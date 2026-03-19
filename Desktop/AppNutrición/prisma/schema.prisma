@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Dietista {
+  id              String    @id @default(cuid())
+  authId          String    @unique
+  email           String    @unique
+  nombre          String
+  apellidos       String
+  telefono        String?
+  especialidad    String?
+  numColegiado    String?
+  clinica         String?
+  logoUrl         String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  pacientes       Paciente[]
+
+  @@map("dietistas")
+}
+
+enum Sexo {
+  MASCULINO
+  FEMENINO
+  OTRO
+}
+
+enum ObjetivoPaciente {
+  PERDER_PESO
+  GANAR_MASA
+  MANTENIMIENTO
+  PATOLOGIA
+  DEPORTIVO
+  OTRO
+}
+
+model Paciente {
+  id                  String            @id @default(cuid())
+  dietistaId          String
+  dietista            Dietista          @relation(fields: [dietistaId], references: [id], onDelete: Cascade)
+
+  nombre              String
+  apellidos           String
+  email               String?
+  telefono            String?
+  fechaNacimiento     DateTime?
+  sexo                Sexo?
+
+  peso                Float?
+  altura              Float?
+
+  alergias            String[]
+  intolerancias       String[]
+  patologias          String[]
+  medicamentos        String[]
+
+  objetivo            ObjetivoPaciente  @default(MANTENIMIENTO)
+  objetivoDetalle     String?
+
+  preferencias        String[]
+  notas               String?
+
+  activo              Boolean           @default(true)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  @@map("pacientes")
+}
