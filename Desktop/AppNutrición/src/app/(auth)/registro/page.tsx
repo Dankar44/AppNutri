@@ -211,6 +211,18 @@ export default function RegistroPage() {
               Inicia sesión
             </Link>
           </p>
+
+          <div className="mt-4 pt-4 border-t border-border text-center">
+            <p className="text-xs text-muted-foreground">
+              ¿Eres paciente?{" "}
+              <Link
+                href="/paciente/login"
+                className="text-primary font-medium hover:underline"
+              >
+                Accede al portal de pacientes
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>

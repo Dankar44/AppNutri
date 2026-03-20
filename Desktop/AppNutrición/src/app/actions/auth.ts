@@ -12,21 +12,17 @@ export async function getCurrentDietista() {
 
   if (!user) return null;
 
-  let dietista = await prisma.dietista.findUnique({
+  const dietista = await prisma.dietista.upsert({
     where: { authId: user.id },
+    update: {},
+    create: {
+      authId: user.id,
+      email: user.email!,
+      nombre: user.user_metadata.nombre || "Sin nombre",
+      apellidos: user.user_metadata.apellidos || "",
+      especialidad: user.user_metadata.especialidad || null,
+    },
   });
-
-  if (!dietista) {
-    dietista = await prisma.dietista.create({
-      data: {
-        authId: user.id,
-        email: user.email!,
-        nombre: user.user_metadata.nombre || "Sin nombre",
-        apellidos: user.user_metadata.apellidos || "",
-        especialidad: user.user_metadata.especialidad || null,
-      },
-    });
-  }
 
   return dietista;
 }

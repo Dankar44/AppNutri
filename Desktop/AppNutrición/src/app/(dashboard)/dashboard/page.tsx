@@ -1,53 +1,36 @@
-import { Users, UtensilsCrossed, UserCheck, TrendingUp } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import {
+  Users,
+  UserCheck,
+  UtensilsCrossed,
+  CalendarDays,
+  Clock,
+  AlertCircle,
+} from "lucide-react";
 import { getCurrentDietista } from "@/app/actions/auth";
+import { getCitasHoy } from "@/app/actions/citas";
+import { getMetricasDashboard, getActividadMensual, getPacientesAtencion } from "@/app/actions/metricas";
+import { generarNotificaciones } from "@/app/actions/notificaciones";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { formatDate } from "@/lib/utils";
+import { StatsCard } from "@/components/stats-card";
+import { DashboardCharts } from "./dashboard-charts";
+import { PacientesAtencion } from "./pacientes-atencion";
 
 export default async function DashboardPage() {
   const dietista = await getCurrentDietista();
   if (!dietista) redirect("/login");
 
-  const [totalPacientes, pacientesActivos, pacientesRecientes] =
-    await Promise.all([
-      prisma.paciente.count({ where: { dietistaId: dietista.id } }),
-      prisma.paciente.count({
-        where: { dietistaId: dietista.id, activo: true },
-      }),
-      prisma.paciente.findMany({
-        where: { dietistaId: dietista.id },
-        orderBy: { createdAt: "desc" },
-        take: 5,
-      }),
-    ]);
+  // Generar notificaciones al cargar el dashboard
+  await generarNotificaciones();
 
-  const stats = [
-    {
-      label: "Total pacientes",
-      value: totalPacientes,
-      icon: Users,
-      color: "text-blue-600 bg-blue-50",
-    },
-    {
-      label: "Pacientes activos",
-      value: pacientesActivos,
-      icon: UserCheck,
-      color: "text-green-600 bg-green-50",
-    },
-    {
-      label: "Dietas creadas",
-      value: 0,
-      icon: UtensilsCrossed,
-      color: "text-orange-600 bg-orange-50",
-    },
-    {
-      label: "Este mes",
-      value: pacientesActivos,
-      icon: TrendingUp,
-      color: "text-purple-600 bg-purple-50",
-    },
-  ];
+  const [metricas, actividad, citasHoy, atencion] = await Promise.all([
+    getMetricasDashboard(),
+    getActividadMensual(),
+    getCitasHoy(),
+    getPacientesAtencion(),
+  ]);
+
+  if (!metricas) redirect("/login");
 
   return (
     <div>
@@ -60,86 +43,111 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      {/* Stats cards */}
+      {/* Stats con tendencia */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {stats.map((stat) => (
-          <div
-            key={stat.label}
-            className="bg-card rounded-xl border border-border p-5 flex items-start gap-4"
-          >
-            <div className={`p-3 rounded-lg ${stat.color}`}>
-              <stat.icon className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{stat.value}</p>
-              <p className="text-sm text-muted-foreground">{stat.label}</p>
-            </div>
-          </div>
-        ))}
+        <StatsCard
+          icon={Users}
+          label="Total pacientes"
+          value={metricas.totalPacientes}
+          change={metricas.cambioPacientes}
+          color="text-blue-600 bg-blue-50"
+        />
+        <StatsCard
+          icon={UserCheck}
+          label="Consultas este mes"
+          value={metricas.consultasMes}
+          change={metricas.cambioConsultas}
+          color="text-green-600 bg-green-50"
+        />
+        <StatsCard
+          icon={UtensilsCrossed}
+          label="Planes activos"
+          value={metricas.planesActivos}
+          color="text-orange-600 bg-orange-50"
+        />
+        <StatsCard
+          icon={CalendarDays}
+          label="Citas esta semana"
+          value={metricas.citasSemana}
+          color="text-purple-600 bg-purple-50"
+        />
       </div>
 
-      {/* Recent patients */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        {/* Gráfico de actividad */}
+        <div className="lg:col-span-2 bg-card rounded-xl border border-border p-5">
+          <h2 className="text-lg font-semibold mb-4">Actividad (últimos 6 meses)</h2>
+          <DashboardCharts data={actividad} />
+        </div>
+
+        {/* Pacientes que necesitan atención */}
+        <div className="bg-card rounded-xl border border-border">
+          <div className="p-5 border-b border-border flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 text-amber-500" />
+            <h2 className="text-lg font-semibold">Necesitan atención</h2>
+          </div>
+          <PacientesAtencion
+            sinConsulta={atencion.sinConsulta}
+            sinMedidas={atencion.sinMedidas}
+            planesAntiguos={atencion.planesAntiguos}
+          />
+        </div>
+      </div>
+
+      {/* Citas de hoy */}
       <div className="bg-card rounded-xl border border-border">
         <div className="p-5 border-b border-border flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Últimos pacientes</h2>
+          <h2 className="text-lg font-semibold">Citas de hoy</h2>
           <Link
-            href="/pacientes"
+            href="/agenda"
             className="text-sm text-primary hover:underline font-medium"
           >
-            Ver todos
+            Ver agenda
           </Link>
         </div>
-        {pacientesRecientes.length === 0 ? (
-          <div className="p-12 text-center">
-            <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="font-medium text-lg mb-1">
-              No tienes pacientes aún
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              Empieza añadiendo tu primer paciente
+        {citasHoy.length === 0 ? (
+          <div className="p-8 text-center">
+            <CalendarDays className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">
+              No tienes citas programadas para hoy
             </p>
-            <Link
-              href="/pacientes/nuevo"
-              className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors"
-            >
-              Añadir paciente
-            </Link>
           </div>
         ) : (
           <div className="divide-y divide-border">
-            {pacientesRecientes.map((paciente) => (
-              <Link
-                key={paciente.id}
-                href={`/pacientes/${paciente.id}`}
-                className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors"
-              >
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">
-                  {paciente.nombre[0]}
-                  {paciente.apellidos[0]}
+            {citasHoy.map((cita) => (
+              <div key={cita.id} className="p-4 flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-purple-50 text-purple-600">
+                  <Clock className="w-4 h-4" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">
-                    {paciente.nombre} {paciente.apellidos}
+                <div className="flex-1">
+                  <p className="text-sm font-medium">
+                    {cita.paciente.nombre} {cita.paciente.apellidos}
                   </p>
-                  <p className="text-sm text-muted-foreground">
-                    {paciente.email || "Sin email"}
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(cita.fechaHora).toLocaleTimeString("es-ES", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}{" "}
+                    - {cita.duracion} min
+                    {cita.motivo ? ` · ${cita.motivo}` : ""}
                   </p>
                 </div>
-                <div className="text-right shrink-0">
-                  <span
-                    className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-                      paciente.activo
+                <span
+                  className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                    cita.estado === "CONFIRMADA"
+                      ? "bg-blue-50 text-blue-700"
+                      : cita.estado === "COMPLETADA"
                         ? "bg-green-50 text-green-700"
-                        : "bg-gray-100 text-gray-600"
-                    }`}
-                  >
-                    {paciente.activo ? "Activo" : "Inactivo"}
-                  </span>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {formatDate(paciente.createdAt)}
-                  </p>
-                </div>
-              </Link>
+                        : "bg-amber-50 text-amber-700"
+                  }`}
+                >
+                  {cita.estado === "CONFIRMADA"
+                    ? "Confirmada"
+                    : cita.estado === "COMPLETADA"
+                      ? "Completada"
+                      : "Pendiente"}
+                </span>
+              </div>
             ))}
           </div>
         )}

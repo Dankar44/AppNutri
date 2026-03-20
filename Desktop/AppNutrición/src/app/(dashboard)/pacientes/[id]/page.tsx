@@ -15,15 +15,25 @@ import {
   AlertTriangle,
   Pill,
   Apple,
+  UtensilsCrossed,
+  FileText,
+  Shield,
+  BookOpen,
+  TrendingUp,
 } from "lucide-react";
 import { getPaciente } from "@/app/actions/pacientes";
+import { getPlanesPaciente } from "@/app/actions/planes";
+import { getMedidasEvolucion } from "@/app/actions/medidas";
 import {
   formatDate,
   calcularEdad,
   calcularIMC,
+  capitalizarNombre,
   OBJETIVO_LABELS,
 } from "@/lib/utils";
 import { PacienteActions } from "./paciente-actions";
+import { EvolucionMiniChart } from "./evolucion-mini-chart";
+import { AvatarPaciente } from "@/components/avatar-paciente";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -33,6 +43,22 @@ export default async function PacienteDetailPage({ params }: Props) {
   const { id } = await params;
   const paciente = await getPaciente(id);
   if (!paciente) notFound();
+
+  const [planes, medidas] = await Promise.all([
+    getPlanesPaciente(id),
+    getMedidasEvolucion(id),
+  ]);
+
+  const nombre = capitalizarNombre(paciente.nombre);
+  const apellidos = capitalizarNombre(paciente.apellidos);
+
+  const chartData = medidas.map((m) => ({
+    fecha: new Date(m.fecha).toLocaleDateString("es-ES", { day: "2-digit", month: "short" }),
+    peso: m.peso,
+    imc: m.imc,
+    grasa: m.grasaCorporal,
+    cintura: m.perimetroCintura,
+  }));
 
   const edad = paciente.fechaNacimiento
     ? calcularEdad(new Date(paciente.fechaNacimiento))
@@ -55,13 +81,10 @@ export default async function PacienteDetailPage({ params }: Props) {
         </Link>
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xl">
-              {paciente.nombre[0]}
-              {paciente.apellidos[0]}
-            </div>
+            <AvatarPaciente nombre={nombre} apellidos={apellidos} fotoUrl={paciente.fotoUrl} size="lg" />
             <div>
               <h1 className="text-2xl font-bold">
-                {paciente.nombre} {paciente.apellidos}
+                {nombre} {apellidos}
               </h1>
               <div className="flex items-center gap-3 mt-1">
                 <span
@@ -200,6 +223,74 @@ export default async function PacienteDetailPage({ params }: Props) {
               </p>
             </section>
           )}
+
+          {/* Evolución del paciente */}
+          <section className="bg-card rounded-xl border border-border p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-blue-600" />
+                Evolución
+              </h2>
+              <Link
+                href={`/pacientes/${paciente.id}/medidas`}
+                className="text-xs text-primary hover:underline"
+              >
+                Ver todo + registrar
+              </Link>
+            </div>
+            {chartData.length >= 2 ? (
+              <EvolucionMiniChart data={chartData} />
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-6">
+                {chartData.length === 0
+                  ? "Sin medidas registradas"
+                  : "Se necesitan al menos 2 medidas para mostrar la gráfica"}
+              </p>
+            )}
+          </section>
+
+          {/* Planes alimenticios */}
+          <section className="bg-card rounded-xl border border-border p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <UtensilsCrossed className="w-5 h-5 text-primary" />
+                Planes alimenticios
+              </h2>
+              <Link
+                href={`/dietas/nuevo`}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-xs font-medium"
+              >
+                + Nuevo plan
+              </Link>
+            </div>
+            {planes.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No hay planes alimenticios para este paciente
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {planes.map((plan) => (
+                  <Link
+                    key={plan.id}
+                    href={`/dietas/${plan.id}`}
+                    className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                  >
+                    <div>
+                      <p className="text-sm font-medium">{plan.nombre}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDate(plan.createdAt)}
+                      </p>
+                    </div>
+                    {plan.caloriasObjetivo && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-medium">
+                        {plan.caloriasObjetivo} kcal
+                      </span>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
         </div>
 
         {/* Columna derecha: resumen rápido */}
@@ -247,7 +338,52 @@ export default async function PacienteDetailPage({ params }: Props) {
                   <span className="font-bold text-lg">{imc}</span>
                 </div>
               )}
+              <Link
+                href={`/pacientes/${paciente.id}/medidas`}
+                className="block mt-3 text-center text-xs text-primary hover:underline"
+              >
+                Ver evolución y registrar medidas
+              </Link>
             </div>
+          </section>
+
+          <section className="bg-card rounded-xl border border-border p-6">
+            <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+              <FileText className="w-5 h-5 text-green-600" />
+              Consultas
+            </h2>
+            <Link
+              href={`/pacientes/${paciente.id}/consultas`}
+              className="block text-center px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
+            >
+              Ver historial de consultas
+            </Link>
+          </section>
+
+          <section className="bg-card rounded-xl border border-border p-6">
+            <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-amber-600" />
+              Diario alimentario
+            </h2>
+            <Link
+              href={`/pacientes/${paciente.id}/diario`}
+              className="block text-center px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
+            >
+              Ver diario del paciente
+            </Link>
+          </section>
+
+          <section className="bg-card rounded-xl border border-border p-6">
+            <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+              <Shield className="w-5 h-5 text-purple-600" />
+              Portal del paciente
+            </h2>
+            <Link
+              href={`/pacientes/${paciente.id}/portal`}
+              className="block text-center px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
+            >
+              Configurar acceso al portal
+            </Link>
           </section>
         </div>
       </div>

@@ -7,6 +7,7 @@ import {
   Users,
   UtensilsCrossed,
   Apple,
+  CookingPot,
   CalendarDays,
   FileBarChart,
   Settings,
@@ -17,12 +18,14 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { NotificationBell } from "@/components/notification-bell";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/pacientes", label: "Pacientes", icon: Users },
   { href: "/dietas", label: "Dietas", icon: UtensilsCrossed },
   { href: "/alimentos", label: "Alimentos", icon: Apple },
+  { href: "/recetas", label: "Recetas", icon: CookingPot },
   { href: "/agenda", label: "Agenda", icon: CalendarDays },
   { href: "/reportes", label: "Reportes", icon: FileBarChart },
   { href: "/ajustes", label: "Ajustes", icon: Settings },
@@ -78,12 +81,15 @@ export function Sidebar({ dietistaNombre, onSignOut }: SidebarProps) {
 
       {/* Footer */}
       <div className="border-t border-border p-3 space-y-2">
-        {!collapsed && (
-          <div className="px-3 py-2">
-            <p className="text-sm font-medium truncate">{dietistaNombre}</p>
-            <p className="text-xs text-muted-foreground">Dietista</p>
-          </div>
-        )}
+        <div className="flex items-center justify-between px-3 py-2">
+          {!collapsed && (
+            <div>
+              <p className="text-sm font-medium truncate">{dietistaNombre}</p>
+              <p className="text-xs text-muted-foreground">Dietista</p>
+            </div>
+          )}
+          <NotificationBell />
+        </div>
         <button
           onClick={onSignOut}
           className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors w-full"

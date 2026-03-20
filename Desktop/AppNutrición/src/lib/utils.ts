@@ -28,6 +28,14 @@ export function formatDate(date: Date | string): string {
   });
 }
 
+export function capitalizarNombre(texto: string): string {
+  return texto
+    .toLowerCase()
+    .split(" ")
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+    .join(" ");
+}
+
 export const OBJETIVO_LABELS: Record<string, string> = {
   PERDER_PESO: "Perder peso",
   GANAR_MASA: "Ganar masa muscular",

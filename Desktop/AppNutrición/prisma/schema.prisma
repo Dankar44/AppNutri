@@ -22,6 +22,15 @@ model Dietista {
   updatedAt       DateTime  @updatedAt
 
   pacientes       Paciente[]
+  alimentos       Alimento[]
+  recetas         Receta[]
+  planes          PlanAlimenticio[]
+  plantillas      Plantilla[]
+  consultas       Consulta[]
+  citas           Cita[]
+  enlacesCompartidos EnlaceCompartido[]
+  generacionesIA  GeneracionIA[]
+  notificaciones  Notificacion[]
 
   @@map("dietistas")
 }
@@ -41,6 +50,58 @@ enum ObjetivoPaciente {
   OTRO
 }
 
+enum CategoriaAlimento {
+  FRUTAS
+  VERDURAS
+  CEREALES
+  LEGUMBRES
+  CARNES
+  PESCADOS
+  LACTEOS
+  HUEVOS
+  FRUTOS_SECOS
+  ACEITES
+  BEBIDAS
+  CONDIMENTOS
+  DULCES
+  OTROS
+}
+
+enum UnidadMedida {
+  GRAMOS
+  MILILITROS
+  UNIDAD
+  CUCHARADA
+  CUCHARADITA
+  TAZA
+  REBANADA
+  PIEZA
+}
+
+enum OrigenAlimento {
+  API
+  PERSONALIZADO
+}
+
+enum TipoComida {
+  DESAYUNO
+  MEDIA_MANANA
+  ALMUERZO
+  MERIENDA
+  CENA
+  RECENA
+}
+
+enum DiaSemana {
+  LUNES
+  MARTES
+  MIERCOLES
+  JUEVES
+  VIERNES
+  SABADO
+  DOMINGO
+}
+
 model Paciente {
   id                  String            @id @default(cuid())
   dietistaId          String
@@ -50,6 +111,7 @@ model Paciente {
   apellidos           String
   email               String?
   telefono            String?
+  fotoUrl             String?
   fechaNacimiento     DateTime?
   sexo                Sexo?
 
@@ -71,5 +133,299 @@ model Paciente {
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
 
+  planes              PlanAlimenticio[]
+  medidas             MedidaAntropometrica[]
+  consultas           Consulta[]
+  citas               Cita[]
+  acceso              AccesoPaciente?
+  entradasDiario      EntradaDiario[]
+  generacionesIA      GeneracionIA[]
+
   @@map("pacientes")
+}
+
+model Alimento {
+  id              String            @id @default(cuid())
+  nombre          String
+  categoria       CategoriaAlimento
+  calorias        Float
+  proteinas       Float
+  carbohidratos   Float
+  grasas          Float
+  fibra           Float             @default(0)
+  porcion         Float             @default(100)
+  unidad          UnidadMedida      @default(GRAMOS)
+  origen          OrigenAlimento    @default(PERSONALIZADO)
+  codigoBarras    String?
+  dietistaId      String?
+  dietista        Dietista?         @relation(fields: [dietistaId], references: [id], onDelete: Cascade)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  recetaIngredientes  RecetaIngrediente[]
+  alimentosEnComida   AlimentoEnComida[]
+  entradasDiario      EntradaDiario[]
+
+  @@map("alimentos")
+}
+
+model Receta {
+  id              String    @id @default(cuid())
+  nombre          String
+  descripcion     String?
+  instrucciones   String?
+  porciones       Int       @default(1)
+  calorias        Float     @default(0)
+  proteinas       Float     @default(0)
+  carbohidratos   Float     @default(0)
+  grasas          Float     @default(0)
+  fibra           Float     @default(0)
+  dietistaId      String
+  dietista        Dietista  @relation(fields: [dietistaId], references: [id], onDelete: Cascade)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  ingredientes    RecetaIngrediente[]
+  alimentosEnComida AlimentoEnComida[]
+  entradasDiario    EntradaDiario[]
+
+  @@map("recetas")
+}
+
+model RecetaIngrediente {
+  id          String       @id @default(cuid())
+  recetaId    String
+  receta      Receta       @relation(fields: [recetaId], references: [id], onDelete: Cascade)
+  alimentoId  String
+  alimento    Alimento     @relation(fields: [alimentoId], references: [id], onDelete: Cascade)
+  cantidad    Float
+  unidad      UnidadMedida @default(GRAMOS)
+
+  @@map("receta_ingredientes")
+}
+
+model PlanAlimenticio {
+  id              String    @id @default(cuid())
+  pacienteId      String
+  paciente        Paciente  @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  dietistaId      String
+  dietista        Dietista  @relation(fields: [dietistaId], references: [id], onDelete: Cascade)
+  nombre          String
+  caloriasObjetivo  Float?
+  proteinasObjetivo Float?
+  carbohidratosObjetivo Float?
+  grasasObjetivo    Float?
+  activo          Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  dias            DiaDelPlan[]
+  enlaces         EnlaceCompartido[]
+
+  @@map("planes_alimenticios")
+}
+
+model DiaDelPlan {
+  id      String      @id @default(cuid())
+  planId  String
+  plan    PlanAlimenticio @relation(fields: [planId], references: [id], onDelete: Cascade)
+  dia     DiaSemana
+
+  comidas ComidaDelDia[]
+
+  @@unique([planId, dia])
+  @@map("dias_del_plan")
+}
+
+model ComidaDelDia {
+  id          String      @id @default(cuid())
+  diaId       String
+  diaDelPlan  DiaDelPlan @relation(fields: [diaId], references: [id], onDelete: Cascade)
+  tipo        TipoComida
+  orden       Int         @default(0)
+  descripcion String?
+
+  alimentos AlimentoEnComida[]
+
+  @@map("comidas_del_dia")
+}
+
+model AlimentoEnComida {
+  id          String       @id @default(cuid())
+  comidaId    String
+  comida      ComidaDelDia @relation(fields: [comidaId], references: [id], onDelete: Cascade)
+  alimentoId  String?
+  alimento    Alimento?    @relation(fields: [alimentoId], references: [id], onDelete: SetNull)
+  recetaId    String?
+  receta      Receta?      @relation(fields: [recetaId], references: [id], onDelete: SetNull)
+  cantidad    Float
+  unidad      UnidadMedida @default(GRAMOS)
+  orden       Int          @default(0)
+
+  @@map("alimentos_en_comida")
+}
+
+model Plantilla {
+  id          String    @id @default(cuid())
+  dietistaId  String
+  dietista    Dietista  @relation(fields: [dietistaId], references: [id], onDelete: Cascade)
+  nombre      String
+  datos       Json
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("plantillas")
+}
+
+model MedidaAntropometrica {
+  id                  String    @id @default(cuid())
+  pacienteId          String
+  paciente            Paciente  @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  fecha               DateTime  @default(now())
+  peso                Float?
+  altura              Float?
+  imc                 Float?
+  grasaCorporal       Float?
+  masaMuscular        Float?
+  perimetroCintura    Float?
+  perimetroCadera     Float?
+  perimetroBrazo      Float?
+  notas               String?
+  createdAt           DateTime  @default(now())
+
+  consulta            Consulta?
+
+  @@map("medidas_antropometricas")
+}
+
+model Consulta {
+  id              String    @id @default(cuid())
+  pacienteId      String
+  paciente        Paciente  @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  dietistaId      String
+  dietista        Dietista  @relation(fields: [dietistaId], references: [id], onDelete: Cascade)
+  fecha           DateTime  @default(now())
+  motivo          String?
+  notas           String?
+  medidaId        String?   @unique
+  medida          MedidaAntropometrica? @relation(fields: [medidaId], references: [id], onDelete: SetNull)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("consultas")
+}
+
+enum EstadoCita {
+  PENDIENTE
+  CONFIRMADA
+  CANCELADA
+  COMPLETADA
+}
+
+model Cita {
+  id              String      @id @default(cuid())
+  pacienteId      String
+  paciente        Paciente    @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  dietistaId      String
+  dietista        Dietista    @relation(fields: [dietistaId], references: [id], onDelete: Cascade)
+  fechaHora       DateTime
+  duracion        Int         @default(30)
+  motivo          String?
+  estado          EstadoCita  @default(PENDIENTE)
+  notas           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@map("citas")
+}
+
+model EnlaceCompartido {
+  id          String    @id @default(cuid())
+  token       String    @unique @default(cuid())
+  planId      String
+  plan        PlanAlimenticio @relation(fields: [planId], references: [id], onDelete: Cascade)
+  dietistaId  String
+  dietista    Dietista  @relation(fields: [dietistaId], references: [id], onDelete: Cascade)
+  activo      Boolean   @default(true)
+  expiraEn    DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@map("enlaces_compartidos")
+}
+
+model AccesoPaciente {
+  id              String    @id @default(cuid())
+  pacienteId      String    @unique
+  paciente        Paciente  @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  email           String    @unique
+  pinHash         String
+  passwordHash    String?
+  perfilCompleto  Boolean   @default(false)
+  activo          Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("accesos_paciente")
+}
+
+model EntradaDiario {
+  id          String       @id @default(cuid())
+  pacienteId  String
+  paciente    Paciente     @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  fecha       DateTime     @default(now())
+  tipoComida  TipoComida
+  descripcion String?
+  alimentoId  String?
+  alimento    Alimento?    @relation(fields: [alimentoId], references: [id], onDelete: SetNull)
+  recetaId    String?
+  receta      Receta?      @relation(fields: [recetaId], references: [id], onDelete: SetNull)
+  cantidad    Float?
+  unidad      UnidadMedida?
+  notas       String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("entradas_diario")
+}
+
+enum EstadoGeneracion {
+  BORRADOR
+  APLICADO
+  DESCARTADO
+}
+
+model GeneracionIA {
+  id              String           @id @default(cuid())
+  dietistaId      String
+  dietista        Dietista         @relation(fields: [dietistaId], references: [id], onDelete: Cascade)
+  pacienteId      String
+  paciente        Paciente         @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  prompt          String
+  respuesta       Json
+  estado          EstadoGeneracion @default(BORRADOR)
+  createdAt       DateTime         @default(now())
+
+  @@map("generaciones_ia")
+}
+
+enum TipoNotificacion {
+  CITA_HOY
+  PACIENTE_SIN_CONSULTA
+  PACIENTE_SIN_MEDIDAS
+  PLAN_ANTIGUO
+  DIARIO_NUEVO
+}
+
+model Notificacion {
+  id          String            @id @default(cuid())
+  dietistaId  String
+  dietista    Dietista          @relation(fields: [dietistaId], references: [id], onDelete: Cascade)
+  tipo        TipoNotificacion
+  titulo      String
+  mensaje     String
+  leida       Boolean           @default(false)
+  enlace      String?
+  createdAt   DateTime          @default(now())
+
+  @@map("notificaciones")
 }

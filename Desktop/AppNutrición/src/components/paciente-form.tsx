@@ -125,15 +125,24 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.nombre || !form.apellidos) {
+    if (!form.nombre.trim() || !form.apellidos.trim()) {
       toast.error("Nombre y apellidos son obligatorios.");
+      return;
+    }
+    if (!form.email || !form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      toast.error("El email es obligatorio y debe ser válido.");
       return;
     }
     setLoading(true);
     try {
       await action(form);
-    } catch {
-      toast.error("Error al guardar el paciente.");
+    } catch (error) {
+      // redirect() de Next.js lanza un error con digest "NEXT_REDIRECT" - no es un error real
+      if (error && typeof error === "object" && "digest" in error) {
+        throw error;
+      }
+      const msg = error instanceof Error ? error.message : "Error al guardar el paciente.";
+      toast.error(msg);
       setLoading(false);
     }
   }
@@ -169,13 +178,19 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5">Email</label>
+            <label className="block text-sm font-medium mb-1.5">
+              Email <span className="text-destructive">*</span>
+            </label>
             <input
               type="email"
               value={form.email}
               onChange={(e) => update("email", e.target.value)}
+              required
               className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              Necesario para el acceso al portal del paciente
+            </p>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1.5">
@@ -228,6 +243,8 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
             <input
               type="number"
               step="0.1"
+              min="1"
+              max="500"
               value={form.peso || ""}
               onChange={(e) =>
                 update("peso", e.target.value ? parseFloat(e.target.value) : undefined)
@@ -243,6 +260,8 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
             <input
               type="number"
               step="0.1"
+              min="30"
+              max="300"
               value={form.altura || ""}
               onChange={(e) =>
                 update(

@@ -1,0 +1,39 @@
+"use client";
+
+import { useRouter, useSearchParams } from "next/navigation";
+import { Search } from "lucide-react";
+import { useRef } from "react";
+
+export function RecetasFilter() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const debounceRef = useRef<NodeJS.Timeout>(null);
+
+  function handleSearch(value: string) {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (value) {
+        params.set("busqueda", value);
+      } else {
+        params.delete("busqueda");
+      }
+      router.push(`/recetas?${params.toString()}`);
+    }, 300);
+  }
+
+  return (
+    <div className="mb-6">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <input
+          type="text"
+          placeholder="Buscar receta..."
+          defaultValue={searchParams.get("busqueda") || ""}
+          onChange={(e) => handleSearch(e.target.value)}
+          className="w-full pl-9 pr-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
+        />
+      </div>
+    </div>
+  );
+}
