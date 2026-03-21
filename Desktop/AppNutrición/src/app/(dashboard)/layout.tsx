@@ -20,7 +20,12 @@ export default async function DashboardLayout({
     redirect("/pendiente");
   }
 
-  const notifCount = await getNotificacionesCount();
+  let notifCount = 0;
+  try {
+    notifCount = await getNotificacionesCount();
+  } catch {
+    // No bloquear el dashboard si las notificaciones fallan
+  }
 
   return (
     <div className="flex min-h-screen">
