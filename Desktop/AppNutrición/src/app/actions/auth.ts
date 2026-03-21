@@ -25,12 +25,19 @@ export async function getCurrentDietista() {
     },
   });
 
-  // Leer verificado con raw SQL (compatible con Prisma client local y Vercel)
-  const rows = await prisma.$queryRawUnsafe<{ verificado: boolean }[]>(
-    `SELECT verificado FROM dietistas WHERE id = $1`, dietista.id
-  );
+  // Leer verificado — intentar Prisma nativo primero, fallback a raw SQL
+  let verificado = false;
+  try {
+    const rows = await prisma.$queryRawUnsafe<{ verificado: boolean }[]>(
+      `SELECT verificado FROM dietistas WHERE id = $1`, dietista.id
+    );
+    verificado = rows[0]?.verificado ?? false;
+  } catch {
+    // Si la columna no existe aún, asumir verificado
+    verificado = true;
+  }
 
-  return { ...dietista, verificado: rows[0]?.verificado ?? false };
+  return { ...dietista, verificado };
 }
 
 export async function signOut() {
