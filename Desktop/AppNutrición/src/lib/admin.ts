@@ -4,9 +4,12 @@ import { SignJWT, jwtVerify } from "jose";
 const ADMIN_COOKIE = "appnutri-admin-session";
 const ADMIN_SESSION_DAYS = 7;
 
+function cleanEnv(val: string | undefined): string {
+  return (val || "").replace(/\\n/g, "").replace(/\n/g, "").replace(/\r/g, "").trim();
+}
+
 function getAdminEmails(): string[] {
-  const raw = process.env.ADMIN_EMAILS || "";
-  return raw
+  return cleanEnv(process.env.ADMIN_EMAILS)
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
@@ -22,7 +25,7 @@ export function isAdminEmail(email: string): boolean {
 }
 
 export function verifyAdminCredentials(email: string, password: string): boolean {
-  const adminPassword = process.env.ADMIN_PASSWORD?.trim();
+  const adminPassword = cleanEnv(process.env.ADMIN_PASSWORD);
   if (!adminPassword) return false;
   return isAdminEmail(email) && password === adminPassword;
 }
