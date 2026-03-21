@@ -25,13 +25,12 @@ export async function getCurrentDietista() {
     },
   });
 
-  // Campo verificado via raw SQL (Prisma client aún no lo tiene generado)
+  // Leer verificado con raw SQL (compatible con Prisma client local y Vercel)
   const rows = await prisma.$queryRawUnsafe<{ verificado: boolean }[]>(
     `SELECT verificado FROM dietistas WHERE id = $1`, dietista.id
   );
-  const verificado = rows[0]?.verificado ?? false;
 
-  return { ...dietista, verificado };
+  return { ...dietista, verificado: rows[0]?.verificado ?? false };
 }
 
 export async function signOut() {
