@@ -22,7 +22,7 @@ export function isAdminEmail(email: string): boolean {
 }
 
 export function verifyAdminCredentials(email: string, password: string): boolean {
-  const adminPassword = process.env.ADMIN_PASSWORD;
+  const adminPassword = process.env.ADMIN_PASSWORD?.trim();
   if (!adminPassword) return false;
   return isAdminEmail(email) && password === adminPassword;
 }
