@@ -26,8 +26,23 @@ export function isAdminEmail(email: string): boolean {
 
 export function verifyAdminCredentials(email: string, password: string): boolean {
   const adminPassword = cleanEnv(process.env.ADMIN_PASSWORD);
+  const adminEmails = getAdminEmails();
+  const emailMatch = isAdminEmail(email);
+  const passMatch = password === adminPassword;
+
+  console.log("[ADMIN-LOGIN-DEBUG]", {
+    inputEmail: email,
+    configuredEmails: adminEmails,
+    emailMatch,
+    passMatch,
+    inputPassLen: password.length,
+    storedPassLen: adminPassword.length,
+    rawEnvPass: JSON.stringify(process.env.ADMIN_PASSWORD),
+    rawEnvEmails: JSON.stringify(process.env.ADMIN_EMAILS),
+  });
+
   if (!adminPassword) return false;
-  return isAdminEmail(email) && password === adminPassword;
+  return emailMatch && passMatch;
 }
 
 export async function createAdminSession(email: string) {
