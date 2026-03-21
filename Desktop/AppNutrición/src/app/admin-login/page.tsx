@@ -19,6 +19,7 @@ export default function AdminLoginPage() {
     try {
       const result = await loginAdmin(email, password);
       if (result.success) {
+        router.refresh();
         router.push("/admin");
       } else {
         toast.error(result.error || "Credenciales incorrectas");
