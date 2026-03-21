@@ -23,7 +23,7 @@ export default function ImportarAlimentoPage() {
     try {
       const data = await buscarAlimentosAPI(query);
       setResults(data);
-    } catch {
+    } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
       toast.error("Error al buscar alimentos");
     } finally {
       setLoading(false);
@@ -36,7 +36,7 @@ export default function ImportarAlimentoPage() {
       const imported = await importarAlimentoAPI(alimento);
       toast.success(`${alimento.nombre} importado correctamente`);
       router.push(`/alimentos/${imported.id}`);
-    } catch {
+    } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
       toast.error("Error al importar el alimento");
       setImporting(null);
     }
@@ -52,13 +52,13 @@ export default function ImportarAlimentoPage() {
           <ArrowLeft className="w-4 h-4" />
           Volver a alimentos
         </Link>
-        <h1 className="text-2xl font-bold">Importar desde Open Food Facts</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Importar desde Open Food Facts</h1>
         <p className="text-muted-foreground mt-1">
           Busca alimentos en la base de datos abierta y añádelos a tu colección
         </p>
       </div>
 
-      <form onSubmit={handleSearch} className="flex gap-3 mb-6">
+      <form onSubmit={handleSearch} className="flex gap-4 mb-8">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
@@ -66,6 +66,7 @@ export default function ImportarAlimentoPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar alimento (ej: arroz, pollo, manzana)..."
+            maxLength={100}
             className="w-full pl-9 pr-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
           />
         </div>

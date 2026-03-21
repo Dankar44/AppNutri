@@ -49,7 +49,7 @@ export default function EditarPlanPage() {
       });
       toast.success("Plan actualizado");
       router.push(`/dietas/${id}`);
-    } catch {
+    } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
       toast.error("Error al actualizar");
       setLoading(false);
     }
@@ -67,7 +67,7 @@ export default function EditarPlanPage() {
           <ArrowLeft className="w-4 h-4" />
           Volver al plan
         </Link>
-        <h1 className="text-2xl font-bold">Editar plan</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Editar plan</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6 max-w-xl">
@@ -77,6 +77,7 @@ export default function EditarPlanPage() {
             <input
               name="nombre"
               required
+              maxLength={200}
               defaultValue={plan.nombre}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
             />
@@ -91,7 +92,8 @@ export default function EditarPlanPage() {
               <input
                 name="caloriasObjetivo"
                 type="number"
-                min="0"
+                min={0}
+                max={20000}
                 defaultValue={plan.caloriasObjetivo ?? ""}
                 className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
               />
@@ -101,7 +103,8 @@ export default function EditarPlanPage() {
               <input
                 name="proteinasObjetivo"
                 type="number"
-                min="0"
+                min={0}
+                max={2000}
                 defaultValue={plan.proteinasObjetivo ?? ""}
                 className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
               />
@@ -111,7 +114,8 @@ export default function EditarPlanPage() {
               <input
                 name="carbohidratosObjetivo"
                 type="number"
-                min="0"
+                min={0}
+                max={2000}
                 defaultValue={plan.carbohidratosObjetivo ?? ""}
                 className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
               />
@@ -121,7 +125,8 @@ export default function EditarPlanPage() {
               <input
                 name="grasasObjetivo"
                 type="number"
-                min="0"
+                min={0}
+                max={2000}
                 defaultValue={plan.grasasObjetivo ?? ""}
                 className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
               />

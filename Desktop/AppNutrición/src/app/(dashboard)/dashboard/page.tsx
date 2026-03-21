@@ -20,8 +20,8 @@ export default async function DashboardPage() {
   const dietista = await getCurrentDietista();
   if (!dietista) redirect("/login");
 
-  // Generar notificaciones al cargar el dashboard
-  await generarNotificaciones();
+  // Generar notificaciones en background (no bloquea la carga)
+  generarNotificaciones().catch(() => {});
 
   const [metricas, actividad, citasHoy, atencion] = await Promise.all([
     getMetricasDashboard(),
@@ -35,7 +35,7 @@ export default async function DashboardPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-2xl sm:text-3xl font-bold">
           ¡Hola, {dietista.nombre}!
         </h1>
         <p className="text-muted-foreground mt-1">

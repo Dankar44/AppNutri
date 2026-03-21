@@ -31,11 +31,14 @@ export async function updateSession(request: NextRequest) {
 
   const isAuthPage =
     request.nextUrl.pathname.startsWith("/login") ||
-    request.nextUrl.pathname.startsWith("/registro");
+    request.nextUrl.pathname.startsWith("/registro") ||
+    request.nextUrl.pathname.startsWith("/pendiente");
 
   const isPublicRoute =
     request.nextUrl.pathname.startsWith("/compartido") ||
-    request.nextUrl.pathname.startsWith("/paciente");
+    request.nextUrl.pathname.startsWith("/paciente") ||
+    request.nextUrl.pathname.startsWith("/admin-login") ||
+    request.nextUrl.pathname.startsWith("/admin");
 
   if (!user && !isAuthPage && !isPublicRoute && request.nextUrl.pathname !== "/") {
     const url = request.nextUrl.clone();
@@ -43,7 +46,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && isAuthPage) {
+  if (user && isAuthPage && !request.nextUrl.pathname.startsWith("/pendiente")) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);

@@ -36,7 +36,7 @@ export default function PatientLoginPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <Leaf className="w-10 h-10 text-primary mx-auto mb-3" />
-          <h1 className="text-2xl font-bold">Portal del Paciente</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">Portal del Paciente</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Accede con tu email y contraseña o PIN
           </p>
@@ -49,6 +49,7 @@ export default function PatientLoginPage() {
               name="email"
               type="email"
               required
+              maxLength={200}
               autoComplete="email"
               className="w-full px-4 py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
@@ -60,6 +61,7 @@ export default function PatientLoginPage() {
                 name="credencial"
                 type={showPassword ? "text" : "password"}
                 required
+                maxLength={128}
                 placeholder="Tu contraseña o PIN de 6 dígitos"
                 autoComplete="current-password"
                 className="w-full px-4 py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 pr-12"

@@ -13,7 +13,7 @@ export default function NuevoAlimentoPage() {
           <ArrowLeft className="w-4 h-4" />
           Volver a alimentos
         </Link>
-        <h1 className="text-2xl font-bold">Nuevo alimento</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Nuevo alimento</h1>
         <p className="text-muted-foreground mt-1">
           Añade un alimento personalizado a tu base de datos
         </p>

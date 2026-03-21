@@ -1,18 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { eliminarReceta } from "@/app/actions/recetas";
 import { toast } from "sonner";
 
 export function RecetaActions({ recetaId }: { recetaId: string }) {
+  const router = useRouter();
   const [confirmando, setConfirmando] = useState(false);
 
   async function handleDelete() {
     try {
       await eliminarReceta(recetaId);
-      toast.success("Receta eliminada");
-    } catch {
+      toast.success("Receta eliminada correctamente");
+      await new Promise((r) => setTimeout(r, 800)); window.location.href = "/recetas";
+    } catch (error) {
+      if (error && typeof error === "object" && "digest" in error) throw error;
       toast.error("Error al eliminar la receta");
     }
   }

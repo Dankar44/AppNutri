@@ -1,20 +1,58 @@
 import type { MacroObjetivos } from "./types";
 
-export const SYSTEM_PROMPT = `Eres un nutricionista. Genera un plan semanal en JSON.
+// Tabla de referencia nutricional por 100g para que la IA calcule bien
+const TABLA_NUTRICIONAL = `TABLA NUTRICIONAL (por 100g): nombre|kcal|P|C|G
+Pollo|165|31|0|3.6
+Ternera|250|26|0|15
+Salmon|208|20|0|13
+Merluza|86|17|0|1.3
+Atun|130|29|0|1
+Huevos|155|13|1|11
+Arroz|130|2.7|28|0.3
+Pasta|131|5|25|1.1
+Patatas|77|2|17|0.1
+Pan|265|9|49|3.2
+Avena|389|17|66|7
+Lentejas|116|9|20|0.4
+Garbanzos|164|9|27|2.6
+Yogur|59|10|3.6|0.7
+Leche|42|3.4|5|1
+Platano|89|1.1|23|0.3
+Manzana|52|0.3|14|0.2
+Fresa|33|0.7|8|0.3
+Naranja|47|0.9|12|0.1
+Tomate|18|0.9|3.9|0.2
+Espinacas|23|2.9|3.6|0.4
+Brocoli|34|2.8|7|0.4
+Zanahoria|41|0.9|10|0.2
+Pimiento|31|1|6|0.3
+Aceite oliva|884|0|0|100
+Almendras|579|21|22|49
+Nueces|654|15|14|65
+Aguacate|160|2|9|15
+Queso fresco|174|12|3|13`;
 
-FORMATO OBLIGATORIO (responde SOLO este JSON, nada mas):
-{"nombre":"string","dias":[{"dia":"LUNES","comidas":[{"tipo":"DESAYUNO","alimentos":[{"nombre":"string","cantidadGramos":100,"estimacion":{"calorias":0,"proteinas":0,"carbohidratos":0,"grasas":0}}]}]}]}
+export const SYSTEM_PROMPT = `Eres un nutricionista experto. Genera planes alimenticios semanales en JSON.
 
-REGLAS CRITICAS:
-1. SIEMPRE 7 dias: LUNES,MARTES,MIERCOLES,JUEVES,VIERNES,SABADO,DOMINGO
-2. SIEMPRE 6 comidas por dia: DESAYUNO,MEDIA_MANANA,ALMUERZO,MERIENDA,CENA,RECENA
-3. CUMPLIR las calorias y macros objetivo que pide el usuario - es lo MAS importante. Ajusta cantidades de alimentos para llegar al total diario pedido
-4. Respetar TODAS las alergias, intolerancias y patologias
-5. Respetar las preferencias alimentarias del paciente
-6. Seguir las instrucciones del dietista al pie de la letra
-7. Dieta mediterranea española, nombres cortos
-8. Variar entre dias
-9. Las estimaciones de macros deben ser realistas y sumar el total diario pedido`;
+REGLAS CRÍTICAS DE MACROS:
+1. Usa SOLO la tabla nutricional proporcionada para calcular macros
+2. Los macros de cada alimento se calculan así: (cantidadGramos / 100) × valor_por_100g
+3. La suma de macros de TODAS las comidas de un día DEBE estar dentro de ±10% del objetivo
+4. Si el objetivo es 1400kcal, cada día debe tener entre 1260-1540kcal
+5. Distribuye las calorías: Desayuno ~20%, Media mañana ~10%, Almuerzo ~30%, Merienda ~10%, Cena ~25%, Recena ~5%
+6. Ajusta las cantidades en gramos para alcanzar los objetivos (no uses siempre cantidades redondas)
+
+FORMATO JSON obligatorio:
+{"nombre":"Plan semanal","dias":[{"dia":"LUNES","comidas":[{"tipo":"DESAYUNO","descripcion":"Nombre del plato","alimentos":[{"nombre":"Avena","cantidadGramos":60,"estimacion":{"calorias":233,"proteinas":10,"carbohidratos":40,"grasas":4}}]}]}]}
+
+Dias: LUNES,MARTES,MIERCOLES,JUEVES,VIERNES,SABADO,DOMINGO
+Comidas: DESAYUNO,MEDIA_MANANA,ALMUERZO,MERIENDA,CENA,RECENA
+
+CADA DIA DEBE SER DIFERENTE. No repitas los mismos platos entre días.
+Cada comida tiene 2-3 alimentos y una "descripcion" con el nombre del plato.
+Nombres de alimentos: max 2 palabras.
+VERIFICA que los macros estimados son correctos según la tabla antes de responder.
+Solo responde con JSON válido, sin texto adicional.`;
 
 export function buildUserPrompt(
   paciente: {
@@ -30,23 +68,51 @@ export function buildUserPrompt(
     preferencias: string[];
   },
   objetivos: MacroObjetivos,
-  instrucciones: string
+  instrucciones: string,
+  _alimentos: { nombre: string; calorias: number; proteinas: number; carbohidratos: number; grasas: number }[],
+  _recetas: { nombre: string; calorias: number; proteinas: number; carbohidratos: number; grasas: number; porciones: number }[]
 ): string {
-  return `OBJETIVO CALORICO DIARIO: ${objetivos.calorias} kcal (OBLIGATORIO cumplir este total)
-Macros diarios: Proteinas ${objetivos.proteinas}g, Carbohidratos ${objetivos.carbohidratos}g, Grasas ${objetivos.grasas}g
+  const tolerancia10 = Math.round(objetivos.calorias * 0.1);
+  const minKcal = objetivos.calorias - tolerancia10;
+  const maxKcal = objetivos.calorias + tolerancia10;
 
-Paciente: ${paciente.nombre}
-Sexo: ${paciente.sexo || "No especificado"}
-Peso: ${paciente.peso ? `${paciente.peso} kg` : "No especificado"}
-Altura: ${paciente.altura ? `${paciente.altura} cm` : "No especificada"}
-Objetivo: ${paciente.objetivo} ${paciente.objetivoDetalle || ""}
-Alergias: ${paciente.alergias.length > 0 ? paciente.alergias.join(", ") : "Ninguna"}
-Intolerancias: ${paciente.intolerancias.length > 0 ? paciente.intolerancias.join(", ") : "Ninguna"}
-Patologias: ${paciente.patologias.length > 0 ? paciente.patologias.join(", ") : "Ninguna"}
-Preferencias: ${paciente.preferencias.length > 0 ? paciente.preferencias.join(", ") : "Sin preferencias"}
+  // Distribución sugerida por comida
+  const dist = {
+    desayuno: Math.round(objetivos.calorias * 0.20),
+    mediaMañana: Math.round(objetivos.calorias * 0.10),
+    almuerzo: Math.round(objetivos.calorias * 0.30),
+    merienda: Math.round(objetivos.calorias * 0.10),
+    cena: Math.round(objetivos.calorias * 0.25),
+    recena: Math.round(objetivos.calorias * 0.05),
+  };
 
-Instrucciones del dietista:
-${instrucciones || "Ninguna"}
+  let prompt = `${TABLA_NUTRICIONAL}
 
-RECUERDA: cada dia debe sumar aproximadamente ${objetivos.calorias} kcal totales.`;
+OBJETIVOS DIARIOS ESTRICTOS:
+- Calorías: ${objetivos.calorias} kcal/día (rango permitido: ${minKcal}-${maxKcal} kcal)
+- Proteínas: ${objetivos.proteinas}g (±15%)
+- Carbohidratos: ${objetivos.carbohidratos}g (±15%)
+- Grasas: ${objetivos.grasas}g (±15%)
+
+DISTRIBUCIÓN POR COMIDA:
+- Desayuno: ~${dist.desayuno} kcal
+- Media mañana: ~${dist.mediaMañana} kcal
+- Almuerzo: ~${dist.almuerzo} kcal
+- Merienda: ~${dist.merienda} kcal
+- Cena: ~${dist.cena} kcal
+- Recena: ~${dist.recena} kcal
+
+PACIENTE: ${paciente.sexo || "No especificado"}, ${paciente.peso ? paciente.peso + "kg" : "peso no especificado"}
+Objetivo: ${paciente.objetivo}${paciente.objetivoDetalle ? " - " + paciente.objetivoDetalle : ""}
+Alergias: ${paciente.alergias.length > 0 ? paciente.alergias.join(", ") : "ninguna"}
+Intolerancias: ${paciente.intolerancias.length > 0 ? paciente.intolerancias.join(", ") : "ninguna"}
+Preferencias: ${paciente.preferencias.length > 0 ? paciente.preferencias.join(", ") : "ninguna"}`;
+
+  if (instrucciones.trim()) {
+    prompt += `\n\nINSTRUCCIONES DEL DIETISTA (prioridad máxima):\n${instrucciones}`;
+  }
+
+  prompt += `\n\nIMPORTANTE: Calcula los macros de cada alimento usando la tabla (cantidadGramos/100 × valor). Verifica que la suma diaria está entre ${minKcal}-${maxKcal} kcal ANTES de responder. Ajusta las cantidades en gramos si es necesario.`;
+
+  return prompt;
 }

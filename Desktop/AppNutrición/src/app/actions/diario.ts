@@ -5,6 +5,7 @@ import { getCurrentPaciente } from "@/lib/patient-auth";
 import { getCurrentDietista } from "./auth";
 import { revalidatePath } from "next/cache";
 import { TipoComida, UnidadMedida } from "@/generated/prisma/client";
+import { sanitizeStringOptional, validateNumberOptional, validateEnum, LIMITS } from "@/lib/validation";
 
 export interface EntradaDiarioData {
   fecha: string;
@@ -21,17 +22,26 @@ export async function crearEntradaDiario(data: EntradaDiarioData) {
   const session = await getCurrentPaciente();
   if (!session) throw new Error("No autorizado");
 
+  // Validar y sanitizar inputs
+  const tipoComidaValues = Object.values(TipoComida) as TipoComida[];
+  const tipoComida = validateEnum(data.tipoComida, tipoComidaValues);
+  if (!tipoComida) throw new Error("Tipo de comida no válido");
+
+  const descripcion = sanitizeStringOptional(data.descripcion, 500);
+  const notas = sanitizeStringOptional(data.notas, 1000);
+  const cantidad = validateNumberOptional(data.cantidad, 0.1, LIMITS.CANTIDAD_MAX);
+
   await prisma.entradaDiario.create({
     data: {
       pacienteId: session.pacienteId,
       fecha: new Date(data.fecha),
-      tipoComida: data.tipoComida,
-      descripcion: data.descripcion || null,
+      tipoComida,
+      descripcion,
       alimentoId: data.alimentoId || null,
       recetaId: data.recetaId || null,
-      cantidad: data.cantidad || null,
+      cantidad,
       unidad: data.unidad || null,
-      notas: data.notas || null,
+      notas,
     },
   });
 

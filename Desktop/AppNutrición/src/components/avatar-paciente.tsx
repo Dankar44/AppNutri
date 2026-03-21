@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 interface AvatarPacienteProps {
@@ -14,15 +15,20 @@ const sizeClasses = {
   xl: "w-24 h-24 text-3xl",
 };
 
+const sizePixels = { sm: 36, md: 44, lg: 80, xl: 96 };
+
 export function AvatarPaciente({ nombre, apellidos, fotoUrl, size = "md" }: AvatarPacienteProps) {
   const initials = `${nombre[0] || ""}${apellidos[0] || ""}`.toUpperCase();
 
   if (fotoUrl) {
     return (
-      <img
+      <Image
         src={fotoUrl}
         alt={`${nombre} ${apellidos}`}
+        width={sizePixels[size]}
+        height={sizePixels[size]}
         className={cn("rounded-full object-cover shrink-0", sizeClasses[size])}
+        loading="lazy"
       />
     );
   }

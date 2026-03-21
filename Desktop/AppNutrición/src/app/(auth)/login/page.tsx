@@ -75,7 +75,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-2 mb-8">
             <Leaf className="w-8 h-8 text-primary" />
-            <span className="text-2xl font-bold">NutriApp</span>
+            <span className="text-xl sm:text-2xl font-bold">NutriApp</span>
           </div>
 
           <h2 className="text-3xl font-bold mb-2">Iniciar sesión</h2>
@@ -98,6 +98,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="tu@email.com"
                 required
+                maxLength={200}
                 className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
               />
             </div>
@@ -117,6 +118,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
+                  maxLength={128}
                   className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow pr-12"
                 />
                 <button

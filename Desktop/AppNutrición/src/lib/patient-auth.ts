@@ -1,8 +1,13 @@
 import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 
+// Fallar ruidosamente en producción si no hay secreto configurado
+if (!process.env.PATIENT_JWT_SECRET && process.env.NODE_ENV === "production") {
+  throw new Error("PATIENT_JWT_SECRET must be set in production");
+}
+
 const SECRET = new TextEncoder().encode(
-  process.env.PATIENT_JWT_SECRET || "nutriapp-patient-secret-dev"
+  process.env.PATIENT_JWT_SECRET || "nutriapp-patient-secret-dev-only"
 );
 
 export async function createPatientSession(
@@ -48,15 +53,67 @@ export async function clearPatientSession(): Promise<void> {
   cookieStore.delete("appnutri-paciente-session");
 }
 
+// Hashing con PBKDF2 (mucho más seguro que SHA-256 simple)
+// Usa sal única por usuario derivada del pin + salt aleatorio
 export async function hashPin(pin: string): Promise<string> {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
   const encoder = new TextEncoder();
-  const data = encoder.encode(pin + "nutriapp-salt");
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(pin),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt,
+      iterations: 100000,
+      hash: "SHA-256",
+    },
+    keyMaterial,
+    256
+  );
+  const hashArray = Array.from(new Uint8Array(derivedBits));
+  const saltHex = Array.from(salt).map((b) => b.toString(16).padStart(2, "0")).join("");
+  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+  return `${saltHex}:${hashHex}`;
 }
 
-export async function verifyPin(pin: string, hash: string): Promise<boolean> {
-  const pinHash = await hashPin(pin);
-  return pinHash === hash;
+export async function verifyPin(pin: string, storedHash: string): Promise<boolean> {
+  // Compatibilidad con hashes antiguos (SHA-256 sin sal)
+  if (!storedHash.includes(":")) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(pin + "nutriapp-salt");
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const oldHash = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+    return oldHash === storedHash;
+  }
+
+  // PBKDF2 verification
+  const [saltHex, expectedHash] = storedHash.split(":");
+  const salt = new Uint8Array(saltHex.match(/.{2}/g)!.map((byte) => parseInt(byte, 16)));
+  const encoder = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(pin),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt,
+      iterations: 100000,
+      hash: "SHA-256",
+    },
+    keyMaterial,
+    256
+  );
+  const hashArray = Array.from(new Uint8Array(derivedBits));
+  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+  return hashHex === expectedHash;
 }

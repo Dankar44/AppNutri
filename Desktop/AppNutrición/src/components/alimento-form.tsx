@@ -85,6 +85,7 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
             <input
               name="nombre"
               required
+              maxLength={200}
               defaultValue={defaultValues?.nombre}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
@@ -124,7 +125,8 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
               name="porcion"
               type="number"
               step="0.1"
-              min="0"
+              min={0.1}
+              max={10000}
               defaultValue={defaultValues?.porcion || 100}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
@@ -141,7 +143,8 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
               name="calorias"
               type="number"
               step="0.1"
-              min="0"
+              min={0}
+              max={20000}
               required
               defaultValue={defaultValues?.calorias}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -153,7 +156,8 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
               name="proteinas"
               type="number"
               step="0.1"
-              min="0"
+              min={0}
+              max={2000}
               required
               defaultValue={defaultValues?.proteinas}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -165,7 +169,8 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
               name="carbohidratos"
               type="number"
               step="0.1"
-              min="0"
+              min={0}
+              max={2000}
               required
               defaultValue={defaultValues?.carbohidratos}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -177,7 +182,8 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
               name="grasas"
               type="number"
               step="0.1"
-              min="0"
+              min={0}
+              max={2000}
               required
               defaultValue={defaultValues?.grasas}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -189,7 +195,8 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
               name="fibra"
               type="number"
               step="0.1"
-              min="0"
+              min={0}
+              max={2000}
               defaultValue={defaultValues?.fibra || 0}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
             />

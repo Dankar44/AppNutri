@@ -13,7 +13,7 @@ export default function NuevaRecetaPage() {
           <ArrowLeft className="w-4 h-4" />
           Volver a recetas
         </Link>
-        <h1 className="text-2xl font-bold">Nueva receta</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Nueva receta</h1>
         <p className="text-muted-foreground mt-1">
           Crea una receta con ingredientes y cálculo automático de macros
         </p>

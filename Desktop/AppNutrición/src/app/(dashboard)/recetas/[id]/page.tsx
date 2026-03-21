@@ -28,7 +28,7 @@ export default async function RecetaDetailPage({ params }: Props) {
         </Link>
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold">{receta.nombre}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">{receta.nombre}</h1>
             {receta.descripcion && (
               <p className="text-muted-foreground mt-1">{receta.descripcion}</p>
             )}

@@ -60,21 +60,40 @@ export async function getActividadMensual() {
   const dietista = await getCurrentDietista();
   if (!dietista) return [];
 
+  // Calcular rango de 6 meses
+  const ahora = new Date();
+  const inicio6Meses = new Date(ahora.getFullYear(), ahora.getMonth() - 5, 1);
+
+  // Solo 2 queries en paralelo en vez de 12 secuenciales
+  const [consultas, pacientes] = await Promise.all([
+    prisma.consulta.findMany({
+      where: { dietistaId: dietista.id, fecha: { gte: inicio6Meses } },
+      select: { fecha: true },
+    }),
+    prisma.paciente.findMany({
+      where: { dietistaId: dietista.id, createdAt: { gte: inicio6Meses } },
+      select: { createdAt: true },
+    }),
+  ]);
+
+  // Agrupar en cliente (mucho más rápido que 12 queries)
   const meses: { mes: string; consultas: number; pacientesNuevos: number }[] = [];
-
   for (let i = 5; i >= 0; i--) {
-    const d = new Date();
-    d.setMonth(d.getMonth() - i);
-    const inicio = new Date(d.getFullYear(), d.getMonth(), 1);
+    const d = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
     const fin = new Date(d.getFullYear(), d.getMonth() + 1, 1);
-    const label = inicio.toLocaleDateString("es-ES", { month: "short", year: "2-digit" });
+    const label = d.toLocaleDateString("es-ES", { month: "short", year: "2-digit" });
 
-    const [consultas, pacientesNuevos] = await Promise.all([
-      prisma.consulta.count({ where: { dietistaId: dietista.id, fecha: { gte: inicio, lt: fin } } }),
-      prisma.paciente.count({ where: { dietistaId: dietista.id, createdAt: { gte: inicio, lt: fin } } }),
-    ]);
+    const consultasMes = consultas.filter((c) => {
+      const f = new Date(c.fecha);
+      return f >= d && f < fin;
+    }).length;
 
-    meses.push({ mes: label, consultas, pacientesNuevos });
+    const pacientesNuevos = pacientes.filter((p) => {
+      const f = new Date(p.createdAt);
+      return f >= d && f < fin;
+    }).length;
+
+    meses.push({ mes: label, consultas: consultasMes, pacientesNuevos });
   }
 
   return meses;

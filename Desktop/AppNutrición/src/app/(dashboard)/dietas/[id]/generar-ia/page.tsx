@@ -23,7 +23,7 @@ export default async function GenerarIAPage({ params }: Props) {
 
   return (
     <div>
-      <div className="mb-6">
+      <div className="mb-4">
         <Link
           href={`/dietas/${id}`}
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
@@ -31,7 +31,7 @@ export default async function GenerarIAPage({ params }: Props) {
           <ArrowLeft className="w-4 h-4" />
           Volver al plan
         </Link>
-        <h1 className="text-2xl font-bold flex items-center gap-2">
+        <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
           <Sparkles className="w-6 h-6 text-amber-500" />
           Generar dieta con IA
         </h1>
@@ -44,8 +44,17 @@ export default async function GenerarIAPage({ params }: Props) {
         <AIConfigBanner />
       ) : (
         <IAGenerationForm
+          planId={id}
           pacienteId={paciente.id}
           pacienteNombre={`${paciente.nombre} ${paciente.apellidos}`}
+          pacienteInfo={{
+            peso: paciente.peso,
+            altura: paciente.altura,
+            objetivo: paciente.objetivo,
+            alergias: paciente.alergias,
+            intolerancias: paciente.intolerancias,
+            preferencias: paciente.preferencias,
+          }}
           defaultObjetivos={{
             calorias: plan.caloriasObjetivo || 2000,
             proteinas: plan.proteinasObjetivo || 120,

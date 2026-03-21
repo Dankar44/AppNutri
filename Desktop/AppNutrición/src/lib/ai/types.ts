@@ -11,6 +11,7 @@ export interface AIAlimento {
 
 export interface AIComida {
   tipo: string;
+  descripcion?: string;
   alimentos: AIAlimento[];
 }
 

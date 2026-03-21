@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Trash2, Power, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { eliminarPaciente, toggleActivoPaciente } from "@/app/actions/pacientes";
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function PacienteActions({ pacienteId, activo }: Props) {
+  const router = useRouter();
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -21,7 +23,8 @@ export function PacienteActions({ pacienteId, activo }: Props) {
       toast.success(
         activo ? "Paciente marcado como inactivo" : "Paciente marcado como activo"
       );
-    } catch {
+    } catch (error) {
+      if (error && typeof error === "object" && "digest" in error) throw error;
       toast.error("Error al cambiar el estado");
     }
     setLoading(false);
@@ -31,8 +34,10 @@ export function PacienteActions({ pacienteId, activo }: Props) {
     setLoading(true);
     try {
       await eliminarPaciente(pacienteId);
-      toast.success("Paciente eliminado");
-    } catch {
+      toast.success("Paciente eliminado correctamente");
+      await new Promise((r) => setTimeout(r, 800)); window.location.href = "/pacientes";
+    } catch (error) {
+      if (error && typeof error === "object" && "digest" in error) throw error;
       toast.error("Error al eliminar el paciente");
       setLoading(false);
     }

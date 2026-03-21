@@ -3,7 +3,9 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import type { DiaSemana, TipoComida, UnidadMedida } from "@/generated/prisma/client";
+import { sanitizeString, sanitizeSearch, LIMITS } from "@/lib/validation";
 
 interface PlantillaDia {
   dia: DiaSemana;
@@ -18,12 +20,17 @@ interface PlantillaDia {
   }[];
 }
 
-export async function getPlantillas() {
+export async function getPlantillas(busqueda?: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) return [];
 
+  const search = busqueda ? sanitizeSearch(busqueda) : undefined;
+
   return prisma.plantilla.findMany({
-    where: { dietistaId: dietista.id },
+    where: {
+      dietistaId: dietista.id,
+      ...(search ? { nombre: { contains: search, mode: "insensitive" as const } } : {}),
+    },
     orderBy: { createdAt: "desc" },
   });
 }
@@ -37,6 +44,7 @@ export async function eliminarPlantilla(id: string) {
   });
 
   revalidatePath("/dietas");
+  revalidatePath("/dietas/plantillas");
 }
 
 export async function crearPlanDesdePlantilla(
@@ -44,6 +52,10 @@ export async function crearPlanDesdePlantilla(
   pacienteId: string,
   nombre: string
 ) {
+  // Validar y sanitizar inputs
+  nombre = sanitizeString(nombre, LIMITS.NOMBRE);
+  if (!nombre) throw new Error("El nombre es obligatorio");
+
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
 
@@ -54,34 +66,79 @@ export async function crearPlanDesdePlantilla(
 
   const datos = plantilla.datos as unknown as PlantillaDia[];
 
+  // Recoger todos los IDs referenciados y verificar cuáles existen
+  const alimentoIds = new Set<string>();
+  const recetaIds = new Set<string>();
+  for (const dia of datos) {
+    for (const comida of dia.comidas) {
+      for (const a of comida.alimentos) {
+        if (a.alimentoId) alimentoIds.add(a.alimentoId);
+        if (a.recetaId) recetaIds.add(a.recetaId);
+      }
+    }
+  }
+
+  const [alimentosExistentes, recetasExistentes] = await Promise.all([
+    alimentoIds.size > 0
+      ? prisma.alimento.findMany({
+          where: { id: { in: [...alimentoIds] } },
+          select: { id: true },
+        })
+      : [],
+    recetaIds.size > 0
+      ? prisma.receta.findMany({
+          where: { id: { in: [...recetaIds] } },
+          select: { id: true },
+        })
+      : [],
+  ]);
+
+  const alimentosValidos = new Set(alimentosExistentes.map((a) => a.id));
+  const recetasValidas = new Set(recetasExistentes.map((r) => r.id));
+
+  // 1. Crear el plan vacío
   const plan = await prisma.planAlimenticio.create({
     data: {
       dietistaId: dietista.id,
       pacienteId,
       nombre,
-      dias: {
-        create: datos.map((dia) => ({
-          dia: dia.dia,
-          comidas: {
-            create: dia.comidas.map((comida, orden) => ({
-              tipo: comida.tipo,
-              orden,
-              alimentos: {
-                create: comida.alimentos.map((a, aOrden) => ({
-                  alimentoId: a.alimentoId,
-                  recetaId: a.recetaId,
-                  cantidad: a.cantidad,
-                  unidad: a.unidad,
-                  orden: aOrden,
-                })),
-              },
-            })),
-          },
-        })),
-      },
     },
   });
 
+  // 2. Crear días y comidas paso a paso
+  for (const dia of datos) {
+    const diaCreado = await prisma.diaDelPlan.create({
+      data: { planId: plan.id, dia: dia.dia },
+    });
+
+    for (let orden = 0; orden < dia.comidas.length; orden++) {
+      const comida = dia.comidas[orden];
+      const comidaCreada = await prisma.comidaDelDia.create({
+        data: { diaId: diaCreado.id, tipo: comida.tipo, orden },
+      });
+
+      // Filtrar alimentos con referencias válidas
+      const alimentosValidos2 = comida.alimentos.filter(
+        (a) =>
+          (!a.alimentoId || alimentosValidos.has(a.alimentoId)) &&
+          (!a.recetaId || recetasValidas.has(a.recetaId))
+      );
+
+      if (alimentosValidos2.length > 0) {
+        await prisma.alimentoEnComida.createMany({
+          data: alimentosValidos2.map((a, aOrden) => ({
+            comidaId: comidaCreada.id,
+            alimentoId: a.alimentoId && alimentosValidos.has(a.alimentoId) ? a.alimentoId : null,
+            recetaId: a.recetaId && recetasValidas.has(a.recetaId) ? a.recetaId : null,
+            cantidad: a.cantidad,
+            unidad: a.unidad,
+            orden: aOrden,
+          })),
+        });
+      }
+    }
+  }
+
   revalidatePath("/dietas");
-  return plan;
+  redirect(`/dietas/${plan.id}`);
 }

@@ -1,45 +1,27 @@
 import Link from "next/link";
 import { Plus, Download, Apple } from "lucide-react";
-import { getAlimentos } from "@/app/actions/alimentos";
-import { MacroBadges } from "@/components/macro-badge";
+import { getAlimentosPaginados } from "@/app/actions/alimentos";
 import { AlimentosFilter } from "./alimentos-filter";
+import { AlimentosTable } from "./alimentos-table";
 
 interface Props {
   searchParams: Promise<{ busqueda?: string; categoria?: string }>;
 }
 
-const CATEGORIA_LABELS: Record<string, string> = {
-  FRUTAS: "Frutas",
-  VERDURAS: "Verduras",
-  CEREALES: "Cereales",
-  LEGUMBRES: "Legumbres",
-  CARNES: "Carnes",
-  PESCADOS: "Pescados",
-  LACTEOS: "Lácteos",
-  HUEVOS: "Huevos",
-  FRUTOS_SECOS: "Frutos secos",
-  ACEITES: "Aceites",
-  BEBIDAS: "Bebidas",
-  CONDIMENTOS: "Condimentos",
-  DULCES: "Dulces",
-  OTROS: "Otros",
-};
-
 export default async function AlimentosPage({ searchParams }: Props) {
   const { busqueda, categoria } = await searchParams;
-  const alimentos = await getAlimentos(
+  const { alimentos, total, nextCursor } = await getAlimentosPaginados(
     busqueda,
-    categoria as Parameters<typeof getAlimentos>[1]
+    categoria as Parameters<typeof getAlimentosPaginados>[1]
   );
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold">Alimentos</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">Alimentos</h1>
           <p className="text-muted-foreground mt-1">
-            {alimentos.length} alimento{alimentos.length !== 1 ? "s" : ""} en tu
-            base de datos
+            {total} alimento{total !== 1 ? "s" : ""} en tu base de datos
           </p>
         </div>
         <div className="flex gap-2">
@@ -82,63 +64,12 @@ export default async function AlimentosPage({ searchParams }: Props) {
           )}
         </div>
       ) : (
-        <div className="bg-card rounded-xl border border-border overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border text-left text-sm text-muted-foreground">
-                <th className="px-4 py-3 font-medium">Nombre</th>
-                <th className="px-4 py-3 font-medium hidden sm:table-cell">Categoría</th>
-                <th className="px-4 py-3 font-medium hidden md:table-cell">Porción</th>
-                <th className="px-4 py-3 font-medium">Macros / 100g</th>
-                <th className="px-4 py-3 font-medium hidden lg:table-cell">Origen</th>
-              </tr>
-            </thead>
-            <tbody>
-              {alimentos.map((alimento) => (
-                <tr
-                  key={alimento.id}
-                  className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors"
-                >
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/alimentos/${alimento.id}`}
-                      className="text-sm font-medium hover:text-primary transition-colors"
-                    >
-                      {alimento.nombre}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 hidden sm:table-cell">
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-muted font-medium">
-                      {CATEGORIA_LABELS[alimento.categoria] || alimento.categoria}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground hidden md:table-cell">
-                    {alimento.porcion}g
-                  </td>
-                  <td className="px-4 py-3">
-                    <MacroBadges
-                      calorias={alimento.calorias}
-                      proteinas={alimento.proteinas}
-                      carbohidratos={alimento.carbohidratos}
-                      grasas={alimento.grasas}
-                    />
-                  </td>
-                  <td className="px-4 py-3 hidden lg:table-cell">
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                        alimento.origen === "API"
-                          ? "bg-blue-50 text-blue-700"
-                          : "bg-green-50 text-green-700"
-                      }`}
-                    >
-                      {alimento.origen === "API" ? "Importado" : "Personalizado"}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <AlimentosTable
+          initial={alimentos}
+          initialCursor={nextCursor}
+          busqueda={busqueda}
+          categoria={categoria}
+        />
       )}
     </div>
   );

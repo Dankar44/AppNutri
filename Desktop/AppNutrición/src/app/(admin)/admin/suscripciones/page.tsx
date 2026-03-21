@@ -1,0 +1,108 @@
+import { CreditCard } from "lucide-react";
+import { getSuscripcionesAdmin, getDistribucionPlanes } from "@/app/actions/admin";
+import { capitalizarNombre, formatDate } from "@/lib/utils";
+
+const PLAN_LABEL: Record<string, string> = { BASICO: "Básico", PROFESIONAL: "Profesional" };
+const PLAN_BADGE: Record<string, string> = { BASICO: "bg-blue-50 text-blue-700", PROFESIONAL: "bg-purple-50 text-purple-700" };
+const ESTADO_LABEL: Record<string, string> = { ACTIVA: "Activa", PRUEBA: "Prueba", CANCELADA: "Cancelada", EXPIRADA: "Expirada" };
+const ESTADO_COLOR: Record<string, string> = { ACTIVA: "text-green-700 bg-green-50", PRUEBA: "text-amber-700 bg-amber-50", CANCELADA: "text-red-700 bg-red-50", EXPIRADA: "text-gray-600 bg-gray-100" };
+
+export default async function SuscripcionesPage() {
+  const [suscripciones, distribucion] = await Promise.all([
+    getSuscripcionesAdmin(),
+    getDistribucionPlanes(),
+  ]);
+
+  return (
+    <div>
+      <div className="mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold">Suscripciones</h1>
+        <p className="text-muted-foreground mt-1">{distribucion.total} suscripciones en total</p>
+      </div>
+
+      {/* Distribución */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        {Object.entries(distribucion.porPlan).map(([plan, count]) => {
+          const n = count as number;
+          return (
+            <div key={plan} className="bg-card rounded-xl border border-border p-5">
+              <p className="text-sm text-muted-foreground mb-1">Plan {PLAN_LABEL[plan] || plan}</p>
+              <p className="text-2xl font-bold">{n}</p>
+              <div className="mt-2 w-full bg-muted rounded-full h-1.5">
+                <div
+                  className={`h-1.5 rounded-full ${plan === "PROFESIONAL" ? "bg-purple-500" : "bg-blue-500"}`}
+                  style={{ width: `${distribucion.total > 0 ? (n / distribucion.total) * 100 : 0}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+        {Object.entries(distribucion.porEstado).map(([estado, count]) => {
+          const n = count as number;
+          return (
+            <div key={estado} className="bg-card rounded-xl border border-border p-5">
+              <p className="text-sm text-muted-foreground mb-1">{ESTADO_LABEL[estado] || estado}</p>
+              <p className="text-2xl font-bold">{n}</p>
+              <div className="mt-2 w-full bg-muted rounded-full h-1.5">
+                <div
+                  className={`h-1.5 rounded-full ${
+                    estado === "ACTIVA" ? "bg-green-500" : estado === "PRUEBA" ? "bg-amber-500" : estado === "CANCELADA" ? "bg-red-500" : "bg-gray-400"
+                  }`}
+                  style={{ width: `${distribucion.total > 0 ? (n / distribucion.total) * 100 : 0}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Tabla */}
+      {suscripciones.length === 0 ? (
+        <div className="bg-card rounded-xl border border-border p-12 text-center">
+          <CreditCard className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="font-medium text-lg mb-1">Sin suscripciones</h3>
+          <p className="text-muted-foreground">No hay suscripciones registradas</p>
+        </div>
+      ) : (
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border bg-muted/50">
+                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Dietista</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground hidden md:table-cell">Email</th>
+                  <th className="text-center px-4 py-3 text-sm font-medium text-muted-foreground">Plan</th>
+                  <th className="text-center px-4 py-3 text-sm font-medium text-muted-foreground">Estado</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground hidden sm:table-cell">Inicio</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground hidden lg:table-cell">Fin</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {suscripciones.map((s) => (
+                  <tr key={s.id} className="hover:bg-muted/30 transition-colors">
+                    <td className="px-4 py-3 font-medium">
+                      {capitalizarNombre(s.dietista.nombre)} {capitalizarNombre(s.dietista.apellidos)}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground hidden md:table-cell">{s.dietista.email}</td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${PLAN_BADGE[s.plan] || ""}`}>
+                        {PLAN_LABEL[s.plan] || s.plan}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${ESTADO_COLOR[s.estado] || ""}`}>
+                        {ESTADO_LABEL[s.estado] || s.estado}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground hidden sm:table-cell">{formatDate(s.fechaInicio)}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground hidden lg:table-cell">{s.fechaFin ? formatDate(s.fechaFin) : "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

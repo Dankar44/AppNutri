@@ -1,46 +1,46 @@
 import Link from "next/link";
-import { Plus, CalendarDays } from "lucide-react";
-import { getCitasSemana } from "@/app/actions/citas";
-import { AgendaSemanal } from "./agenda-semanal";
+import { Plus } from "lucide-react";
+import { getCitasSemana, getCitasMes } from "@/app/actions/citas";
+import { AgendaClient } from "./agenda-client";
 
 interface Props {
-  searchParams: Promise<{ semana?: string }>;
+  searchParams: Promise<{ fecha?: string; vista?: string }>;
 }
 
-function getLunesDeSemana(fecha?: string): Date {
-  const d = fecha ? new Date(fecha) : new Date();
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  const lunes = new Date(d.setDate(diff));
+function formatLocalDate(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function getLunesDeSemana(d: Date): Date {
+  const lunes = new Date(d);
+  const day = lunes.getDay();
+  lunes.setDate(lunes.getDate() - day + (day === 0 ? -6 : 1));
   lunes.setHours(0, 0, 0, 0);
   return lunes;
 }
 
 export default async function AgendaPage({ searchParams }: Props) {
-  const { semana } = await searchParams;
-  const lunes = getLunesDeSemana(semana);
-  const citas = await getCitasSemana(lunes.toISOString());
+  const { fecha, vista = "semana" } = await searchParams;
 
-  const semanaAnterior = new Date(lunes);
-  semanaAnterior.setDate(semanaAnterior.getDate() - 7);
-  const semanaSiguiente = new Date(lunes);
-  semanaSiguiente.setDate(semanaSiguiente.getDate() + 7);
+  // Usar T12:00 para evitar desfases por timezone al parsear "YYYY-MM-DD"
+  const fechaRef = fecha ? new Date(fecha + "T12:00:00") : new Date();
 
-  const domingo = new Date(lunes);
-  domingo.setDate(domingo.getDate() + 6);
+  let citas;
+  let fechaInicio: string;
 
-  const formatSemana = (d: Date) =>
-    d.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+  if (vista === "mes") {
+    citas = await getCitasMes(fechaRef.getFullYear(), fechaRef.getMonth());
+    fechaInicio = formatLocalDate(new Date(fechaRef.getFullYear(), fechaRef.getMonth(), 1));
+  } else {
+    const lunes = getLunesDeSemana(fechaRef);
+    citas = await getCitasSemana(lunes.toISOString());
+    fechaInicio = formatLocalDate(lunes);
+  }
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Agenda</h1>
-          <p className="text-muted-foreground mt-1">
-            {formatSemana(lunes)} - {formatSemana(domingo)}
-          </p>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold">Agenda</h1>
         <Link
           href="/agenda/nueva"
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium"
@@ -50,38 +50,11 @@ export default async function AgendaPage({ searchParams }: Props) {
         </Link>
       </div>
 
-      <div className="flex items-center gap-2 mb-4">
-        <Link
-          href={`/agenda?semana=${semanaAnterior.toISOString().split("T")[0]}`}
-          className="px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors text-sm"
-        >
-          Anterior
-        </Link>
-        <Link
-          href="/agenda"
-          className="px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
-        >
-          Hoy
-        </Link>
-        <Link
-          href={`/agenda?semana=${semanaSiguiente.toISOString().split("T")[0]}`}
-          className="px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors text-sm"
-        >
-          Siguiente
-        </Link>
-      </div>
-
-      {citas.length === 0 ? (
-        <div className="bg-card rounded-xl border border-border p-12 text-center">
-          <CalendarDays className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="font-medium text-lg mb-1">Sin citas esta semana</h3>
-          <p className="text-muted-foreground mb-4">
-            No tienes citas programadas para esta semana
-          </p>
-        </div>
-      ) : (
-        <AgendaSemanal citas={citas} lunes={lunes.toISOString()} />
-      )}
+      <AgendaClient
+        vista={vista as "semana" | "mes"}
+        fechaInicio={fechaInicio}
+        citas={JSON.parse(JSON.stringify(citas))}
+      />
     </div>
   );
 }

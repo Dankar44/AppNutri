@@ -24,7 +24,7 @@ export default async function EditarAlimentoPage({ params }: Props) {
           <ArrowLeft className="w-4 h-4" />
           Volver al alimento
         </Link>
-        <h1 className="text-2xl font-bold">Editar {alimento.nombre}</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Editar {alimento.nombre}</h1>
       </div>
       <AlimentoForm
         alimentoId={alimento.id}

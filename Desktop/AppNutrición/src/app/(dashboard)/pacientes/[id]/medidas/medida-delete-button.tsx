@@ -13,7 +13,7 @@ export function MedidaDeleteButton({ medidaId }: { medidaId: string }) {
       await eliminarMedida(medidaId);
       toast.success("Medida eliminada");
       router.refresh();
-    } catch {
+    } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
       toast.error("Error al eliminar");
     }
   }

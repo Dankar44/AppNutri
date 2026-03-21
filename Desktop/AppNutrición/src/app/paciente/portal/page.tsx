@@ -31,7 +31,7 @@ export default async function PatientPortalPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-xl sm:text-2xl font-bold">
           Hola, {capitalizarNombre(paciente?.nombre || "")}
         </h1>
         <p className="text-muted-foreground mt-1">

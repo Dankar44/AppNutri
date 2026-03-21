@@ -28,7 +28,7 @@ export default async function ConsultasPage({ params }: Props) {
           Volver a {paciente.nombre}
         </Link>
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold flex items-center gap-2">
+          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
             <FileText className="w-6 h-6 text-primary" />
             Consultas de {paciente.nombre} {paciente.apellidos}
           </h1>

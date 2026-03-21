@@ -31,7 +31,7 @@ export function CompartirPanel({
       await crearEnlace(planId);
       toast.success("Enlace creado");
       router.refresh();
-    } catch {
+    } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
       toast.error("Error al crear enlace");
     } finally {
       setLoading(false);
@@ -43,7 +43,7 @@ export function CompartirPanel({
       await desactivarEnlace(id);
       toast.success("Enlace desactivado");
       router.refresh();
-    } catch {
+    } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
       toast.error("Error al desactivar");
     }
   }

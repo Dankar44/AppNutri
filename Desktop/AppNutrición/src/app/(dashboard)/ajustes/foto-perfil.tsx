@@ -34,7 +34,7 @@ export function FotoPerfil({ nombre, apellidos, fotoUrl }: Props) {
         await actualizarFotoDietista(dataUrl);
         toast.success("Foto actualizada");
         router.refresh();
-      } catch {
+      } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
         toast.error("Error al actualizar la foto");
       } finally {
         setLoading(false);

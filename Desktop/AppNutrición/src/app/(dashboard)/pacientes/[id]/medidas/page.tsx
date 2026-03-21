@@ -44,7 +44,7 @@ export default async function MedidasPage({ params }: Props) {
           <ArrowLeft className="w-4 h-4" />
           Volver a {paciente.nombre}
         </Link>
-        <h1 className="text-2xl font-bold flex items-center gap-2">
+        <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
           <Ruler className="w-6 h-6 text-primary" />
           Medidas de {paciente.nombre} {paciente.apellidos}
         </h1>

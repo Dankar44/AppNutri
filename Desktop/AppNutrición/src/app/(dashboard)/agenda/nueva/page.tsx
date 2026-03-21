@@ -34,7 +34,7 @@ export default function NuevaCitaPage() {
       });
       toast.success("Cita creada");
       router.push("/agenda");
-    } catch {
+    } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
       toast.error("Error al crear la cita");
       setLoading(false);
     }
@@ -50,7 +50,7 @@ export default function NuevaCitaPage() {
           <ArrowLeft className="w-4 h-4" />
           Volver a agenda
         </Link>
-        <h1 className="text-2xl font-bold">Nueva cita</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Nueva cita</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6 max-w-xl">
@@ -110,6 +110,7 @@ export default function NuevaCitaPage() {
             <label className="block text-sm font-medium mb-1">Motivo</label>
             <input
               name="motivo"
+              maxLength={200}
               placeholder="Ej: Primera consulta, Revisión mensual..."
               className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
             />
@@ -119,6 +120,7 @@ export default function NuevaCitaPage() {
             <textarea
               name="notas"
               rows={3}
+              maxLength={2000}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm resize-y"
             />
           </div>

@@ -38,7 +38,7 @@ export default async function EditarRecetaPage({ params }: Props) {
           <ArrowLeft className="w-4 h-4" />
           Volver a la receta
         </Link>
-        <h1 className="text-2xl font-bold">Editar {receta.nombre}</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Editar {receta.nombre}</h1>
       </div>
       <RecetaForm
         recetaId={receta.id}

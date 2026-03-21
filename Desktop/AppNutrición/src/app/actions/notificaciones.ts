@@ -20,103 +20,100 @@ export async function generarNotificaciones() {
   const manana = new Date(hoy);
   manana.setDate(manana.getDate() + 1);
 
-  // Citas de hoy
-  const citasHoy = await prisma.cita.findMany({
-    where: { dietistaId: dietista.id, fechaHora: { gte: hoy, lt: manana } },
-    include: { paciente: { select: { nombre: true, apellidos: true } } },
+  // Cargar todas las notificaciones recientes de una sola vez (evita N+1)
+  const notificacionesRecientes = await prisma.notificacion.findMany({
+    where: { dietistaId: dietista.id, createdAt: { gte: hace24h } },
+    select: { tipo: true, mensaje: true },
   });
+  const existeNotif = (tipo: TipoNotificacion, id: string) =>
+    notificacionesRecientes.some((n) => n.tipo === tipo && n.mensaje.includes(id));
 
+  // Datos necesarios en paralelo (3 queries en vez de separadas)
+  const [citasHoy, pacientes, entradasHoy] = await Promise.all([
+    prisma.cita.findMany({
+      where: { dietistaId: dietista.id, fechaHora: { gte: hoy, lt: manana } },
+      include: { paciente: { select: { nombre: true, apellidos: true } } },
+    }),
+    prisma.paciente.findMany({
+      where: { dietistaId: dietista.id, activo: true },
+      select: {
+        id: true, nombre: true, apellidos: true,
+        consultas: { orderBy: { fecha: "desc" }, take: 1, select: { fecha: true } },
+        medidas: { orderBy: { fecha: "desc" }, take: 1, select: { fecha: true } },
+      },
+    }),
+    prisma.entradaDiario.findMany({
+      where: { createdAt: { gte: hoy }, paciente: { dietistaId: dietista.id } },
+      select: { paciente: { select: { id: true, nombre: true, apellidos: true } } },
+      distinct: ["pacienteId"],
+    }),
+  ]);
+
+  // Preparar batch de notificaciones a crear
+  const nuevas: {
+    dietistaId: string;
+    tipo: TipoNotificacion;
+    titulo: string;
+    mensaje: string;
+    enlace: string;
+  }[] = [];
+
+  // Citas de hoy
   for (const cita of citasHoy) {
-    const existe = await prisma.notificacion.findFirst({
-      where: { dietistaId: dietista.id, tipo: "CITA_HOY", createdAt: { gte: hace24h }, mensaje: { contains: cita.id } },
-    });
-    if (!existe) {
+    if (!existeNotif("CITA_HOY", cita.id)) {
       const hora = new Date(cita.fechaHora).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
-      await prisma.notificacion.create({
-        data: {
-          dietistaId: dietista.id,
-          tipo: "CITA_HOY",
-          titulo: `Cita a las ${hora}`,
-          mensaje: `${cita.paciente.nombre} ${cita.paciente.apellidos} - ${cita.id}`,
-          enlace: "/agenda",
-        },
+      nuevas.push({
+        dietistaId: dietista.id,
+        tipo: "CITA_HOY",
+        titulo: `Cita a las ${hora}`,
+        mensaje: `${cita.paciente.nombre} ${cita.paciente.apellidos} - ${cita.id}`,
+        enlace: "/agenda",
       });
     }
   }
 
-  // Pacientes sin consulta >30 días
-  const pacientes = await prisma.paciente.findMany({
-    where: { dietistaId: dietista.id, activo: true },
-    select: {
-      id: true, nombre: true, apellidos: true,
-      consultas: { orderBy: { fecha: "desc" }, take: 1, select: { fecha: true } },
-      medidas: { orderBy: { fecha: "desc" }, take: 1, select: { fecha: true } },
-    },
-  });
-
+  // Pacientes sin consulta/medidas >30 días
   for (const p of pacientes) {
     if (p.consultas.length === 0 || new Date(p.consultas[0].fecha) < hace30Dias) {
-      const existe = await prisma.notificacion.findFirst({
-        where: { dietistaId: dietista.id, tipo: "PACIENTE_SIN_CONSULTA", createdAt: { gte: hace24h }, mensaje: { contains: p.id } },
-      });
-      if (!existe) {
-        await prisma.notificacion.create({
-          data: {
-            dietistaId: dietista.id,
-            tipo: "PACIENTE_SIN_CONSULTA",
-            titulo: "Paciente sin consulta reciente",
-            mensaje: `${p.nombre} ${p.apellidos} lleva >30 días sin consulta - ${p.id}`,
-            enlace: `/pacientes/${p.id}`,
-          },
+      if (!existeNotif("PACIENTE_SIN_CONSULTA", p.id)) {
+        nuevas.push({
+          dietistaId: dietista.id,
+          tipo: "PACIENTE_SIN_CONSULTA",
+          titulo: "Paciente sin consulta reciente",
+          mensaje: `${p.nombre} ${p.apellidos} lleva >30 días sin consulta - ${p.id}`,
+          enlace: `/pacientes/${p.id}`,
         });
       }
     }
-
     if (p.medidas.length === 0 || new Date(p.medidas[0].fecha) < hace30Dias) {
-      const existe = await prisma.notificacion.findFirst({
-        where: { dietistaId: dietista.id, tipo: "PACIENTE_SIN_MEDIDAS", createdAt: { gte: hace24h }, mensaje: { contains: p.id } },
-      });
-      if (!existe) {
-        await prisma.notificacion.create({
-          data: {
-            dietistaId: dietista.id,
-            tipo: "PACIENTE_SIN_MEDIDAS",
-            titulo: "Paciente sin medidas recientes",
-            mensaje: `${p.nombre} ${p.apellidos} lleva >30 días sin medidas - ${p.id}`,
-            enlace: `/pacientes/${p.id}/medidas`,
-          },
+      if (!existeNotif("PACIENTE_SIN_MEDIDAS", p.id)) {
+        nuevas.push({
+          dietistaId: dietista.id,
+          tipo: "PACIENTE_SIN_MEDIDAS",
+          titulo: "Paciente sin medidas recientes",
+          mensaje: `${p.nombre} ${p.apellidos} lleva >30 días sin medidas - ${p.id}`,
+          enlace: `/pacientes/${p.id}/medidas`,
         });
       }
     }
   }
 
-  // Entradas de diario nuevas hoy
-  const entradasHoy = await prisma.entradaDiario.findMany({
-    where: {
-      createdAt: { gte: hoy },
-      paciente: { dietistaId: dietista.id },
-    },
-    select: {
-      paciente: { select: { id: true, nombre: true, apellidos: true } },
-    },
-    distinct: ["pacienteId"],
-  });
-
+  // Entradas de diario hoy
   for (const e of entradasHoy) {
-    const existe = await prisma.notificacion.findFirst({
-      where: { dietistaId: dietista.id, tipo: "DIARIO_NUEVO", createdAt: { gte: hace24h }, mensaje: { contains: e.paciente.id } },
-    });
-    if (!existe) {
-      await prisma.notificacion.create({
-        data: {
-          dietistaId: dietista.id,
-          tipo: "DIARIO_NUEVO",
-          titulo: "Nueva entrada en diario",
-          mensaje: `${e.paciente.nombre} ${e.paciente.apellidos} registró comida hoy - ${e.paciente.id}`,
-          enlace: `/pacientes/${e.paciente.id}/diario`,
-        },
+    if (!existeNotif("DIARIO_NUEVO", e.paciente.id)) {
+      nuevas.push({
+        dietistaId: dietista.id,
+        tipo: "DIARIO_NUEVO",
+        titulo: "Nueva entrada en diario",
+        mensaje: `${e.paciente.nombre} ${e.paciente.apellidos} registró comida hoy - ${e.paciente.id}`,
+        enlace: `/pacientes/${e.paciente.id}/diario`,
       });
     }
+  }
+
+  // Insertar todas las notificaciones de una vez
+  if (nuevas.length > 0) {
+    await prisma.notificacion.createMany({ data: nuevas });
   }
 }
 
@@ -154,6 +151,7 @@ export async function marcarLeida(id: string) {
 
   revalidatePath("/notificaciones");
   revalidatePath("/dashboard");
+  revalidatePath("/", "layout");
 }
 
 export async function marcarTodasLeidas() {
@@ -167,4 +165,5 @@ export async function marcarTodasLeidas() {
 
   revalidatePath("/notificaciones");
   revalidatePath("/dashboard");
+  revalidatePath("/", "layout");
 }

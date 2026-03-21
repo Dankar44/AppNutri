@@ -41,7 +41,7 @@ export default function DiarioPage() {
       await eliminarEntradaDiario(id);
       setEntradas((prev) => prev.filter((e) => e.id !== id));
       toast.success("Entrada eliminada");
-    } catch {
+    } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
       toast.error("Error al eliminar");
     }
   }
@@ -53,7 +53,7 @@ export default function DiarioPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Mi diario</h1>
+        <h1 className="text-xl sm:text-2xl font-bold">Mi diario</h1>
         <Link
           href="/paciente/portal/diario/comparar"
           className="text-sm text-primary hover:underline font-medium"

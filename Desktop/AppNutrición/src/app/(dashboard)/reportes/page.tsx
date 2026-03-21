@@ -33,7 +33,7 @@ export default async function ReportesPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Reportes y Estadísticas</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Reportes y Estadísticas</h1>
         <p className="text-muted-foreground mt-1">
           Métricas de tu consulta
         </p>

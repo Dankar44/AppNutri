@@ -1,18 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { eliminarAlimento } from "@/app/actions/alimentos";
 import { toast } from "sonner";
 
 export function AlimentoActions({ alimentoId }: { alimentoId: string }) {
+  const router = useRouter();
   const [confirmando, setConfirmando] = useState(false);
 
   async function handleDelete() {
     try {
       await eliminarAlimento(alimentoId);
-      toast.success("Alimento eliminado");
-    } catch {
+      toast.success("Alimento eliminado correctamente");
+      await new Promise((r) => setTimeout(r, 800)); window.location.href = "/alimentos";
+    } catch (error) {
+      if (error && typeof error === "object" && "digest" in error) throw error;
       toast.error("Error al eliminar el alimento");
     }
   }

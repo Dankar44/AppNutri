@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { sanitizeStringOptional, LIMITS } from "@/lib/validation";
 
 export interface ConsultaFormData {
   pacienteId: string;
@@ -22,8 +23,8 @@ export async function crearConsulta(data: ConsultaFormData) {
       pacienteId: data.pacienteId,
       dietistaId: dietista.id,
       fecha: data.fecha ? new Date(data.fecha) : new Date(),
-      motivo: data.motivo || null,
-      notas: data.notas || null,
+      motivo: sanitizeStringOptional(data.motivo, LIMITS.MOTIVO),
+      notas: sanitizeStringOptional(data.notas, LIMITS.NOTAS),
       medidaId: data.medidaId || null,
     },
   });
@@ -45,8 +46,8 @@ export async function actualizarConsulta(id: string, data: Partial<ConsultaFormD
   await prisma.consulta.update({
     where: { id },
     data: {
-      ...(data.motivo !== undefined ? { motivo: data.motivo || null } : {}),
-      ...(data.notas !== undefined ? { notas: data.notas || null } : {}),
+      ...(data.motivo !== undefined ? { motivo: sanitizeStringOptional(data.motivo, LIMITS.MOTIVO) } : {}),
+      ...(data.notas !== undefined ? { notas: sanitizeStringOptional(data.notas, LIMITS.NOTAS) } : {}),
       ...(data.fecha ? { fecha: new Date(data.fecha) } : {}),
     },
   });

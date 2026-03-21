@@ -11,12 +11,21 @@ import {
 } from "@/lib/patient-auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { validateEmail, sanitizeString } from "@/lib/validation";
 
 export async function crearAccesoPaciente(
   pacienteId: string,
   email: string,
   pin: string
 ) {
+  // Validar y sanitizar inputs
+  const emailValidado = validateEmail(email);
+  if (!emailValidado) throw new Error("Email no válido");
+  email = emailValidado;
+
+  pin = sanitizeString(pin, 8);
+  if (!/^\d{4,8}$/.test(pin)) throw new Error("El PIN debe tener entre 4 y 8 dígitos");
+
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
 
@@ -37,6 +46,11 @@ export async function crearAccesoPaciente(
 }
 
 export async function loginPaciente(email: string, credencial: string): Promise<{ error?: string }> {
+  const emailValidado = validateEmail(email);
+  if (!emailValidado) return { error: "Email no válido" };
+  email = emailValidado;
+  credencial = sanitizeString(credencial, 128);
+
   const acceso = await prisma.accesoPaciente.findUnique({
     where: { email, activo: true },
   });

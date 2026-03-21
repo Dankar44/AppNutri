@@ -46,7 +46,7 @@ export default async function AlimentoDetailPage({ params }: Props) {
         </Link>
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold">{alimento.nombre}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">{alimento.nombre}</h1>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-xs px-2 py-0.5 rounded-full bg-muted font-medium">
                 {CATEGORIA_LABELS[alimento.categoria] || alimento.categoria}

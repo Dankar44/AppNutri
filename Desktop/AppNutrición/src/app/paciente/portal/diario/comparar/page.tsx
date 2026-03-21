@@ -47,7 +47,7 @@ export default function CompararPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">Comparar con plan</h1>
+      <h1 className="text-xl sm:text-2xl font-bold mb-6">Comparar con plan</h1>
 
       <div className="flex items-center justify-center gap-4 mb-6">
         <button onClick={() => cambiarDia(-1)} className="p-2 rounded-lg hover:bg-muted">

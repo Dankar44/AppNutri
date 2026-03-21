@@ -63,6 +63,7 @@ function TagInput({
             }
           }}
           placeholder={placeholder}
+          maxLength={100}
           className="flex-1 px-4 py-2 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow text-sm"
         />
         <button
@@ -162,6 +163,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
               value={form.nombre}
               onChange={(e) => update("nombre", e.target.value)}
               required
+              maxLength={100}
               className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
           </div>
@@ -174,6 +176,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
               value={form.apellidos}
               onChange={(e) => update("apellidos", e.target.value)}
               required
+              maxLength={100}
               className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
           </div>
@@ -186,6 +189,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
               value={form.email}
               onChange={(e) => update("email", e.target.value)}
               required
+              maxLength={200}
               className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
             <p className="text-xs text-muted-foreground mt-1">
@@ -200,6 +204,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
               type="tel"
               value={form.telefono}
               onChange={(e) => update("telefono", e.target.value)}
+              maxLength={20}
               className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
           </div>
@@ -316,6 +321,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
               value={form.objetivoDetalle}
               onChange={(e) => update("objetivoDetalle", e.target.value)}
               placeholder="Ej: Bajar 5kg en 3 meses"
+              maxLength={200}
               className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
           </div>
@@ -371,6 +377,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
           value={form.notas}
           onChange={(e) => update("notas", e.target.value)}
           rows={4}
+          maxLength={2000}
           placeholder="Notas, observaciones, comentarios..."
           className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow resize-none"
         />

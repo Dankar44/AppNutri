@@ -21,10 +21,17 @@ export async function getCurrentDietista() {
       nombre: user.user_metadata.nombre || "Sin nombre",
       apellidos: user.user_metadata.apellidos || "",
       especialidad: user.user_metadata.especialidad || null,
+      numColegiado: user.user_metadata.numColegiado || null,
     },
   });
 
-  return dietista;
+  // Campo verificado via raw SQL (Prisma client aún no lo tiene generado)
+  const rows = await prisma.$queryRawUnsafe<{ verificado: boolean }[]>(
+    `SELECT verificado FROM dietistas WHERE id = $1`, dietista.id
+  );
+  const verificado = rows[0]?.verificado ?? false;
+
+  return { ...dietista, verificado };
 }
 
 export async function signOut() {

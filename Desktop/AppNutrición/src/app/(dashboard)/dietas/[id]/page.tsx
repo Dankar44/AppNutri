@@ -26,34 +26,32 @@ export default async function PlanDetailPage({ params }: Props) {
           <ArrowLeft className="w-4 h-4" />
           Volver a planes
         </Link>
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-base font-medium">
-              Paciente: {capitalizarNombre(plan.paciente.nombre)} {capitalizarNombre(plan.paciente.apellidos)}
-            </p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+        <div className="space-y-3">
+          <p className="text-sm sm:text-base font-medium">
+            Paciente: {capitalizarNombre(plan.paciente.nombre)} {capitalizarNombre(plan.paciente.apellidos)}
+          </p>
+          <div className="flex items-center gap-2 flex-wrap">
             <Link
               href={`/dietas/${plan.id}/generar-ia`}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-amber-200 text-amber-700 hover:bg-amber-50 transition-colors text-sm font-medium"
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg border border-amber-200 text-amber-700 hover:bg-amber-50 transition-colors text-xs sm:text-sm font-medium"
             >
-              <Sparkles className="w-4 h-4" />
+              <Sparkles className="w-3.5 h-3.5" />
               IA
             </Link>
             <PlantillaButton planId={plan.id} />
             <Link
               href={`/dietas/${plan.id}/compartir`}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors text-xs sm:text-sm font-medium"
             >
-              <Share2 className="w-4 h-4" />
-              Compartir
+              <Share2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Compartir</span>
             </Link>
             <Link
               href={`/dietas/${plan.id}/editar`}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors text-xs sm:text-sm font-medium"
             >
-              <Pencil className="w-4 h-4" />
-              Editar
+              <Pencil className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Editar</span>
             </Link>
             <PlanActions planId={plan.id} />
           </div>

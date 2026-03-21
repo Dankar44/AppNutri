@@ -14,7 +14,7 @@ export default function NuevoPacientePage() {
           <ArrowLeft className="w-4 h-4" />
           Volver a pacientes
         </Link>
-        <h1 className="text-2xl font-bold">Nuevo paciente</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Nuevo paciente</h1>
         <p className="text-muted-foreground mt-1">
           Completa la ficha con los datos del paciente
         </p>

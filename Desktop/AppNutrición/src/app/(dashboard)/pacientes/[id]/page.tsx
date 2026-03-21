@@ -79,11 +79,11 @@ export default async function PacienteDetailPage({ params }: Props) {
           <ArrowLeft className="w-4 h-4" />
           Volver a pacientes
         </Link>
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div className="flex items-center gap-4">
             <AvatarPaciente nombre={nombre} apellidos={apellidos} fotoUrl={paciente.fotoUrl} size="lg" />
             <div>
-              <h1 className="text-2xl font-bold">
+              <h1 className="text-2xl sm:text-3xl font-bold">
                 {nombre} {apellidos}
               </h1>
               <div className="flex items-center gap-3 mt-1">
@@ -102,13 +102,13 @@ export default async function PacienteDetailPage({ params }: Props) {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Link
               href={`/pacientes/${paciente.id}/editar`}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
+              className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
             >
               <Pencil className="w-4 h-4" />
-              Editar
+              <span className="hidden sm:inline">Editar</span>
             </Link>
             <PacienteActions
               pacienteId={paciente.id}

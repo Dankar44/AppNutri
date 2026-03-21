@@ -18,7 +18,7 @@ export function PlantillaButton({ planId }: { planId: string }) {
       toast.success("Plantilla guardada");
       setOpen(false);
       setNombre("");
-    } catch {
+    } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
       toast.error("Error al guardar plantilla");
     } finally {
       setLoading(false);
@@ -45,6 +45,7 @@ export function PlantillaButton({ planId }: { planId: string }) {
               onChange={(e) => setNombre(e.target.value)}
               placeholder="Nombre de la plantilla"
               autoFocus
+              maxLength={200}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm mb-4"
             />
             <div className="flex justify-end gap-2">

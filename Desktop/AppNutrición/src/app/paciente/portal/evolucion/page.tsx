@@ -24,7 +24,7 @@ export default async function PatientEvolucionPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">Mi evolución</h1>
+      <h1 className="text-xl sm:text-2xl font-bold mb-6">Mi evolución</h1>
 
       {data.length === 0 ? (
         <div className="bg-card rounded-xl border border-border p-12 text-center">

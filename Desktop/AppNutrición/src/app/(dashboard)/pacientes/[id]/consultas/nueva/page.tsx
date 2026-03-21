@@ -51,7 +51,7 @@ export default function NuevaConsultaPage() {
       });
 
       toast.success("Consulta registrada");
-    } catch {
+    } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
       toast.error("Error al crear la consulta");
       setLoading(false);
     }
@@ -67,7 +67,7 @@ export default function NuevaConsultaPage() {
           <ArrowLeft className="w-4 h-4" />
           Volver a consultas
         </Link>
-        <h1 className="text-2xl font-bold">Nueva consulta</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Nueva consulta</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
@@ -87,6 +87,7 @@ export default function NuevaConsultaPage() {
               <label className="block text-sm font-medium mb-1">Motivo</label>
               <input
                 name="motivo"
+                maxLength={200}
                 placeholder="Ej: Revisión mensual"
                 className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
               />
@@ -97,6 +98,7 @@ export default function NuevaConsultaPage() {
             <textarea
               name="notas"
               rows={5}
+              maxLength={2000}
               placeholder="Observaciones, indicaciones, seguimiento..."
               className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm resize-y"
             />
@@ -122,6 +124,8 @@ export default function NuevaConsultaPage() {
                   name="peso"
                   type="number"
                   step="0.1"
+                  min={0.1}
+                  max={500}
                   className="w-full px-2 py-1.5 rounded border border-border bg-background text-sm"
                 />
               </div>
@@ -131,6 +135,8 @@ export default function NuevaConsultaPage() {
                   name="altura"
                   type="number"
                   step="0.1"
+                  min={30}
+                  max={300}
                   className="w-full px-2 py-1.5 rounded border border-border bg-background text-sm"
                 />
               </div>
@@ -140,6 +146,8 @@ export default function NuevaConsultaPage() {
                   name="grasaCorporal"
                   type="number"
                   step="0.1"
+                  min={0}
+                  max={100}
                   className="w-full px-2 py-1.5 rounded border border-border bg-background text-sm"
                 />
               </div>
@@ -149,6 +157,8 @@ export default function NuevaConsultaPage() {
                   name="perimetroCintura"
                   type="number"
                   step="0.1"
+                  min={0}
+                  max={300}
                   className="w-full px-2 py-1.5 rounded border border-border bg-background text-sm"
                 />
               </div>

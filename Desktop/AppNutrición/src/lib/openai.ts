@@ -2,7 +2,7 @@ import OpenAI from "openai";
 
 // Groq usa la misma API que OpenAI, solo cambia la baseURL
 const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
-const GROQ_MODEL = "llama-3.3-70b-versatile"; // capaz de generar 7 días completos
+const GROQ_MODEL = "llama-3.3-70b-versatile"; // bueno siguiendo instrucciones estructuradas
 
 function getApiKeys(): string[] {
   const keys: string[] = [];
@@ -41,8 +41,11 @@ export function getNextClient(): OpenAI {
   });
 }
 
-// Ejecuta una llamada rotando keys indefinidamente hasta que complete.
-// En rate limit, cambia de key y espera un poco. No se rinde nunca por rate limit.
+// Ejecuta una llamada rotando keys con circuit breaker.
+// Máximo 10 reintentos y 2 minutos totales.
+const MAX_RETRIES = 10;
+const MAX_TOTAL_MS = 120_000;
+
 export async function callWithRetry<T>(
   fn: (client: OpenAI) => Promise<T>,
 ): Promise<T> {
@@ -50,9 +53,13 @@ export async function callWithRetry<T>(
   if (keys.length === 0) throw new Error("No hay API keys de Groq configuradas");
 
   let consecutiveRateLimits = 0;
+  const startTime = Date.now();
 
-  // Bucle infinito: solo sale con éxito o error no-rate-limit
-  while (true) {
+  while (consecutiveRateLimits < MAX_RETRIES) {
+    if (Date.now() - startTime > MAX_TOTAL_MS) {
+      throw new Error("Tiempo máximo de espera agotado. Inténtalo de nuevo más tarde.");
+    }
+
     const client = getNextClient();
     try {
       const result = await fn(client);
@@ -68,19 +75,17 @@ export async function callWithRetry<T>(
         msg.includes("too many requests");
 
       if (!isRateLimit) {
-        // Error real (no rate limit) → lanzar
         throw err;
       }
 
-      // Rate limit → rotar key y esperar
       consecutiveRateLimits++;
 
-      // Cada vez que se han probado todas las keys sin éxito, esperar más
       const ciclosCompletos = Math.floor(consecutiveRateLimits / keys.length);
       const waitMs = Math.min(3000 + ciclosCompletos * 5000, 30000);
 
       await new Promise((resolve) => setTimeout(resolve, waitMs));
-      // El bucle vuelve a intentar con la siguiente key (getNextClient rota)
     }
   }
+
+  throw new Error("Demasiados reintentos por rate limit. Inténtalo de nuevo más tarde.");
 }

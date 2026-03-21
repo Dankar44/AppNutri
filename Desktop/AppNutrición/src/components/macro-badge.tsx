@@ -33,7 +33,7 @@ export function MacroBadge({
         size === "sm" ? "px-2 py-0.5 text-xs" : "px-3 py-1 text-sm"
       )}
     >
-      <span className="font-semibold">{value}</span>
+      <span className="font-semibold">{Math.round(value * 10) / 10}</span>
       <span className="opacity-70">
         {color === "cal" ? "kcal" : unit}
       </span>

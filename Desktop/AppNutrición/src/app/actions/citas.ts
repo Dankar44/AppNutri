@@ -4,6 +4,12 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
 import { revalidatePath } from "next/cache";
 import { EstadoCita } from "@/generated/prisma/client";
+import {
+  sanitizeStringOptional,
+  validateNumber,
+  validateDate,
+  LIMITS,
+} from "@/lib/validation";
 
 export interface CitaFormData {
   pacienteId: string;
@@ -17,14 +23,20 @@ export async function crearCita(data: CitaFormData) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
 
+  const fechaHora = validateDate(data.fechaHora);
+  if (!fechaHora) throw new Error("Fecha y hora inválidas");
+  const duracion = validateNumber(data.duracion || 30, LIMITS.DURACION_MIN, LIMITS.DURACION_MAX);
+  const motivo = sanitizeStringOptional(data.motivo, LIMITS.MOTIVO);
+  const notas = sanitizeStringOptional(data.notas, LIMITS.NOTAS);
+
   await prisma.cita.create({
     data: {
       pacienteId: data.pacienteId,
       dietistaId: dietista.id,
-      fechaHora: new Date(data.fechaHora),
-      duracion: data.duracion || 30,
-      motivo: data.motivo || null,
-      notas: data.notas || null,
+      fechaHora,
+      duracion,
+      motivo,
+      notas,
     },
   });
 
@@ -62,6 +74,23 @@ export async function getCitasSemana(fechaInicio: string) {
   inicio.setHours(0, 0, 0, 0);
   const fin = new Date(inicio);
   fin.setDate(fin.getDate() + 7);
+
+  return prisma.cita.findMany({
+    where: {
+      dietistaId: dietista.id,
+      fechaHora: { gte: inicio, lt: fin },
+    },
+    include: { paciente: { select: { nombre: true, apellidos: true } } },
+    orderBy: { fechaHora: "asc" },
+  });
+}
+
+export async function getCitasMes(anio: number, mes: number) {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return [];
+
+  const inicio = new Date(anio, mes, 1);
+  const fin = new Date(anio, mes + 1, 1);
 
   return prisma.cita.findMany({
     where: {

@@ -42,7 +42,7 @@ export function MedidasForm({
       toast.success("Medidas registradas");
       e.currentTarget.reset();
       onSuccess?.();
-    } catch {
+    } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
       toast.error("Error al registrar medidas");
     } finally {
       setLoading(false);
@@ -68,7 +68,8 @@ export function MedidasForm({
             name="peso"
             type="number"
             step="0.1"
-            min="0"
+            min={0.1}
+            max={500}
             defaultValue={defaultPeso ?? ""}
             className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
           />
@@ -79,7 +80,8 @@ export function MedidasForm({
             name="altura"
             type="number"
             step="0.1"
-            min="0"
+            min={30}
+            max={300}
             defaultValue={defaultAltura ?? ""}
             className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
           />
@@ -101,7 +103,8 @@ export function MedidasForm({
             name="masaMuscular"
             type="number"
             step="0.1"
-            min="0"
+            min={0}
+            max={200}
             className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
           />
         </div>
@@ -111,7 +114,8 @@ export function MedidasForm({
             name="perimetroCintura"
             type="number"
             step="0.1"
-            min="0"
+            min={0}
+            max={300}
             className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
           />
         </div>
@@ -121,7 +125,8 @@ export function MedidasForm({
             name="perimetroCadera"
             type="number"
             step="0.1"
-            min="0"
+            min={0}
+            max={300}
             className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
           />
         </div>
@@ -132,6 +137,7 @@ export function MedidasForm({
         <textarea
           name="notas"
           rows={2}
+          maxLength={2000}
           className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm resize-y"
         />
       </div>

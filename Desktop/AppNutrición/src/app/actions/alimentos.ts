@@ -10,6 +10,8 @@ import {
   OrigenAlimento,
 } from "@/generated/prisma/client";
 import { buscarAlimentosOFF, type AlimentoAPIResult } from "@/lib/openfoodfacts";
+import { normalizarNombreAlimento, redondearMacros } from "@/lib/alimento-utils";
+import { sanitizeString, validateNumber, validateEnum, sanitizeSearch, LIMITS } from "@/lib/validation";
 
 export interface AlimentoFormData {
   nombre: string;
@@ -27,16 +29,43 @@ export async function crearAlimento(data: AlimentoFormData) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
 
+  // Validación server-side
+  const nombreSanitizado = sanitizeString(data.nombre, LIMITS.NOMBRE);
+  if (!nombreSanitizado) throw new Error("El nombre es obligatorio");
+  data.calorias = validateNumber(data.calorias, 0, LIMITS.CALORIAS_MAX);
+  data.proteinas = validateNumber(data.proteinas, 0, LIMITS.MACROS_MAX);
+  data.carbohidratos = validateNumber(data.carbohidratos, 0, LIMITS.MACROS_MAX);
+  data.grasas = validateNumber(data.grasas, 0, LIMITS.MACROS_MAX);
+  data.fibra = validateNumber(data.fibra, 0, LIMITS.MACROS_MAX);
+  data.porcion = validateNumber(data.porcion, 0.1, LIMITS.PORCION_MAX);
+  const categoriaValida = validateEnum(data.categoria, Object.values(CategoriaAlimento));
+  if (!categoriaValida) throw new Error("Categoría no válida");
+  data.categoria = categoriaValida;
+  const unidadValida = validateEnum(data.unidad, Object.values(UnidadMedida));
+  if (!unidadValida) throw new Error("Unidad no válida");
+  data.unidad = unidadValida;
+
+  const nombreNorm = normalizarNombreAlimento(nombreSanitizado);
+
+  // Prevenir duplicados por nombre normalizado
+  const existente = await prisma.alimento.findFirst({
+    where: {
+      OR: [{ dietistaId: dietista.id }, { dietistaId: null }],
+      nombre: { equals: nombreNorm, mode: "insensitive" },
+    },
+  });
+  if (existente) throw new Error("Ya existe un alimento con ese nombre");
+
   const alimento = await prisma.alimento.create({
     data: {
       dietistaId: dietista.id,
-      nombre: data.nombre,
+      nombre: nombreNorm,
       categoria: data.categoria,
-      calorias: data.calorias,
-      proteinas: data.proteinas,
-      carbohidratos: data.carbohidratos,
-      grasas: data.grasas,
-      fibra: data.fibra,
+      calorias: redondearMacros(data.calorias),
+      proteinas: redondearMacros(data.proteinas),
+      carbohidratos: redondearMacros(data.carbohidratos),
+      grasas: redondearMacros(data.grasas),
+      fibra: redondearMacros(data.fibra),
       porcion: data.porcion,
       unidad: data.unidad,
       origen: "PERSONALIZADO",
@@ -51,16 +80,32 @@ export async function actualizarAlimento(id: string, data: AlimentoFormData) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
 
+  // Validación server-side
+  const nombreSanitizado = sanitizeString(data.nombre, LIMITS.NOMBRE);
+  if (!nombreSanitizado) throw new Error("El nombre es obligatorio");
+  data.calorias = validateNumber(data.calorias, 0, LIMITS.CALORIAS_MAX);
+  data.proteinas = validateNumber(data.proteinas, 0, LIMITS.MACROS_MAX);
+  data.carbohidratos = validateNumber(data.carbohidratos, 0, LIMITS.MACROS_MAX);
+  data.grasas = validateNumber(data.grasas, 0, LIMITS.MACROS_MAX);
+  data.fibra = validateNumber(data.fibra, 0, LIMITS.MACROS_MAX);
+  data.porcion = validateNumber(data.porcion, 0.1, LIMITS.PORCION_MAX);
+  const categoriaValida = validateEnum(data.categoria, Object.values(CategoriaAlimento));
+  if (!categoriaValida) throw new Error("Categoría no válida");
+  data.categoria = categoriaValida;
+  const unidadValida = validateEnum(data.unidad, Object.values(UnidadMedida));
+  if (!unidadValida) throw new Error("Unidad no válida");
+  data.unidad = unidadValida;
+
   await prisma.alimento.update({
     where: { id, dietistaId: dietista.id },
     data: {
-      nombre: data.nombre,
+      nombre: normalizarNombreAlimento(nombreSanitizado),
       categoria: data.categoria,
-      calorias: data.calorias,
-      proteinas: data.proteinas,
-      carbohidratos: data.carbohidratos,
-      grasas: data.grasas,
-      fibra: data.fibra,
+      calorias: redondearMacros(data.calorias),
+      proteinas: redondearMacros(data.proteinas),
+      carbohidratos: redondearMacros(data.carbohidratos),
+      grasas: redondearMacros(data.grasas),
+      fibra: redondearMacros(data.fibra),
       porcion: data.porcion,
       unidad: data.unidad,
     },
@@ -80,7 +125,6 @@ export async function eliminarAlimento(id: string) {
   });
 
   revalidatePath("/alimentos");
-  redirect("/alimentos");
 }
 
 export async function getAlimentos(
@@ -90,16 +134,67 @@ export async function getAlimentos(
   const dietista = await getCurrentDietista();
   if (!dietista) return [];
 
+  const busquedaSanitizada = busqueda ? sanitizeSearch(busqueda) : undefined;
+
   return prisma.alimento.findMany({
     where: {
       OR: [{ dietistaId: dietista.id }, { dietistaId: null }],
       ...(categoria ? { categoria } : {}),
-      ...(busqueda
-        ? { nombre: { contains: busqueda, mode: "insensitive" as const } }
+      ...(busquedaSanitizada
+        ? { nombre: { contains: busquedaSanitizada, mode: "insensitive" as const } }
         : {}),
     },
     orderBy: { nombre: "asc" },
   });
+}
+
+const PAGE_SIZE = 100;
+
+export async function getAlimentosPaginados(
+  busqueda?: string,
+  categoria?: CategoriaAlimento,
+  cursor?: string
+) {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return { alimentos: [], total: 0, nextCursor: null as string | null };
+
+  const busquedaSanitizada = busqueda ? sanitizeSearch(busqueda) : undefined;
+
+  const where = {
+    OR: [{ dietistaId: dietista.id }, { dietistaId: null }],
+    ...(categoria ? { categoria } : {}),
+    ...(busquedaSanitizada
+      ? { nombre: { contains: busquedaSanitizada, mode: "insensitive" as const } }
+      : {}),
+  };
+
+  const [alimentos, total] = await Promise.all([
+    prisma.alimento.findMany({
+      where,
+      orderBy: { nombre: "asc" },
+      take: PAGE_SIZE + 1,
+      ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
+    }),
+    prisma.alimento.count({ where }),
+  ]);
+
+  const hasMore = alimentos.length > PAGE_SIZE;
+  if (hasMore) alimentos.pop();
+
+  return {
+    alimentos,
+    total,
+    nextCursor: hasMore ? alimentos[alimentos.length - 1].id : null,
+  };
+}
+
+export async function cargarMasAlimentos(
+  cursor: string,
+  busqueda?: string,
+  categoria?: string
+) {
+  const busquedaSanitizada = busqueda ? sanitizeSearch(busqueda) : undefined;
+  return getAlimentosPaginados(busquedaSanitizada, categoria as CategoriaAlimento | undefined, cursor);
 }
 
 export async function getAlimento(id: string) {
@@ -124,21 +219,41 @@ export async function importarAlimentoAPI(data: AlimentoAPIResult) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
 
-  const existente = await prisma.alimento.findFirst({
+  // Validación server-side
+  data.nombre = sanitizeString(data.nombre, 200) || "Sin nombre";
+  data.calorias = validateNumber(data.calorias, 0, LIMITS.CALORIAS_MAX);
+  data.proteinas = validateNumber(data.proteinas, 0, LIMITS.MACROS_MAX);
+  data.carbohidratos = validateNumber(data.carbohidratos, 0, LIMITS.MACROS_MAX);
+  data.grasas = validateNumber(data.grasas, 0, LIMITS.MACROS_MAX);
+  data.fibra = validateNumber(data.fibra, 0, LIMITS.MACROS_MAX);
+
+  // Buscar por código de barras
+  const existentePorCodigo = await prisma.alimento.findFirst({
     where: { codigoBarras: data.codigoBarras, dietistaId: dietista.id },
   });
-  if (existente) return existente;
+  if (existentePorCodigo) return existentePorCodigo;
+
+  const nombreNorm = normalizarNombreAlimento(data.nombre);
+
+  // Buscar también por nombre normalizado
+  const existentePorNombre = await prisma.alimento.findFirst({
+    where: {
+      OR: [{ dietistaId: dietista.id }, { dietistaId: null }],
+      nombre: { equals: nombreNorm, mode: "insensitive" },
+    },
+  });
+  if (existentePorNombre) return existentePorNombre;
 
   const alimento = await prisma.alimento.create({
     data: {
       dietistaId: dietista.id,
-      nombre: data.nombre,
+      nombre: nombreNorm,
       categoria: "OTROS",
-      calorias: data.calorias,
-      proteinas: data.proteinas,
-      carbohidratos: data.carbohidratos,
-      grasas: data.grasas,
-      fibra: data.fibra,
+      calorias: redondearMacros(data.calorias),
+      proteinas: redondearMacros(data.proteinas),
+      carbohidratos: redondearMacros(data.carbohidratos),
+      grasas: redondearMacros(data.grasas),
+      fibra: redondearMacros(data.fibra),
       porcion: 100,
       unidad: "GRAMOS",
       origen: "API",

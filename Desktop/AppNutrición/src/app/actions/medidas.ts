@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
 import { revalidatePath } from "next/cache";
+import { validateNumberOptional, sanitizeStringOptional } from "@/lib/validation";
 
 export interface MedidaFormData {
   pacienteId: string;
@@ -32,30 +33,40 @@ export async function crearMedida(data: MedidaFormData) {
   });
   if (!paciente) throw new Error("Paciente no encontrado");
 
-  const imc = calcularIMC(data.peso, data.altura || paciente.altura || undefined);
+  // Validar y sanitizar inputs
+  const peso = validateNumberOptional(data.peso, 0.1, 500);
+  const altura = validateNumberOptional(data.altura, 30, 300);
+  const grasaCorporal = validateNumberOptional(data.grasaCorporal, 0, 100);
+  const masaMuscular = validateNumberOptional(data.masaMuscular, 0, 200);
+  const perimetroCintura = validateNumberOptional(data.perimetroCintura, 0, 300);
+  const perimetroCadera = validateNumberOptional(data.perimetroCadera, 0, 300);
+  const perimetroBrazo = validateNumberOptional(data.perimetroBrazo, 0, 300);
+  const notas = sanitizeStringOptional(data.notas, 1000);
+
+  const imc = calcularIMC(peso ?? undefined, altura || paciente.altura || undefined);
 
   const medida = await prisma.medidaAntropometrica.create({
     data: {
       pacienteId: data.pacienteId,
       fecha: data.fecha ? new Date(data.fecha) : new Date(),
-      peso: data.peso || null,
-      altura: data.altura || null,
+      peso,
+      altura,
       imc,
-      grasaCorporal: data.grasaCorporal || null,
-      masaMuscular: data.masaMuscular || null,
-      perimetroCintura: data.perimetroCintura || null,
-      perimetroCadera: data.perimetroCadera || null,
-      perimetroBrazo: data.perimetroBrazo || null,
-      notas: data.notas || null,
+      grasaCorporal,
+      masaMuscular,
+      perimetroCintura,
+      perimetroCadera,
+      perimetroBrazo,
+      notas,
     },
   });
 
-  if (data.peso) {
+  if (peso) {
     await prisma.paciente.update({
       where: { id: data.pacienteId },
       data: {
-        peso: data.peso,
-        ...(data.altura ? { altura: data.altura } : {}),
+        peso,
+        ...(altura ? { altura } : {}),
       },
     });
   }

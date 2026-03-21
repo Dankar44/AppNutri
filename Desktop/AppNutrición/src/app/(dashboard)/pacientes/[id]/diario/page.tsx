@@ -23,7 +23,7 @@ export default async function DiarioDietistaPage({ params }: Props) {
           <ArrowLeft className="w-4 h-4" />
           Volver a {paciente.nombre}
         </Link>
-        <h1 className="text-2xl font-bold flex items-center gap-2">
+        <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
           <BookOpen className="w-6 h-6 text-green-600" />
           Diario de {paciente.nombre} {paciente.apellidos}
         </h1>

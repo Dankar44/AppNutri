@@ -165,7 +165,6 @@ export async function eliminarPaciente(id: string) {
 
   revalidatePath("/pacientes");
   revalidatePath("/dashboard");
-  redirect("/pacientes");
 }
 
 export async function toggleActivoPaciente(id: string) {

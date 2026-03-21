@@ -40,7 +40,7 @@ export function PortalConfig({ pacienteId, emailDefault, accesoExistente }: Prop
       setConfirmando(false);
       toast.success("PIN generado correctamente");
       router.refresh();
-    } catch {
+    } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
       toast.error("Error al configurar acceso");
     } finally {
       setLoading(false);
@@ -153,6 +153,7 @@ export function PortalConfig({ pacienteId, emailDefault, accesoExistente }: Prop
               name="email"
               type="email"
               required
+              maxLength={200}
               value={emailForm}
               onChange={(e) => setEmailForm(e.target.value)}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"

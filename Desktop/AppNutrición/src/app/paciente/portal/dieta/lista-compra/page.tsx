@@ -43,7 +43,7 @@ export default async function PatientShoppingListPage() {
         <ArrowLeft className="w-4 h-4" />
         Volver a mi dieta
       </Link>
-      <h1 className="text-2xl font-bold mb-4">Lista de la compra</h1>
+      <h1 className="text-xl sm:text-2xl font-bold mb-4">Lista de la compra</h1>
       <ShoppingList categorias={categorias} />
     </div>
   );

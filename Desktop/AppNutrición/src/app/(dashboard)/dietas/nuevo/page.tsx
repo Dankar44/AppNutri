@@ -32,9 +32,8 @@ export default function NuevoPlanPage() {
 
     try {
       if (plantillaId) {
-        const plan = await crearPlanDesdePlantilla(plantillaId, pacienteId, nombre);
+        await crearPlanDesdePlantilla(plantillaId, pacienteId, nombre);
         toast.success("Plan creado desde plantilla");
-        router.push(`/dietas/${plan.id}`);
       } else {
         const data: PlanFormData = {
           nombre,
@@ -64,7 +63,7 @@ export default function NuevoPlanPage() {
           <ArrowLeft className="w-4 h-4" />
           Volver a planes
         </Link>
-        <h1 className="text-2xl font-bold">Nuevo plan alimenticio</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Nuevo plan alimenticio</h1>
         <p className="text-muted-foreground mt-1">
           Crea un plan semanal para un paciente
         </p>
@@ -92,6 +91,7 @@ export default function NuevoPlanPage() {
             <input
               name="nombre"
               required
+              maxLength={200}
               placeholder="Ej: Plan semanal - Pérdida de peso"
               className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
             />
@@ -113,7 +113,8 @@ export default function NuevoPlanPage() {
                 <input
                   name="caloriasObjetivo"
                   type="number"
-                  min="0"
+                  min={0}
+                  max={20000}
                   placeholder="2000"
                   className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
                 />
@@ -123,7 +124,8 @@ export default function NuevoPlanPage() {
                 <input
                   name="proteinasObjetivo"
                   type="number"
-                  min="0"
+                  min={0}
+                  max={2000}
                   placeholder="120"
                   className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
                 />
@@ -133,7 +135,8 @@ export default function NuevoPlanPage() {
                 <input
                   name="carbohidratosObjetivo"
                   type="number"
-                  min="0"
+                  min={0}
+                  max={2000}
                   placeholder="250"
                   className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
                 />
@@ -143,7 +146,8 @@ export default function NuevoPlanPage() {
                 <input
                   name="grasasObjetivo"
                   type="number"
-                  min="0"
+                  min={0}
+                  max={2000}
                   placeholder="70"
                   className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
                 />

@@ -120,7 +120,8 @@ export function IngredienteList({
                       onChange={(e) =>
                         updateCantidad(index, parseFloat(e.target.value) || 0)
                       }
-                      min="0"
+                      min={0}
+                      max={10000}
                       step="1"
                       className="w-20 px-2 py-1 text-sm rounded border border-border bg-background text-center"
                     />

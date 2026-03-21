@@ -18,6 +18,7 @@ model Dietista {
   numColegiado    String?
   clinica         String?
   logoUrl         String?
+  verificado      Boolean   @default(false)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -31,8 +32,37 @@ model Dietista {
   enlacesCompartidos EnlaceCompartido[]
   generacionesIA  GeneracionIA[]
   notificaciones  Notificacion[]
+  suscripcion     Suscripcion?
 
   @@map("dietistas")
+}
+
+enum PlanSuscripcion {
+  BASICO
+  PROFESIONAL
+}
+
+enum EstadoSuscripcion {
+  ACTIVA
+  CANCELADA
+  EXPIRADA
+  PRUEBA
+}
+
+model Suscripcion {
+  id              String             @id @default(cuid())
+  dietistaId      String             @unique
+  dietista        Dietista           @relation(fields: [dietistaId], references: [id], onDelete: Cascade)
+  plan            PlanSuscripcion    @default(BASICO)
+  estado          EstadoSuscripcion  @default(PRUEBA)
+  fechaInicio     DateTime           @default(now())
+  fechaFin        DateTime?
+  stripeCustomerId    String?
+  stripeSubscriptionId String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@map("suscripciones")
 }
 
 enum Sexo {

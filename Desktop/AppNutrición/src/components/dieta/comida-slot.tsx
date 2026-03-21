@@ -88,6 +88,7 @@ export function ComidaSlot({
         value={desc}
         onChange={(e) => handleDescChange(e.target.value)}
         placeholder="Descripción del plato..."
+        maxLength={500}
         className="w-full px-2 py-1 text-[11px] rounded border border-border bg-background text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 focus:text-foreground placeholder:italic"
       />
 

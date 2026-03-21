@@ -1,18 +1,23 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { eliminarPlan } from "@/app/actions/planes";
 import { toast } from "sonner";
 
 export function PlanActions({ planId }: { planId: string }) {
+  const router = useRouter();
   const [confirmando, setConfirmando] = useState(false);
 
   async function handleDelete() {
     try {
       await eliminarPlan(planId);
-      toast.success("Plan eliminado");
-    } catch {
+      toast.success("Plan eliminado correctamente");
+      await new Promise((r) => setTimeout(r, 800));
+      window.location.href = "/dietas";
+    } catch (error) {
+      if (error && typeof error === "object" && "digest" in error) throw error;
       toast.error("Error al eliminar el plan");
     }
   }

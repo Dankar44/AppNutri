@@ -56,22 +56,27 @@ export function DiaColumna({
 }: DiaColumnaProps) {
   const todosAlimentos = comidas.flatMap((c) => c.alimentos);
   const macrosDia = sumarMacros(
-    todosAlimentos.map((a) =>
-      calcularMacrosPorcion(
-        {
-          calorias: a.calorias,
-          proteinas: a.proteinas,
-          carbohidratos: a.carbohidratos,
-          grasas: a.grasas,
+    todosAlimentos.map((a) => {
+      if (a.esReceta) {
+        // Recetas: macros son por porción, cantidad = nº porciones
+        return {
+          calorias: Math.round(a.calorias * a.cantidad * 10) / 10,
+          proteinas: Math.round(a.proteinas * a.cantidad * 10) / 10,
+          carbohidratos: Math.round(a.carbohidratos * a.cantidad * 10) / 10,
+          grasas: Math.round(a.grasas * a.cantidad * 10) / 10,
           fibra: 0,
-        },
+        };
+      }
+      // Alimentos: macros por 100g, cantidad en gramos
+      return calcularMacrosPorcion(
+        { calorias: a.calorias, proteinas: a.proteinas, carbohidratos: a.carbohidratos, grasas: a.grasas, fibra: 0 },
         a.cantidad
-      )
-    )
+      );
+    })
   );
 
   return (
-    <div className="min-w-[220px] flex flex-col">
+    <div className="flex-1 min-w-0 flex flex-col">
       <div className="text-center font-semibold text-sm py-2 border-b border-border bg-muted/50 rounded-t-lg sticky top-0">
         {DIA_LABELS[dia] || dia}
       </div>

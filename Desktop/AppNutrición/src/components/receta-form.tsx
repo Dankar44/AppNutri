@@ -76,6 +76,7 @@ export function RecetaForm({
             <input
               name="nombre"
               required
+              maxLength={200}
               defaultValue={defaultValues?.nombre}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
@@ -84,6 +85,7 @@ export function RecetaForm({
             <label className="block text-sm font-medium mb-1">Descripción</label>
             <input
               name="descripcion"
+              maxLength={500}
               defaultValue={defaultValues?.descripcion}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
@@ -92,7 +94,8 @@ export function RecetaForm({
             <label className="block text-sm font-medium mb-1">Porciones</label>
             <input
               type="number"
-              min="1"
+              min={1}
+              max={100}
               value={porciones}
               onChange={(e) => setPorciones(parseInt(e.target.value) || 1)}
               className="w-32 px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -103,6 +106,7 @@ export function RecetaForm({
             <textarea
               name="instrucciones"
               rows={4}
+              maxLength={5000}
               defaultValue={defaultValues?.instrucciones}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y"
             />

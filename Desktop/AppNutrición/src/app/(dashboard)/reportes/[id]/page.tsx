@@ -59,7 +59,7 @@ export default async function ReportesPacientePage({ params }: Props) {
           <ArrowLeft className="w-4 h-4" />
           Volver a reportes
         </Link>
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-2xl sm:text-3xl font-bold">
           Informes de {paciente.nombre} {paciente.apellidos}
         </h1>
       </div>
@@ -67,15 +67,15 @@ export default async function ReportesPacientePage({ params }: Props) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div className="bg-card rounded-xl border border-border p-5">
           <p className="text-sm text-muted-foreground">Planes</p>
-          <p className="text-2xl font-bold">{planes.length}</p>
+          <p className="text-2xl sm:text-3xl font-bold">{planes.length}</p>
         </div>
         <div className="bg-card rounded-xl border border-border p-5">
           <p className="text-sm text-muted-foreground">Consultas</p>
-          <p className="text-2xl font-bold">{consultas.length}</p>
+          <p className="text-2xl sm:text-3xl font-bold">{consultas.length}</p>
         </div>
         <div className="bg-card rounded-xl border border-border p-5">
           <p className="text-sm text-muted-foreground">Evolución peso</p>
-          <p className="text-2xl font-bold">
+          <p className="text-2xl sm:text-3xl font-bold">
             {cambiosPeso !== null ? (
               <span className={cambiosPeso < 0 ? "text-green-600" : cambiosPeso > 0 ? "text-red-600" : ""}>
                 {cambiosPeso > 0 ? "+" : ""}{cambiosPeso} kg

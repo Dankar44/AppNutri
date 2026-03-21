@@ -59,7 +59,7 @@ export default function CompletarPerfilPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Leaf className="w-10 h-10 text-primary mx-auto mb-3" />
-          <h1 className="text-2xl font-bold">Completa tu perfil</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">Completa tu perfil</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Configura tu contraseña para acceder en el futuro sin necesitar el PIN
           </p>
@@ -99,6 +99,7 @@ export default function CompletarPerfilPage() {
                 type={showPassword ? "text" : "password"}
                 required
                 minLength={6}
+                maxLength={128}
                 placeholder="Mínimo 6 caracteres"
                 className="w-full px-4 py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 pr-12"
               />
@@ -121,6 +122,7 @@ export default function CompletarPerfilPage() {
               type={showPassword ? "text" : "password"}
               required
               minLength={6}
+              maxLength={128}
               placeholder="Repite la contraseña"
               className="w-full px-4 py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
             />

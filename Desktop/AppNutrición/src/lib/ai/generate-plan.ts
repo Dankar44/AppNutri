@@ -15,12 +15,31 @@ interface PacienteData {
   preferencias: string[];
 }
 
+interface AlimentoDB {
+  nombre: string;
+  calorias: number;
+  proteinas: number;
+  carbohidratos: number;
+  grasas: number;
+}
+
+interface RecetaDB {
+  nombre: string;
+  calorias: number;
+  proteinas: number;
+  carbohidratos: number;
+  grasas: number;
+  porciones: number;
+}
+
 export async function generateDietPlan(
   paciente: PacienteData,
   objetivos: MacroObjetivos,
-  instrucciones: string
+  instrucciones: string,
+  alimentos: AlimentoDB[],
+  recetas: RecetaDB[]
 ): Promise<{ plan: AIPlanGenerado; promptUsado: string }> {
-  const userPrompt = buildUserPrompt(paciente, objetivos, instrucciones);
+  const userPrompt = buildUserPrompt(paciente, objetivos, instrucciones, alimentos, recetas);
   const model = getGroqModel();
 
   const plan = await callWithRetry(async (client) => {
@@ -31,16 +50,16 @@ export async function generateDietPlan(
         { role: "user", content: userPrompt },
       ],
       response_format: { type: "json_object" },
-      temperature: 0.7,
-      max_tokens: 8000,
+      temperature: 0.4,
+      max_tokens: 8192,
     });
 
     const content = response.choices[0].message.content;
     if (!content) throw new Error("La IA no generó respuesta");
 
     const parsed = JSON.parse(content) as AIPlanGenerado;
-    if (!parsed.dias || !Array.isArray(parsed.dias)) {
-      throw new Error("Formato de respuesta incorrecto");
+    if (!parsed.dias || !Array.isArray(parsed.dias) || parsed.dias.length < 7) {
+      throw new Error(`La IA solo generó ${parsed.dias?.length || 0} días. Inténtalo de nuevo.`);
     }
 
     return parsed;

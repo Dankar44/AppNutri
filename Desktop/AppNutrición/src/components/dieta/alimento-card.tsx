@@ -45,10 +45,18 @@ export function AlimentoCard({
     ? { transform: `translate(${transform.x}px, ${transform.y}px)` }
     : undefined;
 
-  const macros = calcularMacrosPorcion(
-    { calorias, proteinas, carbohidratos, grasas, fibra: 0 },
-    cantidad
-  );
+  const macros = esReceta
+    ? {
+        calorias: Math.round(calorias * cantidad * 10) / 10,
+        proteinas: Math.round(proteinas * cantidad * 10) / 10,
+        carbohidratos: Math.round(carbohidratos * cantidad * 10) / 10,
+        grasas: Math.round(grasas * cantidad * 10) / 10,
+        fibra: 0,
+      }
+    : calcularMacrosPorcion(
+        { calorias, proteinas, carbohidratos, grasas, fibra: 0 },
+        cantidad
+      );
 
   function handleCantidadChange(value: number) {
     setTempCantidad(value);
@@ -95,7 +103,8 @@ export function AlimentoCard({
           value={tempCantidad}
           onChange={(e) => handleCantidadChange(parseFloat(e.target.value) || 0)}
           className="w-14 px-1 py-0.5 text-xs rounded border border-border bg-background text-center"
-          min="0"
+          min={0}
+          max={10000}
         />
         <span className="text-muted-foreground">{esReceta ? "porc" : "g"}</span>
         <button

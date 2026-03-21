@@ -57,7 +57,7 @@ export default function NuevaEntradaPage() {
       });
       toast.success("Entrada registrada");
       router.push("/paciente/portal/diario");
-    } catch {
+    } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
       toast.error("Error al registrar");
       setLoading(false);
     }
@@ -73,7 +73,7 @@ export default function NuevaEntradaPage() {
           <ArrowLeft className="w-4 h-4" />
           Volver al diario
         </Link>
-        <h1 className="text-2xl font-bold">Registrar comida</h1>
+        <h1 className="text-xl sm:text-2xl font-bold">Registrar comida</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
@@ -114,6 +114,7 @@ export default function NuevaEntradaPage() {
                 <input
                   type="text" value={query} onChange={(e) => handleBuscar(e.target.value)}
                   placeholder="Buscar alimento..."
+                  maxLength={100}
                   className="w-full pl-9 pr-3 py-2 rounded-lg border border-border bg-background text-sm"
                 />
                 {resultados.length > 0 && (
@@ -130,7 +131,7 @@ export default function NuevaEntradaPage() {
             )}
             <div className="mt-3">
               <label className="block text-sm font-medium mb-1">Cantidad (g)</label>
-              <input name="cantidad" type="number" step="1" min="0"
+              <input name="cantidad" type="number" step="1" min={0.1} max={10000}
                 defaultValue={alimentoSeleccionado?.porcion || ""}
                 className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm" />
             </div>
@@ -138,14 +139,14 @@ export default function NuevaEntradaPage() {
         ) : (
           <div>
             <label className="block text-sm font-medium mb-1">¿Qué comiste?</label>
-            <input name="descripcion" required placeholder="Ej: Un bocadillo de jamón y queso"
+            <input name="descripcion" required maxLength={500} placeholder="Ej: Un bocadillo de jamón y queso"
               className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm" />
           </div>
         )}
 
         <div>
           <label className="block text-sm font-medium mb-1">Notas (opcional)</label>
-          <textarea name="notas" rows={2} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm resize-y" />
+          <textarea name="notas" rows={2} maxLength={2000} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm resize-y" />
         </div>
 
         <button type="submit" disabled={loading || (modo === "buscar" && !alimentoSeleccionado)}

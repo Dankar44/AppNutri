@@ -26,7 +26,7 @@ export default async function PortalConfigPage({ params }: Props) {
           <ArrowLeft className="w-4 h-4" />
           Volver a {paciente.nombre}
         </Link>
-        <h1 className="text-2xl font-bold flex items-center gap-2">
+        <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
           <Shield className="w-6 h-6 text-primary" />
           Portal del paciente
         </h1>

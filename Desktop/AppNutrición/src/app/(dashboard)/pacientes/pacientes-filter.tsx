@@ -31,13 +31,14 @@ export function PacientesFilter({ busquedaInicial, activosInicial, vista }: Prop
   }
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="space-y-3 sm:space-y-0 sm:flex sm:items-center sm:gap-3">
       <div className="relative flex-1">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <input
           type="text"
           placeholder="Buscar por nombre o email..."
           value={busqueda}
+          maxLength={100}
           onChange={(e) => {
             setBusqueda(e.target.value);
             applyFilters(e.target.value, soloActivos);
@@ -45,6 +46,7 @@ export function PacientesFilter({ busquedaInicial, activosInicial, vista }: Prop
           className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
         />
       </div>
+      <div className="flex items-center gap-3">
       <label className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-input bg-white cursor-pointer hover:bg-muted/50 transition-colors shrink-0">
         <input
           type="checkbox"
@@ -72,6 +74,7 @@ export function PacientesFilter({ busquedaInicial, activosInicial, vista }: Prop
         >
           <LayoutGrid className="w-4 h-4" />
         </button>
+      </div>
       </div>
     </div>
   );

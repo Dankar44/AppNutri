@@ -15,7 +15,8 @@ export function ConsultaActions({ consultaId }: { consultaId: string }) {
       await eliminarConsulta(consultaId);
       toast.success("Consulta eliminada");
       router.refresh();
-    } catch {
+    } catch (error) {
+      if (error && typeof error === "object" && "digest" in error) throw error;
       toast.error("Error al eliminar");
     }
   }

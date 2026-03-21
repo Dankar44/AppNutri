@@ -26,7 +26,7 @@ export default async function CompartirPage({ params }: Props) {
           <ArrowLeft className="w-4 h-4" />
           Volver al plan
         </Link>
-        <h1 className="text-2xl font-bold">Compartir: {plan.nombre}</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Compartir: {plan.nombre}</h1>
         <p className="text-muted-foreground mt-1">
           Genera enlaces para compartir este plan con el paciente
         </p>

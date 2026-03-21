@@ -111,7 +111,7 @@ export function PlanEditor({ planId, planNombre, dias, objetivos }: PlanEditorPr
       try {
         await moverAlimentoAComida(alimentoEnComidaId, droppableData.comidaId!);
         router.refresh();
-      } catch {
+      } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
         toast.error("Error al mover alimento");
       }
     });
@@ -138,7 +138,7 @@ export function PlanEditor({ planId, planNombre, dias, objetivos }: PlanEditorPr
           item.cantidad
         );
         router.refresh();
-      } catch {
+      } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
         toast.error("Error al añadir alimento");
       }
     });
@@ -149,7 +149,7 @@ export function PlanEditor({ planId, planNombre, dias, objetivos }: PlanEditorPr
       try {
         await removeAlimentoDeComida(alimentoEnComidaId);
         router.refresh();
-      } catch {
+      } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
         toast.error("Error al eliminar");
       }
     });
@@ -160,7 +160,7 @@ export function PlanEditor({ planId, planNombre, dias, objetivos }: PlanEditorPr
       try {
         await actualizarCantidadAlimento(alimentoEnComidaId, cantidad);
         router.refresh();
-      } catch {
+      } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
         toast.error("Error al actualizar cantidad");
       }
     });
@@ -219,8 +219,8 @@ export function PlanEditor({ planId, planNombre, dias, objetivos }: PlanEditorPr
           </div>
         </div>
 
-        <div className="overflow-x-auto pb-4">
-          <div className="flex gap-3 min-w-max">
+        <div className="overflow-x-auto pb-4 scroll-smooth">
+          <div className="flex gap-3" style={{ width: `calc(((100% + 0.75rem) / 3) * 7 - 0.75rem)` }}>
             {diasData.map((dia) => (
               <DiaColumna
                 key={dia.dia}

@@ -28,7 +28,7 @@ export default async function EditarPacientePage({ params }: Props) {
           <ArrowLeft className="w-4 h-4" />
           Volver al paciente
         </Link>
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-2xl sm:text-3xl font-bold">
           Editar: {paciente.nombre} {paciente.apellidos}
         </h1>
         <p className="text-muted-foreground mt-1">

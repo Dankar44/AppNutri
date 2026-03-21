@@ -80,6 +80,7 @@ export function AlimentoSearch({
           value={query}
           onChange={(e) => handleChange(e.target.value)}
           placeholder={placeholder}
+          maxLength={100}
           className="w-full pl-9 pr-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
         />
         {loading && (
