@@ -5,12 +5,12 @@ import { requireAdmin, verifyAdminCredentials, createAdminSession, clearAdminSes
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
-export async function loginAdmin(email: string, password: string) {
+export async function loginAdmin(email: string, password: string): Promise<{ error?: string }> {
   if (!verifyAdminCredentials(email, password)) {
-    return { success: false, error: "Email o contraseña incorrectos" };
+    return { error: "Email o contraseña incorrectos" };
   }
   await createAdminSession(email);
-  return { success: true };
+  redirect("/admin");
 }
 
 export async function logoutAdmin() {

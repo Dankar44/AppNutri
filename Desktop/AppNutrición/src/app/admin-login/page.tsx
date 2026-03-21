@@ -1,13 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { ShieldCheck, Loader2 } from "lucide-react";
 import { loginAdmin } from "@/app/actions/admin";
 import { toast } from "sonner";
 
 export default function AdminLoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,15 +16,13 @@ export default function AdminLoginPage() {
 
     try {
       const result = await loginAdmin(email, password);
-      if (result.success) {
-        router.refresh();
-        router.push("/admin");
-      } else {
-        toast.error(result.error || "Credenciales incorrectas");
+      if (result?.error) {
+        toast.error(result.error);
+        setLoading(false);
       }
-    } catch {
+    } catch (error) {
+      if (error && typeof error === "object" && "digest" in error) throw error;
       toast.error("Error al iniciar sesión");
-    } finally {
       setLoading(false);
     }
   }
