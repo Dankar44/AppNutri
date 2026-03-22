@@ -61,27 +61,27 @@ export default async function AdminDashboardPage() {
         {statCards.map((card) => (
           <div
             key={card.label}
-            className="bg-card rounded-xl border border-border p-5"
+            className="bg-card rounded-xl border border-border p-3 sm:p-5"
           >
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-muted-foreground">{card.label}</span>
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${card.color}`}>
-                <card.icon className="w-5 h-5" />
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <span className="text-xs sm:text-sm text-muted-foreground">{card.label}</span>
+              <div className={`w-7 h-7 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center ${card.color}`}>
+                <card.icon className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
             </div>
-            <p className="text-2xl font-bold">{card.value}</p>
+            <p className="text-xl sm:text-2xl font-bold">{card.value}</p>
             {card.change !== null && (
-              <div className="flex items-center gap-1 mt-1">
+              <div className="flex items-center gap-1 mt-1 flex-wrap">
                 {card.change >= 0 ? (
-                  <TrendingUp className="w-3.5 h-3.5 text-green-600" />
+                  <TrendingUp className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-green-600" />
                 ) : (
-                  <TrendingDown className="w-3.5 h-3.5 text-red-600" />
+                  <TrendingDown className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-600" />
                 )}
-                <span className={`text-xs font-medium ${card.change >= 0 ? "text-green-600" : "text-red-600"}`}>
+                <span className={`text-[10px] sm:text-xs font-medium ${card.change >= 0 ? "text-green-600" : "text-red-600"}`}>
                   {card.change >= 0 ? "+" : ""}{card.change}%
                 </span>
-                <span className="text-xs text-muted-foreground">
-                  ({card.nuevos} nuevos este mes)
+                <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:inline">
+                  ({card.nuevos} nuevos)
                 </span>
               </div>
             )}
