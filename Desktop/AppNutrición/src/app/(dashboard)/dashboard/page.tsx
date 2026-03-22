@@ -44,7 +44,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Stats con tendencia */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div data-tour="stats-cards" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatsCard
           icon={Users}
           label="Total pacientes"
@@ -75,7 +75,7 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Gráfico de actividad */}
-        <div className="lg:col-span-2 bg-card rounded-xl border border-border p-5">
+        <div data-tour="activity-chart" className="lg:col-span-2 bg-card rounded-xl border border-border p-5">
           <h2 className="text-lg font-semibold mb-4">Actividad (últimos 6 meses)</h2>
           <DashboardCharts data={actividad} />
         </div>

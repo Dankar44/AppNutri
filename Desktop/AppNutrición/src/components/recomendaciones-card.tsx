@@ -13,12 +13,11 @@ export function RecomendacionesCard({ pacienteId, initialText }: Props) {
   const [text, setText] = useState(initialText);
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const debounceRef = useRef<NodeJS.Timeout>(null);
+  const statusTimerRef = useRef<NodeJS.Timeout>(null);
   const savedRef = useRef(initialText);
 
-  // Guardado diferido: 5 segundos después de dejar de escribir
   useEffect(() => {
     if (text === savedRef.current) return;
-
     setStatus("idle");
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
@@ -28,7 +27,8 @@ export function RecomendacionesCard({ pacienteId, initialText }: Props) {
         await guardarRecomendaciones(pacienteId, text);
         savedRef.current = text;
         setStatus("saved");
-        setTimeout(() => setStatus("idle"), 2000);
+        if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
+        statusTimerRef.current = setTimeout(() => setStatus("idle"), 2000);
       } catch {
         setStatus("idle");
       }
@@ -36,11 +36,12 @@ export function RecomendacionesCard({ pacienteId, initialText }: Props) {
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
     };
   }, [text, pacienteId]);
 
   return (
-    <section className="bg-card rounded-xl border border-border p-6">
+    <section data-tour="patient-recommendations" className="bg-card rounded-xl border border-border p-6">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-semibold flex items-center gap-2">
           <MessageSquareText className="w-5 h-5 text-teal-500" />

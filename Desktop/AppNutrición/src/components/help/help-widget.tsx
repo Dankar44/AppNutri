@@ -46,14 +46,17 @@ export function HelpWidget() {
 
   const section = getSection(pathname);
   const sectionLabel = SECTION_LABELS[section] || "esta sección";
+  const searchDebounceRef = useRef<NodeJS.Timeout>(null);
 
-  // Reset cuando cambia la ruta
   useEffect(() => {
-    resetChat();
-  }, [pathname]);
+    setMessages([]);
+    setChips(getEntriesForSection(section));
+    setSearchQuery("");
+    setSearchResults(null);
+  }, [pathname, section]);
 
-  // Scroll al fondo cuando cambian mensajes
   useEffect(() => {
+    if (!open || !bodyRef.current) return;
     if (bodyRef.current) {
       bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
     }
@@ -80,11 +83,11 @@ export function HelpWidget() {
 
   function handleSearch(q: string) {
     setSearchQuery(q);
-    if (q.trim().length >= 2) {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    if (q.trim().length < 2) { setSearchResults(null); return; }
+    searchDebounceRef.current = setTimeout(() => {
       setSearchResults(searchHelp(q));
-    } else {
-      setSearchResults(null);
-    }
+    }, 200);
   }
 
   // No mostrar en rutas fuera del dashboard

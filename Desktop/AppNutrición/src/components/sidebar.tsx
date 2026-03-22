@@ -140,20 +140,6 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, isAdmin }: 
           <LogOut className="w-5 h-5 shrink-0" />
           {(!collapsed || mobileOpen) && <span>Cerrar sesión</span>}
         </button>
-        {/* Collapse solo en desktop */}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="hidden lg:flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors w-full"
-        >
-          {collapsed ? (
-            <ChevronRight className="w-5 h-5 shrink-0" />
-          ) : (
-            <>
-              <ChevronLeft className="w-5 h-5 shrink-0" />
-              <span>Colapsar</span>
-            </>
-          )}
-        </button>
       </div>
     </>
   );
@@ -195,6 +181,7 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, isAdmin }: 
 
       {/* Sidebar desktop */}
       <aside
+        data-tour="sidebar"
         className={cn(
           "hidden lg:flex h-screen sticky top-0 bg-sidebar border-r border-border flex-col transition-all duration-300",
           collapsed ? "w-[72px]" : "w-64"

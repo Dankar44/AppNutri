@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Leaf, UtensilsCrossed, BookOpen, TrendingUp, MessageSquareText,
+  Leaf, LayoutDashboard, UtensilsCrossed, BookOpen, TrendingUp, MessageSquareText,
   ShoppingCart, Settings, FileDown, LogOut, Menu, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -11,7 +11,7 @@ import { logoutPaciente } from "@/app/actions/paciente-auth";
 import { useState, useEffect } from "react";
 
 const navItems = [
-  { href: "/paciente/portal", label: "Inicio", icon: Leaf, exact: true },
+  { href: "/paciente/portal", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/paciente/portal/dieta", label: "Mi dieta", icon: UtensilsCrossed },
   { href: "/paciente/portal/diario", label: "Diario", icon: BookOpen },
   { href: "/paciente/portal/evolucion", label: "Evolución", icon: TrendingUp },
@@ -145,7 +145,7 @@ export function PatientNav({ nombre, apellidos, fotoUrl }: Props) {
       </aside>
 
       {/* Sidebar desktop */}
-      <aside className="hidden lg:flex h-screen sticky top-0 bg-sidebar border-r border-border flex-col w-64">
+      <aside data-tour="sidebar" className="hidden lg:flex h-screen sticky top-0 bg-sidebar border-r border-border flex-col w-64">
         {sidebarContent}
       </aside>
     </>

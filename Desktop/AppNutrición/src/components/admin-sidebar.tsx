@@ -117,19 +117,6 @@ export function AdminSidebar({ adminNombre, onSignOut }: AdminSidebarProps) {
           <LogOut className="w-5 h-5 shrink-0" />
           {(!collapsed || mobileOpen) && <span>Cerrar sesión</span>}
         </button>
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="hidden lg:flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors w-full"
-        >
-          {collapsed ? (
-            <ChevronRight className="w-5 h-5 shrink-0" />
-          ) : (
-            <>
-              <ChevronLeft className="w-5 h-5 shrink-0" />
-              <span>Colapsar</span>
-            </>
-          )}
-        </button>
       </div>
     </>
   );

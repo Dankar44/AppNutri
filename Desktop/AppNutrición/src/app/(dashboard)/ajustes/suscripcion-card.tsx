@@ -152,7 +152,7 @@ export function SuscripcionCard({ plan, estado, fechaInicio, fechaFin }: Props) 
       </div>
 
       {/* Comparativa rápida */}
-      <div className="bg-muted/30 rounded-lg p-4 text-xs space-y-2">
+      <div className="bg-muted/30 rounded-lg p-3 text-xs space-y-1.5">
         <div className="grid grid-cols-3 gap-2 font-semibold text-muted-foreground">
           <span></span>
           <span className="text-center">Básico</span>

@@ -27,6 +27,7 @@ export default async function PacientesPage({ searchParams }: Props) {
         </div>
         <Link
           href="/pacientes/nuevo"
+          data-tour="new-patient-btn"
           className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-lg font-medium hover:bg-green-700 transition-colors"
         >
           <Plus className="w-4 h-4" />
@@ -34,7 +35,7 @@ export default async function PacientesPage({ searchParams }: Props) {
         </Link>
       </div>
 
-      <div className="mb-6">
+      <div className="mb-6" data-tour="patient-search">
         <PacientesFilter busquedaInicial={busqueda} activosInicial={soloActivos} vista={vista} />
       </div>
 

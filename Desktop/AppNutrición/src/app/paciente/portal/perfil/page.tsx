@@ -3,6 +3,7 @@ import { Clock } from "lucide-react";
 import { getCurrentPaciente } from "@/lib/patient-auth";
 import { prisma } from "@/lib/prisma";
 import { getHorarioPacientePortal } from "@/app/actions/paciente-auth";
+import { TourSettings } from "@/components/tour/tour-settings";
 import { PerfilPacienteForm } from "./perfil-form";
 import { HorarioPacienteWrapper } from "./horario-paciente-wrapper";
 
@@ -51,6 +52,9 @@ export default async function PerfilPacientePage() {
         </p>
         <HorarioPacienteWrapper initialEntries={horarioEntries} />
       </section>
+
+      {/* Guías interactivas */}
+      <TourSettings />
     </div>
   );
 }

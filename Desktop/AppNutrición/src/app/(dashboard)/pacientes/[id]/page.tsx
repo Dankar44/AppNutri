@@ -132,7 +132,7 @@ export default async function PacienteDetailPage({ params }: Props) {
         {/* Columna izquierda */}
         <div className="lg:col-span-2 space-y-6">
           {/* Datos personales */}
-          <section className="bg-card rounded-xl border border-border p-6">
+          <section data-tour="patient-personal-data" className="bg-card rounded-xl border border-border p-6">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <User className="w-5 h-5 text-primary" />
               Datos personales
@@ -171,7 +171,7 @@ export default async function PacienteDetailPage({ params }: Props) {
           </section>
 
           {/* Historial médico */}
-          <section className="bg-card rounded-xl border border-border p-6">
+          <section data-tour="patient-medical" className="bg-card rounded-xl border border-border p-6">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <Heart className="w-5 h-5 text-red-500" />
               Historial médico
@@ -225,7 +225,7 @@ export default async function PacienteDetailPage({ params }: Props) {
             };
 
             return (
-              <section className="bg-card rounded-xl border border-border p-6">
+              <section data-tour="patient-lifestyle" className="bg-card rounded-xl border border-border p-6">
                 <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                   <Dumbbell className="w-5 h-5 text-indigo-500" />
                   Actividad física y estilo de vida
@@ -284,7 +284,7 @@ export default async function PacienteDetailPage({ params }: Props) {
           )}
 
           {/* Horario semanal */}
-          <section className="bg-card rounded-xl border border-border p-6">
+          <section data-tour="patient-schedule" className="bg-card rounded-xl border border-border p-6">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <Clock className="w-5 h-5 text-indigo-500" />
               Horario semanal
@@ -321,7 +321,7 @@ export default async function PacienteDetailPage({ params }: Props) {
           </section>
 
           {/* Planes alimenticios */}
-          <section className="bg-card rounded-xl border border-border p-6">
+          <section data-tour="patient-plans" className="bg-card rounded-xl border border-border p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <UtensilsCrossed className="w-5 h-5 text-primary" />
@@ -393,7 +393,7 @@ export default async function PacienteDetailPage({ params }: Props) {
             </div>
           </section>
 
-          <section className="bg-card rounded-xl border border-border p-6">
+          <section data-tour="patient-measures" className="bg-card rounded-xl border border-border p-6">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <Ruler className="w-5 h-5 text-blue-600" />
               Medidas

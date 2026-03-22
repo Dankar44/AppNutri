@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Plus, X, Save, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import type { HorarioEntry } from "@/app/actions/pacientes";
 import { toast } from "sonner";
@@ -35,16 +35,22 @@ export function HorarioSemanal({ initialEntries, readOnly, onSave }: Props) {
   const [entries, setEntries] = useState<HorarioEntry[]>(initialEntries);
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [dirty, setDirty] = useState(false);
   const [editingCell, setEditingCell] = useState<{ dia: string; hora: string } | null>(null);
   const [inputActividad, setInputActividad] = useState("");
   const [inputColor, setInputColor] = useState("otro");
   const [inputNota, setInputNota] = useState("");
-  const hasChanges = JSON.stringify(entries) !== JSON.stringify(initialEntries);
 
   const horasVisibles = expanded ? HORAS : HORAS.slice(0, PREVIEW_ROWS);
 
+  const entryMap = useMemo(() => {
+    const m = new Map<string, HorarioEntry>();
+    for (const e of entries) m.set(`${e.dia}-${e.hora}`, e);
+    return m;
+  }, [entries]);
+
   function getEntry(dia: string, hora: string) {
-    return entries.find((e) => e.dia === dia && e.hora === hora);
+    return entryMap.get(`${dia}-${hora}`);
   }
 
   function startEdit(dia: string, hora: string) {
@@ -69,6 +75,7 @@ export function HorarioSemanal({ initialEntries, readOnly, onSave }: Props) {
       });
     }
     setEntries(updated);
+    setDirty(true);
     setEditingCell(null);
     setInputActividad("");
     setInputNota("");
@@ -76,6 +83,7 @@ export function HorarioSemanal({ initialEntries, readOnly, onSave }: Props) {
 
   function removeEntry(dia: string, hora: string) {
     setEntries(entries.filter((e) => !(e.dia === dia && e.hora === hora)));
+    setDirty(true);
   }
 
   async function handleSave() {
@@ -101,7 +109,7 @@ export function HorarioSemanal({ initialEntries, readOnly, onSave }: Props) {
             </span>
           ))}
         </div>
-        {!readOnly && hasChanges && (
+        {!readOnly && dirty && (
           <button
             onClick={handleSave}
             disabled={saving}

@@ -41,7 +41,7 @@ export default async function PatientPortalPage() {
 
       {/* Tu nutricionista */}
       {dietista && (
-        <div className="bg-card rounded-xl border border-border p-5 mb-6 flex items-center gap-4">
+        <div data-tour="dietista-info" className="bg-card rounded-xl border border-border p-5 mb-6 flex items-center gap-4">
           {dietista.logoUrl ? (
             <img
               src={dietista.logoUrl}
@@ -65,7 +65,7 @@ export default async function PatientPortalPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div data-tour="quick-access" className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Link
           href="/paciente/portal/dieta"
           className="bg-card rounded-xl border border-border p-6 hover:border-primary/30 hover:shadow-sm transition-all"

@@ -31,7 +31,8 @@ const ORIGENES = [
 export function AlimentosFilter() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const debounceRef = useRef<NodeJS.Timeout>(null);
+  const searchDebounce = useRef<NodeJS.Timeout>(null);
+  const macroDebounce = useRef<NodeJS.Timeout>(null);
   const [showAdvanced, setShowAdvanced] = useState(true);
 
   function updateParams(updates: Record<string, string>) {
@@ -44,8 +45,13 @@ export function AlimentosFilter() {
   }
 
   function handleSearch(value: string) {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => updateParams({ busqueda: value }), 300);
+    if (searchDebounce.current) clearTimeout(searchDebounce.current);
+    searchDebounce.current = setTimeout(() => updateParams({ busqueda: value }), 300);
+  }
+
+  function handleMacroChange(key: string, value: string) {
+    if (macroDebounce.current) clearTimeout(macroDebounce.current);
+    macroDebounce.current = setTimeout(() => updateParams({ [key]: value }), 500);
   }
 
   function clearFilters() {
@@ -98,7 +104,7 @@ export function AlimentosFilter() {
 
       {/* Filtros avanzados */}
       {showAdvanced && (
-        <div className="bg-card rounded-xl border border-border p-5 space-y-4">
+        <div data-tour="food-filters" className="bg-card rounded-xl border border-border p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold">Filtros avanzados</h3>
             {hasFilters && (
@@ -131,14 +137,14 @@ export function AlimentosFilter() {
                   type="number"
                   placeholder="Mín"
                   defaultValue={searchParams.get("calMin") || ""}
-                  onChange={(e) => { if (debounceRef.current) clearTimeout(debounceRef.current); debounceRef.current = setTimeout(() => updateParams({ calMin: e.target.value }), 500); }}
+                  onChange={(e) => handleMacroChange("calMin", e.target.value)}
                   className="w-full px-2 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
                 />
                 <input
                   type="number"
                   placeholder="Máx"
                   defaultValue={searchParams.get("calMax") || ""}
-                  onChange={(e) => { if (debounceRef.current) clearTimeout(debounceRef.current); debounceRef.current = setTimeout(() => updateParams({ calMax: e.target.value }), 500); }}
+                  onChange={(e) => handleMacroChange("calMax", e.target.value)}
                   className="w-full px-2 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
                 />
               </div>
@@ -152,14 +158,14 @@ export function AlimentosFilter() {
                   type="number"
                   placeholder="Mín"
                   defaultValue={searchParams.get("protMin") || ""}
-                  onChange={(e) => { if (debounceRef.current) clearTimeout(debounceRef.current); debounceRef.current = setTimeout(() => updateParams({ protMin: e.target.value }), 500); }}
+                  onChange={(e) => handleMacroChange("protMin", e.target.value)}
                   className="w-full px-2 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
                 />
                 <input
                   type="number"
                   placeholder="Máx"
                   defaultValue={searchParams.get("protMax") || ""}
-                  onChange={(e) => { if (debounceRef.current) clearTimeout(debounceRef.current); debounceRef.current = setTimeout(() => updateParams({ protMax: e.target.value }), 500); }}
+                  onChange={(e) => handleMacroChange("protMax", e.target.value)}
                   className="w-full px-2 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
                 />
               </div>
@@ -173,14 +179,14 @@ export function AlimentosFilter() {
                   type="number"
                   placeholder="Mín"
                   defaultValue={searchParams.get("carbMin") || ""}
-                  onChange={(e) => { if (debounceRef.current) clearTimeout(debounceRef.current); debounceRef.current = setTimeout(() => updateParams({ carbMin: e.target.value }), 500); }}
+                  onChange={(e) => handleMacroChange("carbMin", e.target.value)}
                   className="w-full px-2 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
                 />
                 <input
                   type="number"
                   placeholder="Máx"
                   defaultValue={searchParams.get("carbMax") || ""}
-                  onChange={(e) => { if (debounceRef.current) clearTimeout(debounceRef.current); debounceRef.current = setTimeout(() => updateParams({ carbMax: e.target.value }), 500); }}
+                  onChange={(e) => handleMacroChange("carbMax", e.target.value)}
                   className="w-full px-2 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
                 />
               </div>
@@ -194,14 +200,14 @@ export function AlimentosFilter() {
                   type="number"
                   placeholder="Mín"
                   defaultValue={searchParams.get("grasaMin") || ""}
-                  onChange={(e) => { if (debounceRef.current) clearTimeout(debounceRef.current); debounceRef.current = setTimeout(() => updateParams({ grasaMin: e.target.value }), 500); }}
+                  onChange={(e) => handleMacroChange("grasaMin", e.target.value)}
                   className="w-full px-2 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
                 />
                 <input
                   type="number"
                   placeholder="Máx"
                   defaultValue={searchParams.get("grasaMax") || ""}
-                  onChange={(e) => { if (debounceRef.current) clearTimeout(debounceRef.current); debounceRef.current = setTimeout(() => updateParams({ grasaMax: e.target.value }), 500); }}
+                  onChange={(e) => handleMacroChange("grasaMax", e.target.value)}
                   className="w-full px-2 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
                 />
               </div>

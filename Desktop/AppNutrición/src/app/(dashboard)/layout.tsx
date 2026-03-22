@@ -4,6 +4,7 @@ import { getNotificacionesCount } from "@/app/actions/notificaciones";
 import { isAdminEmail } from "@/lib/admin";
 import { SidebarWrapper } from "./sidebar-wrapper";
 import { HelpWidget } from "@/components/help/help-widget";
+import { TourWrapper } from "@/components/tour/tour-wrapper";
 
 export default async function DashboardLayout({
   children,
@@ -28,19 +29,21 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen">
-      <SidebarWrapper
-        dietistaNombre={`${dietista.nombre} ${dietista.apellidos}`}
-        signOutAction={signOut}
-        notifCount={notifCount}
-        isAdmin={isAdminEmail(dietista.email)}
-      />
-      <main className="flex-1 overflow-y-auto">
-        <div className="pt-16 lg:pt-0 p-4 sm:p-6 lg:px-10 lg:pt-10 lg:pb-8 max-w-7xl mx-auto">
-          {children}
-        </div>
-      </main>
-      <HelpWidget />
-    </div>
+    <TourWrapper audience="dietista">
+      <div className="flex min-h-screen">
+        <SidebarWrapper
+          dietistaNombre={`${dietista.nombre} ${dietista.apellidos}`}
+          signOutAction={signOut}
+          notifCount={notifCount}
+          isAdmin={isAdminEmail(dietista.email)}
+        />
+        <main className="flex-1 overflow-y-auto">
+          <div className="pt-16 lg:pt-0 p-4 sm:p-6 lg:px-10 lg:pt-10 lg:pb-8 max-w-7xl mx-auto">
+            {children}
+          </div>
+        </main>
+        <HelpWidget />
+      </div>
+    </TourWrapper>
   );
 }

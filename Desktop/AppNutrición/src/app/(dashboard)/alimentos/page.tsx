@@ -40,6 +40,7 @@ export default async function AlimentosPage({ searchParams }: Props) {
         <div className="flex gap-2">
           <Link
             href="/alimentos/importar"
+            data-tour="import-btn"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
           >
             <Download className="w-4 h-4" />
