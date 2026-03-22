@@ -44,7 +44,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Stats con tendencia */}
-      <div data-tour="stats-cards" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div data-tour="stats-cards" className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
         <StatsCard
           icon={Users}
           label="Total pacientes"

@@ -65,12 +65,12 @@ export default async function PatientPortalPage() {
         </div>
       )}
 
-      <div data-tour="quick-access" className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div data-tour="quick-access" className="grid grid-cols-2 gap-3 sm:gap-4">
         <Link
           href="/paciente/portal/dieta"
-          className="bg-card rounded-xl border border-border p-6 hover:border-primary/30 hover:shadow-sm transition-all"
+          className="bg-card rounded-xl border border-border p-4 sm:p-6 hover:border-primary/30 hover:shadow-sm transition-all"
         >
-          <UtensilsCrossed className="w-8 h-8 text-primary mb-3" />
+          <UtensilsCrossed className="w-6 h-6 sm:w-8 sm:h-8 text-primary mb-2 sm:mb-3" />
           <h3 className="font-semibold mb-1">Mi dieta</h3>
           <p className="text-sm text-muted-foreground">
             {planActivo ? `Plan activo: ${planActivo.nombre}` : "No tienes un plan activo"}
@@ -79,18 +79,18 @@ export default async function PatientPortalPage() {
 
         <Link
           href="/paciente/portal/diario"
-          className="bg-card rounded-xl border border-border p-6 hover:border-primary/30 hover:shadow-sm transition-all"
+          className="bg-card rounded-xl border border-border p-4 sm:p-6 hover:border-primary/30 hover:shadow-sm transition-all"
         >
-          <BookOpen className="w-8 h-8 text-green-600 mb-3" />
+          <BookOpen className="w-6 h-6 sm:w-8 sm:h-8 text-green-600 mb-2 sm:mb-3" />
           <h3 className="font-semibold mb-1">Mi diario</h3>
           <p className="text-sm text-muted-foreground">Registra lo que comes cada día</p>
         </Link>
 
         <Link
           href="/paciente/portal/evolucion"
-          className="bg-card rounded-xl border border-border p-6 hover:border-primary/30 hover:shadow-sm transition-all"
+          className="bg-card rounded-xl border border-border p-4 sm:p-6 hover:border-primary/30 hover:shadow-sm transition-all"
         >
-          <TrendingUp className="w-8 h-8 text-blue-600 mb-3" />
+          <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 mb-2 sm:mb-3" />
           <h3 className="font-semibold mb-1">Mi evolución</h3>
           <p className="text-sm text-muted-foreground">Gráficos de peso y medidas</p>
         </Link>
@@ -98,9 +98,9 @@ export default async function PatientPortalPage() {
         {planActivo && (
           <Link
             href="/paciente/portal/dieta/lista-compra"
-            className="bg-card rounded-xl border border-border p-6 hover:border-primary/30 hover:shadow-sm transition-all"
+            className="bg-card rounded-xl border border-border p-4 sm:p-6 hover:border-primary/30 hover:shadow-sm transition-all"
           >
-            <ShoppingCart className="w-8 h-8 text-amber-600 mb-3" />
+            <ShoppingCart className="w-6 h-6 sm:w-8 sm:h-8 text-amber-600 mb-2 sm:mb-3" />
             <h3 className="font-semibold mb-1">Lista de la compra</h3>
             <p className="text-sm text-muted-foreground">Generada desde tu plan semanal</p>
           </Link>
