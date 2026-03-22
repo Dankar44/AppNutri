@@ -114,8 +114,16 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
     intolerancias: paciente?.intolerancias || [],
     patologias: paciente?.patologias || [],
     medicamentos: paciente?.medicamentos || [],
+    suplementos: (paciente as Record<string, unknown>)?.suplementos as string[] || [],
     objetivo: paciente?.objetivo || "MANTENIMIENTO",
     objetivoDetalle: paciente?.objetivoDetalle || "",
+    nivelActividad: (paciente as Record<string, unknown>)?.nivelActividad as string || "",
+    frecuenciaEjercicio: (paciente as Record<string, unknown>)?.frecuenciaEjercicio as string || "",
+    tipoEjercicio: (paciente as Record<string, unknown>)?.tipoEjercicio as string || "",
+    horarioTrabajo: (paciente as Record<string, unknown>)?.horarioTrabajo as string || "",
+    horarioEjercicio: (paciente as Record<string, unknown>)?.horarioEjercicio as string || "",
+    horasDescanso: (paciente as Record<string, unknown>)?.horasDescanso as string || "",
+    ocupacion: (paciente as Record<string, unknown>)?.ocupacion as string || "",
     preferencias: paciente?.preferencias || [],
     notas: paciente?.notas || "",
   });
@@ -356,6 +364,100 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
             tags={form.medicamentos}
             onChange={(tags) => update("medicamentos", tags)}
           />
+          <TagInput
+            label="Suplementos"
+            placeholder="Ej: Proteína whey, Creatina, Vitamina D..."
+            tags={form.suplementos}
+            onChange={(tags) => update("suplementos", tags)}
+          />
+        </div>
+      </section>
+
+      {/* Actividad física y estilo de vida */}
+      <section className="bg-card rounded-xl border border-border p-6">
+        <h2 className="text-lg font-semibold mb-4">Actividad física y estilo de vida</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Ocupación</label>
+            <input
+              type="text"
+              value={form.ocupacion}
+              onChange={(e) => update("ocupacion", e.target.value)}
+              placeholder="Ej: Oficinista, Profesor, Camarero..."
+              maxLength={200}
+              className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Nivel de actividad</label>
+            <select
+              value={form.nivelActividad}
+              onChange={(e) => update("nivelActividad", e.target.value)}
+              className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+            >
+              <option value="">Seleccionar...</option>
+              <option value="SEDENTARIO">Sedentario (poco o nada de ejercicio)</option>
+              <option value="LIGERO">Ligero (1-2 días/semana)</option>
+              <option value="MODERADO">Moderado (3-4 días/semana)</option>
+              <option value="ACTIVO">Activo (5-6 días/semana)</option>
+              <option value="MUY_ACTIVO">Muy activo (ejercicio diario intenso)</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Frecuencia de ejercicio</label>
+            <input
+              type="text"
+              value={form.frecuenciaEjercicio}
+              onChange={(e) => update("frecuenciaEjercicio", e.target.value)}
+              placeholder="Ej: 4 veces por semana, 1h cada sesión"
+              maxLength={100}
+              className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Tipo de ejercicio</label>
+            <input
+              type="text"
+              value={form.tipoEjercicio}
+              onChange={(e) => update("tipoEjercicio", e.target.value)}
+              placeholder="Ej: Musculación, Cardio, CrossFit, Natación..."
+              maxLength={200}
+              className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Horario de trabajo</label>
+            <input
+              type="text"
+              value={form.horarioTrabajo}
+              onChange={(e) => update("horarioTrabajo", e.target.value)}
+              placeholder="Ej: 9:00 - 18:00, turnos rotativos..."
+              maxLength={100}
+              className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Horario de ejercicio</label>
+            <input
+              type="text"
+              value={form.horarioEjercicio}
+              onChange={(e) => update("horarioEjercicio", e.target.value)}
+              placeholder="Ej: 7:00 - 8:00, después del trabajo..."
+              maxLength={100}
+              className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Horas de descanso</label>
+            <input
+              type="text"
+              value={form.horasDescanso}
+              onChange={(e) => update("horasDescanso", e.target.value)}
+              placeholder="Ej: 7-8 horas, duerme de 23:00 a 7:00"
+              maxLength={100}
+              className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+            />
+          </div>
         </div>
       </section>
 

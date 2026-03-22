@@ -150,22 +150,41 @@ export async function getAlimentos(
 
 const PAGE_SIZE = 100;
 
+interface MacroFilters {
+  origen?: string;
+  calMin?: number;
+  calMax?: number;
+  protMin?: number;
+  protMax?: number;
+  carbMin?: number;
+  carbMax?: number;
+  grasaMin?: number;
+  grasaMax?: number;
+}
+
 export async function getAlimentosPaginados(
   busqueda?: string,
   categoria?: CategoriaAlimento,
-  cursor?: string
+  cursor?: string,
+  macroFilters?: MacroFilters
 ) {
   const dietista = await getCurrentDietista();
   if (!dietista) return { alimentos: [], total: 0, nextCursor: null as string | null };
 
   const busquedaSanitizada = busqueda ? sanitizeSearch(busqueda) : undefined;
+  const f = macroFilters || {};
 
   const where = {
     OR: [{ dietistaId: dietista.id }, { dietistaId: null }],
     ...(categoria ? { categoria } : {}),
+    ...(f.origen && (f.origen === "PERSONALIZADO" || f.origen === "API") ? { origen: f.origen as "PERSONALIZADO" | "API" } : {}),
     ...(busquedaSanitizada
       ? { nombre: { contains: busquedaSanitizada, mode: "insensitive" as const } }
       : {}),
+    ...(f.calMin || f.calMax ? { calorias: { ...(f.calMin ? { gte: f.calMin } : {}), ...(f.calMax ? { lte: f.calMax } : {}) } } : {}),
+    ...(f.protMin || f.protMax ? { proteinas: { ...(f.protMin ? { gte: f.protMin } : {}), ...(f.protMax ? { lte: f.protMax } : {}) } } : {}),
+    ...(f.carbMin || f.carbMax ? { carbohidratos: { ...(f.carbMin ? { gte: f.carbMin } : {}), ...(f.carbMax ? { lte: f.carbMax } : {}) } } : {}),
+    ...(f.grasaMin || f.grasaMax ? { grasas: { ...(f.grasaMin ? { gte: f.grasaMin } : {}), ...(f.grasaMax ? { lte: f.grasaMax } : {}) } } : {}),
   };
 
   const [alimentos, total] = await Promise.all([

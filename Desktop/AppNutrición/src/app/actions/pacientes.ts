@@ -19,8 +19,16 @@ export interface PacienteFormData {
   intolerancias: string[];
   patologias: string[];
   medicamentos: string[];
+  suplementos: string[];
   objetivo: ObjetivoPaciente;
   objetivoDetalle?: string;
+  nivelActividad?: string;
+  frecuenciaEjercicio?: string;
+  tipoEjercicio?: string;
+  horarioTrabajo?: string;
+  horarioEjercicio?: string;
+  horasDescanso?: string;
+  ocupacion?: string;
   preferencias: string[];
   notas?: string;
 }
@@ -105,8 +113,16 @@ function sanitizeFormData(data: PacienteFormData) {
     intolerancias: sanitizeArray(data.intolerancias),
     patologias: sanitizeArray(data.patologias),
     medicamentos: sanitizeArray(data.medicamentos),
+    suplementos: sanitizeArray(data.suplementos),
     objetivo: OBJETIVOS_VALIDOS.includes(data.objetivo) ? data.objetivo as ObjetivoPaciente : "MANTENIMIENTO" as ObjetivoPaciente,
     objetivoDetalle: sanitizeString(data.objetivoDetalle, 500) || null,
+    nivelActividad: sanitizeString(data.nivelActividad, 100) || null,
+    frecuenciaEjercicio: sanitizeString(data.frecuenciaEjercicio, 100) || null,
+    tipoEjercicio: sanitizeString(data.tipoEjercicio, 200) || null,
+    horarioTrabajo: sanitizeString(data.horarioTrabajo, 100) || null,
+    horarioEjercicio: sanitizeString(data.horarioEjercicio, 100) || null,
+    horasDescanso: sanitizeString(data.horasDescanso, 100) || null,
+    ocupacion: sanitizeString(data.ocupacion, 200) || null,
     preferencias: sanitizeArray(data.preferencias),
     notas: sanitizeString(data.notas, 2000) || null,
   };
@@ -221,4 +237,64 @@ export async function getPaciente(id: string) {
   return prisma.paciente.findUnique({
     where: { id, dietistaId: dietista.id },
   });
+}
+
+// ─── Horario compartido ───
+
+export interface HorarioEntry {
+  dia: string;
+  hora: string;
+  actividad: string;
+  color?: string;
+  nota?: string;
+}
+
+export async function getHorarioPaciente(pacienteId: string): Promise<HorarioEntry[]> {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return [];
+
+  const rows = await prisma.$queryRawUnsafe<{ horario: HorarioEntry[] | null }[]>(
+    `SELECT horario FROM pacientes WHERE id = $1 AND "dietistaId" = $2`,
+    pacienteId, dietista.id
+  );
+
+  const horario = rows[0]?.horario;
+  if (!horario || !Array.isArray(horario)) return [];
+  return horario;
+}
+
+export async function guardarHorarioPaciente(pacienteId: string, horario: HorarioEntry[]) {
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error("No autorizado");
+
+  await prisma.$queryRawUnsafe(
+    `UPDATE pacientes SET horario = $1::jsonb WHERE id = $2 AND "dietistaId" = $3`,
+    JSON.stringify(horario), pacienteId, dietista.id
+  );
+
+  revalidatePath(`/pacientes/${pacienteId}`);
+}
+
+// ─── Recomendaciones ───
+
+export async function getRecomendaciones(pacienteId: string): Promise<string> {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return "";
+
+  const rows = await prisma.$queryRawUnsafe<{ recomendaciones: string | null }[]>(
+    `SELECT recomendaciones FROM pacientes WHERE id = $1 AND "dietistaId" = $2`,
+    pacienteId, dietista.id
+  );
+  return rows[0]?.recomendaciones || "";
+}
+
+export async function guardarRecomendaciones(pacienteId: string, texto: string) {
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error("No autorizado");
+
+  const sanitized = texto.slice(0, 5000);
+  await prisma.$queryRawUnsafe(
+    `UPDATE pacientes SET recomendaciones = $1 WHERE id = $2 AND "dietistaId" = $3`,
+    sanitized, pacienteId, dietista.id
+  );
 }

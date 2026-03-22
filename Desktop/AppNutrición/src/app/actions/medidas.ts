@@ -126,3 +126,45 @@ export async function eliminarMedida(id: string) {
   await prisma.medidaAntropometrica.delete({ where: { id } });
   revalidatePath(`/pacientes/${medida.pacienteId}/medidas`);
 }
+
+// Registro rápido desde la ficha del paciente
+export async function crearMedidaRapida(
+  pacienteId: string,
+  data: { peso?: number; altura?: number; grasaCorporal?: number }
+) {
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error("No autorizado");
+
+  const paciente = await prisma.paciente.findFirst({
+    where: { id: pacienteId, dietistaId: dietista.id },
+  });
+  if (!paciente) throw new Error("Paciente no encontrado");
+
+  const peso = data.peso || paciente.peso || null;
+  const altura = data.altura || paciente.altura || null;
+  const imc = peso && altura ? Math.round((peso / ((altura / 100) ** 2)) * 10) / 10 : null;
+
+  await prisma.medidaAntropometrica.create({
+    data: {
+      pacienteId,
+      peso: data.peso || null,
+      altura: data.altura || null,
+      imc,
+      grasaCorporal: data.grasaCorporal || null,
+    },
+  });
+
+  // Actualizar peso/altura del paciente si se proporcionaron
+  const updateData: Record<string, number> = {};
+  if (data.peso) updateData.peso = data.peso;
+  if (data.altura) updateData.altura = data.altura;
+  if (Object.keys(updateData).length > 0) {
+    await prisma.paciente.update({
+      where: { id: pacienteId },
+      data: updateData,
+    });
+  }
+
+  revalidatePath(`/pacientes/${pacienteId}`);
+  revalidatePath(`/pacientes/${pacienteId}/medidas`);
+}

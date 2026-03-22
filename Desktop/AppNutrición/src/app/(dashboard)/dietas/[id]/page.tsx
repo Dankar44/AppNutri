@@ -2,10 +2,13 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Pencil, Share2, Sparkles } from "lucide-react";
 import { getPlan } from "@/app/actions/planes";
+import { getCurrentDietista } from "@/app/actions/auth";
 import { capitalizarNombre } from "@/lib/utils";
+import { prisma } from "@/lib/prisma";
 import { PlanEditor } from "@/components/dieta/plan-editor";
 import { PlanActions } from "./plan-actions";
 import { PlantillaButton } from "./plantilla-button";
+import { ExportarPDFButton } from "@/components/dieta/exportar-pdf-button";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -15,6 +18,24 @@ export default async function PlanDetailPage({ params }: Props) {
   const { id } = await params;
   const plan = await getPlan(id);
   if (!plan) notFound();
+
+  const dietista = await getCurrentDietista();
+  let recomendaciones = "";
+  try {
+    const rows = await prisma.$queryRawUnsafe<{ recomendaciones: string | null }[]>(
+      `SELECT recomendaciones FROM pacientes WHERE id = $1`, plan.pacienteId
+    );
+    recomendaciones = rows[0]?.recomendaciones || "";
+  } catch { /* ignore */ }
+
+  const pdfData = {
+    planNombre: plan.nombre,
+    pacienteNombre: `${capitalizarNombre(plan.paciente.nombre)} ${capitalizarNombre(plan.paciente.apellidos)}`,
+    dietistaNombre: dietista ? `${dietista.nombre} ${dietista.apellidos}` : "NutriApp",
+    dias: plan.dias,
+    recomendaciones,
+    caloriasObjetivo: plan.caloriasObjetivo,
+  };
 
   return (
     <div>
@@ -53,6 +74,7 @@ export default async function PlanDetailPage({ params }: Props) {
               <Pencil className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Editar</span>
             </Link>
+            <ExportarPDFButton data={pdfData} />
             <PlanActions planId={plan.id} />
           </div>
         </div>

@@ -152,9 +152,18 @@ model Paciente {
   intolerancias       String[]
   patologias          String[]
   medicamentos        String[]
+  suplementos         String[]
 
   objetivo            ObjetivoPaciente  @default(MANTENIMIENTO)
   objetivoDetalle     String?
+
+  nivelActividad      String?
+  frecuenciaEjercicio String?
+  tipoEjercicio       String?
+  horarioTrabajo      String?
+  horarioEjercicio    String?
+  horasDescanso       String?
+  ocupacion           String?
 
   preferencias        String[]
   notas               String?

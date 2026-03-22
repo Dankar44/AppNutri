@@ -9,10 +9,6 @@ todos:
     content: "Fase 1: Dashboard basico y CRUD completo de pacientes"
     status: pending
   - id: base-alimentos
-    content: "Fase 2: Base de datos de alimentos + recetas + integracion API"
-    status: pending
-  - id: editor-dietas
-    content: "Fase 2: Editor visual de dietas con drag & drop y calculo de macros"
     status: pending
   - id: seguimiento
     content: "Fase 3: Medidas antropometricas, agenda, consultas, PDF"

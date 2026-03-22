@@ -144,15 +144,14 @@ export function PlanEditor({ planId, planNombre, dias, objetivos }: PlanEditorPr
     });
   }
 
-  function handleRemoveAlimento(alimentoEnComidaId: string) {
-    startTransition(async () => {
-      try {
-        await removeAlimentoDeComida(alimentoEnComidaId);
-        router.refresh();
-      } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
-        toast.error("Error al eliminar");
-      }
-    });
+  async function handleRemoveAlimento(alimentoEnComidaId: string) {
+    try {
+      await removeAlimentoDeComida(alimentoEnComidaId);
+    } catch (error) {
+      if (error && typeof error === "object" && "digest" in error) throw error;
+      toast.error("Error al eliminar");
+    }
+    router.refresh();
   }
 
   function handleCantidadChange(alimentoEnComidaId: string, cantidad: number) {
@@ -219,8 +218,8 @@ export function PlanEditor({ planId, planNombre, dias, objetivos }: PlanEditorPr
           </div>
         </div>
 
-        <div className="overflow-x-auto pb-4 scroll-smooth">
-          <div className="flex gap-3" style={{ width: `calc(((100% + 0.75rem) / 3) * 7 - 0.75rem)` }}>
+        <div className="overflow-x-auto pb-4 scroll-smooth snap-x snap-mandatory">
+          <div className="flex gap-3 w-[calc(((100%+0.75rem)/1)*7-0.75rem)] md:w-[calc(((100%+0.75rem)/2)*7-0.75rem)] lg:w-[calc(((100%+0.75rem)/3)*7-0.75rem)]">
             {diasData.map((dia) => (
               <DiaColumna
                 key={dia.dia}

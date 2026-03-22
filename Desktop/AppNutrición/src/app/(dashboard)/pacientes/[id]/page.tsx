@@ -20,8 +20,16 @@ import {
   Shield,
   BookOpen,
   TrendingUp,
+  Dumbbell,
+  Clock,
+  Briefcase,
+  Moon,
+  Sparkles,
 } from "lucide-react";
-import { getPaciente } from "@/app/actions/pacientes";
+import { getPaciente, getHorarioPaciente, getRecomendaciones } from "@/app/actions/pacientes";
+import { HorarioDietistaWrapper } from "@/components/horario-dietista-wrapper";
+import { RecomendacionesCard } from "@/components/recomendaciones-card";
+import { MedidasRapidas } from "@/components/medidas-rapidas";
 import { getPlanesPaciente } from "@/app/actions/planes";
 import { getMedidasEvolucion } from "@/app/actions/medidas";
 import {
@@ -44,9 +52,11 @@ export default async function PacienteDetailPage({ params }: Props) {
   const paciente = await getPaciente(id);
   if (!paciente) notFound();
 
-  const [planes, medidas] = await Promise.all([
+  const [planes, medidas, horarioEntries, recomendacionesText] = await Promise.all([
     getPlanesPaciente(id),
     getMedidasEvolucion(id),
+    getHorarioPaciente(id),
+    getRecomendaciones(id),
   ]);
 
   const nombre = capitalizarNombre(paciente.nombre);
@@ -191,8 +201,57 @@ export default async function PacienteDetailPage({ params }: Props) {
                 tags={paciente.medicamentos}
                 colorClass="bg-blue-50 text-blue-700"
               />
+              <TagList
+                icon={Sparkles}
+                label="Suplementos"
+                tags={(paciente as Record<string, unknown>).suplementos as string[] || []}
+                colorClass="bg-cyan-50 text-cyan-700"
+              />
             </div>
           </section>
+
+          {/* Actividad física y estilo de vida */}
+          {(() => {
+            const p = paciente as Record<string, unknown>;
+            const hasData = p.nivelActividad || p.frecuenciaEjercicio || p.tipoEjercicio || p.horarioTrabajo || p.horarioEjercicio || p.horasDescanso || p.ocupacion;
+            if (!hasData) return null;
+
+            const NIVEL_LABELS: Record<string, string> = {
+              SEDENTARIO: "Sedentario",
+              LIGERO: "Ligero (1-2 días/sem)",
+              MODERADO: "Moderado (3-4 días/sem)",
+              ACTIVO: "Activo (5-6 días/sem)",
+              MUY_ACTIVO: "Muy activo (diario)",
+            };
+
+            return (
+              <section className="bg-card rounded-xl border border-border p-6">
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Dumbbell className="w-5 h-5 text-indigo-500" />
+                  Actividad física y estilo de vida
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                  {[
+                    { val: p.ocupacion, icon: Briefcase, label: "Ocupación" },
+                    { val: p.nivelActividad, icon: Dumbbell, label: "Nivel de actividad", transform: (v: string) => NIVEL_LABELS[v] || v },
+                    { val: p.frecuenciaEjercicio, icon: Calendar, label: "Frecuencia" },
+                    { val: p.tipoEjercicio, icon: Target, label: "Tipo de ejercicio" },
+                    { val: p.horarioTrabajo, icon: Clock, label: "Horario de trabajo" },
+                    { val: p.horarioEjercicio, icon: Clock, label: "Horario de ejercicio" },
+                    { val: p.horasDescanso, icon: Moon, label: "Descanso" },
+                  ].filter((item) => !!item.val).map((item) => (
+                    <div key={item.label} className="flex items-start gap-2">
+                      <item.icon className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                      <div>
+                        <span className="text-muted-foreground">{item.label}</span>
+                        <p className="font-medium">{item.transform ? item.transform(String(item.val)) : String(item.val)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            );
+          })()}
 
           {/* Preferencias */}
           {paciente.preferencias.length > 0 && (
@@ -223,6 +282,18 @@ export default async function PacienteDetailPage({ params }: Props) {
               </p>
             </section>
           )}
+
+          {/* Horario semanal */}
+          <section className="bg-card rounded-xl border border-border p-6">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Clock className="w-5 h-5 text-indigo-500" />
+              Horario semanal
+            </h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              Horario compartido con el paciente. Haz clic en una celda para añadir una actividad.
+            </p>
+            <HorarioDietistaWrapper pacienteId={paciente.id} initialEntries={horarioEntries} />
+          </section>
 
           {/* Evolución del paciente */}
           <section className="bg-card rounded-xl border border-border p-6">
@@ -269,7 +340,7 @@ export default async function PacienteDetailPage({ params }: Props) {
               </p>
             ) : (
               <div className="space-y-2">
-                {planes.map((plan) => (
+                {planes.slice(0, 3).map((plan) => (
                   <Link
                     key={plan.id}
                     href={`/dietas/${plan.id}`}
@@ -288,6 +359,14 @@ export default async function PacienteDetailPage({ params }: Props) {
                     )}
                   </Link>
                 ))}
+                {planes.length > 3 && (
+                  <Link
+                    href="/dietas"
+                    className="block text-center py-2.5 rounded-lg border border-border hover:bg-muted/50 transition-colors text-sm text-primary font-medium"
+                  >
+                    Ver todos los planes ({planes.length})
+                  </Link>
+                )}
               </div>
             )}
           </section>
@@ -345,6 +424,9 @@ export default async function PacienteDetailPage({ params }: Props) {
                 Ver evolución y registrar medidas
               </Link>
             </div>
+
+            {/* Mini formulario rápido */}
+            <MedidasRapidas pacienteId={paciente.id} />
           </section>
 
           <section className="bg-card rounded-xl border border-border p-6">
@@ -372,6 +454,8 @@ export default async function PacienteDetailPage({ params }: Props) {
               Ver diario del paciente
             </Link>
           </section>
+
+          <RecomendacionesCard pacienteId={paciente.id} initialText={recomendacionesText} />
 
           <section className="bg-card rounded-xl border border-border p-6">
             <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">

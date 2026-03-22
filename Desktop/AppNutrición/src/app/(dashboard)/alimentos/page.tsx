@@ -5,14 +5,27 @@ import { AlimentosFilter } from "./alimentos-filter";
 import { AlimentosTable } from "./alimentos-table";
 
 interface Props {
-  searchParams: Promise<{ busqueda?: string; categoria?: string }>;
+  searchParams: Promise<Record<string, string | undefined>>;
 }
 
 export default async function AlimentosPage({ searchParams }: Props) {
-  const { busqueda, categoria } = await searchParams;
+  const params = await searchParams;
+  const { busqueda, categoria, origen, calMin, calMax, protMin, protMax, carbMin, carbMax, grasaMin, grasaMax } = params;
   const { alimentos, total, nextCursor } = await getAlimentosPaginados(
     busqueda,
-    categoria as Parameters<typeof getAlimentosPaginados>[1]
+    categoria as Parameters<typeof getAlimentosPaginados>[1],
+    undefined,
+    {
+      origen,
+      calMin: calMin ? parseFloat(calMin) : undefined,
+      calMax: calMax ? parseFloat(calMax) : undefined,
+      protMin: protMin ? parseFloat(protMin) : undefined,
+      protMax: protMax ? parseFloat(protMax) : undefined,
+      carbMin: carbMin ? parseFloat(carbMin) : undefined,
+      carbMax: carbMax ? parseFloat(carbMax) : undefined,
+      grasaMin: grasaMin ? parseFloat(grasaMin) : undefined,
+      grasaMax: grasaMax ? parseFloat(grasaMax) : undefined,
+    }
   );
 
   return (

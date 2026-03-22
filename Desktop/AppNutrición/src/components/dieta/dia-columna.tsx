@@ -76,7 +76,7 @@ export function DiaColumna({
   );
 
   return (
-    <div className="flex-1 min-w-0 flex flex-col">
+    <div className="flex-1 min-w-0 flex flex-col snap-start">
       <div className="text-center font-semibold text-sm py-2 border-b border-border bg-muted/50 rounded-t-lg sticky top-0">
         {DIA_LABELS[dia] || dia}
       </div>

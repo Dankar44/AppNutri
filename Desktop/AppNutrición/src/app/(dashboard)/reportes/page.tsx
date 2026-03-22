@@ -43,7 +43,7 @@ export default async function ReportesPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatsCard icon={Users} label="Tasa de retención" value={`${stats.tasaRetencion}%`} color="text-blue-600 bg-blue-50" />
         <StatsCard icon={FileText} label="Media consultas/pac." value={stats.mediaConsultas} color="text-green-600 bg-green-50" />
-        <StatsCard icon={Sparkles} label="Planes con IA" value={stats.planesIA} color="text-amber-600 bg-amber-50" />
+        <StatsCard icon={Sparkles} label="Planes creados" value={stats.planesIA} color="text-amber-600 bg-amber-50" />
         <StatsCard icon={UserCheck} label="Pacientes con portal" value={stats.pacientesConPortal} color="text-purple-600 bg-purple-50" />
       </div>
 

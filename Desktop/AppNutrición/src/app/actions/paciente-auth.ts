@@ -124,9 +124,87 @@ export async function getPerfilCompleto() {
   return acceso?.perfilCompleto ?? false;
 }
 
+export async function actualizarPerfilPaciente(data: { nombre?: string; apellidos?: string; telefono?: string }) {
+  const session = await getCurrentPaciente();
+  if (!session) throw new Error("No autorizado");
+
+  const updateData: Record<string, string | null> = {};
+  if (data.nombre?.trim()) updateData.nombre = data.nombre.trim().slice(0, 100);
+  if (data.apellidos?.trim()) updateData.apellidos = data.apellidos.trim().slice(0, 100);
+  if (data.telefono !== undefined) updateData.telefono = data.telefono.trim().slice(0, 20) || null;
+
+  if (Object.keys(updateData).length > 0) {
+    await prisma.paciente.update({
+      where: { id: session.pacienteId },
+      data: updateData,
+    });
+  }
+
+  revalidatePath("/paciente/portal/perfil");
+  revalidatePath("/paciente/portal");
+}
+
+export async function cambiarPasswordPaciente(passwordActual: string, passwordNueva: string) {
+  const session = await getCurrentPaciente();
+  if (!session) throw new Error("No autorizado");
+
+  if (passwordNueva.length < 6) throw new Error("La nueva contraseña debe tener al menos 6 caracteres");
+
+  const acceso = await prisma.accesoPaciente.findUnique({
+    where: { pacienteId: session.pacienteId },
+  });
+  if (!acceso) throw new Error("Acceso no encontrado");
+
+  // Verificar contraseña actual
+  const valid = await verifyPin(passwordActual, acceso.passwordHash || acceso.pinHash);
+  if (!valid) throw new Error("La contraseña actual es incorrecta");
+
+  const newHash = await hashPin(passwordNueva);
+  await prisma.accesoPaciente.update({
+    where: { pacienteId: session.pacienteId },
+    data: { passwordHash: newHash },
+  });
+}
+
 export async function logoutPaciente() {
   await clearPatientSession();
   redirect("/paciente/login");
+}
+
+// ─── Horario compartido (lado paciente) ───
+
+export interface HorarioEntry {
+  dia: string;
+  hora: string;
+  actividad: string;
+  color?: string;
+  nota?: string;
+}
+
+export async function getHorarioPacientePortal(): Promise<HorarioEntry[]> {
+  const session = await getCurrentPaciente();
+  if (!session) return [];
+
+  const rows = await prisma.$queryRawUnsafe<{ horario: HorarioEntry[] | null }[]>(
+    `SELECT horario FROM pacientes WHERE id = $1`,
+    session.pacienteId
+  );
+
+  const horario = rows[0]?.horario;
+  if (!horario || !Array.isArray(horario)) return [];
+  return horario;
+}
+
+export async function guardarHorarioPacientePortal(horario: HorarioEntry[]) {
+  const session = await getCurrentPaciente();
+  if (!session) throw new Error("No autorizado");
+
+  await prisma.$queryRawUnsafe(
+    `UPDATE pacientes SET horario = $1::jsonb WHERE id = $2`,
+    JSON.stringify(horario), session.pacienteId
+  );
+
+  revalidatePath("/paciente/portal/perfil");
 }
 
 export async function getAccesoPaciente(pacienteId: string) {

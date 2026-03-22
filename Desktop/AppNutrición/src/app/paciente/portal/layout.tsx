@@ -13,14 +13,18 @@ export default async function PatientPortalLayout({
 
   const paciente = await prisma.paciente.findUnique({
     where: { id: session.pacienteId },
-    select: { nombre: true },
+    select: { nombre: true, apellidos: true, fotoUrl: true },
   });
   if (!paciente) redirect("/paciente/login");
 
   return (
-    <>
-      <PatientNav nombre={paciente.nombre} />
-      <main className="max-w-4xl mx-auto p-4 md:p-6">{children}</main>
-    </>
+    <div className="flex min-h-screen">
+      <PatientNav nombre={paciente.nombre} apellidos={paciente.apellidos} fotoUrl={paciente.fotoUrl} />
+      <main className="flex-1 overflow-y-auto">
+        <div className="pt-16 lg:pt-0 p-4 sm:p-6 lg:px-10 lg:pt-10 lg:pb-8 max-w-5xl mx-auto">
+          {children}
+        </div>
+      </main>
+    </div>
   );
 }

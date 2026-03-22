@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Clock } from "lucide-react";
 import { useDroppable } from "@dnd-kit/core";
 import { AlimentoCard } from "./alimento-card";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,15 @@ const TIPO_LABELS: Record<string, string> = {
   MERIENDA: "Merienda",
   CENA: "Cena",
   RECENA: "Recena",
+};
+
+const HORA_DEFAULT: Record<string, string> = {
+  DESAYUNO: "08:00",
+  MEDIA_MANANA: "11:00",
+  ALMUERZO: "14:00",
+  MERIENDA: "17:30",
+  CENA: "21:00",
+  RECENA: "23:00",
 };
 
 interface AlimentoEnSlot {
@@ -52,6 +61,7 @@ export function ComidaSlot({
   });
 
   const [desc, setDesc] = useState(descripcion || "");
+  const [hora, setHora] = useState(HORA_DEFAULT[tipo] || "");
   const debounceRef = useRef<NodeJS.Timeout>(null);
 
   function handleDescChange(value: string) {
@@ -70,17 +80,28 @@ export function ComidaSlot({
         isOver && "bg-primary/10 ring-2 ring-primary/30"
       )}
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-1">
         <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           {TIPO_LABELS[tipo] || tipo}
         </h4>
-        <button
-          onClick={() => onAdd(comidaId)}
-          className="p-0.5 rounded hover:bg-primary/10 text-primary transition-colors"
-          title="Añadir alimento"
-        >
-          <Plus className="w-3.5 h-3.5" />
-        </button>
+        <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5 text-muted-foreground">
+            <Clock className="w-3 h-3" />
+            <input
+              type="time"
+              value={hora}
+              onChange={(e) => setHora(e.target.value)}
+              className="text-[10px] bg-transparent border-none outline-none w-[52px] text-muted-foreground focus:text-foreground"
+            />
+          </div>
+          <button
+            onClick={() => onAdd(comidaId)}
+            className="p-0.5 rounded hover:bg-primary/10 text-primary transition-colors"
+            title="Añadir alimento"
+          >
+            <Plus className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
       <input
