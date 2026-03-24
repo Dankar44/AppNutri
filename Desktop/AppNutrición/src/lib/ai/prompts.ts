@@ -50,8 +50,14 @@ Comidas: DESAYUNO,MEDIA_MANANA,ALMUERZO,MERIENDA,CENA,RECENA
 
 CADA DIA DEBE SER DIFERENTE. No repitas los mismos platos entre días.
 Cada comida tiene 2-3 alimentos y una "descripcion" con el nombre del plato.
-Nombres de alimentos: max 2 palabras.
-VERIFICA que los macros estimados son correctos según la tabla antes de responder.
+Nombres de alimentos: max 2 palabras, usa nombres simples que existan en una base de datos española (Pollo, Arroz, Salmon, Lentejas, Avena, Yogur, etc).
+
+VERIFICACIÓN OBLIGATORIA antes de responder:
+1. Para CADA alimento, calcula: (cantidadGramos / 100) × kcal_por_100g = calorias_estimadas
+2. Suma las calorias de TODOS los alimentos del día
+3. Si la suma NO está entre el mínimo y máximo permitido, AJUSTA las cantidades hasta que encaje
+4. Los macros en "estimacion" DEBEN reflejar el cálculo correcto, NO valores inventados
+
 Solo responde con JSON válido, sin texto adicional.`;
 
 export function buildUserPrompt(

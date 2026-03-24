@@ -92,15 +92,14 @@ const COMIDAS_MAP: Record<string, TipoComida> = {
   MERIENDA: "MERIENDA", CENA: "CENA", RECENA: "RECENA",
 };
 
-// Busca un alimento por nombre (fuzzy) o lo crea con los macros estimados
-async function findOrCreateAlimento(
+// Busca el alimento más parecido en la DB. NUNCA crea nuevos.
+async function findAlimentoMasParecido(
   dietistaId: string,
   nombre: string,
-  estimacion: { calorias: number; proteinas: number; carbohidratos: number; grasas: number }
-): Promise<string> {
+): Promise<string | null> {
   const nombreNorm = normalizarNombreAlimento(nombre);
 
-  // Buscar exacto primero (con nombre normalizado)
+  // 1. Buscar exacto
   const exacto = await prisma.alimento.findFirst({
     where: {
       OR: [{ dietistaId }, { dietistaId: null }],
@@ -110,7 +109,7 @@ async function findOrCreateAlimento(
   });
   if (exacto) return exacto.id;
 
-  // Buscar por contiene
+  // 2. Buscar si el nombre de la DB contiene lo que buscamos
   const parcial = await prisma.alimento.findFirst({
     where: {
       OR: [{ dietistaId }, { dietistaId: null }],
@@ -120,8 +119,11 @@ async function findOrCreateAlimento(
   });
   if (parcial) return parcial.id;
 
-  // Buscar por la primera palabra significativa (ej: "Pechuga de pollo" → buscar "pollo")
+  // 3. Buscar si lo que buscamos contiene el nombre de la DB (inverso)
+  // Ej: IA dice "Pechuga de pollo" → buscar alimentos cuyo nombre esté contenido
   const palabras = nombreNorm.split(" ").filter((p) => p.length > 3);
+
+  // Buscar cada palabra significativa
   for (const palabra of palabras) {
     const porPalabra = await prisma.alimento.findFirst({
       where: {
@@ -133,23 +135,21 @@ async function findOrCreateAlimento(
     if (porPalabra) return porPalabra.id;
   }
 
-  // No existe: crear uno nuevo con nombre normalizado y macros redondeados
-  const nuevo = await prisma.alimento.create({
-    data: {
-      dietistaId,
-      nombre: nombreNorm,
-      categoria: "OTROS",
-      calorias: redondearMacros(estimacion.calorias),
-      proteinas: redondearMacros(estimacion.proteinas),
-      carbohidratos: redondearMacros(estimacion.carbohidratos),
-      grasas: redondearMacros(estimacion.grasas),
-      porcion: 100,
-      unidad: "GRAMOS",
-      origen: "PERSONALIZADO",
-    },
-  });
+  // 4. Último intento: buscar solo la primera palabra (ej: "Avena" de "Avena con leche")
+  const primeraPalabra = nombreNorm.split(" ")[0];
+  if (primeraPalabra && primeraPalabra.length > 2) {
+    const porPrimera = await prisma.alimento.findFirst({
+      where: {
+        OR: [{ dietistaId }, { dietistaId: null }],
+        nombre: { contains: primeraPalabra, mode: "insensitive" },
+      },
+      select: { id: true },
+    });
+    if (porPrimera) return porPrimera.id;
+  }
 
-  return nuevo.id;
+  // No encontrado — devolver null (se omitirá del plan)
+  return null;
 }
 
 export async function aceptarPlanIA(
@@ -195,14 +195,13 @@ export async function aceptarPlanIA(
     }[];
   };
 
-  // Resolver todos los alimentos (buscar o crear)
-  const alimentoCache = new Map<string, string>();
+  // Resolver todos los alimentos (buscar el más parecido, NUNCA crear nuevos)
+  const alimentoCache = new Map<string, string | null>();
   for (const dia of planIA.dias) {
     for (const comida of dia.comidas) {
       for (const a of comida.alimentos) {
         if (!alimentoCache.has(a.nombre)) {
-          const est = a.estimacion || { calorias: 0, proteinas: 0, carbohidratos: 0, grasas: 0 };
-          const id = await findOrCreateAlimento(dietista.id, a.nombre, est);
+          const id = await findAlimentoMasParecido(dietista.id, a.nombre);
           alimentoCache.set(a.nombre, id);
         }
       }
@@ -237,16 +236,18 @@ export async function aceptarPlanIA(
         });
       }
 
-      for (let i = 0; i < comidaIA.alimentos.length; i++) {
-        const a = comidaIA.alimentos[i];
-        const alimentoId = alimentoCache.get(a.nombre) || null;
+      let orden = 0;
+      for (const a of comidaIA.alimentos) {
+        const alimentoId = alimentoCache.get(a.nombre) ?? null;
+        // Solo añadir si se encontró un alimento real en la DB
+        if (!alimentoId) continue;
         await prisma.alimentoEnComida.create({
           data: {
             comidaId: comidaExistente.id,
             alimentoId,
             cantidad: a.cantidadGramos,
             unidad: "GRAMOS",
-            orden: i,
+            orden: orden++,
           },
         });
       }
