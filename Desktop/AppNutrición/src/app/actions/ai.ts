@@ -77,8 +77,10 @@ export async function generarPlanIA(
               select: { nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true },
             });
             if (real) {
+              // Redondear cantidad a múltiplo de 5
+              a.cantidadGramos = Math.round(a.cantidadGramos / 5) * 5 || 5;
               const factor = a.cantidadGramos / 100;
-              a.nombre = real.nombre; // Usar nombre real de la DB
+              a.nombre = real.nombre;
               a.estimacion = {
                 calorias: Math.round(real.calorias * factor),
                 proteinas: Math.round(real.proteinas * factor * 10) / 10,
@@ -99,12 +101,30 @@ export async function generarPlanIA(
         const ratio = objetivos.calorias / totalDia;
         for (const comida of dia.comidas) {
           for (const a of comida.alimentos) {
-            a.cantidadGramos = Math.round(a.cantidadGramos * ratio);
-            if (a.estimacion) {
-              a.estimacion.calorias = Math.round(a.estimacion.calorias * ratio);
-              a.estimacion.proteinas = Math.round(a.estimacion.proteinas * ratio * 10) / 10;
-              a.estimacion.carbohidratos = Math.round(a.estimacion.carbohidratos * ratio * 10) / 10;
-              a.estimacion.grasas = Math.round(a.estimacion.grasas * ratio * 10) / 10;
+            a.cantidadGramos = Math.round((a.cantidadGramos * ratio) / 5) * 5 || 5;
+          }
+        }
+      }
+    }
+
+    // Recalcular macros finales con cantidades redondeadas
+    for (const dia of plan.dias) {
+      for (const comida of dia.comidas) {
+        for (const a of comida.alimentos) {
+          const alimentoId = await findAlimentoMasParecido(dietista.id, a.nombre);
+          if (alimentoId) {
+            const real = await prisma.alimento.findUnique({
+              where: { id: alimentoId },
+              select: { calorias: true, proteinas: true, carbohidratos: true, grasas: true },
+            });
+            if (real) {
+              const f = a.cantidadGramos / 100;
+              a.estimacion = {
+                calorias: Math.round(real.calorias * f),
+                proteinas: Math.round(real.proteinas * f * 10) / 10,
+                carbohidratos: Math.round(real.carbohidratos * f * 10) / 10,
+                grasas: Math.round(real.grasas * f * 10) / 10,
+              };
             }
           }
         }

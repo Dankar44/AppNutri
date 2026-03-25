@@ -95,11 +95,9 @@ export function PlanPreview({ plan, onAccept, onReject, loading }: PlanPreviewPr
                         </p>
                         {tieneAlimentos ? (
                           <>
-                            {comida.descripcion && (
-                              <p className="text-sm font-medium text-foreground mb-1.5">
-                                {comida.descripcion}
-                              </p>
-                            )}
+                            <p className="text-sm font-medium text-foreground mb-1.5">
+                              {comida.descripcion || comida.alimentos.map((a) => a.nombre).join(" con ")}
+                            </p>
                             <div className="space-y-0.5">
                               {comida.alimentos.map((a, i) => (
                                 <p key={i} className="text-xs text-muted-foreground">
