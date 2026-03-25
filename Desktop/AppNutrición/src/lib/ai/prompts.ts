@@ -1,6 +1,5 @@
 import type { MacroObjetivos } from "./types";
 
-// Tabla de referencia nutricional por 100g para que la IA calcule bien
 const TABLA_NUTRICIONAL = `TABLA NUTRICIONAL (por 100g): nombre|kcal|P|C|G
 Pollo|165|31|0|3.6
 Ternera|250|26|0|15
@@ -32,33 +31,40 @@ Nueces|654|15|14|65
 Aguacate|160|2|9|15
 Queso fresco|174|12|3|13`;
 
-export const SYSTEM_PROMPT = `Eres un nutricionista experto. Genera planes alimenticios semanales en JSON.
+export const SYSTEM_PROMPT = `Genera un plan alimenticio semanal en JSON.
 
-REGLAS CRÍTICAS DE MACROS:
-1. Usa SOLO la tabla nutricional proporcionada para calcular macros
-2. Los macros de cada alimento se calculan así: (cantidadGramos / 100) × valor_por_100g
-3. La suma de macros de TODAS las comidas de un día DEBE estar dentro de ±10% del objetivo
-4. Si el objetivo es 1400kcal, cada día debe tener entre 1260-1540kcal
-5. Distribuye las calorías: Desayuno ~20%, Media mañana ~10%, Almuerzo ~30%, Merienda ~10%, Cena ~25%, Recena ~5%
-6. Ajusta las cantidades en gramos para alcanzar los objetivos (no uses siempre cantidades redondas)
+REGLA PRINCIPAL: El total de calorías de cada día DEBE coincidir con el objetivo (±5%). Si el objetivo es 2000kcal, cada día debe sumar entre 1900 y 2100kcal. NO menos.
 
-FORMATO JSON obligatorio:
-{"nombre":"Plan semanal","dias":[{"dia":"LUNES","comidas":[{"tipo":"DESAYUNO","descripcion":"Nombre del plato","alimentos":[{"nombre":"Avena","cantidadGramos":60,"estimacion":{"calorias":233,"proteinas":10,"carbohidratos":40,"grasas":4}}]}]}]}
+Cómo calcular: calorías de un alimento = (cantidadGramos / 100) × kcal_por_100g_de_la_tabla
+
+Ejemplo para 2000kcal/día:
+- Desayuno: Avena 100g (389kcal) + Platano 150g (134kcal) + Leche 250g (105kcal) = 628kcal
+- Media mañana: Yogur 200g (118kcal) + Almendras 20g (116kcal) = 234kcal
+- Almuerzo: Pollo 200g (330kcal) + Arroz 150g (195kcal) + Tomate 100g (18kcal) = 543kcal
+- Merienda: Pan 60g (159kcal) + Aguacate 80g (128kcal) = 287kcal
+- Cena: Salmon 180g (374kcal) + Patatas 200g (154kcal) + Espinacas 100g (23kcal) = 551kcal
+- Recena: Leche 200g (84kcal)
+TOTAL: 628+234+543+287+551+84 = 2327kcal (ajustar cantidades para llegar a 2000)
+
+IMPORTANTE: Usa cantidades GRANDES si el objetivo es alto. 200g de pollo, 150g de arroz, 250g de leche. NO pongas 50g de todo.
+
+FORMATO JSON COMPACTO (sin espacios innecesarios):
+{"nombre":"Plan","dias":[{"dia":"LUNES","comidas":[{"tipo":"DESAYUNO","descripcion":"Avena con platano","alimentos":[{"nombre":"Avena","cantidadGramos":100,"estimacion":{"calorias":389,"proteinas":17,"carbohidratos":66,"grasas":7}}]}]}]}
+IMPORTANTE: Genera el JSON lo más compacto posible, sin saltos de línea ni indentación.
 
 Dias: LUNES,MARTES,MIERCOLES,JUEVES,VIERNES,SABADO,DOMINGO
 Comidas: DESAYUNO,MEDIA_MANANA,ALMUERZO,MERIENDA,CENA,RECENA
 
-CADA DIA DEBE SER DIFERENTE. No repitas los mismos platos entre días.
-Cada comida tiene 2-3 alimentos y una "descripcion" con el nombre del plato.
-Nombres de alimentos: max 2 palabras, usa nombres simples que existan en una base de datos española (Pollo, Arroz, Salmon, Lentejas, Avena, Yogur, etc).
-
-VERIFICACIÓN OBLIGATORIA antes de responder:
-1. Para CADA alimento, calcula: (cantidadGramos / 100) × kcal_por_100g = calorias_estimadas
-2. Suma las calorias de TODOS los alimentos del día
-3. Si la suma NO está entre el mínimo y máximo permitido, AJUSTA las cantidades hasta que encaje
-4. Los macros en "estimacion" DEBEN reflejar el cálculo correcto, NO valores inventados
-
-Solo responde con JSON válido, sin texto adicional.`;
+REGLAS:
+- 7 días TODOS DIFERENTES (salvo que las instrucciones del dietista digan lo contrario). Cada desayuno, almuerzo y cena debe usar proteínas DISTINTAS:
+  * Lunes: pollo, Martes: ternera, Miércoles: merluza, Jueves: atun, Viernes: salmon, Sábado: huevos+legumbres, Domingo: garbanzos
+  * Varía desayunos: avena, huevos, pan con tomate, yogur con fruta, tortitas...
+  * Varía meriendas: fruta+nueces, pan+aguacate, yogur+almendras, queso+pan...
+  * Si las INSTRUCCIONES DEL DIETISTA contradicen algo de arriba, las instrucciones tienen prioridad
+- 2-3 alimentos por comida con "descripcion" del plato
+- Nombres de alimentos: max 2 palabras simples (Pollo, Arroz, Salmon, Lentejas, Avena, Yogur, Pan, Pasta, Huevos, Ternera, Merluza, Atun, Patatas, Platano, Manzana, Fresa, Naranja, Tomate, Espinacas, Brocoli, Zanahoria, Almendras, Nueces, Aguacate, Leche, Aceite oliva, Queso fresco, Garbanzos)
+- Los macros en "estimacion" deben ser NÚMEROS ya calculados, NO fórmulas. Pon el resultado: 233 no (150/100)*155
+- Solo JSON válido, sin comentarios, sin fórmulas, sin texto adicional`;
 
 export function buildUserPrompt(
   paciente: {
@@ -78,47 +84,28 @@ export function buildUserPrompt(
   _alimentos: { nombre: string; calorias: number; proteinas: number; carbohidratos: number; grasas: number }[],
   _recetas: { nombre: string; calorias: number; proteinas: number; carbohidratos: number; grasas: number; porciones: number }[]
 ): string {
-  const tolerancia10 = Math.round(objetivos.calorias * 0.1);
-  const minKcal = objetivos.calorias - tolerancia10;
-  const maxKcal = objetivos.calorias + tolerancia10;
-
-  // Distribución sugerida por comida
-  const dist = {
-    desayuno: Math.round(objetivos.calorias * 0.20),
-    mediaMañana: Math.round(objetivos.calorias * 0.10),
-    almuerzo: Math.round(objetivos.calorias * 0.30),
-    merienda: Math.round(objetivos.calorias * 0.10),
-    cena: Math.round(objetivos.calorias * 0.25),
-    recena: Math.round(objetivos.calorias * 0.05),
-  };
+  const min = Math.round(objetivos.calorias * 0.95);
+  const max = Math.round(objetivos.calorias * 1.05);
 
   let prompt = `${TABLA_NUTRICIONAL}
 
-OBJETIVOS DIARIOS ESTRICTOS:
-- Calorías: ${objetivos.calorias} kcal/día (rango permitido: ${minKcal}-${maxKcal} kcal)
-- Proteínas: ${objetivos.proteinas}g (±15%)
-- Carbohidratos: ${objetivos.carbohidratos}g (±15%)
-- Grasas: ${objetivos.grasas}g (±15%)
+OBJETIVO OBLIGATORIO — cada día DEBE sumar entre ${min} y ${max} kcal:
+- Calorías: ${objetivos.calorias} kcal/día
+- Proteínas: ~${objetivos.proteinas}g
+- Carbohidratos: ~${objetivos.carbohidratos}g
+- Grasas: ~${objetivos.grasas}g
 
-DISTRIBUCIÓN POR COMIDA:
-- Desayuno: ~${dist.desayuno} kcal
-- Media mañana: ~${dist.mediaMañana} kcal
-- Almuerzo: ~${dist.almuerzo} kcal
-- Merienda: ~${dist.merienda} kcal
-- Cena: ~${dist.cena} kcal
-- Recena: ~${dist.recena} kcal
-
-PACIENTE: ${paciente.sexo || "No especificado"}, ${paciente.peso ? paciente.peso + "kg" : "peso no especificado"}
-Objetivo: ${paciente.objetivo}${paciente.objetivoDetalle ? " - " + paciente.objetivoDetalle : ""}
-Alergias: ${paciente.alergias.length > 0 ? paciente.alergias.join(", ") : "ninguna"}
-Intolerancias: ${paciente.intolerancias.length > 0 ? paciente.intolerancias.join(", ") : "ninguna"}
-Preferencias: ${paciente.preferencias.length > 0 ? paciente.preferencias.join(", ") : "ninguna"}`;
+PACIENTE: ${paciente.sexo || ""} ${paciente.peso ? paciente.peso + "kg" : ""}
+Objetivo: ${paciente.objetivo}
+Alergias: ${paciente.alergias.join(", ") || "ninguna"}
+Intolerancias: ${paciente.intolerancias.join(", ") || "ninguna"}
+Preferencias: ${paciente.preferencias.join(", ") || "ninguna"}`;
 
   if (instrucciones.trim()) {
-    prompt += `\n\nINSTRUCCIONES DEL DIETISTA (prioridad máxima):\n${instrucciones}`;
+    prompt += `\n\nINSTRUCCIONES DEL DIETISTA:\n${instrucciones}`;
   }
 
-  prompt += `\n\nIMPORTANTE: Calcula los macros de cada alimento usando la tabla (cantidadGramos/100 × valor). Verifica que la suma diaria está entre ${minKcal}-${maxKcal} kcal ANTES de responder. Ajusta las cantidades en gramos si es necesario.`;
+  prompt += `\n\nRECUERDA: Cada día debe sumar ${min}-${max} kcal. Usa cantidades grandes si hace falta (200g pollo, 150g arroz, 250g leche). Verifica la suma antes de responder.`;
 
   return prompt;
 }

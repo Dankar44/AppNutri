@@ -66,6 +66,51 @@ export async function generarPlanIA(
       recetas
     );
 
+    // Recalcular macros de la preview usando datos REALES de la DB
+    for (const dia of plan.dias) {
+      for (const comida of dia.comidas) {
+        for (const a of comida.alimentos) {
+          const alimentoId = await findAlimentoMasParecido(dietista.id, a.nombre);
+          if (alimentoId) {
+            const real = await prisma.alimento.findUnique({
+              where: { id: alimentoId },
+              select: { nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true },
+            });
+            if (real) {
+              const factor = a.cantidadGramos / 100;
+              a.nombre = real.nombre; // Usar nombre real de la DB
+              a.estimacion = {
+                calorias: Math.round(real.calorias * factor),
+                proteinas: Math.round(real.proteinas * factor * 10) / 10,
+                carbohidratos: Math.round(real.carbohidratos * factor * 10) / 10,
+                grasas: Math.round(real.grasas * factor * 10) / 10,
+              };
+            }
+          }
+        }
+      }
+    }
+
+    // Ajustar cantidades para que el total diario se acerque al objetivo
+    for (const dia of plan.dias) {
+      const totalDia = dia.comidas.reduce((sum, c) =>
+        sum + c.alimentos.reduce((s, a) => s + (a.estimacion?.calorias || 0), 0), 0);
+      if (totalDia > 0 && Math.abs(totalDia - objetivos.calorias) > objetivos.calorias * 0.1) {
+        const ratio = objetivos.calorias / totalDia;
+        for (const comida of dia.comidas) {
+          for (const a of comida.alimentos) {
+            a.cantidadGramos = Math.round(a.cantidadGramos * ratio);
+            if (a.estimacion) {
+              a.estimacion.calorias = Math.round(a.estimacion.calorias * ratio);
+              a.estimacion.proteinas = Math.round(a.estimacion.proteinas * ratio * 10) / 10;
+              a.estimacion.carbohidratos = Math.round(a.estimacion.carbohidratos * ratio * 10) / 10;
+              a.estimacion.grasas = Math.round(a.estimacion.grasas * ratio * 10) / 10;
+            }
+          }
+        }
+      }
+    }
+
     const generacion = await prisma.generacionIA.create({
       data: {
         dietistaId: dietista.id,
@@ -93,62 +138,64 @@ const COMIDAS_MAP: Record<string, TipoComida> = {
 };
 
 // Busca el alimento más parecido en la DB. NUNCA crea nuevos.
+// Prioriza: nombre exacto > nombre que empieza igual > primera palabra exacta
 async function findAlimentoMasParecido(
   dietistaId: string,
   nombre: string,
 ): Promise<string | null> {
   const nombreNorm = normalizarNombreAlimento(nombre);
+  const or = [{ dietistaId }, { dietistaId: null }];
 
-  // 1. Buscar exacto
+  // 1. Exacto
   const exacto = await prisma.alimento.findFirst({
-    where: {
-      OR: [{ dietistaId }, { dietistaId: null }],
-      nombre: { equals: nombreNorm, mode: "insensitive" },
-    },
+    where: { OR: or, nombre: { equals: nombreNorm, mode: "insensitive" } },
     select: { id: true },
   });
   if (exacto) return exacto.id;
 
-  // 2. Buscar si el nombre de la DB contiene lo que buscamos
-  const parcial = await prisma.alimento.findFirst({
-    where: {
-      OR: [{ dietistaId }, { dietistaId: null }],
-      nombre: { contains: nombreNorm, mode: "insensitive" },
-    },
-    select: { id: true },
-  });
-  if (parcial) return parcial.id;
+  // 2. Buscar con nombre + variantes comunes
+  // Ej: "Salmon" → buscar "Salmon", "Salmón" (con tilde)
+  const variantes = [nombreNorm];
+  // Añadir variante sin/con tilde básica
+  const sinTildes = nombreNorm.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (sinTildes !== nombreNorm) variantes.push(sinTildes);
 
-  // 3. Buscar si lo que buscamos contiene el nombre de la DB (inverso)
-  // Ej: IA dice "Pechuga de pollo" → buscar alimentos cuyo nombre esté contenido
-  const palabras = nombreNorm.split(" ").filter((p) => p.length > 3);
-
-  // Buscar cada palabra significativa
-  for (const palabra of palabras) {
-    const porPalabra = await prisma.alimento.findFirst({
-      where: {
-        OR: [{ dietistaId }, { dietistaId: null }],
-        nombre: { contains: palabra, mode: "insensitive" },
-      },
-      select: { id: true },
+  for (const v of variantes) {
+    // Buscar TODOS los que empiezan así y coger el de nombre más corto (más parecido)
+    const matches = await prisma.alimento.findMany({
+      where: { OR: or, nombre: { startsWith: v, mode: "insensitive" } },
+      select: { id: true, nombre: true },
+      take: 10,
     });
-    if (porPalabra) return porPalabra.id;
+    if (matches.length > 0) {
+      // Priorizar el nombre más corto (Salmon > Salmonete, Patatas > Patatas Fritas)
+      matches.sort((a, b) => a.nombre.length - b.nombre.length);
+      return matches[0].id;
+    }
   }
 
-  // 4. Último intento: buscar solo la primera palabra (ej: "Avena" de "Avena con leche")
-  const primeraPalabra = nombreNorm.split(" ")[0];
-  if (primeraPalabra && primeraPalabra.length > 2) {
+  // 3. Buscar solo la primera palabra (ej: "Avena copos" → "Avena")
+  const primera = nombreNorm.split(" ")[0];
+  if (primera && primera.length >= 4) {
+    // Buscar EXACTO la primera palabra para evitar "Pan" → "Panga"
     const porPrimera = await prisma.alimento.findFirst({
-      where: {
-        OR: [{ dietistaId }, { dietistaId: null }],
-        nombre: { contains: primeraPalabra, mode: "insensitive" },
-      },
+      where: { OR: or, nombre: { equals: primera, mode: "insensitive" } },
       select: { id: true },
     });
     if (porPrimera) return porPrimera.id;
+
+    // Buscar que empiece por la primera palabra, priorizar nombre más corto
+    const porPrimeraStart = await prisma.alimento.findMany({
+      where: { OR: or, nombre: { startsWith: primera, mode: "insensitive" } },
+      select: { id: true, nombre: true },
+      take: 10,
+    });
+    if (porPrimeraStart.length > 0) {
+      porPrimeraStart.sort((a, b) => a.nombre.length - b.nombre.length);
+      return porPrimeraStart[0].id;
+    }
   }
 
-  // No encontrado — devolver null (se omitirá del plan)
   return null;
 }
 

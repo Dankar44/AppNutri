@@ -2,13 +2,14 @@ import OpenAI from "openai";
 
 // Groq usa la misma API que OpenAI, solo cambia la baseURL
 const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
-const GROQ_MODEL = "llama-3.3-70b-versatile"; // bueno siguiendo instrucciones estructuradas
+const GROQ_MODEL = "llama-3.3-70b-versatile";
 
 function getApiKeys(): string[] {
   const keys: string[] = [];
-  if (process.env.GROQ_API_KEY_1) keys.push(process.env.GROQ_API_KEY_1);
-  if (process.env.GROQ_API_KEY_2) keys.push(process.env.GROQ_API_KEY_2);
-  // Fallback a OPENAI_API_KEY si existe (compatibilidad)
+  for (let i = 1; i <= 10; i++) {
+    const key = process.env[`GROQ_API_KEY_${i}`];
+    if (key) keys.push(key);
+  }
   if (keys.length === 0 && process.env.OPENAI_API_KEY) {
     keys.push(process.env.OPENAI_API_KEY);
   }
