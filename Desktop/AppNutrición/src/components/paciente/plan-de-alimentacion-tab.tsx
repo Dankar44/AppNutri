@@ -245,7 +245,7 @@ export function PlanDeAlimentacionTab({
       <div>
         <div className="flex flex-wrap items-center justify-between gap-4 mb-3">
           <div className="flex items-center gap-3 min-w-0">
-            <h3 className="text-base font-semibold whitespace-nowrap">Dietas actuales:</h3>
+            <h3 className="text-base font-semibold whitespace-nowrap">Dietas del paciente:</h3>
 
             <div className="w-[360px]">
               <div ref={planSelectWrapRef} className="relative">
@@ -317,8 +317,8 @@ export function PlanDeAlimentacionTab({
       </div>
 
       <div className="flex items-center gap-2">
-        <div className="flex-1 bg-primary/5 border border-primary/10 rounded-xl px-3 py-2.5 flex items-center justify-center min-w-0">
-          <div className="text-base font-semibold text-muted-foreground truncate text-center">
+        <div className="flex-1 bg-sidebar-accent rounded-xl px-3 py-2.5 flex items-center justify-center min-w-0">
+          <div className="text-base font-semibold text-sidebar-foreground truncate text-center">
             {diaVista ? DIA_LABELS[diaVista.dia] || diaVista.dia : "—"}
           </div>
         </div>
@@ -412,10 +412,6 @@ export function PlanDeAlimentacionTab({
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="tabular-nums font-medium">
-                    {diaVista ? DIA_LABELS[diaVista.dia] || diaVista.dia : "—"}
-                  </span>
-
                   <button
                     type="button"
                     onClick={() => setDayIndex((i) => Math.max(0, i - 1))}
@@ -455,6 +451,7 @@ export function PlanDeAlimentacionTab({
                   <PlanEditor
                     showHeader={false}
                     compactHeader
+                    showDayHeader={false}
                     planId={selectedPlan.id}
                     planNombre={selectedPlan.nombre}
                     dias={[diaVista as any]}

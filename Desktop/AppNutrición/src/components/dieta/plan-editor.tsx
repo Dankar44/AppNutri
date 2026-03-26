@@ -70,6 +70,7 @@ interface PlanEditorProps {
   };
   showHeader?: boolean;
   compactHeader?: boolean;
+  showDayHeader?: boolean;
 }
 
 interface DragItemData {
@@ -89,6 +90,7 @@ export function PlanEditor({
   objetivos,
   showHeader = true,
   compactHeader = false,
+  showDayHeader = true,
 }: PlanEditorProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -197,6 +199,7 @@ export function PlanEditor({
       }),
     })),
   }));
+  const isSingleDayView = diasData.length <= 1;
 
   const dragMacros = activeDragItem
     ? calcularMacrosPorcion(
@@ -229,14 +232,27 @@ export function PlanEditor({
           </div>
         )}
 
-        <div className="overflow-x-auto pb-4 scroll-smooth snap-x snap-mandatory">
-          <div className="flex gap-3 w-[calc(((100%+0.75rem)/1)*7-0.75rem)] md:w-[calc(((100%+0.75rem)/2)*7-0.75rem)] lg:w-[calc(((100%+0.75rem)/3)*7-0.75rem)]">
+        <div
+          className={
+            isSingleDayView
+              ? "pb-4"
+              : "overflow-x-auto pb-4 scroll-smooth snap-x snap-mandatory"
+          }
+        >
+          <div
+            className={
+              isSingleDayView
+                ? "flex gap-3 w-full"
+                : "flex gap-3 w-[calc(((100%+0.75rem)/1)*7-0.75rem)] md:w-[calc(((100%+0.75rem)/2)*7-0.75rem)] lg:w-[calc(((100%+0.75rem)/3)*7-0.75rem)]"
+            }
+          >
             {diasData.map((dia) => (
               <DiaColumna
                 key={dia.dia}
                 dia={dia.dia}
                 comidas={dia.comidas}
                 compactHeader={compactHeader}
+                showDayHeader={showDayHeader}
                 objetivos={{
                   calorias: objetivos.calorias ?? undefined,
                   proteinas: objetivos.proteinas ?? undefined,

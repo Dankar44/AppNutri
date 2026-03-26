@@ -19,6 +19,8 @@ import { PacienteActions } from "@/app/(dashboard)/pacientes/[id]/paciente-actio
 import { FICHA_TABS, type PestanaFicha } from "@/lib/paciente-ficha-pestanas";
 import { PlanificacionPorDefectoTab } from "./planificacion-por-defecto-tab";
 import { PlanDeAlimentacionTab } from "./plan-de-alimentacion-tab";
+import { PacienteFichaGeneralTab } from "./paciente-ficha-general-tab";
+import type { HorarioEntry } from "@/app/actions/pacientes";
 
 export type { PestanaFicha };
 
@@ -30,6 +32,8 @@ type PacienteSerializado = {
   email: string | null;
   fechaNacimiento: string | null;
   sexo: string | null;
+  telefono: string | null;
+  objetivo: string | null;
   activo: boolean;
   peso: number | null;
   altura: number | null;
@@ -40,6 +44,7 @@ type PacienteSerializado = {
   medicamentos: string[];
   alergias: string[];
   intolerancias: string[];
+  suplementos: string[];
   fichaInformacion: unknown;
 };
 
@@ -106,11 +111,17 @@ export function PacienteFichaClient({
   pestana,
   medidas = [],
   planes = [],
+  horario = [],
+  recomendaciones = "",
+  planesResumen = [],
 }: {
   paciente: PacienteSerializado;
   pestana: PestanaFicha;
   medidas?: MedidaSerializada[];
   planes?: PlanDetalle[];
+  horario?: HorarioEntry[];
+  recomendaciones?: string;
+  planesResumen?: PlanResumen[];
 }) {
   const nombre = capitalizarNombre(paciente.nombre);
   const apellidos = capitalizarNombre(paciente.apellidos);
@@ -189,6 +200,30 @@ export function PacienteFichaClient({
         ))}
       </nav>
 
+      {pestana === "general" && (
+        <PacienteFichaGeneralTab
+          paciente={{
+            id: paciente.id,
+            email: paciente.email,
+            telefono: paciente.telefono,
+            fechaNacimiento: paciente.fechaNacimiento,
+            sexo: paciente.sexo,
+            peso: paciente.peso,
+            altura: paciente.altura,
+            objetivo: paciente.objetivo,
+            objetivoDetalle: paciente.objetivoDetalle,
+            alergias: paciente.alergias,
+            intolerancias: paciente.intolerancias,
+            patologias: paciente.patologias,
+            medicamentos: paciente.medicamentos,
+            suplementos: paciente.suplementos,
+          }}
+          horario={horario}
+          recomendaciones={recomendaciones}
+          planes={planesResumen}
+        />
+      )}
+
       {pestana === "informacion" && (
         <PacienteFichaInformacionTab
           pacienteId={paciente.id}
@@ -249,7 +284,8 @@ export function PacienteFichaClient({
         </div>
       )}
 
-      {pestana !== "informacion" &&
+      {pestana !== "general" &&
+        pestana !== "informacion" &&
         pestana !== "mediciones" &&
         pestana !== "planificacion" &&
         pestana !== "plan-alimentacion" &&

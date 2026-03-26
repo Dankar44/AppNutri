@@ -7,6 +7,7 @@ import { parsePestanaFicha } from "@/lib/paciente-ficha-pestanas";
 import { PacienteFichaClient } from "@/components/paciente/paciente-ficha-client";
 import { getPlanesPaciente } from "@/app/actions/planes";
 import { getPlan } from "@/app/actions/planes";
+import { getHorarioPaciente, getRecomendaciones } from "@/app/actions/pacientes";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -26,6 +27,12 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
   const medidas = ["mediciones", "planificacion", "plan-alimentacion"].includes(pestana)
     ? JSON.parse(JSON.stringify(await getMedidas(id)))
     : [];
+
+  const [horario, recomendaciones, planesResumen] = await Promise.all([
+    getHorarioPaciente(id),
+    getRecomendaciones(id),
+    getPlanesPaciente(id),
+  ]);
 
   const planes =
     pestana === "plan-alimentacion"
@@ -112,6 +119,9 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
         pestana={pestana}
         medidas={medidas}
         planes={planes}
+        horario={JSON.parse(JSON.stringify(horario))}
+        recomendaciones={recomendaciones}
+        planesResumen={JSON.parse(JSON.stringify(planesResumen))}
       />
     </div>
   );

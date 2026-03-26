@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, UtensilsCrossed, BookCopy, CalendarDays, Flame } from "lucide-react";
+import { Plus, UtensilsCrossed, BookCopy } from "lucide-react";
 import { getPlanes } from "@/app/actions/planes";
 import { getPlantillas } from "@/app/actions/plantillas";
 import { formatDate, capitalizarNombre } from "@/lib/utils";
@@ -19,6 +19,7 @@ export default async function DietasPage({ searchParams }: Props) {
 
   // Agrupar planes por paciente
   const porPaciente = new Map<string, {
+    pacienteId: string;
     paciente: { nombre: string; apellidos: string; fotoUrl: string | null };
     planes: typeof planes;
   }>();
@@ -26,7 +27,11 @@ export default async function DietasPage({ searchParams }: Props) {
   for (const plan of planes) {
     const key = `${plan.pacienteId}`;
     if (!porPaciente.has(key)) {
-      porPaciente.set(key, { paciente: plan.paciente, planes: [] });
+      porPaciente.set(key, {
+        pacienteId: plan.pacienteId,
+        paciente: plan.paciente,
+        planes: [],
+      });
     }
     porPaciente.get(key)!.planes.push(plan);
   }
@@ -105,40 +110,50 @@ export default async function DietasPage({ searchParams }: Props) {
                   <h2 className="font-semibold truncate">
                     {capitalizarNombre(grupo.paciente.nombre)} {capitalizarNombre(grupo.paciente.apellidos)}
                   </h2>
-                  <p className="text-xs text-muted-foreground">
-                    {grupo.planes.length} plan{grupo.planes.length !== 1 ? "es" : ""}
-                  </p>
+                  <div className="mt-0.5 flex items-center gap-2 text-xs">
+                    <p className="text-muted-foreground">
+                      {grupo.planes.length} plan{grupo.planes.length !== 1 ? "es" : ""}
+                    </p>
+                    {grupo.planes.length > 1 && (
+                      <Link
+                        href={`/pacientes/${grupo.pacienteId}?pestana=plan-alimentacion`}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        Ver historial
+                      </Link>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* Planes del paciente */}
+              {/* Mostrar solo la receta (plan) activa por paciente */}
               <div className="divide-y divide-border">
-                {grupo.planes.map((plan) => (
-                  <Link
-                    key={plan.id}
-                    href={`/dietas/${plan.id}`}
-                    className="flex items-center justify-between gap-3 px-5 py-3.5 hover:bg-muted/40 transition-colors group"
-                  >
-                    <div className="min-w-0">
-                      <h3 className="font-medium truncate group-hover:text-primary transition-colors">
-                        {plan.nombre}
-                      </h3>
-                      <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <CalendarDays className="w-3 h-3" />
-                          {formatDate(plan.createdAt)}
-                        </span>
-                        {plan.caloriasObjetivo && (
-                          <span className="flex items-center gap-1 text-amber-600">
-                            <Flame className="w-3 h-3" />
-                            {plan.caloriasObjetivo} kcal
-                          </span>
-                        )}
+                {(() => {
+                  const planActivo =
+                    grupo.planes.find((plan) => plan.activo) ?? grupo.planes[0];
+
+                  if (!planActivo) return null;
+
+                  return (
+                    <Link
+                      href={`/dietas/${planActivo.id}`}
+                      className="flex items-center justify-between gap-3 px-5 py-3.5 hover:bg-muted/40 transition-colors group"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          Receta activa
+                        </p>
+                        <h3 className="mt-1 font-medium truncate group-hover:text-primary transition-colors">
+                          {planActivo.nombre}
+                        </h3>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {formatDate(planActivo.createdAt)}
+                        </p>
                       </div>
-                    </div>
-                    <span className="text-muted-foreground group-hover:text-primary transition-colors text-sm">&rsaquo;</span>
-                  </Link>
-                ))}
+                      <span className="text-muted-foreground group-hover:text-primary transition-colors text-sm">&rsaquo;</span>
+                    </Link>
+                  );
+                })()}
               </div>
             </section>
           ))}

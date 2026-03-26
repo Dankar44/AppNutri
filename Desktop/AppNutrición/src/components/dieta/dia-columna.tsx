@@ -45,6 +45,7 @@ interface DiaColumnaProps {
   onRemoveAlimento: (alimentoEnComidaId: string) => void;
   onCantidadChange: (alimentoEnComidaId: string, cantidad: number) => void;
   compactHeader?: boolean;
+  showDayHeader?: boolean;
 }
 
 export function DiaColumna({
@@ -55,6 +56,7 @@ export function DiaColumna({
   onRemoveAlimento,
   onCantidadChange,
   compactHeader = false,
+  showDayHeader = true,
 }: DiaColumnaProps) {
   const todosAlimentos = comidas.flatMap((c) => c.alimentos);
   const macrosDia = sumarMacros(
@@ -79,9 +81,11 @@ export function DiaColumna({
 
   return (
     <div className="flex-1 min-w-0 flex flex-col snap-start">
-      <div className="text-center font-semibold text-sm py-2 border-b border-border bg-muted/50 rounded-t-lg sticky top-0">
-        {DIA_LABELS[dia] || dia}
-      </div>
+      {showDayHeader && (
+        <div className="text-center font-semibold text-sm py-2 border-b border-border bg-muted/50 rounded-t-lg sticky top-0">
+          {DIA_LABELS[dia] || dia}
+        </div>
+      )}
       <div className="flex-1 p-2 space-y-3 border-x border-border">
         {comidas.map((comida) => (
           <ComidaSlot

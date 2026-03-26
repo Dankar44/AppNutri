@@ -1,6 +1,7 @@
 /** Pestañas de la ficha del paciente (módulo server-safe; no "use client"). */
 
 export const FICHA_TABS = [
+  { id: "general", label: "General" },
   { id: "informacion", label: "Información" },
   { id: "mediciones", label: "Mediciones" },
   { id: "planificacion", label: "Planificación" },
@@ -18,5 +19,5 @@ const PESTANA_SET = new Set<string>(FICHA_TABS.map((t) => t.id));
 export function parsePestanaFicha(raw: string | undefined): PestanaFicha {
   if (raw === "acompanamiento") return "seguimiento";
   if (raw && PESTANA_SET.has(raw)) return raw as PestanaFicha;
-  return "informacion";
+  return "general";
 }
