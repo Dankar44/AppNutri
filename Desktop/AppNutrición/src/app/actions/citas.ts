@@ -80,7 +80,7 @@ export async function getCitasSemana(fechaInicio: string) {
       dietistaId: dietista.id,
       fechaHora: { gte: inicio, lt: fin },
     },
-    include: { paciente: { select: { nombre: true, apellidos: true } } },
+    include: { paciente: { select: { id: true, nombre: true, apellidos: true } } },
     orderBy: { fechaHora: "asc" },
   });
 }
@@ -97,7 +97,7 @@ export async function getCitasMes(anio: number, mes: number) {
       dietistaId: dietista.id,
       fechaHora: { gte: inicio, lt: fin },
     },
-    include: { paciente: { select: { nombre: true, apellidos: true } } },
+    include: { paciente: { select: { id: true, nombre: true, apellidos: true } } },
     orderBy: { fechaHora: "asc" },
   });
 }
@@ -118,6 +118,54 @@ export async function getCitasHoy() {
     },
     include: { paciente: { select: { nombre: true, apellidos: true } } },
     orderBy: { fechaHora: "asc" },
+  });
+}
+
+/** Citas de un día concreto (fecha local YYYY-MM-DD). */
+export async function getCitasDia(fechaYYYYMMDD: string) {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return [];
+
+  const [y, m, d] = fechaYYYYMMDD.split("-").map(Number);
+  if (!y || !m || !d) return [];
+
+  const inicio = new Date(y, m - 1, d, 0, 0, 0, 0);
+  const fin = new Date(y, m - 1, d + 1, 0, 0, 0, 0);
+
+  return prisma.cita.findMany({
+    where: {
+      dietistaId: dietista.id,
+      fechaHora: { gte: inicio, lt: fin },
+    },
+    include: {
+      paciente: {
+        select: { id: true, nombre: true, apellidos: true, fotoUrl: true },
+      },
+    },
+    orderBy: { fechaHora: "asc" },
+  });
+}
+
+/** Citas pendientes o confirmadas desde ahora en adelante (para dashboard). */
+export async function getProximasCitas(take = 8) {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return [];
+
+  const ahora = new Date();
+
+  return prisma.cita.findMany({
+    where: {
+      dietistaId: dietista.id,
+      fechaHora: { gte: ahora },
+      estado: { in: [EstadoCita.PENDIENTE, EstadoCita.CONFIRMADA] },
+    },
+    include: {
+      paciente: {
+        select: { id: true, nombre: true, apellidos: true, fotoUrl: true },
+      },
+    },
+    orderBy: { fechaHora: "asc" },
+    take,
   });
 }
 

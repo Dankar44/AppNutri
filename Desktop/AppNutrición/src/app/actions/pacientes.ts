@@ -4,7 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { ObjetivoPaciente, Sexo } from "@/generated/prisma/client";
+import { ObjetivoPaciente, Prisma, Sexo } from "@/generated/prisma/client";
+import type { FichaInformacionData } from "@/lib/ficha-informacion-types";
 
 export interface PacienteFormData {
   nombre: string;
@@ -297,4 +298,37 @@ export async function guardarRecomendaciones(pacienteId: string, texto: string) 
     `UPDATE pacientes SET recomendaciones = $1 WHERE id = $2 AND "dietistaId" = $3`,
     sanitized, pacienteId, dietista.id
   );
+}
+
+function sanitizeFichaInformacionDeep(obj: unknown): unknown {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj === "string") return obj.trim().slice(0, 4000);
+  if (Array.isArray(obj)) return {};
+  if (typeof obj !== "object") return {};
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+    if (typeof v === "string") out[k] = v.trim().slice(0, 4000);
+    else if (v !== null && typeof v === "object" && !Array.isArray(v))
+      out[k] = sanitizeFichaInformacionDeep(v);
+  }
+  return out;
+}
+
+export async function guardarFichaInformacionPaciente(
+  pacienteId: string,
+  data: FichaInformacionData
+) {
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error("No autorizado");
+
+  const cleaned = sanitizeFichaInformacionDeep(data) as FichaInformacionData;
+
+  await prisma.paciente.update({
+    where: { id: pacienteId, dietistaId: dietista.id },
+    data: {
+      fichaInformacion: cleaned as Prisma.InputJsonValue,
+    },
+  });
+
+  revalidatePath(`/pacientes/${pacienteId}`);
 }

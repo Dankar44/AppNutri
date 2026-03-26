@@ -354,6 +354,36 @@ export async function getPlanesPaciente(pacienteId: string) {
   });
 }
 
+/**
+ * Marca un plan como "actual" (activo) para el paciente actual,
+ * desactivando el resto de planes del mismo paciente.
+ */
+export async function asignarPlanComoActual(planId: string) {
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error("No autorizado");
+
+  const plan = await prisma.planAlimenticio.findUnique({
+    where: { id: planId },
+    select: { id: true, pacienteId: true, dietistaId: true },
+  });
+
+  if (!plan || plan.dietistaId !== dietista.id) throw new Error("No autorizado");
+
+  await prisma.$transaction([
+    prisma.planAlimenticio.updateMany({
+      where: { dietistaId: dietista.id, pacienteId: plan.pacienteId, activo: true },
+      data: { activo: false },
+    }),
+    prisma.planAlimenticio.update({
+      where: { id: planId, dietistaId: dietista.id },
+      data: { activo: true },
+    }),
+  ]);
+
+  revalidatePath(`/pacientes/${plan.pacienteId}`);
+  revalidatePath(`/pacientes/${plan.pacienteId}?pestana=plan-alimentacion`);
+}
+
 export async function guardarComoPlantilla(planId: string, nombre: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");

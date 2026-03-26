@@ -168,6 +168,14 @@ model Paciente {
   preferencias        String[]
   notas               String?
 
+  /// Formulario extendido tipo ficha clínica (pestaña Información)
+  fichaInformacion    Json?
+
+  /// Horario de paciente (guardado como JSONB)
+  horario             Json?
+  /// Recomendaciones clínicas (guardadas como texto)
+  recomendaciones     String?
+
   activo              Boolean           @default(true)
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt

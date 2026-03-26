@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, CalendarDays, Calendar } from "lucide-react"
 import { AgendaSemanal } from "./agenda-semanal";
 import { AgendaMensual } from "./agenda-mensual";
 import { AgendaDiaDetalle } from "./agenda-dia-detalle";
+import { AgendaVistaDia } from "./agenda-vista-dia";
 
 interface Cita {
   id: string;
@@ -14,11 +15,11 @@ interface Cita {
   motivo: string | null;
   estado: string;
   notas: string | null;
-  paciente: { nombre: string; apellidos: string };
+  paciente: { id: string; nombre: string; apellidos: string };
 }
 
 interface Props {
-  vista: "semana" | "mes";
+  vista: "dia" | "semana" | "mes";
   fechaInicio: string;
   citas: Cita[];
 }
@@ -36,9 +37,10 @@ function getLunesDeSemana(d: Date): Date {
 
 export function AgendaClient({ vista, fechaInicio, citas }: Props) {
   const router = useRouter();
-  const [diaSeleccionado, setDiaSeleccionado] = useState<string | null>(
-    vista === "semana" ? formatLocalDate(new Date()) : null
-  );
+  const [diaSeleccionado, setDiaSeleccionado] = useState<string | null>(() => {
+    if (vista === "semana") return formatLocalDate(new Date());
+    return null;
+  });
   const fecha = new Date(fechaInicio + "T12:00:00");
 
   function navegar(dir: "anterior" | "hoy" | "siguiente") {
@@ -46,37 +48,69 @@ export function AgendaClient({ vista, fechaInicio, citas }: Props) {
 
     if (dir === "hoy") {
       nuevaFecha = new Date();
+    } else if (vista === "dia") {
+      nuevaFecha = new Date(fecha);
+      nuevaFecha.setDate(
+        nuevaFecha.getDate() + (dir === "siguiente" ? 1 : -1)
+      );
     } else if (vista === "semana") {
       nuevaFecha = new Date(fecha);
       nuevaFecha.setDate(nuevaFecha.getDate() + (dir === "siguiente" ? 7 : -7));
     } else {
       nuevaFecha = new Date(fecha);
-      nuevaFecha.setMonth(nuevaFecha.getMonth() + (dir === "siguiente" ? 1 : -1));
+      nuevaFecha.setMonth(
+        nuevaFecha.getMonth() + (dir === "siguiente" ? 1 : -1)
+      );
     }
 
     setDiaSeleccionado(null);
-    router.push(`/agenda?vista=${vista}&fecha=${formatLocalDate(nuevaFecha)}`);
+    let fPush = nuevaFecha;
+    if (vista === "semana") {
+      fPush = getLunesDeSemana(nuevaFecha);
+    } else if (vista === "mes") {
+      fPush = new Date(nuevaFecha.getFullYear(), nuevaFecha.getMonth(), 1);
+    }
+    router.push(`/agenda?vista=${vista}&fecha=${formatLocalDate(fPush)}`);
   }
 
-  function cambiarVista(v: "semana" | "mes") {
+  function cambiarVista(v: "dia" | "semana" | "mes") {
     setDiaSeleccionado(null);
-    router.push(`/agenda?vista=${v}&fecha=${formatLocalDate(fecha)}`);
+    const base = new Date(fechaInicio + "T12:00:00");
+    let f: Date;
+    if (v === "semana") {
+      f = getLunesDeSemana(base);
+    } else if (v === "mes") {
+      f = new Date(base.getFullYear(), base.getMonth(), 1);
+    } else {
+      f = base;
+    }
+    router.push(`/agenda?vista=${v}&fecha=${formatLocalDate(f)}`);
   }
 
-  // Título según vista
   let titulo: string;
-  if (vista === "semana") {
+  if (vista === "dia") {
+    titulo = fecha.toLocaleDateString("es-ES", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+    titulo = titulo.charAt(0).toUpperCase() + titulo.slice(1);
+  } else if (vista === "semana") {
     const lunes = getLunesDeSemana(fecha);
     const domingo = new Date(lunes);
     domingo.setDate(domingo.getDate() + 6);
-    const fmt = (d: Date) => d.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
-    titulo = `${fmt(lunes)} - ${fmt(domingo)}`;
+    const fmt = (d: Date) =>
+      d.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+    titulo = `${fmt(lunes)} – ${fmt(domingo)}`;
   } else {
-    titulo = fecha.toLocaleDateString("es-ES", { month: "long", year: "numeric" });
+    titulo = fecha.toLocaleDateString("es-ES", {
+      month: "long",
+      year: "numeric",
+    });
     titulo = titulo.charAt(0).toUpperCase() + titulo.slice(1);
   }
 
-  // Citas del día seleccionado
   const citasDia = diaSeleccionado
     ? citas.filter((c) => {
         const d = new Date(c.fechaHora);
@@ -85,62 +119,91 @@ export function AgendaClient({ vista, fechaInicio, citas }: Props) {
     : [];
 
   return (
-    <>
-      {/* Controles */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => navegar("anterior")}
-            className="p-1.5 rounded-lg border border-border hover:bg-muted transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => navegar("hoy")}
-            className="px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
-          >
-            Hoy
-          </button>
-          <button
-            onClick={() => navegar("siguiente")}
-            className="p-1.5 rounded-lg border border-border hover:bg-muted transition-colors"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-          <span className="text-sm font-medium ml-2">{titulo}</span>
+    <div className="min-w-0">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between mb-4">
+        <p className="text-sm font-semibold text-foreground lg:min-w-[12rem] lg:shrink-0">
+          {titulo}
+        </p>
+
+        <div className="flex flex-wrap items-center justify-between gap-2 sm:justify-center lg:flex-1">
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => navegar("anterior")}
+              className="p-1.5 rounded-lg border border-border hover:bg-muted transition-colors"
+              aria-label="Anterior"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => navegar("hoy")}
+              className="px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
+            >
+              Hoy
+            </button>
+            <button
+              type="button"
+              onClick={() => navegar("siguiente")}
+              className="p-1.5 rounded-lg border border-border hover:bg-muted transition-colors"
+              aria-label="Siguiente"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
-        <div className="flex rounded-lg border border-border overflow-hidden">
+        <div className="flex rounded-lg border border-border overflow-hidden w-full sm:w-auto lg:shrink-0">
           <button
-            onClick={() => cambiarVista("semana")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
-              vista === "semana" ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+            type="button"
+            onClick={() => cambiarVista("dia")}
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
+              vista === "dia"
+                ? "bg-primary text-primary-foreground"
+                : "hover:bg-muted"
             }`}
           >
-            <CalendarDays className="w-4 h-4" />
+            Día
+          </button>
+          <button
+            type="button"
+            onClick={() => cambiarVista("semana")}
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
+              vista === "semana"
+                ? "bg-primary text-primary-foreground"
+                : "hover:bg-muted"
+            }`}
+          >
+            <CalendarDays className="w-4 h-4 hidden sm:inline" />
             Semana
           </button>
           <button
+            type="button"
             onClick={() => cambiarVista("mes")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
-              vista === "mes" ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
+              vista === "mes"
+                ? "bg-primary text-primary-foreground"
+                : "hover:bg-muted"
             }`}
           >
-            <Calendar className="w-4 h-4" />
+            <Calendar className="w-4 h-4 hidden sm:inline" />
             Mes
           </button>
         </div>
       </div>
 
-      {/* Vista */}
-      {vista === "semana" ? (
+      {vista === "dia" && (
+        <AgendaVistaDia fecha={fechaInicio} citas={citas} />
+      )}
+      {vista === "semana" && (
         <AgendaSemanal
           citas={citas}
           lunes={fechaInicio}
           diaSeleccionado={diaSeleccionado}
           onSelectDia={setDiaSeleccionado}
         />
-      ) : (
+      )}
+      {vista === "mes" && (
         <AgendaMensual
           citas={citas}
           anio={fecha.getFullYear()}
@@ -150,14 +213,13 @@ export function AgendaClient({ vista, fechaInicio, citas }: Props) {
         />
       )}
 
-      {/* Detalle del día */}
-      {diaSeleccionado && (
+      {diaSeleccionado && vista !== "dia" && (
         <AgendaDiaDetalle
           fecha={diaSeleccionado}
           citas={citasDia}
           onClose={() => setDiaSeleccionado(null)}
         />
       )}
-    </>
+    </div>
   );
 }

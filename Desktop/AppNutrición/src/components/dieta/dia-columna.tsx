@@ -44,6 +44,7 @@ interface DiaColumnaProps {
   onAddAlimento: (comidaId: string) => void;
   onRemoveAlimento: (alimentoEnComidaId: string) => void;
   onCantidadChange: (alimentoEnComidaId: string, cantidad: number) => void;
+  compactHeader?: boolean;
 }
 
 export function DiaColumna({
@@ -53,6 +54,7 @@ export function DiaColumna({
   onAddAlimento,
   onRemoveAlimento,
   onCantidadChange,
+  compactHeader = false,
 }: DiaColumnaProps) {
   const todosAlimentos = comidas.flatMap((c) => c.alimentos);
   const macrosDia = sumarMacros(
@@ -91,6 +93,7 @@ export function DiaColumna({
             onAdd={onAddAlimento}
             onRemove={onRemoveAlimento}
             onCantidadChange={onCantidadChange}
+            compactHeader={compactHeader}
           />
         ))}
       </div>

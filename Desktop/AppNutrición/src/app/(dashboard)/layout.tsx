@@ -38,7 +38,7 @@ export default async function DashboardLayout({
           isAdmin={isAdminEmail(dietista.email)}
         />
         <main className="flex-1 overflow-y-auto">
-          <div className="pt-16 lg:pt-0 p-4 sm:p-6 lg:px-10 lg:pt-10 lg:pb-8 max-w-7xl mx-auto">
+          <div className="pt-16 lg:pt-0 w-full max-w-none px-4 sm:px-5 md:px-6 lg:px-8 py-4 sm:py-6 lg:pt-10 lg:pb-8">
             {children}
           </div>
         </main>

@@ -100,7 +100,7 @@ export function AgendaMensual({ citas, anio, mes, diaSeleccionado, onSelectDia }
               key={i}
               type="button"
               onClick={() => currentMonth ? onSelectDia(isSeleccionado ? null : diaStr) : undefined}
-              className={`relative min-h-[80px] sm:min-h-[100px] p-1.5 border-b border-r border-border text-left transition-colors ${
+              className={`relative h-[80px] sm:h-[92px] md:h-[104px] lg:h-[116px] p-1.5 sm:p-2 border-b border-r border-border text-left transition-colors overflow-hidden flex flex-col ${
                 !currentMonth
                   ? "bg-muted/30 text-muted-foreground/40 cursor-default"
                   : isSeleccionado
@@ -109,7 +109,7 @@ export function AgendaMensual({ citas, anio, mes, diaSeleccionado, onSelectDia }
               }`}
             >
               <span
-                className={`inline-flex items-center justify-center w-6 h-6 text-xs font-medium rounded-full ${
+                className={`inline-flex shrink-0 items-center justify-center w-6 h-6 text-xs font-medium rounded-full ${
                   isHoy
                     ? "bg-primary text-primary-foreground"
                     : ""
@@ -119,11 +119,11 @@ export function AgendaMensual({ citas, anio, mes, diaSeleccionado, onSelectDia }
               </span>
 
               {/* Indicadores de citas */}
-              <div className="mt-1 space-y-0.5">
+              <div className="mt-0.5 min-h-0 flex-1 overflow-y-auto space-y-0.5">
                 {citasDia.slice(0, 3).map((cita) => (
                   <div
                     key={cita.id}
-                    className="flex items-center gap-1 text-[10px] leading-tight truncate"
+                    className="flex items-center gap-1 text-[11px] leading-tight truncate"
                   >
                     <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${ESTADO_DOT[cita.estado] || ESTADO_DOT.PENDIENTE}`} />
                     <span className="truncate">

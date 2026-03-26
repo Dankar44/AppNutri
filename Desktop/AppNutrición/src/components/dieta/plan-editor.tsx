@@ -68,6 +68,8 @@ interface PlanEditorProps {
     carbohidratos?: number | null;
     grasas?: number | null;
   };
+  showHeader?: boolean;
+  compactHeader?: boolean;
 }
 
 interface DragItemData {
@@ -80,7 +82,14 @@ interface DragItemData {
   grasas: number;
 }
 
-export function PlanEditor({ planId, planNombre, dias, objetivos }: PlanEditorProps) {
+export function PlanEditor({
+  planId,
+  planNombre,
+  dias,
+  objetivos,
+  showHeader = true,
+  compactHeader = false,
+}: PlanEditorProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [selectorOpen, setSelectorOpen] = useState(false);
@@ -209,14 +218,16 @@ export function PlanEditor({ planId, planNombre, dias, objetivos }: PlanEditorPr
       onDragEnd={handleDragEnd}
     >
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-xl font-bold">{planNombre}</h1>
-            {isPending && (
-              <p className="text-xs text-muted-foreground">Guardando...</p>
-            )}
+        {showHeader && (
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-xl font-bold">{planNombre}</h1>
+              {isPending && (
+                <p className="text-xs text-muted-foreground">Guardando...</p>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="overflow-x-auto pb-4 scroll-smooth snap-x snap-mandatory">
           <div className="flex gap-3 w-[calc(((100%+0.75rem)/1)*7-0.75rem)] md:w-[calc(((100%+0.75rem)/2)*7-0.75rem)] lg:w-[calc(((100%+0.75rem)/3)*7-0.75rem)]">
@@ -225,6 +236,7 @@ export function PlanEditor({ planId, planNombre, dias, objetivos }: PlanEditorPr
                 key={dia.dia}
                 dia={dia.dia}
                 comidas={dia.comidas}
+                compactHeader={compactHeader}
                 objetivos={{
                   calorias: objetivos.calorias ?? undefined,
                   proteinas: objetivos.proteinas ?? undefined,
