@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { ObjetivoPaciente, Prisma, Sexo } from "@/generated/prisma/client";
+import { ObjetivoPaciente, Sexo } from "@/generated/prisma/client";
 import type { FichaInformacionData } from "@/lib/ficha-informacion-types";
 
 export interface PacienteFormData {
@@ -323,12 +323,10 @@ export async function guardarFichaInformacionPaciente(
 
   const cleaned = sanitizeFichaInformacionDeep(data) as FichaInformacionData;
 
-  await prisma.paciente.update({
-    where: { id: pacienteId, dietistaId: dietista.id },
-    data: {
-      fichaInformacion: cleaned as Prisma.InputJsonValue,
-    },
-  });
+  await prisma.$queryRawUnsafe(
+    `UPDATE pacientes SET "fichaInformacion" = $1::jsonb WHERE id = $2 AND "dietistaId" = $3`,
+    JSON.stringify(cleaned), pacienteId, dietista.id
+  );
 
   revalidatePath(`/pacientes/${pacienteId}`);
 }
