@@ -50,67 +50,63 @@ export default async function MedidasPage({ params }: Props) {
         </h1>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <EvolucionCharts data={chartData} />
+      <div className="max-w-4xl mx-auto space-y-6">
+        <section className="bg-card rounded-xl border border-border p-6">
+          <h2 className="text-lg font-semibold mb-4">Registro de mediciones</h2>
+          <MedidasFormWrapper
+            pacienteId={id}
+            defaultPeso={paciente.peso}
+            defaultAltura={paciente.altura}
+          />
+        </section>
 
-          <section className="bg-card rounded-xl border border-border p-6">
-            <h2 className="text-lg font-semibold mb-4">
-              Historial ({medidas.length})
-            </h2>
-            {medidas.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No hay medidas registradas
-              </p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border text-left text-muted-foreground">
-                      <th className="pb-2 font-medium">Fecha</th>
-                      <th className="pb-2 font-medium">Peso</th>
-                      <th className="pb-2 font-medium">IMC</th>
-                      <th className="pb-2 font-medium hidden sm:table-cell">% Grasa</th>
-                      <th className="pb-2 font-medium hidden md:table-cell">Cintura</th>
-                      <th className="pb-2 font-medium"></th>
+        <EvolucionCharts data={chartData} />
+
+        <section className="bg-card rounded-xl border border-border p-6">
+          <h2 className="text-lg font-semibold mb-4">
+            Historial ({medidas.length})
+          </h2>
+          {medidas.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No hay medidas registradas
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-muted-foreground">
+                    <th className="pb-2 font-medium">Fecha</th>
+                    <th className="pb-2 font-medium">Peso</th>
+                    <th className="pb-2 font-medium">IMC</th>
+                    <th className="pb-2 font-medium hidden sm:table-cell">% Grasa</th>
+                    <th className="pb-2 font-medium hidden md:table-cell">Cintura</th>
+                    <th className="pb-2 font-medium"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {medidas.map((m) => (
+                    <tr key={m.id as string} className="border-b border-border last:border-0">
+                      <td className="py-2">{formatDate(m.fecha as Date)}</td>
+                      <td className="py-2 font-medium">
+                        {m.peso ? `${m.peso} kg` : "-"}
+                      </td>
+                      <td className="py-2">{m.imc != null ? String(m.imc) : "-"}</td>
+                      <td className="py-2 hidden sm:table-cell">
+                        {m.grasaCorporal ? `${m.grasaCorporal}%` : "-"}
+                      </td>
+                      <td className="py-2 hidden md:table-cell">
+                        {m.perimetroCintura ? `${m.perimetroCintura} cm` : "-"}
+                      </td>
+                      <td className="py-2">
+                        <MedidaDeleteButton medidaId={m.id as string} />
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {medidas.map((m) => (
-                      <tr key={m.id} className="border-b border-border last:border-0">
-                        <td className="py-2">{formatDate(m.fecha)}</td>
-                        <td className="py-2 font-medium">
-                          {m.peso ? `${m.peso} kg` : "-"}
-                        </td>
-                        <td className="py-2">{m.imc ?? "-"}</td>
-                        <td className="py-2 hidden sm:table-cell">
-                          {m.grasaCorporal ? `${m.grasaCorporal}%` : "-"}
-                        </td>
-                        <td className="py-2 hidden md:table-cell">
-                          {m.perimetroCintura ? `${m.perimetroCintura} cm` : "-"}
-                        </td>
-                        <td className="py-2">
-                          <MedidaDeleteButton medidaId={m.id} />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
-        </div>
-
-        <div>
-          <section className="bg-card rounded-xl border border-border p-6">
-            <h2 className="text-lg font-semibold mb-4">Nueva medición</h2>
-            <MedidasFormWrapper
-              pacienteId={id}
-              defaultPeso={paciente.peso}
-              defaultAltura={paciente.altura}
-            />
-          </section>
-        </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );

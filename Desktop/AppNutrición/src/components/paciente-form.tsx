@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Loader2, X, Plus } from "lucide-react";
+import { DatePicker } from "@/components/date-picker";
 import { toast } from "sonner";
 import type { PacienteFormData } from "@/app/actions/pacientes";
 import type { Paciente } from "@/generated/prisma/client";
@@ -142,6 +143,10 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
       toast.error("El email es obligatorio y debe ser válido.");
       return;
     }
+    if (!form.fechaNacimiento) {
+      toast.error("La fecha de nacimiento es obligatoria.");
+      return;
+    }
     setLoading(true);
     try {
       await action(form);
@@ -218,13 +223,13 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1.5">
-              Fecha de nacimiento
+              Fecha de nacimiento <span className="text-destructive">*</span>
             </label>
-            <input
-              type="date"
-              value={form.fechaNacimiento}
-              onChange={(e) => update("fechaNacimiento", e.target.value)}
-              className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+            <DatePicker
+              value={form.fechaNacimiento ?? ""}
+              onChange={(v) => update("fechaNacimiento", v)}
+              required
+              pastOnly
             />
           </div>
           <div>

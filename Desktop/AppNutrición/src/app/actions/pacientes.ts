@@ -91,11 +91,10 @@ function validatePacienteData(data: PacienteFormData): string | null {
   if (data.sexo && !SEXOS_VALIDOS.includes(data.sexo)) return "Sexo no válido";
   if (!OBJETIVOS_VALIDOS.includes(data.objetivo)) return "Objetivo no válido";
 
-  if (data.fechaNacimiento) {
-    const fecha = new Date(data.fechaNacimiento);
-    if (isNaN(fecha.getTime())) return "Fecha de nacimiento no válida";
-    if (fecha > new Date()) return "La fecha de nacimiento no puede ser futura";
-  }
+  if (!data.fechaNacimiento) return "La fecha de nacimiento es obligatoria";
+  const fecha = new Date(data.fechaNacimiento);
+  if (isNaN(fecha.getTime())) return "Fecha de nacimiento no válida";
+  if (fecha > new Date()) return "La fecha de nacimiento no puede ser futura";
 
   return null;
 }
@@ -131,6 +130,58 @@ function sanitizeFormData(data: PacienteFormData) {
 
 // --- Actions ---
 
+// Campos que el Prisma client local no conoce (Node 20.9 no regenera)
+function splitExtraFields(clean: ReturnType<typeof sanitizeFormData>) {
+  const {
+    suplementos,
+    nivelActividad,
+    frecuenciaEjercicio,
+    tipoEjercicio,
+    horarioTrabajo,
+    horarioEjercicio,
+    horasDescanso,
+    ocupacion,
+    ...prismaFields
+  } = clean;
+  return {
+    prismaFields,
+    extraFields: {
+      suplementos,
+      nivelActividad,
+      frecuenciaEjercicio,
+      tipoEjercicio,
+      horarioTrabajo,
+      horarioEjercicio,
+      horasDescanso,
+      ocupacion,
+    },
+  };
+}
+
+async function saveExtraFields(pacienteId: string, extra: ReturnType<typeof splitExtraFields>["extraFields"]) {
+  await prisma.$queryRawUnsafe(
+    `UPDATE pacientes SET
+      suplementos = $1::text[],
+      "nivelActividad" = $2,
+      "frecuenciaEjercicio" = $3,
+      "tipoEjercicio" = $4,
+      "horarioTrabajo" = $5,
+      "horarioEjercicio" = $6,
+      "horasDescanso" = $7,
+      ocupacion = $8
+    WHERE id = $9`,
+    extra.suplementos,
+    extra.nivelActividad,
+    extra.frecuenciaEjercicio,
+    extra.tipoEjercicio,
+    extra.horarioTrabajo,
+    extra.horarioEjercicio,
+    extra.horasDescanso,
+    extra.ocupacion,
+    pacienteId
+  );
+}
+
 export async function crearPaciente(data: PacienteFormData) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
@@ -138,14 +189,16 @@ export async function crearPaciente(data: PacienteFormData) {
   const error = validatePacienteData(data);
   if (error) throw new Error(error);
 
-  const clean = sanitizeFormData(data);
+  const { prismaFields, extraFields } = splitExtraFields(sanitizeFormData(data));
 
   const paciente = await prisma.paciente.create({
     data: {
       dietistaId: dietista.id,
-      ...clean,
+      ...prismaFields,
     },
   });
+
+  await saveExtraFields(paciente.id, extraFields);
 
   revalidatePath("/pacientes");
   revalidatePath("/dashboard");
@@ -159,12 +212,14 @@ export async function actualizarPaciente(id: string, data: PacienteFormData) {
   const error = validatePacienteData(data);
   if (error) throw new Error(error);
 
-  const clean = sanitizeFormData(data);
+  const { prismaFields, extraFields } = splitExtraFields(sanitizeFormData(data));
 
   await prisma.paciente.update({
     where: { id, dietistaId: dietista.id },
-    data: clean,
+    data: prismaFields,
   });
+
+  await saveExtraFields(id, extraFields);
 
   revalidatePath("/pacientes");
   revalidatePath(`/pacientes/${id}`);
@@ -278,6 +333,7 @@ export async function guardarHorarioPaciente(pacienteId: string, horario: Horari
 
 // ─── Recomendaciones ───
 
+/** Returns only the "otrasRecomendaciones" text for backward-compatible usage (General tab card). */
 export async function getRecomendaciones(pacienteId: string): Promise<string> {
   const dietista = await getCurrentDietista();
   if (!dietista) return "";
@@ -286,17 +342,51 @@ export async function getRecomendaciones(pacienteId: string): Promise<string> {
     `SELECT recomendaciones FROM pacientes WHERE id = $1 AND "dietistaId" = $2`,
     pacienteId, dietista.id
   );
-  return rows[0]?.recomendaciones || "";
+  const raw = rows[0]?.recomendaciones || "";
+
+  // If the field stores structured JSON, extract otrasRecomendaciones
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object" && "otrasRecomendaciones" in parsed) {
+      return parsed.otrasRecomendaciones || "";
+    }
+  } catch {
+    // plain text
+  }
+  return raw;
 }
 
+/** Saves only the "otrasRecomendaciones" text, preserving other structured fields. */
 export async function guardarRecomendaciones(pacienteId: string, texto: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
 
   const sanitized = texto.slice(0, 5000);
+
+  // Read current value to preserve structured fields
+  const rows = await prisma.$queryRawUnsafe<{ recomendaciones: string | null }[]>(
+    `SELECT recomendaciones FROM pacientes WHERE id = $1 AND "dietistaId" = $2`,
+    pacienteId, dietista.id
+  );
+  const raw = rows[0]?.recomendaciones || "";
+
+  let toSave: string;
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object" && "agua" in parsed) {
+      // Structured format: update only otrasRecomendaciones
+      parsed.otrasRecomendaciones = sanitized;
+      toSave = JSON.stringify(parsed);
+    } else {
+      toSave = sanitized;
+    }
+  } catch {
+    toSave = sanitized;
+  }
+
   await prisma.$queryRawUnsafe(
     `UPDATE pacientes SET recomendaciones = $1 WHERE id = $2 AND "dietistaId" = $3`,
-    sanitized, pacienteId, dietista.id
+    toSave, pacienteId, dietista.id
   );
 }
 

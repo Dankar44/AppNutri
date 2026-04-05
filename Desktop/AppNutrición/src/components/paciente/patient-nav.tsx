@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Leaf, LayoutDashboard, UtensilsCrossed, BookOpen, TrendingUp, MessageSquareText,
-  ShoppingCart, Settings, FileDown, LogOut, Menu, X,
+  ShoppingCart, Settings, FileDown, LogOut, Menu, X, ClipboardCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logoutPaciente } from "@/app/actions/paciente-auth";
@@ -14,6 +14,7 @@ const navItems = [
   { href: "/paciente/portal", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/paciente/portal/dieta", label: "Mi dieta", icon: UtensilsCrossed },
   { href: "/paciente/portal/diario", label: "Diario", icon: BookOpen },
+  { href: "/paciente/portal/seguimiento", label: "Mi seguimiento", icon: ClipboardCheck },
   { href: "/paciente/portal/evolucion", label: "Evolución", icon: TrendingUp },
   { href: "/paciente/portal/dieta/lista-compra", label: "Lista de la compra", icon: ShoppingCart },
   { href: "/paciente/portal/recomendaciones", label: "Recomendaciones", icon: MessageSquareText },

@@ -40,6 +40,19 @@ export type MedidaSerializada = {
   perimetroCintura: number | null;
   perimetroCadera: number | null;
   perimetroBrazo: number | null;
+  pliegueAbdominal: number | null;
+  pliegueAxilar: number | null;
+  plieguePectoral: number | null;
+  pliegueSubescapular: number | null;
+  pliegueSuprailiaco: number | null;
+  pliegueTricipital: number | null;
+  pliegueMuslo: number | null;
+  colesterolHDL: number | null;
+  colesterolLDL: number | null;
+  colesterolTotal: number | null;
+  presionDiastolica: number | null;
+  presionSistolica: number | null;
+  trigliceridos: number | null;
 };
 
 type MetricaDb =
@@ -49,28 +62,41 @@ type MetricaDb =
   | "perimetroCadera"
   | "perimetroBrazo"
   | "grasaCorporal"
-  | "masaMuscular";
+  | "masaMuscular"
+  | "pliegueAbdominal"
+  | "pliegueAxilar"
+  | "plieguePectoral"
+  | "pliegueSubescapular"
+  | "pliegueSuprailiaco"
+  | "pliegueTricipital"
+  | "pliegueMuslo"
+  | "colesterolHDL"
+  | "colesterolLDL"
+  | "colesterolTotal"
+  | "presionDiastolica"
+  | "presionSistolica"
+  | "trigliceridos";
 
 type VistaMedicion = MetricaDb | "pliegues" | "analiticos";
 
-const PLIEGUES_ROWS = [
-  "Pliegue cutáneo abdominal",
-  "Pliegue cutáneo axilar medio",
-  "Pliegue cutáneo pectoral",
-  "Pliegue cutáneo subescapular",
-  "Pliegue cutáneo suprailíaco",
-  "Pliegue cutáneo tricipital",
-  "Pliegue del muslo anterior",
-] as const;
+const PLIEGUES_KEYS: { key: MetricaDb; label: string }[] = [
+  { key: "pliegueAbdominal", label: "Pliegue cutáneo abdominal" },
+  { key: "pliegueAxilar", label: "Pliegue cutáneo axilar medio" },
+  { key: "plieguePectoral", label: "Pliegue cutáneo pectoral" },
+  { key: "pliegueSubescapular", label: "Pliegue cutáneo subescapular" },
+  { key: "pliegueSuprailiaco", label: "Pliegue cutáneo suprailíaco" },
+  { key: "pliegueTricipital", label: "Pliegue cutáneo tricipital" },
+  { key: "pliegueMuslo", label: "Pliegue del muslo anterior" },
+];
 
-const ANALITICOS_ROWS = [
-  "Colesterol HDL",
-  "Colesterol LDL",
-  "Colesterol total",
-  "Presión arterial diastólica",
-  "Presión arterial sistólica",
-  "Triglicéridos",
-] as const;
+const ANALITICOS_KEYS: { key: MetricaDb; label: string }[] = [
+  { key: "colesterolHDL", label: "Colesterol HDL" },
+  { key: "colesterolLDL", label: "Colesterol LDL" },
+  { key: "colesterolTotal", label: "Colesterol total" },
+  { key: "presionDiastolica", label: "Presión arterial diastólica" },
+  { key: "presionSistolica", label: "Presión arterial sistólica" },
+  { key: "trigliceridos", label: "Triglicéridos" },
+];
 
 const METRIC_META: Record<
   MetricaDb,
@@ -108,6 +134,19 @@ const METRIC_META: Record<
     inputStep: "0.1",
     inputMax: 200,
   },
+  pliegueAbdominal: { label: "Pliegue abdominal", unit: "mm", inputStep: "0.1", inputMax: 100 },
+  pliegueAxilar: { label: "Pliegue axilar medio", unit: "mm", inputStep: "0.1", inputMax: 100 },
+  plieguePectoral: { label: "Pliegue pectoral", unit: "mm", inputStep: "0.1", inputMax: 100 },
+  pliegueSubescapular: { label: "Pliegue subescapular", unit: "mm", inputStep: "0.1", inputMax: 100 },
+  pliegueSuprailiaco: { label: "Pliegue suprailíaco", unit: "mm", inputStep: "0.1", inputMax: 100 },
+  pliegueTricipital: { label: "Pliegue tricipital", unit: "mm", inputStep: "0.1", inputMax: 100 },
+  pliegueMuslo: { label: "Pliegue muslo anterior", unit: "mm", inputStep: "0.1", inputMax: 100 },
+  colesterolHDL: { label: "Colesterol HDL", unit: "mg/dL", inputStep: "1", inputMax: 500 },
+  colesterolLDL: { label: "Colesterol LDL", unit: "mg/dL", inputStep: "1", inputMax: 500 },
+  colesterolTotal: { label: "Colesterol total", unit: "mg/dL", inputStep: "1", inputMax: 500 },
+  presionDiastolica: { label: "Presión diastólica", unit: "mmHg", inputStep: "1", inputMax: 300 },
+  presionSistolica: { label: "Presión sistólica", unit: "mmHg", inputStep: "1", inputMax: 300 },
+  trigliceridos: { label: "Triglicéridos", unit: "mg/dL", inputStep: "1", inputMax: 1000 },
 };
 
 function fmt(v: number | null | undefined, unit: string, digits = 1): string {
@@ -186,11 +225,11 @@ export function PacienteFichaMedicionesTab({
 
   function registrarUna() {
     const v = parseFloat(valorNuevo.replace(",", "."));
-    if (Number.isNaN(v) || vista === "pliegues" || vista === "analiticos") {
+    if (Number.isNaN(v) || !METRIC_META[vista as MetricaDb]) {
       toast.error("Introduce un valor válido");
       return;
     }
-    const meta = METRIC_META[vista];
+    const meta = METRIC_META[vista as MetricaDb];
     if (v < 0 || v > meta.inputMax) {
       toast.error("Valor fuera de rango");
       return;
@@ -235,7 +274,7 @@ export function PacienteFichaMedicionesTab({
   }
 
   const filtradasMetrica = useMemo(() => {
-    if (vista === "pliegues" || vista === "analiticos") return [];
+    if (!METRIC_META[vista as MetricaDb]) return [];
     const key = vista as keyof MedidaSerializada;
     return ordenadas.filter(
       (m) => m[key] !== null && typeof m[key] === "number"
@@ -243,7 +282,7 @@ export function PacienteFichaMedicionesTab({
   }, [ordenadas, vista]);
 
   const chartData = useMemo(() => {
-    if (vista === "pliegues" || vista === "analiticos") return [];
+    if (!METRIC_META[vista as MetricaDb]) return [];
     const key = vista as MetricaDb;
     return [...medidas]
       .filter((m) => m[key] !== null && typeof m[key] === "number")
@@ -262,7 +301,7 @@ export function PacienteFichaMedicionesTab({
       ? "Pliegues cutáneos"
       : vista === "analiticos"
         ? "Datos analíticos"
-        : METRIC_META[vista as MetricaDb].label;
+        : METRIC_META[vista as MetricaDb]?.label ?? vista;
 
   return (
     <div className="space-y-4">
@@ -304,7 +343,7 @@ export function PacienteFichaMedicionesTab({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[min(100%,280px)_1fr] gap-6 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-[min(100%,320px)_1fr] gap-6 items-start">
         <aside className="space-y-4 shrink-0">
           <SidebarCard title="Mediciones básicas">
             <SidebarRow
@@ -374,8 +413,8 @@ export function PacienteFichaMedicionesTab({
               </button>
             }
           >
-            {PLIEGUES_ROWS.map((label) => (
-              <SidebarRowStatic key={label} label={label} value="—" />
+            {PLIEGUES_KEYS.map(({ key, label }) => (
+              <SidebarRowStatic key={key} label={label} value={fmt(latestValue(medidas, key), "mm")} />
             ))}
           </SidebarCard>
 
@@ -391,9 +430,10 @@ export function PacienteFichaMedicionesTab({
               </button>
             }
           >
-            {ANALITICOS_ROWS.map((label) => (
-              <SidebarRowStatic key={label} label={label} value="—" />
-            ))}
+            {ANALITICOS_KEYS.map(({ key, label }) => {
+              const unit = key.startsWith("presion") ? "mmHg" : "mg/dL";
+              return <SidebarRowStatic key={key} label={label} value={fmt(latestValue(medidas, key), unit)} />;
+            })}
           </SidebarCard>
 
           <button
@@ -414,10 +454,27 @@ export function PacienteFichaMedicionesTab({
           <h2 className="text-xl font-bold text-foreground">{tituloPrincipal}</h2>
 
           {vista === "pliegues" && (
-            <PlaceholderPanel text="Los pliegues cutáneos se podrán registrar en una próxima versión. Mientras tanto puedes anotarlos en las notas al registrar medidas desde la vista completa." />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {PLIEGUES_KEYS.map(({ key, label }) => (
+                <button key={key} type="button" onClick={() => setVista(key)} className="flex items-center justify-between rounded-lg border border-border px-4 py-3 hover:bg-muted/40 text-left text-sm">
+                  <span>{label}</span>
+                  <span className="font-medium text-muted-foreground">{fmt(latestValue(medidas, key), "mm")}</span>
+                </button>
+              ))}
+            </div>
           )}
           {vista === "analiticos" && (
-            <PlaceholderPanel text="Los datos analíticos (analítica, tensión, lípidos…) se añadirán próximamente." />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {ANALITICOS_KEYS.map(({ key, label }) => {
+                const unit = key.startsWith("presion") ? "mmHg" : "mg/dL";
+                return (
+                  <button key={key} type="button" onClick={() => setVista(key)} className="flex items-center justify-between rounded-lg border border-border px-4 py-3 hover:bg-muted/40 text-left text-sm">
+                    <span>{label}</span>
+                    <span className="font-medium text-muted-foreground">{fmt(latestValue(medidas, key), unit)}</span>
+                  </button>
+                );
+              })}
+            </div>
           )}
 
           {vista !== "pliegues" && vista !== "analiticos" && (

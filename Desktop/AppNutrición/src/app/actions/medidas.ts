@@ -15,6 +15,19 @@ export interface MedidaFormData {
   perimetroCintura?: number;
   perimetroCadera?: number;
   perimetroBrazo?: number;
+  pliegueAbdominal?: number;
+  pliegueAxilar?: number;
+  plieguePectoral?: number;
+  pliegueSubescapular?: number;
+  pliegueSuprailiaco?: number;
+  pliegueTricipital?: number;
+  pliegueMuslo?: number;
+  colesterolHDL?: number;
+  colesterolLDL?: number;
+  colesterolTotal?: number;
+  presionDiastolica?: number;
+  presionSistolica?: number;
+  trigliceridos?: number;
   notas?: string;
 }
 
@@ -61,6 +74,36 @@ export async function crearMedida(data: MedidaFormData) {
     },
   });
 
+  // Campos extra no conocidos por Prisma local (pliegues + analíticos)
+  const pliegueAbdominal = validateNumberOptional(data.pliegueAbdominal, 0, 100);
+  const pliegueAxilar = validateNumberOptional(data.pliegueAxilar, 0, 100);
+  const plieguePectoral = validateNumberOptional(data.plieguePectoral, 0, 100);
+  const pliegueSubescapular = validateNumberOptional(data.pliegueSubescapular, 0, 100);
+  const pliegueSuprailiaco = validateNumberOptional(data.pliegueSuprailiaco, 0, 100);
+  const pliegueTricipital = validateNumberOptional(data.pliegueTricipital, 0, 100);
+  const pliegueMuslo = validateNumberOptional(data.pliegueMuslo, 0, 100);
+  const colesterolHDL = validateNumberOptional(data.colesterolHDL, 0, 500);
+  const colesterolLDL = validateNumberOptional(data.colesterolLDL, 0, 500);
+  const colesterolTotal = validateNumberOptional(data.colesterolTotal, 0, 500);
+  const presionDiastolica = validateNumberOptional(data.presionDiastolica, 0, 300);
+  const presionSistolica = validateNumberOptional(data.presionSistolica, 0, 300);
+  const trigliceridos = validateNumberOptional(data.trigliceridos, 0, 1000);
+
+  await prisma.$queryRawUnsafe(
+    `UPDATE medidas_antropometricas SET
+      "pliegueAbdominal" = $1, "pliegueAxilar" = $2, "plieguePectoral" = $3,
+      "pliegueSubescapular" = $4, "pliegueSuprailiaco" = $5, "pliegueTricipital" = $6,
+      "pliegueMuslo" = $7, "colesterolHDL" = $8, "colesterolLDL" = $9,
+      "colesterolTotal" = $10, "presionDiastolica" = $11, "presionSistolica" = $12,
+      trigliceridos = $13
+    WHERE id = $14`,
+    pliegueAbdominal, pliegueAxilar, plieguePectoral,
+    pliegueSubescapular, pliegueSuprailiaco, pliegueTricipital,
+    pliegueMuslo, colesterolHDL, colesterolLDL,
+    colesterolTotal, presionDiastolica, presionSistolica,
+    trigliceridos, medida.id
+  );
+
   if (peso) {
     await prisma.paciente.update({
       where: { id: data.pacienteId },
@@ -76,17 +119,46 @@ export async function crearMedida(data: MedidaFormData) {
   return medida;
 }
 
-export async function getMedidas(pacienteId: string) {
+export interface MedidaRow {
+  id: string;
+  pacienteId: string;
+  fecha: Date;
+  peso: number | null;
+  altura: number | null;
+  imc: number | null;
+  grasaCorporal: number | null;
+  masaMuscular: number | null;
+  perimetroCintura: number | null;
+  perimetroCadera: number | null;
+  perimetroBrazo: number | null;
+  pliegueAbdominal: number | null;
+  pliegueAxilar: number | null;
+  plieguePectoral: number | null;
+  pliegueSubescapular: number | null;
+  pliegueSuprailiaco: number | null;
+  pliegueTricipital: number | null;
+  pliegueMuslo: number | null;
+  colesterolHDL: number | null;
+  colesterolLDL: number | null;
+  colesterolTotal: number | null;
+  presionDiastolica: number | null;
+  presionSistolica: number | null;
+  trigliceridos: number | null;
+  notas: string | null;
+  createdAt: Date;
+}
+
+export async function getMedidas(pacienteId: string): Promise<MedidaRow[]> {
   const dietista = await getCurrentDietista();
   if (!dietista) return [];
 
-  return prisma.medidaAntropometrica.findMany({
-    where: {
-      pacienteId,
-      paciente: { dietistaId: dietista.id },
-    },
-    orderBy: { fecha: "desc" },
-  });
+  return prisma.$queryRawUnsafe<MedidaRow[]>(
+    `SELECT m.* FROM medidas_antropometricas m
+     JOIN pacientes p ON m."pacienteId" = p.id
+     WHERE m."pacienteId" = $1 AND p."dietistaId" = $2
+     ORDER BY m.fecha DESC`,
+    pacienteId, dietista.id
+  );
 }
 
 export async function getMedidasEvolucion(pacienteId: string) {

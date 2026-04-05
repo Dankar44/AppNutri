@@ -1,10 +1,8 @@
 "use client";
 
-import { Trash2, GripVertical, CookingPot } from "lucide-react";
+import { Trash2, GripVertical, ListFilter } from "lucide-react";
 import { useState, useRef } from "react";
 import { useDraggable } from "@dnd-kit/core";
-import { MacroBadges } from "@/components/macro-badge";
-import { calcularMacrosPorcion } from "@/lib/macros";
 import { cn } from "@/lib/utils";
 
 interface AlimentoCardProps {
@@ -15,9 +13,11 @@ interface AlimentoCardProps {
   proteinas: number;
   carbohidratos: number;
   grasas: number;
+  fibra?: number;
   esReceta?: boolean;
   onRemove: (id: string) => void;
   onCantidadChange: (id: string, cantidad: number) => void;
+  onBuscarEquivalente?: (alimentoId: string, nombre: string, calorias: number, proteinas: number, carbohidratos: number, grasas: number, cantidad: number) => void;
 }
 
 export function AlimentoCard({
@@ -28,9 +28,11 @@ export function AlimentoCard({
   proteinas,
   carbohidratos,
   grasas,
+  fibra,
   esReceta,
   onRemove,
   onCantidadChange,
+  onBuscarEquivalente,
 }: AlimentoCardProps) {
   const [tempCantidad, setTempCantidad] = useState(cantidad);
   const debounceRef = useRef<NodeJS.Timeout>(null);
@@ -45,19 +47,6 @@ export function AlimentoCard({
     ? { transform: `translate(${transform.x}px, ${transform.y}px)` }
     : undefined;
 
-  const macros = esReceta
-    ? {
-        calorias: Math.round(calorias * cantidad * 10) / 10,
-        proteinas: Math.round(proteinas * cantidad * 10) / 10,
-        carbohidratos: Math.round(carbohidratos * cantidad * 10) / 10,
-        grasas: Math.round(grasas * cantidad * 10) / 10,
-        fibra: 0,
-      }
-    : calcularMacrosPorcion(
-        { calorias, proteinas, carbohidratos, grasas, fibra: 0 },
-        cantidad
-      );
-
   function handleCantidadChange(value: number) {
     setTempCantidad(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -66,54 +55,63 @@ export function AlimentoCard({
     }, 500);
   }
 
+  const unidadLabel = esReceta ? "porc." : "g";
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={cn(
-        "flex items-center gap-1 p-2 rounded-lg border bg-background text-xs group touch-none",
-        esReceta ? "border-purple-200 bg-purple-50/30" : "border-border",
-        isDragging && "opacity-50 shadow-lg z-50"
+        "flex items-center gap-2 px-3 py-2.5 touch-none",
+        "border-b border-border/50 last:border-b-0",
+        "hover:bg-muted/30 transition-colors",
+        isDragging && "opacity-50 shadow-lg z-50 bg-card"
       )}
     >
+      {/* Drag handle */}
       <button
         {...listeners}
         {...attributes}
-        className="p-0.5 rounded cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0"
+        className="p-0.5 rounded cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-muted-foreground shrink-0"
       >
-        <GripVertical className="w-3 h-3" />
+        <GripVertical className="w-4 h-4" />
       </button>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1">
-          {esReceta && <CookingPot className="w-3 h-3 text-purple-500 shrink-0" />}
-          <p className={cn("font-medium truncate", esReceta && "text-purple-900")}>{nombre}</p>
-        </div>
-        <div className="mt-0.5">
-          <MacroBadges
-            calorias={macros.calorias}
-            proteinas={macros.proteinas}
-            carbohidratos={macros.carbohidratos}
-            grasas={macros.grasas}
-          />
-        </div>
-      </div>
-      <div className="flex items-center gap-1 shrink-0">
+
+      {/* Food description with inline editable quantity */}
+      <div className="flex-1 min-w-0 flex items-center gap-1.5 text-sm">
         <input
           type="number"
           value={tempCantidad}
           onChange={(e) => handleCantidadChange(parseFloat(e.target.value) || 0)}
-          className="w-14 px-1 py-0.5 text-xs rounded border border-border bg-background text-center"
+          className="w-14 px-1.5 py-0.5 text-sm rounded border border-transparent hover:border-border focus:border-primary/50 bg-transparent text-right tabular-nums focus:outline-none focus:ring-1 focus:ring-primary/20"
           min={0}
           max={10000}
         />
-        <span className="text-muted-foreground">{esReceta ? "porc" : "g"}</span>
-        <button
-          onClick={() => onRemove(id)}
-          className="p-1 rounded hover:bg-red-50 text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all"
-        >
-          <Trash2 className="w-3 h-3" />
-        </button>
+        <span className="text-muted-foreground text-sm shrink-0">
+          {unidadLabel} de
+        </span>
+        <span className="truncate font-medium text-foreground">{nombre}</span>
       </div>
+
+      {/* Equivalente button */}
+      {onBuscarEquivalente && !esReceta && (
+        <button
+          onClick={() => onBuscarEquivalente(id, nombre, calorias, proteinas, carbohidratos, grasas, cantidad)}
+          className="p-1.5 rounded border border-border/60 hover:bg-primary/10 hover:border-primary/30 text-muted-foreground/50 hover:text-primary transition-all shrink-0"
+          title="Buscar alimento equivalente"
+        >
+          <ListFilter className="w-4 h-4" />
+        </button>
+      )}
+
+      {/* Delete button */}
+      <button
+        onClick={() => onRemove(id)}
+        className="p-1.5 rounded border border-border/60 hover:bg-red-50 hover:border-red-200 text-muted-foreground/50 hover:text-red-500 transition-all shrink-0"
+        title="Eliminar"
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
     </div>
   );
 }

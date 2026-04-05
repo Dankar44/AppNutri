@@ -8,6 +8,33 @@ import { PacienteFichaClient } from "@/components/paciente/paciente-ficha-client
 import { getPlanesPaciente } from "@/app/actions/planes";
 import { getPlan } from "@/app/actions/planes";
 import { getHorarioPaciente, getRecomendaciones } from "@/app/actions/pacientes";
+import { getFichaSidebar } from "@/app/actions/ficha-sidebar";
+import { prisma } from "@/lib/prisma";
+
+const MICRO_COLS = [
+  "vitaminaA","vitaminaB6","vitaminaB12","vitaminaC","vitaminaD",
+  "vitaminaE","vitaminaK","tiamina","riboflavina","niacina",
+  "folato","acidoPantotenico","colina","calcio","hierro",
+  "magnesio","fosforo","potasio","sodio","cinc",
+  "cobre","manganeso","selenio","fluor",
+] as const;
+
+async function getMicronutrientes(alimentoIds: string[]): Promise<Record<string, Record<string, number>>> {
+  if (alimentoIds.length === 0) return {};
+  const placeholders = alimentoIds.map((_, i) => `$${i + 1}`).join(",");
+  const selectCols = MICRO_COLS.map(c => `"${c}"`).join(",");
+  const rows = await prisma.$queryRawUnsafe<(Record<string, unknown> & { id: string })[]>(
+    `SELECT id, ${selectCols} FROM alimentos WHERE id IN (${placeholders})`,
+    ...alimentoIds
+  );
+  const map: Record<string, Record<string, number>> = {};
+  for (const row of rows) {
+    const micros: Record<string, number> = {};
+    for (const col of MICRO_COLS) micros[col] = typeof row[col] === "number" ? row[col] as number : 0;
+    map[row.id] = micros;
+  }
+  return map;
+}
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -28,10 +55,11 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
     ? JSON.parse(JSON.stringify(await getMedidas(id)))
     : [];
 
-  const [horario, recomendaciones, planesResumen] = await Promise.all([
+  const [horario, recomendaciones, planesResumen, sidebarData] = await Promise.all([
     getHorarioPaciente(id),
     getRecomendaciones(id),
     getPlanesPaciente(id),
+    getFichaSidebar(id),
   ]);
 
   const planes =
@@ -43,6 +71,17 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
             planesPaciente.map(async (p) => {
               const plan = await getPlan(p.id);
               if (!plan) return null;
+
+              // Recoger todos los IDs de alimentos del plan para cargar micronutrientes
+              const alimentoIds: string[] = [];
+              for (const dia of plan.dias) {
+                for (const comida of dia.comidas) {
+                  for (const a of comida.alimentos) {
+                    if (a.alimento?.id) alimentoIds.push(a.alimento.id);
+                  }
+                }
+              }
+              const microMap = await getMicronutrientes([...new Set(alimentoIds)]);
 
               return {
                 id: plan.id,
@@ -61,6 +100,7 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
                     tipo: comida.tipo,
                     descripcion: comida.descripcion,
                     alimentos: comida.alimentos.map((a) => {
+                      const micros = a.alimento?.id ? (microMap[a.alimento.id] || {}) : {};
                       const itemAlimento = a.alimento
                         ? {
                             id: a.alimento.id,
@@ -70,6 +110,8 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
                             carbohidratos: a.alimento.carbohidratos ?? 0,
                             grasas: a.alimento.grasas ?? 0,
                             fibra: a.alimento.fibra ?? 0,
+                            categoria: a.alimento.categoria ?? "OTROS",
+                            ...micros,
                           }
                         : null;
 
@@ -122,6 +164,7 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
         horario={JSON.parse(JSON.stringify(horario))}
         recomendaciones={recomendaciones}
         planesResumen={JSON.parse(JSON.stringify(planesResumen))}
+        sidebarData={sidebarData}
       />
     </div>
   );

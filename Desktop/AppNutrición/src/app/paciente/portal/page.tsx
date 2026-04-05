@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { UtensilsCrossed, BookOpen, TrendingUp, ShoppingCart } from "lucide-react";
+import { UtensilsCrossed, BookOpen, TrendingUp, ShoppingCart, ClipboardCheck } from "lucide-react";
 import { getCurrentPaciente } from "@/lib/patient-auth";
 import { prisma } from "@/lib/prisma";
 import { capitalizarNombre } from "@/lib/utils";
@@ -84,6 +84,15 @@ export default async function PatientPortalPage() {
           <BookOpen className="w-6 h-6 sm:w-8 sm:h-8 text-green-600 mb-2 sm:mb-3" />
           <h3 className="font-semibold mb-1">Mi diario</h3>
           <p className="text-sm text-muted-foreground">Registra lo que comes cada día</p>
+        </Link>
+
+        <Link
+          href="/paciente/portal/seguimiento"
+          className="bg-card rounded-xl border border-border p-4 sm:p-6 hover:border-primary/30 hover:shadow-sm transition-all"
+        >
+          <ClipboardCheck className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-600 mb-2 sm:mb-3" />
+          <h3 className="font-semibold mb-1">Mi seguimiento</h3>
+          <p className="text-sm text-muted-foreground">Registra comidas, agua y ejercicio</p>
         </Link>
 
         <Link

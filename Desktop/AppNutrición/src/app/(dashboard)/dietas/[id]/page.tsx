@@ -102,6 +102,7 @@ export default async function PlanDetailPage({ params }: Props) {
                     proteinas: a.alimento.proteinas,
                     carbohidratos: a.alimento.carbohidratos,
                     grasas: a.alimento.grasas,
+                    fibra: a.alimento.fibra,
                   }
                 : null,
               receta: a.receta
@@ -112,6 +113,7 @@ export default async function PlanDetailPage({ params }: Props) {
                     proteinas: a.receta.proteinas,
                     carbohidratos: a.receta.carbohidratos,
                     grasas: a.receta.grasas,
+                    fibra: a.receta.fibra,
                   }
                 : null,
             })),

@@ -187,6 +187,7 @@ model Paciente {
   acceso              AccesoPaciente?
   entradasDiario      EntradaDiario[]
   generacionesIA      GeneracionIA[]
+  seguimiento         SeguimientoDiario[]
 
   @@map("pacientes")
 }
@@ -200,6 +201,31 @@ model Alimento {
   carbohidratos   Float
   grasas          Float
   fibra           Float             @default(0)
+  // Micronutrientes (por 100g)
+  vitaminaA       Float?            // ug
+  vitaminaB6      Float?            // mg
+  vitaminaB12     Float?            // ug
+  vitaminaC       Float?            // mg
+  vitaminaD       Float?            // ug
+  vitaminaE       Float?            // mg
+  vitaminaK       Float?            // ug
+  tiamina         Float?            // mg (B1)
+  riboflavina     Float?            // mg (B2)
+  niacina         Float?            // mg (B3)
+  folato          Float?            // ug (B9)
+  acidoPantotenico Float?           // mg (B5)
+  colina          Float?            // mg
+  calcio          Float?            // mg
+  hierro          Float?            // mg
+  magnesio        Float?            // mg
+  fosforo         Float?            // mg
+  potasio         Float?            // mg
+  sodio           Float?            // mg
+  cinc            Float?            // mg
+  cobre           Float?            // mg
+  manganeso       Float?            // mg
+  selenio         Float?            // ug
+  fluor           Float?            // ug
   porcion         Float             @default(100)
   unidad          UnidadMedida      @default(GRAMOS)
   origen          OrigenAlimento    @default(PERSONALIZADO)
@@ -475,4 +501,24 @@ model Notificacion {
   createdAt   DateTime          @default(now())
 
   @@map("notificaciones")
+}
+
+model SeguimientoDiario {
+  id                    String   @id @default(cuid())
+  pacienteId            String
+  paciente              Paciente @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  fecha                 DateTime @db.Date
+  cumplido              Boolean  @default(false)
+  aguaML                Int      @default(0)
+  ejercicio             Boolean  @default(false)
+  ejercicioMinutos      Int      @default(0)
+  ejercicioKcal         Int      @default(0)
+  ejercicioTipo         String?
+  ejercicioDistanciaKm  Float    @default(0)
+  notas                 String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([pacienteId, fecha])
+  @@map("seguimiento_diario")
 }

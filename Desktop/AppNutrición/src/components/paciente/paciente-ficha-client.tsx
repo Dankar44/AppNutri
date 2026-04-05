@@ -20,7 +20,10 @@ import { FICHA_TABS, type PestanaFicha } from "@/lib/paciente-ficha-pestanas";
 import { PlanificacionPorDefectoTab } from "./planificacion-por-defecto-tab";
 import { PlanDeAlimentacionTab } from "./plan-de-alimentacion-tab";
 import { PacienteFichaGeneralTab } from "./paciente-ficha-general-tab";
+import { SeguimientoTab } from "./seguimiento-tab";
+import { RecomendacionesTab } from "./recomendaciones-tab";
 import type { HorarioEntry } from "@/app/actions/pacientes";
+import type { FichaSidebarData } from "@/lib/ficha-sidebar-types";
 
 export type { PestanaFicha };
 
@@ -114,6 +117,7 @@ export function PacienteFichaClient({
   horario = [],
   recomendaciones = "",
   planesResumen = [],
+  sidebarData = {},
 }: {
   paciente: PacienteSerializado;
   pestana: PestanaFicha;
@@ -122,6 +126,7 @@ export function PacienteFichaClient({
   horario?: HorarioEntry[];
   recomendaciones?: string;
   planesResumen?: PlanResumen[];
+  sidebarData?: FichaSidebarData;
 }) {
   const nombre = capitalizarNombre(paciente.nombre);
   const apellidos = capitalizarNombre(paciente.apellidos);
@@ -148,35 +153,31 @@ export function PacienteFichaClient({
             <h1 className="text-xl sm:text-2xl font-bold truncate">
               {nombre} {apellidos}
             </h1>
-            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-              {paciente.fechaNacimiento && (
-                <span className="inline-flex items-center gap-1">
-                  <Calendar className="w-4 h-4 shrink-0" />
-                  {formatDate(paciente.fechaNacimiento)}
-                  {edad != null && ` (${edad} años)`}
-                </span>
-              )}
-              {paciente.email && (
-                <a
-                  href={`mailto:${paciente.email}`}
-                  className="inline-flex items-center gap-1 text-primary hover:underline"
-                >
-                  <Mail className="w-4 h-4 shrink-0" />
-                  <span className="truncate max-w-[200px] sm:max-w-xs">
-                    {paciente.email}
-                  </span>
-                </a>
-              )}
-            </div>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+        <div className="flex items-center gap-3 shrink-0 flex-wrap">
+          {paciente.fechaNacimiento && (
+            <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+              <Calendar className="w-4 h-4 shrink-0" />
+              {formatDate(paciente.fechaNacimiento)}
+              {edad != null && ` (${edad} años)`}
+            </span>
+          )}
+          {paciente.email && (
+            <a
+              href={`mailto:${paciente.email}`}
+              className="p-2 rounded-lg border border-border hover:bg-muted transition-colors"
+              title={paciente.email}
+            >
+              <Mail className="w-4 h-4" />
+            </a>
+          )}
           <Link
             href={`/pacientes/${paciente.id}/editar`}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-muted text-sm font-medium"
+            className="p-2 rounded-lg border border-border hover:bg-muted transition-colors"
+            title="Editar paciente"
           >
             <Pencil className="w-4 h-4" />
-            Editar
           </Link>
           <PacienteActions pacienteId={paciente.id} activo={paciente.activo} />
         </div>
@@ -221,18 +222,22 @@ export function PacienteFichaClient({
           horario={horario}
           recomendaciones={recomendaciones}
           planes={planesResumen}
+          sidebarData={sidebarData}
         />
       )}
 
       {pestana === "informacion" && (
         <PacienteFichaInformacionTab
           pacienteId={paciente.id}
+          pacienteEmail={paciente.email}
           initialFicha={ficha}
           resumen={{
             patologias: paciente.patologias,
             medicamentos: paciente.medicamentos,
             alergias: paciente.alergias,
             intolerancias: paciente.intolerancias,
+            objetivo: paciente.objetivo,
+            objetivoDetalle: paciente.objetivoDetalle,
           }}
         />
       )}
@@ -255,6 +260,23 @@ export function PacienteFichaClient({
           pacienteId={paciente.id}
           pacienteNombre={`${paciente.nombre} ${paciente.apellidos}`}
           planes={planes}
+          pacientePeso={paciente.peso}
+          pacienteObjetivo={paciente.objetivo}
+        />
+      )}
+
+      {pestana === "seguimiento" && (
+        <SeguimientoTab
+          pacienteId={paciente.id}
+          pacienteNombre={`${paciente.nombre} ${paciente.apellidos}`}
+          pacientePeso={paciente.peso}
+        />
+      )}
+
+      {pestana === "recomendaciones" && (
+        <RecomendacionesTab
+          pacienteId={paciente.id}
+          pacientePeso={paciente.peso}
         />
       )}
 
@@ -289,6 +311,8 @@ export function PacienteFichaClient({
         pestana !== "mediciones" &&
         pestana !== "planificacion" &&
         pestana !== "plan-alimentacion" &&
+        pestana !== "seguimiento" &&
+        pestana !== "recomendaciones" &&
         pestana !== "portal-paciente" && (
         <div className="rounded-xl border border-dashed border-border bg-muted/20 p-10 text-center">
           <p className="text-muted-foreground text-sm max-w-md mx-auto">

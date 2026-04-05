@@ -1,0 +1,266 @@
+"use server";
+
+import { prisma } from "@/lib/prisma";
+import { getCurrentPaciente } from "@/lib/patient-auth";
+import { revalidatePath } from "next/cache";
+import {
+  sanitizeStringOptional,
+  validateNumber,
+  validateNumberOptional,
+} from "@/lib/validation";
+
+// ─── Types ───
+
+export interface ComidaSeguimiento {
+  tipo: string; // DESAYUNO, MEDIA_MANANA, etc.
+  alimentos: {
+    nombre: string;
+    cantidad: number;
+    cumplido: boolean;
+  }[];
+  horaReal: string | null;
+  notas: string | null;
+}
+
+export interface SeguimientoPacienteDia {
+  id: string;
+  fecha: Date;
+  cumplido: boolean;
+  aguaML: number;
+  ejercicio: boolean;
+  ejercicioMinutos: number;
+  ejercicioKcal: number;
+  ejercicioTipo: string | null;
+  ejercicioDistanciaKm: number;
+  notas: string | null;
+  comidasData: ComidaSeguimiento[] | null;
+}
+
+export interface GuardarSeguimientoData {
+  aguaML?: number;
+  ejercicio?: boolean;
+  ejercicioMinutos?: number;
+  ejercicioKcal?: number;
+  ejercicioTipo?: string;
+  ejercicioDistanciaKm?: number;
+  notas?: string;
+  comidasData?: ComidaSeguimiento[];
+}
+
+// ─── Comida del día desde el plan activo ───
+
+export interface AlimentoPlanificado {
+  nombre: string;
+  cantidad: number;
+  unidad: string;
+}
+
+export interface ComidaPlanificada {
+  tipo: string;
+  descripcion: string | null;
+  alimentos: AlimentoPlanificado[];
+}
+
+const DIAS_SEMANA_MAP: Record<number, string> = {
+  0: "DOMINGO",
+  1: "LUNES",
+  2: "MARTES",
+  3: "MIERCOLES",
+  4: "JUEVES",
+  5: "VIERNES",
+  6: "SABADO",
+};
+
+export async function getComidaDelDiaPaciente(
+  fecha: string
+): Promise<{ comidas: ComidaPlanificada[]; peso: number | null }> {
+  const session = await getCurrentPaciente();
+  if (!session) return { comidas: [], peso: null };
+
+  const d = new Date(fecha + "T12:00:00");
+  const diaSemana = DIAS_SEMANA_MAP[d.getDay()];
+
+  const plan = await prisma.planAlimenticio.findFirst({
+    where: { pacienteId: session.pacienteId, activo: true },
+    orderBy: { createdAt: "desc" },
+    include: {
+      dias: {
+        where: { dia: diaSemana as never },
+        include: {
+          comidas: {
+            orderBy: { orden: "asc" },
+            include: {
+              alimentos: {
+                orderBy: { orden: "asc" },
+                include: {
+                  alimento: { select: { nombre: true } },
+                  receta: { select: { nombre: true } },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const paciente = await prisma.paciente.findUnique({
+    where: { id: session.pacienteId },
+    select: { peso: true },
+  });
+
+  if (!plan || plan.dias.length === 0) {
+    return { comidas: [], peso: paciente?.peso ?? null };
+  }
+
+  const diaDelPlan = plan.dias[0];
+  const comidas: ComidaPlanificada[] = diaDelPlan.comidas.map((c) => ({
+    tipo: c.tipo,
+    descripcion: c.descripcion,
+    alimentos: c.alimentos.map((a) => ({
+      nombre: a.alimento?.nombre || a.receta?.nombre || "Alimento",
+      cantidad: a.cantidad,
+      unidad: a.unidad,
+    })),
+  }));
+
+  return { comidas, peso: paciente?.peso ?? null };
+}
+
+// ─── Get seguimiento del día ───
+
+export async function getSeguimientoPacienteDia(
+  fecha: string
+): Promise<SeguimientoPacienteDia | null> {
+  const session = await getCurrentPaciente();
+  if (!session) return null;
+
+  const rows = await prisma.$queryRawUnsafe<SeguimientoPacienteDia[]>(
+    `SELECT id, fecha, cumplido, "aguaML", ejercicio, "ejercicioMinutos",
+            "ejercicioKcal", "ejercicioTipo", "ejercicioDistanciaKm", notas,
+            "comidasData"
+     FROM seguimiento_diario
+     WHERE "pacienteId" = $1 AND fecha = $2::date`,
+    session.pacienteId,
+    fecha
+  );
+
+  return rows[0] ?? null;
+}
+
+// ─── Guardar seguimiento del día ───
+
+export async function guardarSeguimientoPaciente(
+  fecha: string,
+  data: GuardarSeguimientoData
+) {
+  const session = await getCurrentPaciente();
+  if (!session) throw new Error("No autorizado");
+
+  // Validate
+  const aguaML = validateNumber(data.aguaML ?? 0, 0, 10000);
+  const ejercicio = data.ejercicio ?? false;
+  const ejercicioMinutos = validateNumber(data.ejercicioMinutos ?? 0, 0, 1440);
+  const ejercicioKcal = validateNumber(data.ejercicioKcal ?? 0, 0, 20000);
+  const ejercicioTipo = sanitizeStringOptional(data.ejercicioTipo, 200);
+  const ejercicioDistanciaKm = validateNumberOptional(
+    data.ejercicioDistanciaKm,
+    0,
+    500
+  ) ?? 0;
+  const notas = sanitizeStringOptional(data.notas, 2000);
+
+  // Sanitize comidas data
+  const comidasData = data.comidasData
+    ? JSON.stringify(
+        data.comidasData.map((c) => ({
+          tipo: String(c.tipo).slice(0, 50),
+          alimentos: (c.alimentos || []).slice(0, 30).map((a) => ({
+            nombre: String(a.nombre).slice(0, 200),
+            cantidad: Number(a.cantidad) || 0,
+            cumplido: Boolean(a.cumplido),
+          })),
+          horaReal: c.horaReal ? String(c.horaReal).slice(0, 10) : null,
+          notas: c.notas ? String(c.notas).slice(0, 500) : null,
+        }))
+      )
+    : null;
+
+  // Check if comidasData column exists — if not, upsert without it
+  // We compute cumplido from meal check data
+  let cumplido = false;
+  if (data.comidasData && data.comidasData.length > 0) {
+    const totalAlimentos = data.comidasData.reduce(
+      (sum, c) => sum + c.alimentos.length,
+      0
+    );
+    const cumplidos = data.comidasData.reduce(
+      (sum, c) => sum + c.alimentos.filter((a) => a.cumplido).length,
+      0
+    );
+    cumplido = totalAlimentos > 0 && cumplidos / totalAlimentos >= 0.5;
+  }
+
+  try {
+    await prisma.$queryRawUnsafe(
+      `INSERT INTO seguimiento_diario
+        ("pacienteId", fecha, cumplido, "aguaML", ejercicio, "ejercicioMinutos",
+         "ejercicioKcal", "ejercicioTipo", "ejercicioDistanciaKm", notas, "comidasData")
+       VALUES ($1, $2::date, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb)
+       ON CONFLICT ("pacienteId", fecha)
+       DO UPDATE SET
+         cumplido = $3,
+         "aguaML" = $4,
+         ejercicio = $5,
+         "ejercicioMinutos" = $6,
+         "ejercicioKcal" = $7,
+         "ejercicioTipo" = $8,
+         "ejercicioDistanciaKm" = $9,
+         notas = $10,
+         "comidasData" = $11::jsonb,
+         "updatedAt" = CURRENT_TIMESTAMP`,
+      session.pacienteId,
+      fecha,
+      cumplido,
+      aguaML,
+      ejercicio,
+      ejercicioMinutos,
+      ejercicioKcal,
+      ejercicioTipo,
+      ejercicioDistanciaKm,
+      notas,
+      comidasData
+    );
+  } catch {
+    // Fallback: comidasData column might not exist yet, save without it
+    await prisma.$queryRawUnsafe(
+      `INSERT INTO seguimiento_diario
+        ("pacienteId", fecha, cumplido, "aguaML", ejercicio, "ejercicioMinutos",
+         "ejercicioKcal", "ejercicioTipo", "ejercicioDistanciaKm", notas)
+       VALUES ($1, $2::date, $3, $4, $5, $6, $7, $8, $9, $10)
+       ON CONFLICT ("pacienteId", fecha)
+       DO UPDATE SET
+         cumplido = $3,
+         "aguaML" = $4,
+         ejercicio = $5,
+         "ejercicioMinutos" = $6,
+         "ejercicioKcal" = $7,
+         "ejercicioTipo" = $8,
+         "ejercicioDistanciaKm" = $9,
+         notas = $10,
+         "updatedAt" = CURRENT_TIMESTAMP`,
+      session.pacienteId,
+      fecha,
+      cumplido,
+      aguaML,
+      ejercicio,
+      ejercicioMinutos,
+      ejercicioKcal,
+      ejercicioTipo,
+      ejercicioDistanciaKm,
+      notas
+    );
+  }
+
+  revalidatePath("/paciente/portal/seguimiento");
+}

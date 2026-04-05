@@ -283,3 +283,72 @@ export async function importarAlimentoAPI(data: AlimentoAPIResult) {
   revalidatePath("/alimentos");
   return alimento;
 }
+
+export async function buscarEquivalentes(
+  alimentoIdExcluir: string,
+  caloriasReferencia: number,
+  busqueda?: string
+) {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return [];
+
+  const search = busqueda ? sanitizeSearch(busqueda) : undefined;
+
+  // Obtener la categoría y macros del alimento de referencia
+  const ref = await prisma.alimento.findUnique({
+    where: { id: alimentoIdExcluir },
+    select: { categoria: true, proteinas: true, carbohidratos: true, grasas: true },
+  });
+
+  const baseWhere = {
+    OR: [{ dietistaId: dietista.id }, { dietistaId: null }],
+    id: { not: alimentoIdExcluir },
+    calorias: { gte: 5 as number },
+    ...(search ? { nombre: { contains: search, mode: "insensitive" as const } } : {}),
+  };
+
+  // Primero: misma categoría (priorizados)
+  const mismaCategoria = ref
+    ? await prisma.alimento.findMany({
+        where: { ...baseWhere, categoria: ref.categoria },
+        select: { id: true, nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true },
+        orderBy: { nombre: "asc" },
+        take: 40,
+      })
+    : [];
+
+  // Segundo: otras categorías para completar
+  const idsYaIncluidos = new Set(mismaCategoria.map((a) => a.id));
+  const otrasNeeded = 60 - mismaCategoria.length;
+  const otras = otrasNeeded > 0
+    ? await prisma.alimento.findMany({
+        where: {
+          ...baseWhere,
+          ...(ref ? { categoria: { not: ref.categoria } } : {}),
+        },
+        select: { id: true, nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true },
+        orderBy: { nombre: "asc" },
+        take: otrasNeeded + 10,
+      })
+    : [];
+
+  // Combinar: primero misma categoría, luego otros
+  const todos = [
+    ...mismaCategoria,
+    ...otras.filter((a) => !idsYaIncluidos.has(a.id)),
+  ].slice(0, 60);
+
+  // Ordenar por similitud de macros si tenemos referencia
+  if (ref) {
+    const refP = ref.proteinas;
+    const refC = ref.carbohidratos;
+    const refG = ref.grasas;
+    todos.sort((a, b) => {
+      const diffA = Math.abs(a.proteinas - refP) + Math.abs(a.carbohidratos - refC) + Math.abs(a.grasas - refG);
+      const diffB = Math.abs(b.proteinas - refP) + Math.abs(b.carbohidratos - refC) + Math.abs(b.grasas - refG);
+      return diffA - diffB;
+    });
+  }
+
+  return todos;
+}
