@@ -215,3 +215,18 @@ export async function getAccesoPaciente(pacienteId: string) {
     where: { pacienteId },
   });
 }
+
+export async function getAccesoEstado(pacienteId: string) {
+  "use server";
+  const acceso = await prisma.accesoPaciente.findUnique({
+    where: { pacienteId },
+    select: { email: true, activo: true, passwordHash: true, perfilCompleto: true },
+  });
+  if (!acceso) return null;
+  return {
+    email: acceso.email,
+    activo: acceso.activo,
+    tienePassword: !!acceso.passwordHash,
+    perfilCompleto: acceso.perfilCompleto,
+  };
+}

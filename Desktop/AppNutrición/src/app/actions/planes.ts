@@ -12,6 +12,9 @@ import {
   validateNumberOptional,
   LIMITS,
 } from "@/lib/validation";
+import { capitalizarNombre } from "@/lib/utils";
+import { getRecomendaciones } from "./pacientes";
+import type { PlanPDFData } from "@/lib/pdf/generate-plan-pdf";
 
 /**
  * Helper: verifica que una comida pertenezca a un plan del dietista actual.
@@ -417,4 +420,67 @@ export async function guardarComoPlantilla(planId: string, nombre: string) {
 
   revalidatePath("/dietas");
   return plantilla;
+}
+
+/**
+ * Returns everything needed to render the PDF on the client.
+ */
+export async function getPlanPDFData(planId: string): Promise<PlanPDFData | null> {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return null;
+
+  const plan = await getPlan(planId);
+  if (!plan) return null;
+
+  const recomendaciones = await getRecomendaciones(plan.pacienteId);
+
+  return {
+    planNombre: plan.nombre,
+    pacienteNombre: `${capitalizarNombre(plan.paciente.nombre)} ${capitalizarNombre(plan.paciente.apellidos)}`,
+    dietistaNombre: `${dietista.nombre} ${dietista.apellidos}`,
+    dias: plan.dias.map((dia) => ({
+      dia: dia.dia,
+      comidas: dia.comidas.map((comida) => ({
+        tipo: comida.tipo,
+        descripcion: comida.descripcion,
+        alimentos: comida.alimentos.map((a) => ({
+          cantidad: a.cantidad,
+          unidad: a.unidad,
+          alimento: a.alimento
+            ? {
+                id: a.alimento.id,
+                nombre: a.alimento.nombre,
+                categoria: a.alimento.categoria ?? "OTROS",
+                calorias: a.alimento.calorias ?? 0,
+                proteinas: a.alimento.proteinas ?? 0,
+                carbohidratos: a.alimento.carbohidratos ?? 0,
+                grasas: a.alimento.grasas ?? 0,
+                fibra: a.alimento.fibra ?? 0,
+                porcion: a.alimento.porcion ?? 100,
+              }
+            : null,
+          receta: a.receta
+            ? {
+                id: a.receta.id,
+                nombre: a.receta.nombre,
+                descripcion: a.receta.descripcion,
+                instrucciones: a.receta.instrucciones,
+                porciones: a.receta.porciones ?? 1,
+                calorias: a.receta.calorias ?? 0,
+                proteinas: a.receta.proteinas ?? 0,
+                carbohidratos: a.receta.carbohidratos ?? 0,
+                grasas: a.receta.grasas ?? 0,
+                ingredientes: a.receta.ingredientes.map((i) => ({
+                  alimento: { nombre: i.alimento.nombre },
+                  cantidad: i.cantidad,
+                  unidad: i.unidad,
+                })),
+              }
+            : null,
+        })),
+      })),
+    })),
+    recomendaciones,
+    caloriasObjetivo: plan.caloriasObjetivo,
+  };
 }

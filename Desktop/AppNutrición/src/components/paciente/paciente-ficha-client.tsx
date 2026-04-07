@@ -22,6 +22,7 @@ import { PlanDeAlimentacionTab } from "./plan-de-alimentacion-tab";
 import { PacienteFichaGeneralTab } from "./paciente-ficha-general-tab";
 import { SeguimientoTab } from "./seguimiento-tab";
 import { RecomendacionesTab } from "./recomendaciones-tab";
+import { EntregablesTab } from "./entregables-tab";
 import type { HorarioEntry } from "@/app/actions/pacientes";
 import type { FichaSidebarData } from "@/lib/ficha-sidebar-types";
 
@@ -280,6 +281,19 @@ export function PacienteFichaClient({
         />
       )}
 
+      {pestana === "entregables" && (
+        <EntregablesTab
+          pacienteId={paciente.id}
+          pacienteEmail={paciente.email}
+          pacienteNombre={`${paciente.nombre} ${paciente.apellidos}`}
+          planActivo={
+            planesResumen.find((p) => p.activo)
+              ? { id: planesResumen.find((p) => p.activo)!.id, nombre: planesResumen.find((p) => p.activo)!.nombre }
+              : null
+          }
+        />
+      )}
+
       {pestana === "portal-paciente" && (
         <div className="rounded-xl border border-border bg-card p-6 sm:p-8 max-w-xl">
           <div className="flex items-start gap-3">
@@ -313,6 +327,7 @@ export function PacienteFichaClient({
         pestana !== "plan-alimentacion" &&
         pestana !== "seguimiento" &&
         pestana !== "recomendaciones" &&
+        pestana !== "entregables" &&
         pestana !== "portal-paciente" && (
         <div className="rounded-xl border border-dashed border-border bg-muted/20 p-10 text-center">
           <p className="text-muted-foreground text-sm max-w-md mx-auto">

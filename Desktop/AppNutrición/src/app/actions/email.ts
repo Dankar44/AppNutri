@@ -3,6 +3,9 @@
 import { getMailer } from "@/lib/mailer";
 import { getCurrentDietista } from "./auth";
 import { getPaciente } from "./pacientes";
+import { getPlan } from "./planes";
+import { generatePlanPDF, type PlanPDFData } from "@/lib/pdf/generate-plan-pdf";
+import { getRecomendaciones } from "./pacientes";
 import type { FichaInformacionData } from "@/lib/ficha-informacion-types";
 import {
   OPCION_VACIA,
@@ -183,6 +186,177 @@ export async function enviarCuestionarioPaciente(
       from: `${dietistaNombre} - AppNutri <${process.env.GMAIL_USER}>`,
       to: paciente.email,
       subject: `Tu cuestionario nutricional \u2014 ${dietistaNombre}`,
+      html,
+      replyTo: dietista.email,
+    });
+    return { ok: true };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Error desconocido";
+    return { ok: false, error: msg };
+  }
+}
+
+// ─── Enviar plan alimentario por email ───
+
+export async function enviarPlanPorEmail(
+  pacienteId: string,
+  planId: string
+): Promise<{ ok: boolean; error?: string }> {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return { ok: false, error: "No autorizado" };
+
+  const paciente = await getPaciente(pacienteId);
+  if (!paciente) return { ok: false, error: "Paciente no encontrado" };
+  if (!paciente.email) return { ok: false, error: "El paciente no tiene email registrado" };
+
+  const plan = await getPlan(planId);
+  if (!plan) return { ok: false, error: "Plan no encontrado" };
+
+  const mailer = getMailer();
+  if (!mailer) {
+    return { ok: false, error: "Email no configurado (falta GMAIL_USER / GMAIL_APP_PASSWORD en .env.local)" };
+  }
+
+  const pacienteNombre = `${paciente.nombre} ${paciente.apellidos}`.trim();
+  const dietistaNombre = `${dietista.nombre} ${dietista.apellidos}`.trim();
+  const recomendaciones = await getRecomendaciones(pacienteId);
+
+  const pdfData: PlanPDFData = {
+    planNombre: plan.nombre,
+    pacienteNombre,
+    dietistaNombre,
+    dias: plan.dias.map((dia) => ({
+      dia: dia.dia,
+      comidas: dia.comidas.map((comida) => ({
+        tipo: comida.tipo,
+        descripcion: comida.descripcion,
+        alimentos: comida.alimentos.map((a) => ({
+          cantidad: a.cantidad,
+          unidad: a.unidad,
+          alimento: a.alimento
+            ? {
+                id: a.alimento.id,
+                nombre: a.alimento.nombre,
+                categoria: a.alimento.categoria ?? "OTROS",
+                calorias: a.alimento.calorias ?? 0,
+                proteinas: a.alimento.proteinas ?? 0,
+                carbohidratos: a.alimento.carbohidratos ?? 0,
+                grasas: a.alimento.grasas ?? 0,
+                fibra: a.alimento.fibra ?? 0,
+                porcion: a.alimento.porcion ?? 100,
+              }
+            : null,
+          receta: a.receta
+            ? {
+                id: a.receta.id,
+                nombre: a.receta.nombre,
+                descripcion: a.receta.descripcion,
+                instrucciones: a.receta.instrucciones,
+                porciones: a.receta.porciones ?? 1,
+                calorias: a.receta.calorias ?? 0,
+                proteinas: a.receta.proteinas ?? 0,
+                carbohidratos: a.receta.carbohidratos ?? 0,
+                grasas: a.receta.grasas ?? 0,
+                ingredientes: a.receta.ingredientes.map((i) => ({
+                  alimento: { nombre: i.alimento.nombre },
+                  cantidad: i.cantidad,
+                  unidad: i.unidad,
+                })),
+              }
+            : null,
+        })),
+      })),
+    })),
+    recomendaciones,
+    caloriasObjetivo: plan.caloriasObjetivo,
+  };
+
+  const htmlBody = generatePlanPDF(pdfData);
+
+  try {
+    await mailer.sendMail({
+      from: `${dietistaNombre} - AppNutri <${process.env.GMAIL_USER}>`,
+      to: paciente.email,
+      subject: `Tu plan de alimentación — ${escapeHtml(plan.nombre)}`,
+      html: htmlBody,
+      replyTo: dietista.email,
+    });
+    return { ok: true };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Error desconocido";
+    return { ok: false, error: msg };
+  }
+}
+
+// ─── Enviar instrucciones de acceso al portal ───
+
+export async function enviarAccesoPortal(
+  pacienteId: string
+): Promise<{ ok: boolean; error?: string }> {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return { ok: false, error: "No autorizado" };
+
+  const paciente = await getPaciente(pacienteId);
+  if (!paciente) return { ok: false, error: "Paciente no encontrado" };
+  if (!paciente.email) return { ok: false, error: "El paciente no tiene email registrado" };
+
+  const mailer = getMailer();
+  if (!mailer) {
+    return { ok: false, error: "Email no configurado (falta GMAIL_USER / GMAIL_APP_PASSWORD en .env.local)" };
+  }
+
+  const pacienteNombre = `${paciente.nombre} ${paciente.apellidos}`.trim();
+  const dietistaNombre = `${dietista.nombre} ${dietista.apellidos}`.trim();
+
+  const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/paciente/login`;
+
+  const html = `
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f9fafb">
+  <div style="max-width:600px;margin:0 auto;padding:32px 16px">
+    <div style="background:#fff;border-radius:12px;border:1px solid #e5e7eb;padding:32px;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+      <div style="text-align:center;margin-bottom:24px">
+        <h1 style="margin:0 0 8px;font-size:22px;color:#111827">Acceso a tu portal de nutricion</h1>
+        <p style="margin:0;color:#6b7280;font-size:14px">
+          Hola <strong>${escapeHtml(pacienteNombre)}</strong>, tu nutricionista
+          <strong>${escapeHtml(dietistaNombre)}</strong> te ha dado acceso a tu portal personal.
+        </p>
+      </div>
+
+      <div style="background:#f0fdf4;border-radius:8px;padding:20px;margin-bottom:24px;text-align:center">
+        <p style="margin:0 0 12px;font-size:14px;color:#166534;font-weight:600">
+          Accede a tu portal aqui:
+        </p>
+        <a href="${portalUrl}" style="display:inline-block;background:#16a34a;color:white;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">
+          Ir a mi portal
+        </a>
+      </div>
+
+      <div style="background:#f9fafb;border-radius:8px;padding:16px;margin-bottom:16px">
+        <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#374151">Instrucciones:</p>
+        <ol style="margin:0;padding:0 0 0 20px;color:#4b5563;font-size:13px;line-height:1.8">
+          <li>Accede al enlace de arriba</li>
+          <li>Introduce tu email: <strong>${escapeHtml(paciente.email)}</strong></li>
+          <li>Introduce el PIN que te ha proporcionado tu nutricionista</li>
+          <li>Desde el portal podras consultar tu dieta, registrar tu peso y mas</li>
+        </ol>
+      </div>
+
+      <div style="margin-top:24px;text-align:center;color:#9ca3af;font-size:12px">
+        <p style="margin:0">Enviado desde AppNutri</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  try {
+    await mailer.sendMail({
+      from: `${dietistaNombre} - AppNutri <${process.env.GMAIL_USER}>`,
+      to: paciente.email,
+      subject: `Acceso a tu portal de nutricion — ${dietistaNombre}`,
       html,
       replyTo: dietista.email,
     });

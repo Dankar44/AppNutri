@@ -44,7 +44,7 @@ interface RecomendacionesTabProps {
 
 // ─── Constants ───
 
-const EJERCICIOS_POR_PAGINA = 6;
+const EJERCICIOS_POR_PAGINA = 5;
 
 // ─── Main Component ───
 
@@ -235,6 +235,8 @@ function EjercicioCard({
 
   // Exercise form state for each item in the list
   const [duraciones, setDuraciones] = useState<Record<string, number>>({});
+  const [customNombre, setCustomNombre] = useState("");
+  const [customMet, setCustomMet] = useState("");
   const [frecuencias, setFrecuencias] = useState<Record<string, number>>({});
 
   const filtered = useMemo(() => {
@@ -391,77 +393,67 @@ function EjercicioCard({
               return (
                 <div
                   key={ej.nombre}
-                  className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl border px-4 py-4",
+                    alreadyAdded ? "border-primary/30 bg-primary/5" : "border-border bg-background"
+                  )}
                 >
-                  {/* Duration input */}
-                  <input
-                    type="number"
-                    min={1}
-                    max={999}
-                    value={dur}
-                    onChange={(e) =>
-                      setDuraciones((prev) => ({
-                        ...prev,
-                        [ej.nombre]: Math.max(1, parseInt(e.target.value) || 1),
-                      }))
-                    }
-                    className="w-14 px-2 py-1 rounded border border-border bg-muted/30 text-center text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  />
-                  <span className="text-xs text-muted-foreground">min</span>
-
-                  {/* Separator */}
-                  <span className="text-muted-foreground/40">|</span>
-
-                  {/* Frequency select */}
-                  <select
-                    value={freq}
-                    onChange={(e) =>
-                      setFrecuencias((prev) => ({
-                        ...prev,
-                        [ej.nombre]: parseInt(e.target.value),
-                      }))
-                    }
-                    className="px-2 py-1 rounded border border-border bg-muted/30 text-xs focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  >
-                    {FRECUENCIAS.map((f) => (
-                      <option key={f.value} value={f.value}>
-                        {f.label}
-                      </option>
-                    ))}
-                  </select>
-
-                  {/* Separator */}
-                  <span className="text-muted-foreground/40">|</span>
-
-                  {/* Exercise name */}
-                  <div className="flex-1 min-w-0">
-                    <span className="font-medium">{ej.nombre}</span>
-                    <span className="text-xs text-muted-foreground ml-1.5">
-                      Compendio de actividades fisicas
-                    </span>
+                  {/* Duration + frequency inputs */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <input
+                      type="number"
+                      min={1}
+                      max={999}
+                      value={dur}
+                      onChange={(e) =>
+                        setDuraciones((prev) => ({
+                          ...prev,
+                          [ej.nombre]: Math.max(1, parseInt(e.target.value) || 1),
+                        }))
+                      }
+                      className="w-14 px-2 py-1.5 rounded-lg border border-border bg-muted/30 text-center text-sm tabular-nums focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    />
+                    <span className="text-xs text-muted-foreground">min</span>
+                    <span className="text-muted-foreground/30">|</span>
+                    <select
+                      value={freq}
+                      onChange={(e) =>
+                        setFrecuencias((prev) => ({
+                          ...prev,
+                          [ej.nombre]: parseInt(e.target.value),
+                        }))
+                      }
+                      className="px-2 py-1.5 rounded-lg border border-border bg-muted/30 text-xs focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    >
+                      {FRECUENCIAS.map((f) => (
+                        <option key={f.value} value={f.value}>{f.label}</option>
+                      ))}
+                    </select>
                   </div>
 
-                  {/* MET */}
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    MET {ej.met}
-                  </span>
+                  {/* Exercise name — stacked */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm">{ej.nombre}</p>
+                    <p className="text-xs text-muted-foreground">Compendio de actividades físicas</p>
+                  </div>
 
-                  {/* Separator */}
-                  <span className="text-muted-foreground/40">|</span>
+                  {/* Stats — larger */}
+                  <div className="flex items-center gap-6 shrink-0">
+                    <div className="text-center">
+                      <p className="text-base font-bold tabular-nums">{ej.met}</p>
+                      <p className="text-[10px] text-muted-foreground">MET</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-base font-bold tabular-nums">{gasto} kcal</p>
+                      <p className="text-[10px] text-muted-foreground">Gasto por actividad</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-base font-bold tabular-nums">{promedio} kcal</p>
+                      <p className="text-[10px] text-muted-foreground">Promedio diaria</p>
+                    </div>
+                  </div>
 
-                  {/* Gasto */}
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {gasto} kcal
-                  </span>
-
-                  {/* Separator */}
-                  <span className="text-muted-foreground/40">|</span>
-
-                  {/* Promedio */}
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {promedio} kcal/dia
-                  </span>
-
+                  {/* Add button */}
                   {/* Add button */}
                   <button
                     type="button"
@@ -492,6 +484,53 @@ function EjercicioCard({
           </div>
 
           {/* Pagination */}
+          {/* Crear ejercicio personalizado — dentro del panel */}
+          <div className="mx-4 my-3 rounded-xl border border-dashed border-primary/30 bg-white p-3">
+            <p className="text-xs font-medium text-primary mb-2">¿No encuentras tu ejercicio? Créalo:</p>
+            <div className="flex flex-wrap items-end gap-2">
+              <div className="flex-1 min-w-[140px]">
+                <label className="text-[10px] text-muted-foreground">Nombre *</label>
+                <input
+                  type="text"
+                  placeholder="Ej: Padel adaptado..."
+                  value={customNombre}
+                  onChange={(e) => setCustomNombre(e.target.value)}
+                  maxLength={100}
+                  className="w-full px-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
+                />
+              </div>
+              <div className="w-20">
+                <label className="text-[10px] text-muted-foreground">MET *</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  min={1}
+                  max={20}
+                  placeholder="5.0"
+                  value={customMet}
+                  onChange={(e) => setCustomMet(e.target.value)}
+                  className="w-full px-2 py-1.5 rounded-lg border border-border bg-background text-sm text-center focus:outline-none focus:ring-1 focus:ring-primary/30"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const nombre = customNombre.trim();
+                  const met = parseFloat(customMet);
+                  if (!nombre || isNaN(met) || met < 1) return;
+                  if (ejercicios.some((e) => e.nombre === nombre)) return;
+                  addEjercicio({ nombre, met });
+                  setCustomNombre("");
+                  setCustomMet("");
+                }}
+                disabled={!customNombre.trim() || !customMet}
+                className="px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-40"
+              >
+                Añadir
+              </button>
+            </div>
+          </div>
+
           {totalPages > 1 && (
             <div className="flex items-center justify-center gap-2 px-4 pb-3">
               <button
