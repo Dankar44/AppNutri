@@ -357,6 +357,139 @@ export async function getPlanesPaciente(pacienteId: string) {
   });
 }
 
+const MICRO_COLS = [
+  "vitaminaA","vitaminaB6","vitaminaB12","vitaminaC","vitaminaD",
+  "vitaminaE","vitaminaK","tiamina","riboflavina","niacina",
+  "folato","acidoPantotenico","colina","calcio","hierro",
+  "magnesio","fosforo","potasio","sodio","cinc",
+  "cobre","manganeso","selenio","fluor",
+] as const;
+
+/**
+ * Carga todos los planes de un paciente con datos completos (días, comidas,
+ * alimentos + micronutrientes, recetas) en un mínimo de queries.
+ * Reemplaza el patrón N+1 anterior (getPlan por cada plan + getMicronutrientes por cada plan).
+ */
+export async function getPlanesDetallePaciente(pacienteId: string) {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return [];
+
+  // 1 sola query: todos los planes con nested includes (sin ingredientes de recetas)
+  const planes = await prisma.planAlimenticio.findMany({
+    where: { dietistaId: dietista.id, pacienteId },
+    orderBy: { createdAt: "desc" },
+    include: {
+      dias: {
+        orderBy: { dia: "asc" },
+        include: {
+          comidas: {
+            orderBy: { orden: "asc" },
+            include: {
+              alimentos: {
+                orderBy: { orden: "asc" },
+                include: {
+                  alimento: true,
+                  receta: {
+                    select: {
+                      id: true, nombre: true, calorias: true, proteinas: true,
+                      carbohidratos: true, grasas: true, fibra: true, porciones: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  // Recoger IDs únicos de alimentos de todos los planes
+  const alimentoIdSet = new Set<string>();
+  for (const plan of planes) {
+    for (const dia of plan.dias) {
+      for (const comida of dia.comidas) {
+        for (const a of comida.alimentos) {
+          if (a.alimento?.id) alimentoIdSet.add(a.alimento.id);
+        }
+      }
+    }
+  }
+
+  // 1 sola query de micronutrientes para todos los planes combinados
+  const microMap: Record<string, Record<string, number>> = {};
+  if (alimentoIdSet.size > 0) {
+    const ids = [...alimentoIdSet];
+    const placeholders = ids.map((_, i) => `$${i + 1}`).join(",");
+    const selectCols = MICRO_COLS.map((c) => `"${c}"`).join(",");
+    const rows = await prisma.$queryRawUnsafe<(Record<string, unknown> & { id: string })[]>(
+      `SELECT id, ${selectCols} FROM alimentos WHERE id IN (${placeholders})`,
+      ...ids,
+    );
+    for (const row of rows) {
+      const micros: Record<string, number> = {};
+      for (const col of MICRO_COLS) micros[col] = typeof row[col] === "number" ? (row[col] as number) : 0;
+      microMap[row.id] = micros;
+    }
+  }
+
+  // Formatear resultado
+  const result = planes.map((plan) => ({
+    id: plan.id,
+    nombre: plan.nombre,
+    caloriasObjetivo: plan.caloriasObjetivo,
+    activo: plan.activo,
+    proteinasObjetivo: plan.proteinasObjetivo,
+    carbohidratosObjetivo: plan.carbohidratosObjetivo,
+    grasasObjetivo: plan.grasasObjetivo,
+    createdAt: plan.createdAt?.toISOString?.() ?? new Date(plan.createdAt).toISOString(),
+    dias: plan.dias.map((dia) => ({
+      id: dia.id,
+      dia: dia.dia,
+      comidas: dia.comidas.map((comida) => ({
+        id: comida.id,
+        tipo: comida.tipo,
+        descripcion: comida.descripcion,
+        alimentos: comida.alimentos.map((a) => {
+          const micros = a.alimento?.id ? (microMap[a.alimento.id] || {}) : {};
+          return {
+            id: a.id,
+            cantidad: a.cantidad,
+            unidad: a.unidad,
+            alimento: a.alimento
+              ? {
+                  id: a.alimento.id,
+                  nombre: a.alimento.nombre,
+                  calorias: a.alimento.calorias ?? 0,
+                  proteinas: a.alimento.proteinas ?? 0,
+                  carbohidratos: a.alimento.carbohidratos ?? 0,
+                  grasas: a.alimento.grasas ?? 0,
+                  fibra: a.alimento.fibra ?? 0,
+                  categoria: a.alimento.categoria ?? "OTROS",
+                  ...micros,
+                }
+              : null,
+            receta: a.receta
+              ? {
+                  id: a.receta.id,
+                  nombre: a.receta.nombre,
+                  calorias: a.receta.calorias ?? 0,
+                  proteinas: a.receta.proteinas ?? 0,
+                  carbohidratos: a.receta.carbohidratos ?? 0,
+                  grasas: a.receta.grasas ?? 0,
+                  fibra: a.receta.fibra ?? 0,
+                  porciones: a.receta.porciones ?? 1,
+                }
+              : null,
+          };
+        }),
+      })),
+    })),
+  }));
+
+  return JSON.parse(JSON.stringify(result));
+}
+
 /**
  * Marca un plan como "actual" (activo) para el paciente actual,
  * desactivando el resto de planes del mismo paciente.

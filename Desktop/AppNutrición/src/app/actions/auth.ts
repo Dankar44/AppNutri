@@ -1,10 +1,11 @@
 "use server";
 
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 
-export async function getCurrentDietista() {
+export const getCurrentDietista = cache(async function getCurrentDietista() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -38,7 +39,7 @@ export async function getCurrentDietista() {
   }
 
   return { ...dietista, verificado };
-}
+});
 
 export async function signOut() {
   const supabase = await createClient();
