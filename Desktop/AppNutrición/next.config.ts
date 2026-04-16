@@ -32,6 +32,12 @@ const nextConfig: NextConfig = {
             "frame-ancestors 'none'",
           ].join("; "),
         },
+      ],
+    },
+    {
+      source: "/(.*)",
+      has: [{ type: "header", key: "x-forwarded-proto", value: "https" }],
+      headers: [
         { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
       ],
     },
