@@ -39,8 +39,8 @@ export function AnalisisSidebar({
           label="Energía"
           actual={calorias}
           objetivo={caloriasObj}
-          color="bg-amber-500"
-          trackColor="bg-amber-100"
+          color="bg-purple-400"
+          trackColor="bg-purple-50"
           unit="kcal"
           icon="⚡"
         />
@@ -48,33 +48,33 @@ export function AnalisisSidebar({
           label="Grasa"
           actual={grasas}
           objetivo={grasasObj}
-          color="bg-orange-500"
-          trackColor="bg-orange-100"
-          icon="🔴"
+          color="bg-yellow-400"
+          trackColor="bg-yellow-50"
+          icon="◎"
         />
         <MacroBarra
           label="H. Carbono"
           actual={carbohidratos}
           objetivo={carbohidratosObj}
-          color="bg-green-500"
-          trackColor="bg-green-100"
-          icon="🟢"
+          color="bg-orange-300"
+          trackColor="bg-orange-50"
+          icon="◯"
         />
         <MacroBarra
           label="Proteína"
           actual={proteinas}
           objetivo={proteinasObj}
-          color="bg-blue-500"
-          trackColor="bg-blue-100"
-          icon="🔵"
+          color="bg-blue-400"
+          trackColor="bg-blue-50"
+          icon="◇"
         />
         <MacroBarra
           label="Fibra"
           actual={fibra}
           objetivo={fibraObj}
-          color="bg-teal-500"
-          trackColor="bg-teal-100"
-          icon="🟣"
+          color="bg-emerald-400"
+          trackColor="bg-emerald-50"
+          icon="△"
         />
       </div>
     </div>

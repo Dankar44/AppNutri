@@ -123,10 +123,10 @@ const DIA_LABELS: Record<string, string> = {
 };
 
 const MACRO_COLORS = {
-  grasas: "#fbbf24", // amber-400 pastel
-  carbohidratos: "#fdba74", // orange-300 pastel
-  proteinas: "#93c5fd", // blue-300 pastel
-  fibra: "#6ee7b7", // emerald-300 pastel
+  grasas: "#f0b845", // dorado cálido
+  carbohidratos: "#d9956a", // caramelo suave
+  proteinas: "#7eaadf", // azul medio
+  fibra: "#4ec4a0", // teal medio
 };
 
 export function PlanDeAlimentacionTab({
@@ -527,8 +527,8 @@ export function PlanDeAlimentacionTab({
                   <span className="text-foreground font-medium flex items-center gap-1.5"><Flame className="w-3.5 h-3.5" /> Energía</span>
                   <span className="font-bold tabular-nums text-sm">{Math.round(totals.macros.calorias)} <span className="text-muted-foreground font-normal text-xs">/ {Math.round((totals.energy.energyTotal || 1) / 1)} kcal</span></span>
                 </div>
-                <div className="h-3 bg-amber-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-amber-400 rounded-full" style={{ width: `${Math.min(100, (totals.macros.calorias / Math.max(totals.macros.calorias * 1.15, 1)) * 100)}%` }} />
+                <div className="h-3 bg-purple-100/60 rounded-full overflow-hidden">
+                  <div className="h-full bg-purple-300 rounded-full" style={{ width: `${Math.min(100, (totals.macros.calorias / Math.max(totals.macros.calorias * 1.15, 1)) * 100)}%` }} />
                 </div>
               </div>
 
@@ -615,7 +615,7 @@ export function PlanDeAlimentacionTab({
                 {/* Barras de macros */}
                 <div className="flex-1 space-y-3 pt-1">
                   {[
-                    { key: "grasas", label: "Grasa", value: totals.macros.grasas, kcal: totals.energy.grasasKcal, color: MACRO_COLORS.grasas, bgColor: "bg-amber-50" },
+                    { key: "grasas", label: "Grasa", value: totals.macros.grasas, kcal: totals.energy.grasasKcal, color: MACRO_COLORS.grasas, bgColor: "bg-yellow-50" },
                     { key: "carbohidratos", label: "Hidratos de Carbono", value: totals.macros.carbohidratos, kcal: totals.energy.carbKcal, color: MACRO_COLORS.carbohidratos, bgColor: "bg-orange-50" },
                     { key: "proteinas", label: "Proteína", value: totals.macros.proteinas, kcal: totals.energy.protKcal, color: MACRO_COLORS.proteinas, bgColor: "bg-blue-50" },
                     { key: "fibra", label: "Fibra alimentaria", value: totals.macros.fibra, kcal: totals.energy.fibraKcal, color: MACRO_COLORS.fibra, bgColor: "bg-emerald-50" },
@@ -910,11 +910,11 @@ export function PlanDeAlimentacionTab({
               <h4 className="text-base font-semibold mb-4">Análisis global</h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                 {[
-                  { icon: <Flame className="w-4 h-4" />, label: "Energía", value: Math.round(totals.macros.calorias), obj: Math.round(calObj), unit: "kcal", color: "#fbbf24", bg: "bg-amber-100" },
-                  { icon: <Droplets className="w-4 h-4" />, label: "Grasa", value: Math.round(totals.macros.grasas * 10) / 10, obj: Math.round(grasObj * 10) / 10, unit: "g", color: MACRO_COLORS.grasas, bg: "bg-amber-100" },
-                  { icon: <Circle className="w-4 h-4" />, label: "H. Carbono", value: Math.round(totals.macros.carbohidratos * 10) / 10, obj: Math.round(carbObj * 10) / 10, unit: "g", color: MACRO_COLORS.carbohidratos, bg: "bg-orange-100" },
-                  { icon: <Diamond className="w-4 h-4" />, label: "Proteína", value: Math.round(totals.macros.proteinas * 10) / 10, obj: Math.round(protObj * 10) / 10, unit: "g", color: MACRO_COLORS.proteinas, bg: "bg-blue-100" },
-                  { icon: <Triangle className="w-4 h-4" />, label: "Fibra", value: Math.round(totals.macros.fibra * 10) / 10, obj: Math.round(fibraObj * 10) / 10, unit: "g", color: MACRO_COLORS.fibra, bg: "bg-emerald-100" },
+                  { icon: <Flame className="w-4 h-4" />, label: "Energía", value: Math.round(totals.macros.calorias), obj: Math.round(calObj), unit: "kcal", color: "#b197fc", bg: "bg-purple-50" },
+                  { icon: <Droplets className="w-4 h-4" />, label: "Grasa", value: Math.round(totals.macros.grasas * 10) / 10, obj: Math.round(grasObj * 10) / 10, unit: "g", color: MACRO_COLORS.grasas, bg: "bg-yellow-50" },
+                  { icon: <Circle className="w-4 h-4" />, label: "H. Carbono", value: Math.round(totals.macros.carbohidratos * 10) / 10, obj: Math.round(carbObj * 10) / 10, unit: "g", color: MACRO_COLORS.carbohidratos, bg: "bg-orange-50" },
+                  { icon: <Diamond className="w-4 h-4" />, label: "Proteína", value: Math.round(totals.macros.proteinas * 10) / 10, obj: Math.round(protObj * 10) / 10, unit: "g", color: MACRO_COLORS.proteinas, bg: "bg-blue-50" },
+                  { icon: <Triangle className="w-4 h-4" />, label: "Fibra", value: Math.round(totals.macros.fibra * 10) / 10, obj: Math.round(fibraObj * 10) / 10, unit: "g", color: MACRO_COLORS.fibra, bg: "bg-emerald-50" },
                 ].map((m) => {
                   const pct = m.obj > 0 ? Math.min((m.value / m.obj) * 100, 100) : 0;
                   return (

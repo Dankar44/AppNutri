@@ -31,3 +31,60 @@ body {
   background-color: var(--color-background);
   color: var(--color-foreground);
 }
+
+/* Macro slider — barra fina de colores arrastrable */
+input[type="range"].macro-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 18px;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"].macro-slider::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--slider-color) var(--slider-pct),
+    rgba(0, 0, 0, 0.06) var(--slider-pct)
+  );
+  transition: background 0.15s;
+}
+input[type="range"].macro-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 0 0 2px var(--slider-color), 0 1px 3px rgba(0, 0, 0, 0.15);
+  margin-top: -4px;
+  border: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+input[type="range"].macro-slider:hover::-webkit-slider-thumb,
+input[type="range"].macro-slider:active::-webkit-slider-thumb {
+  opacity: 1;
+}
+input[type="range"].macro-slider::-moz-range-track {
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--slider-color) var(--slider-pct),
+    rgba(0, 0, 0, 0.06) var(--slider-pct)
+  );
+}
+input[type="range"].macro-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 0 0 2px var(--slider-color), 0 1px 3px rgba(0, 0, 0, 0.15);
+  border: none;
+}
+input[type="range"].macro-slider::-moz-range-progress {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--slider-color);
+}

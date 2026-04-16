@@ -9,6 +9,7 @@ import { getPlanesPaciente } from "@/app/actions/planes";
 import { getPlan } from "@/app/actions/planes";
 import { getHorarioPaciente, getRecomendaciones } from "@/app/actions/pacientes";
 import { getFichaSidebar } from "@/app/actions/ficha-sidebar";
+import { ensurePlanificacionDefecto, getPlanificaciones } from "@/app/actions/planificaciones";
 import { prisma } from "@/lib/prisma";
 
 const MICRO_COLS = [
@@ -61,6 +62,14 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
     getPlanesPaciente(id),
     getFichaSidebar(id),
   ]);
+
+  const planificaciones =
+    pestana === "planificacion"
+      ? await (async () => {
+          await ensurePlanificacionDefecto(id);
+          return getPlanificaciones(id);
+        })()
+      : [];
 
   const planes =
     pestana === "plan-alimentacion"
@@ -161,6 +170,7 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
         pestana={pestana}
         medidas={medidas}
         planes={planes}
+        planificaciones={planificaciones}
         horario={JSON.parse(JSON.stringify(horario))}
         recomendaciones={recomendaciones}
         planesResumen={JSON.parse(JSON.stringify(planesResumen))}

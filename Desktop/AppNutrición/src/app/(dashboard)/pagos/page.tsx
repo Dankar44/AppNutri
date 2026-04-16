@@ -1,7 +1,7 @@
 import { CreditCard, CircleDollarSign, Receipt, Clock } from "lucide-react";
 import { getPagos, getEstadisticasPagos } from "@/app/actions/pagos";
 import { getPacientes } from "@/app/actions/pacientes";
-import { formatDate } from "@/lib/utils";
+import { getStripeAccountStatus } from "@/app/actions/stripe";
 import { PagosClient } from "./pagos-client";
 
 function formatEuro(value: number) {
@@ -9,10 +9,11 @@ function formatEuro(value: number) {
 }
 
 export default async function PagosPage() {
-  const [pagos, stats, pacientes] = await Promise.all([
+  const [pagos, stats, pacientes, stripeStatus] = await Promise.all([
     getPagos(),
     getEstadisticasPagos(),
     getPacientes(),
+    getStripeAccountStatus(),
   ]);
 
   const pagosSerializados = JSON.parse(JSON.stringify(pagos));
@@ -67,7 +68,7 @@ export default async function PagosPage() {
         </div>
       </div>
 
-      <PagosClient pagos={pagosSerializados} pacientes={pacientesLista} />
+      <PagosClient pagos={pagosSerializados} pacientes={pacientesLista} stripeConnected={stripeStatus.onboarded} />
     </div>
   );
 }

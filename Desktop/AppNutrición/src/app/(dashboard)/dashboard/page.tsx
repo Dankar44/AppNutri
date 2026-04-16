@@ -203,14 +203,12 @@ export default async function DashboardPage() {
               icon={Users}
               label="Total pacientes"
               value={metricas.totalPacientes}
-              change={metricas.cambioPacientes}
               color="text-blue-600 bg-blue-50"
             />
             <StatsCard
               icon={UserCheck}
               label="Consultas este mes"
               value={metricas.consultasMes}
-              change={metricas.cambioConsultas}
               color="text-green-600 bg-green-50"
             />
             <StatsCard

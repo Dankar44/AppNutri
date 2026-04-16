@@ -18,6 +18,7 @@ import {
 import { PacienteActions } from "@/app/(dashboard)/pacientes/[id]/paciente-actions";
 import { FICHA_TABS, type PestanaFicha } from "@/lib/paciente-ficha-pestanas";
 import { PlanificacionPorDefectoTab } from "./planificacion-por-defecto-tab";
+import type { Planificacion } from "@/app/actions/planificaciones";
 import { PlanDeAlimentacionTab } from "./plan-de-alimentacion-tab";
 import { PacienteFichaGeneralTab } from "./paciente-ficha-general-tab";
 import { SeguimientoTab } from "./seguimiento-tab";
@@ -115,6 +116,7 @@ export function PacienteFichaClient({
   pestana,
   medidas = [],
   planes = [],
+  planificaciones = [],
   horario = [],
   recomendaciones = "",
   planesResumen = [],
@@ -124,6 +126,7 @@ export function PacienteFichaClient({
   pestana: PestanaFicha;
   medidas?: MedidaSerializada[];
   planes?: PlanDetalle[];
+  planificaciones?: Planificacion[];
   horario?: HorarioEntry[];
   recomendaciones?: string;
   planesResumen?: PlanResumen[];
@@ -253,7 +256,13 @@ export function PacienteFichaClient({
       )}
 
       {pestana === "planificacion" && (
-        <PlanificacionPorDefectoTab paciente={paciente} medidas={medidas} ficha={ficha} />
+        <PlanificacionPorDefectoTab
+          paciente={paciente}
+          medidas={medidas}
+          ficha={ficha}
+          planificaciones={planificaciones}
+          pacienteId={paciente.id}
+        />
       )}
 
       {pestana === "plan-alimentacion" && (

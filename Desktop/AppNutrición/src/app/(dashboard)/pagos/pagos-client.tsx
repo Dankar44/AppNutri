@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Check, Trash2, CreditCard, Loader2, X } from "lucide-react";
-import { crearPago, marcarPagado, eliminarPago } from "@/app/actions/pagos";
+import { Plus, Trash2, CreditCard, Loader2, X, Link2, Copy, Check, ExternalLink, RefreshCw, Banknote } from "lucide-react";
+import { crearPago, marcarPagado, eliminarPago, generarLinkPago } from "@/app/actions/pagos";
 import { toast } from "sonner";
 
 interface Pago {
@@ -14,12 +14,15 @@ interface Pago {
   estado: string;
   metodoPago: string | null;
   fechaPago: string | null;
+  stripePaymentUrl: string | null;
+  stripeSessionId: string | null;
   createdAt: string;
 }
 
 interface Props {
   pagos: Pago[];
   pacientes: { id: string; nombre: string }[];
+  stripeConnected: boolean;
 }
 
 function formatEuro(value: number) {
@@ -30,11 +33,13 @@ function formatFecha(fecha: string) {
   return new Date(fecha).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" });
 }
 
-export function PagosClient({ pagos, pacientes }: Props) {
+export function PagosClient({ pagos, pacientes, stripeConnected }: Props) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
-  const [showPagar, setShowPagar] = useState<string | null>(null);
+  const [showManualPago, setShowManualPago] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [generatingLink, setGeneratingLink] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Form state
   const [pacienteId, setPacienteId] = useState("");
@@ -42,10 +47,8 @@ export function PagosClient({ pagos, pacientes }: Props) {
   const [importe, setImporte] = useState("");
   const [notas, setNotas] = useState("");
 
-  // Pagar state
-  const [numTarjeta, setNumTarjeta] = useState("");
-  const [expiry, setExpiry] = useState("");
-  const [cvv, setCvv] = useState("");
+  // Manual payment state
+  const [metodoPago, setMetodoPago] = useState("");
 
   async function handleCrear(e: React.FormEvent) {
     e.preventDefault();
@@ -53,38 +56,57 @@ export function PagosClient({ pagos, pacientes }: Props) {
     setLoading(true);
     try {
       await crearPago({ pacienteId: pacienteId || undefined, concepto, importe: parseFloat(importe), notas });
-      toast.success("Pago creado");
+      toast.success(stripeConnected ? "Cobro creado con link de pago" : "Cobro creado");
       setShowForm(false);
       setConcepto(""); setImporte(""); setNotas(""); setPacienteId("");
       router.refresh();
     } catch (err) {
       if (err && typeof err === "object" && "digest" in err) throw err;
-      toast.error("Error al crear pago");
+      toast.error("Error al crear cobro");
     } finally { setLoading(false); }
   }
 
-  async function handlePagar(pagoId: string) {
-    if (!numTarjeta || !expiry || !cvv) { toast.error("Completa los datos de la tarjeta"); return; }
-    setLoading(true);
-    // Simular procesamiento (2 segundos)
-    await new Promise((r) => setTimeout(r, 2000));
+  async function handleGenerarLink(pagoId: string) {
+    setGeneratingLink(pagoId);
     try {
-      const metodo = `Tarjeta ****${numTarjeta.replace(/\s/g, "").slice(-4)}`;
-      await marcarPagado(pagoId, metodo);
-      toast.success("Pago procesado correctamente");
-      setShowPagar(null);
-      setNumTarjeta(""); setExpiry(""); setCvv("");
+      const { url } = await generarLinkPago(pagoId);
+      if (url) {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link de pago generado y copiado al portapapeles");
+      }
       router.refresh();
     } catch (err) {
       if (err && typeof err === "object" && "digest" in err) throw err;
-      toast.error("Error al procesar pago");
+      toast.error(err instanceof Error ? err.message : "Error al generar link");
+    } finally { setGeneratingLink(null); }
+  }
+
+  async function handleCopyLink(url: string, pagoId: string) {
+    await navigator.clipboard.writeText(url);
+    setCopiedId(pagoId);
+    toast.success("Link copiado al portapapeles");
+    setTimeout(() => setCopiedId(null), 2000);
+  }
+
+  async function handleMarcarPagado(pagoId: string) {
+    if (!metodoPago.trim()) { toast.error("Indica el método de pago"); return; }
+    setLoading(true);
+    try {
+      await marcarPagado(pagoId, metodoPago.trim());
+      toast.success("Pago marcado como pagado");
+      setShowManualPago(null);
+      setMetodoPago("");
+      router.refresh();
+    } catch (err) {
+      if (err && typeof err === "object" && "digest" in err) throw err;
+      toast.error("Error al marcar como pagado");
     } finally { setLoading(false); }
   }
 
   async function handleEliminar(pagoId: string) {
     try {
       await eliminarPago(pagoId);
-      toast.success("Pago eliminado");
+      toast.success("Cobro eliminado");
       router.refresh();
     } catch (err) {
       if (err && typeof err === "object" && "digest" in err) throw err;
@@ -94,6 +116,21 @@ export function PagosClient({ pagos, pacientes }: Props) {
 
   return (
     <div className="space-y-6">
+      {/* Banner Stripe no conectado */}
+      {!stripeConnected && (
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <CreditCard className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+          <div className="text-sm">
+            <p className="font-medium text-amber-800">Stripe no conectado</p>
+            <p className="text-amber-700 mt-0.5">
+              Conecta tu cuenta de Stripe en{" "}
+              <a href="/ajustes" className="underline font-medium hover:text-amber-900">Ajustes</a>{" "}
+              para generar links de pago automáticos y cobrar a tus pacientes online.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Botón crear */}
       <div className="flex justify-end">
         <button onClick={() => setShowForm(!showForm)}
@@ -106,6 +143,11 @@ export function PagosClient({ pagos, pacientes }: Props) {
       {showForm && (
         <form onSubmit={handleCrear} className="bg-card rounded-xl border border-border p-6 space-y-4">
           <h3 className="font-semibold">Crear solicitud de cobro</h3>
+          {stripeConnected && (
+            <p className="text-xs text-green-700 bg-green-50 px-3 py-1.5 rounded-lg">
+              Se generará un link de pago de Stripe automáticamente
+            </p>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1.5">Paciente</label>
@@ -140,37 +182,23 @@ export function PagosClient({ pagos, pacientes }: Props) {
         </form>
       )}
 
-      {/* Modal pagar con tarjeta */}
-      {showPagar && (
+      {/* Modal marcar como pagado manualmente */}
+      {showManualPago && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
           <div className="bg-card rounded-2xl border border-border shadow-2xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold flex items-center gap-2"><CreditCard className="w-5 h-5 text-primary" /> Pagar con tarjeta</h3>
-              <button onClick={() => setShowPagar(null)} className="p-1 rounded hover:bg-muted"><X className="w-4 h-4" /></button>
+              <h3 className="font-semibold flex items-center gap-2"><Banknote className="w-5 h-5 text-primary" /> Marcar como pagado</h3>
+              <button onClick={() => { setShowManualPago(null); setMetodoPago(""); }} className="p-1 rounded hover:bg-muted"><X className="w-4 h-4" /></button>
             </div>
-            <p className="text-xs text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg mb-4">Modo de prueba — cualquier tarjeta funciona</p>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium mb-1">Número de tarjeta</label>
-                <input type="text" value={numTarjeta} onChange={(e) => setNumTarjeta(e.target.value)} maxLength={19} placeholder="4242 4242 4242 4242"
-                  className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-sm font-mono" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Caducidad</label>
-                  <input type="text" value={expiry} onChange={(e) => setExpiry(e.target.value)} maxLength={5} placeholder="12/28"
-                    className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-sm font-mono" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">CVV</label>
-                  <input type="text" value={cvv} onChange={(e) => setCvv(e.target.value)} maxLength={4} placeholder="123"
-                    className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-sm font-mono" />
-                </div>
-              </div>
+            <p className="text-sm text-muted-foreground mb-4">Registra un pago recibido fuera de Stripe (efectivo, transferencia, etc.)</p>
+            <div>
+              <label className="block text-sm font-medium mb-1">Método de pago</label>
+              <input type="text" value={metodoPago} onChange={(e) => setMetodoPago(e.target.value)} maxLength={50} placeholder="Ej: Efectivo, Transferencia, Bizum..."
+                className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-sm" />
             </div>
-            <button onClick={() => handlePagar(showPagar)} disabled={loading}
+            <button onClick={() => handleMarcarPagado(showManualPago)} disabled={loading || !metodoPago.trim()}
               className="w-full mt-4 py-3 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2">
-              {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Procesando...</> : "Pagar ahora"}
+              {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</> : "Confirmar pago"}
             </button>
           </div>
         </div>
@@ -180,7 +208,7 @@ export function PagosClient({ pagos, pacientes }: Props) {
       {pagos.length === 0 ? (
         <div className="bg-card rounded-xl border border-border p-12 text-center">
           <CreditCard className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="font-medium text-lg mb-1">Sin pagos</h3>
+          <h3 className="font-medium text-lg mb-1">Sin cobros</h3>
           <p className="text-muted-foreground">Crea tu primera solicitud de cobro</p>
         </div>
       ) : (
@@ -221,10 +249,38 @@ export function PagosClient({ pagos, pacientes }: Props) {
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
                         {pago.estado === "PENDIENTE" && (
-                          <button onClick={() => setShowPagar(pago.id)}
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90">
-                            <CreditCard className="w-3 h-3" /> Pagar
-                          </button>
+                          <>
+                            {/* Acciones Stripe */}
+                            {pago.stripePaymentUrl ? (
+                              <>
+                                <button onClick={() => handleCopyLink(pago.stripePaymentUrl!, pago.id)}
+                                  className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-[#635BFF] text-white hover:bg-[#5851DB]"
+                                  title="Copiar link de pago">
+                                  {copiedId === pago.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                                  {copiedId === pago.id ? "Copiado" : "Link"}
+                                </button>
+                                <a href={pago.stripePaymentUrl} target="_blank" rel="noopener noreferrer"
+                                  className="inline-flex items-center p-1 rounded text-xs text-[#635BFF] hover:bg-[#635BFF]/10"
+                                  title="Abrir página de pago">
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                </a>
+                              </>
+                            ) : stripeConnected ? (
+                              <button onClick={() => handleGenerarLink(pago.id)}
+                                disabled={generatingLink === pago.id}
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-[#635BFF] text-white hover:bg-[#5851DB] disabled:opacity-50"
+                                title="Generar link de pago">
+                                {generatingLink === pago.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Link2 className="w-3 h-3" />}
+                                Link
+                              </button>
+                            ) : null}
+                            {/* Marcar como pagado manualmente */}
+                            <button onClick={() => setShowManualPago(pago.id)}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border border-border hover:bg-muted"
+                              title="Marcar como pagado manualmente">
+                              <Banknote className="w-3 h-3" /> Pagado
+                            </button>
+                          </>
                         )}
                         <button onClick={() => handleEliminar(pago.id)}
                           className="p-1 rounded text-muted-foreground hover:text-red-600 hover:bg-red-50 transition-colors">

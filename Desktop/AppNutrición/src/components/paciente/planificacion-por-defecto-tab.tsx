@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import {
   Activity,
@@ -10,7 +10,9 @@ import {
   Clock,
   Dumbbell,
   Flame,
+  MoreVertical,
   Percent,
+  Plus,
   Ruler,
   Scale,
   Search,
@@ -19,9 +21,23 @@ import {
   Wheat,
   Droplets,
   Beef,
+  X,
+  Pencil,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 import type { FichaInformacionData } from "@/lib/ficha-informacion-types";
+import { MonthPicker } from "@/components/month-picker";
 import type { MedidaSerializada } from "./paciente-ficha-mediciones-tab";
+import type { Planificacion, PlanificacionDatos } from "@/app/actions/planificaciones";
+import {
+  guardarPlanificacion,
+  actualizarFechasPlanificacion,
+  crearPlanificacion,
+  renombrarPlanificacion,
+  cambiarEstadoPlanificacion,
+  eliminarPlanificacion,
+} from "@/app/actions/planificaciones";
 
 /* ─── Types ─── */
 
@@ -81,12 +97,117 @@ function categoriaIMC(imc: number): { label: string; color: string } {
   return { label: "Obesidad", color: "bg-red-100 text-red-700" };
 }
 
-function calcularBMR_Oms(pesoKg: number, alturaCm: number, edad: number, sexo: string | null): number {
-  const base = 10 * pesoKg + 6.25 * alturaCm - 5 * edad;
-  const isMale = (sexo || "").toUpperCase() === "MASCULINO";
-  return base + (isMale ? 5 : -161);
+/* ─── BMR formulas ─── */
+
+function isMale(sexo: string | null): boolean {
+  return (sexo || "").toUpperCase() === "MASCULINO";
 }
 
+// WHO/FAO/UNU — Schofield (1985), solo peso
+function calcularBMR_OMS(pesoKg: number, edad: number, sexo: string | null): number {
+  if (isMale(sexo)) {
+    if (edad < 18) return 17.5 * pesoKg + 651;
+    if (edad < 30) return 15.3 * pesoKg + 679;
+    if (edad < 60) return 11.6 * pesoKg + 879;
+    return 13.5 * pesoKg + 487;
+  }
+  if (edad < 18) return 12.2 * pesoKg + 746;
+  if (edad < 30) return 14.7 * pesoKg + 496;
+  if (edad < 60) return 8.7 * pesoKg + 829;
+  return 10.5 * pesoKg + 596;
+}
+
+// Henry / Oxford (2005), peso + altura (m)
+function calcularBMR_Henry(pesoKg: number, alturaCm: number, edad: number, sexo: string | null): number {
+  const hM = alturaCm / 100;
+  if (isMale(sexo)) {
+    if (edad < 18) return 15.6 * pesoKg + 266 * hM + 299;
+    if (edad < 30) return 14.4 * pesoKg + 313 * hM + 113;
+    if (edad < 60) return 11.4 * pesoKg + 541 * hM - 137;
+    return 11.4 * pesoKg + 541 * hM - 256;
+  }
+  if (edad < 18) return 9.40 * pesoKg + 249 * hM + 462;
+  if (edad < 30) return 10.4 * pesoKg + 615 * hM - 282;
+  if (edad < 60) return 8.18 * pesoKg + 502 * hM - 11.6;
+  return 8.52 * pesoKg + 421 * hM + 10.7;
+}
+
+// Harris-Benedict original (1919)
+function calcularBMR_HarrisBenedict(pesoKg: number, alturaCm: number, edad: number, sexo: string | null): number {
+  return isMale(sexo)
+    ? 66.5 + 13.75 * pesoKg + 5.003 * alturaCm - 6.755 * edad
+    : 655.1 + 9.563 * pesoKg + 1.850 * alturaCm - 4.676 * edad;
+}
+
+// Harris-Benedict revisada (Roza & Shizgal, 1984)
+function calcularBMR_HarrisBenedictRev(pesoKg: number, alturaCm: number, edad: number, sexo: string | null): number {
+  return isMale(sexo)
+    ? 88.362 + 13.397 * pesoKg + 4.799 * alturaCm - 5.677 * edad
+    : 447.593 + 9.247 * pesoKg + 3.098 * alturaCm - 4.330 * edad;
+}
+
+// Mifflin-St Jeor (1990)
+function calcularBMR_MifflinStJeor(pesoKg: number, alturaCm: number, edad: number, sexo: string | null): number {
+  return 10 * pesoKg + 6.25 * alturaCm - 5 * edad + (isMale(sexo) ? 5 : -161);
+}
+
+// Katch-McArdle (1983) — necesita % grasa
+function calcularBMR_KatchMcArdle(pesoKg: number, grasaPct: number | null): number | null {
+  if (grasaPct == null) return null;
+  const lbm = pesoKg * (1 - grasaPct / 100);
+  return 370 + 21.6 * lbm;
+}
+
+// Cunningham (1980) — necesita % grasa
+function calcularBMR_Cunningham(pesoKg: number, grasaPct: number | null): number | null {
+  if (grasaPct == null) return null;
+  const lbm = pesoKg * (1 - grasaPct / 100);
+  return 500 + 22 * lbm;
+}
+
+// Black et al. (1996)
+function calcularBMR_Black(pesoKg: number, alturaCm: number, edad: number, sexo: string | null): number {
+  const hM = alturaCm / 100;
+  const coef = isMale(sexo) ? 259 : 230;
+  return coef * Math.pow(pesoKg, 0.48) * Math.pow(hM, 0.50) * Math.pow(Math.max(edad, 1), -0.13);
+}
+
+// Ten Haaf & Weijs (2014) — modelo peso (resultado en kJ, se convierte a kcal)
+function calcularBMR_TenHaafPeso(pesoKg: number, alturaCm: number, edad: number, sexo: string | null): number {
+  const kJ = 49.94 * pesoKg + 24.59 * alturaCm - 34.01 * edad + (isMale(sexo) ? 799.84 : 0) + 112.24;
+  return kJ / 4.184;
+}
+
+// Ten Haaf & Weijs (2014) — modelo masa magra (resultado en kJ)
+function calcularBMR_TenHaafLBM(pesoKg: number, grasaPct: number | null): number | null {
+  if (grasaPct == null) return null;
+  const ffm = pesoKg * (1 - grasaPct / 100);
+  const kJ = 81.46 * ffm + 1886.1;
+  return kJ / 4.184;
+}
+
+// Dispatcher — elige la fórmula según el nombre
+function calcularBMR(
+  formula: string, pesoKg: number, alturaCm: number, edad: number, sexo: string | null, grasaPct: number | null
+): number | null {
+  switch (formula) {
+    case "Ecuación de la OMS":               return calcularBMR_OMS(pesoKg, edad, sexo);
+    case "Ecuación de Henry":                return calcularBMR_Henry(pesoKg, alturaCm, edad, sexo);
+    case "Ecuación de Harris Benedict":      return calcularBMR_HarrisBenedict(pesoKg, alturaCm, edad, sexo);
+    case "Ecuación revisada de Harris Benedict": return calcularBMR_HarrisBenedictRev(pesoKg, alturaCm, edad, sexo);
+    case "Ecuación de Mifflin St Jeor":      return calcularBMR_MifflinStJeor(pesoKg, alturaCm, edad, sexo);
+    case "Ecuación de Katch-McArdle":        return calcularBMR_KatchMcArdle(pesoKg, grasaPct);
+    case "Ecuación de Cunningham":           return calcularBMR_Cunningham(pesoKg, grasaPct);
+    case "Ecuación de Black":                return calcularBMR_Black(pesoKg, alturaCm, edad, sexo);
+    case "Ecuación de Ten Haaf (peso)":      return calcularBMR_TenHaafPeso(pesoKg, alturaCm, edad, sexo);
+    case "Ecuación de Ten Haaf (masa magra)": return calcularBMR_TenHaafLBM(pesoKg, grasaPct);
+    default:                                  return calcularBMR_OMS(pesoKg, edad, sexo);
+  }
+}
+
+/* ─── EER formulas ─── */
+
+// IOM 2005 (Institute of Medicine)
 function calcularEER_IOM2005(
   pesoKg: number,
   alturaCm: number,
@@ -95,10 +216,18 @@ function calcularEER_IOM2005(
   pa: number
 ): number {
   const hM = alturaCm / 100;
-  const isMale = (sexo || "").toUpperCase() === "MASCULINO";
-  return isMale
+  return isMale(sexo)
     ? 662 - 9.53 * edad + pa * (15.91 * pesoKg + 539.6 * hM)
     : 354 - 6.91 * edad + pa * (9.36 * pesoKg + 726 * hM);
+}
+
+// Dispatcher — elige EER según nombre
+function calcularEER(
+  formula: string, bmr: number | null, pal: number,
+  pesoKg: number, alturaCm: number, edad: number, sexo: string | null, paIom: number
+): number | null {
+  if (formula === "TMB x PAL") return bmr != null ? bmr * pal : null;
+  return calcularEER_IOM2005(pesoKg, alturaCm, edad, sexo, paIom);
 }
 
 function fmt1(n: number): string {
@@ -416,11 +545,125 @@ export function PlanificacionPorDefectoTab({
   paciente,
   medidas,
   ficha,
+  planificaciones: initialPlanificaciones = [],
+  pacienteId,
 }: {
   paciente: PacienteForPlanificacion;
   medidas: MedidaSerializada[];
   ficha: FichaInformacionData | null | undefined;
+  planificaciones?: Planificacion[];
+  pacienteId: string;
 }) {
+  /* ─── Planificaciones state ─── */
+  const [planificaciones, setPlanificaciones] = useState<Planificacion[]>(initialPlanificaciones);
+  const [selectedPlanId, setSelectedPlanId] = useState<string>(
+    () => initialPlanificaciones.find((p) => p.estado === "activa")?.id ?? initialPlanificaciones[0]?.id ?? ""
+  );
+  const selectedPlan = useMemo(
+    () => planificaciones.find((p) => p.id === selectedPlanId) ?? planificaciones[0] ?? null,
+    [planificaciones, selectedPlanId]
+  );
+  const datos = selectedPlan?.datos ?? {};
+
+  /* ─── Tab menu state ─── */
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [isPending, startTransition] = useTransition();
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  /* Close menu on outside click */
+  useEffect(() => {
+    if (!menuOpenId) return;
+    function handleDown(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpenId(null);
+    }
+    document.addEventListener("mousedown", handleDown);
+    return () => document.removeEventListener("mousedown", handleDown);
+  }, [menuOpenId]);
+
+  /* ─── Sort: activa first, then terminada/guardada grayed ─── */
+  const sortedPlanificaciones = useMemo(() => {
+    const activas = planificaciones.filter((p) => p.estado === "activa");
+    const inactivas = planificaciones.filter((p) => p.estado !== "activa");
+    return [...activas, ...inactivas];
+  }, [planificaciones]);
+
+  /* ─── Modal crear planificación ─── */
+  const [showCrearModal, setShowCrearModal] = useState(false);
+  const [crearNombre, setCrearNombre] = useState("");
+  const [copiarDeId, setCopiarDeId] = useState<string>("");
+
+  function openCrearModal() {
+    setCrearNombre("");
+    setCopiarDeId(planificaciones[0]?.id ?? "");
+    setShowCrearModal(true);
+  }
+
+  async function handleCrearConfirm() {
+    if (!crearNombre.trim()) return;
+    const datosCopiados = planificaciones.find((p) => p.id === copiarDeId)?.datos ?? {};
+    startTransition(async () => {
+      const newId = await crearPlanificacion(pacienteId, crearNombre.trim(), datosCopiados);
+      const newPlan: Planificacion = {
+        id: newId,
+        pacienteId,
+        nombre: crearNombre.trim(),
+        estado: "activa",
+        esDefecto: false,
+        fechaInicio: new Date().toISOString(),
+        fechaUltimoCambio: new Date().toISOString(),
+        fechaFinPrevista: null,
+        datos: datosCopiados,
+      };
+      setPlanificaciones((prev) => [...prev, newPlan]);
+      setSelectedPlanId(newId);
+      setShowCrearModal(false);
+    });
+  }
+
+  async function handleRename(planId: string) {
+    if (!renameValue.trim()) return;
+    startTransition(async () => {
+      await renombrarPlanificacion(planId, renameValue.trim());
+      setPlanificaciones((prev) =>
+        prev.map((p) => (p.id === planId ? { ...p, nombre: renameValue.trim() } : p))
+      );
+      setRenamingId(null);
+      setRenameValue("");
+    });
+  }
+
+  async function handleCambiarEstado(planId: string, estado: "activa" | "terminada" | "guardada") {
+    startTransition(async () => {
+      await cambiarEstadoPlanificacion(planId, estado);
+      setPlanificaciones((prev) =>
+        prev.map((p) => (p.id === planId ? { ...p, estado } : p))
+      );
+      setMenuOpenId(null);
+    });
+  }
+
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  function handleEliminarClick(planId: string) {
+    setMenuOpenId(null);
+    setDeleteConfirmId(planId);
+  }
+
+  async function handleEliminarConfirm() {
+    if (!deleteConfirmId) return;
+    const planId = deleteConfirmId;
+    startTransition(async () => {
+      await eliminarPlanificacion(planId, pacienteId);
+      setPlanificaciones((prev) => prev.filter((p) => p.id !== planId));
+      if (selectedPlanId === planId) {
+        const remaining = planificaciones.filter((p) => p.id !== planId);
+        setSelectedPlanId(remaining[0]?.id ?? "");
+      }
+      setDeleteConfirmId(null);
+    });
+  }
   /* --- Constants (unchanged) --- */
   const FORMULAS_MASA_GRASA_GROUPS = [
     {
@@ -469,10 +712,18 @@ export function PlanificacionPorDefectoTab({
   const actividadRegistradaRaw = ficha?.personalSocial?.actividadFisica?.trim() || "";
   const actividadInicial = mapActividad(actividadRegistradaRaw) ?? "Sedentario";
 
-  const [actividadActualLabel, setActividadActualLabel] = useState<string>(actividadInicial);
-  const [actividadObjetivoLabel, setActividadObjetivoLabel] = useState<string>("Activo");
-  const [palCustomActual, setPalCustomActual] = useState("1.5");
-  const [palCustomObjetivo, setPalCustomObjetivo] = useState("1.5");
+  const [actividadActualLabel, setActividadActualLabel] = useState<string>(
+    datos.actividadActual ?? actividadInicial
+  );
+  const [actividadObjetivoLabel, setActividadObjetivoLabel] = useState<string>(
+    datos.actividadObjetivo ?? "Activo"
+  );
+  const [palCustomActual, setPalCustomActual] = useState(
+    datos.palCustomActual != null ? String(datos.palCustomActual) : "1.5"
+  );
+  const [palCustomObjetivo, setPalCustomObjetivo] = useState(
+    datos.palCustomObjetivo != null ? String(datos.palCustomObjetivo) : "1.5"
+  );
 
   const actividadActualOpt = useMemo(() => {
     const opt = ACTIVIDAD_OPTS.find((o) => o.label === actividadActualLabel) ?? ACTIVIDAD_OPTS[0];
@@ -493,7 +744,7 @@ export function PlanificacionPorDefectoTab({
   }, [ACTIVIDAD_OPTS, actividadObjetivoLabel, palCustomObjetivo]);
 
   const [formulaMasaGrasa, setFormulaMasaGrasa] = useState(
-    FORMULAS_MASA_GRASA_GROUPS[0].items[0]
+    datos.formulaMasaGrasa ?? FORMULAS_MASA_GRASA_GROUPS[0].items[0]
   );
 
   const BMR_FORMULA_GROUPS = [
@@ -521,17 +772,18 @@ export function PlanificacionPorDefectoTab({
     },
   ];
 
-  const [bmrFormula, setBmrFormula] = useState<string>("Ecuación de la OMS");
-  const [eerFormula, setEerFormula] = useState<string>("EER, IOM 2005");
+  const [bmrFormula, setBmrFormula] = useState<string>(datos.formulaBmr ?? "Ecuación de la OMS");
+  const [eerFormula, setEerFormula] = useState<string>(datos.formulaEer ?? "EER, IOM 2005");
+  const [eerObjetivoInput, setEerObjetivoInput] = useState(datos.eerObjetivo ?? "");
 
   /* --- Macro reference source --- */
-  const [macroRefIdx, setMacroRefIdx] = useState(0);
+  const [macroRefIdx, setMacroRefIdx] = useState(datos.macroRefIdx ?? 0);
   const macroRef = MACRO_REF_SOURCES[macroRefIdx];
 
   /* --- Macro percentages (editable) --- */
-  const [grasaPct, setGrasaPct] = useState(30);
-  const [carbPct, setCarbPct] = useState(50);
-  const [protPct, setProtPct] = useState(20);
+  const [grasaPct, setGrasaPct] = useState(datos.grasaPct ?? 30);
+  const [carbPct, setCarbPct] = useState(datos.carbPct ?? 50);
+  const [protPct, setProtPct] = useState(datos.protPct ?? 20);
 
   /* --- Editable weight/body fat inputs --- */
   const pesoInicialActual = latestValue(medidas, "peso") ?? paciente.peso ?? null;
@@ -539,10 +791,12 @@ export function PlanificacionPorDefectoTab({
   const grasaInicialActual = latestValue(medidas, "grasaCorporal");
 
   const [pesoActualInput, setPesoActualInput] = useState(pesoInicialActual != null ? String(pesoInicialActual) : "");
-  const [pesoObjetivoInput, setPesoObjetivoInput] = useState(pesoInicialObjetivo != null ? String(pesoInicialObjetivo) : "");
+  const [pesoObjetivoInput, setPesoObjetivoInput] = useState(
+    datos.pesoObjetivo ?? (pesoInicialObjetivo != null ? String(pesoInicialObjetivo) : "")
+  );
   const [grasaActualInput, setGrasaActualInput] = useState(grasaInicialActual != null ? String(grasaInicialActual) : "");
-  const [grasaObjetivoInput, setGrasaObjetivoInput] = useState("");
-  const [imcObjetivoInput, setImcObjetivoInput] = useState("");
+  const [grasaObjetivoInput, setGrasaObjetivoInput] = useState(datos.grasaObjetivo ?? "");
+  const [imcObjetivoInput, setImcObjetivoInput] = useState(datos.imcObjetivo ?? "");
 
   /* --- Derived values (all logic preserved) --- */
 
@@ -567,25 +821,26 @@ export function PlanificacionPorDefectoTab({
     const imcObjetivo =
       pesoObjetivo && Number.isFinite(pesoObjetivo) ? calcularIMC(pesoObjetivo, h) : null;
 
-    const bmrActual = a != null ? calcularBMR_Oms(w, h, a, paciente.sexo) : null;
-    const bmrObjetivo =
-      pesoObjetivo && a != null ? calcularBMR_Oms(pesoObjetivo, h, a, paciente.sexo) : null;
+    const grasaActPct = grasaActualInput ? parseFloat(grasaActualInput) || null : null;
+    const grasaObjPct = grasaObjetivoInput ? parseFloat(grasaObjetivoInput) || null : null;
+
+    const bmrActual = a != null ? calcularBMR(bmrFormula, w, h, a, paciente.sexo, grasaActPct) : null;
 
     const eerActual = a != null
-      ? calcularEER_IOM2005(w, h, a, paciente.sexo, actividadActualOpt.paIom)
+      ? calcularEER(eerFormula, bmrActual, actividadActualOpt.pal, w, h, a, paciente.sexo, actividadActualOpt.paIom)
       : null;
 
-    const eerObjetivo =
-      pesoObjetivo && a != null
-        ? calcularEER_IOM2005(pesoObjetivo, h, a, paciente.sexo, actividadObjetivoOpt.paIom)
-        : null;
+    // Referencia = mismo BMR actual pero con la actividad objetivo
+    const eerReferencia = a != null
+      ? calcularEER(eerFormula, bmrActual, actividadObjetivoOpt.pal, w, h, a, paciente.sexo, actividadObjetivoOpt.paIom)
+      : null;
+
     return {
       imcActual,
       imcObjetivo,
       bmrActual,
-      bmrObjetivo,
       eerActual,
-      eerObjetivo,
+      eerReferencia,
     };
   }, [
     pesoActual,
@@ -593,15 +848,19 @@ export function PlanificacionPorDefectoTab({
     edad,
     pesoObjetivo,
     paciente.sexo,
+    bmrFormula,
+    eerFormula,
+    grasaActualInput,
+    actividadActualOpt.pal,
     actividadActualOpt.paIom,
+    actividadObjetivoOpt.pal,
     actividadObjetivoOpt.paIom,
   ]);
 
   const macros = useMemo(() => {
-    const eer = valores?.eerActual;
-    const w = pesoActual;
-    if (!eer || !w) return null;
-    const kcal = Math.round(eer);
+    const eerObj = eerObjetivoInput ? parseFloat(eerObjetivoInput) || 0 : 0;
+    const w = pesoActual || 1;
+    const kcal = Math.round(eerObj);
     const grasaG = Math.round((kcal * grasaPct) / 100 / 9);
     const carbG = Math.round((kcal * carbPct) / 100 / 4);
     const protG = Math.round((kcal * protPct) / 100 / 4);
@@ -610,22 +869,179 @@ export function PlanificacionPorDefectoTab({
       grasaG,
       carbG,
       protG,
-      grasaGKg: grasaG / w,
-      carbGKg: carbG / w,
-      protGKg: protG / w,
+      grasaGKg: pesoActual ? grasaG / pesoActual : 0,
+      carbGKg: pesoActual ? carbG / pesoActual : 0,
+      protGKg: pesoActual ? protG / pesoActual : 0,
     };
-  }, [valores?.eerActual, pesoActual, grasaPct, carbPct, protPct]);
+  }, [eerObjetivoInput, pesoActual, grasaPct, carbPct, protPct]);
 
-  const fibraG = useMemo(() => {
-    if (!pesoActual) return null;
-    return Math.round((pesoActual * 0.455) * 10) / 10;
-  }, [pesoActual]);
+  /* --- Fibra alimentaria --- */
+  const FIBRA_REFS: Record<string, string> = {
+    "Food and Nutrition Board / IOM": "25.3 g",
+    "ANSES, 2016": "30 g",
+    "SACN": "30 g",
+    "SINU, 2014": "26.5 g",
+    "NHMRC 2006, (actualizado el 2017)": "25 g",
+  };
+  const [fibraFuente, setFibraFuente] = useState(datos.fibraFuente ?? "Food and Nutrition Board / IOM");
+  const [fibraInput, setFibraInput] = useState(datos.fibraCantidad ?? "");
+
+  /* ─── Date state for duración section ─── */
+  const [fechaInicioInput, setFechaInicioInput] = useState(
+    selectedPlan?.fechaInicio ? selectedPlan.fechaInicio.slice(0, 7) : ""
+  );
+  const [fechaFinPrevistaInput, setFechaFinPrevistaInput] = useState(
+    selectedPlan?.fechaFinPrevista ? selectedPlan.fechaFinPrevista.slice(0, 7) : ""
+  );
+
+  /* ─── Reset state when switching planification ─── */
+  const prevPlanIdRef = useRef(selectedPlanId);
+  useEffect(() => {
+    if (prevPlanIdRef.current === selectedPlanId) return;
+    prevPlanIdRef.current = selectedPlanId;
+    if (!selectedPlan) return;
+    const d = selectedPlan.datos ?? {};
+    setActividadActualLabel(d.actividadActual ?? actividadInicial);
+    setActividadObjetivoLabel(d.actividadObjetivo ?? "Activo");
+    setPalCustomActual(d.palCustomActual != null ? String(d.palCustomActual) : "1.5");
+    setPalCustomObjetivo(d.palCustomObjetivo != null ? String(d.palCustomObjetivo) : "1.5");
+    setFormulaMasaGrasa(d.formulaMasaGrasa ?? FORMULAS_MASA_GRASA_GROUPS[0].items[0]);
+    setBmrFormula(d.formulaBmr ?? "Ecuación de la OMS");
+    setEerFormula(d.formulaEer ?? "EER, IOM 2005");
+    setEerObjetivoInput(d.eerObjetivo ?? "");
+    setMacroRefIdx(d.macroRefIdx ?? 0);
+    setGrasaPct(d.grasaPct ?? 30);
+    setCarbPct(d.carbPct ?? 50);
+    setProtPct(d.protPct ?? 20);
+    setPesoObjetivoInput(d.pesoObjetivo ?? (pesoInicialObjetivo != null ? String(pesoInicialObjetivo) : ""));
+    setGrasaObjetivoInput(d.grasaObjetivo ?? "");
+    setImcObjetivoInput(d.imcObjetivo ?? "");
+    setFibraFuente(d.fibraFuente ?? "Food and Nutrition Board / IOM");
+    setFibraInput(d.fibraCantidad ?? "");
+    setFechaInicioInput(selectedPlan.fechaInicio ? selectedPlan.fechaInicio.slice(0, 7) : "");
+    setFechaFinPrevistaInput(selectedPlan.fechaFinPrevista ? selectedPlan.fechaFinPrevista.slice(0, 7) : "");
+  }, [selectedPlanId, selectedPlan, actividadInicial, pesoInicialObjetivo, FORMULAS_MASA_GRASA_GROUPS]);
+
+  /* ─── Dirty tracking + manual save ─── */
+  const [isDirty, setIsDirty] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const isFirstRender = useRef(true);
+
+  // Mark dirty on any value change (skip first render / plan switch)
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    setIsDirty(true);
+  }, [
+    actividadActualLabel, actividadObjetivoLabel, palCustomActual, palCustomObjetivo,
+    bmrFormula, eerFormula, formulaMasaGrasa, eerObjetivoInput,
+    grasaPct, carbPct, protPct, macroRefIdx,
+    fibraFuente, fibraInput, pesoObjetivoInput, grasaObjetivoInput, imcObjetivoInput,
+  ]);
+
+  // Reset dirty flag on plan switch
+  useEffect(() => { isFirstRender.current = true; setIsDirty(false); }, [selectedPlanId]);
+
+  function buildDatosSnapshot(): PlanificacionDatos {
+    return {
+      actividadActual: actividadActualLabel,
+      actividadObjetivo: actividadObjetivoLabel,
+      palCustomActual: parseFloat(palCustomActual) || undefined,
+      palCustomObjetivo: parseFloat(palCustomObjetivo) || undefined,
+      formulaBmr: bmrFormula,
+      formulaEer: eerFormula,
+      formulaMasaGrasa: formulaMasaGrasa,
+      eerObjetivo: eerObjetivoInput || undefined,
+      grasaPct,
+      carbPct,
+      protPct,
+      macroRefIdx,
+      fibraFuente,
+      fibraCantidad: fibraInput || undefined,
+      pesoObjetivo: pesoObjetivoInput || undefined,
+      grasaObjetivo: grasaObjetivoInput || undefined,
+      imcObjetivo: imcObjetivoInput || undefined,
+    };
+  }
+
+  async function handleGuardar() {
+    if (!selectedPlan || !isDirty) return;
+    setIsSaving(true);
+    const snapshot = buildDatosSnapshot();
+    await guardarPlanificacion(selectedPlan.id, snapshot);
+    setPlanificaciones((prev) =>
+      prev.map((p) =>
+        p.id === selectedPlan.id
+          ? { ...p, datos: snapshot, fechaUltimoCambio: new Date().toISOString() }
+          : p
+      )
+    );
+    setIsDirty(false);
+    setIsSaving(false);
+  }
+
+  /* ─── Date save handlers ─── */
+  function handleFechaInicioChange(val: string) {
+    setFechaInicioInput(val);
+    if (!selectedPlan || !val) return;
+    const isoDate = new Date(val + "-01").toISOString();
+    actualizarFechasPlanificacion(selectedPlan.id, { fechaInicio: isoDate });
+    setPlanificaciones((prev) =>
+      prev.map((p) => (p.id === selectedPlan.id ? { ...p, fechaInicio: isoDate } : p))
+    );
+  }
+
+  function handleFechaFinPrevistaChange(val: string) {
+    setFechaFinPrevistaInput(val);
+    if (!selectedPlan) return;
+    const isoDate = val ? new Date(val + "-01").toISOString() : null;
+    actualizarFechasPlanificacion(selectedPlan.id, { fechaFinPrevista: isoDate });
+    setPlanificaciones((prev) =>
+      prev.map((p) => (p.id === selectedPlan.id ? { ...p, fechaFinPrevista: isoDate } : p))
+    );
+  }
 
   /* ─── Helpers for pct input clamping ─── */
   function handlePctChange(setter: (v: number) => void, raw: string) {
     const n = parseInt(raw, 10);
     if (Number.isNaN(n)) return;
     setter(Math.max(0, Math.min(100, n)));
+  }
+
+  /* ─── Slider drag: rebalance the other two to keep sum = 100% ─── */
+  function handleSliderDrag(changed: "grasa" | "carb" | "prot", newVal: number) {
+    const clamped = Math.max(0, Math.min(100, newVal));
+    const remaining = 100 - clamped;
+
+    let other1: number, other2: number;
+    let setChanged: (v: number) => void;
+    let setOther1: (v: number) => void;
+    let setOther2: (v: number) => void;
+
+    if (changed === "grasa") {
+      setChanged = setGrasaPct; other1 = carbPct; other2 = protPct;
+      setOther1 = setCarbPct; setOther2 = setProtPct;
+    } else if (changed === "carb") {
+      setChanged = setCarbPct; other1 = grasaPct; other2 = protPct;
+      setOther1 = setGrasaPct; setOther2 = setProtPct;
+    } else {
+      setChanged = setProtPct; other1 = grasaPct; other2 = carbPct;
+      setOther1 = setGrasaPct; setOther2 = setCarbPct;
+    }
+
+    setChanged(clamped);
+    const otherTotal = other1 + other2;
+    if (otherTotal === 0) {
+      const half = Math.round(remaining / 2);
+      setOther1(half);
+      setOther2(remaining - half);
+    } else {
+      const newOther1 = Math.round((other1 / otherTotal) * remaining);
+      setOther1(newOther1);
+      setOther2(remaining - newOther1);
+    }
   }
 
   /* ─── Table header style (reused) ─── */
@@ -784,6 +1200,211 @@ export function PlanificacionPorDefectoTab({
         </div>
       </section>
 
+      {/* ====== Planificación tabs ====== */}
+      <div className="flex items-center gap-1 border-b border-border mb-6 overflow-x-auto pb-px -mx-1 px-1 scrollbar-thin">
+        {sortedPlanificaciones.map((plan) => {
+          const isActive = plan.id === selectedPlanId;
+          const isInactive = plan.estado !== "activa";
+          return (
+            <div key={plan.id} className="relative flex items-center shrink-0">
+              {renamingId === plan.id ? (
+                <form
+                  onSubmit={(e) => { e.preventDefault(); handleRename(plan.id); }}
+                  className="flex items-center gap-1 px-2 py-1.5"
+                >
+                  <input
+                    autoFocus
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    onBlur={() => { setRenamingId(null); setRenameValue(""); }}
+                    className="w-32 h-7 px-2 rounded border border-primary bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    onKeyDown={(e) => { if (e.key === "Escape") { setRenamingId(null); setRenameValue(""); } }}
+                  />
+                </form>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setSelectedPlanId(plan.id)}
+                  className={`whitespace-nowrap px-3 py-2 text-sm font-medium border-b-2 transition-colors rounded-t-lg ${
+                    isActive
+                      ? "border-primary text-primary bg-primary/5"
+                      : isInactive
+                        ? "border-transparent text-muted-foreground/50 hover:text-muted-foreground hover:bg-muted/30"
+                        : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                  }`}
+                >
+                  {plan.nombre}
+                  {isInactive && (
+                    <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-normal">
+                      {plan.estado}
+                    </span>
+                  )}
+                </button>
+              )}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === plan.id ? null : plan.id); }}
+                  className="p-1 rounded hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <MoreVertical className="w-3.5 h-3.5" />
+                </button>
+                {menuOpenId === plan.id && (
+                  <div
+                    ref={menuRef}
+                    className="absolute top-full right-0 mt-1 z-50 w-40 rounded-xl border border-border bg-card shadow-xl p-1"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => { setRenamingId(plan.id); setRenameValue(plan.nombre); setMenuOpenId(null); }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-lg hover:bg-muted/60 transition-colors"
+                    >
+                      <Pencil className="w-4 h-4 text-muted-foreground" />
+                      Editar
+                    </button>
+                    {!plan.esDefecto && (
+                      <button
+                        type="button"
+                        onClick={() => handleEliminarClick(plan.id)}
+                        className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-lg hover:bg-red-50 text-red-600 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Eliminar
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        <button
+          type="button"
+          onClick={openCrearModal}
+          className="shrink-0 inline-flex items-center gap-1 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/5 rounded-t-lg border-b-2 border-transparent transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          Crear planificación
+        </button>
+      </div>
+
+      {/* ====== Modal crear planificación ====== */}
+      {showCrearModal && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={() => setShowCrearModal(false)}>
+          <div className="bg-card rounded-2xl shadow-2xl border border-border w-full max-w-lg mx-4 p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold">Crear nueva planificación</h3>
+              <button type="button" onClick={() => setShowCrearModal(false)} className="p-1 rounded-lg hover:bg-muted transition-colors">
+                <X className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
+
+            <label className="block text-sm font-medium text-muted-foreground mb-2">Nombre de la planificación</label>
+            <input
+              autoFocus
+              value={crearNombre}
+              onChange={(e) => setCrearNombre(e.target.value)}
+              placeholder="Ej: Plan de definición"
+              className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 mb-5"
+              onKeyDown={(e) => { if (e.key === "Enter") handleCrearConfirm(); }}
+            />
+
+            <label className="block text-sm font-medium text-muted-foreground mb-2">Copiar la planificación:</label>
+            <select
+              value={copiarDeId}
+              onChange={(e) => setCopiarDeId(e.target.value)}
+              className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 mb-6"
+            >
+              {planificaciones.map((p) => (
+                <option key={p.id} value={p.id}>{p.nombre}</option>
+              ))}
+              <option value="">Sin copiar (vacía)</option>
+            </select>
+
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setShowCrearModal(false)}
+                className="px-4 py-2.5 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleCrearConfirm}
+                disabled={!crearNombre.trim() || isPending}
+                className="px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+              >
+                Crear planificación
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ====== Modal confirmar eliminación ====== */}
+      {deleteConfirmId && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={() => setDeleteConfirmId(null)}>
+          <div className="bg-card rounded-2xl shadow-2xl border border-border w-full max-w-md mx-4 p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2.5">
+                <AlertTriangle className="w-5 h-5 text-amber-500" />
+                <h3 className="text-lg font-bold">¿Deseas eliminar esta planificación?</h3>
+              </div>
+              <button type="button" onClick={() => setDeleteConfirmId(null)} className="p-1 rounded-lg hover:bg-muted transition-colors">
+                <X className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
+            <p className="text-sm text-muted-foreground mb-6">
+              Los planes de alimentación asociados a esta planificación se asociarán a otra planificación existente.
+            </p>
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmId(null)}
+                className="px-4 py-2.5 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleEliminarConfirm}
+                disabled={isPending}
+                className="px-5 py-2.5 rounded-lg bg-amber-400 text-white text-sm font-semibold hover:bg-amber-500 transition-colors disabled:opacity-50"
+              >
+                Borrar
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ====== Botón guardar cambios ====== */}
+      {isDirty && (
+        <div className="flex justify-end mb-4">
+          <button
+            type="button"
+            onClick={handleGuardar}
+            disabled={isSaving}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-60"
+          >
+            {isSaving ? (
+              <>
+                <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                Guardando...
+              </>
+            ) : (
+              <>
+                <Check className="w-4 h-4" />
+                Guardar cambios
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
       {/* ====== Section 2: Cálculos ====== */}
       <section className="bg-card rounded-xl border border-border overflow-hidden">
         <div className="px-5 pt-5 pb-3">
@@ -861,8 +1482,10 @@ export function PlanificacionPorDefectoTab({
                   </span>
                 </td>
                 <td className="py-3 px-4 text-muted-foreground">—</td>
-                <td className="py-3 px-4 text-muted-foreground">
-                  {valores?.bmrObjetivo != null ? `${Math.round(valores.bmrObjetivo)} kcal/día` : "—"}
+                <td className="py-3 px-4">
+                  <span className="font-medium">
+                    {valores?.bmrActual != null ? `${Math.round(valores.bmrActual)} kcal/día` : "—"}
+                  </span>
                 </td>
               </tr>
 
@@ -893,15 +1516,18 @@ export function PlanificacionPorDefectoTab({
                       step="1"
                       min="500"
                       max="10000"
-                      value={valores?.eerObjetivo != null ? Math.round(valores.eerObjetivo) : ""}
-                      readOnly
-                      className="w-full h-9 rounded-lg border border-border bg-muted/50 px-3 pr-16 text-sm font-medium"
+                      value={eerObjetivoInput}
+                      onChange={(e) => setEerObjetivoInput(e.target.value)}
+                      placeholder="kcal/día"
+                      className="w-full h-9 rounded-lg border border-border bg-background px-3 pr-16 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
                     <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">kcal/día</span>
                   </div>
                 </td>
-                <td className="py-3 px-4 text-muted-foreground">
-                  {valores?.eerObjetivo != null ? `${Math.round(valores.eerObjetivo)} kcal/día` : "—"}
+                <td className="py-3 px-4">
+                  <span className="font-medium">
+                    {valores?.eerReferencia != null ? `${Math.round(valores.eerReferencia)} kcal/día` : "—"}
+                  </span>
                 </td>
               </tr>
             </tbody>
@@ -926,8 +1552,7 @@ export function PlanificacionPorDefectoTab({
           </select>
         </div>
 
-        {macros ? (
-          <div className="overflow-x-auto">
+        <div className="overflow-x-auto">
             <table className="min-w-[780px] w-full text-sm">
               <thead>
                 <tr className={thBg}>
@@ -959,12 +1584,15 @@ export function PlanificacionPorDefectoTab({
                       />
                       <span className="text-muted-foreground">%</span>
                     </div>
-                    <div className="mt-2 h-2.5 bg-muted/40 rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-300"
-                        style={{ width: `${grasaPct}%`, backgroundColor: "#EAB308" }}
-                      />
-                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={grasaPct}
+                      onChange={(e) => handleSliderDrag("grasa", parseInt(e.target.value, 10))}
+                      className="macro-slider w-full mt-2"
+                      style={{ "--slider-color": "#EAB308", "--slider-pct": `${grasaPct}%` } as React.CSSProperties}
+                    />
                   </td>
                   <td className="py-3 px-4 font-medium">{macros.grasaG} g</td>
                   <td className="py-3 px-4">{fmt2(macros.grasaGKg)} g/kg</td>
@@ -991,12 +1619,15 @@ export function PlanificacionPorDefectoTab({
                       />
                       <span className="text-muted-foreground">%</span>
                     </div>
-                    <div className="mt-2 h-2.5 bg-muted/40 rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-300"
-                        style={{ width: `${carbPct}%`, backgroundColor: "#F97316" }}
-                      />
-                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={carbPct}
+                      onChange={(e) => handleSliderDrag("carb", parseInt(e.target.value, 10))}
+                      className="macro-slider w-full mt-2"
+                      style={{ "--slider-color": "#F97316", "--slider-pct": `${carbPct}%` } as React.CSSProperties}
+                    />
                   </td>
                   <td className="py-3 px-4 font-medium">{macros.carbG} g</td>
                   <td className="py-3 px-4">{fmt2(macros.carbGKg)} g/kg</td>
@@ -1023,12 +1654,15 @@ export function PlanificacionPorDefectoTab({
                       />
                       <span className="text-muted-foreground">%</span>
                     </div>
-                    <div className="mt-2 h-2.5 bg-muted/40 rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-300"
-                        style={{ width: `${protPct}%`, backgroundColor: "#3B82F6" }}
-                      />
-                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={protPct}
+                      onChange={(e) => handleSliderDrag("prot", parseInt(e.target.value, 10))}
+                      className="macro-slider w-full mt-2"
+                      style={{ "--slider-color": "#3B82F6", "--slider-pct": `${protPct}%` } as React.CSSProperties}
+                    />
                   </td>
                   <td className="py-3 px-4 font-medium">{macros.protG} g</td>
                   <td className="py-3 px-4">{fmt2(macros.protGKg)} g/kg</td>
@@ -1044,11 +1678,6 @@ export function PlanificacionPorDefectoTab({
               </div>
             )}
           </div>
-        ) : (
-          <div className="mx-5 mb-5 rounded-xl border border-dashed border-border bg-muted/20 p-10 text-center text-sm text-muted-foreground">
-            Faltan datos (peso/altura) para calcular la distribución.
-          </div>
-        )}
       </section>
 
       {/* ====== Section 4: Cuantificación de nutrientes ====== */}
@@ -1076,19 +1705,33 @@ export function PlanificacionPorDefectoTab({
                   </div>
                 </td>
                 <td className="py-3 px-4">
-                  <select className="px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-                    <option>Food and Nutrition Board / IOM</option>
-                    <option>ANSES, 2016</option>
-                    <option>SACN</option>
-                    <option>SINU, 2014</option>
-                    <option>NHMRC 2006</option>
+                  <select
+                    value={fibraFuente}
+                    onChange={(e) => setFibraFuente(e.target.value)}
+                    className="px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  >
+                    {Object.keys(FIBRA_REFS).map((f) => (
+                      <option key={f}>{f}</option>
+                    ))}
                   </select>
                 </td>
-                <td className="py-3 px-4 font-medium">
-                  {fibraG != null ? `${fmt1(fibraG)} g` : "—"}
+                <td className="py-3 px-4">
+                  <div className="relative w-28">
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="200"
+                      value={fibraInput}
+                      onChange={(e) => setFibraInput(e.target.value)}
+                      placeholder="0"
+                      className="w-full h-9 rounded-lg border border-border bg-background px-3 pr-6 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">g</span>
+                  </div>
                 </td>
-                <td className="py-3 px-4 text-muted-foreground">
-                  {fibraG != null ? `${fmt1(fibraG)} g` : "—"}
+                <td className="py-3 px-4 font-medium">
+                  {FIBRA_REFS[fibraFuente] ?? "—"}
                 </td>
               </tr>
             </tbody>
@@ -1120,9 +1763,25 @@ export function PlanificacionPorDefectoTab({
                     Planificación actual
                   </div>
                 </td>
-                <td className="py-3 px-4 font-medium">{formatMonthYearEs(paciente.createdAt)}</td>
-                <td className="py-3 px-4 font-medium">{formatMonthYearEs(paciente.updatedAt)}</td>
-                <td className="py-3 px-4 font-medium">{formatMonthYearEs(paciente.updatedAt)}</td>
+                <td className="py-3 px-4">
+                  <MonthPicker
+                    value={fechaInicioInput}
+                    onChange={handleFechaInicioChange}
+                  />
+                </td>
+                <td className="py-3 px-4">
+                  <div className="font-medium">
+                    {formatMonthYearEs(selectedPlan?.fechaUltimoCambio)}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground mt-0.5">Se actualiza al guardar</div>
+                </td>
+                <td className="py-3 px-4">
+                  <MonthPicker
+                    value={fechaFinPrevistaInput}
+                    onChange={handleFechaFinPrevistaChange}
+                    placeholder="Seleccionar fin"
+                  />
+                </td>
               </tr>
             </tbody>
           </table>
