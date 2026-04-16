@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 
 const ADMIN_COOKIE = "appnutri-admin-session";
@@ -52,9 +52,11 @@ export async function createAdminSession(email: string) {
     .sign(getSecret());
 
   const cookieStore = await cookies();
+  const hdrs = await headers();
+  const proto = hdrs.get("x-forwarded-proto") ?? (process.env.NODE_ENV === "production" ? "https" : "http");
   cookieStore.set(ADMIN_COOKIE, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: proto === "https",
     sameSite: "lax",
     maxAge: ADMIN_SESSION_DAYS * 24 * 60 * 60,
     path: "/",

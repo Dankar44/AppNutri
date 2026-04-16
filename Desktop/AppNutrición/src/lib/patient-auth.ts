@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 
 // Fallar ruidosamente en producción si no hay secreto configurado
@@ -20,9 +20,11 @@ export async function createPatientSession(
     .sign(SECRET);
 
   const cookieStore = await cookies();
+  const hdrs = await headers();
+  const proto = hdrs.get("x-forwarded-proto") ?? (process.env.NODE_ENV === "production" ? "https" : "http");
   cookieStore.set("appnutri-paciente-session", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: proto === "https",
     sameSite: "lax",
     maxAge: 30 * 24 * 60 * 60,
     path: "/",
