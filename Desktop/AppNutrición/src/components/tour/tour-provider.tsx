@@ -129,11 +129,9 @@ export function TourProvider({ audience, children }: Props) {
 
   const currentStep = activeTour?.steps[currentStepIndex] || null;
 
-  if (!mounted) return <>{children}</>;
-
   return (
     <TourContext.Provider value={{
-      activeTour, currentStepIndex, currentStep, completedTours, isFirstVisit,
+      activeTour, currentStepIndex, currentStep, completedTours, isFirstVisit: mounted && isFirstVisit,
       startTour, nextStep, prevStep, skipTour, dismissWelcome, resetAllTours,
       audience, tours,
     }}>
