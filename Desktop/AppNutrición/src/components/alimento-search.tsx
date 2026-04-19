@@ -89,7 +89,7 @@ export function AlimentoSearch({
       </div>
 
       {open && results.length > 0 && (
-        <div className="absolute z-50 top-full mt-1 w-full bg-card border border-border rounded-lg shadow-lg max-h-64 overflow-y-auto">
+        <div className="absolute z-50 top-full mt-1 w-full bg-card border border-border rounded-lg shadow-lg max-h-[min(16rem,50dvh)] overflow-y-auto touch-scroll-x">
           {results.map((alimento) => (
             <button
               key={alimento.id}

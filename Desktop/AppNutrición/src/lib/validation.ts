@@ -140,4 +140,5 @@ export const LIMITS = {
   DURACION_MIN: 5,
   DURACION_MAX: 480,
   PORCIONES_MAX: 100,
+  TIEMPO_PREP_MAX: 1440,
 } as const;

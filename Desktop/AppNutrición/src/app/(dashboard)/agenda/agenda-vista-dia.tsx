@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CitaDetalleModal, type CitaDetalle } from "./cita-detalle-modal";
+import { toMadridDateStr, toMadridTimeStr } from "@/lib/tz";
 
 const START_HOUR = 6;
 const END_HOUR = 22;
@@ -14,6 +16,7 @@ const ESTADO_STYLES: Record<string, string> = {
   CONFIRMADA: "bg-sky-100 text-sky-900 border-sky-200",
   COMPLETADA: "bg-emerald-100 text-emerald-900 border-emerald-200",
   CANCELADA: "bg-muted text-muted-foreground border-border",
+  CONTRAPROPUESTA: "bg-indigo-100 text-indigo-900 border-indigo-200",
 };
 
 interface Cita {
@@ -22,7 +25,12 @@ interface Cita {
   duracion: number;
   motivo: string | null;
   estado: string;
-  paciente: { id: string; nombre: string; apellidos: string };
+  notas?: string | null;
+  origen?: string;
+  propuestoPor?: string;
+  isOnline?: boolean;
+  googleMeetLink?: string | null;
+  paciente: { id: string; nombre: string; apellidos: string; fotoUrl?: string | null };
 }
 
 interface Props {
@@ -30,17 +38,45 @@ interface Props {
   citas: Cita[];
 }
 
-function formatLocalDate(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
+const formatLocalDate = toMadridDateStr;
 
 export function AgendaVistaDia({ fecha, citas }: Props) {
   const [ahora, setAhora] = useState(() => new Date());
+  const [citaAbierta, setCitaAbierta] = useState<CitaDetalle | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const t = setInterval(() => setAhora(new Date()), 60_000);
     return () => clearInterval(t);
   }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const now = new Date();
+    const esHoyInit =
+      `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}` === fecha;
+
+    let targetPx: number;
+    if (esHoyInit) {
+      const minutosDesde = now.getHours() * 60 + now.getMinutes() - START_HOUR * 60;
+      const clamped = Math.max(0, Math.min(minutosDesde, (END_HOUR - START_HOUR + 1) * 60));
+      targetPx = (clamped / 60) * PX_PER_HOUR;
+    } else if (citas.length > 0) {
+      const primera = new Date(
+        citas.reduce((min, c) => (c.fechaHora < min ? c.fechaHora : min), citas[0].fechaHora),
+      );
+      const min = primera.getHours() * 60 + primera.getMinutes() - START_HOUR * 60;
+      targetPx = Math.max(0, (min / 60) * PX_PER_HOUR);
+    } else {
+      targetPx = (8 - START_HOUR) * PX_PER_HOUR;
+    }
+
+    const viewportH = el.clientHeight;
+    const maxScroll = Math.max(0, el.scrollHeight - viewportH);
+    const scrollTop = Math.max(0, Math.min(maxScroll, targetPx - viewportH / 2));
+    el.scrollTop = scrollTop;
+  }, [fecha, citas]);
 
   const esHoy = formatLocalDate(ahora) === fecha;
 
@@ -89,16 +125,16 @@ export function AgendaVistaDia({ fecha, citas }: Props) {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
-      <div className="relative flex">
+    <div className="rounded-xl border border-border bg-card overflow-hidden flex flex-col max-h-[calc(100vh-220px)]">
+      <div ref={scrollRef} className="relative flex overflow-y-auto flex-1 min-h-0">
         <div
-          className="w-14 shrink-0 border-r border-border bg-muted/30"
-          style={{ minHeight: totalHeight }}
+          className="w-10 sm:w-14 shrink-0 border-r border-border bg-muted/30"
+          style={{ height: totalHeight }}
         >
           {horas.map((h) => (
             <div
               key={h}
-              className="text-[11px] text-muted-foreground text-right pr-2 pt-0 font-medium tabular-nums"
+              className="text-[10px] sm:text-[11px] text-muted-foreground text-right pr-1 sm:pr-2 pt-0 font-medium tabular-nums"
               style={{ height: PX_PER_HOUR }}
             >
               {String(h).padStart(2, "0")}:00
@@ -108,7 +144,7 @@ export function AgendaVistaDia({ fecha, citas }: Props) {
 
         <div
           className="relative flex-1 min-w-0"
-          style={{ minHeight: totalHeight }}
+          style={{ height: totalHeight }}
         >
           {horas.map((h) => (
             <div
@@ -139,16 +175,14 @@ export function AgendaVistaDia({ fecha, citas }: Props) {
           {citas.map((cita) => {
             const pos = posicionCita(cita);
             if (!pos) return null;
-            const hora = new Date(cita.fechaHora).toLocaleTimeString("es-ES", {
-              hour: "2-digit",
-              minute: "2-digit",
-            });
+            const hora = toMadridTimeStr(new Date(cita.fechaHora));
             return (
-              <Link
+              <button
                 key={cita.id}
-                href={`/pacientes/${cita.paciente.id}`}
+                type="button"
+                onClick={() => setCitaAbierta(cita as CitaDetalle)}
                 className={cn(
-                  "absolute left-1 right-2 z-10 rounded-lg border px-2 py-1.5 shadow-sm overflow-hidden hover:opacity-95 transition-opacity",
+                  "absolute left-1 right-2 z-10 rounded-lg border px-2 py-1.5 shadow-sm overflow-hidden text-left hover:ring-2 hover:ring-primary/30 transition-all",
                   ESTADO_STYLES[cita.estado] || ESTADO_STYLES.PENDIENTE
                 )}
                 style={{
@@ -169,7 +203,7 @@ export function AgendaVistaDia({ fecha, citas }: Props) {
                     {cita.motivo}
                   </p>
                 )}
-              </Link>
+              </button>
             );
           })}
         </div>
@@ -182,6 +216,10 @@ export function AgendaVistaDia({ fecha, citas }: Props) {
             Crear cita
           </Link>
         </p>
+      )}
+
+      {citaAbierta && (
+        <CitaDetalleModal cita={citaAbierta} onClose={() => setCitaAbierta(null)} />
       )}
     </div>
   );

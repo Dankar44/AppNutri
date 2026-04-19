@@ -140,9 +140,9 @@ export function ComidaSlot({
       )}
     >
       {/* Header */}
-      <div className="flex items-center gap-4 px-6 py-4">
-        <span className="text-base text-muted-foreground tabular-nums shrink-0">{hora}</span>
-        <h4 className="text-lg font-bold text-foreground flex-1 min-w-0 truncate">
+      <div className="flex items-center gap-3 sm:gap-4 px-3 sm:px-6 py-3 sm:py-4">
+        <span className="text-sm sm:text-base text-muted-foreground tabular-nums shrink-0">{hora}</span>
+        <h4 className="text-base sm:text-lg font-bold text-foreground flex-1 min-w-0 truncate">
           {TIPO_LABELS[tipo] || tipo}
         </h4>
         <button
@@ -243,20 +243,20 @@ export function ComidaSlot({
 
           {/* Macro pills */}
           <div className="px-4 py-3 border-t border-border/50 bg-muted/10">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-50 text-purple-600 text-xs font-medium">
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <span className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-purple-50 text-purple-600 text-sm font-medium">
                 Energía {Math.round(mealTotals.calorias)} kcal
               </span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-yellow-50 text-yellow-700 text-xs font-medium">
+              <span className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-yellow-50 text-yellow-700 text-sm font-medium">
                 Grasa {mealTotals.grasas.toFixed(1)} g
               </span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-medium">
+              <span className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-orange-50 text-orange-700 text-sm font-medium">
                 H. Carbono {mealTotals.carbohidratos.toFixed(1)} g
               </span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-medium">
+              <span className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-blue-50 text-blue-600 text-sm font-medium">
                 Proteína {mealTotals.proteinas.toFixed(1)} g
               </span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 text-xs font-medium">
+              <span className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-emerald-50 text-emerald-600 text-sm font-medium">
                 Fibra {mealTotals.fibra.toFixed(1)} g
               </span>
             </div>

@@ -39,7 +39,7 @@ export default async function MedidasPage({ params }: Props) {
       <div className="mb-6">
         <Link
           href={`/pacientes/${id}`}
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3 py-2 sm:py-0 -my-2 sm:my-0"
         >
           <ArrowLeft className="w-4 h-4" />
           Volver a {paciente.nombre}

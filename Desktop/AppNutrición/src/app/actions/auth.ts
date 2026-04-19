@@ -3,6 +3,7 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { crearPacienteDemoSiNoExiste } from "@/lib/paciente-demo";
 import { redirect } from "next/navigation";
 
 export const getCurrentDietista = cache(async function getCurrentDietista() {
@@ -25,6 +26,15 @@ export const getCurrentDietista = cache(async function getCurrentDietista() {
       numColegiado: user.user_metadata.numColegiado || null,
     },
   });
+
+  // Si es un dietista recién creado (createdAt ≈ updatedAt), crear el paciente demo.
+  // No bloqueamos el login: si falla, lo logueamos y seguimos.
+  const esNuevo = Math.abs(dietista.createdAt.getTime() - dietista.updatedAt.getTime()) < 1500;
+  if (esNuevo) {
+    crearPacienteDemoSiNoExiste(prisma, dietista.id).catch((err) => {
+      console.error("[paciente-demo] Error creando paciente demo:", err);
+    });
+  }
 
   // Leer verificado — intentar Prisma nativo primero, fallback a raw SQL
   let verificado = false;

@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { Plus, Users } from "lucide-react";
-import { getPacientes } from "@/app/actions/pacientes";
+import { getPacientes, isDemoEliminado } from "@/app/actions/pacientes";
 import { formatDate, OBJETIVO_LABELS, calcularIMC, capitalizarNombre } from "@/lib/utils";
 import { AvatarPaciente } from "@/components/avatar-paciente";
 import { PacientesFilter } from "./pacientes-filter";
+import { PageHeader } from "@/components/page-header";
+import { RestaurarDemoBanner } from "./restaurar-demo-banner";
 
 interface Props {
   searchParams: Promise<{ busqueda?: string; activos?: string; vista?: string }>;
@@ -14,26 +16,30 @@ export default async function PacientesPage({ searchParams }: Props) {
   const busqueda = params.busqueda || "";
   const soloActivos = params.activos === "true";
   const vista = params.vista || "tabla";
-  const pacientes = await getPacientes(busqueda, soloActivos);
+  const [pacientes, demoEliminado] = await Promise.all([
+    getPacientes(busqueda, soloActivos),
+    isDemoEliminado(),
+  ]);
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Pacientes</h1>
-          <p className="text-muted-foreground mt-1">
-            {pacientes.length} paciente{pacientes.length !== 1 ? "s" : ""}
-          </p>
-        </div>
-        <Link
-          href="/pacientes/nuevo"
-          data-tour="new-patient-btn"
-          className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-lg font-medium hover:bg-green-700 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Nuevo paciente
-        </Link>
-      </div>
+      <PageHeader
+        icon={Users}
+        title="Pacientes"
+        subtitle={`${pacientes.length} paciente${pacientes.length !== 1 ? "s" : ""}`}
+        action={
+          <Link
+            href="/pacientes/nuevo"
+            data-tour="new-patient-btn"
+            className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-lg font-medium hover:bg-green-700 transition-colors w-full sm:w-auto min-h-11"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Nuevo paciente</span>
+          </Link>
+        }
+      />
+
+      {demoEliminado && <RestaurarDemoBanner />}
 
       <div className="mb-6" data-tour="patient-search">
         <PacientesFilter busquedaInicial={busqueda} activosInicial={soloActivos} vista={vista} />
@@ -72,6 +78,11 @@ export default async function PacientesPage({ searchParams }: Props) {
               <h3 className="font-semibold">
                 {capitalizarNombre(p.nombre)} {capitalizarNombre(p.apellidos)}
               </h3>
+              {p.nombre === "Paciente" && p.apellidos === "Prueba" && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-medium border border-amber-200 mt-1">
+                  Paciente de ejemplo
+                </span>
+              )}
               <p className="text-xs text-muted-foreground mt-0.5">
                 {OBJETIVO_LABELS[p.objetivo] || p.objetivo}
               </p>
@@ -116,9 +127,16 @@ export default async function PacientesPage({ searchParams }: Props) {
                     <td className="px-4 py-3">
                       <Link href={`/pacientes/${p.id}`} className="flex items-center gap-3">
                         <AvatarPaciente nombre={p.nombre} apellidos={p.apellidos} fotoUrl={p.fotoUrl} size="md" />
-                        <p className="font-medium truncate hover:text-primary transition-colors">
-                          {capitalizarNombre(p.nombre)} {capitalizarNombre(p.apellidos)}
-                        </p>
+                        <div className="min-w-0 flex items-center gap-2 flex-wrap">
+                          <p className="font-medium truncate hover:text-primary transition-colors">
+                            {capitalizarNombre(p.nombre)} {capitalizarNombre(p.apellidos)}
+                          </p>
+                          {p.nombre === "Paciente" && p.apellidos === "Prueba" && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-medium border border-amber-200 shrink-0">
+                              Ejemplo
+                            </span>
+                          )}
+                        </div>
                       </Link>
                     </td>
                     <td className="px-4 py-3 hidden md:table-cell">

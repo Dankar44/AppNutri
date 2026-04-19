@@ -118,11 +118,15 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
   const hasResults = alimentos.length > 0 || recetas.length > 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-card rounded-xl border border-border shadow-xl w-full max-w-lg mx-4 max-h-[80vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 px-0 sm:px-4">
+      <div className="bg-card rounded-t-xl sm:rounded-xl border border-border shadow-xl w-full sm:max-w-lg max-h-[90dvh] sm:max-h-[80vh] flex flex-col pb-safe sm:pb-0">
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h3 className="font-semibold">Añadir alimento o receta</h3>
-          <button onClick={onClose} className="p-1 hover:bg-muted rounded transition-colors">
+          <button
+            onClick={onClose}
+            aria-label="Cerrar"
+            className="p-2 hover:bg-muted rounded transition-colors min-h-11 min-w-11 flex items-center justify-center"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>

@@ -1,10 +1,12 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Pencil } from "lucide-react";
 import { getAlimento } from "@/app/actions/alimentos";
-import { MacroBadges } from "@/components/macro-badge";
-import { calcularMacrosPorcion } from "@/lib/macros";
+import { prisma } from "@/lib/prisma";
 import { AlimentoActions } from "./alimento-actions";
+import { MacroAnalysisCard } from "@/components/alimento/macro-analysis-card";
+import { PorcionCalculator } from "@/components/alimento/porcion-calculator";
+import { MicronutrientesCard } from "@/components/alimento/micronutrientes-card";
 
 const CATEGORIA_LABELS: Record<string, string> = {
   FRUTAS: "Frutas", VERDURAS: "Verduras", CEREALES: "Cereales",
@@ -23,23 +25,31 @@ export default async function AlimentoDetailPage({ params }: Props) {
   const alimento = await getAlimento(id);
   if (!alimento) notFound();
 
-  const macrosPorcion = calcularMacrosPorcion(
-    {
-      calorias: alimento.calorias,
-      proteinas: alimento.proteinas,
-      carbohidratos: alimento.carbohidratos,
-      grasas: alimento.grasas,
-      fibra: alimento.fibra,
-    },
-    alimento.porcion
+  const MICRO_COLS = [
+    "vitaminaA","vitaminaB6","vitaminaB12","vitaminaC","vitaminaD",
+    "vitaminaE","vitaminaK","tiamina","riboflavina","niacina",
+    "folato","acidoPantotenico","colina","calcio","hierro",
+    "magnesio","fosforo","potasio","sodio","cinc",
+    "cobre","manganeso","selenio","fluor",
+  ] as const;
+  const selectCols = MICRO_COLS.map((c) => `"${c}"`).join(",");
+  const microRows = await prisma.$queryRawUnsafe<Record<string, unknown>[]>(
+    `SELECT ${selectCols} FROM alimentos WHERE id = $1`,
+    alimento.id,
   );
+  const microsRaw = microRows[0] || {};
+  const micros: Partial<Record<(typeof MICRO_COLS)[number], number>> = {};
+  for (const col of MICRO_COLS) {
+    const v = microsRaw[col];
+    if (typeof v === "number") micros[col] = v;
+  }
 
   return (
     <div>
       <div className="mb-6">
         <Link
           href="/alimentos"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3 py-2 sm:py-0 -my-2 sm:my-0"
         >
           <ArrowLeft className="w-4 h-4" />
           Volver a alimentos
@@ -79,73 +89,30 @@ export default async function AlimentoDetailPage({ params }: Props) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <section className="bg-card rounded-xl border border-border p-6">
-          <h2 className="text-lg font-semibold mb-4">Macros por 100g</h2>
-          <MacroBadges
-            calorias={alimento.calorias}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+        <div className="lg:col-span-2 flex">
+          <MacroAnalysisCard
+            title="Macros por 100g"
             proteinas={alimento.proteinas}
             carbohidratos={alimento.carbohidratos}
             grasas={alimento.grasas}
             fibra={alimento.fibra}
-            size="md"
           />
-          <div className="mt-6 space-y-3">
-            <MacroBar label="Proteínas" value={alimento.proteinas} max={100} color="bg-blue-500" />
-            <MacroBar label="Carbohidratos" value={alimento.carbohidratos} max={100} color="bg-green-500" />
-            <MacroBar label="Grasas" value={alimento.grasas} max={100} color="bg-red-500" />
-            <MacroBar label="Fibra" value={alimento.fibra} max={100} color="bg-purple-500" />
-          </div>
-        </section>
-
-        <section className="bg-card rounded-xl border border-border p-6">
-          <h2 className="text-lg font-semibold mb-4">
-            Macros por porción ({alimento.porcion}g)
-          </h2>
-          <MacroBadges
-            calorias={macrosPorcion.calorias}
-            proteinas={macrosPorcion.proteinas}
-            carbohidratos={macrosPorcion.carbohidratos}
-            grasas={macrosPorcion.grasas}
-            fibra={macrosPorcion.fibra}
-            size="md"
-          />
-          <div className="mt-6 space-y-3">
-            <MacroBar label="Proteínas" value={macrosPorcion.proteinas} max={alimento.porcion} color="bg-blue-500" />
-            <MacroBar label="Carbohidratos" value={macrosPorcion.carbohidratos} max={alimento.porcion} color="bg-green-500" />
-            <MacroBar label="Grasas" value={macrosPorcion.grasas} max={alimento.porcion} color="bg-red-500" />
-            <MacroBar label="Fibra" value={macrosPorcion.fibra} max={alimento.porcion} color="bg-purple-500" />
-          </div>
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function MacroBar({
-  label,
-  value,
-  max,
-  color,
-}: {
-  label: string;
-  value: number;
-  max: number;
-  color: string;
-}) {
-  const pct = Math.min((value / max) * 100, 100);
-  return (
-    <div>
-      <div className="flex justify-between text-sm mb-1">
-        <span className="text-muted-foreground">{label}</span>
-        <span className="font-medium">{value}g</span>
-      </div>
-      <div className="h-2 rounded-full bg-muted overflow-hidden">
-        <div
-          className={`h-full rounded-full ${color}`}
-          style={{ width: `${pct}%` }}
+        </div>
+        <PorcionCalculator
+          calorias={alimento.calorias}
+          proteinas={alimento.proteinas}
+          carbohidratos={alimento.carbohidratos}
+          grasas={alimento.grasas}
+          fibra={alimento.fibra}
+          porcionDefault={alimento.porcion}
         />
       </div>
+
+      <div className="mt-6">
+        <MicronutrientesCard values={micros} />
+      </div>
     </div>
   );
 }
+

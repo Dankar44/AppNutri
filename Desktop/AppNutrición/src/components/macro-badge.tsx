@@ -11,11 +11,11 @@ interface MacroBadgeProps {
 }
 
 const colorMap = {
-  cal: "bg-amber-50 text-amber-700 border-amber-200",
-  prot: "bg-blue-50 text-blue-700 border-blue-200",
-  carb: "bg-green-50 text-green-700 border-green-200",
-  gras: "bg-red-50 text-red-700 border-red-200",
-  fibra: "bg-purple-50 text-purple-700 border-purple-200",
+  cal: "bg-purple-50 text-purple-600 border-purple-200",
+  prot: "bg-blue-50 text-blue-600 border-blue-200",
+  carb: "bg-orange-50 text-orange-700 border-orange-200",
+  gras: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  fibra: "bg-emerald-50 text-emerald-600 border-emerald-200",
 };
 
 export function MacroBadge({
@@ -30,7 +30,7 @@ export function MacroBadge({
       className={cn(
         "inline-flex items-center gap-1 rounded-full border font-medium",
         colorMap[color],
-        size === "sm" ? "px-2 py-0.5 text-xs" : "px-3 py-1 text-sm"
+        size === "sm" ? "px-2 py-0.5 text-[11px] sm:text-xs" : "px-3 py-1 text-sm"
       )}
     >
       <span className="font-semibold">{Math.round(value * 10) / 10}</span>

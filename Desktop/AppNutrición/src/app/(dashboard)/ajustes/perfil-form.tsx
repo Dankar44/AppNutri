@@ -40,7 +40,7 @@ export function PerfilForm({ defaultValues }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <div>
           <label className="block text-sm font-medium mb-1">Nombre *</label>
           <input name="nombre" required maxLength={100} defaultValue={defaultValues.nombre}
@@ -62,7 +62,7 @@ export function PerfilForm({ defaultValues }: Props) {
         <input name="especialidad" maxLength={200} defaultValue={defaultValues.especialidad || ""}
           className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm" />
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <div>
           <label className="block text-sm font-medium mb-1">Nº Colegiado</label>
           <input name="numColegiado" maxLength={50} defaultValue={defaultValues.numColegiado || ""}

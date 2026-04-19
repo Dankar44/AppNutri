@@ -567,19 +567,39 @@ export function PlanificacionPorDefectoTab({
 
   /* ─── Tab menu state ─── */
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [menuAnchor, setMenuAnchor] = useState<{ top: number; right: number } | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [isPending, startTransition] = useTransition();
   const menuRef = useRef<HTMLDivElement | null>(null);
 
-  /* Close menu on outside click */
+  function closeMenu() {
+    setMenuOpenId(null);
+    setMenuAnchor(null);
+  }
+
+  /* Close menu on outside click / scroll / escape */
   useEffect(() => {
     if (!menuOpenId) return;
     function handleDown(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpenId(null);
+      const target = e.target as HTMLElement;
+      if (target.closest("[data-menu-trigger]")) return;
+      if (menuRef.current && !menuRef.current.contains(target)) closeMenu();
+    }
+    function handleEsc(e: KeyboardEvent) {
+      if (e.key === "Escape") closeMenu();
+    }
+    function handleScroll() {
+      closeMenu();
     }
     document.addEventListener("mousedown", handleDown);
-    return () => document.removeEventListener("mousedown", handleDown);
+    document.addEventListener("keydown", handleEsc);
+    window.addEventListener("scroll", handleScroll, true);
+    return () => {
+      document.removeEventListener("mousedown", handleDown);
+      document.removeEventListener("keydown", handleEsc);
+      window.removeEventListener("scroll", handleScroll, true);
+    };
   }, [menuOpenId]);
 
   /* ─── Sort: activa first, then terminada/guardada grayed ─── */
@@ -647,7 +667,7 @@ export function PlanificacionPorDefectoTab({
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   function handleEliminarClick(planId: string) {
-    setMenuOpenId(null);
+    closeMenu();
     setDeleteConfirmId(planId);
   }
 
@@ -1084,13 +1104,13 @@ export function PlanificacionPorDefectoTab({
                 <td className="py-3 px-4 text-muted-foreground">—</td>
                 <td className="py-3 px-4">
                   <div className="relative w-32">
-                    <input type="number" step="0.1" min="1" max="500" value={pesoActualInput} onChange={(e) => setPesoActualInput(e.target.value)} placeholder="—" className="w-full h-9 rounded-lg border border-border bg-background px-3 pr-8 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                    <input type="number" inputMode="decimal" step="0.1" min="1" max="500" value={pesoActualInput} onChange={(e) => setPesoActualInput(e.target.value)} placeholder="—" className="w-full h-9 rounded-lg border border-border bg-background px-3 pr-8 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30" />
                     <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">kg</span>
                   </div>
                 </td>
                 <td className="py-3 px-4">
                   <div className="relative w-32">
-                    <input type="number" step="0.1" min="1" max="500" value={pesoObjetivoInput} onChange={(e) => setPesoObjetivoInput(e.target.value)} placeholder="—" className="w-full h-9 rounded-lg border border-border bg-background px-3 pr-8 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                    <input type="number" inputMode="decimal" step="0.1" min="1" max="500" value={pesoObjetivoInput} onChange={(e) => setPesoObjetivoInput(e.target.value)} placeholder="—" className="w-full h-9 rounded-lg border border-border bg-background px-3 pr-8 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30" />
                     <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">kg</span>
                   </div>
                 </td>
@@ -1125,13 +1145,13 @@ export function PlanificacionPorDefectoTab({
                 </td>
                 <td className="py-3 px-4">
                   <div className="relative w-32">
-                    <input type="number" step="0.01" min="0" max="100" value={grasaActualInput} onChange={(e) => setGrasaActualInput(e.target.value)} placeholder="—" className="w-full h-9 rounded-lg border border-border bg-background px-3 pr-8 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                    <input type="number" inputMode="decimal" step="0.01" min="0" max="100" value={grasaActualInput} onChange={(e) => setGrasaActualInput(e.target.value)} placeholder="—" className="w-full h-9 rounded-lg border border-border bg-background px-3 pr-8 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30" />
                     <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>
                   </div>
                 </td>
                 <td className="py-3 px-4">
                   <div className="relative w-32">
-                    <input type="number" step="0.1" min="0" max="100" value={grasaObjetivoInput} onChange={(e) => setGrasaObjetivoInput(e.target.value)} placeholder="No definido" className="w-full h-9 rounded-lg border border-border bg-background px-3 pr-8 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-rose-400 placeholder:text-xs" />
+                    <input type="number" inputMode="decimal" step="0.1" min="0" max="100" value={grasaObjetivoInput} onChange={(e) => setGrasaObjetivoInput(e.target.value)} placeholder="No definido" className="w-full h-9 rounded-lg border border-border bg-background px-3 pr-8 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-rose-400 placeholder:text-xs" />
                     <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>
                   </div>
                 </td>
@@ -1169,7 +1189,7 @@ export function PlanificacionPorDefectoTab({
                     </td>
                     <td className="py-3 px-4">
                       <div className="relative w-32">
-                        <input type="number" step="0.1" min="10" max="60" value={imcObjetivoInput || (valores?.imcObjetivo != null ? fmt1(valores.imcObjetivo) : "")} onChange={(e) => setImcObjetivoInput(e.target.value)} placeholder="—" className="w-full h-9 rounded-lg border border-border bg-background px-3 pr-14 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                        <input type="number" inputMode="decimal" step="0.1" min="10" max="60" value={imcObjetivoInput || (valores?.imcObjetivo != null ? fmt1(valores.imcObjetivo) : "")} onChange={(e) => setImcObjetivoInput(e.target.value)} placeholder="—" className="w-full h-9 rounded-lg border border-border bg-background px-3 pr-14 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30" />
                         <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">kg/m²</span>
                       </div>
                       {imcObj != null && (
@@ -1241,40 +1261,26 @@ export function PlanificacionPorDefectoTab({
                   )}
                 </button>
               )}
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === plan.id ? null : plan.id); }}
-                  className="p-1 rounded hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <MoreVertical className="w-3.5 h-3.5" />
-                </button>
-                {menuOpenId === plan.id && (
-                  <div
-                    ref={menuRef}
-                    className="absolute top-full right-0 mt-1 z-50 w-40 rounded-xl border border-border bg-card shadow-xl p-1"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => { setRenamingId(plan.id); setRenameValue(plan.nombre); setMenuOpenId(null); }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-lg hover:bg-muted/60 transition-colors"
-                    >
-                      <Pencil className="w-4 h-4 text-muted-foreground" />
-                      Editar
-                    </button>
-                    {!plan.esDefecto && (
-                      <button
-                        type="button"
-                        onClick={() => handleEliminarClick(plan.id)}
-                        className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-lg hover:bg-red-50 text-red-600 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Eliminar
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
+              <button
+                type="button"
+                data-menu-trigger
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (menuOpenId === plan.id) {
+                    closeMenu();
+                    return;
+                  }
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setMenuAnchor({
+                    top: rect.bottom + 4,
+                    right: window.innerWidth - rect.right,
+                  });
+                  setMenuOpenId(plan.id);
+                }}
+                className="p-1 rounded hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <MoreVertical className="w-3.5 h-3.5" />
+              </button>
             </div>
           );
         })}
@@ -1287,6 +1293,43 @@ export function PlanificacionPorDefectoTab({
           Crear planificación
         </button>
       </div>
+
+      {/* ====== Menú flotante (editar / eliminar) ====== */}
+      {menuOpenId && menuAnchor && typeof document !== "undefined" && (() => {
+        const plan = sortedPlanificaciones.find((p) => p.id === menuOpenId);
+        if (!plan) return null;
+        return createPortal(
+          <div
+            ref={menuRef}
+            style={{ position: "fixed", top: menuAnchor.top, right: menuAnchor.right }}
+            className="z-[60] w-44 rounded-xl border border-border bg-card shadow-xl p-1"
+          >
+            <button
+              type="button"
+              onClick={() => {
+                setRenamingId(plan.id);
+                setRenameValue(plan.nombre);
+                closeMenu();
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-lg hover:bg-muted/60 transition-colors"
+            >
+              <Pencil className="w-4 h-4 text-muted-foreground" />
+              Editar
+            </button>
+            {!plan.esDefecto && (
+              <button
+                type="button"
+                onClick={() => handleEliminarClick(plan.id)}
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-lg hover:bg-red-50 text-red-600 transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+                Eliminar
+              </button>
+            )}
+          </div>,
+          document.body
+        );
+      })()}
 
       {/* ====== Modal crear planificación ====== */}
       {showCrearModal && createPortal(
@@ -1440,7 +1483,7 @@ export function PlanificacionPorDefectoTab({
                   />
                   {actividadActualLabel === "Personalizado" && (
                     <div className="mt-1.5 relative w-28">
-                      <input type="number" step="0.001" min="1" max="3" value={palCustomActual} onChange={(e) => setPalCustomActual(e.target.value)} className="w-full h-8 rounded-lg border border-border bg-background px-2 pr-12 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      <input type="number" inputMode="decimal" step="0.001" min="1" max="3" value={palCustomActual} onChange={(e) => setPalCustomActual(e.target.value)} className="w-full h-8 rounded-lg border border-border bg-background px-2 pr-12 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/30" />
                       <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">PAL</span>
                     </div>
                   )}
@@ -1453,7 +1496,7 @@ export function PlanificacionPorDefectoTab({
                   />
                   {actividadObjetivoLabel === "Personalizado" && (
                     <div className="mt-1.5 relative w-28">
-                      <input type="number" step="0.001" min="1" max="3" value={palCustomObjetivo} onChange={(e) => setPalCustomObjetivo(e.target.value)} className="w-full h-8 rounded-lg border border-border bg-background px-2 pr-12 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      <input type="number" inputMode="decimal" step="0.001" min="1" max="3" value={palCustomObjetivo} onChange={(e) => setPalCustomObjetivo(e.target.value)} className="w-full h-8 rounded-lg border border-border bg-background px-2 pr-12 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/30" />
                       <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">PAL</span>
                     </div>
                   )}
@@ -1512,7 +1555,7 @@ export function PlanificacionPorDefectoTab({
                 <td className="py-3 px-4">
                   <div className="relative w-36">
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       step="1"
                       min="500"
                       max="10000"
@@ -1575,7 +1618,7 @@ export function PlanificacionPorDefectoTab({
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-2">
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         min={0}
                         max={100}
                         value={grasaPct}
@@ -1610,7 +1653,7 @@ export function PlanificacionPorDefectoTab({
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-2">
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         min={0}
                         max={100}
                         value={carbPct}
@@ -1645,7 +1688,7 @@ export function PlanificacionPorDefectoTab({
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-2">
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         min={0}
                         max={100}
                         value={protPct}
@@ -1718,7 +1761,7 @@ export function PlanificacionPorDefectoTab({
                 <td className="py-3 px-4">
                   <div className="relative w-28">
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       step="0.1"
                       min="0"
                       max="200"

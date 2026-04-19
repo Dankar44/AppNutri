@@ -12,7 +12,6 @@ import {
   TrendingUp,
   Minus,
   Calculator,
-  ArrowRight,
 } from "lucide-react";
 import {
   Line,
@@ -343,7 +342,7 @@ export function PacienteFichaMedicionesTab({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[min(100%,320px)_1fr] gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] xl:grid-cols-[min(100%,320px)_1fr] gap-3 sm:gap-4 lg:gap-6 items-start">
         <aside className="space-y-4 shrink-0">
           <SidebarCard title="Mediciones básicas">
             <SidebarRow
@@ -435,19 +434,6 @@ export function PacienteFichaMedicionesTab({
               return <SidebarRowStatic key={key} label={label} value={fmt(latestValue(medidas, key), unit)} />;
             })}
           </SidebarCard>
-
-          <button
-            type="button"
-            onClick={() =>
-              toast.message("Próximamente", {
-                description: "Personalización de tipos de medición.",
-              })
-            }
-            className="w-full flex items-center justify-center gap-2 rounded-lg bg-sky-100 dark:bg-sky-950/50 text-sky-900 dark:text-sky-100 px-4 py-3 text-sm font-semibold hover:bg-sky-200/80 dark:hover:bg-sky-900/50 transition-colors"
-          >
-            Configurar tipos de mediciones
-            <ArrowRight className="w-4 h-4" />
-          </button>
         </aside>
 
         <main className="min-w-0 space-y-6">
@@ -500,7 +486,7 @@ export function PacienteFichaMedicionesTab({
                       Valor
                     </label>
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       step={METRIC_META[vista].inputStep}
                       min={0}
                       max={METRIC_META[vista].inputMax}
@@ -586,7 +572,7 @@ export function PacienteFichaMedicionesTab({
                     <span className="text-emerald-600">▲</span>
                     Progreso
                   </h3>
-                  <div className="h-[220px] w-full">
+                  <div className="h-[180px] sm:h-[220px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart
                         data={chartData}

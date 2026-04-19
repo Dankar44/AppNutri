@@ -29,9 +29,9 @@ export function PlantillaButton({ planId }: { planId: string }) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-muted transition-colors text-xs sm:text-sm font-medium"
       >
-        <FileDown className="w-4 h-4" />
+        <FileDown className="w-3.5 h-3.5" />
         Plantilla
       </button>
 

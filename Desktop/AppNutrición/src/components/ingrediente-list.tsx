@@ -4,8 +4,7 @@ import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { AlimentoSearch } from "./alimento-search";
 import { MacroBadges } from "./macro-badge";
-import { MacroResumen } from "./macro-resumen";
-import { calcularMacrosPorcion, sumarMacros, type Macros } from "@/lib/macros";
+import { calcularMacrosPorcion, type Macros } from "@/lib/macros";
 import { buscarAlimentosParaReceta } from "@/app/actions/recetas";
 
 export interface IngredienteItem {
@@ -64,21 +63,8 @@ export function IngredienteList({
     onChange(ingredientes.filter((_, i) => i !== index));
   }
 
-  const macrosTotales = sumarMacros(
-    ingredientes.map((ing) =>
-      calcularMacrosPorcion(ing.macrosPor100g, ing.cantidad)
-    )
-  );
-
-  const macrosPorPorcion = porciones > 0
-    ? {
-        calorias: Math.round((macrosTotales.calorias / porciones) * 10) / 10,
-        proteinas: Math.round((macrosTotales.proteinas / porciones) * 10) / 10,
-        carbohidratos: Math.round((macrosTotales.carbohidratos / porciones) * 10) / 10,
-        grasas: Math.round((macrosTotales.grasas / porciones) * 10) / 10,
-        fibra: Math.round((macrosTotales.fibra / porciones) * 10) / 10,
-      }
-    : macrosTotales;
+  const pesoTotal = ingredientes.reduce((sum, ing) => sum + (ing.cantidad || 0), 0);
+  void porciones;
 
   return (
     <div className="space-y-4">
@@ -97,13 +83,19 @@ export function IngredienteList({
           <div className="space-y-2">
             {ingredientes.map((ing, index) => {
               const macros = calcularMacrosPorcion(ing.macrosPor100g, ing.cantidad);
+              const pct = pesoTotal > 0 ? (ing.cantidad / pesoTotal) * 100 : 0;
               return (
                 <div
                   key={`${ing.alimentoId}-${index}`}
                   className="flex items-center gap-3 p-3 rounded-lg border border-border bg-background"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{ing.nombre}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-medium truncate">{ing.nombre}</p>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-muted font-semibold tabular-nums text-muted-foreground">
+                        {pct.toFixed(0)}%
+                      </span>
+                    </div>
                     <div className="mt-1">
                       <MacroBadges
                         calorias={macros.calorias}
@@ -115,7 +107,7 @@ export function IngredienteList({
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       value={ing.cantidad}
                       onChange={(e) =>
                         updateCantidad(index, parseFloat(e.target.value) || 0)
@@ -138,15 +130,9 @@ export function IngredienteList({
             })}
           </div>
 
-          <div className="bg-muted/50 rounded-lg p-4">
-            <MacroResumen
-              label={`Macros por porción (${porciones} porc.)`}
-              calorias={macrosPorPorcion.calorias}
-              proteinas={macrosPorPorcion.proteinas}
-              carbohidratos={macrosPorPorcion.carbohidratos}
-              grasas={macrosPorPorcion.grasas}
-              fibra={macrosPorPorcion.fibra}
-            />
+          <div className="flex items-center justify-between px-3 text-xs text-muted-foreground">
+            <span>Total de la receta</span>
+            <span className="font-semibold tabular-nums">{Math.round(pesoTotal)} g · 100%</span>
           </div>
         </>
       )}

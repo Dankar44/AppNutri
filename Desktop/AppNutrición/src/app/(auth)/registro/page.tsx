@@ -101,7 +101,7 @@ export default function RegistroPage() {
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-dvh flex">
       {/* Panel izquierdo decorativo */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary to-green-700 relative overflow-hidden">
         <div className="absolute inset-0 bg-black/10" />
@@ -119,9 +119,9 @@ export default function RegistroPage() {
       </div>
 
       {/* Panel derecho */}
-      <div className="flex-1 flex items-center justify-center px-8 py-12">
+      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6 sm:py-12 pb-safe">
         <div className="w-full max-w-md">
-          <div className="lg:hidden flex items-center gap-2 mb-8">
+          <div className="lg:hidden flex items-center gap-2 mb-6 sm:mb-8">
             <Leaf className="w-8 h-8 text-primary" />
             <span className="text-xl sm:text-2xl font-bold">NutriApp</span>
           </div>
@@ -159,13 +159,13 @@ export default function RegistroPage() {
           {/* === PASO 1: Datos personales === */}
           {paso === 1 && (
             <>
-              <h2 className="text-3xl font-bold mb-2">Crear cuenta</h2>
-              <p className="text-muted-foreground mb-6">
+              <h2 className="text-2xl sm:text-3xl font-bold mb-2">Crear cuenta</h2>
+              <p className="text-muted-foreground text-sm sm:text-base mb-6">
                 Regístrate como dietista profesional
               </p>
 
               <form onSubmit={handleSiguiente} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <label htmlFor="nombre" className="block text-sm font-medium mb-1.5">
                       Nombre *
@@ -311,7 +311,7 @@ export default function RegistroPage() {
                         <span className="text-sm text-muted-foreground">/mes</span>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-1.5">
+                      <div className="grid grid-cols-1 xs:grid-cols-2 gap-1.5">
                         {plan.features.map((f) => (
                           <div key={f.texto} className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <f.icon className="w-3 h-3 text-primary flex-shrink-0" />

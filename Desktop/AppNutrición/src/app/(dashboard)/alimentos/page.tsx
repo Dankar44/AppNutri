@@ -3,6 +3,7 @@ import { Plus, Download, Apple } from "lucide-react";
 import { getAlimentosPaginados } from "@/app/actions/alimentos";
 import { AlimentosFilter } from "./alimentos-filter";
 import { AlimentosTable } from "./alimentos-table";
+import { PageHeader } from "@/components/page-header";
 
 interface Props {
   searchParams: Promise<Record<string, string | undefined>>;
@@ -11,6 +12,23 @@ interface Props {
 export default async function AlimentosPage({ searchParams }: Props) {
   const params = await searchParams;
   const { busqueda, categoria, origen, calMin, calMax, protMin, protMax, carbMin, carbMax, grasaMin, grasaMax } = params;
+
+  const MICRO_KEYS = [
+    "vitaminaA","vitaminaB6","vitaminaB12","vitaminaC","vitaminaD",
+    "vitaminaE","vitaminaK","tiamina","riboflavina","niacina",
+    "folato","acidoPantotenico","colina","calcio","hierro",
+    "magnesio","fosforo","potasio","sodio","cinc",
+    "cobre","manganeso","selenio","fluor",
+  ];
+  const microMin: Record<string, number> = {};
+  for (const k of MICRO_KEYS) {
+    const v = params[`m_${k}`];
+    if (v) {
+      const n = parseFloat(v);
+      if (!isNaN(n) && n > 0) microMin[k] = n;
+    }
+  }
+
   const { alimentos, total, nextCursor } = await getAlimentosPaginados(
     busqueda,
     categoria as Parameters<typeof getAlimentosPaginados>[1],
@@ -25,36 +43,36 @@ export default async function AlimentosPage({ searchParams }: Props) {
       carbMax: carbMax ? parseFloat(carbMax) : undefined,
       grasaMin: grasaMin ? parseFloat(grasaMin) : undefined,
       grasaMax: grasaMax ? parseFloat(grasaMax) : undefined,
+      microMin: Object.keys(microMin).length ? microMin : undefined,
     }
   );
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Alimentos</h1>
-          <p className="text-muted-foreground mt-1">
-            {total} alimento{total !== 1 ? "s" : ""} en tu base de datos
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Link
-            href="/alimentos/importar"
-            data-tour="import-btn"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
-          >
-            <Download className="w-4 h-4" />
-            Importar
-          </Link>
-          <Link
-            href="/alimentos/nuevo"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium"
-          >
-            <Plus className="w-4 h-4" />
-            Nuevo alimento
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        icon={Apple}
+        title="Alimentos"
+        subtitle={`${total} alimento${total !== 1 ? "s" : ""} en tu base de datos`}
+        action={
+          <div className="flex gap-2">
+            <Link
+              href="/alimentos/importar"
+              data-tour="import-btn"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
+            >
+              <Download className="w-4 h-4" />
+              Importar
+            </Link>
+            <Link
+              href="/alimentos/nuevo"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium"
+            >
+              <Plus className="w-4 h-4" />
+              Nuevo alimento
+            </Link>
+          </div>
+        }
+      />
 
       <AlimentosFilter />
 

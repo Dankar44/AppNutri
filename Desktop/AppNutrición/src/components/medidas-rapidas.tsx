@@ -67,7 +67,7 @@ export function MedidasRapidas({ pacienteId }: Props) {
             <div>
               <label className="text-[11px] text-muted-foreground">Peso (kg)</label>
               <input
-                type="number"
+                type="number" inputMode="decimal"
                 step="0.1"
                 min="1"
                 max="500"
@@ -80,7 +80,7 @@ export function MedidasRapidas({ pacienteId }: Props) {
             <div>
               <label className="text-[11px] text-muted-foreground">Altura (cm)</label>
               <input
-                type="number"
+                type="number" inputMode="decimal"
                 step="0.1"
                 min="30"
                 max="300"
@@ -94,7 +94,7 @@ export function MedidasRapidas({ pacienteId }: Props) {
           <div>
             <label className="text-[11px] text-muted-foreground">% Grasa corporal</label>
             <input
-              type="number"
+              type="number" inputMode="decimal"
               step="0.1"
               min="0"
               max="80"

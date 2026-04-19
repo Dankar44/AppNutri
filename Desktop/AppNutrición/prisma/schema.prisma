@@ -19,6 +19,8 @@ model Dietista {
   clinica         String?
   logoUrl         String?
   verificado      Boolean   @default(false)
+  demoEliminado   Boolean   @default(false)
+  notifPreferencias Json?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -33,6 +35,10 @@ model Dietista {
   generacionesIA  GeneracionIA[]
   notificaciones  Notificacion[]
   suscripcion     Suscripcion?
+  recetasFavoritas RecetaFavorito[]
+  conversaciones  Conversacion[]
+  mensajes        Mensaje[]
+  googleIntegracion GoogleIntegracion?
 
   @@map("dietistas")
 }
@@ -188,6 +194,10 @@ model Paciente {
   entradasDiario      EntradaDiario[]
   generacionesIA      GeneracionIA[]
   seguimiento         SeguimientoDiario[]
+  notificaciones      Notificacion[]
+  conversaciones      Conversacion[]
+  mensajes            Mensaje[]
+  googleIntegracion   GoogleIntegracionPaciente?
 
   @@map("pacientes")
 }
@@ -248,21 +258,59 @@ model Receta {
   descripcion     String?
   instrucciones   String?
   porciones       Int       @default(1)
+  tiempoPreparacion Int?
   calorias        Float     @default(0)
   proteinas       Float     @default(0)
   carbohidratos   Float     @default(0)
   grasas          Float     @default(0)
   fibra           Float     @default(0)
-  dietistaId      String
-  dietista        Dietista  @relation(fields: [dietistaId], references: [id], onDelete: Cascade)
+  vitaminaA       Float?
+  vitaminaB6      Float?
+  vitaminaB12     Float?
+  vitaminaC       Float?
+  vitaminaD       Float?
+  vitaminaE       Float?
+  vitaminaK       Float?
+  tiamina         Float?
+  riboflavina     Float?
+  niacina         Float?
+  folato          Float?
+  acidoPantotenico Float?
+  colina          Float?
+  calcio          Float?
+  hierro          Float?
+  magnesio        Float?
+  fosforo         Float?
+  potasio         Float?
+  sodio           Float?
+  cinc            Float?
+  cobre           Float?
+  manganeso       Float?
+  selenio         Float?
+  fluor           Float?
+  dietistaId      String?
+  dietista        Dietista? @relation(fields: [dietistaId], references: [id], onDelete: Cascade)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
   ingredientes    RecetaIngrediente[]
   alimentosEnComida AlimentoEnComida[]
   entradasDiario    EntradaDiario[]
+  favoritos         RecetaFavorito[]
 
   @@map("recetas")
+}
+
+model RecetaFavorito {
+  id          String    @id @default(cuid())
+  dietistaId  String
+  dietista    Dietista  @relation(fields: [dietistaId], references: [id], onDelete: Cascade)
+  recetaId    String
+  receta      Receta    @relation(fields: [recetaId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@unique([dietistaId, recetaId])
+  @@map("receta_favoritos")
 }
 
 model RecetaIngrediente {
@@ -393,6 +441,12 @@ enum EstadoCita {
   CONFIRMADA
   CANCELADA
   COMPLETADA
+  CONTRAPROPUESTA
+}
+
+enum OrigenCita {
+  DIETISTA
+  PACIENTE
 }
 
 model Cita {
@@ -406,10 +460,50 @@ model Cita {
   motivo          String?
   estado          EstadoCita  @default(PENDIENTE)
   notas           String?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  origen          OrigenCita  @default(DIETISTA)
+  propuestoPor    OrigenCita  @default(DIETISTA)
+  citaOriginalId  String?
+  isOnline                Boolean     @default(false)
+  googleEventId           String?
+  googleEventIdPaciente   String?
+  googleMeetLink          String?
+  createdAt               DateTime    @default(now())
+  updatedAt               DateTime    @updatedAt
 
   @@map("citas")
+}
+
+model GoogleIntegracion {
+  id           String   @id @default(cuid())
+  dietistaId   String   @unique
+  dietista     Dietista @relation(fields: [dietistaId], references: [id], onDelete: Cascade)
+  email        String
+  accessToken  String
+  refreshToken String
+  expiryDate   DateTime
+  calendarId   String   @default("primary")
+  sincronizar  Boolean  @default(true)
+  crearMeet    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("google_integraciones")
+}
+
+model GoogleIntegracionPaciente {
+  id           String   @id @default(cuid())
+  pacienteId   String   @unique
+  paciente     Paciente @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  email        String
+  accessToken  String
+  refreshToken String
+  expiryDate   DateTime
+  calendarId   String   @default("primary")
+  sincronizar  Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("google_integraciones_paciente")
 }
 
 model EnlaceCompartido {
@@ -487,12 +581,19 @@ enum TipoNotificacion {
   PACIENTE_SIN_MEDIDAS
   PLAN_ANTIGUO
   DIARIO_NUEVO
+  CITA_SOLICITADA
+  CITA_CONFIRMADA
+  CITA_CONTRAPROPUESTA
+  CITA_RECHAZADA
+  CITA_CANCELADA_POR_PACIENTE
 }
 
 model Notificacion {
   id          String            @id @default(cuid())
-  dietistaId  String
-  dietista    Dietista          @relation(fields: [dietistaId], references: [id], onDelete: Cascade)
+  dietistaId  String?
+  dietista    Dietista?         @relation(fields: [dietistaId], references: [id], onDelete: Cascade)
+  pacienteId  String?
+  paciente    Paciente?         @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
   tipo        TipoNotificacion
   titulo      String
   mensaje     String
@@ -521,4 +622,58 @@ model SeguimientoDiario {
 
   @@unique([pacienteId, fecha])
   @@map("seguimiento_diario")
+}
+
+
+enum AutorMensaje {
+  DIETISTA
+  PACIENTE
+}
+
+model Conversacion {
+  id              String    @id @default(cuid())
+  dietistaId      String
+  dietista        Dietista  @relation(fields: [dietistaId], references: [id], onDelete: Cascade)
+  pacienteId      String
+  paciente        Paciente  @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+
+  ultimoMensajeAt DateTime?
+  archivadaDietista Boolean @default(false)
+
+  noLeidosDietista Int @default(0)
+  noLeidosPaciente Int @default(0)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  mensajes        Mensaje[]
+
+  @@unique([dietistaId, pacienteId])
+  @@index([dietistaId, ultimoMensajeAt])
+  @@index([pacienteId, ultimoMensajeAt])
+  @@map("conversaciones")
+}
+
+model Mensaje {
+  id             String       @id @default(cuid())
+  conversacionId String
+  conversacion   Conversacion @relation(fields: [conversacionId], references: [id], onDelete: Cascade)
+
+  autor          AutorMensaje
+  dietistaId     String?
+  dietista       Dietista?    @relation(fields: [dietistaId], references: [id], onDelete: SetNull)
+  pacienteId     String?
+  paciente       Paciente?    @relation(fields: [pacienteId], references: [id], onDelete: SetNull)
+
+  texto          String
+  adjuntoUrl     String?
+  adjuntoNombre  String?
+  adjuntoTipo    String?
+
+  leidoEn        DateTime?
+
+  createdAt      DateTime     @default(now())
+
+  @@index([conversacionId, createdAt])
+  @@map("mensajes")
 }

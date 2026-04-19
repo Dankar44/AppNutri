@@ -1,8 +1,9 @@
-import { CreditCard, CircleDollarSign, Receipt, Clock } from "lucide-react";
+import { CreditCard, CircleDollarSign, Receipt, Clock, Wallet } from "lucide-react";
 import { getPagos, getEstadisticasPagos } from "@/app/actions/pagos";
 import { getPacientes } from "@/app/actions/pacientes";
 import { getStripeAccountStatus } from "@/app/actions/stripe";
 import { PagosClient } from "./pagos-client";
+import { PageHeader } from "@/components/page-header";
 
 function formatEuro(value: number) {
   return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(value);
@@ -21,12 +22,11 @@ export default async function PagosPage() {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Pagos</h1>
-          <p className="text-muted-foreground mt-1">Gestiona los cobros de tus pacientes</p>
-        </div>
-      </div>
+      <PageHeader
+        icon={Wallet}
+        title="Pagos"
+        subtitle="Gestiona los cobros de tus pacientes"
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">

@@ -36,7 +36,7 @@ function NumField({
       <div className="relative">
         <input
           name={name}
-          type="number"
+          type="number" inputMode="decimal"
           step={step}
           min={min}
           max={max}

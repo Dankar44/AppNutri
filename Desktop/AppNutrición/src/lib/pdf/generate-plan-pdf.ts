@@ -55,67 +55,67 @@ export interface PlanPDFData {
 
 const CSS = `
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', Arial, sans-serif; color: #1a1a1a; font-size: 11px; line-height: 1.4; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; color: #2c3e33; font-size: 11px; line-height: 1.4; }
 
   .page { page-break-after: always; padding: 30px 40px; min-height: 100vh; position: relative; }
   .page:last-child { page-break-after: avoid; }
 
-  .header { background: #16a34a; color: white; padding: 8px 20px; display: flex; justify-content: space-between; align-items: center; margin: -30px -40px 20px; padding: 12px 40px; }
-  .header-name { font-weight: 700; font-size: 13px; }
-  .header-sub { font-size: 10px; opacity: 0.85; }
+  .header { background: #6b9e80; color: white; padding: 8px 20px; display: flex; justify-content: space-between; align-items: center; margin: -30px -40px 20px; padding: 12px 40px; }
+  .header-name { font-weight: 700; font-size: 13px; letter-spacing: 0.3px; }
+  .header-sub { font-size: 10px; opacity: 0.9; }
   .header-logo { font-weight: 800; font-size: 16px; letter-spacing: -0.5px; }
 
-  .section-title { background: linear-gradient(90deg, #fbbf24 0%, #fcd34d 100%); padding: 10px 20px; text-align: center; font-weight: 700; font-size: 14px; color: #1a1a1a; margin: 20px 0 16px; border-radius: 6px; }
+  .section-title { background: #eaf3ec; padding: 10px 20px; text-align: center; font-weight: 700; font-size: 14px; color: #3d5a48; margin: 20px 0 16px; border-radius: 6px; border: 1px solid #d4e4d9; }
 
-  .day-title { background: #fbbf24; padding: 8px 16px; text-align: center; font-weight: 700; font-size: 13px; border-radius: 6px; margin-bottom: 12px; }
+  .day-title { background: #e8d8a8; color: #6b5932; padding: 8px 16px; text-align: center; font-weight: 700; font-size: 13px; border-radius: 6px; margin-bottom: 12px; }
 
   /* Cover */
   .cover { display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; text-align: center; }
-  .cover-box { background: #f5f5f0; border-radius: 16px; padding: 60px 80px; max-width: 500px; }
-  .cover-title { font-size: 28px; color: #1a1a1a; font-weight: 300; margin-bottom: 4px; }
-  .cover-title strong { font-weight: 800; color: #16a34a; }
-  .cover-name { background: #16a34a; color: white; padding: 8px 24px; font-weight: 700; font-size: 14px; margin-top: 16px; display: inline-block; letter-spacing: 0.5px; }
-  .cover-logo { margin-top: 60px; font-size: 24px; font-weight: 800; color: #16a34a; }
+  .cover-box { background: #f5f9f6; border-radius: 16px; padding: 60px 80px; max-width: 500px; border: 1px solid #dce8df; }
+  .cover-title { font-size: 28px; color: #3d5a48; font-weight: 300; margin-bottom: 4px; }
+  .cover-title strong { font-weight: 800; color: #6b9e80; }
+  .cover-name { background: #6b9e80; color: white; padding: 8px 24px; font-weight: 700; font-size: 14px; margin-top: 16px; display: inline-block; letter-spacing: 0.5px; border-radius: 4px; }
+  .cover-logo { margin-top: 60px; font-size: 24px; font-weight: 800; color: #6b9e80; }
 
   /* Summary table */
   .summary-table { width: 100%; border-collapse: collapse; font-size: 9px; }
-  .summary-table th { background: #16a34a; color: white; padding: 8px 4px; text-align: center; font-weight: 700; font-size: 10px; }
-  .summary-table td { padding: 6px 4px; border: 1px solid #e5e5e5; vertical-align: top; text-align: center; font-size: 9px; }
-  .summary-table .meal-label { background: #16a34a; color: white; font-weight: 700; font-size: 9px; padding: 6px 8px; text-align: center; writing-mode: vertical-rl; transform: rotate(180deg); min-width: 30px; }
-  .summary-table tr:nth-child(even) td:not(.meal-label) { background: #f0fdf4; }
+  .summary-table th { background: #6b9e80; color: white; padding: 8px 4px; text-align: center; font-weight: 700; font-size: 10px; }
+  .summary-table td { padding: 6px 4px; border: 1px solid #e2ebe5; vertical-align: top; text-align: center; font-size: 9px; color: #3d5a48; }
+  .summary-table .meal-label { background: #8bb39a; color: white; font-weight: 700; font-size: 9px; padding: 6px 8px; text-align: center; writing-mode: vertical-rl; transform: rotate(180deg); min-width: 30px; }
+  .summary-table tr:nth-child(even) td:not(.meal-label) { background: #f5f9f6; }
 
   /* Day detail table */
   .detail-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-  .detail-table th { background: #16a34a; color: white; padding: 8px; font-size: 10px; text-align: left; }
-  .detail-table td { padding: 8px; border: 1px solid #e5e5e5; vertical-align: top; font-size: 10px; }
-  .detail-table .meal-cell { background: #16a34a; color: white; font-weight: 700; text-align: center; width: 90px; font-size: 11px; }
-  .detail-table .meal-cell .hora { font-weight: 400; font-size: 9px; opacity: 0.8; }
-  .detail-table .plato-cell { width: 160px; font-weight: 600; font-size: 10px; }
-  .detail-table .ingredientes-cell { font-size: 10px; color: #333; }
-  .detail-table tr:nth-child(even) td:not(.meal-cell) { background: #f9fafb; }
+  .detail-table th { background: #6b9e80; color: white; padding: 8px; font-size: 10px; text-align: left; font-weight: 600; }
+  .detail-table td { padding: 8px; border: 1px solid #e2ebe5; vertical-align: top; font-size: 10px; }
+  .detail-table .meal-cell { background: #8bb39a; color: white; font-weight: 700; text-align: center; width: 90px; font-size: 11px; }
+  .detail-table .meal-cell .hora { font-weight: 400; font-size: 9px; opacity: 0.85; }
+  .detail-table .plato-cell { width: 160px; font-weight: 600; font-size: 10px; color: #3d5a48; }
+  .detail-table .ingredientes-cell { font-size: 10px; color: #55695c; }
+  .detail-table tr:nth-child(even) td:not(.meal-cell) { background: #f5f9f6; }
 
   /* Macros */
-  .macros-row { display: flex; justify-content: center; gap: 20px; margin-top: 12px; padding: 10px; background: #f0fdf4; border-radius: 8px; }
+  .macros-row { display: flex; justify-content: center; gap: 20px; margin-top: 12px; padding: 12px; background: #eef5f0; border-radius: 8px; border: 1px solid #dce8df; }
   .macro-item { text-align: center; }
   .macro-value { font-weight: 800; font-size: 16px; }
-  .macro-label { font-size: 9px; color: #666; }
-  .macro-cal { color: #d97706; }
-  .macro-prot { color: #2563eb; }
-  .macro-carb { color: #16a34a; }
-  .macro-fat { color: #dc2626; }
+  .macro-label { font-size: 9px; color: #7a8a80; margin-top: 2px; }
+  .macro-cal { color: #c88a5c; }
+  .macro-prot { color: #7d9bb5; }
+  .macro-carb { color: #6b9e80; }
+  .macro-fat { color: #c97e79; }
 
   /* Shopping list */
   .shop-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
   .shop-cat { break-inside: avoid; }
-  .shop-cat-title { background: #16a34a; color: white; padding: 6px 10px; font-weight: 700; font-size: 10px; border-radius: 4px 4px 0 0; }
-  .shop-item { padding: 4px 10px; font-size: 10px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 6px; background: #fafafa; }
+  .shop-cat-title { background: #6b9e80; color: white; padding: 6px 10px; font-weight: 700; font-size: 10px; border-radius: 4px 4px 0 0; }
+  .shop-item { padding: 4px 10px; font-size: 10px; border-bottom: 1px solid #eaf0ec; display: flex; align-items: center; gap: 6px; background: #f5f9f6; color: #3d5a48; }
   .shop-item:last-child { border-radius: 0 0 4px 4px; }
-  .shop-check { width: 10px; height: 10px; border: 1.5px solid #ccc; border-radius: 2px; flex-shrink: 0; }
+  .shop-check { width: 10px; height: 10px; border: 1.5px solid #bcc9c0; border-radius: 2px; flex-shrink: 0; }
 
   /* Recommendations */
-  .reco-text { font-size: 11px; line-height: 1.6; white-space: pre-line; }
+  .reco-text { font-size: 11px; line-height: 1.6; white-space: pre-line; color: #3d5a48; }
 
-  .footer { text-align: center; color: #999; font-size: 9px; padding: 10px 0; border-top: 1px solid #e5e5e5; margin-top: 20px; }
+  .footer { text-align: center; color: #a3b0a6; font-size: 9px; padding: 10px 0; border-top: 1px solid #e2ebe5; margin-top: 20px; }
 
   @media print {
     body { margin: 0; }

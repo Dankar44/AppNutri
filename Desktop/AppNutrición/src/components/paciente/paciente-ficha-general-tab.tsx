@@ -127,10 +127,10 @@ export function PacienteFichaGeneralTab({
   const previewPlanes = planesOrdenados.slice(0, 3);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-5 items-start">
-      <div className="space-y-5">
-      <section className="rounded-xl border border-border bg-card p-5">
-        <h3 className="text-2xl font-semibold mb-4 inline-flex items-center gap-2">
+    <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-3 sm:gap-5 items-start">
+      <div className="space-y-3 sm:space-y-5">
+      <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
+        <h3 className="text-xl sm:text-2xl font-semibold mb-3 sm:mb-4 inline-flex items-center gap-2">
           <UserRound className="w-5 h-5 text-green-600" />
           Datos personales
         </h3>
@@ -573,7 +573,7 @@ function ModalObjetivo({ open, onClose, saving, onSave }: { open: boolean; onClo
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div><label className="block text-sm font-medium text-muted-foreground mb-1">Valor <span className="text-destructive">*</span></label><input type="number" step="0.1" value={form.valor} onChange={(e) => setForm({ ...form, valor: e.target.value })} placeholder="Número" className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" /></div>
+                <div><label className="block text-sm font-medium text-muted-foreground mb-1">Valor <span className="text-destructive">*</span></label><input type="number" inputMode="decimal" step="0.1" value={form.valor} onChange={(e) => setForm({ ...form, valor: e.target.value })} placeholder="Número" className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" /></div>
                 <div><label className="block text-sm font-medium text-muted-foreground mb-1">Unidad</label><input value={form.unidad} onChange={(e) => setForm({ ...form, unidad: e.target.value })} className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" /></div>
               </div>
             </>

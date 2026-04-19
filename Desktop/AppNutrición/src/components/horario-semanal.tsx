@@ -168,9 +168,10 @@ export function HorarioSemanal({ initialEntries, readOnly, onSave }: Props) {
         </div>
       </div>
 
-      {/* Grid */}
-      <div className="overflow-x-auto border border-border rounded-lg">
-        <table className="w-full border-collapse min-w-[600px]">
+      {/* Grid — con scroll horizontal fluido en móvil */}
+      <div className="overflow-x-auto touch-scroll-x border border-border rounded-lg relative">
+        <div className="sm:hidden absolute top-1 right-1 text-[10px] text-muted-foreground/70 bg-card/80 px-1.5 py-0.5 rounded pointer-events-none">← →</div>
+        <table className="w-full border-collapse min-w-[480px] sm:min-w-[600px]">
           <thead>
             <tr>
               <th className="bg-muted/50 p-2 text-xs font-medium text-muted-foreground text-center w-[60px] border-b border-r border-border">Hora</th>

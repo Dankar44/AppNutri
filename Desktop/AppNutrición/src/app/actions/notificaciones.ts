@@ -111,9 +111,12 @@ export async function generarNotificaciones() {
     }
   }
 
-  // Insertar todas las notificaciones de una vez
-  if (nuevas.length > 0) {
-    await prisma.notificacion.createMany({ data: nuevas });
+  // Filtrar por preferencias del usuario antes de insertar
+  const prefs = await getNotifPreferencias();
+  const filtradas = nuevas.filter((n) => prefs[n.tipo as keyof NotifPreferencias]);
+
+  if (filtradas.length > 0) {
+    await prisma.notificacion.createMany({ data: filtradas });
   }
 }
 
@@ -166,4 +169,59 @@ export async function marcarTodasLeidas() {
   revalidatePath("/notificaciones");
   revalidatePath("/dashboard");
   revalidatePath("/", "layout");
+}
+
+export type NotifPreferencias = {
+  CITA_HOY: boolean;
+  CITA_SOLICITADA: boolean;
+  CITA_CONFIRMADA: boolean;
+  CITA_CONTRAPROPUESTA: boolean;
+  CITA_RECHAZADA: boolean;
+  CITA_CANCELADA_POR_PACIENTE: boolean;
+  PACIENTE_SIN_CONSULTA: boolean;
+  PACIENTE_SIN_MEDIDAS: boolean;
+  PLAN_ANTIGUO: boolean;
+  DIARIO_NUEVO: boolean;
+};
+
+const PREFERENCIAS_DEFAULT: NotifPreferencias = {
+  CITA_HOY: true,
+  CITA_SOLICITADA: true,
+  CITA_CONFIRMADA: true,
+  CITA_CONTRAPROPUESTA: true,
+  CITA_RECHAZADA: true,
+  CITA_CANCELADA_POR_PACIENTE: true,
+  PACIENTE_SIN_CONSULTA: true,
+  PACIENTE_SIN_MEDIDAS: true,
+  PLAN_ANTIGUO: true,
+  DIARIO_NUEVO: true,
+};
+
+export async function getNotifPreferencias(): Promise<NotifPreferencias> {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return PREFERENCIAS_DEFAULT;
+
+  const rows = await prisma.$queryRawUnsafe<{ notifPreferencias: unknown }[]>(
+    `SELECT "notifPreferencias" FROM dietistas WHERE id = $1`,
+    dietista.id,
+  );
+
+  const raw = rows[0]?.notifPreferencias;
+  if (!raw || typeof raw !== "object") return PREFERENCIAS_DEFAULT;
+
+  return { ...PREFERENCIAS_DEFAULT, ...(raw as Partial<NotifPreferencias>) };
+}
+
+export async function setNotifPreferencias(prefs: NotifPreferencias) {
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error("No autorizado");
+
+  await prisma.$executeRawUnsafe(
+    `UPDATE dietistas SET "notifPreferencias" = $1::jsonb, "updatedAt" = NOW() WHERE id = $2`,
+    JSON.stringify(prefs),
+    dietista.id,
+  );
+
+  revalidatePath("/notificaciones/preferencias");
+  revalidatePath("/notificaciones");
 }

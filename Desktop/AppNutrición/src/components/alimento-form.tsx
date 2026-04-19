@@ -123,7 +123,7 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
             <label className="block text-sm font-medium mb-1">Porción base (g)</label>
             <input
               name="porcion"
-              type="number"
+              type="number" inputMode="decimal"
               step="0.1"
               min={0.1}
               max={10000}
@@ -134,14 +134,14 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
         </div>
       </section>
 
-      <section className="bg-card rounded-xl border border-border p-6 space-y-4">
-        <h2 className="text-lg font-semibold">Macronutrientes por 100g</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+      <section className="bg-card rounded-xl border border-border p-4 sm:p-6 space-y-4">
+        <h2 className="text-base sm:text-lg font-semibold">Macronutrientes por 100g</h2>
+        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
           <div>
             <label className="block text-sm font-medium mb-1">Calorías (kcal)</label>
             <input
               name="calorias"
-              type="number"
+              type="number" inputMode="decimal"
               step="0.1"
               min={0}
               max={20000}
@@ -154,7 +154,7 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
             <label className="block text-sm font-medium mb-1">Proteínas (g)</label>
             <input
               name="proteinas"
-              type="number"
+              type="number" inputMode="decimal"
               step="0.1"
               min={0}
               max={2000}
@@ -167,7 +167,7 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
             <label className="block text-sm font-medium mb-1">Carbohidratos (g)</label>
             <input
               name="carbohidratos"
-              type="number"
+              type="number" inputMode="decimal"
               step="0.1"
               min={0}
               max={2000}
@@ -180,7 +180,7 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
             <label className="block text-sm font-medium mb-1">Grasas (g)</label>
             <input
               name="grasas"
-              type="number"
+              type="number" inputMode="decimal"
               step="0.1"
               min={0}
               max={2000}
@@ -193,7 +193,7 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
             <label className="block text-sm font-medium mb-1">Fibra (g)</label>
             <input
               name="fibra"
-              type="number"
+              type="number" inputMode="decimal"
               step="0.1"
               min={0}
               max={2000}

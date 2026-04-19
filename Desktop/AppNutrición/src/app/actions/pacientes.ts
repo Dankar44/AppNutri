@@ -231,12 +231,55 @@ export async function eliminarPaciente(id: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
 
+  // Si borra el paciente demo, marcar la flag para que NO se re-cree al recargar
+  const paciente = await prisma.paciente.findUnique({
+    where: { id },
+    select: { nombre: true, apellidos: true },
+  });
+  const esDemo = paciente?.nombre === "Paciente" && paciente?.apellidos === "Prueba";
+
   await prisma.paciente.delete({
     where: { id, dietistaId: dietista.id },
   });
 
+  if (esDemo) {
+    await prisma.$queryRawUnsafe(
+      `UPDATE dietistas SET "demoEliminado" = true WHERE id = $1`,
+      dietista.id,
+    );
+  }
+
   revalidatePath("/pacientes");
   revalidatePath("/dashboard");
+}
+
+/**
+ * Restaura el paciente demo que el nutri había eliminado previamente.
+ * Limpia la flag `demoEliminado` para que la siguiente llamada a
+ * `crearPacienteDemoSiNoExiste` lo regenere automáticamente.
+ */
+export async function restaurarPacienteDemo() {
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error("No autorizado");
+
+  await prisma.$queryRawUnsafe(
+    `UPDATE dietistas SET "demoEliminado" = false WHERE id = $1`,
+    dietista.id,
+  );
+
+  revalidatePath("/pacientes");
+  revalidatePath("/dashboard");
+}
+
+/** Devuelve true si el nutri borró el paciente demo y aún no lo ha restaurado. */
+export async function isDemoEliminado(): Promise<boolean> {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return false;
+  const rows = await prisma.$queryRawUnsafe<{ demoEliminado: boolean }[]>(
+    `SELECT "demoEliminado" FROM dietistas WHERE id = $1`,
+    dietista.id,
+  );
+  return rows[0]?.demoEliminado ?? false;
 }
 
 export async function toggleActivoPaciente(id: string) {

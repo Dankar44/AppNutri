@@ -2,17 +2,20 @@ import Link from "next/link";
 import { FileBarChart, Users, FileText, UtensilsCrossed, Sparkles, UserCheck, CalendarDays } from "lucide-react";
 import { getCurrentDietista } from "@/app/actions/auth";
 import { getEstadisticasDietista, getDistribucionObjetivos, getConsultasPorMes } from "@/app/actions/estadisticas";
+import { getMetricasDashboard } from "@/app/actions/metricas";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { StatsCard } from "@/components/stats-card";
 import { DistribucionChart, ActividadAnualChart } from "./reportes-charts";
+import { PageHeader } from "@/components/page-header";
 
 export default async function ReportesPage() {
   const dietista = await getCurrentDietista();
   if (!dietista) redirect("/login");
 
-  const [stats, distribucion, consultasMes, pacientesRecientes] = await Promise.all([
+  const [stats, metricas, distribucion, consultasMes, pacientesRecientes] = await Promise.all([
     getEstadisticasDietista(),
+    getMetricasDashboard(),
     getDistribucionObjetivos(),
     getConsultasPorMes(),
     prisma.paciente.findMany({
@@ -28,18 +31,56 @@ export default async function ReportesPage() {
     }),
   ]);
 
-  if (!stats) redirect("/login");
+  if (!stats || !metricas) redirect("/login");
+
+  const kpisMes = [
+    { label: "Total pacientes", value: metricas.totalPacientes, icon: Users, href: "/pacientes" },
+    { label: "Consultas este mes", value: metricas.consultasMes, icon: UserCheck, href: "/agenda" },
+    { label: "Planes activos", value: metricas.planesActivos, icon: UtensilsCrossed, href: "/dietas" },
+    { label: "Citas esta semana", value: metricas.citasSemana, icon: CalendarDays, href: "/agenda" },
+  ];
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold">Reportes y Estadísticas</h1>
-        <p className="text-muted-foreground mt-1">
-          Métricas de tu consulta
-        </p>
-      </div>
+      <PageHeader
+        icon={FileBarChart}
+        title="Reportes y Estadísticas"
+        subtitle="Métricas de tu consulta"
+      />
 
-      {/* KPIs */}
+      {/* Resumen del mes */}
+      <section className="mb-8">
+        <h2 className="text-lg font-semibold mb-4">Resumen del mes</h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          {kpisMes.map((kpi) => (
+            <Link
+              key={kpi.label}
+              href={kpi.href}
+              className="group relative overflow-hidden rounded-xl border border-border bg-card p-4 sm:p-5 hover:border-primary/30 hover:shadow-sm transition-all"
+            >
+              <kpi.icon
+                strokeWidth={1.5}
+                className="absolute -bottom-3 -right-3 w-24 h-24 sm:w-28 sm:h-28 text-primary/10 pointer-events-none"
+              />
+              <div className="relative">
+                <kpi.icon
+                  strokeWidth={1.75}
+                  className="w-7 h-7 sm:w-8 sm:h-8 text-primary"
+                />
+                <p className="text-3xl sm:text-4xl font-bold tabular-nums leading-none mt-6 sm:mt-8">
+                  {kpi.value}
+                </p>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1.5">
+                  {kpi.label}
+                </p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Métricas avanzadas */}
+      <h2 className="text-lg font-semibold mb-4">Métricas de consulta</h2>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatsCard icon={Users} label="Tasa de retención" value={`${stats.tasaRetencion}%`} color="text-blue-600 bg-blue-50" />
         <StatsCard icon={FileText} label="Media consultas/pac." value={stats.mediaConsultas} color="text-green-600 bg-green-50" />

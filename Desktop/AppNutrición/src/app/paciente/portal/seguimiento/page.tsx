@@ -531,28 +531,28 @@ export default function SeguimientoPage() {
           <div className="flex items-center justify-center gap-2 flex-wrap">
             <button
               onClick={() => addAgua(-250)}
-              className="flex items-center gap-1 bg-white/70 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-700 rounded-lg px-3 py-2 text-sm font-medium text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-800/50 transition-colors"
+              className="flex items-center gap-1 bg-white/70 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-700 rounded-lg px-3 py-2.5 text-sm font-medium text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-800/50 transition-colors min-h-11"
             >
               <Minus className="w-3.5 h-3.5" />
               250ml
             </button>
             <button
               onClick={() => addAgua(250)}
-              className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+              className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-3 py-2.5 text-sm font-medium transition-colors min-h-11"
             >
               <Plus className="w-3.5 h-3.5" />
               250ml
             </button>
             <button
               onClick={() => addAgua(500)}
-              className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+              className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-3 py-2.5 text-sm font-medium transition-colors min-h-11"
             >
               <Plus className="w-3.5 h-3.5" />
               500ml
             </button>
             <button
               onClick={() => addAgua(1000)}
-              className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+              className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-3 py-2.5 text-sm font-medium transition-colors min-h-11"
             >
               <Plus className="w-3.5 h-3.5" />
               1L
@@ -623,7 +623,7 @@ export default function SeguimientoPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
                 {/* Duración */}
                 <div>
                   <label className="text-xs font-medium text-muted-foreground mb-1 block">

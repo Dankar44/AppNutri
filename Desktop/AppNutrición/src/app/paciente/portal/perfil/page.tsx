@@ -3,28 +3,44 @@ import { Clock } from "lucide-react";
 import { getCurrentPaciente } from "@/lib/patient-auth";
 import { prisma } from "@/lib/prisma";
 import { getHorarioPacientePortal } from "@/app/actions/paciente-auth";
+import { getIntegracionPaciente } from "@/app/actions/google-integracion";
 import { TourSettings } from "@/components/tour/tour-settings";
 import { PerfilPacienteForm } from "./perfil-form";
 import { HorarioPacienteWrapper } from "./horario-paciente-wrapper";
+import { IntegracionesCardPaciente } from "./integraciones-card";
 
-export default async function PerfilPacientePage() {
+export default async function PerfilPacientePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ google?: string; reason?: string }>;
+}) {
   const session = await getCurrentPaciente();
   if (!session) redirect("/paciente/login");
 
-  const paciente = await prisma.paciente.findUnique({
-    where: { id: session.pacienteId },
-    select: {
-      nombre: true,
-      apellidos: true,
-      email: true,
-      telefono: true,
-      fotoUrl: true,
-    },
-  });
+  const [paciente, horarioEntries, integracion, sp] = await Promise.all([
+    prisma.paciente.findUnique({
+      where: { id: session.pacienteId },
+      select: {
+        nombre: true,
+        apellidos: true,
+        email: true,
+        telefono: true,
+        fotoUrl: true,
+      },
+    }),
+    getHorarioPacientePortal(),
+    getIntegracionPaciente(),
+    searchParams,
+  ]);
 
   if (!paciente) redirect("/paciente/login");
 
-  const horarioEntries = await getHorarioPacientePortal();
+  const googleFlash =
+    sp.google === "ok"
+      ? { type: "ok" as const, message: "Google Calendar conectado correctamente." }
+      : sp.google === "error"
+        ? { type: "error" as const, message: `No se pudo conectar Google (${sp.reason || "error"}).` }
+        : null;
 
   return (
     <div>
@@ -40,6 +56,8 @@ export default async function PerfilPacientePage() {
         telefono={paciente.telefono || ""}
         fotoUrl={paciente.fotoUrl || ""}
       />
+
+      <IntegracionesCardPaciente integracion={integracion} flash={googleFlash} />
 
       {/* Horario compartido */}
       <section className="bg-card rounded-xl border border-border p-6 mt-6">

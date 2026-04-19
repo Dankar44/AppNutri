@@ -22,6 +22,7 @@ interface Props {
   vista: "dia" | "semana" | "mes";
   fechaInicio: string;
   citas: Cita[];
+  diaResaltado?: string;
 }
 
 function formatLocalDate(d: Date): string {
@@ -35,9 +36,10 @@ function getLunesDeSemana(d: Date): Date {
   return lunes;
 }
 
-export function AgendaClient({ vista, fechaInicio, citas }: Props) {
+export function AgendaClient({ vista, fechaInicio, citas, diaResaltado }: Props) {
   const router = useRouter();
   const [diaSeleccionado, setDiaSeleccionado] = useState<string | null>(() => {
+    if (diaResaltado) return diaResaltado; // viene de ?cita=xxx
     if (vista === "semana") return formatLocalDate(new Date());
     return null;
   });
@@ -118,6 +120,20 @@ export function AgendaClient({ vista, fechaInicio, citas }: Props) {
       })
     : [];
 
+  const hoy = new Date();
+  let mostrandoHoy = false;
+  if (vista === "dia") {
+    mostrandoHoy = formatLocalDate(fecha) === formatLocalDate(hoy);
+  } else if (vista === "semana") {
+    mostrandoHoy =
+      formatLocalDate(getLunesDeSemana(fecha)) ===
+      formatLocalDate(getLunesDeSemana(hoy));
+  } else {
+    mostrandoHoy =
+      fecha.getFullYear() === hoy.getFullYear() &&
+      fecha.getMonth() === hoy.getMonth();
+  }
+
   return (
     <div className="min-w-0">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between mb-4">
@@ -130,7 +146,7 @@ export function AgendaClient({ vista, fechaInicio, citas }: Props) {
             <button
               type="button"
               onClick={() => navegar("anterior")}
-              className="p-1.5 rounded-lg border border-border hover:bg-muted transition-colors"
+              className="p-2.5 sm:p-1.5 rounded-lg border border-border hover:bg-muted transition-colors min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 flex items-center justify-center"
               aria-label="Anterior"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -138,14 +154,38 @@ export function AgendaClient({ vista, fechaInicio, citas }: Props) {
             <button
               type="button"
               onClick={() => navegar("hoy")}
-              className="px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
+              disabled={mostrandoHoy}
+              className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
+                mostrandoHoy
+                  ? "border-primary/30 bg-primary/10 text-primary cursor-default"
+                  : "border-border hover:bg-muted"
+              }`}
+              title={
+                mostrandoHoy
+                  ? vista === "dia"
+                    ? "Estás en el día de hoy"
+                    : vista === "semana"
+                      ? "Estás en la semana actual"
+                      : "Estás en el mes actual"
+                  : "Volver a hoy"
+              }
             >
-              Hoy
+              {mostrandoHoy
+                ? vista === "dia"
+                  ? "Hoy"
+                  : vista === "semana"
+                    ? "Esta semana"
+                    : "Este mes"
+                : vista === "dia"
+                  ? "Ir a este día"
+                  : vista === "semana"
+                    ? "Ir a esta semana"
+                    : "Ir a este mes"}
             </button>
             <button
               type="button"
               onClick={() => navegar("siguiente")}
-              className="p-1.5 rounded-lg border border-border hover:bg-muted transition-colors"
+              className="p-2.5 sm:p-1.5 rounded-lg border border-border hover:bg-muted transition-colors min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 flex items-center justify-center"
               aria-label="Siguiente"
             >
               <ChevronRight className="w-4 h-4" />
@@ -157,7 +197,7 @@ export function AgendaClient({ vista, fechaInicio, citas }: Props) {
           <button
             type="button"
             onClick={() => cambiarVista("dia")}
-            className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2.5 sm:py-1.5 text-sm font-medium transition-colors min-h-11 sm:min-h-0 ${
               vista === "dia"
                 ? "bg-primary text-primary-foreground"
                 : "hover:bg-muted"
@@ -168,7 +208,7 @@ export function AgendaClient({ vista, fechaInicio, citas }: Props) {
           <button
             type="button"
             onClick={() => cambiarVista("semana")}
-            className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2.5 sm:py-1.5 text-sm font-medium transition-colors min-h-11 sm:min-h-0 ${
               vista === "semana"
                 ? "bg-primary text-primary-foreground"
                 : "hover:bg-muted"
@@ -180,7 +220,7 @@ export function AgendaClient({ vista, fechaInicio, citas }: Props) {
           <button
             type="button"
             onClick={() => cambiarVista("mes")}
-            className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2.5 sm:py-1.5 text-sm font-medium transition-colors min-h-11 sm:min-h-0 ${
               vista === "mes"
                 ? "bg-primary text-primary-foreground"
                 : "hover:bg-muted"

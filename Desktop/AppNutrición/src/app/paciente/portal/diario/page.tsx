@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
 import { getEntradasDia, eliminarEntradaDiario } from "@/app/actions/diario";
 import { toast } from "sonner";
 
@@ -62,20 +62,28 @@ export default function DiarioPage() {
         </Link>
       </div>
 
-      <div className="flex items-center justify-center gap-4 mb-6">
-        <button onClick={() => cambiarDia(-1)} className="p-2 rounded-lg hover:bg-muted transition-colors">
+      <div className="flex items-center justify-center gap-2 sm:gap-4 mb-6">
+        <button
+          onClick={() => cambiarDia(-1)}
+          aria-label="Día anterior"
+          className="p-2.5 rounded-lg hover:bg-muted transition-colors min-h-11 min-w-11 flex items-center justify-center"
+        >
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <div className="text-center">
-          <p className="font-semibold capitalize">{fechaLabel}</p>
+        <div className="text-center flex-1 min-w-0">
+          <p className="font-semibold capitalize text-sm sm:text-base">{fechaLabel}</p>
           <input
             type="date"
             value={fecha}
             onChange={(e) => setFecha(e.target.value)}
-            className="text-xs text-muted-foreground bg-transparent border-none text-center cursor-pointer"
+            className="text-xs sm:text-sm text-muted-foreground bg-transparent border border-border sm:border-transparent rounded px-2 py-1 text-center cursor-pointer"
           />
         </div>
-        <button onClick={() => cambiarDia(1)} className="p-2 rounded-lg hover:bg-muted transition-colors">
+        <button
+          onClick={() => cambiarDia(1)}
+          aria-label="Día siguiente"
+          className="p-2.5 rounded-lg hover:bg-muted transition-colors min-h-11 min-w-11 flex items-center justify-center"
+        >
           <ChevronRight className="w-5 h-5" />
         </button>
       </div>
@@ -99,16 +107,17 @@ export default function DiarioPage() {
               ) : (
                 <div className="space-y-1">
                   {entradasTipo.map((e) => (
-                    <div key={e.id} className="flex items-center justify-between text-sm group">
-                      <span>
+                    <div key={e.id} className="flex items-center justify-between gap-2 text-sm group">
+                      <span className="min-w-0 flex-1 truncate">
                         {e.alimento?.nombre || e.receta?.nombre || e.descripcion || "Sin descripción"}
                         {e.cantidad && <span className="text-muted-foreground text-xs ml-1">({e.cantidad}g)</span>}
                       </span>
                       <button
                         onClick={() => handleEliminar(e.id)}
-                        className="text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all"
+                        aria-label="Eliminar entrada"
+                        className="p-2 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors sm:opacity-0 sm:group-hover:opacity-100 min-h-10 min-w-10 sm:min-h-0 sm:min-w-0 flex items-center justify-center shrink-0"
                       >
-                        Eliminar
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   ))}

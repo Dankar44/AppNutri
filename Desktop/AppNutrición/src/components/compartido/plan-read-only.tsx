@@ -76,7 +76,7 @@ function RecetaDesplegable({ receta, cantidad }: { receta: RecetaDetalle; cantid
           )}
 
           <div>
-            <p className="text-[10px] font-semibold text-purple-600 uppercase mb-1">Ingredientes</p>
+            <p className="text-[11px] sm:text-[10px] font-semibold text-purple-600 uppercase mb-1">Ingredientes</p>
             <div className="space-y-0.5">
               {receta.ingredientes.map((ing, i) => (
                 <div key={i} className="flex items-center justify-between text-xs">
@@ -89,7 +89,7 @@ function RecetaDesplegable({ receta, cantidad }: { receta: RecetaDetalle; cantid
 
           {receta.instrucciones && (
             <div>
-              <p className="text-[10px] font-semibold text-purple-600 uppercase mb-1">Preparación</p>
+              <p className="text-[11px] sm:text-[10px] font-semibold text-purple-600 uppercase mb-1">Preparación</p>
               <p className="text-xs text-purple-800 whitespace-pre-wrap">{receta.instrucciones}</p>
             </div>
           )}
@@ -101,7 +101,7 @@ function RecetaDesplegable({ receta, cantidad }: { receta: RecetaDetalle; cantid
               carbohidratos={receta.carbohidratos}
               grasas={receta.grasas}
             />
-            <p className="text-[10px] text-purple-500 mt-0.5">Macros por porción</p>
+            <p className="text-[11px] sm:text-[10px] text-purple-500 mt-0.5">Macros por porción</p>
           </div>
         </div>
       )}

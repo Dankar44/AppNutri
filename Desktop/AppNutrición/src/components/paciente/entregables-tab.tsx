@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useTransition, useEffect, useCallback, useRef } from "react";
+import { useState, useTransition, useEffect, useRef } from "react";
 import {
   Mail,
-  Smartphone,
   Plus,
   Info,
   ChevronDown,
@@ -15,14 +14,13 @@ import {
   Settings2,
   Download,
   Eye,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { enviarPlanPorEmail, enviarAccesoPortal } from "@/app/actions/email";
-import { crearAccesoPaciente, getAccesoEstado } from "@/app/actions/paciente-auth";
-import { getPlanPDFData } from "@/app/actions/planes";
+import { enviarPlanPorEmail } from "@/app/actions/email";
+import { getPlanPDFData, getPlanesPaciente } from "@/app/actions/planes";
 import { generatePlanPDF, type PlanPDFData } from "@/lib/pdf/generate-plan-pdf";
-import { Shield, Check } from "lucide-react";
 
 // ─── Types ───
 
@@ -220,34 +218,36 @@ export function EntregablesTab({
   const [preferencias, setPreferencias] =
     useState<PreferenciasPortal>(PREFERENCIAS_DEFAULT);
   const [sendingPlan, startSendingPlan] = useTransition();
-  const [sendingAcceso, startSendingAcceso] = useTransition();
-  const [accesoEstado, setAccesoEstado] = useState<{ email: string; activo: boolean; tienePassword: boolean; perfilCompleto: boolean } | null>(null);
-  const [pinEmail, setPinEmail] = useState(pacienteEmail || "");
-  const [generatingPin, setGeneratingPin] = useState(false);
-  const [pinGenerado, setPinGenerado] = useState<string | null>(null);
 
   // PDF configurator state
   const [pdfOptions, setPdfOptions] = useState<PDFOptions>(PDF_OPTIONS_DEFAULT);
+  const [appliedOptions, setAppliedOptions] = useState<PDFOptions>(PDF_OPTIONS_DEFAULT);
   const [pdfData, setPdfData] = useState<PlanPDFData | null>(null);
+  const [planes, setPlanes] = useState<{ id: string; nombre: string; activo: boolean }[]>([]);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(planActivo?.id ?? null);
   const [pdfHtml, setPdfHtml] = useState<string | null>(null);
   const [loadingPdf, setLoadingPdf] = useState(false);
   const [previewPage, setPreviewPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
-  const loadAcceso = useCallback(async () => {
-    const estado = await getAccesoEstado(pacienteId);
-    setAccesoEstado(estado);
-    if (estado?.email) setPinEmail(estado.email);
+  // Cargar la lista de planes del paciente
+  useEffect(() => {
+    getPlanesPaciente(pacienteId).then((list) => {
+      const mapped = list.map((p) => ({ id: p.id, nombre: p.nombre, activo: p.activo }));
+      setPlanes(mapped);
+      if (!selectedPlanId && mapped.length > 0) {
+        const activo = mapped.find((p) => p.activo);
+        setSelectedPlanId(activo?.id ?? mapped[0].id);
+      }
+    }).catch(() => {});
   }, [pacienteId]);
 
-  useEffect(() => { loadAcceso(); }, [loadAcceso]);
-
-  // Load PDF data when plan exists
+  // Cargar datos del PDF cuando cambia el plan seleccionado
   useEffect(() => {
-    if (!planActivo) return;
+    if (!selectedPlanId) { setPdfData(null); return; }
     let cancelled = false;
     setLoadingPdf(true);
-    getPlanPDFData(planActivo.id).then((data) => {
+    getPlanPDFData(selectedPlanId).then((data) => {
       if (cancelled) return;
       setPdfData(data);
       setLoadingPdf(false);
@@ -255,11 +255,24 @@ export function EntregablesTab({
       if (!cancelled) setLoadingPdf(false);
     });
     return () => { cancelled = true; };
-  }, [planActivo]);
+  }, [selectedPlanId]);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
+  const [previewScale, setPreviewScale] = useState(1);
 
-  // Regenerate PDF HTML when options or data change
+  // Ajustar escala de la vista previa al ancho del contenedor (794px = A4 a 96dpi)
+  useEffect(() => {
+    const el = previewContainerRef.current;
+    if (!el) return;
+    const update = () => setPreviewScale(el.clientWidth / 794);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [pdfHtml]);
+
+  // Regenerate PDF HTML when data o opciones aplicadas cambian (no cuando cambia pdfOptions)
   useEffect(() => {
     if (!pdfData) { setPdfHtml(null); return; }
     const html = generatePlanPDF(pdfData);
@@ -273,23 +286,11 @@ export function EntregablesTab({
     const count = (previewHtml.match(/class="page/g) || []).length;
     setTotalPages(Math.max(1, count));
     setPreviewPage(0);
-  }, [pdfData, pdfOptions]);
+  }, [pdfData, appliedOptions]);
 
-  // Scroll iframe to correct page when previewPage changes
-  useEffect(() => {
-    const iframe = iframeRef.current;
-    if (!iframe) return;
-    try {
-      const doc = iframe.contentDocument;
-      if (!doc) return;
-      const pages = doc.querySelectorAll(".page");
-      if (pages[previewPage]) {
-        pages[previewPage].scrollIntoView({ behavior: "instant" });
-      }
-    } catch {
-      // cross-origin or not loaded yet
-    }
-  }, [previewPage]);
+  // ¿Hay cambios sin aplicar?
+  const hasUnappliedChanges = JSON.stringify(pdfOptions) !== JSON.stringify(appliedOptions);
+
 
   function handlePdfOptionChange(key: keyof PDFOptions, value: boolean) {
     setPdfOptions((prev) => ({ ...prev, [key]: value }));
@@ -309,8 +310,8 @@ export function EntregablesTab({
   }
 
   function handleEnviarPlan() {
-    if (!planActivo) {
-      toast.error("No hay un plan activo para enviar");
+    if (!selectedPlanId) {
+      toast.error("No hay un plan seleccionado para enviar");
       return;
     }
     if (!pacienteEmail) {
@@ -318,7 +319,7 @@ export function EntregablesTab({
       return;
     }
     startSendingPlan(async () => {
-      const res = await enviarPlanPorEmail(pacienteId, planActivo.id);
+      const res = await enviarPlanPorEmail(pacienteId, selectedPlanId);
       if (res.ok) {
         toast.success("Plan enviado por email correctamente");
       } else {
@@ -327,20 +328,6 @@ export function EntregablesTab({
     });
   }
 
-  function handleEnviarAcceso() {
-    if (!pacienteEmail) {
-      toast.error("El paciente no tiene email registrado");
-      return;
-    }
-    startSendingAcceso(async () => {
-      const res = await enviarAccesoPortal(pacienteId);
-      if (res.ok) {
-        toast.success("Instrucciones de acceso enviadas por email");
-      } else {
-        toast.error(res.error || "Error al enviar las instrucciones");
-      }
-    });
-  }
 
   function handlePreferenceChange(key: keyof PreferenciasPortal, value: boolean) {
     setPreferencias((prev) => ({ ...prev, [key]: value }));
@@ -351,37 +338,35 @@ export function EntregablesTab({
     <div className="space-y-6">
       {/* Section 1: Generar entregable */}
       <div>
-        <div className="flex items-center gap-3 mb-4">
-          <div className="rounded-lg bg-primary/10 p-2.5 text-primary shrink-0">
-            <FileText className="w-5 h-5" />
-          </div>
-          <div>
-            <h2 className="text-base font-semibold text-foreground">
-              Generar entregable
-            </h2>
-            {planActivo ? (
-              <p className="text-sm text-muted-foreground mt-0.5">
-                {planActivo.nombre}
-              </p>
-            ) : (
-              <p className="text-sm text-muted-foreground mt-0.5">
-                No hay un plan activo asignado
-              </p>
-            )}
-          </div>
-        </div>
-
-        {!planActivo ? (
+        {planes.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border bg-muted/20 p-8 text-center">
             <FileText className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">
-              Asigna un plan activo al paciente para poder generar entregables
+              Este paciente no tiene planes para generar entregables
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
-            {/* Left column: PDF options */}
-            <div className="rounded-xl border border-border bg-card p-5">
+            {/* Right column: PDF options */}
+            <div className="rounded-xl border border-border bg-card p-5 lg:order-2">
+              {/* Selector de plan */}
+              <div className="mb-5 pb-5 border-b border-border">
+                <label className="block text-sm font-semibold text-foreground mb-2">
+                  Plan alimenticio
+                </label>
+                <select
+                  value={selectedPlanId ?? ""}
+                  onChange={(e) => setSelectedPlanId(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                >
+                  {planes.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nombre}{p.activo ? " (actual)" : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <h3 className="text-sm font-semibold text-foreground mb-4">
                 Contenido del PDF
               </h3>
@@ -403,7 +388,7 @@ export function EntregablesTab({
                       onChange={(e) =>
                         handlePdfOptionChange(opt.key, e.target.checked)
                       }
-                      className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary/20 shrink-0"
+                      className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary/20 shrink-0 accent-primary"
                     />
                     <div className="min-w-0">
                       <span className="text-sm font-medium text-foreground">
@@ -417,7 +402,24 @@ export function EntregablesTab({
                 ))}
               </div>
 
-              <div className="flex items-center gap-2 mt-5 pt-4 border-t border-border">
+              <div className="mt-5 pt-4 border-t border-border space-y-3">
+                {/* Botón generar — aplica las opciones actuales a la vista previa */}
+                <button
+                  type="button"
+                  onClick={() => setAppliedOptions(pdfOptions)}
+                  disabled={!hasUnappliedChanges}
+                  className={cn(
+                    "w-full inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors",
+                    hasUnappliedChanges
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                      : "bg-muted text-muted-foreground cursor-not-allowed"
+                  )}
+                >
+                  <Sparkles className="w-4 h-4" />
+                  {hasUnappliedChanges ? "Generar vista previa" : "Vista previa actualizada"}
+                </button>
+
+                <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={handleEnviarPlan}
@@ -450,11 +452,12 @@ export function EntregablesTab({
                   <Download className="w-4 h-4" />
                   Descargar PDF
                 </button>
+                </div>
               </div>
             </div>
 
-            {/* Right column: PDF preview */}
-            <div className="rounded-xl border border-border bg-card p-4 flex flex-col">
+            {/* Left column: PDF preview */}
+            <div className="rounded-xl border border-border bg-card p-4 flex flex-col lg:order-1">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
                   <Eye className="w-4 h-4 text-muted-foreground" />
@@ -467,47 +470,78 @@ export function EntregablesTab({
                   <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
                 </div>
               ) : pdfHtml ? (
-                <div className="flex-1 flex flex-col">
-                  {/* Scaled PDF preview */}
+                <div className="flex-1 flex flex-col items-center">
+                  {/* A4 container con borde visible — una página visible a la vez */}
                   <div
-                    className="relative flex-1 bg-muted/30 rounded-lg overflow-hidden"
-                    style={{ minHeight: "420px" }}
+                    ref={previewContainerRef}
+                    className="relative bg-muted/30 rounded-lg overflow-hidden w-full border-2 border-border shadow-xl"
+                    style={{ aspectRatio: "794 / 1123", maxHeight: "calc(100vh - 200px)", maxWidth: "calc((100vh - 200px) * 794 / 1123)" }}
                   >
-                    <div
-                      className="absolute inset-0 flex items-start justify-center overflow-hidden"
-                    >
+                    <div className="absolute inset-0 overflow-hidden">
+                      {/* Wrapper que se escala al ancho del contenedor */}
                       <div
-                        className="origin-top-left shadow-lg bg-white"
+                        className="absolute top-0 left-0 bg-white"
                         style={{
                           width: "794px",
                           height: "1123px",
-                          transform: "scale(0.36)",
-                          transformOrigin: "top center",
+                          transform: `scale(${previewScale})`,
+                          transformOrigin: "top left",
+                          overflow: "hidden",
                         }}
                       >
-                        <iframe
-                          ref={iframeRef}
-                          srcDoc={pdfHtml}
-                          title="Vista previa del PDF"
-                          className="w-full h-full border-0"
-                          sandbox="allow-same-origin"
+                        {/* Wrapper interno que se desplaza verticalmente para cambiar de página */}
+                        <div
                           style={{
-                            pointerEvents: "none",
+                            width: "794px",
+                            height: `${Math.max(totalPages, 1) * 1123}px`,
+                            transform: `translateY(-${previewPage * 1123}px)`,
+                            transition: "transform 500ms cubic-bezier(0.22, 1, 0.36, 1)",
                           }}
-                          onLoad={() => {
-                            // Scroll to the correct page on load
-                            const iframe = iframeRef.current;
-                            if (!iframe) return;
-                            try {
-                              const pages = iframe.contentDocument?.querySelectorAll(".page");
-                              if (pages && pages[previewPage]) {
-                                pages[previewPage].scrollIntoView();
+                        >
+                          <iframe
+                            ref={iframeRef}
+                            srcDoc={pdfHtml}
+                            title="Vista previa del PDF"
+                            className="border-0 block"
+                            sandbox="allow-same-origin"
+                            scrolling="no"
+                            style={{
+                              width: "794px",
+                              height: `${Math.max(totalPages, 1) * 1123}px`,
+                              pointerEvents: "none",
+                            }}
+                            onLoad={() => {
+                              const iframe = iframeRef.current;
+                              if (!iframe) return;
+                              try {
+                                const doc = iframe.contentDocument;
+                                if (!doc) return;
+                                const styleId = "preview-page-delim";
+                                if (!doc.getElementById(styleId)) {
+                                  const style = doc.createElement("style");
+                                  style.id = styleId;
+                                  style.textContent = `
+                                    html, body { margin: 0; padding: 0; background: white; overflow: hidden; }
+                                    .page {
+                                      margin: 0 !important;
+                                      height: 1123px !important;
+                                      min-height: 1123px !important;
+                                      max-height: 1123px !important;
+                                      width: 794px !important;
+                                      background: white;
+                                      box-sizing: border-box;
+                                      overflow: hidden;
+                                    }
+                                    .page.cover { justify-content: center; }
+                                  `;
+                                  doc.head.appendChild(style);
+                                }
+                              } catch {
+                                // cross-origin safety
                               }
-                            } catch {
-                              // cross-origin safety
-                            }
-                          }}
-                        />
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -547,145 +581,6 @@ export function EntregablesTab({
             </div>
           </div>
         )}
-      </div>
-
-      {/* Section 2: Aplicacion para el cliente */}
-      <div className="rounded-xl border border-border bg-card p-5">
-        <h2 className="text-base font-semibold text-foreground mb-4">
-          Aplicacion para el cliente
-        </h2>
-
-        {/* Send access instructions */}
-        <div className="mb-5">
-          <p className="text-sm font-medium text-muted-foreground mb-3">
-            Enviar instrucciones de acceso al cliente
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={handleEnviarAcceso}
-              disabled={sendingAcceso || !pacienteEmail}
-              className={cn(
-                "flex items-center gap-3 rounded-xl border border-border p-4 text-left transition-colors",
-                pacienteEmail
-                  ? "hover:bg-muted/60 cursor-pointer"
-                  : "opacity-50 cursor-not-allowed"
-              )}
-            >
-              <div className="rounded-lg bg-blue-50 p-2.5 text-blue-600 dark:bg-blue-950 dark:text-blue-400 shrink-0">
-                {sendingAcceso ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <Mail className="w-5 h-5" />
-                )}
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">
-                  Enviar por email
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {pacienteEmail || "Sin email registrado"}
-                </p>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              disabled
-              className="flex items-center gap-3 rounded-xl border border-dashed border-border p-4 text-left opacity-50 cursor-not-allowed"
-            >
-              <div className="rounded-lg bg-muted p-2.5 text-muted-foreground shrink-0">
-                <Smartphone className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">
-                  Enviar por mensaje
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Proximamente
-                </p>
-              </div>
-            </button>
-          </div>
-        </div>
-
-        {/* Estado del acceso */}
-        {accesoEstado && (
-          <div className="border-t border-border pt-4 mb-4">
-            <h3 className="text-sm font-semibold flex items-center gap-2 mb-3">
-              <Shield className="w-4 h-4 text-primary" />
-              Estado del acceso
-            </h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Email</span>
-                <span className="font-medium">{accesoEstado.email}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Estado</span>
-                <span className={cn("px-2 py-0.5 rounded-full text-xs font-medium", accesoEstado.activo ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700")}>
-                  {accesoEstado.activo ? "Activo" : "Inactivo"}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Contraseña</span>
-                <span className="font-medium">{accesoEstado.tienePassword ? "Configurada" : "Sin configurar"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Perfil</span>
-                <span className="font-medium">{accesoEstado.perfilCompleto ? "Completado" : "Pendiente"}</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Regenerar PIN / Crear contraseña */}
-        <div className="border-t border-border pt-4">
-          <h3 className="text-sm font-semibold mb-3">
-            {accesoEstado ? "Regenerar PIN" : "O genera una contraseña por ellos"}
-          </h3>
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">Email del paciente *</label>
-              <input
-                type="email"
-                value={pinEmail}
-                onChange={(e) => setPinEmail(e.target.value)}
-                placeholder="email@ejemplo.com"
-                maxLength={200}
-                className="w-full mt-1 px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-              />
-              <p className="text-[11px] text-muted-foreground mt-1">El paciente usará este email para hacer login</p>
-            </div>
-            <button
-              type="button"
-              disabled={generatingPin || !pinEmail.includes("@")}
-              onClick={async () => {
-                setGeneratingPin(true);
-                try {
-                  const pin = String(Math.floor(100000 + Math.random() * 900000));
-                  await crearAccesoPaciente(pacienteId, pinEmail, pin);
-                  setPinGenerado(pin);
-                  await loadAcceso();
-                  toast.success("PIN generado correctamente");
-                } catch (e: any) {
-                  toast.error(e?.message || "Error al generar PIN");
-                } finally {
-                  setGeneratingPin(false);
-                }
-              }}
-              className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors disabled:opacity-50"
-            >
-              {generatingPin ? "Generando..." : accesoEstado ? "Regenerar PIN" : "Crear contraseña"}
-            </button>
-            {pinGenerado && (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-50 border border-emerald-200">
-                <Check className="w-4 h-4 text-emerald-600" />
-                <span className="text-sm">PIN generado: <strong className="font-mono text-lg">{pinGenerado}</strong></span>
-              </div>
-            )}
-          </div>
-        </div>
       </div>
 
       {/* Section 3: Examenes de laboratorio */}
@@ -747,6 +642,7 @@ export function EntregablesTab({
           ))}
         </div>
       </div>
+
     </div>
   );
 }

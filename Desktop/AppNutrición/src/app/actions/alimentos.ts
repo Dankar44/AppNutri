@@ -160,7 +160,16 @@ interface MacroFilters {
   carbMax?: number;
   grasaMin?: number;
   grasaMax?: number;
+  microMin?: Record<string, number>;
 }
+
+const MICRO_COLUMNS_ALLOWED = new Set([
+  "vitaminaA","vitaminaB6","vitaminaB12","vitaminaC","vitaminaD",
+  "vitaminaE","vitaminaK","tiamina","riboflavina","niacina",
+  "folato","acidoPantotenico","colina","calcio","hierro",
+  "magnesio","fosforo","potasio","sodio","cinc",
+  "cobre","manganeso","selenio","fluor",
+]);
 
 export async function getAlimentosPaginados(
   busqueda?: string,
@@ -174,6 +183,25 @@ export async function getAlimentosPaginados(
   const busquedaSanitizada = busqueda ? sanitizeSearch(busqueda) : undefined;
   const f = macroFilters || {};
 
+  let microIdFilter: { id: { in: string[] } } | undefined;
+  const microEntries = Object.entries(f.microMin || {}).filter(
+    ([k, v]) => MICRO_COLUMNS_ALLOWED.has(k) && typeof v === "number" && v > 0,
+  );
+  if (microEntries.length > 0) {
+    const conditions = microEntries
+      .map(([k], i) => `"${k}" >= $${i + 1}`)
+      .join(" AND ");
+    const values = microEntries.map(([, v]) => v);
+    const rows = await prisma.$queryRawUnsafe<{ id: string }[]>(
+      `SELECT id FROM alimentos WHERE ${conditions}`,
+      ...values,
+    );
+    microIdFilter = { id: { in: rows.map((r) => r.id) } };
+    if (rows.length === 0) {
+      return { alimentos: [], total: 0, nextCursor: null as string | null };
+    }
+  }
+
   const where = {
     OR: [{ dietistaId: dietista.id }, { dietistaId: null }],
     ...(categoria ? { categoria } : {}),
@@ -185,6 +213,7 @@ export async function getAlimentosPaginados(
     ...(f.protMin || f.protMax ? { proteinas: { ...(f.protMin ? { gte: f.protMin } : {}), ...(f.protMax ? { lte: f.protMax } : {}) } } : {}),
     ...(f.carbMin || f.carbMax ? { carbohidratos: { ...(f.carbMin ? { gte: f.carbMin } : {}), ...(f.carbMax ? { lte: f.carbMax } : {}) } } : {}),
     ...(f.grasaMin || f.grasaMax ? { grasas: { ...(f.grasaMin ? { gte: f.grasaMin } : {}), ...(f.grasaMax ? { lte: f.grasaMax } : {}) } } : {}),
+    ...(microIdFilter || {}),
   };
 
   const [alimentos, total] = await Promise.all([

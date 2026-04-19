@@ -1,32 +1,47 @@
-import { AlertTriangle, CreditCard, User, Wallet } from "lucide-react";
+import { AlertTriangle, CreditCard, User, Wallet, Settings } from "lucide-react";
 import { TourSettings } from "@/components/tour/tour-settings";
 import { getCurrentDietista } from "@/app/actions/auth";
 import { getSuscripcion } from "@/app/actions/suscripcion";
 import { getStripeAccountStatus } from "@/app/actions/stripe";
+import { getIntegracionNutri } from "@/app/actions/google-integracion";
 import { redirect } from "next/navigation";
 import { PerfilForm } from "./perfil-form";
 import { FotoPerfil } from "./foto-perfil";
 import { SuscripcionCard } from "./suscripcion-card";
 import { StripeConnectCard } from "./stripe-connect-card";
+import { IntegracionesCard } from "./integraciones-card";
 import { EliminarCuentaButton } from "./eliminar-cuenta-button";
+import { PageHeader } from "@/components/page-header";
 
-export default async function AjustesPage() {
+export default async function AjustesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ google?: string; reason?: string; backfill?: string }>;
+}) {
   const dietista = await getCurrentDietista();
   if (!dietista) redirect("/login");
 
-  const [suscripcion, stripeStatus] = await Promise.all([
+  const [suscripcion, stripeStatus, googleIntegracion, sp] = await Promise.all([
     getSuscripcion(),
     getStripeAccountStatus(),
+    getIntegracionNutri(),
+    searchParams,
   ]);
+
+  const googleFlash =
+    sp.google === "ok"
+      ? { type: "ok" as const, message: "Google Calendar conectado correctamente." }
+      : sp.google === "error"
+        ? { type: "error" as const, message: `No se pudo conectar Google (${sp.reason || "error"}).` }
+        : null;
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold">Ajustes</h1>
-        <p className="text-muted-foreground mt-1">
-          Configura tu perfil y preferencias
-        </p>
-      </div>
+      <PageHeader
+        icon={Settings}
+        title="Ajustes"
+        subtitle="Configura tu perfil y preferencias"
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {/* Columna izquierda: Perfil + Zona peligrosa */}
@@ -104,6 +119,8 @@ export default async function AjustesPage() {
             </h2>
             <StripeConnectCard status={stripeStatus} />
           </section>
+
+          <IntegracionesCard integracion={googleIntegracion} flash={googleFlash} />
         </div>
       </div>
 

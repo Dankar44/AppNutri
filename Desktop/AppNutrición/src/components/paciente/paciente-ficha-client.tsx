@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Mail, Calendar, Pencil, Shield, ArrowRight } from "lucide-react";
+import { Mail, Calendar, Pencil } from "lucide-react";
 import type { FichaInformacionData } from "@/lib/ficha-informacion-types";
 import { AvatarPaciente } from "@/components/avatar-paciente";
 import {
@@ -24,6 +24,7 @@ import { PacienteFichaGeneralTab } from "./paciente-ficha-general-tab";
 import { SeguimientoTab } from "./seguimiento-tab";
 import { RecomendacionesTab } from "./recomendaciones-tab";
 import { EntregablesTab } from "./entregables-tab";
+import { PortalPacienteTab } from "./portal-paciente-tab";
 import type { HorarioEntry } from "@/app/actions/pacientes";
 import type { FichaSidebarData } from "@/lib/ficha-sidebar-types";
 
@@ -145,23 +146,40 @@ export function PacienteFichaClient({
 
   return (
     <div>
-      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between border-b border-border pb-6">
-        <div className="flex items-center gap-4 min-w-0">
+      <div className="mb-5 sm:mb-6 flex flex-col gap-3 lg:gap-4 lg:flex-row lg:items-center lg:justify-between border-b border-border pb-4 sm:pb-6">
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
           <AvatarPaciente
             nombre={nombre}
             apellidos={apellidos}
             fotoUrl={paciente.fotoUrl}
             size="lg"
           />
-          <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold truncate">
-              {nombre} {apellidos}
-            </h1>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-lg sm:text-2xl font-bold truncate">
+                {nombre} {apellidos}
+              </h1>
+              {paciente.nombre === "Paciente" && paciente.apellidos === "Prueba" && (
+                <span
+                  title="Paciente de ejemplo precargado. Puedes eliminarlo o modificarlo libremente."
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] sm:text-xs font-medium border border-amber-200 shrink-0"
+                >
+                  Paciente de ejemplo
+                </span>
+              )}
+            </div>
+            {paciente.fechaNacimiento && (
+              <span className="lg:hidden inline-flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+                <Calendar className="w-3.5 h-3.5 shrink-0" />
+                {formatDate(paciente.fechaNacimiento)}
+                {edad != null && ` (${edad} años)`}
+              </span>
+            )}
           </div>
         </div>
-        <div className="flex items-center gap-3 shrink-0 flex-wrap">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0 flex-wrap">
           {paciente.fechaNacimiento && (
-            <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+            <span className="hidden lg:inline-flex items-center gap-1.5 text-sm text-muted-foreground">
               <Calendar className="w-4 h-4 shrink-0" />
               {formatDate(paciente.fechaNacimiento)}
               {edad != null && ` (${edad} años)`}
@@ -170,16 +188,18 @@ export function PacienteFichaClient({
           {paciente.email && (
             <a
               href={`mailto:${paciente.email}`}
-              className="p-2 rounded-lg border border-border hover:bg-muted transition-colors"
+              className="p-2.5 lg:p-2 rounded-lg border border-border hover:bg-muted transition-colors min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 flex items-center justify-center"
               title={paciente.email}
+              aria-label="Enviar email"
             >
               <Mail className="w-4 h-4" />
             </a>
           )}
           <Link
             href={`/pacientes/${paciente.id}/editar`}
-            className="p-2 rounded-lg border border-border hover:bg-muted transition-colors"
+            className="p-2.5 lg:p-2 rounded-lg border border-border hover:bg-muted transition-colors min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 flex items-center justify-center"
             title="Editar paciente"
+            aria-label="Editar paciente"
           >
             <Pencil className="w-4 h-4" />
           </Link>
@@ -187,14 +207,14 @@ export function PacienteFichaClient({
         </div>
       </div>
 
-      <nav className="flex gap-1 overflow-x-auto pb-px mb-6 -mx-1 px-1 scrollbar-thin">
+      <nav className="flex gap-1 overflow-x-auto pb-px mb-5 sm:mb-6 -mx-1 px-1 scrollbar-thin touch-scroll-x [scroll-snap-type:x_proximity]">
         {FICHA_TABS.map((t) => (
           <Link
             key={t.id}
             href={`/pacientes/${paciente.id}?pestana=${t.id}`}
             scroll={false}
             className={cn(
-              "whitespace-nowrap px-3 py-2 text-sm font-medium rounded-t-lg border-b-2 transition-colors",
+              "whitespace-nowrap px-3 py-2.5 sm:py-2 text-sm font-medium rounded-t-lg border-b-2 transition-colors [scroll-snap-align:start] min-h-11 sm:min-h-0 flex items-center",
               pestana === t.id
                 ? "border-primary text-primary bg-primary/5"
                 : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/60"
@@ -304,29 +324,11 @@ export function PacienteFichaClient({
       )}
 
       {pestana === "portal-paciente" && (
-        <div className="rounded-xl border border-border bg-card p-6 sm:p-8 max-w-xl">
-          <div className="flex items-start gap-3">
-            <div className="rounded-lg bg-primary/10 p-2.5 text-primary shrink-0">
-              <Shield className="w-5 h-5" />
-            </div>
-            <div className="min-w-0 space-y-2">
-              <h2 className="text-lg font-semibold text-foreground">
-                Acceso al portal del paciente
-              </h2>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Activa o revisa el acceso de {nombre} al portal (dieta, diario, evolución,
-                recomendaciones): misma pantalla de siempre para credenciales, contraseña y perfil.
-              </p>
-              <Link
-                href={`/pacientes/${paciente.id}/portal`}
-                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-              >
-                Configurar portal del paciente
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          </div>
-        </div>
+        <PortalPacienteTab
+          pacienteId={paciente.id}
+          pacienteEmail={paciente.email}
+          esDemo={paciente.nombre === "Paciente" && paciente.apellidos === "Prueba"}
+        />
       )}
 
       {pestana !== "general" &&

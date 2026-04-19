@@ -401,7 +401,7 @@ function EjercicioCard({
                   {/* Duration + frequency inputs */}
                   <div className="flex items-center gap-2 shrink-0">
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       min={1}
                       max={999}
                       value={dur}
@@ -502,7 +502,7 @@ function EjercicioCard({
               <div className="w-20">
                 <label className="text-[10px] text-muted-foreground">MET *</label>
                 <input
-                  type="number"
+                  type="number" inputMode="decimal"
                   step="0.1"
                   min={1}
                   max={20}

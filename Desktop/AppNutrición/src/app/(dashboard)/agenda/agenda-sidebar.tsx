@@ -118,7 +118,7 @@ export function AgendaSidebar({
           Configura tu disponibilidad
         </p>
         <Link
-          href="/ajustes"
+          href="/agenda/horario"
           className="block rounded-xl border border-border bg-card p-5 shadow-sm hover:bg-muted/40 transition-colors"
         >
           <div className="flex gap-4 items-start">

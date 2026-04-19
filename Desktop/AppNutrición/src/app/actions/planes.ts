@@ -79,6 +79,13 @@ export async function crearPlan(data: PlanFormData) {
     ? validateNumber(data.grasasObjetivo, 0, LIMITS.MACROS_MAX)
     : null;
 
+  // La nueva dieta se marca como la actual del paciente:
+  // desactivar el resto antes de crear la nueva.
+  await prisma.planAlimenticio.updateMany({
+    where: { dietistaId: dietista.id, pacienteId: data.pacienteId, activo: true },
+    data: { activo: false },
+  });
+
   const plan = await prisma.planAlimenticio.create({
     data: {
       dietistaId: dietista.id,
@@ -88,6 +95,7 @@ export async function crearPlan(data: PlanFormData) {
       proteinasObjetivo,
       carbohidratosObjetivo,
       grasasObjetivo,
+      activo: true,
       dias: {
         create: DIAS.map((dia) => ({
           dia,
@@ -342,9 +350,84 @@ export async function getPacientesParaPlan() {
 
   return prisma.paciente.findMany({
     where: { dietistaId: dietista.id, activo: true },
-    select: { id: true, nombre: true, apellidos: true },
+    select: {
+      id: true,
+      nombre: true,
+      apellidos: true,
+      fotoUrl: true,
+      email: true,
+      telefono: true,
+      fechaNacimiento: true,
+      objetivo: true,
+      objetivoDetalle: true,
+      peso: true,
+      altura: true,
+    },
     orderBy: { nombre: "asc" },
   });
+}
+
+/**
+ * Devuelve contexto enriquecido de un paciente para mostrar al crear un plan:
+ * - Datos del paciente
+ * - Plan activo (si existe)
+ * - Conteo total de planes
+ * - Última medida antropométrica
+ * - Próxima cita
+ */
+export async function getPacienteContextoPlan(pacienteId: string) {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return null;
+
+  const paciente = await prisma.paciente.findFirst({
+    where: { id: pacienteId, dietistaId: dietista.id },
+    select: {
+      id: true,
+      nombre: true,
+      apellidos: true,
+      fotoUrl: true,
+      email: true,
+      telefono: true,
+      fechaNacimiento: true,
+      objetivo: true,
+      objetivoDetalle: true,
+      peso: true,
+      altura: true,
+    },
+  });
+  if (!paciente) return null;
+
+  const ahora = new Date();
+  const [planActivo, totalPlanes, ultimaMedida, proximaCita] = await Promise.all([
+    prisma.planAlimenticio.findFirst({
+      where: { pacienteId, dietistaId: dietista.id, activo: true },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        nombre: true,
+        caloriasObjetivo: true,
+        proteinasObjetivo: true,
+        carbohidratosObjetivo: true,
+        grasasObjetivo: true,
+        createdAt: true,
+      },
+    }),
+    prisma.planAlimenticio.count({
+      where: { pacienteId, dietistaId: dietista.id },
+    }),
+    prisma.medidaAntropometrica.findFirst({
+      where: { pacienteId },
+      orderBy: { fecha: "desc" },
+      select: { fecha: true, peso: true, imc: true },
+    }),
+    prisma.cita.findFirst({
+      where: { pacienteId, dietistaId: dietista.id, fechaHora: { gte: ahora } },
+      orderBy: { fechaHora: "asc" },
+      select: { id: true, fechaHora: true, motivo: true, estado: true },
+    }),
+  ]);
+
+  return { paciente, planActivo, totalPlanes, ultimaMedida, proximaCita };
 }
 
 export async function getPlanesPaciente(pacienteId: string) {

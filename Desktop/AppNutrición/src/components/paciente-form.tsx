@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { Loader2, X, Plus } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2, X, Plus, AlertTriangle } from "lucide-react";
 import { DatePicker } from "@/components/date-picker";
 import { toast } from "sonner";
 import type { PacienteFormData } from "@/app/actions/pacientes";
@@ -70,7 +71,8 @@ function TagInput({
         <button
           type="button"
           onClick={addTag}
-          className="px-3 py-2 rounded-lg border border-input hover:bg-muted transition-colors"
+          aria-label={`Añadir ${label.toLowerCase()}`}
+          className="px-3 py-2 rounded-lg border border-input hover:bg-muted transition-colors min-h-11 min-w-11 shrink-0 flex items-center justify-center"
         >
           <Plus className="w-4 h-4" />
         </button>
@@ -99,7 +101,10 @@ function TagInput({
 }
 
 export function PacienteForm({ paciente, action, submitLabel }: Props) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+  const pendingHrefRef = useRef<string | null>(null);
   const [form, setForm] = useState<PacienteFormData>({
     nombre: paciente?.nombre || "",
     apellidos: paciente?.apellidos || "",
@@ -133,6 +138,57 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
+  // Detección de cambios sin guardar
+  const initialFormRef = useRef(JSON.stringify(form));
+  const savedRef = useRef(false);
+  const isDirty = JSON.stringify(form) !== initialFormRef.current;
+
+  useEffect(() => {
+    if (!isDirty || savedRef.current) return;
+
+    // Aviso nativo al cerrar pestaña / refrescar (no personalizable por el navegador)
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+
+    // Interceptar clicks en links para navegación client-side
+    const handleClick = (e: MouseEvent) => {
+      const link = (e.target as HTMLElement).closest("a[href]") as HTMLAnchorElement | null;
+      if (!link) return;
+      const href = link.getAttribute("href");
+      if (!href || href.startsWith("#") || href.startsWith("javascript:") || link.target === "_blank") return;
+      try {
+        const url = new URL(href, window.location.origin);
+        if (url.origin !== window.location.origin) return;
+      } catch { return; }
+      e.preventDefault();
+      e.stopPropagation();
+      pendingHrefRef.current = href;
+      setShowUnsavedModal(true);
+    };
+    document.addEventListener("click", handleClick, true);
+
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      document.removeEventListener("click", handleClick, true);
+    };
+  }, [isDirty]);
+
+  function handleConfirmLeave() {
+    setShowUnsavedModal(false);
+    savedRef.current = true;
+    if (pendingHrefRef.current) {
+      router.push(pendingHrefRef.current);
+    }
+    pendingHrefRef.current = null;
+  }
+
+  function handleCancelLeave() {
+    setShowUnsavedModal(false);
+    pendingHrefRef.current = null;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.nombre.trim() || !form.apellidos.trim()) {
@@ -148,6 +204,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
       return;
     }
     setLoading(true);
+    savedRef.current = true;
     try {
       await action(form);
     } catch (error) {
@@ -155,6 +212,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
       if (error && typeof error === "object" && "digest" in error) {
         throw error;
       }
+      savedRef.current = false;
       const msg = error instanceof Error ? error.message : "Error al guardar el paciente.";
       toast.error(msg);
       setLoading(false);
@@ -162,7 +220,8 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <>
+    <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
       {/* Datos personales */}
       <section className="bg-card rounded-xl border border-border p-6">
         <h2 className="text-lg font-semibold mb-4">Datos personales</h2>
@@ -259,7 +318,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
               Peso (kg)
             </label>
             <input
-              type="number"
+              type="number" inputMode="decimal"
               step="0.1"
               min="1"
               max="500"
@@ -276,7 +335,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
               Altura (cm)
             </label>
             <input
-              type="number"
+              type="number" inputMode="decimal"
               step="0.1"
               min="30"
               max="300"
@@ -502,5 +561,45 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
         </button>
       </div>
     </form>
+
+    {showUnsavedModal && (
+      <div
+        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm px-0 sm:px-4"
+        onClick={handleCancelLeave}
+      >
+        <div
+          className="bg-card rounded-t-2xl sm:rounded-2xl border border-border shadow-2xl w-full sm:max-w-md p-5 sm:p-6 pb-safe sm:pb-6"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-5 h-5 text-amber-600" />
+            </div>
+            <h3 className="text-base sm:text-lg font-semibold">Cambios sin guardar</h3>
+          </div>
+          <p className="text-sm text-muted-foreground mb-5 sm:mb-6 sm:pl-[52px]">
+            Has modificado datos del paciente que aún no se han guardado.
+            Si sales ahora, perderás los cambios.
+          </p>
+          <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={handleCancelLeave}
+              className="px-4 py-3 sm:py-2.5 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors min-h-11 sm:min-h-0"
+            >
+              Seguir editando
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmLeave}
+              className="px-4 py-3 sm:py-2.5 rounded-lg bg-destructive text-destructive-foreground text-sm font-medium hover:bg-destructive/90 transition-colors min-h-11 sm:min-h-0"
+            >
+              Salir sin guardar
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

@@ -81,9 +81,10 @@ export function AlimentoCard({
       <div className="flex-1 min-w-0 flex items-center gap-1.5 text-sm">
         <input
           type="number"
+          inputMode="decimal"
           value={tempCantidad}
           onChange={(e) => handleCantidadChange(parseFloat(e.target.value) || 0)}
-          className="w-14 px-1.5 py-0.5 text-sm rounded border border-transparent hover:border-border focus:border-primary/50 bg-transparent text-right tabular-nums focus:outline-none focus:ring-1 focus:ring-primary/20"
+          className="w-16 sm:w-14 px-2 py-1 sm:px-1.5 sm:py-0.5 text-base sm:text-sm rounded border border-transparent hover:border-border focus:border-primary/50 bg-transparent text-right tabular-nums focus:outline-none focus:ring-1 focus:ring-primary/20"
           min={0}
           max={10000}
         />

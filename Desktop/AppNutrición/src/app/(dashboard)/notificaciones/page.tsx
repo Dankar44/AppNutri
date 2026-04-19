@@ -1,68 +1,111 @@
-import { Bell, Check } from "lucide-react";
+import Link from "next/link";
+import { Bell, Settings } from "lucide-react";
 import { getNotificaciones } from "@/app/actions/notificaciones";
-import { formatDate } from "@/lib/utils";
 import { NotificacionActions } from "./notificacion-actions";
+import { NotificacionItem } from "./notificacion-item";
+import { PageHeader } from "@/components/page-header";
 
-const TIPO_ICONS: Record<string, string> = {
-  CITA_HOY: "text-purple-600 bg-purple-50",
-  PACIENTE_SIN_CONSULTA: "text-amber-600 bg-amber-50",
-  PACIENTE_SIN_MEDIDAS: "text-blue-600 bg-blue-50",
-  PLAN_ANTIGUO: "text-orange-600 bg-orange-50",
-  DIARIO_NUEVO: "text-green-600 bg-green-50",
-};
+type Notif = Awaited<ReturnType<typeof getNotificaciones>>[number];
+
+function formatLabelDia(d: Date): string {
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const ayer = new Date(hoy);
+  ayer.setDate(ayer.getDate() - 1);
+  const fecha = new Date(d);
+  fecha.setHours(0, 0, 0, 0);
+
+  if (fecha.getTime() === hoy.getTime()) return "Hoy";
+  if (fecha.getTime() === ayer.getTime()) return "Ayer";
+
+  const diffDias = Math.round((hoy.getTime() - fecha.getTime()) / 86400000);
+  if (diffDias > 1 && diffDias <= 6) {
+    const wd = fecha.toLocaleDateString("es-ES", { weekday: "long" });
+    return wd.charAt(0).toUpperCase() + wd.slice(1);
+  }
+
+  const formato = fecha.toLocaleDateString("es-ES", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+  return formato.charAt(0).toUpperCase() + formato.slice(1);
+}
+
+function agruparPorDia(notifs: Notif[]): { label: string; items: Notif[] }[] {
+  const grupos: Record<string, Notif[]> = {};
+  const ordenes: string[] = [];
+
+  for (const n of notifs) {
+    const d = new Date(n.createdAt);
+    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    if (!grupos[key]) {
+      grupos[key] = [];
+      ordenes.push(key);
+    }
+    grupos[key].push(n);
+  }
+
+  return ordenes.map((key) => ({
+    label: formatLabelDia(new Date(grupos[key][0].createdAt)),
+    items: grupos[key],
+  }));
+}
 
 export default async function NotificacionesPage() {
   const notificaciones = await getNotificaciones();
   const noLeidas = notificaciones.filter((n) => !n.leida).length;
+  const grupos = agruparPorDia(notificaciones);
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Notificaciones</h1>
-          <p className="text-muted-foreground mt-1">
-            {noLeidas > 0 ? `${noLeidas} sin leer` : "Todas leídas"}
-          </p>
-        </div>
-        {noLeidas > 0 && <NotificacionActions />}
-      </div>
+      <PageHeader
+        icon={Bell}
+        title="Notificaciones"
+        subtitle={noLeidas > 0 ? `${noLeidas} sin leer` : "Todas leídas"}
+        action={
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Link
+              href="/notificaciones/preferencias"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium shrink-0"
+            >
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline">Preferencias</span>
+            </Link>
+            {noLeidas > 0 && <NotificacionActions />}
+          </div>
+        }
+      />
 
       {notificaciones.length === 0 ? (
-        <div className="bg-card rounded-xl border border-border p-12 text-center">
-          <Bell className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="font-medium text-lg mb-1">Sin notificaciones</h3>
-          <p className="text-muted-foreground">No tienes notificaciones</p>
+        <div className="bg-card rounded-2xl border border-border p-12 text-center">
+          <div className="w-16 h-16 rounded-full bg-primary/10 mx-auto flex items-center justify-center mb-4">
+            <Bell strokeWidth={1.75} className="w-8 h-8 text-primary" />
+          </div>
+          <h3 className="font-semibold text-lg mb-1">Sin notificaciones</h3>
+          <p className="text-muted-foreground text-sm">
+            Cuando llegue una nueva aparecerá aquí
+          </p>
         </div>
       ) : (
-        <div className="space-y-2">
-          {notificaciones.map((n) => (
-            <a
-              key={n.id}
-              href={n.enlace || "#"}
-              className={`block p-4 rounded-xl border transition-colors ${
-                n.leida
-                  ? "border-border bg-card opacity-60"
-                  : "border-primary/20 bg-primary/5 hover:bg-primary/10"
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${TIPO_ICONS[n.tipo] || "text-gray-600 bg-gray-50"}`}>
-                  <Bell className="w-4 h-4" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">{n.titulo}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {n.mensaje.replace(/ - [a-z0-9]+$/i, "")}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {formatDate(n.createdAt)}
-                  </p>
-                </div>
-                {!n.leida && (
-                  <div className="w-2 h-2 rounded-full bg-primary shrink-0 mt-2" />
-                )}
+        <div className="space-y-6">
+          {grupos.map((grupo, idx) => (
+            <section key={idx}>
+              <div className="flex items-center gap-3 mb-3">
+                <h2 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  {grupo.label}
+                </h2>
+                <span className="text-[11px] text-muted-foreground/70 tabular-nums">
+                  {grupo.items.length} {grupo.items.length === 1 ? "notificación" : "notificaciones"}
+                </span>
+                <div className="flex-1 h-px bg-border" />
               </div>
-            </a>
+              <div className="bg-card rounded-2xl border border-border overflow-hidden divide-y divide-border">
+                {grupo.items.map((n) => (
+                  <NotificacionItem key={n.id} notificacion={n} />
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       )}

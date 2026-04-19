@@ -5,6 +5,7 @@ import { getPlantillas } from "@/app/actions/plantillas";
 import { formatDate, capitalizarNombre } from "@/lib/utils";
 import { AvatarPaciente } from "@/components/avatar-paciente";
 import { DietasFilter } from "./dietas-filter";
+import { PageHeader } from "@/components/page-header";
 
 interface Props {
   searchParams: Promise<{ busqueda?: string }>;
@@ -40,33 +41,33 @@ export default async function DietasPage({ searchParams }: Props) {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Planes alimenticios</h1>
-          <p className="text-muted-foreground mt-1">
-            {planes.length} plan{planes.length !== 1 ? "es" : ""} · {grupos.length} paciente{grupos.length !== 1 ? "s" : ""}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          {plantillas.length > 0 && (
+      <PageHeader
+        icon={UtensilsCrossed}
+        title="Planes alimenticios"
+        subtitle={`${planes.length} plan${planes.length !== 1 ? "es" : ""} · ${grupos.length} paciente${grupos.length !== 1 ? "s" : ""}`}
+        action={
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+            {plantillas.length > 0 && (
+              <Link
+                href="/dietas/plantillas"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium flex-1 sm:flex-none min-h-11 sm:min-h-0"
+              >
+                <BookCopy className="w-4 h-4" />
+                <span className="hidden xs:inline">Plantillas ({plantillas.length})</span>
+                <span className="xs:hidden">({plantillas.length})</span>
+              </Link>
+            )}
             <Link
-              href="/dietas/plantillas"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
+              href="/dietas/nuevo"
+              data-tour="new-plan-btn"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium flex-1 sm:flex-none min-h-11 sm:min-h-0"
             >
-              <BookCopy className="w-4 h-4" />
-              Plantillas ({plantillas.length})
+              <Plus className="w-4 h-4" />
+              Nuevo plan
             </Link>
-          )}
-          <Link
-            href="/dietas/nuevo"
-            data-tour="new-plan-btn"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium"
-          >
-            <Plus className="w-4 h-4" />
-            Nuevo plan
-          </Link>
-        </div>
-      </div>
+          </div>
+        }
+      />
 
       <DietasFilter />
 

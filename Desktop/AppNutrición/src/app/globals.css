@@ -24,6 +24,38 @@
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  /* Breakpoint extra para iPhone SE y similares */
+  --breakpoint-xs: 375px;
+}
+
+/* Utilidades móvil: safe-area y dynamic viewport */
+@layer utilities {
+  .pt-safe { padding-top: max(env(safe-area-inset-top), 0px); }
+  .pb-safe { padding-bottom: max(env(safe-area-inset-bottom), 0px); }
+  .pl-safe { padding-left: max(env(safe-area-inset-left), 0px); }
+  .pr-safe { padding-right: max(env(safe-area-inset-right), 0px); }
+  .px-safe { padding-left: max(env(safe-area-inset-left), 0px); padding-right: max(env(safe-area-inset-right), 0px); }
+  .py-safe { padding-top: max(env(safe-area-inset-top), 0px); padding-bottom: max(env(safe-area-inset-bottom), 0px); }
+  .top-safe { top: max(env(safe-area-inset-top), 0px); }
+  .bottom-safe { bottom: max(env(safe-area-inset-bottom), 0px); }
+  .h-dvh { height: 100dvh; }
+  .min-h-dvh { min-height: 100dvh; }
+  .max-h-dvh { max-height: 100dvh; }
+  /* Scroll horizontal suave en iOS */
+  .touch-scroll-x {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+}
+
+/* iOS: evitar zoom automático al enfocar inputs en móvil.
+   Solo aplicamos a pantallas <640px — desktop mantiene sus tamaños. */
+@media (max-width: 639.98px) {
+  input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
 }
 
 body {

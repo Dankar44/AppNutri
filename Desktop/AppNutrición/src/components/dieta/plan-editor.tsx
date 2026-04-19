@@ -399,9 +399,9 @@ export function PlanEditor({
         )}
 
         {/* Main layout: meals + sidebar */}
-        <div className="flex flex-col xl:flex-row gap-6">
+        <div className="flex flex-col xl:flex-row gap-4 sm:gap-6">
           {/* Main content - meal cards */}
-          <div className="flex-1 min-w-0 space-y-6">
+          <div className="flex-1 min-w-0 space-y-4 sm:space-y-6">
             {visibleDias.map((dia) => (
               <div key={dia.dia}>
                 {/* Day heading (show when viewing all days) */}

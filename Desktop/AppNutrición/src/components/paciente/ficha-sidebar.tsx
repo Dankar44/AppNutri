@@ -486,7 +486,7 @@ export function FichaSidebar({
                   <div>
                     <Label required>Valor</Label>
                     <Input
-                      type="number"
+                      type="number" inputMode="decimal"
                       step="0.1"
                       placeholder="Introduzca un número"
                       value={objForm.valor}

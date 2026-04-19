@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -18,12 +18,28 @@ export const metadata: Metadata = {
     "Plataforma profesional para dietistas: crea dietas personalizadas, gestiona pacientes y optimiza tu consulta con inteligencia artificial.",
   keywords: ["nutrición", "dietista", "dietas", "planes alimenticios", "macros", "pacientes"],
   authors: [{ name: "NutriApp" }],
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "NutriApp",
+  },
+  formatDetection: { telephone: false },
   openGraph: {
     title: "NutriApp - Gestión de Dietas para Dietistas",
     description: "Crea dietas personalizadas, gestiona pacientes y optimiza tu consulta.",
     type: "website",
     locale: "es_ES",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  themeColor: "#16a34a",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -35,7 +51,15 @@ export default function RootLayout({
     <html lang="es" className={inter.variable}>
       <body className={`${inter.className} antialiased`}>
         {children}
-        <Toaster position="top-right" richColors />
+        <Toaster
+          position="top-center"
+          richColors
+          closeButton
+          offset={16}
+          toastOptions={{
+            className: "sm:!mr-4 sm:!mt-4",
+          }}
+        />
       </body>
     </html>
   );

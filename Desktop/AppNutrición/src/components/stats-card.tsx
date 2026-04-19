@@ -7,11 +7,12 @@ interface StatsCardProps {
   value: number | string;
   change?: number;
   color: string;
+  muted?: boolean;
 }
 
-export function StatsCard({ icon: Icon, label, value, change, color }: StatsCardProps) {
+export function StatsCard({ icon: Icon, label, value, change, color, muted }: StatsCardProps) {
   return (
-    <div className="bg-card rounded-xl border border-border p-5">
+    <div className={cn("rounded-xl border border-border p-5", muted ? "bg-muted/30" : "bg-card")}>
       <div className="flex items-start justify-between">
         <div className={`p-3 rounded-lg ${color}`}>
           <Icon className="w-5 h-5" />

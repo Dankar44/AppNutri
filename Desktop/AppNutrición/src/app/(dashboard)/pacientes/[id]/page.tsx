@@ -48,7 +48,7 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
     <div>
       <Link
         href="/pacientes"
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 py-2 sm:py-0 -my-2 sm:my-0"
       >
         <ArrowLeft className="w-4 h-4" />
         Volver a pacientes

@@ -33,7 +33,7 @@ export default async function EditarRecetaPage({ params }: Props) {
       <div className="mb-6">
         <Link
           href={`/recetas/${receta.id}`}
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3 py-2 sm:py-0 -my-2 sm:my-0"
         >
           <ArrowLeft className="w-4 h-4" />
           Volver a la receta
@@ -47,6 +47,7 @@ export default async function EditarRecetaPage({ params }: Props) {
           descripcion: receta.descripcion || undefined,
           instrucciones: receta.instrucciones || undefined,
           porciones: receta.porciones,
+          tiempoPreparacion: receta.tiempoPreparacion,
         }}
         defaultIngredientes={ingredientes}
       />

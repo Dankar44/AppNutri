@@ -18,7 +18,7 @@ import {
   X,
   ShieldCheck,
   Wallet,
-  Mail,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -46,7 +46,7 @@ function getNavSections(isAdmin?: boolean): NavSection[] {
       ],
     },
     {
-      title: "Plan de alimentación",
+      title: "Dietas",
       items: [
         { href: "/dietas", label: "Dietas", icon: UtensilsCrossed },
         { href: "/alimentos", label: "Alimentos", icon: Apple },
@@ -55,7 +55,7 @@ function getNavSections(isAdmin?: boolean): NavSection[] {
     },
     {
       title: "Acompañamiento",
-      items: [{ href: "/mensajes", label: "Mensajes", icon: Mail }],
+      items: [{ href: "/mensajes", label: "Mensajes", icon: MessageSquare }],
     },
     {
       title: "Centro de control",
@@ -74,10 +74,11 @@ interface SidebarProps {
   dietistaNombre: string;
   onSignOut: () => void;
   notifCount?: number;
+  mensajesCount?: number;
   isAdmin?: boolean;
 }
 
-export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, isAdmin }: SidebarProps) {
+export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCount = 0, isAdmin }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -141,7 +142,7 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, isAdmin }: 
                     key={item.href + (admin ? "-admin" : "")}
                     href={item.href}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                      "flex items-center gap-3 px-3 py-3 lg:py-2.5 rounded-lg text-sm font-medium transition-colors",
                       admin
                         ? isActive
                           ? "bg-indigo-50 text-indigo-700"
@@ -153,7 +154,12 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, isAdmin }: 
                     title={collapsed && !mobileOpen ? item.label : undefined}
                   >
                     <item.icon className="w-5 h-5 shrink-0" />
-                    {(!collapsed || mobileOpen) && <span>{item.label}</span>}
+                    {(!collapsed || mobileOpen) && <span className="flex-1">{item.label}</span>}
+                    {item.href === "/mensajes" && mensajesCount > 0 && (
+                      <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold shrink-0">
+                        {mensajesCount > 9 ? "9+" : mensajesCount}
+                      </span>
+                    )}
                   </Link>
                 );
               })}
@@ -188,15 +194,16 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, isAdmin }: 
   return (
     <>
       {/* Barra superior móvil */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 h-14 bg-card border-b border-border flex items-center px-4 gap-3">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 h-14 pt-safe bg-card border-b border-border flex items-center px-3 gap-3">
         <button
           onClick={() => setMobileOpen(true)}
-          className="p-2 rounded-lg hover:bg-muted transition-colors"
+          aria-label="Abrir menú"
+          className="p-2.5 -ml-1 rounded-lg hover:bg-muted transition-colors min-h-11 min-w-11 flex items-center justify-center"
         >
           <Menu className="w-5 h-5" />
         </button>
-        <Leaf className="w-5 h-5 text-primary" />
-        <span className="font-bold text-sm">NutriApp</span>
+        <Leaf className="w-5 h-5 text-primary shrink-0" />
+        <span className="font-bold text-sm truncate">NutriApp</span>
         <div className="ml-auto">
           <NotificationBell initialCount={notifCount} />
         </div>
@@ -205,15 +212,16 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, isAdmin }: 
       {/* Overlay móvil */}
       {mobileOpen && (
         <div
-          className="lg:hidden fixed inset-0 z-50 bg-black/50"
+          className="lg:hidden fixed inset-0 z-40 bg-black/50"
           onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
         />
       )}
 
       {/* Sidebar drawer móvil */}
       <aside
         className={cn(
-          "lg:hidden fixed top-0 left-0 z-50 h-full w-72 bg-sidebar border-r border-border flex flex-col transition-transform duration-300",
+          "lg:hidden fixed top-0 left-0 z-50 h-full w-64 xs:w-72 max-w-[85vw] pt-safe pb-safe bg-sidebar border-r border-border flex flex-col transition-transform duration-300",
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >

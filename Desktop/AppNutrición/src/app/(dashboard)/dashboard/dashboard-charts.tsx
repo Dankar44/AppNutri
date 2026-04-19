@@ -8,10 +8,19 @@ interface ActividadData {
   pacientesNuevos: number;
 }
 
-export function DashboardCharts({ data }: { data: ActividadData[] }) {
+export function DashboardCharts({
+  data,
+  height = 250,
+}: {
+  data: ActividadData[];
+  height?: number;
+}) {
   if (data.every((d) => d.consultas === 0 && d.pacientesNuevos === 0)) {
     return (
-      <div className="flex items-center justify-center h-[250px] text-sm text-muted-foreground">
+      <div
+        className="flex items-center justify-center text-sm text-muted-foreground"
+        style={{ height }}
+      >
         Sin datos de actividad aún
       </div>
     );
@@ -24,7 +33,7 @@ export function DashboardCharts({ data }: { data: ActividadData[] }) {
         { key: "consultas", label: "Consultas", color: "#3b82f6" },
         { key: "pacientes", label: "Pacientes nuevos", color: "#22c55e" },
       ]}
-      height={250}
+      height={height}
     />
   );
 }

@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Leaf, LayoutDashboard, UtensilsCrossed, BookOpen, TrendingUp, MessageSquareText,
-  ShoppingCart, Settings, FileDown, LogOut, Menu, X, ClipboardCheck,
+  ShoppingCart, Settings, FileDown, LogOut, Menu, X, ClipboardCheck, Calendar,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logoutPaciente } from "@/app/actions/paciente-auth";
@@ -15,6 +16,8 @@ const navItems = [
   { href: "/paciente/portal/dieta", label: "Mi dieta", icon: UtensilsCrossed },
   { href: "/paciente/portal/diario", label: "Diario", icon: BookOpen },
   { href: "/paciente/portal/seguimiento", label: "Mi seguimiento", icon: ClipboardCheck },
+  { href: "/paciente/portal/citas", label: "Mis citas", icon: Calendar },
+  { href: "/paciente/portal/mensajes", label: "Mensajes", icon: MessageSquare },
   { href: "/paciente/portal/evolucion", label: "Evolución", icon: TrendingUp },
   { href: "/paciente/portal/dieta/lista-compra", label: "Lista de la compra", icon: ShoppingCart },
   { href: "/paciente/portal/recomendaciones", label: "Recomendaciones", icon: MessageSquareText },
@@ -26,9 +29,10 @@ interface Props {
   nombre: string;
   apellidos: string;
   fotoUrl?: string | null;
+  badges?: Record<string, number>;
 }
 
-export function PatientNav({ nombre, apellidos, fotoUrl }: Props) {
+export function PatientNav({ nombre, apellidos, fotoUrl, badges }: Props) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -77,7 +81,12 @@ export function PatientNav({ nombre, apellidos, fotoUrl }: Props) {
               )}
             >
               <item.icon className="w-5 h-5 shrink-0" />
-              <span>{item.label}</span>
+              <span className="flex-1">{item.label}</span>
+              {badges && badges[item.href] > 0 && (
+                <span className="shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                  {badges[item.href]}
+                </span>
+              )}
             </Link>
           );
         })}
@@ -113,8 +122,12 @@ export function PatientNav({ nombre, apellidos, fotoUrl }: Props) {
   return (
     <>
       {/* Barra superior móvil */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 h-14 bg-card border-b border-border flex items-center px-4 gap-3">
-        <button onClick={() => setMobileOpen(true)} className="p-2 rounded-lg hover:bg-muted transition-colors">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 h-14 pt-safe bg-card border-b border-border flex items-center px-3 gap-3">
+        <button
+          onClick={() => setMobileOpen(true)}
+          aria-label="Abrir menú"
+          className="p-2.5 -ml-1 rounded-lg hover:bg-muted transition-colors min-h-11 min-w-11 flex items-center justify-center"
+        >
           <Menu className="w-5 h-5" />
         </button>
         <Leaf className="w-5 h-5 text-primary" />
@@ -132,13 +145,13 @@ export function PatientNav({ nombre, apellidos, fotoUrl }: Props) {
 
       {/* Overlay móvil */}
       {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 bg-black/50" onClick={() => setMobileOpen(false)} />
+        <div className="lg:hidden fixed inset-0 z-40 bg-black/50" onClick={() => setMobileOpen(false)} aria-hidden="true" />
       )}
 
       {/* Sidebar drawer móvil */}
       <aside
         className={cn(
-          "lg:hidden fixed top-0 left-0 z-50 h-full w-72 bg-sidebar border-r border-border flex flex-col transition-transform duration-300",
+          "lg:hidden fixed top-0 left-0 z-50 h-full w-64 xs:w-72 max-w-[85vw] pt-safe pb-safe bg-sidebar border-r border-border flex flex-col transition-transform duration-300",
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >

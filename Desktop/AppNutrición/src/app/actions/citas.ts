@@ -10,6 +10,7 @@ import {
   validateDate,
   LIMITS,
 } from "@/lib/validation";
+import { syncCitaAmbos, unsyncCitaAntesDeBorrar } from "@/lib/google-sync";
 
 export interface CitaFormData {
   pacienteId: string;
@@ -17,6 +18,12 @@ export interface CitaFormData {
   duracion?: number;
   motivo?: string;
   notas?: string;
+  isOnline?: boolean;
+  /**
+   * - "directa" (por defecto): crea la cita CONFIRMADA directamente, útil para citas ya acordadas en persona.
+   * - "proponer": crea PENDIENTE y notifica al paciente, que decidirá si aceptarla/contraponerla/rechazarla.
+   */
+  modo?: "directa" | "proponer";
 }
 
 export async function crearCita(data: CitaFormData) {
@@ -28,8 +35,16 @@ export async function crearCita(data: CitaFormData) {
   const duracion = validateNumber(data.duracion || 30, LIMITS.DURACION_MIN, LIMITS.DURACION_MAX);
   const motivo = sanitizeStringOptional(data.motivo, LIMITS.MOTIVO);
   const notas = sanitizeStringOptional(data.notas, LIMITS.NOTAS);
+  const modo = data.modo ?? "directa";
 
-  await prisma.cita.create({
+  // Verificar que el paciente pertenece al nutri (seguridad)
+  const paciente = await prisma.paciente.findFirst({
+    where: { id: data.pacienteId, dietistaId: dietista.id },
+    select: { id: true, nombre: true, apellidos: true },
+  });
+  if (!paciente) throw new Error("Paciente no encontrado");
+
+  const cita = await prisma.cita.create({
     data: {
       pacienteId: data.pacienteId,
       dietistaId: dietista.id,
@@ -37,10 +52,37 @@ export async function crearCita(data: CitaFormData) {
       duracion,
       motivo,
       notas,
+      estado: modo === "proponer" ? "PENDIENTE" : "CONFIRMADA",
+      origen: "DIETISTA",
+      propuestoPor: "DIETISTA",
+      isOnline: data.isOnline ?? false,
     },
+    select: { id: true },
   });
 
+  // Sincronizar con Google Calendar (fire-and-forget)
+  void syncCitaAmbos(cita.id);
+
+  // Si es una propuesta al paciente, notificar
+  if (modo === "proponer") {
+    const dias = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+    const meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+    const d = fechaHora;
+    const textoFecha = `${dias[d.getDay()]} ${d.getDate()} de ${meses[d.getMonth()]} a las ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+    await prisma.notificacion.create({
+      data: {
+        pacienteId: paciente.id,
+        tipo: "CITA_SOLICITADA",
+        titulo: "Tu nutricionista te ha propuesto una cita",
+        mensaje: `${dietista.nombre} ${dietista.apellidos} propone una cita para el ${textoFecha}`,
+        enlace: "/paciente/portal/citas",
+      },
+    });
+  }
+
   revalidatePath("/agenda");
+  revalidatePath("/paciente/portal/citas");
+  return cita;
 }
 
 export async function actualizarEstadoCita(id: string, estado: EstadoCita) {
@@ -52,6 +94,7 @@ export async function actualizarEstadoCita(id: string, estado: EstadoCita) {
     data: { estado },
   });
 
+  void syncCitaAmbos(id);
   revalidatePath("/agenda");
 }
 
@@ -59,6 +102,7 @@ export async function eliminarCita(id: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
 
+  await unsyncCitaAntesDeBorrar(id);
   await prisma.cita.delete({
     where: { id, dietistaId: dietista.id },
   });
@@ -175,7 +219,66 @@ export async function getPacientesParaCita() {
 
   return prisma.paciente.findMany({
     where: { dietistaId: dietista.id, activo: true },
-    select: { id: true, nombre: true, apellidos: true },
+    select: {
+      id: true,
+      nombre: true,
+      apellidos: true,
+      fotoUrl: true,
+      email: true,
+      telefono: true,
+      fechaNacimiento: true,
+      objetivo: true,
+      objetivoDetalle: true,
+    },
     orderBy: { nombre: "asc" },
   });
+}
+
+export async function getPacienteContextoCita(pacienteId: string) {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return null;
+
+  const paciente = await prisma.paciente.findFirst({
+    where: { id: pacienteId, dietistaId: dietista.id },
+    select: {
+      id: true,
+      nombre: true,
+      apellidos: true,
+      fotoUrl: true,
+      email: true,
+      telefono: true,
+      fechaNacimiento: true,
+      objetivo: true,
+      objetivoDetalle: true,
+      peso: true,
+      altura: true,
+    },
+  });
+  if (!paciente) return null;
+
+  const ahora = new Date();
+  const [proximaCita, ultimaCita, planActivo, ultimaMedida] = await Promise.all([
+    prisma.cita.findFirst({
+      where: { pacienteId, dietistaId: dietista.id, fechaHora: { gte: ahora } },
+      orderBy: { fechaHora: "asc" },
+      select: { id: true, fechaHora: true, motivo: true, estado: true },
+    }),
+    prisma.cita.findFirst({
+      where: { pacienteId, dietistaId: dietista.id, fechaHora: { lt: ahora } },
+      orderBy: { fechaHora: "desc" },
+      select: { id: true, fechaHora: true, motivo: true, estado: true },
+    }),
+    prisma.planAlimenticio.findFirst({
+      where: { pacienteId, dietistaId: dietista.id, activo: true },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, nombre: true, caloriasObjetivo: true, createdAt: true },
+    }),
+    prisma.medidaAntropometrica.findFirst({
+      where: { pacienteId },
+      orderBy: { fecha: "desc" },
+      select: { fecha: true, peso: true, imc: true },
+    }),
+  ]);
+
+  return { paciente, proximaCita, ultimaCita, planActivo, ultimaMedida };
 }

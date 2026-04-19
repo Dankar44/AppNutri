@@ -1,0 +1,20 @@
+{
+  "name": "NutriApp",
+  "short_name": "NutriApp",
+  "description": "Plataforma profesional para dietistas: crea dietas personalizadas, gestiona pacientes y optimiza tu consulta.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#fafafa",
+  "theme_color": "#16a34a",
+  "lang": "es",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/demo-paciente-avatar.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

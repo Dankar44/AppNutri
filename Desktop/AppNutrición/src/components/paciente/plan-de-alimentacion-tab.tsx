@@ -441,7 +441,7 @@ export function PlanDeAlimentacionTab({
 
       {selectedPlan && totals ? (
         vista === "plan" ? (
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_400px] gap-3 sm:gap-4">
             <div className="bg-card rounded-xl border border-border p-4">
               {/* Selector de dieta integrado */}
               <div className="flex items-center justify-between gap-3 mb-3">
@@ -711,7 +711,7 @@ export function PlanDeAlimentacionTab({
                         {/* Tooltip hover — aparece a la izquierda del cursor */}
                         <div className="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50">
                           <div className="bg-white border border-border/30 rounded-2xl shadow-xl p-3 whitespace-nowrap text-[11px]">
-                            <div className="grid grid-cols-[auto_auto_auto_auto] gap-x-3 gap-y-1.5 items-center">
+                            <div className="grid grid-cols-2 sm:grid-cols-[auto_auto_auto_auto] gap-x-2 sm:gap-x-3 gap-y-1.5 items-center">
                               <span className="font-semibold px-2 py-0.5 rounded-full" style={{ color: MACRO_COLORS.grasas, background: MACRO_COLORS.grasas + "22" }}>Grasa</span>
                               <span className="tabular-nums text-right">{meal.grasasKcal} kcal</span>
                               <span className="tabular-nums text-right">{meal.grasasPct}%</span>
@@ -779,16 +779,16 @@ export function PlanDeAlimentacionTab({
                   return (
                     <div
                       key={row.key}
-                      className="flex items-center gap-3 px-3 py-2.5 border-b border-border/40 last:border-0"
+                      className="flex items-center gap-1.5 px-2 py-2.5 border-b border-border/40 last:border-0"
                     >
-                      <span className="text-xs text-muted-foreground w-28 shrink-0">{row.label}</span>
-                      <span className="text-sm font-bold tabular-nums w-16 text-right shrink-0">
+                      <span className="text-xs text-muted-foreground w-20 shrink-0">{row.label}</span>
+                      <span className="text-xs font-bold tabular-nums w-10 text-right shrink-0">
                         {actual.toFixed(1)}
                       </span>
-                      <span className="text-[10px] text-muted-foreground shrink-0">
+                      <span className="text-[10px] text-muted-foreground shrink-0 w-16">
                         / {row.ddr} {row.unit}
                       </span>
-                      <div className="flex-1 relative h-2.5 bg-muted/40 rounded-full overflow-hidden ml-1">
+                      <div className="flex-1 relative h-2.5 bg-muted/40 rounded-full overflow-hidden">
                         {/* Línea de referencia DDR al 50% */}
                         <div className="absolute left-1/2 top-0 h-full w-px border-l border-dashed border-muted-foreground/30 z-10" />
                         <div

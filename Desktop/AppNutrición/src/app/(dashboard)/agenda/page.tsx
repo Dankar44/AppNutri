@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, CalendarDays } from "lucide-react";
 import {
   getCitasSemana,
   getCitasMes,
@@ -9,9 +9,10 @@ import {
 import { prisma } from "@/lib/prisma";
 import { AgendaClient } from "./agenda-client";
 import { AgendaSidebar } from "./agenda-sidebar";
+import { PageHeader } from "@/components/page-header";
 
 interface Props {
-  searchParams: Promise<{ fecha?: string; vista?: string }>;
+  searchParams: Promise<{ fecha?: string; vista?: string; cita?: string }>;
 }
 
 function formatLocalDate(d: Date): string {
@@ -28,12 +29,26 @@ function getLunesDeSemana(d: Date): Date {
 
 export default async function AgendaPage({ searchParams }: Props) {
   const params = await searchParams;
-  const { fecha } = params;
   const vistaRaw = params.vista;
   const vista =
     vistaRaw === "semana" || vistaRaw === "mes" || vistaRaw === "dia"
       ? vistaRaw
-      : "dia";
+      : "semana"; // por defecto SEMANA
+
+  // Si viene ?cita=xxx (p.ej. desde una notificación), saltar a la semana de esa cita
+  // y seleccionar el día para que se abra el detalle con los botones.
+  let fecha = params.fecha;
+  let diaResaltado: string | undefined;
+  if (params.cita) {
+    const citaUrl = await prisma.cita.findUnique({
+      where: { id: params.cita },
+      select: { fechaHora: true },
+    });
+    if (citaUrl) {
+      fecha = formatLocalDate(citaUrl.fechaHora);
+      diaResaltado = fecha;
+    }
+  }
 
   const fechaRef = fecha ? new Date(fecha + "T12:00:00") : new Date();
 
@@ -75,17 +90,20 @@ export default async function AgendaPage({ searchParams }: Props) {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 lg:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold">Agenda</h1>
-        <Link
-          href="/agenda/nueva"
-          data-tour="new-appointment-btn"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          Nueva cita
-        </Link>
-      </div>
+      <PageHeader
+        icon={CalendarDays}
+        title="Agenda"
+        action={
+          <Link
+            href="/agenda/nueva"
+            data-tour="new-appointment-btn"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            Nueva cita
+          </Link>
+        }
+      />
 
       <div className="flex flex-col xl:flex-row xl:gap-8 xl:items-start">
         <div className="flex-1 min-w-0 mb-8 xl:mb-0">
@@ -93,6 +111,7 @@ export default async function AgendaPage({ searchParams }: Props) {
             vista={vista}
             fechaInicio={fechaInicio}
             citas={JSON.parse(JSON.stringify(citas))}
+            diaResaltado={diaResaltado}
           />
         </div>
         <AgendaSidebar

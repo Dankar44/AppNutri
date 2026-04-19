@@ -11,8 +11,8 @@ interface AvatarPacienteProps {
 const sizeClasses = {
   sm: "w-9 h-9 text-xs",
   md: "w-11 h-11 text-sm",
-  lg: "w-20 h-20 text-2xl",
-  xl: "w-24 h-24 text-3xl",
+  lg: "w-16 h-16 sm:w-20 sm:h-20 text-xl sm:text-2xl",
+  xl: "w-20 h-20 sm:w-24 sm:h-24 text-2xl sm:text-3xl",
 };
 
 const sizePixels = { sm: 36, md: 44, lg: 80, xl: 96 };

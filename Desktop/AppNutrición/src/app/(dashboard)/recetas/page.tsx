@@ -1,32 +1,117 @@
 import Link from "next/link";
-import { Plus, CookingPot, Search } from "lucide-react";
-import { getRecetas } from "@/app/actions/recetas";
-import { MacroBadges } from "@/components/macro-badge";
+import { Plus, CookingPot, Sparkles } from "lucide-react";
+import { getRecetas, type RecetaFilters } from "@/app/actions/recetas";
 import { RecetasFilter } from "./recetas-filter";
+import { RecetasGrid } from "./recetas-grid";
+import { PageHeader } from "@/components/page-header";
 
 interface Props {
-  searchParams: Promise<{ busqueda?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+const MICRO_KEYS = [
+  "vitaminaA", "vitaminaB6", "vitaminaB12", "vitaminaC", "vitaminaD",
+  "vitaminaE", "vitaminaK", "tiamina", "riboflavina", "niacina",
+  "folato", "acidoPantotenico", "colina", "calcio", "hierro",
+  "magnesio", "fosforo", "potasio", "sodio", "cinc",
+  "cobre", "manganeso", "selenio", "fluor",
+];
+
+function toNumber(v: string | string[] | undefined): number | undefined {
+  if (typeof v !== "string" || v.trim() === "") return undefined;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : undefined;
 }
 
 export default async function RecetasPage({ searchParams }: Props) {
-  const { busqueda } = await searchParams;
-  const recetas = await getRecetas(busqueda);
+  const sp = await searchParams;
+  const tab = sp.tab === "app" ? "app" : "mias";
+  const busqueda = typeof sp.busqueda === "string" ? sp.busqueda : undefined;
+
+  const microMin: Record<string, number> = {};
+  for (const k of MICRO_KEYS) {
+    const raw = sp[`m_${k}`];
+    const n = toNumber(raw);
+    if (n !== undefined && n > 0) microMin[k] = n;
+  }
+
+  const filters: RecetaFilters = {
+    busqueda,
+    ingMin: toNumber(sp.ingMin),
+    ingMax: toNumber(sp.ingMax),
+    tiempoMin: toNumber(sp.tiempoMin),
+    tiempoMax: toNumber(sp.tiempoMax),
+    calMin: toNumber(sp.calMin),
+    calMax: toNumber(sp.calMax),
+    protMin: toNumber(sp.protMin),
+    protMax: toNumber(sp.protMax),
+    carbMin: toNumber(sp.carbMin),
+    carbMax: toNumber(sp.carbMax),
+    grasaMin: toNumber(sp.grasaMin),
+    grasaMax: toNumber(sp.grasaMax),
+    ...(Object.keys(microMin).length ? { microMin } : {}),
+  };
+
+  const recetas = await getRecetas({ ...filters, scope: tab });
+  const hayFiltros = Object.values(filters).some(
+    (v) => v !== undefined && (typeof v !== "object" || Object.keys(v).length > 0),
+  );
+
+  const currentParams = new URLSearchParams();
+  for (const [k, v] of Object.entries(sp)) {
+    if (k === "tab") continue;
+    if (typeof v === "string" && v) currentParams.set(k, v);
+  }
+  const miasHref = (() => {
+    const p = new URLSearchParams(currentParams);
+    p.delete("tab");
+    const q = p.toString();
+    return q ? `/recetas?${q}` : "/recetas";
+  })();
+  const appHref = (() => {
+    const p = new URLSearchParams(currentParams);
+    p.set("tab", "app");
+    return `/recetas?${p.toString()}`;
+  })();
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Recetas</h1>
-          <p className="text-muted-foreground mt-1">
-            {recetas.length} receta{recetas.length !== 1 ? "s" : ""}
-          </p>
-        </div>
+      <PageHeader
+        icon={CookingPot}
+        title="Recetas"
+        subtitle={`${recetas.length} receta${recetas.length !== 1 ? "s" : ""}${tab === "mias" ? " en tu colección" : " en el catálogo de la app"}`}
+        action={
+          <Link
+            href="/recetas/nueva"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium"
+          >
+            <Plus className="w-4 h-4" />
+            Nueva receta
+          </Link>
+        }
+      />
+
+      <div className="flex gap-1 border-b border-border mb-5">
         <Link
-          href="/recetas/nueva"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium"
+          href={miasHref}
+          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+            tab === "mias"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
         >
-          <Plus className="w-4 h-4" />
-          Nueva receta
+          Mis recetas
+        </Link>
+        <Link
+          href={appHref}
+          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors inline-flex items-center gap-1.5 ${
+            tab === "app"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          Recetas de la app
         </Link>
       </div>
 
@@ -35,50 +120,37 @@ export default async function RecetasPage({ searchParams }: Props) {
       {recetas.length === 0 ? (
         <div className="bg-card rounded-xl border border-border p-12 text-center">
           <CookingPot className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="font-medium text-lg mb-1">Sin recetas</h3>
+          <h3 className="font-medium text-lg mb-1">
+            {tab === "app" ? "Sin recetas" : "Sin recetas propias"}
+          </h3>
           <p className="text-muted-foreground mb-4">
-            {busqueda
-              ? "No se encontraron recetas con ese nombre"
-              : "Crea tu primera receta con ingredientes y macros calculados"}
+            {hayFiltros
+              ? "No se encontraron recetas con esos filtros"
+              : tab === "app"
+                ? "El catálogo de la app estará disponible pronto"
+                : "Crea tu primera receta o añade favoritas desde el catálogo de la app"}
           </p>
-          {!busqueda && (
-            <Link
-              href="/recetas/nueva"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium"
-            >
-              <Plus className="w-4 h-4" />
-              Crear receta
-            </Link>
+          {!hayFiltros && tab === "mias" && (
+            <div className="flex gap-2 justify-center">
+              <Link
+                href="/recetas/nueva"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium"
+              >
+                <Plus className="w-4 h-4" />
+                Crear receta
+              </Link>
+              <Link
+                href={appHref}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
+              >
+                <Sparkles className="w-4 h-4" />
+                Ver catálogo de la app
+              </Link>
+            </div>
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {recetas.map((receta) => (
-            <Link
-              key={receta.id}
-              href={`/recetas/${receta.id}`}
-              className="bg-card rounded-xl border border-border p-5 hover:border-primary/30 hover:shadow-sm transition-all"
-            >
-              <h3 className="font-semibold mb-1">{receta.nombre}</h3>
-              {receta.descripcion && (
-                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                  {receta.descripcion}
-                </p>
-              )}
-              <div className="flex items-center justify-between mt-3">
-                <MacroBadges
-                  calorias={receta.calorias}
-                  proteinas={receta.proteinas}
-                  carbohidratos={receta.carbohidratos}
-                  grasas={receta.grasas}
-                />
-                <span className="text-xs text-muted-foreground shrink-0 ml-2">
-                  {receta.porciones} porc.
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
+        <RecetasGrid recetas={recetas} />
       )}
     </div>
   );

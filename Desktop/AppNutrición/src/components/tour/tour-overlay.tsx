@@ -92,7 +92,7 @@ function TourOverlayContent() {
         <div className="fixed z-[60] border-2 border-primary rounded-lg pointer-events-none"
           style={{ top: targetRect.top - pad, left: targetRect.left - pad, width: targetRect.width + pad * 2, height: targetRect.height + pad * 2 }} />
       )}
-      <div style={tooltipStyle} className="bg-card rounded-xl border border-border shadow-2xl p-5 w-[340px]">
+      <div style={tooltipStyle} className="bg-card rounded-xl border border-border shadow-2xl p-4 sm:p-5 w-[calc(100vw-2rem)] max-w-[340px]">
         <div className="flex items-start justify-between mb-2">
           <div>
             <p className="text-xs text-primary font-medium mb-0.5">{activeTour.name}</p>
