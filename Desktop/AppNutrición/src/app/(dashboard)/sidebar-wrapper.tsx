@@ -7,6 +7,7 @@ interface SidebarWrapperProps {
   signOutAction: () => Promise<void>;
   notifCount: number;
   mensajesCount?: number;
+  badges?: Record<string, number>;
   isAdmin?: boolean;
 }
 
@@ -15,6 +16,7 @@ export function SidebarWrapper({
   signOutAction,
   notifCount,
   mensajesCount = 0,
+  badges = {},
   isAdmin,
 }: SidebarWrapperProps) {
   return (
@@ -23,6 +25,7 @@ export function SidebarWrapper({
       onSignOut={() => signOutAction()}
       notifCount={notifCount}
       mensajesCount={mensajesCount}
+      badges={badges}
       isAdmin={isAdmin}
     />
   );

@@ -1,7 +1,14 @@
 import { redirect } from "next/navigation";
+import { TrendingUp, LineChart as LineChartIcon } from "lucide-react";
 import { getCurrentPaciente } from "@/lib/patient-auth";
 import { prisma } from "@/lib/prisma";
-import { EvolucionChart } from "@/components/evolucion-chart";
+import { PageHeader } from "@/components/page-header";
+import {
+  EvolucionCard,
+  type Medida,
+} from "@/components/paciente/evolucion/evolucion-card";
+import { PerimetrosCard, type PerimetroPoint } from "@/components/paciente/evolucion/perimetros-card";
+import { HitosCard } from "@/components/paciente/evolucion/hitos-card";
 
 export default async function PatientEvolucionPage() {
   const session = await getCurrentPaciente();
@@ -10,53 +17,109 @@ export default async function PatientEvolucionPage() {
   const medidas = await prisma.medidaAntropometrica.findMany({
     where: { pacienteId: session.pacienteId },
     orderBy: { fecha: "asc" },
-    select: { fecha: true, peso: true, imc: true, grasaCorporal: true },
+    select: {
+      fecha: true,
+      peso: true,
+      imc: true,
+      grasaCorporal: true,
+      perimetroCintura: true,
+      perimetroCadera: true,
+      perimetroBrazo: true,
+    },
   });
 
-  const data = medidas.map((m) => ({
-    fecha: new Date(m.fecha).toLocaleDateString("es-ES", { day: "2-digit", month: "short" }),
+  const data: Medida[] = medidas.map((m) => ({
+    fechaISO: new Date(m.fecha).toISOString().split("T")[0],
     peso: m.peso,
     imc: m.imc,
     grasa: m.grasaCorporal,
   }));
 
+  const perimetros: PerimetroPoint[] = medidas.map((m) => ({
+    fechaISO: new Date(m.fecha).toISOString().split("T")[0],
+    cintura: m.perimetroCintura,
+    cadera: m.perimetroCadera,
+    brazo: m.perimetroBrazo,
+  }));
+
   const hasPeso = data.some((d) => d.peso !== null);
+  const hasImc = data.some((d) => d.imc !== null);
+  const hasGrasa = data.some((d) => d.grasa !== null);
+  const hasPerimetros = perimetros.some(
+    (p) => p.cintura !== null || p.cadera !== null || p.brazo !== null
+  );
 
   return (
     <div>
-      <h1 className="text-xl sm:text-2xl font-bold mb-6">Mi evolución</h1>
+      <PageHeader
+        icon={TrendingUp}
+        title="Mi evolución"
+        subtitle={
+          data.length > 0
+            ? `${data.length} medicion${data.length !== 1 ? "es" : ""} registrada${data.length !== 1 ? "s" : ""}`
+            : "Gráficos de peso y medidas"
+        }
+      />
 
       {data.length === 0 ? (
-        <div className="bg-card rounded-xl border border-border p-12 text-center">
-          <p className="text-muted-foreground">
-            Tu dietista aún no ha registrado medidas
-          </p>
-        </div>
+        <EmptyState />
       ) : (
-        <div className="space-y-6">
-          {hasPeso && (
-            <section className="bg-card rounded-xl border border-border p-6">
-              <h2 className="text-lg font-semibold mb-4">Peso e IMC</h2>
-              <EvolucionChart
+        <div className="space-y-5">
+          <div className="grid gap-5 lg:grid-cols-2">
+            {hasPeso && (
+              <EvolucionCard
+                iconName="scale"
+                title="Peso"
+                metric="peso"
+                unit="kg"
+                decimals={1}
+                color="#3b82f6"
                 data={data}
-                lines={[
-                  { key: "peso", label: "Peso (kg)", color: "#3b82f6" },
-                  { key: "imc", label: "IMC", color: "#f59e0b" },
-                ]}
               />
-            </section>
-          )}
-          {data.some((d) => d.grasa !== null) && (
-            <section className="bg-card rounded-xl border border-border p-6">
-              <h2 className="text-lg font-semibold mb-4">% Grasa corporal</h2>
-              <EvolucionChart
+            )}
+            {hasImc && (
+              <EvolucionCard
+                iconName="activity"
+                title="IMC"
+                metric="imc"
+                unit=""
+                decimals={1}
+                color="#f59e0b"
                 data={data}
-                lines={[{ key: "grasa", label: "% Grasa", color: "#ef4444" }]}
+                referenceArea={{ y1: 18.5, y2: 24.9, label: "Saludable" }}
               />
-            </section>
-          )}
+            )}
+            {hasGrasa && (
+              <EvolucionCard
+                iconName="percent"
+                title="% Grasa corporal"
+                metric="grasa"
+                unit="%"
+                decimals={1}
+                color="#ef4444"
+                data={data}
+              />
+            )}
+            {hasPerimetros && <PerimetrosCard data={perimetros} />}
+          </div>
+
+          <HitosCard data={data} />
         </div>
       )}
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="rounded-2xl border border-dashed border-border bg-card/50 p-10 sm:p-14 text-center">
+      <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl border border-border text-muted-foreground mb-4">
+        <LineChartIcon className="w-7 h-7" strokeWidth={1.5} />
+      </div>
+      <h2 className="text-lg font-semibold mb-1">Aún no hay mediciones</h2>
+      <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+        Tu nutricionista registrará tu peso, IMC y composición corporal en las próximas consultas. Aparecerán aquí en cuanto las añada.
+      </p>
     </div>
   );
 }

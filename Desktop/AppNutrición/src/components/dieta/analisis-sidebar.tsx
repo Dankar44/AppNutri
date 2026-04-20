@@ -40,7 +40,7 @@ export function AnalisisSidebar({
           actual={calorias}
           objetivo={caloriasObj}
           color="bg-purple-400"
-          trackColor="bg-purple-50"
+          trackColor="bg-purple-50 dark:bg-purple-500/10"
           unit="kcal"
           icon="⚡"
         />
@@ -49,7 +49,7 @@ export function AnalisisSidebar({
           actual={grasas}
           objetivo={grasasObj}
           color="bg-yellow-400"
-          trackColor="bg-yellow-50"
+          trackColor="bg-yellow-50 dark:bg-yellow-500/10"
           icon="◎"
         />
         <MacroBarra
@@ -57,7 +57,7 @@ export function AnalisisSidebar({
           actual={carbohidratos}
           objetivo={carbohidratosObj}
           color="bg-orange-300"
-          trackColor="bg-orange-50"
+          trackColor="bg-orange-50 dark:bg-orange-500/10"
           icon="◯"
         />
         <MacroBarra
@@ -65,7 +65,7 @@ export function AnalisisSidebar({
           actual={proteinas}
           objetivo={proteinasObj}
           color="bg-blue-400"
-          trackColor="bg-blue-50"
+          trackColor="bg-blue-50 dark:bg-blue-500/10"
           icon="◇"
         />
         <MacroBarra
@@ -73,7 +73,7 @@ export function AnalisisSidebar({
           actual={fibra}
           objetivo={fibraObj}
           color="bg-emerald-400"
-          trackColor="bg-emerald-50"
+          trackColor="bg-emerald-50 dark:bg-emerald-500/10"
           icon="△"
         />
       </div>

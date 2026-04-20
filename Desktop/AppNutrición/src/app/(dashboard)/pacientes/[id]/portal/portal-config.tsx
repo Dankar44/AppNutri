@@ -73,7 +73,7 @@ export function PortalConfig({ pacienteId, emailDefault, accesoExistente }: Prop
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Estado</span>
-              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${accesoExistente.activo ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-600"}`}>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${accesoExistente.activo ? "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400" : "bg-muted text-muted-foreground"}`}>
                 {accesoExistente.activo ? "Activo" : "Inactivo"}
               </span>
             </div>
@@ -111,14 +111,14 @@ export function PortalConfig({ pacienteId, emailDefault, accesoExistente }: Prop
 
       {/* Diálogo de confirmación */}
       {confirmando && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-5">
+        <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-lg p-5">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-semibold text-amber-800">
+              <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
                 Este paciente ya tiene contraseña configurada
               </p>
-              <p className="text-xs text-amber-700 mt-1">
+              <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
                 Al generar un nuevo PIN, el paciente perderá su contraseña actual y tendrá que crear una nueva al iniciar sesión con el PIN. Sus dietas, medidas, foto y demás datos NO se verán afectados.
               </p>
               <div className="flex gap-2 mt-3">

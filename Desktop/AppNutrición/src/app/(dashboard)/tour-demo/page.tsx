@@ -53,7 +53,7 @@ export default function TourDemoPage() {
   return (
     <div>
       <div className="mb-4">
-        <p className="text-xs text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg inline-flex items-center gap-1 mb-3 font-medium">
+        <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-3 py-1.5 rounded-lg inline-flex items-center gap-1 mb-3 font-medium">
           Paciente de demostración — Solo para el tour guiado
         </p>
       </div>
@@ -64,7 +64,7 @@ export default function TourDemoPage() {
         <div>
           <h1 className="text-2xl font-bold">{p.nombre} {p.apellidos}</h1>
           <div className="flex items-center gap-3 mt-1">
-            <span className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 font-medium">Activo</span>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 font-medium">Activo</span>
             <span className="text-sm text-muted-foreground">Alta: 01/01/2026</span>
           </div>
         </div>
@@ -92,9 +92,9 @@ export default function TourDemoPage() {
               <Heart className="w-5 h-5 text-red-500" /> Historial médico
             </h2>
             <div className="grid grid-cols-2 gap-6">
-              <div><div className="flex items-center gap-1 mb-2"><AlertTriangle className="w-4 h-4 text-red-500" /><span className="text-sm font-medium">Alergias</span></div><TagList tags={p.alergias} color="bg-red-50 text-red-700" /></div>
-              <div><div className="flex items-center gap-1 mb-2"><AlertTriangle className="w-4 h-4 text-orange-500" /><span className="text-sm font-medium">Intolerancias</span></div><TagList tags={p.intolerancias} color="bg-orange-50 text-orange-700" /></div>
-              <div><div className="flex items-center gap-1 mb-2"><Pill className="w-4 h-4 text-blue-500" /><span className="text-sm font-medium">Medicamentos</span></div><TagList tags={p.medicamentos} color="bg-blue-50 text-blue-700" /></div>
+              <div><div className="flex items-center gap-1 mb-2"><AlertTriangle className="w-4 h-4 text-red-500" /><span className="text-sm font-medium">Alergias</span></div><TagList tags={p.alergias} color="bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400" /></div>
+              <div><div className="flex items-center gap-1 mb-2"><AlertTriangle className="w-4 h-4 text-orange-500" /><span className="text-sm font-medium">Intolerancias</span></div><TagList tags={p.intolerancias} color="bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400" /></div>
+              <div><div className="flex items-center gap-1 mb-2"><Pill className="w-4 h-4 text-blue-500" /><span className="text-sm font-medium">Medicamentos</span></div><TagList tags={p.medicamentos} color="bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400" /></div>
               <div><div className="flex items-center gap-1 mb-2"><Sparkles className="w-4 h-4 text-cyan-500" /><span className="text-sm font-medium">Suplementos</span></div><TagList tags={p.suplementos} color="bg-cyan-50 text-cyan-700" /></div>
             </div>
           </section>
@@ -132,7 +132,7 @@ export default function TourDemoPage() {
           {/* Evolución */}
           <section className="bg-card rounded-xl border border-border p-6">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-blue-600" /> Evolución
+              <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" /> Evolución
             </h2>
             <p className="text-sm text-muted-foreground">Gráficas de peso, IMC y medidas a lo largo del tiempo.</p>
           </section>
@@ -146,7 +146,7 @@ export default function TourDemoPage() {
               {p.planes.map((plan) => (
                 <div key={plan.nombre} className="flex items-center justify-between p-3 rounded-lg border border-border">
                   <div><p className="text-sm font-medium">{plan.nombre}</p><p className="text-xs text-muted-foreground">{plan.fecha}</p></div>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-medium">{plan.kcal} kcal</span>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 font-medium">{plan.kcal} kcal</span>
                 </div>
               ))}
             </div>
@@ -157,7 +157,7 @@ export default function TourDemoPage() {
         <div className="space-y-6">
           <section className="bg-card rounded-xl border border-border p-6">
             <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-              <Target className="w-5 h-5 text-green-600" /> Objetivo
+              <Target className="w-5 h-5 text-green-600 dark:text-green-400" /> Objetivo
             </h2>
             <span className="text-primary font-medium">{p.objetivo}</span>
             <p className="text-sm text-muted-foreground mt-1">{p.objetivoDetalle}</p>
@@ -165,7 +165,7 @@ export default function TourDemoPage() {
 
           <section data-tour="patient-measures" className="bg-card rounded-xl border border-border p-6">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Ruler className="w-5 h-5 text-blue-600" /> Medidas
+              <Ruler className="w-5 h-5 text-blue-600 dark:text-blue-400" /> Medidas
             </h2>
             <div className="space-y-3">
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Peso</span><span className="font-medium">{p.peso} kg</span></div>
@@ -176,7 +176,7 @@ export default function TourDemoPage() {
 
           <section className="bg-card rounded-xl border border-border p-6">
             <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-              <FileText className="w-5 h-5 text-green-600" /> Consultas
+              <FileText className="w-5 h-5 text-green-600 dark:text-green-400" /> Consultas
             </h2>
             <p className="text-sm text-muted-foreground">Ver historial de consultas</p>
           </section>
@@ -197,7 +197,7 @@ export default function TourDemoPage() {
 
           <section className="bg-card rounded-xl border border-border p-6">
             <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-              <Shield className="w-5 h-5 text-purple-600" /> Portal del paciente
+              <Shield className="w-5 h-5 text-purple-600 dark:text-purple-400" /> Portal del paciente
             </h2>
             <p className="text-sm text-muted-foreground">Configurar acceso al portal</p>
           </section>

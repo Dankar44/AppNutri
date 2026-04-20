@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 import { getCurrentPaciente } from "@/lib/patient-auth";
 import { prisma } from "@/lib/prisma";
 import { generarListaCompra } from "@/lib/shopping-list";
 import { ShoppingList } from "@/components/paciente/shopping-list";
+import { PageHeader } from "@/components/page-header";
 
 export default async function PatientShoppingListPage() {
   const session = await getCurrentPaciente();
@@ -19,7 +19,10 @@ export default async function PatientShoppingListPage() {
           comidas: {
             include: {
               alimentos: {
-                include: { alimento: { select: { id: true, nombre: true, categoria: true, porcion: true } }, receta: { select: { id: true, nombre: true } } },
+                include: {
+                  alimento: { select: { id: true, nombre: true, categoria: true, porcion: true } },
+                  receta: { select: { id: true, nombre: true } },
+                },
               },
             },
           },
@@ -29,22 +32,30 @@ export default async function PatientShoppingListPage() {
   });
 
   if (!plan) {
-    return <p className="text-center py-12 text-muted-foreground">Sin plan activo</p>;
+    return (
+      <div>
+        <PageHeader icon={ShoppingCart} title="Lista de la compra" />
+        <div className="rounded-xl border border-border bg-muted/30 p-12 text-center">
+          <ShoppingCart className="w-12 h-12 text-muted-foreground mx-auto mb-4" strokeWidth={1.5} />
+          <h2 className="text-lg font-semibold mb-1">Sin plan activo</h2>
+          <p className="text-muted-foreground">
+            Tu nutricionista aún no te ha asignado un plan alimenticio.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   const categorias = generarListaCompra(plan.dias as Parameters<typeof generarListaCompra>[0]);
 
   return (
     <div>
-      <Link
-        href="/paciente/portal/dieta"
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Volver a mi dieta
-      </Link>
-      <h1 className="text-xl sm:text-2xl font-bold mb-4">Lista de la compra</h1>
-      <ShoppingList categorias={categorias} />
+      <PageHeader icon={ShoppingCart} title="Lista de la compra" />
+      <ShoppingList
+        planId={plan.id}
+        planNombre={plan.nombre}
+        categoriasIniciales={categorias}
+      />
     </div>
   );
 }

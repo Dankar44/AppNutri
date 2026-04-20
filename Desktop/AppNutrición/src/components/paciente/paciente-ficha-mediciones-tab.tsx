@@ -569,7 +569,7 @@ export function PacienteFichaMedicionesTab({
               {chartData.length >= 2 && (
                 <div className="rounded-xl border border-border bg-card p-5">
                   <h3 className="text-sm font-semibold flex items-center gap-2 mb-4">
-                    <span className="text-emerald-600">▲</span>
+                    <span className="text-emerald-600 dark:text-emerald-400">▲</span>
                     Progreso
                   </h3>
                   <div className="h-[180px] sm:h-[220px] w-full">
@@ -641,10 +641,10 @@ function DeltaBadge({ delta, unit }: { delta: number; unit: string }) {
       className={cn(
         "text-xs font-semibold px-2 py-1 rounded-full shrink-0 inline-flex items-center gap-0.5",
         down && unit === "kg"
-          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
+          ? "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 dark:bg-emerald-950 dark:text-emerald-200"
           : up && unit === "kg"
-            ? "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200"
-            : "bg-blue-50 text-blue-800 dark:bg-blue-950 dark:text-blue-200"
+            ? "bg-amber-100 dark:bg-amber-500/15 text-amber-900 dark:text-amber-200 dark:bg-amber-950 dark:text-amber-200"
+            : "bg-blue-50 dark:bg-blue-500/10 text-blue-800 dark:text-blue-300 dark:bg-blue-950 dark:text-blue-200"
       )}
     >
       {down && <TrendingDown className="w-3 h-3" />}

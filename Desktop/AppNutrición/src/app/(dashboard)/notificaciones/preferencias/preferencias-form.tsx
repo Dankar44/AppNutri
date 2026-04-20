@@ -13,6 +13,9 @@ import {
   FileWarning,
   BookOpen,
   Save,
+  Wallet,
+  WalletCards,
+  AlertCircle,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { setNotifPreferencias, type NotifPreferencias } from "@/app/actions/notificaciones";
@@ -104,6 +107,30 @@ const CATEGORIAS: Categoria[] = [
         titulo: "Entrada en diario",
         descripcion: "Cuando un paciente registra comida o síntomas",
         icon: BookOpen,
+      },
+    ],
+  },
+  {
+    label: "Pagos",
+    descripcion: "Movimientos de cobros de tus pacientes",
+    items: [
+      {
+        key: "PAGO_RECIBIDO",
+        titulo: "Pago recibido",
+        descripcion: "Un paciente ha completado un pago",
+        icon: Wallet,
+      },
+      {
+        key: "PAGO_PENDIENTE",
+        titulo: "Pago pendiente",
+        descripcion: "Factura o cobro a la espera de confirmación",
+        icon: WalletCards,
+      },
+      {
+        key: "PAGO_FALLIDO",
+        titulo: "Pago fallido",
+        descripcion: "Un cobro no se ha podido procesar",
+        icon: AlertCircle,
       },
     ],
   },
@@ -235,7 +262,7 @@ function Switch({ checked }: { checked: boolean }) {
       role="switch"
     >
       <span
-        className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
+        className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-card shadow-sm transition-transform ${
           checked ? "translate-x-4" : "translate-x-0"
         }`}
       />

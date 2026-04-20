@@ -69,13 +69,13 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
     <>
       {/* Banner visible SOLO en el paciente de ejemplo — explica cómo entrar al portal */}
       {esDemo && accesoEstado?.email && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 mb-4">
+        <div className="rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-5 mb-4">
           <div className="flex items-start gap-3">
-            <div className="shrink-0 w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center">
-              <Info className="w-5 h-5 text-amber-700" />
+            <div className="shrink-0 w-9 h-9 rounded-full bg-amber-100 dark:bg-amber-500/15 flex items-center justify-center">
+              <Info className="w-5 h-5 text-amber-700 dark:text-amber-400" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-semibold text-amber-900 mb-1">
+              <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-200 mb-1">
                 Paciente de ejemplo — prueba el portal como si fueras el paciente
               </h3>
               <p className="text-xs text-amber-800/90 mb-3">
@@ -84,8 +84,8 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
                 (dieta, seguimiento, diario alimentario, mediciones…).
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2 mb-2">
-                <div className="rounded-lg border border-amber-200 bg-white px-3 py-2 flex items-center gap-2">
-                  <span className="text-[11px] font-medium text-amber-900 shrink-0">Email</span>
+                <div className="rounded-lg border border-amber-200 dark:border-amber-500/30 bg-card px-3 py-2 flex items-center gap-2">
+                  <span className="text-[11px] font-medium text-amber-900 dark:text-amber-200 shrink-0">Email</span>
                   <code className="text-xs font-mono text-foreground truncate flex-1">
                     {accesoEstado.email}
                   </code>
@@ -95,14 +95,14 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
                       navigator.clipboard.writeText(accesoEstado.email);
                       toast.success("Email copiado");
                     }}
-                    className="p-1 rounded hover:bg-amber-100 text-amber-700 transition-colors shrink-0"
+                    className="p-1 rounded hover:bg-amber-100 dark:hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 transition-colors shrink-0"
                     title="Copiar email"
                   >
                     <Copy className="w-3.5 h-3.5" />
                   </button>
                 </div>
-                <div className="rounded-lg border border-amber-200 bg-white px-3 py-2 flex items-center gap-2">
-                  <span className="text-[11px] font-medium text-amber-900 shrink-0">PIN</span>
+                <div className="rounded-lg border border-amber-200 dark:border-amber-500/30 bg-card px-3 py-2 flex items-center gap-2">
+                  <span className="text-[11px] font-medium text-amber-900 dark:text-amber-200 shrink-0">PIN</span>
                   <code className="text-base font-mono font-bold text-foreground">123456</code>
                   <button
                     type="button"
@@ -110,7 +110,7 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
                       navigator.clipboard.writeText("123456");
                       toast.success("PIN copiado");
                     }}
-                    className="p-1 rounded hover:bg-amber-100 text-amber-700 transition-colors shrink-0"
+                    className="p-1 rounded hover:bg-amber-100 dark:hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 transition-colors shrink-0"
                     title="Copiar PIN"
                   >
                     <Copy className="w-3.5 h-3.5" />
@@ -121,7 +121,7 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
                 href="/paciente/login"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-800 hover:text-amber-900 underline underline-offset-2"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-800 dark:text-amber-300 hover:text-amber-900 underline underline-offset-2"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 Abrir portal del paciente en una nueva pestaña
@@ -206,7 +206,7 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Estado</span>
-                    <span className={cn("px-2 py-0.5 rounded-full text-xs font-medium", accesoEstado.activo ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700")}>
+                    <span className={cn("px-2 py-0.5 rounded-full text-xs font-medium", accesoEstado.activo ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400")}>
                       {accesoEstado.activo ? "Activo" : "Inactivo"}
                     </span>
                   </div>
@@ -251,8 +251,8 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
                   {generatingPin ? "Generando..." : accesoEstado ? "Regenerar PIN" : "Crear contraseña"}
                 </button>
                 {pinGenerado && (
-                  <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-50 border border-emerald-200">
-                    <Check className="w-4 h-4 text-emerald-600" />
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30">
+                    <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     <span className="text-sm">PIN generado: <strong className="font-mono text-lg">{pinGenerado}</strong></span>
                   </div>
                 )}
@@ -270,7 +270,7 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start gap-3 mb-4">
-              <div className="rounded-full bg-amber-100 p-2.5 text-amber-600 shrink-0">
+              <div className="rounded-full bg-amber-100 dark:bg-amber-500/15 p-2.5 text-amber-600 dark:text-amber-400 shrink-0">
                 <AlertTriangle className="w-5 h-5" />
               </div>
               <div>

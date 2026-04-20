@@ -77,7 +77,7 @@ export default async function ReportesPacientePage({ params }: Props) {
           <p className="text-sm text-muted-foreground">Evolución peso</p>
           <p className="text-2xl sm:text-3xl font-bold">
             {cambiosPeso !== null ? (
-              <span className={cambiosPeso < 0 ? "text-green-600" : cambiosPeso > 0 ? "text-red-600" : ""}>
+              <span className={cambiosPeso < 0 ? "text-green-600 dark:text-green-400" : cambiosPeso > 0 ? "text-red-600 dark:text-red-400" : ""}>
                 {cambiosPeso > 0 ? "+" : ""}{cambiosPeso} kg
               </span>
             ) : (

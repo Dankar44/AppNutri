@@ -1,21 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import {
-  Droplets,
-  Dumbbell,
-  Check,
-  X,
-  Plus,
-  Minus,
-  Clock,
-  UtensilsCrossed,
-  ChevronLeft,
-  ChevronRight,
-  Save,
-  StickyNote,
-  Loader2,
-} from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { BookOpen, Loader2, UtensilsCrossed, CheckCircle2, AlertCircle, Save } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
+import { toast } from "sonner";
 import {
   getSeguimientoPacienteDia,
   guardarSeguimientoPaciente,
@@ -23,97 +11,39 @@ import {
   type ComidaSeguimiento,
   type ComidaPlanificada,
 } from "@/app/actions/seguimiento-paciente";
-import { toast } from "sonner";
+import {
+  TIPOS_ORDEN,
+  calcularAguaObjetivo,
+} from "@/lib/seguimiento";
+import { DateNavigator } from "@/components/paciente/seguimiento/date-navigator";
+import { ResumenHero } from "@/components/paciente/seguimiento/resumen-hero";
+import { ComidaCard } from "@/components/paciente/seguimiento/comida-card";
+import { AguaTracker } from "@/components/paciente/seguimiento/agua-tracker";
+import { EjercicioCard } from "@/components/paciente/seguimiento/ejercicio-card";
+import { NotasCard } from "@/components/paciente/seguimiento/notas-card";
+import { useAutosave } from "@/components/paciente/seguimiento/use-autosave";
 
-// ─── Helpers ───
+const SENSACION_MARKER = /^⟦sensacion:([a-z]+)⟧\n?/;
 
-const TIPO_LABELS: Record<string, string> = {
-  DESAYUNO: "Desayuno",
-  MEDIA_MANANA: "Media mañana",
-  ALMUERZO: "Comida",
-  MERIENDA: "Merienda",
-  CENA: "Cena",
-  RECENA: "Recena",
-};
-
-const TIPO_HORAS: Record<string, string> = {
-  DESAYUNO: "08:00",
-  MEDIA_MANANA: "11:00",
-  ALMUERZO: "14:00",
-  MERIENDA: "17:00",
-  CENA: "21:00",
-  RECENA: "23:00",
-};
-
-const TIPOS_ORDEN = [
-  "DESAYUNO",
-  "MEDIA_MANANA",
-  "ALMUERZO",
-  "MERIENDA",
-  "CENA",
-  "RECENA",
-];
-
-function formatFecha(fecha: string): string {
-  const d = new Date(fecha + "T12:00:00");
-  return d.toLocaleDateString("es-ES", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
+function extraerSensacion(notas: string): { sensacion: string | null; texto: string } {
+  const m = notas.match(SENSACION_MARKER);
+  if (!m) return { sensacion: null, texto: notas };
+  return { sensacion: m[1], texto: notas.replace(SENSACION_MARKER, "") };
 }
 
-function estimarKcal(tipo: string, minutos: number): number {
-  const metMap: Record<string, number> = {
-    Carrera: 10,
-    Correr: 10,
-    Running: 10,
-    "Bicicleta": 8,
-    Ciclismo: 8,
-    "Natación": 7,
-    Nadar: 7,
-    Caminar: 4,
-    Andar: 4,
-    Yoga: 3,
-    Pilates: 3,
-    Pesas: 5,
-    Musculación: 5,
-    Gimnasio: 5,
-    Crossfit: 9,
-    Fútbol: 8,
-    Tenis: 7,
-    Padel: 6,
-    Pádel: 6,
-    Baloncesto: 7,
-    Baile: 5,
-  };
-
-  // Find a matching MET
-  const tipoLower = tipo.toLowerCase();
-  let met = 5; // default
-  for (const [key, value] of Object.entries(metMap)) {
-    if (tipoLower.includes(key.toLowerCase())) {
-      met = value;
-      break;
-    }
-  }
-
-  // Simple estimate: kcal = MET * weight(70kg default) * hours
-  return Math.round(met * 70 * (minutos / 60));
+function combinarSensacion(sensacion: string | null, texto: string): string {
+  if (!sensacion) return texto;
+  return `⟦sensacion:${sensacion}⟧\n${texto}`;
 }
-
-// ─── Main component ───
 
 export default function SeguimientoPage() {
   const [fecha, setFecha] = useState(new Date().toISOString().split("T")[0]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState<string | null>(null);
+  const [manualSaving, setManualSaving] = useState(false);
 
-  // Plan data
   const [comidasPlan, setComidasPlan] = useState<ComidaPlanificada[]>([]);
   const [pesoKg, setPesoKg] = useState<number | null>(null);
 
-  // Tracking state
   const [comidasData, setComidasData] = useState<ComidaSeguimiento[]>([]);
   const [aguaML, setAguaML] = useState(0);
   const [ejercicio, setEjercicio] = useState(false);
@@ -121,13 +51,15 @@ export default function SeguimientoPage() {
   const [ejercicioMinutos, setEjercicioMinutos] = useState(0);
   const [ejercicioDistanciaKm, setEjercicioDistanciaKm] = useState(0);
   const [ejercicioKcal, setEjercicioKcal] = useState(0);
-  const [notas, setNotas] = useState("");
+  const [notasTexto, setNotasTexto] = useState("");
+  const [sensacion, setSensacion] = useState<string | null>(null);
 
-  const aguaObjetivo = pesoKg ? Math.round(pesoKg * 35) : 2000;
+  const celebracionRef = useRef(false);
+  const aguaObjetivo = calcularAguaObjetivo(pesoKg);
 
-  // ─── Load data ───
   const loadData = useCallback(async () => {
     setLoading(true);
+    celebracionRef.current = false;
     try {
       const [planData, seguimiento] = await Promise.all([
         getComidaDelDiaPaciente(fecha),
@@ -144,25 +76,24 @@ export default function SeguimientoPage() {
         setEjercicioMinutos(seguimiento.ejercicioMinutos || 0);
         setEjercicioDistanciaKm(seguimiento.ejercicioDistanciaKm || 0);
         setEjercicioKcal(seguimiento.ejercicioKcal || 0);
-        setNotas(seguimiento.notas || "");
-
-        // If we have saved comidas data, use it
+        const { sensacion: s, texto } = extraerSensacion(seguimiento.notas || "");
+        setSensacion(s);
+        setNotasTexto(texto);
         if (seguimiento.comidasData && Array.isArray(seguimiento.comidasData)) {
           setComidasData(seguimiento.comidasData);
         } else {
-          // Initialize from plan
-          initComidasFromPlan(planData.comidas);
+          setComidasData(inicializarComidas(planData.comidas));
         }
       } else {
-        // Fresh day — initialize from plan
         setAguaML(0);
         setEjercicio(false);
         setEjercicioTipo("");
         setEjercicioMinutos(0);
         setEjercicioDistanciaKm(0);
         setEjercicioKcal(0);
-        setNotas("");
-        initComidasFromPlan(planData.comidas);
+        setNotasTexto("");
+        setSensacion(null);
+        setComidasData(inicializarComidas(planData.comidas));
       }
     } catch {
       toast.error("Error al cargar datos");
@@ -171,78 +102,108 @@ export default function SeguimientoPage() {
     }
   }, [fecha]);
 
-  function initComidasFromPlan(comidas: ComidaPlanificada[]) {
-    setComidasData(
-      comidas.map((c) => ({
-        tipo: c.tipo,
-        alimentos: c.alimentos.map((a) => ({
-          nombre: a.nombre,
-          cantidad: a.cantidad,
-          cumplido: false,
-        })),
-        horaReal: null,
-        notas: null,
-      }))
-    );
-  }
-
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  // Auto-calculate kcal when exercise type or minutes change
+  // Autosave
+  const autosaveValue = useMemo(
+    () => ({
+      fecha,
+      aguaML,
+      ejercicio,
+      ejercicioTipo,
+      ejercicioMinutos,
+      ejercicioDistanciaKm,
+      ejercicioKcal,
+      notasTexto,
+      sensacion,
+      comidasData,
+    }),
+    [
+      fecha,
+      aguaML,
+      ejercicio,
+      ejercicioTipo,
+      ejercicioMinutos,
+      ejercicioDistanciaKm,
+      ejercicioKcal,
+      notasTexto,
+      sensacion,
+      comidasData,
+    ]
+  );
+
+  const { status } = useAutosave(
+    autosaveValue,
+    async (v) => {
+      await guardarSeguimientoPaciente(v.fecha, {
+        aguaML: v.aguaML,
+        ejercicio: v.ejercicio,
+        ejercicioMinutos: v.ejercicioMinutos,
+        ejercicioKcal: v.ejercicioKcal,
+        ejercicioTipo: v.ejercicioTipo || undefined,
+        ejercicioDistanciaKm: v.ejercicioDistanciaKm || undefined,
+        notas: combinarSensacion(v.sensacion, v.notasTexto) || undefined,
+        comidasData: v.comidasData,
+      });
+    },
+    { delayMs: 900, enabled: !loading }
+  );
+
+  const totalAlimentos = comidasData.reduce((s, c) => s + c.alimentos.length, 0);
+  const alimentosCumplidos = comidasData.reduce(
+    (s, c) => s + c.alimentos.filter((a) => a.cumplido).length,
+    0
+  );
+
+  // Celebración a 100%
   useEffect(() => {
-    if (ejercicioTipo && ejercicioMinutos > 0) {
-      setEjercicioKcal(estimarKcal(ejercicioTipo, ejercicioMinutos));
+    if (
+      !loading &&
+      totalAlimentos > 0 &&
+      alimentosCumplidos === totalAlimentos &&
+      !celebracionRef.current
+    ) {
+      celebracionRef.current = true;
+      toast.success("Día completo", { duration: 3000 });
     }
-  }, [ejercicioTipo, ejercicioMinutos]);
-
-  // ─── Handlers ───
-
-  function cambiarDia(offset: number) {
-    const d = new Date(fecha + "T12:00:00");
-    d.setDate(d.getDate() + offset);
-    setFecha(d.toISOString().split("T")[0]);
-  }
+  }, [alimentosCumplidos, totalAlimentos, loading]);
 
   function toggleAlimento(comidaIdx: number, alimentoIdx: number) {
-    setComidasData((prev) => {
-      const next = prev.map((c, ci) => {
-        if (ci !== comidaIdx) return c;
-        return {
-          ...c,
-          alimentos: c.alimentos.map((a, ai) => {
-            if (ai !== alimentoIdx) return a;
-            return { ...a, cumplido: !a.cumplido };
-          }),
-        };
-      });
-      return next;
-    });
+    setComidasData((prev) =>
+      prev.map((c, ci) =>
+        ci !== comidaIdx
+          ? c
+          : {
+              ...c,
+              alimentos: c.alimentos.map((a, ai) =>
+                ai !== alimentoIdx ? a : { ...a, cumplido: !a.cumplido }
+              ),
+            }
+      )
+    );
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      try {
+        (navigator as Navigator & { vibrate?: (p: number) => boolean }).vibrate?.(12);
+      } catch {}
+    }
   }
 
   function updateHoraReal(comidaIdx: number, hora: string) {
     setComidasData((prev) =>
-      prev.map((c, ci) =>
-        ci === comidaIdx ? { ...c, horaReal: hora || null } : c
-      )
+      prev.map((c, ci) => (ci === comidaIdx ? { ...c, horaReal: hora || null } : c))
     );
   }
 
   function updateNotasComida(comidaIdx: number, value: string) {
     setComidasData((prev) =>
-      prev.map((c, ci) =>
-        ci === comidaIdx ? { ...c, notas: value || null } : c
-      )
+      prev.map((c, ci) => (ci === comidaIdx ? { ...c, notas: value || null } : c))
     );
   }
 
-  function addAgua(ml: number) {
-    setAguaML((prev) => Math.max(0, Math.min(prev + ml, 10000)));
-  }
-
-  async function guardarTodo(seccion?: string) {
-    setSaving(seccion || "todo");
+  async function guardarManual() {
+    setManualSaving(true);
     try {
       await guardarSeguimientoPaciente(fecha, {
         aguaML,
@@ -251,480 +212,207 @@ export default function SeguimientoPage() {
         ejercicioKcal,
         ejercicioTipo: ejercicioTipo || undefined,
         ejercicioDistanciaKm: ejercicioDistanciaKm || undefined,
-        notas: notas || undefined,
+        notas: combinarSensacion(sensacion, notasTexto) || undefined,
         comidasData,
       });
       toast.success("Seguimiento guardado");
     } catch {
       toast.error("Error al guardar");
     } finally {
-      setSaving(null);
+      setManualSaving(false);
     }
   }
 
-  // ─── Stats ───
+  // Atajos de teclado
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.target instanceof HTMLElement) {
+        const tag = e.target.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA") return;
+      }
+      if (e.key === "ArrowLeft") {
+        const d = new Date(fecha + "T12:00:00");
+        d.setDate(d.getDate() - 1);
+        setFecha(d.toISOString().split("T")[0]);
+      } else if (e.key === "ArrowRight") {
+        const d = new Date(fecha + "T12:00:00");
+        d.setDate(d.getDate() + 1);
+        setFecha(d.toISOString().split("T")[0]);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [fecha]);
 
-  const totalAlimentos = comidasData.reduce(
-    (sum, c) => sum + c.alimentos.length,
-    0
-  );
-  const alimentosCumplidos = comidasData.reduce(
-    (sum, c) => sum + c.alimentos.filter((a) => a.cumplido).length,
-    0
-  );
-  const aguaPct = Math.min(100, Math.round((aguaML / aguaObjetivo) * 100));
-
-  // ─── Render ───
+  const comidasOrdenadas = TIPOS_ORDEN.map((tipo) =>
+    comidasData.findIndex((c) => c.tipo === tipo)
+  ).filter((idx) => idx !== -1);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="pb-8">
+        <SeguimientoHeader status="idle" />
+        <div className="space-y-4 mt-4">
+          <div className="h-40 rounded-2xl bg-muted/40 animate-pulse" />
+          <div className="h-24 rounded-2xl bg-muted/40 animate-pulse" />
+          <div className="h-24 rounded-2xl bg-muted/40 animate-pulse" />
+          <div className="h-24 rounded-2xl bg-muted/40 animate-pulse" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="pb-8">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold mb-4">
-          Mi seguimiento diario
-        </h1>
+    <div className="pb-10 space-y-5">
+      <SeguimientoHeader status={status} />
 
-        <div className="flex items-center justify-center gap-4">
-          <button
-            onClick={() => cambiarDia(-1)}
-            className="p-2 rounded-lg hover:bg-muted transition-colors"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <div className="text-center">
-            <p className="font-semibold capitalize">{formatFecha(fecha)}</p>
-            <input
-              type="date"
-              value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
-              className="text-xs text-muted-foreground bg-transparent border-none text-center cursor-pointer"
-            />
-          </div>
-          <button
-            onClick={() => cambiarDia(1)}
-            className="p-2 rounded-lg hover:bg-muted transition-colors"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
+      <DateNavigator fecha={fecha} onChange={setFecha} />
 
-      {/* Quick summary bar */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <div className="bg-card rounded-xl border border-border p-3 text-center">
-          <p className="text-xs text-muted-foreground mb-1">Comidas</p>
-          <p className="text-lg font-bold text-green-600">
-            {alimentosCumplidos}/{totalAlimentos}
+      <ResumenHero
+        comidasCumplidas={alimentosCumplidos}
+        comidasTotal={totalAlimentos}
+        aguaML={aguaML}
+        aguaObjetivo={aguaObjetivo}
+        ejercicio={ejercicio}
+        ejercicioMinutos={ejercicioMinutos}
+        ejercicioKcal={ejercicioKcal}
+      />
+
+      {comidasPlan.length === 0 ? (
+        <section className="rounded-2xl border border-border bg-card p-8 text-center">
+          <UtensilsCrossed className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+          <h3 className="font-semibold mb-1">Sin plan activo para hoy</h3>
+          <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+            Tu nutricionista aún no te ha asignado un plan alimenticio para este día.
           </p>
-        </div>
-        <div className="bg-card rounded-xl border border-border p-3 text-center">
-          <p className="text-xs text-muted-foreground mb-1">Agua</p>
-          <p className="text-lg font-bold text-blue-600">
-            {aguaML >= 1000
-              ? `${(aguaML / 1000).toFixed(1)}L`
-              : `${aguaML}ml`}
-          </p>
-        </div>
-        <div className="bg-card rounded-xl border border-border p-3 text-center">
-          <p className="text-xs text-muted-foreground mb-1">Ejercicio</p>
-          <p className="text-lg font-bold text-emerald-600">
-            {ejercicio ? `${ejercicioMinutos}min` : "No"}
-          </p>
-        </div>
-      </div>
-
-      {/* Section 1: Comidas */}
-      <section className="mb-8">
-        <div className="flex items-center gap-2 mb-4">
-          <UtensilsCrossed className="w-5 h-5 text-green-600" />
-          <h2 className="text-lg font-semibold">Comidas del día</h2>
-        </div>
-
-        {comidasData.length === 0 ? (
-          <div className="bg-card rounded-xl border border-border p-6 text-center">
-            <UtensilsCrossed className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
-            <p className="text-muted-foreground text-sm">
-              No tienes un plan alimenticio activo para hoy.
-            </p>
-            <p className="text-muted-foreground text-xs mt-1">
-              Pide a tu dietista que te asigne un plan.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {TIPOS_ORDEN.map((tipo) => {
-              const comidaIdx = comidasData.findIndex((c) => c.tipo === tipo);
-              if (comidaIdx === -1) return null;
-              const comida = comidasData[comidaIdx];
-              const todosComidos = comida.alimentos.length > 0 && comida.alimentos.every((a) => a.cumplido);
-
-              return (
-                <div
-                  key={tipo}
-                  className={`bg-card rounded-xl border transition-colors ${
-                    todosComidos
-                      ? "border-green-300 bg-green-50/50 dark:bg-green-950/20"
-                      : "border-border"
-                  } p-4`}
-                >
-                  {/* Meal header */}
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-sm">
-                        {TIPO_LABELS[tipo] || tipo}
-                      </h3>
-                      {todosComidos && (
-                        <Check className="w-4 h-4 text-green-600" />
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Clock className="w-3 h-3" />
-                      <span>{TIPO_HORAS[tipo] || ""}</span>
-                    </div>
-                  </div>
-
-                  {/* Food list */}
-                  <div className="space-y-2 mb-3">
-                    {comida.alimentos.map((alimento, ai) => (
-                      <button
-                        key={ai}
-                        type="button"
-                        onClick={() => toggleAlimento(comidaIdx, ai)}
-                        className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors text-left ${
-                          alimento.cumplido
-                            ? "bg-green-100/70 dark:bg-green-900/30"
-                            : "hover:bg-muted/50"
-                        }`}
-                      >
-                        <div
-                          className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
-                            alimento.cumplido
-                              ? "bg-green-600 text-white"
-                              : "border-2 border-gray-300 dark:border-gray-600"
-                          }`}
-                        >
-                          {alimento.cumplido ? (
-                            <Check className="w-3.5 h-3.5" />
-                          ) : (
-                            <X className="w-3 h-3 text-gray-300 dark:text-gray-600" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <span
-                            className={`text-sm ${
-                              alimento.cumplido
-                                ? "line-through text-muted-foreground"
-                                : ""
-                            }`}
-                          >
-                            {alimento.nombre}
-                          </span>
-                          {alimento.cantidad > 0 && (
-                            <span className="text-xs text-muted-foreground ml-1">
-                              ({alimento.cantidad}g)
-                            </span>
-                          )}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Hora real + notas */}
-                  <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-border/50">
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                      <input
-                        type="time"
-                        value={comida.horaReal || ""}
-                        onChange={(e) =>
-                          updateHoraReal(comidaIdx, e.target.value)
-                        }
-                        className="text-xs bg-muted/30 border border-border rounded-md px-2 py-1"
-                        placeholder="Hora real"
-                      />
-                    </div>
-                    <input
-                      type="text"
-                      value={comida.notas || ""}
-                      onChange={(e) =>
-                        updateNotasComida(comidaIdx, e.target.value)
-                      }
-                      placeholder="Notas..."
-                      className="flex-1 text-xs bg-muted/30 border border-border rounded-md px-2 py-1"
-                    />
-                  </div>
-                </div>
-              );
-            })}
-
-            <button
-              onClick={() => guardarTodo("comidas")}
-              disabled={saving !== null}
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {saving === "comidas" ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Save className="w-4 h-4" />
-              )}
-              Guardar comidas
-            </button>
-          </div>
-        )}
-      </section>
-
-      {/* Section 2: Agua */}
-      <section className="mb-8">
-        <div className="flex items-center gap-2 mb-4">
-          <Droplets className="w-5 h-5 text-blue-500" />
-          <h2 className="text-lg font-semibold">Agua</h2>
-        </div>
-
-        <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/20 rounded-xl border border-blue-200 dark:border-blue-800 p-5">
-          {/* Visual display */}
-          <div className="flex items-center justify-center gap-6 mb-5">
-            <div className="relative w-20 h-28 rounded-b-2xl rounded-t-lg border-2 border-blue-300 dark:border-blue-600 overflow-hidden bg-white/50 dark:bg-blue-950/50">
-              {/* Water fill */}
-              <div
-                className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-blue-500 to-blue-400 transition-all duration-500 ease-out"
-                style={{ height: `${Math.min(100, aguaPct)}%` }}
-              />
-              {/* Droplet icon */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Droplets className="w-6 h-6 text-white/80 drop-shadow" />
-              </div>
-            </div>
-
-            <div className="text-center">
-              <p className="text-3xl font-bold text-blue-700 dark:text-blue-300">
-                {aguaML >= 1000
-                  ? `${(aguaML / 1000).toFixed(1)}L`
-                  : `${aguaML}ml`}
-              </p>
-              <p className="text-sm text-blue-600/70 dark:text-blue-400/60">
-                de{" "}
-                {aguaObjetivo >= 1000
-                  ? `${(aguaObjetivo / 1000).toFixed(1)}L`
-                  : `${aguaObjetivo}ml`}
-              </p>
-              <p className="text-xs text-blue-500/60 mt-0.5">{aguaPct}%</p>
-            </div>
-          </div>
-
-          {/* Progress bar */}
-          <div className="w-full bg-blue-100 dark:bg-blue-900/50 rounded-full h-3 mb-4 overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full transition-all duration-500 ease-out"
-              style={{ width: `${Math.min(100, aguaPct)}%` }}
-            />
-          </div>
-
-          {/* Quick-add buttons */}
-          <div className="flex items-center justify-center gap-2 flex-wrap">
-            <button
-              onClick={() => addAgua(-250)}
-              className="flex items-center gap-1 bg-white/70 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-700 rounded-lg px-3 py-2.5 text-sm font-medium text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-800/50 transition-colors min-h-11"
-            >
-              <Minus className="w-3.5 h-3.5" />
-              250ml
-            </button>
-            <button
-              onClick={() => addAgua(250)}
-              className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-3 py-2.5 text-sm font-medium transition-colors min-h-11"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              250ml
-            </button>
-            <button
-              onClick={() => addAgua(500)}
-              className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-3 py-2.5 text-sm font-medium transition-colors min-h-11"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              500ml
-            </button>
-            <button
-              onClick={() => addAgua(1000)}
-              className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-3 py-2.5 text-sm font-medium transition-colors min-h-11"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              1L
-            </button>
-          </div>
-
-          <button
-            onClick={() => guardarTodo("agua")}
-            disabled={saving !== null}
-            className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {saving === "agua" ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
-            Guardar agua
-          </button>
-        </div>
-      </section>
-
-      {/* Section 3: Ejercicio */}
-      <section className="mb-8">
-        <div className="flex items-center gap-2 mb-4">
-          <Dumbbell className="w-5 h-5 text-emerald-600" />
-          <h2 className="text-lg font-semibold">Ejercicio</h2>
-        </div>
-
-        <div
-          className={`rounded-xl border p-5 transition-colors ${
-            ejercicio
-              ? "bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/20 border-emerald-200 dark:border-emerald-800"
-              : "bg-card border-border"
-          }`}
+        </section>
+      ) : (
+        <section
+          aria-label="Comidas del día"
+          className="rounded-2xl border border-border bg-card overflow-hidden"
         >
-          {/* Toggle */}
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium">
-              ¿Has hecho ejercicio hoy?
-            </span>
-            <button
-              onClick={() => setEjercicio(!ejercicio)}
-              className={`relative w-12 h-6 rounded-full transition-colors ${
-                ejercicio ? "bg-emerald-600" : "bg-gray-300 dark:bg-gray-600"
-              }`}
-            >
-              <span
-                className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform shadow-sm ${
-                  ejercicio ? "translate-x-6" : "translate-x-0"
-                }`}
-              />
-            </button>
-          </div>
-
-          {ejercicio && (
-            <div className="space-y-3 pt-3 border-t border-emerald-200/50 dark:border-emerald-700/30">
-              {/* Tipo */}
+          <header className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl border border-border text-foreground">
+                <UtensilsCrossed className="w-5 h-5" strokeWidth={1.75} />
+              </span>
               <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                  Tipo de ejercicio
-                </label>
-                <input
-                  type="text"
-                  value={ejercicioTipo}
-                  onChange={(e) => setEjercicioTipo(e.target.value)}
-                  placeholder="Ej: Carrera, Natación, Pesas..."
-                  className="w-full bg-white/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-700 rounded-lg px-3 py-2 text-sm"
-                />
+                <h2 className="text-base font-semibold">Comidas del día</h2>
+                <p className="text-[11px] text-muted-foreground">
+                  Marca lo que has tomado
+                </p>
               </div>
-
-              <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
-                {/* Duración */}
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                    Duración (min)
-                  </label>
-                  <input
-                    type="number"
-                    value={ejercicioMinutos || ""}
-                    onChange={(e) =>
-                      setEjercicioMinutos(
-                        Math.min(1440, Math.max(0, Number(e.target.value)))
-                      )
-                    }
-                    placeholder="45"
-                    min={0}
-                    max={1440}
-                    className="w-full bg-white/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-700 rounded-lg px-3 py-2 text-sm"
-                  />
-                </div>
-
-                {/* Distancia */}
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                    Distancia (km)
-                  </label>
-                  <input
-                    type="number"
-                    value={ejercicioDistanciaKm || ""}
-                    onChange={(e) =>
-                      setEjercicioDistanciaKm(
-                        Math.min(500, Math.max(0, Number(e.target.value)))
-                      )
-                    }
-                    placeholder="Opcional"
-                    min={0}
-                    step={0.1}
-                    className="w-full bg-white/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-700 rounded-lg px-3 py-2 text-sm"
-                  />
-                </div>
-              </div>
-
-              {/* Kcal estimadas */}
-              {ejercicioKcal > 0 && (
-                <div className="bg-emerald-100/70 dark:bg-emerald-900/30 rounded-lg p-3 text-center">
-                  <p className="text-xs text-emerald-600/70 dark:text-emerald-400/60">
-                    Estimación de calorías quemadas
-                  </p>
-                  <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">
-                    ~{ejercicioKcal} kcal
-                  </p>
-                </div>
-              )}
-
-              <button
-                onClick={() => guardarTodo("ejercicio")}
-                disabled={saving !== null}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {saving === "ejercicio" ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Save className="w-4 h-4" />
-                )}
-                Guardar ejercicio
-              </button>
             </div>
+            <span className="text-xs font-semibold text-muted-foreground tabular-nums">
+              {alimentosCumplidos}/{totalAlimentos}
+            </span>
+          </header>
+          <div className="divide-y divide-border">
+            {comidasOrdenadas.map((comidaIdx) => (
+              <ComidaCard
+                key={comidasData[comidaIdx].tipo}
+                comida={comidasData[comidaIdx]}
+                onToggleAlimento={(ai) => toggleAlimento(comidaIdx, ai)}
+                onChangeHora={(h) => updateHoraReal(comidaIdx, h)}
+                onChangeNotas={(n) => updateNotasComida(comidaIdx, n)}
+                embedded
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      <AguaTracker aguaML={aguaML} objetivo={aguaObjetivo} onChange={setAguaML} />
+
+      <EjercicioCard
+        ejercicio={ejercicio}
+        tipo={ejercicioTipo}
+        minutos={ejercicioMinutos}
+        distanciaKm={ejercicioDistanciaKm}
+        kcal={ejercicioKcal}
+        pesoKg={pesoKg}
+        onToggle={setEjercicio}
+        onTipo={setEjercicioTipo}
+        onMinutos={setEjercicioMinutos}
+        onDistancia={setEjercicioDistanciaKm}
+        onKcal={setEjercicioKcal}
+      />
+
+      <NotasCard
+        notas={notasTexto}
+        onChange={setNotasTexto}
+        sensacion={sensacion}
+        onSensacion={setSensacion}
+      />
+
+      <div className="flex justify-center pt-2">
+        <button
+          onClick={guardarManual}
+          disabled={manualSaving}
+          className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-5 h-11 rounded-xl transition-all disabled:opacity-50 shadow-sm"
+        >
+          {manualSaving ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Save className="w-4 h-4" />
           )}
-        </div>
-      </section>
-
-      {/* Section 4: Notas */}
-      <section className="mb-8">
-        <div className="flex items-center gap-2 mb-4">
-          <StickyNote className="w-5 h-5 text-amber-600" />
-          <h2 className="text-lg font-semibold">Notas del día</h2>
-        </div>
-
-        <div className="bg-card rounded-xl border border-border p-5">
-          <textarea
-            value={notas}
-            onChange={(e) => setNotas(e.target.value)}
-            placeholder="¿Cómo te has sentido hoy? ¿Alguna observación?"
-            rows={4}
-            maxLength={2000}
-            className="w-full bg-muted/30 border border-border rounded-lg px-3 py-2 text-sm resize-none"
-          />
-
-          <button
-            onClick={() => guardarTodo("notas")}
-            disabled={saving !== null}
-            className="w-full mt-3 bg-amber-600 hover:bg-amber-700 text-white font-medium py-2.5 rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {saving === "notas" ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
-            Guardar notas
-          </button>
-        </div>
-      </section>
+          {manualSaving ? "Guardando..." : "Guardar ahora"}
+        </button>
+      </div>
     </div>
   );
 }
+
+function SeguimientoHeader({ status }: { status: "idle" | "saving" | "saved" | "error" }) {
+  return (
+    <PageHeader
+      icon={BookOpen}
+      title="Diario"
+      subtitle="Registra cómo te ha ido el día"
+      action={<SaveIndicator status={status} />}
+    />
+  );
+}
+
+function SaveIndicator({ status }: { status: "idle" | "saving" | "saved" | "error" }) {
+  if (status === "idle") return null;
+  const config = {
+    saving: {
+      icon: <Loader2 className="w-3 h-3 animate-spin" />,
+      text: "Guardando…",
+      color: "text-muted-foreground",
+    },
+    saved: {
+      icon: <CheckCircle2 className="w-3 h-3" />,
+      text: "Guardado",
+      color: "text-green-600 dark:text-green-400",
+    },
+    error: {
+      icon: <AlertCircle className="w-3 h-3" />,
+      text: "Error",
+      color: "text-red-600 dark:text-red-400",
+    },
+  }[status];
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-[11px] font-medium ${config.color} animate-in fade-in`}
+    >
+      {config.icon}
+      {config.text}
+    </span>
+  );
+}
+
+function inicializarComidas(comidas: ComidaPlanificada[]): ComidaSeguimiento[] {
+  return comidas.map((c) => ({
+    tipo: c.tipo,
+    alimentos: c.alimentos.map((a) => ({
+      nombre: a.nombre,
+      cantidad: a.cantidad,
+      cumplido: false,
+    })),
+    horaReal: null,
+    notas: null,
+  }));
+}
+

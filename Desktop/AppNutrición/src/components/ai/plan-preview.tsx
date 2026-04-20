@@ -117,12 +117,12 @@ export function PlanPreview({ plan, onAccept, onReject, loading }: PlanPreviewPr
                 {/* Resumen macros */}
                 <div className="border-t border-border px-3 py-2.5 bg-muted/20">
                   <div className="text-center mb-1">
-                    <span className="text-base font-bold text-amber-600">{macros.cal}</span>
+                    <span className="text-base font-bold text-amber-600 dark:text-amber-400">{macros.cal}</span>
                     <span className="text-xs text-muted-foreground ml-0.5">kcal</span>
                   </div>
                   <div className="flex justify-between text-xs">
-                    <span className="text-blue-600 font-medium">P: {macros.prot}g</span>
-                    <span className="text-green-600 font-medium">C: {macros.carb}g</span>
+                    <span className="text-blue-600 dark:text-blue-400 font-medium">P: {macros.prot}g</span>
+                    <span className="text-green-600 dark:text-green-400 font-medium">C: {macros.carb}g</span>
                     <span className="text-red-500 font-medium">G: {macros.gras}g</span>
                   </div>
                 </div>

@@ -46,7 +46,7 @@ export function VerificacionActions({ dietistaId, nombre }: Props) {
   if (confirmarRechazo) {
     return (
       <div className="flex items-center gap-2 shrink-0">
-        <span className="text-sm text-red-600">¿Eliminar cuenta?</span>
+        <span className="text-sm text-red-600 dark:text-red-400">¿Eliminar cuenta?</span>
         <button
           onClick={handleRechazar}
           disabled={loading !== null}
@@ -81,7 +81,7 @@ export function VerificacionActions({ dietistaId, nombre }: Props) {
       <button
         onClick={() => setConfirmarRechazo(true)}
         disabled={loading !== null}
-        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 disabled:opacity-50 transition-colors"
+        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-500/15 disabled:opacity-50 transition-colors"
       >
         <X className="w-4 h-4" />
         Rechazar

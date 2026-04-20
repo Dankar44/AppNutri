@@ -771,14 +771,14 @@ function SaveStatusBadge({ status }: { status: SaveStatus }) {
   }
   if (status === "unsaved") {
     return (
-      <span className="inline-flex items-center gap-1.5 text-xs text-amber-600">
+      <span className="inline-flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
         <AlertCircle className="w-3.5 h-3.5" />
         Sin guardar
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs text-emerald-600">
+    <span className="inline-flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
       <Check className="w-3.5 h-3.5" />
       Guardado
     </span>

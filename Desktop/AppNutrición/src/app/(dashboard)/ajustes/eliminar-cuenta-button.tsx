@@ -32,7 +32,7 @@ export function EliminarCuentaButton() {
 
   return (
     <div className="flex items-center gap-3">
-      <span className="text-sm text-red-600">Se borrarán todos tus datos permanentemente.</span>
+      <span className="text-sm text-red-600 dark:text-red-400">Se borrarán todos tus datos permanentemente.</span>
       <button
         onClick={handleDelete}
         disabled={loading}

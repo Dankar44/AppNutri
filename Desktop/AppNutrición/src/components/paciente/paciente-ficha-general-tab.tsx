@@ -131,7 +131,7 @@ export function PacienteFichaGeneralTab({
       <div className="space-y-3 sm:space-y-5">
       <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
         <h3 className="text-xl sm:text-2xl font-semibold mb-3 sm:mb-4 inline-flex items-center gap-2">
-          <UserRound className="w-5 h-5 text-green-600" />
+          <UserRound className="w-5 h-5 text-green-600 dark:text-green-400" />
           Datos personales
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
@@ -223,7 +223,7 @@ export function PacienteFichaGeneralTab({
       <section className="rounded-xl border border-border bg-card p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h3 className="text-2xl font-semibold inline-flex items-center gap-2">
-            <UtensilsCrossed className="w-5 h-5 text-green-600" />
+            <UtensilsCrossed className="w-5 h-5 text-green-600 dark:text-green-400" />
             Planes alimenticios
           </h3>
           <Link
@@ -246,7 +246,7 @@ export function PacienteFichaGeneralTab({
                 <p className="text-sm text-muted-foreground">{formatDate(plan.createdAt)}</p>
               </div>
               {plan.caloriasObjetivo != null && (
-                <span className="rounded-full bg-amber-50 px-2.5 py-1 text-sm font-medium text-amber-700">
+                <span className="rounded-full bg-amber-50 dark:bg-amber-500/10 px-2.5 py-1 text-sm font-medium text-amber-700 dark:text-amber-400">
                   {plan.caloriasObjetivo} kcal
                 </span>
               )}
@@ -270,7 +270,7 @@ export function PacienteFichaGeneralTab({
       <section className="rounded-xl border border-border bg-card p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-2xl font-semibold inline-flex items-center gap-2">
-            <Target className="w-5 h-5 text-green-600" />
+            <Target className="w-5 h-5 text-green-600 dark:text-green-400" />
             Objetivos
           </h3>
           <button
@@ -334,7 +334,7 @@ export function PacienteFichaGeneralTab({
       <SeguimientoSection
         title="Observaciones"
         icon={FileText}
-        iconColor="text-amber-600"
+        iconColor="text-amber-600 dark:text-amber-400"
         empty="Todavía no has registrado observaciones"
         onAdd={() => setModal("observacion")}
       >
@@ -358,14 +358,14 @@ export function PacienteFichaGeneralTab({
 
       <section className="rounded-xl border border-border bg-card p-5">
         <h3 className="text-2xl font-semibold mb-4 inline-flex items-center gap-2">
-          <BookOpen className="w-5 h-5 text-amber-600" />
-          Diario alimentario
+          <BookOpen className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+          Seguimiento diario
         </h3>
         <Link
-          href={`/pacientes/${paciente.id}/diario`}
+          href={`/pacientes/${paciente.id}/seguimiento`}
           className="inline-flex w-full items-center justify-center rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted"
         >
-          Ver diario del paciente
+          Ver seguimiento del paciente
         </Link>
       </section>
 

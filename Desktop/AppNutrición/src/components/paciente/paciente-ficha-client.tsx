@@ -162,7 +162,7 @@ export function PacienteFichaClient({
               {paciente.nombre === "Paciente" && paciente.apellidos === "Prueba" && (
                 <span
                   title="Paciente de ejemplo precargado. Puedes eliminarlo o modificarlo libremente."
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] sm:text-xs font-medium border border-amber-200 shrink-0"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 text-[10px] sm:text-xs font-medium border border-amber-200 dark:border-amber-500/30 shrink-0"
                 >
                   Paciente de ejemplo
                 </span>
@@ -369,7 +369,7 @@ function EnlacesRapidos({
 }) {
   const links: { href: string; label: string }[] = [];
   if (pestana === "seguimiento")
-    links.push({ href: `/pacientes/${pacienteId}/diario`, label: "Diario alimentario" });
+    links.push({ href: `/pacientes/${pacienteId}/seguimiento`, label: "Seguimiento diario" });
   if (!links.length) return null;
 
   return (

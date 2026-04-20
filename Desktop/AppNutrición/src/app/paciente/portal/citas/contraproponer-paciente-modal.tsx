@@ -94,7 +94,7 @@ export function ContraproponerPacienteModal({
       >
         <div className="flex items-center justify-between p-5 border-b border-border">
           <div className="flex items-center gap-2">
-            <CalendarClock className="w-5 h-5 text-amber-600" />
+            <CalendarClock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
             <h2 className="text-lg font-semibold">Proponer otra fecha</h2>
           </div>
           <button

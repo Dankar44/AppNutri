@@ -1,7 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { FileDown, UtensilsCrossed, Clock, ShoppingCart, MessageSquareText, Check } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Eye,
+  Sparkles,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 import { generatePlanPDF, type PlanPDFData } from "@/lib/pdf/generate-plan-pdf";
 
 interface HorarioEntry {
@@ -13,195 +20,356 @@ interface HorarioEntry {
 }
 
 interface Props {
-  plan: PlanPDFData["dias"] extends (infer T)[] ? { nombre: string; dias: T[]; caloriasObjetivo?: number | null } : never;
+  plan: PlanPDFData["dias"] extends (infer T)[]
+    ? { nombre: string; dias: T[]; caloriasObjetivo?: number | null }
+    : never;
   pacienteNombre: string;
   dietistaNombre: string;
   recomendaciones: string;
   horario: HorarioEntry[];
 }
 
-const DIAS_LABELS: Record<string, string> = {
-  Lunes: "Lunes", Martes: "Martes", Miércoles: "Miércoles",
-  Jueves: "Jueves", Viernes: "Viernes", Sábado: "Sábado", Domingo: "Domingo",
+type PDFOptions = {
+  portada: boolean;
+  planSemanal: boolean;
+  detalleDiario: boolean;
+  recomendaciones: boolean;
+  listaCompra: boolean;
+  horarioPaciente: boolean;
 };
 
-const HORAS = [
-  "06:00", "07:00", "08:00", "09:00", "10:00", "11:00", "12:00",
-  "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00",
-  "20:00", "21:00", "22:00", "23:00",
+const DEFAULT_OPTIONS: PDFOptions = {
+  portada: true,
+  planSemanal: true,
+  detalleDiario: true,
+  recomendaciones: true,
+  listaCompra: true,
+  horarioPaciente: false,
+};
+
+const OPTION_LABELS: {
+  key: keyof PDFOptions;
+  label: string;
+  description: string;
+  disabled?: boolean;
+}[] = [
+  { key: "portada", label: "Portada", description: "Página de presentación con tu nombre", disabled: true },
+  { key: "planSemanal", label: "Plan semanal completo", description: "Tabla resumen con todas las comidas de la semana" },
+  { key: "detalleDiario", label: "Detalle diario de comidas", description: "Desglose de cada día con ingredientes y cantidades" },
+  { key: "recomendaciones", label: "Recomendaciones", description: "Consejos y recomendaciones personalizadas" },
+  { key: "listaCompra", label: "Lista de la compra", description: "Ingredientes agrupados por categoría" },
+  { key: "horarioPaciente", label: "Horario semanal", description: "Tu horario habitual de actividades" },
 ];
 
-const COLOR_LABELS: Record<string, { label: string; bg: string; text: string }> = {
-  trabajo: { label: "Trabajo", bg: "#dbeafe", text: "#1d4ed8" },
-  ejercicio: { label: "Ejercicio", bg: "#dcfce7", text: "#16a34a" },
-  comida: { label: "Comida", bg: "#fef3c7", text: "#d97706" },
-  descanso: { label: "Descanso", bg: "#f3e8ff", text: "#7c3aed" },
-  otro: { label: "Otro", bg: "#f3f4f6", text: "#374151" },
+const HORAS = [
+  "06:00","07:00","08:00","09:00","10:00","11:00","12:00",
+  "13:00","14:00","15:00","16:00","17:00","18:00","19:00",
+  "20:00","21:00","22:00","23:00",
+];
+
+const COLOR_LABELS: Record<string, { bg: string; text: string }> = {
+  trabajo: { bg: "#dbeafe", text: "#1d4ed8" },
+  ejercicio: { bg: "#dcfce7", text: "#16a34a" },
+  comida: { bg: "#fef3c7", text: "#d97706" },
+  descanso: { bg: "#f3e8ff", text: "#7c3aed" },
+  otro: { bg: "#f3f4f6", text: "#374151" },
 };
 
-function generateHorarioHTML(horario: HorarioEntry[]): string {
-  const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+function generateHorarioHTML(horario: HorarioEntry[], pacienteNombre: string) {
+  const dias = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
   const horasConDatos = HORAS.filter((h) => horario.some((e) => e.hora === h));
   if (horasConDatos.length === 0) return "";
 
-  let html = `<table style="width:100%;border-collapse:collapse;font-size:9px;margin-top:12px;">`;
-  html += `<tr><th style="background:#16a34a;color:white;padding:6px;font-size:9px;">Hora</th>`;
-  for (const d of dias) html += `<th style="background:#16a34a;color:white;padding:6px;font-size:9px;">${d}</th>`;
-  html += `</tr>`;
-
+  let tabla = `<table style="width:100%;border-collapse:collapse;font-size:9px;margin-top:12px;">`;
+  tabla += `<tr><th style="background:#16a34a;color:white;padding:6px;">Hora</th>`;
+  for (const d of dias) tabla += `<th style="background:#16a34a;color:white;padding:6px;">${d}</th>`;
+  tabla += `</tr>`;
   for (const hora of horasConDatos) {
-    html += `<tr>`;
-    html += `<td style="padding:4px 6px;border:1px solid #e5e5e5;font-weight:600;text-align:center;">${hora}</td>`;
+    tabla += `<tr><td style="padding:4px 6px;border:1px solid #e5e5e5;font-weight:600;text-align:center;">${hora}</td>`;
     for (const dia of dias) {
       const entry = horario.find((e) => e.dia === dia && e.hora === hora);
       if (entry) {
         const c = COLOR_LABELS[entry.color || "otro"];
-        html += `<td style="padding:3px 5px;border:1px solid #e5e5e5;background:${c.bg};color:${c.text};font-size:8px;">${entry.actividad}${entry.nota ? `<br><span style="opacity:0.7">${entry.nota}</span>` : ""}</td>`;
+        tabla += `<td style="padding:3px 5px;border:1px solid #e5e5e5;background:${c.bg};color:${c.text};font-size:8px;">${entry.actividad}${entry.nota ? `<br><span style="opacity:0.7">${entry.nota}</span>` : ""}</td>`;
       } else {
-        html += `<td style="border:1px solid #e5e5e5;"></td>`;
+        tabla += `<td style="border:1px solid #e5e5e5;"></td>`;
       }
     }
-    html += `</tr>`;
+    tabla += `</tr>`;
   }
-  html += `</table>`;
+  tabla += `</table>`;
+
+  return `<div class="page"><div class="header"><div><span class="header-name">${pacienteNombre.toUpperCase()}</span><br><span class="header-sub">PLAN DIETÉTICO SEMANAL</span></div><div class="header-logo">NutriApp</div></div><div class="section-title">MI HORARIO SEMANAL</div>${tabla}<div class="footer">NutriApp</div></div>`;
+}
+
+function applyOptions(baseHtml: string, options: PDFOptions, horarioHtml: string) {
+  let html = baseHtml;
+  if (!options.listaCompra) {
+    html = html.replace(/<div class="page"[^>]*>(?:(?!<\/div>\s*<div class="page")[\s\S])*?LISTA DE LA COMPRA[\s\S]*?<\/div>\s*(?=<div class="page"|<\/body>)/g, "");
+  }
+  if (!options.planSemanal) {
+    html = html.replace(/<div class="page"[^>]*>(?:(?!<\/div>\s*<div class="page")[\s\S])*?PLAN SEMANAL[\s\S]*?<\/div>\s*(?=<div class="page"|<\/body>)/g, "");
+  }
+  if (!options.detalleDiario) {
+    html = html.replace(/<div class="page day"[\s\S]*?<\/div>\s*(?=<div class="page"|<\/body>)/g, "");
+  }
+  if (!options.recomendaciones) {
+    html = html.replace(/<div class="page"[^>]*>(?:(?!<\/div>\s*<div class="page")[\s\S])*?RECOMENDACIONES[\s\S]*?<\/div>\s*(?=<div class="page"|<\/body>)/g, "");
+  }
+  if (options.horarioPaciente && horarioHtml) {
+    html = html.replace("</body>", `${horarioHtml}</body>`);
+  }
   return html;
 }
 
-export function ExportarPDFPaciente({ plan, pacienteNombre, dietistaNombre, recomendaciones, horario }: Props) {
-  const [options, setOptions] = useState({
-    dieta: true,
-    horarioSemanal: horario.length > 0,
-    listaCompra: true,
-    recomendacionesIncluir: recomendaciones.length > 0,
-  });
+export function ExportarPDFPaciente({
+  plan,
+  pacienteNombre,
+  dietistaNombre,
+  recomendaciones,
+  horario,
+}: Props) {
+  const [options, setOptions] = useState<PDFOptions>(() => ({
+    ...DEFAULT_OPTIONS,
+    horarioPaciente: horario.length > 0,
+    recomendaciones: recomendaciones.length > 0,
+  }));
+  const [applied, setApplied] = useState<PDFOptions>(options);
 
-  function toggle(key: keyof typeof options) {
-    setOptions((prev) => ({ ...prev, [key]: !prev[key] }));
-  }
-
-  function handleGenerar() {
-    // Build custom recomendaciones with optional horario
-    let recoText = "";
-    if (options.recomendacionesIncluir) recoText = recomendaciones;
-
-    // Generate base PDF
-    const html = generatePlanPDF({
+  const baseHtml = useMemo(() => {
+    return generatePlanPDF({
       planNombre: plan.nombre,
       pacienteNombre,
       dietistaNombre,
-      dias: options.dieta ? plan.dias : [],
-      recomendaciones: recoText,
+      dias: plan.dias,
+      recomendaciones,
       caloriasObjetivo: plan.caloriasObjetivo,
     });
+  }, [plan, pacienteNombre, dietistaNombre, recomendaciones]);
 
-    // Inject horario section before </body> if selected
-    let finalHtml = html;
-    if (options.horarioSemanal && horario.length > 0) {
-      const horarioPage = `<div class="page"><div class="header"><div><span class="header-name">${pacienteNombre.toUpperCase()}</span><br><span class="header-sub">PLAN DIETÉTICO SEMANAL</span></div><div class="header-logo">NutriApp</div></div><div class="section-title">MI HORARIO SEMANAL</div>${generateHorarioHTML(horario)}<div class="footer">NutriApp</div></div>`;
-      finalHtml = finalHtml.replace("</body>", `${horarioPage}</body>`);
-    }
+  const horarioHtml = useMemo(
+    () => generateHorarioHTML(horario, pacienteNombre),
+    [horario, pacienteNombre]
+  );
 
-    // Remove dieta pages if not selected (keep cover, reco, shopping, back)
-    if (!options.dieta) {
-      // The PDF generator already handles empty dias array
-    }
+  const previewHtml = useMemo(() => {
+    const withOptions = applyOptions(baseHtml, applied, horarioHtml);
+    return withOptions.replace(
+      /<script>window\.onload=function\(\)\{window\.print\(\);\}<\/script>/,
+      ""
+    );
+  }, [baseHtml, applied, horarioHtml]);
 
-    if (!options.listaCompra) {
-      // Remove shopping list section
-      finalHtml = finalHtml.replace(/LISTA DE LA COMPRA[\s\S]*?<div class="footer">NutriApp[^<]*<\/div><\/div>/g, "");
-    }
+  const totalPages = Math.max(1, (previewHtml.match(/class="page/g) || []).length);
+  const [previewPage, setPreviewPage] = useState(0);
+  useEffect(() => setPreviewPage(0), [previewHtml]);
 
+  const previewContainerRef = useRef<HTMLDivElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [previewScale, setPreviewScale] = useState(1);
+
+  useEffect(() => {
+    const el = previewContainerRef.current;
+    if (!el) return;
+    const update = () => setPreviewScale(el.clientWidth / 794);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [previewHtml]);
+
+  const hasUnappliedChanges = JSON.stringify(options) !== JSON.stringify(applied);
+
+  function toggleOption(key: keyof PDFOptions) {
+    setOptions((prev) => ({ ...prev, [key]: !prev[key] }));
+  }
+
+  function handleDescargar() {
+    const html = applyOptions(baseHtml, applied, horarioHtml);
     const ventana = window.open("", "_blank");
     if (!ventana) return;
-    ventana.document.write(finalHtml);
+    ventana.document.write(html);
     ventana.document.close();
   }
 
-  const SECTIONS = [
-    {
-      key: "dieta" as const,
-      icon: UtensilsCrossed,
-      title: "Plan dietético semanal",
-      desc: `${plan.nombre} — resumen semanal + detalle por día con ingredientes`,
-      always: false,
-    },
-    {
-      key: "horarioSemanal" as const,
-      icon: Clock,
-      title: "Horario semanal",
-      desc: horario.length > 0 ? `${horario.length} actividades registradas` : "Sin horario configurado",
-      always: false,
-      disabled: horario.length === 0,
-    },
-    {
-      key: "listaCompra" as const,
-      icon: ShoppingCart,
-      title: "Lista de la compra",
-      desc: "Ingredientes agrupados por categoría con cantidades totales",
-      always: false,
-    },
-    {
-      key: "recomendacionesIncluir" as const,
-      icon: MessageSquareText,
-      title: "Recomendaciones del nutricionista",
-      desc: recomendaciones ? `${recomendaciones.slice(0, 80)}...` : "Sin recomendaciones",
-      always: false,
-      disabled: !recomendaciones,
-    },
-  ];
-
-  const anySelected = Object.values(options).some(Boolean);
-
   return (
-    <div className="space-y-4">
-      <div className="bg-card rounded-xl border border-border p-6">
-        <h2 className="font-semibold mb-1">Contenido del PDF</h2>
-        <p className="text-sm text-muted-foreground mb-4">Selecciona las secciones que quieres incluir</p>
+    <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
+      {/* Opciones */}
+      <div className="rounded-xl border border-border bg-card p-5 lg:order-2">
+        <div className="mb-5 pb-5 border-b border-border">
+          <label className="block text-sm font-semibold text-foreground mb-2">
+            Plan alimenticio
+          </label>
+          <div className="w-full px-3 py-2.5 rounded-lg border border-border bg-muted/30 text-sm">
+            {plan.nombre} <span className="text-muted-foreground">(actual)</span>
+          </div>
+        </div>
 
-        <div className="space-y-2">
-          {SECTIONS.map((s) => {
-            const checked = options[s.key];
-            const disabled = s.disabled;
+        <h3 className="text-sm font-semibold text-foreground mb-4">Contenido del PDF</h3>
+        <div className="space-y-1">
+          {OPTION_LABELS.map((opt) => {
+            const noData =
+              (opt.key === "horarioPaciente" && horario.length === 0) ||
+              (opt.key === "recomendaciones" && !recomendaciones);
+            const disabled = opt.disabled || noData;
             return (
-              <button
-                key={s.key}
-                type="button"
-                onClick={() => !disabled && toggle(s.key)}
-                disabled={disabled}
-                className={`w-full flex items-center gap-4 p-4 rounded-lg border-2 text-left transition-all ${
-                  disabled
-                    ? "border-border bg-muted/30 opacity-50 cursor-not-allowed"
-                    : checked
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-muted-foreground/30"
-                }`}
+              <label
+                key={opt.key}
+                className={cn(
+                  "flex items-start gap-3 rounded-lg px-3 py-2.5 transition-colors",
+                  disabled ? "opacity-60 cursor-not-allowed" : "hover:bg-muted/50 cursor-pointer"
+                )}
               >
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${checked ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
-                  <s.icon className="w-5 h-5" />
+                <input
+                  type="checkbox"
+                  checked={options[opt.key]}
+                  disabled={disabled}
+                  onChange={() => !disabled && toggleOption(opt.key)}
+                  className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary/20 shrink-0 accent-primary"
+                />
+                <div className="min-w-0">
+                  <span className="text-sm font-medium text-foreground">{opt.label}</span>
+                  <p className="text-xs text-muted-foreground mt-0.5">{opt.description}</p>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm">{s.title}</p>
-                  <p className="text-xs text-muted-foreground truncate">{s.desc}</p>
-                </div>
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                  checked ? "border-primary bg-primary" : "border-muted-foreground/30"
-                }`}>
-                  {checked && <Check className="w-3.5 h-3.5 text-white" />}
-                </div>
-              </button>
+              </label>
             );
           })}
         </div>
+
+        <div className="mt-5 pt-4 border-t border-border space-y-3">
+          <button
+            type="button"
+            onClick={() => setApplied(options)}
+            disabled={!hasUnappliedChanges}
+            className={cn(
+              "w-full inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors",
+              hasUnappliedChanges
+                ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                : "bg-muted text-muted-foreground cursor-not-allowed"
+            )}
+          >
+            <Sparkles className="w-4 h-4" />
+            {hasUnappliedChanges ? "Generar vista previa" : "Vista previa actualizada"}
+          </button>
+          <button
+            type="button"
+            onClick={handleDescargar}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 text-white hover:bg-green-700 px-4 py-2.5 text-sm font-semibold transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            Descargar PDF
+          </button>
+        </div>
       </div>
 
-      <button
-        onClick={handleGenerar}
-        disabled={!anySelected}
-        className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium disabled:opacity-50"
-      >
-        <FileDown className="w-5 h-5" />
-        Generar PDF
-      </button>
+      {/* Preview */}
+      <div className="rounded-xl border border-border bg-card p-4 flex flex-col lg:order-1">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+            <Eye className="w-4 h-4 text-muted-foreground" />
+            Vista previa
+          </h3>
+        </div>
+        <div className="flex-1 flex flex-col items-center">
+          <div
+            ref={previewContainerRef}
+            className="relative bg-muted/30 rounded-lg overflow-hidden w-full border-2 border-border shadow-xl"
+            style={{
+              aspectRatio: "794 / 1123",
+              maxHeight: "calc(100vh - 200px)",
+              maxWidth: "calc((100vh - 200px) * 794 / 1123)",
+            }}
+          >
+            <div className="absolute inset-0 overflow-hidden">
+              <div
+                className="absolute top-0 left-0 bg-card"
+                style={{
+                  width: "794px",
+                  height: "1123px",
+                  transform: `scale(${previewScale})`,
+                  transformOrigin: "top left",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    width: "794px",
+                    height: `${totalPages * 1123}px`,
+                    transform: `translateY(-${previewPage * 1123}px)`,
+                    transition: "transform 500ms cubic-bezier(0.22, 1, 0.36, 1)",
+                  }}
+                >
+                  <iframe
+                    ref={iframeRef}
+                    srcDoc={previewHtml}
+                    title="Vista previa del PDF"
+                    className="border-0 block"
+                    sandbox="allow-same-origin"
+                    scrolling="no"
+                    style={{
+                      width: "794px",
+                      height: `${totalPages * 1123}px`,
+                      pointerEvents: "none",
+                    }}
+                    onLoad={() => {
+                      const iframe = iframeRef.current;
+                      if (!iframe) return;
+                      try {
+                        const doc = iframe.contentDocument;
+                        if (!doc) return;
+                        const styleId = "preview-page-delim";
+                        if (!doc.getElementById(styleId)) {
+                          const style = doc.createElement("style");
+                          style.id = styleId;
+                          style.textContent = `
+                            html, body { margin: 0; padding: 0; background: white; overflow: hidden; }
+                            .page {
+                              margin: 0 !important;
+                              height: 1123px !important;
+                              min-height: 1123px !important;
+                              max-height: 1123px !important;
+                              width: 794px !important;
+                              background: white;
+                              box-sizing: border-box;
+                              overflow: hidden;
+                            }
+                            .page.cover { justify-content: center; }
+                          `;
+                          doc.head.appendChild(style);
+                        }
+                      } catch {}
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-3 mt-3 pt-2 border-t border-border w-full">
+              <button
+                type="button"
+                onClick={() => setPreviewPage(Math.max(0, previewPage - 1))}
+                disabled={previewPage === 0}
+                className="p-1 rounded hover:bg-muted transition-colors disabled:opacity-30"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {previewPage + 1} / {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPreviewPage(Math.min(totalPages - 1, previewPage + 1))}
+                disabled={previewPage >= totalPages - 1}
+                className="p-1 rounded hover:bg-muted transition-colors disabled:opacity-30"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

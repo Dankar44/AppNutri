@@ -148,7 +148,7 @@ function ToggleDropdown({
         className={cn(
           "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors",
           value
-            ? "border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950 dark:text-green-400"
+            ? "border-green-200 dark:border-green-500/30 bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 dark:border-green-800 dark:bg-green-950 dark:text-green-400"
             : "border-border bg-muted/50 text-muted-foreground"
         )}
       >
@@ -480,7 +480,7 @@ export function EntregablesTab({
                     <div className="absolute inset-0 overflow-hidden">
                       {/* Wrapper que se escala al ancho del contenedor */}
                       <div
-                        className="absolute top-0 left-0 bg-white"
+                        className="absolute top-0 left-0 bg-card"
                         style={{
                           width: "794px",
                           height: "1123px",
@@ -587,7 +587,7 @@ export function EntregablesTab({
       <div className="rounded-xl border border-border bg-card p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-purple-50 p-2.5 text-purple-600 dark:bg-purple-950 dark:text-purple-400 shrink-0">
+            <div className="rounded-lg bg-purple-50 dark:bg-purple-500/10 p-2.5 text-purple-600 dark:text-purple-400 dark:bg-purple-950 dark:text-purple-400 shrink-0">
               <FlaskConical className="w-5 h-5" />
             </div>
             <h2 className="text-base font-semibold text-foreground">
@@ -614,7 +614,7 @@ export function EntregablesTab({
       {/* Section 4: Preferencias de la aplicacion del cliente */}
       <div className="rounded-xl border border-border bg-card p-5">
         <div className="flex items-center gap-3 mb-5">
-          <div className="rounded-lg bg-amber-50 p-2.5 text-amber-600 dark:bg-amber-950 dark:text-amber-400 shrink-0">
+          <div className="rounded-lg bg-amber-50 dark:bg-amber-500/10 p-2.5 text-amber-600 dark:text-amber-400 dark:bg-amber-950 dark:text-amber-400 shrink-0">
             <Settings2 className="w-5 h-5" />
           </div>
           <h2 className="text-base font-semibold text-foreground">

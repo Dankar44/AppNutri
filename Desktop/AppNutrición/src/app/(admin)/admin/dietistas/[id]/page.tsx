@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 
 const PLAN_LABEL: Record<string, string> = { BASICO: "Básico", PROFESIONAL: "Profesional" };
 const ESTADO_LABEL: Record<string, string> = { ACTIVA: "Activa", PRUEBA: "Periodo de prueba", CANCELADA: "Cancelada", EXPIRADA: "Expirada" };
-const ESTADO_COLOR: Record<string, string> = { ACTIVA: "text-green-700 bg-green-50", PRUEBA: "text-amber-700 bg-amber-50", CANCELADA: "text-red-700 bg-red-50", EXPIRADA: "text-gray-600 bg-gray-100" };
+const ESTADO_COLOR: Record<string, string> = { ACTIVA: "text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-500/10", PRUEBA: "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10", CANCELADA: "text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-500/10", EXPIRADA: "text-muted-foreground bg-muted" };
 const OBJETIVO_LABEL: Record<string, string> = { PERDER_PESO: "Perder peso", GANAR_MASA: "Ganar masa", MANTENIMIENTO: "Mantenimiento", PATOLOGIA: "Patología", DEPORTIVO: "Deportivo", OTRO: "Otro" };
 
 interface Props {
@@ -19,12 +19,12 @@ export default async function DietistaDetallePage({ params }: Props) {
   if (!dietista) redirect("/admin/dietistas");
 
   const stats = [
-    { label: "Pacientes", value: dietista._count.pacientes, icon: Users, color: "text-indigo-600 bg-indigo-50" },
-    { label: "Planes", value: dietista._count.planes, icon: UtensilsCrossed, color: "text-amber-600 bg-amber-50" },
-    { label: "Consultas", value: dietista._count.consultas, icon: Stethoscope, color: "text-purple-600 bg-purple-50" },
-    { label: "Recetas", value: dietista._count.recetas, icon: CookingPot, color: "text-green-600 bg-green-50" },
-    { label: "Alimentos", value: dietista._count.alimentos, icon: CalendarDays, color: "text-blue-600 bg-blue-50" },
-    { label: "Citas", value: dietista._count.citas, icon: CalendarDays, color: "text-pink-600 bg-pink-50" },
+    { label: "Pacientes", value: dietista._count.pacientes, icon: Users, color: "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10" },
+    { label: "Planes", value: dietista._count.planes, icon: UtensilsCrossed, color: "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10" },
+    { label: "Consultas", value: dietista._count.consultas, icon: Stethoscope, color: "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10" },
+    { label: "Recetas", value: dietista._count.recetas, icon: CookingPot, color: "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10" },
+    { label: "Alimentos", value: dietista._count.alimentos, icon: CalendarDays, color: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10" },
+    { label: "Citas", value: dietista._count.citas, icon: CalendarDays, color: "text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-500/10" },
   ];
 
   return (
@@ -80,7 +80,7 @@ export default async function DietistaDetallePage({ params }: Props) {
         {/* Suscripción */}
         <div className="bg-card rounded-xl border border-border p-6">
           <h2 className="font-semibold mb-4 flex items-center gap-2">
-            <CreditCard className="w-5 h-5 text-indigo-600" />
+            <CreditCard className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             Suscripción
           </h2>
           {dietista.suscripcion ? (
@@ -159,7 +159,7 @@ export default async function DietistaDetallePage({ params }: Props) {
                     <td className="px-4 py-3 text-center text-sm">{p._count.planes}</td>
                     <td className="px-4 py-3 text-center text-sm hidden sm:table-cell">{p._count.consultas}</td>
                     <td className="px-4 py-3 text-center hidden lg:table-cell">
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${p.activo ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-600"}`}>
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${p.activo ? "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400" : "bg-muted text-muted-foreground"}`}>
                         {p.activo ? "Activo" : "Inactivo"}
                       </span>
                     </td>

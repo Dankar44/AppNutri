@@ -146,7 +146,7 @@ export function DatePicker({
       <button
         type="button"
         onClick={toggle}
-        className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg border bg-white text-left transition-shadow text-sm ${
+        className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg border bg-card text-left transition-shadow text-sm ${
           open ? "border-primary ring-2 ring-ring" : "border-input hover:border-primary/40"
         }`}
       >
@@ -171,7 +171,7 @@ export function DatePicker({
         <div
           ref={dropRef}
           style={{ top: pos.top, left: pos.left, width: DROP_W }}
-          className="fixed z-[9999] bg-white rounded-xl border border-border shadow-xl p-3"
+          className="fixed z-[9999] bg-card rounded-xl border border-border shadow-xl p-3"
         >
           {/* Cabecera */}
           <div className="flex items-center justify-between mb-3">

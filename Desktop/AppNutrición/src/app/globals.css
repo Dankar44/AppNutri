@@ -1,31 +1,159 @@
 @import "tailwindcss";
 
-@theme {
-  --color-background: #fafafa;
-  --color-foreground: #0a0a0a;
-  --color-primary: #16a34a;
-  --color-primary-foreground: #ffffff;
-  --color-secondary: #f0fdf4;
-  --color-secondary-foreground: #166534;
-  --color-muted: #f5f5f5;
-  --color-muted-foreground: #737373;
-  --color-accent: #dcfce7;
-  --color-accent-foreground: #166534;
-  --color-destructive: #ef4444;
-  --color-border: #e5e5e5;
-  --color-input: #e5e5e5;
-  --color-ring: #16a34a;
-  --color-card: #ffffff;
-  --color-card-foreground: #0a0a0a;
-  --color-sidebar: #f8fafc;
-  --color-sidebar-foreground: #334155;
-  --color-sidebar-accent: #dcfce7;
+/* Tomar .dark como variante Tailwind (darkMode: class en TW4). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Tokens usables desde clases Tailwind. Se resuelven al valor de la variable
+   CSS correspondiente, que cambia según sea :root o .dark. */
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--fg);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-fg);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-fg);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-fg);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-fg);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-fg);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-fg);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-fg);
+  --color-sidebar-accent: var(--sidebar-accent);
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  /* Breakpoint extra para iPhone SE y similares */
   --breakpoint-xs: 375px;
+}
+
+/* Paleta LIGHT — valores iniciales */
+:root {
+  --bg: #fafafa;
+  --fg: #0a0a0a;
+  --card: #ffffff;
+  --card-fg: #0a0a0a;
+  --muted: #f5f5f5;
+  --muted-fg: #737373;
+  --accent: #dcfce7;
+  --accent-fg: #166534;
+  --secondary: #f0fdf4;
+  --secondary-fg: #166534;
+  --border: #e5e5e5;
+  --input: #e5e5e5;
+  --ring: #16a34a;
+  --primary: #16a34a;
+  --primary-fg: #ffffff;
+  --destructive: #ef4444;
+  --destructive-fg: #ffffff;
+  --sidebar: #f8fafc;
+  --sidebar-fg: #334155;
+  --sidebar-accent: #dcfce7;
+
+  /* Tokens auxiliares (no expuestos como clases Tailwind pero usados en CSS) */
+  --overlay: rgba(0, 0, 0, 0.45);
+  --slider-track: rgba(0, 0, 0, 0.06);
+  --scrollbar-thumb: rgba(0, 0, 0, 0.18);
+  --autofill-bg: #ffffff;
+
+  color-scheme: light;
+}
+
+/* Paleta DARK — tonos grises neutros, no puro negro.
+   Un pelín más claros que Linear/Vercel para sensación "cálida" y no opresiva. */
+.dark {
+  --bg: #101117;
+  --fg: #ededef;
+  --card: #17181e;
+  --card-fg: #ededef;
+  --muted: #1e2026;
+  --muted-fg: #9799a0;
+  --accent: #102e1e;
+  --accent-fg: #86efac;
+  --secondary: #0d2115;
+  --secondary-fg: #86efac;
+  --border: #27292f;
+  --input: #2b2d33;
+  --ring: #22c55e;
+  --primary: #22c55e;
+  --primary-fg: #042a10;
+  --destructive: #f87171;
+  --destructive-fg: #101117;
+  --sidebar: #121418;
+  --sidebar-fg: #c7c8cc;
+  --sidebar-accent: #102e1e;
+
+  --overlay: rgba(0, 0, 0, 0.7);
+  --slider-track: rgba(255, 255, 255, 0.08);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.18);
+  --autofill-bg: #17181e;
+
+  color-scheme: dark;
+}
+
+/* ───── Transición del cambio de tema ─────
+   Estrategia:
+   1) Por defecto NO hay transición global de colores (evita el efecto "lag" en
+      cascada donde cada elemento se anima por su cuenta).
+   2) Cuando hay soporte para View Transitions API, usamos un clip-path
+      circular que se expande desde el botón del toggle → un único crossfade
+      uniforme.
+   3) Fallback sin VT API: aplicamos transition durante 220ms a todos los
+      elementos solo cuando la clase .theme-transitioning está en html. Fuera
+      de ese periodo, no hay transition residual. */
+
+html.theme-transitioning,
+html.theme-transitioning *,
+html.theme-transitioning *::before,
+html.theme-transitioning *::after {
+  transition:
+    background-color 220ms ease,
+    border-color 220ms ease,
+    color 220ms ease,
+    fill 220ms ease,
+    stroke 220ms ease !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.theme-transitioning,
+  html.theme-transitioning *,
+  html.theme-transitioning *::before,
+  html.theme-transitioning *::after {
+    transition: none !important;
+  }
+}
+
+/* View Transitions API — clip-path circle reveal desde el punto del click */
+@supports (view-transition-name: root) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+  ::view-transition-old(root) {
+    z-index: 1;
+  }
+  ::view-transition-new(root) {
+    z-index: 2;
+    animation: themeReveal 520ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+  @keyframes themeReveal {
+    from {
+      clip-path: circle(0% at var(--vt-x, 50%) var(--vt-y, 50%));
+    }
+    to {
+      clip-path: circle(var(--vt-r, 150%) at var(--vt-x, 50%) var(--vt-y, 50%));
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    ::view-transition-new(root) { animation: none; }
+  }
 }
 
 /* Utilidades móvil: safe-area y dynamic viewport */
@@ -41,15 +169,39 @@
   .h-dvh { height: 100dvh; }
   .min-h-dvh { min-height: 100dvh; }
   .max-h-dvh { max-height: 100dvh; }
-  /* Scroll horizontal suave en iOS */
   .touch-scroll-x {
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
   }
+  /* Clase opcional para forzar paleta clara dentro de un contenedor
+     (usada por ejemplo en previews de PDF, que siempre deben ser claros). */
+  .force-light {
+    --bg: #fafafa;
+    --fg: #0a0a0a;
+    --card: #ffffff;
+    --card-fg: #0a0a0a;
+    --muted: #f5f5f5;
+    --muted-fg: #737373;
+    --border: #e5e5e5;
+    color-scheme: light;
+  }
 }
 
-/* iOS: evitar zoom automático al enfocar inputs en móvil.
-   Solo aplicamos a pantallas <640px — desktop mantiene sus tamaños. */
+/* Impresión siempre en claro */
+@media print {
+  :root, .dark {
+    --bg: #ffffff;
+    --fg: #000000;
+    --card: #ffffff;
+    --card-fg: #000000;
+    --muted: #f5f5f5;
+    --muted-fg: #555555;
+    --border: #cccccc;
+    color-scheme: light;
+  }
+}
+
+/* iOS: evitar zoom automático al enfocar inputs */
 @media (max-width: 639.98px) {
   input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),
   select,
@@ -60,8 +212,46 @@
 
 body {
   font-family: var(--font-sans);
-  background-color: var(--color-background);
-  color: var(--color-foreground);
+  background-color: var(--bg);
+  color: var(--fg);
+}
+
+/* Scrollbar más sutil y adaptado al tema (WebKit + Firefox) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--muted-fg); background-clip: padding-box; }
+
+/* Autofill Chrome/Safari: forzar colores del tema, quitando el amarillo flúor */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--fg);
+  -webkit-box-shadow: 0 0 0 1000px var(--autofill-bg) inset;
+  box-shadow: 0 0 0 1000px var(--autofill-bg) inset;
+  caret-color: var(--fg);
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+/* Selección de texto con tinte de marca */
+::selection {
+  background-color: color-mix(in srgb, var(--primary) 35%, transparent);
+  color: var(--fg);
 }
 
 /* Macro slider — barra fina de colores arrastrable */
@@ -78,7 +268,7 @@ input[type="range"].macro-slider::-webkit-slider-runnable-track {
   background: linear-gradient(
     to right,
     var(--slider-color) var(--slider-pct),
-    rgba(0, 0, 0, 0.06) var(--slider-pct)
+    var(--slider-track) var(--slider-pct)
   );
   transition: background 0.15s;
 }
@@ -87,7 +277,7 @@ input[type="range"].macro-slider::-webkit-slider-thumb {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: white;
+  background: var(--card);
   box-shadow: 0 0 0 2px var(--slider-color), 0 1px 3px rgba(0, 0, 0, 0.15);
   margin-top: -4px;
   border: none;
@@ -104,14 +294,14 @@ input[type="range"].macro-slider::-moz-range-track {
   background: linear-gradient(
     to right,
     var(--slider-color) var(--slider-pct),
-    rgba(0, 0, 0, 0.06) var(--slider-pct)
+    var(--slider-track) var(--slider-pct)
   );
 }
 input[type="range"].macro-slider::-moz-range-thumb {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: white;
+  background: var(--card);
   box-shadow: 0 0 0 2px var(--slider-color), 0 1px 3px rgba(0, 0, 0, 0.15);
   border: none;
 }

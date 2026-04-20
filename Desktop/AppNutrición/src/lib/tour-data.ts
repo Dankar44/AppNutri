@@ -178,17 +178,6 @@ const PACIENTE_TOURS: Tour[] = [
     ],
   },
   {
-    id: "paciente-diario",
-    name: "Tu Diario Alimentario",
-    description: "Registra lo que comes cada día",
-    icon: "BookOpen",
-    audience: "paciente",
-    steps: [
-      { id: "p3-1", title: "Tu diario", description: "Registra aquí lo que comes cada día. Tu nutricionista podrá verlo para hacer seguimiento.", route: "/paciente/portal/diario", target: "diary-view", position: "bottom" },
-      { id: "p3-2", title: "Nueva entrada", description: "Pulsa para registrar una comida: selecciona el tipo, busca alimentos y añade cantidades.", target: "new-entry-btn", position: "bottom" },
-    ],
-  },
-  {
     id: "paciente-evolucion",
     name: "Tu Evolución",
     description: "Visualiza tu progreso con gráficas",

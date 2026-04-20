@@ -1,120 +1,521 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { UtensilsCrossed, BookOpen, TrendingUp, ShoppingCart, ClipboardCheck } from "lucide-react";
+import {
+  Calendar,
+  ArrowRight,
+  LayoutDashboard,
+  Trophy,
+  TrendingDown,
+  Heart,
+  Flame,
+  type LucideIcon,
+} from "lucide-react";
 import { getCurrentPaciente } from "@/lib/patient-auth";
 import { prisma } from "@/lib/prisma";
 import { capitalizarNombre } from "@/lib/utils";
+import {
+  calcularAguaObjetivo,
+  tipoComidaPorHora,
+  TIPOS_ORDEN,
+} from "@/lib/seguimiento";
+import { HoyCard } from "@/components/paciente/dashboard/hoy-card";
+import { ComidaActualCard } from "@/components/paciente/dashboard/comida-actual-card";
+import { ProgresoCard, type SparkPoint } from "@/components/paciente/dashboard/progreso-card";
+import { MensajesPreviewCard } from "@/components/paciente/dashboard/mensajes-preview-card";
+import { HitoRecienteCard } from "@/components/paciente/dashboard/hito-reciente-card";
+
+const DIAS_SEMANA_MAP: Record<number, string> = {
+  0: "DOMINGO",
+  1: "LUNES",
+  2: "MARTES",
+  3: "MIERCOLES",
+  4: "JUEVES",
+  5: "VIERNES",
+  6: "SABADO",
+};
+
+function getSaludoMadrid(): { saludo: string; fechaLarga: string; ahoraHHMM: string } {
+  const ahora = new Date();
+  const hh = ahora.toLocaleString("es-ES", {
+    timeZone: "Europe/Madrid",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const horaMadrid = parseInt(hh.split(":")[0], 10);
+  let saludo = "Buenos días";
+  if (horaMadrid >= 13 && horaMadrid < 21) saludo = "Buenas tardes";
+  else if (horaMadrid >= 21 || horaMadrid < 6) saludo = "Buenas noches";
+  const fechaLarga = ahora.toLocaleDateString("es-ES", {
+    timeZone: "Europe/Madrid",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+  return {
+    saludo,
+    fechaLarga: fechaLarga.charAt(0).toUpperCase() + fechaLarga.slice(1),
+    ahoraHHMM: hh,
+  };
+}
 
 export default async function PatientPortalPage() {
   const session = await getCurrentPaciente();
   if (!session) redirect("/paciente/login");
 
-  const paciente = await prisma.paciente.findUnique({
-    where: { id: session.pacienteId },
-    select: {
-      nombre: true,
-      apellidos: true,
-      dietista: {
-        select: { nombre: true, apellidos: true, especialidad: true, logoUrl: true },
-      },
-    },
-  });
+  const hoyIso = new Date().toISOString().split("T")[0];
+  const diaSemana = DIAS_SEMANA_MAP[new Date().getDay()];
+  const hace30Dias = new Date();
+  hace30Dias.setDate(hace30Dias.getDate() - 30);
 
-  const planActivo = await prisma.planAlimenticio.findFirst({
-    where: { pacienteId: session.pacienteId, activo: true },
-    orderBy: { createdAt: "desc" },
-    select: { id: true, nombre: true },
-  });
+  const [paciente, planActivo, proximaCita, medidas, conversacion, ultimoMensaje] =
+    await Promise.all([
+      prisma.paciente.findUnique({
+        where: { id: session.pacienteId },
+        select: {
+          nombre: true,
+          apellidos: true,
+          peso: true,
+        },
+      }),
+      prisma.planAlimenticio.findFirst({
+        where: { pacienteId: session.pacienteId, activo: true },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          nombre: true,
+          dias: {
+            where: { dia: diaSemana as never },
+            include: {
+              comidas: {
+                orderBy: { orden: "asc" },
+                include: {
+                  alimentos: {
+                    orderBy: { orden: "asc" },
+                    include: {
+                      alimento: { select: { nombre: true } },
+                      receta: { select: { nombre: true } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      }),
+      prisma.cita.findFirst({
+        where: {
+          pacienteId: session.pacienteId,
+          fechaHora: { gte: new Date() },
+          estado: { in: ["PENDIENTE", "CONFIRMADA"] },
+        },
+        orderBy: { fechaHora: "asc" },
+        select: {
+          id: true,
+          fechaHora: true,
+          duracion: true,
+          motivo: true,
+          estado: true,
+          isOnline: true,
+          googleMeetLink: true,
+        },
+      }),
+      prisma.medidaAntropometrica.findMany({
+        where: { pacienteId: session.pacienteId },
+        orderBy: { fecha: "asc" },
+        select: {
+          fecha: true,
+          peso: true,
+          imc: true,
+          grasaCorporal: true,
+        },
+      }),
+      prisma.conversacion.findFirst({
+        where: { pacienteId: session.pacienteId },
+        select: {
+          id: true,
+          noLeidosPaciente: true,
+        },
+      }),
+      prisma.mensaje.findFirst({
+        where: {
+          conversacion: { pacienteId: session.pacienteId },
+          autor: "DIETISTA",
+        },
+        orderBy: { createdAt: "desc" },
+        select: {
+          texto: true,
+          createdAt: true,
+          dietista: {
+            select: { nombre: true, apellidos: true, logoUrl: true },
+          },
+        },
+      }),
+    ]);
 
-  const dietista = paciente?.dietista;
+  const { saludo, fechaLarga, ahoraHHMM } = getSaludoMadrid();
+
+  // Seguimiento de HOY (raw query para comidasData)
+  const seguimientoHoyRows = await prisma.$queryRawUnsafe<
+    Array<{
+      aguaML: number;
+      ejercicio: boolean;
+      ejercicioMinutos: number;
+      comidasData: unknown;
+    }>
+  >(
+    `SELECT "aguaML", ejercicio, "ejercicioMinutos", "comidasData"
+     FROM seguimiento_diario
+     WHERE "pacienteId" = $1 AND fecha = $2::date`,
+    session.pacienteId,
+    hoyIso
+  );
+  const seguHoy = seguimientoHoyRows[0] ?? null;
+  const comidasDataHoy = (seguHoy?.comidasData ?? []) as Array<{
+    alimentos: Array<{ cumplido: boolean }>;
+  }>;
+  const comidasTotal = comidasDataHoy.reduce((s, c) => s + c.alimentos.length, 0);
+  const comidasCumplidas = comidasDataHoy.reduce(
+    (s, c) => s + c.alimentos.filter((a) => a.cumplido).length,
+    0
+  );
+  const haRegistrado =
+    seguHoy !== null &&
+    ((seguHoy.aguaML ?? 0) > 0 ||
+      seguHoy.ejercicio ||
+      comidasCumplidas > 0);
+
+  const aguaObjetivo = calcularAguaObjetivo(paciente?.peso ?? null);
+
+  // Racha: días consecutivos con cumplido=true hasta hoy
+  const rachaRows = await prisma.$queryRawUnsafe<Array<{ fecha: Date; cumplido: boolean }>>(
+    `SELECT fecha, cumplido FROM seguimiento_diario
+     WHERE "pacienteId" = $1 AND fecha <= $2::date
+     ORDER BY fecha DESC
+     LIMIT 30`,
+    session.pacienteId,
+    hoyIso
+  );
+  let racha = 0;
+  const hoy = new Date(hoyIso + "T00:00:00");
+  for (let i = 0; i < rachaRows.length; i++) {
+    const f = new Date(rachaRows[i].fecha);
+    const diasDiff = Math.round(
+      (hoy.getTime() - f.getTime()) / (24 * 60 * 60 * 1000)
+    );
+    if (diasDiff !== i) break;
+    if (!rachaRows[i].cumplido) break;
+    racha++;
+  }
+
+  // Comida actual según hora
+  const tipoActual = tipoComidaPorHora(ahoraHHMM);
+  const comidaPlan =
+    planActivo && planActivo.dias[0]
+      ? planActivo.dias[0].comidas.find((c) => c.tipo === tipoActual)
+      : null;
+  const alimentosActual = comidaPlan
+    ? comidaPlan.alimentos.map((a) => ({
+        nombre: a.alimento?.nombre || a.receta?.nombre || "Alimento",
+        cantidad: a.cantidad,
+      }))
+    : [];
+
+  // KPIs progreso
+  const pesoVals = medidas
+    .map((m) => ({ fecha: m.fecha, v: m.peso }))
+    .filter((x) => x.v !== null) as { fecha: Date; v: number }[];
+  const imcVals = medidas
+    .map((m) => ({ fecha: m.fecha, v: m.imc }))
+    .filter((x) => x.v !== null) as { fecha: Date; v: number }[];
+  const grasaVals = medidas
+    .map((m) => ({ fecha: m.fecha, v: m.grasaCorporal }))
+    .filter((x) => x.v !== null) as { fecha: Date; v: number }[];
+
+  function deltaSemana(vals: { fecha: Date; v: number }[]): number | null {
+    if (vals.length < 2) return null;
+    const actual = vals[vals.length - 1].v;
+    const ref = vals.find((x) => Date.now() - x.fecha.getTime() >= 6 * 24 * 60 * 60 * 1000);
+    const prev = ref?.v ?? vals[0].v;
+    return actual - prev;
+  }
+
+  const sparkData: SparkPoint[] = medidas
+    .filter((m) => m.fecha >= hace30Dias && m.peso !== null)
+    .map((m) => ({
+      fechaISO: new Date(m.fecha).toISOString().split("T")[0],
+      peso: m.peso,
+    }));
+
+  // Hito reciente (último conseguido)
+  const hitoReciente = calcularHitoReciente(pesoVals, imcVals);
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-xl sm:text-2xl font-bold">
-          Hola, {capitalizarNombre(paciente?.nombre || "")}
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Bienvenido a tu portal de nutrición
-        </p>
+    <div className="space-y-5 sm:space-y-6">
+      {/* Hero */}
+      <section className="flex items-end justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold leading-tight flex items-center gap-2">
+            <LayoutDashboard className="w-6 h-6 text-primary shrink-0" strokeWidth={1.75} />
+            {saludo}, {capitalizarNombre(paciente?.nombre || "")}
+          </h1>
+          <p className="text-muted-foreground text-xs sm:text-sm mt-0.5">{fechaLarga}</p>
+        </div>
+      </section>
+
+      {/* Próxima cita compacta */}
+      {proximaCita && <ProximaCitaBanner cita={proximaCita} />}
+
+      {/* Matriz 2x2: (Hoy | Progreso) / (Te toca | [Mensajes + Hito stack]) */}
+      <div className="grid gap-5 lg:grid-cols-2 lg:items-stretch">
+        <HoyCard
+          comidasCumplidas={comidasCumplidas}
+          comidasTotal={comidasTotal}
+          aguaML={seguHoy?.aguaML ?? 0}
+          aguaObjetivo={aguaObjetivo}
+          ejercicio={seguHoy?.ejercicio ?? false}
+          ejercicioMinutos={seguHoy?.ejercicioMinutos ?? 0}
+          haRegistrado={haRegistrado}
+          racha={racha}
+          className="h-full"
+        />
+
+        <ProgresoCard
+          className="h-full"
+          peso={{
+            label: "Peso",
+            unit: "kg",
+            actual: pesoVals[pesoVals.length - 1]?.v ?? null,
+            delta: deltaSemana(pesoVals),
+            periodoLabel: "7 días",
+            color: "#3b82f6",
+            downIsGood: true,
+          }}
+          imc={{
+            label: "IMC",
+            unit: "",
+            actual: imcVals[imcVals.length - 1]?.v ?? null,
+            delta: deltaSemana(imcVals),
+            periodoLabel: "7 días",
+            color: "#f59e0b",
+            downIsGood: true,
+          }}
+          grasa={{
+            label: "Grasa",
+            unit: "%",
+            actual: grasaVals[grasaVals.length - 1]?.v ?? null,
+            delta: deltaSemana(grasaVals),
+            periodoLabel: "7 días",
+            color: "#ef4444",
+            downIsGood: true,
+          }}
+          sparkData={sparkData}
+        />
+
+        <ComidaActualCard
+          tipoActual={tipoActual}
+          alimentos={alimentosActual}
+          ahoraHHMM={ahoraHHMM}
+          hayPlan={!!planActivo}
+          className="h-full"
+        />
+
+        {/* Sub-grid de 2 celdas: Mensajes arriba, Hito abajo */}
+        <div
+          className="grid gap-5 h-full"
+          style={{ gridTemplateRows: hitoReciente ? "1fr 1fr" : "1fr" }}
+        >
+          <MensajesPreviewCard
+            className="h-full"
+            noLeidos={conversacion?.noLeidosPaciente ?? 0}
+            ultimo={
+              ultimoMensaje
+                ? {
+                    texto: ultimoMensaje.texto,
+                    createdAt: ultimoMensaje.createdAt,
+                    remitenteNombre: ultimoMensaje.dietista
+                      ? `${ultimoMensaje.dietista.nombre} ${ultimoMensaje.dietista.apellidos}`
+                      : "Tu nutricionista",
+                    fotoUrl: ultimoMensaje.dietista?.logoUrl ?? null,
+                  }
+                : null
+            }
+          />
+
+          {hitoReciente && (
+            <HitoRecienteCard
+              titulo={hitoReciente.titulo}
+              descripcion={hitoReciente.descripcion}
+              fecha={hitoReciente.fecha}
+              Icon={hitoReciente.Icon}
+              color={hitoReciente.color}
+              className="h-full"
+            />
+          )}
+        </div>
       </div>
 
-      {/* Tu nutricionista */}
-      {dietista && (
-        <div data-tour="dietista-info" className="bg-card rounded-xl border border-border p-5 mb-6 flex items-center gap-4">
-          {dietista.logoUrl ? (
-            <img
-              src={dietista.logoUrl}
-              alt={dietista.nombre}
-              className="w-14 h-14 rounded-full object-cover shrink-0"
-            />
-          ) : (
-            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xl shrink-0">
-              {dietista.nombre[0]?.toUpperCase()}{dietista.apellidos[0]?.toUpperCase()}
-            </div>
+    </div>
+  );
+}
+
+void TIPOS_ORDEN;
+
+function ProximaCitaBanner({
+  cita,
+}: {
+  cita: {
+    id: string;
+    fechaHora: Date;
+    motivo: string | null;
+    estado: string;
+    isOnline: boolean;
+    googleMeetLink: string | null;
+  };
+}) {
+  return (
+    <section className="rounded-2xl border border-border bg-card p-4 sm:p-5 flex items-start justify-between gap-3 flex-wrap">
+      <div className="flex items-start gap-3 min-w-0 flex-1">
+        <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl border border-border text-foreground shrink-0">
+          <Calendar className="w-5 h-5" strokeWidth={1.75} />
+        </span>
+        <div className="min-w-0">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+            Próxima cita
+          </p>
+          <p className="font-semibold capitalize leading-tight">
+            {new Date(cita.fechaHora).toLocaleDateString("es-ES", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+              timeZone: "Europe/Madrid",
+            })}
+            {" · "}
+            <span className="tabular-nums">
+              {new Date(cita.fechaHora).toLocaleTimeString("es-ES", {
+                hour: "2-digit",
+                minute: "2-digit",
+                timeZone: "Europe/Madrid",
+              })}
+            </span>
+          </p>
+          {cita.motivo && (
+            <p className="text-xs text-muted-foreground mt-0.5 truncate">{cita.motivo}</p>
           )}
-          <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Tu nutricionista</p>
-            <p className="font-semibold text-lg">
-              {capitalizarNombre(dietista.nombre)} {capitalizarNombre(dietista.apellidos)}
-            </p>
-            {dietista.especialidad && (
-              <p className="text-sm text-muted-foreground">{dietista.especialidad}</p>
+          <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+            <span
+              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                cita.estado === "CONFIRMADA"
+                  ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                  : "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+              }`}
+            >
+              {cita.estado === "CONFIRMADA" ? "Confirmada" : "Pendiente"}
+            </span>
+            {cita.isOnline && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-500/15 text-sky-700 dark:text-sky-400">
+                Online
+              </span>
             )}
           </div>
         </div>
-      )}
-
-      <div data-tour="quick-access" className="grid grid-cols-2 gap-3 sm:gap-4">
-        <Link
-          href="/paciente/portal/dieta"
-          className="bg-card rounded-xl border border-border p-4 sm:p-6 hover:border-primary/30 hover:shadow-sm transition-all"
-        >
-          <UtensilsCrossed className="w-6 h-6 sm:w-8 sm:h-8 text-primary mb-2 sm:mb-3" />
-          <h3 className="font-semibold mb-1">Mi dieta</h3>
-          <p className="text-sm text-muted-foreground">
-            {planActivo ? `Plan activo: ${planActivo.nombre}` : "No tienes un plan activo"}
-          </p>
-        </Link>
-
-        <Link
-          href="/paciente/portal/diario"
-          className="bg-card rounded-xl border border-border p-4 sm:p-6 hover:border-primary/30 hover:shadow-sm transition-all"
-        >
-          <BookOpen className="w-6 h-6 sm:w-8 sm:h-8 text-green-600 mb-2 sm:mb-3" />
-          <h3 className="font-semibold mb-1">Mi diario</h3>
-          <p className="text-sm text-muted-foreground">Registra lo que comes cada día</p>
-        </Link>
-
-        <Link
-          href="/paciente/portal/seguimiento"
-          className="bg-card rounded-xl border border-border p-4 sm:p-6 hover:border-primary/30 hover:shadow-sm transition-all"
-        >
-          <ClipboardCheck className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-600 mb-2 sm:mb-3" />
-          <h3 className="font-semibold mb-1">Mi seguimiento</h3>
-          <p className="text-sm text-muted-foreground">Registra comidas, agua y ejercicio</p>
-        </Link>
-
-        <Link
-          href="/paciente/portal/evolucion"
-          className="bg-card rounded-xl border border-border p-4 sm:p-6 hover:border-primary/30 hover:shadow-sm transition-all"
-        >
-          <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 mb-2 sm:mb-3" />
-          <h3 className="font-semibold mb-1">Mi evolución</h3>
-          <p className="text-sm text-muted-foreground">Gráficos de peso y medidas</p>
-        </Link>
-
-        {planActivo && (
-          <Link
-            href="/paciente/portal/dieta/lista-compra"
-            className="bg-card rounded-xl border border-border p-4 sm:p-6 hover:border-primary/30 hover:shadow-sm transition-all"
-          >
-            <ShoppingCart className="w-6 h-6 sm:w-8 sm:h-8 text-amber-600 mb-2 sm:mb-3" />
-            <h3 className="font-semibold mb-1">Lista de la compra</h3>
-            <p className="text-sm text-muted-foreground">Generada desde tu plan semanal</p>
-          </Link>
-        )}
       </div>
-    </div>
+      <div className="flex items-center gap-2 shrink-0">
+        {cita.googleMeetLink && (
+          <a
+            href={cita.googleMeetLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-sky-600 text-white text-sm font-medium hover:bg-sky-700 transition-colors"
+          >
+            Unirse
+          </a>
+        )}
+        <Link
+          href="/paciente/portal/citas"
+          className="inline-flex items-center gap-1 px-3 h-9 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
+        >
+          Ver citas
+          <ArrowRight className="w-3.5 h-3.5" />
+        </Link>
+      </div>
+    </section>
   );
+}
+
+function calcularHitoReciente(
+  pesos: { fecha: Date; v: number }[],
+  imcs: { fecha: Date; v: number }[]
+): { titulo: string; descripcion: string; fecha: string; Icon: LucideIcon; color: string } | null {
+  const candidatos: {
+    titulo: string;
+    descripcion: string;
+    fecha: Date;
+    Icon: LucideIcon;
+    color: string;
+  }[] = [];
+
+  if (pesos.length >= 2) {
+    const inicial = pesos[0].v;
+    for (const u of [
+      { kg: 1, titulo: "Primer kilo", Icon: TrendingDown, color: "#10b981" },
+      { kg: 5, titulo: "5 kilos menos", Icon: Trophy, color: "#f59e0b" },
+      { kg: 10, titulo: "10 kilos menos", Icon: Trophy, color: "#ef4444" },
+    ]) {
+      const punto = pesos.find((m) => inicial - m.v >= u.kg);
+      if (punto)
+        candidatos.push({
+          titulo: u.titulo,
+          descripcion: `Has bajado ${u.kg} kg desde que empezaste`,
+          fecha: punto.fecha,
+          Icon: u.Icon,
+          color: u.color,
+        });
+    }
+  }
+
+  if (imcs.length >= 1 && imcs[0].v >= 25) {
+    const saludable = imcs.find((m) => m.v < 25);
+    if (saludable)
+      candidatos.push({
+        titulo: "IMC saludable",
+        descripcion: "Tu IMC ha bajado por debajo de 25",
+        fecha: saludable.fecha,
+        Icon: Heart,
+        color: "#ec4899",
+      });
+  }
+
+  if (pesos.length >= 3) {
+    let racha = 1;
+    let fecha: Date | null = null;
+    for (let i = 1; i < pesos.length; i++) {
+      if (pesos[i].v < pesos[i - 1].v) {
+        racha++;
+        if (racha === 3) fecha = pesos[i].fecha;
+      } else {
+        racha = 1;
+      }
+    }
+    if (fecha)
+      candidatos.push({
+        titulo: "En racha",
+        descripcion: "3 mediciones consecutivas bajando",
+        fecha,
+        Icon: Flame,
+        color: "#f97316",
+      });
+  }
+
+  if (candidatos.length === 0) return null;
+  candidatos.sort((a, b) => b.fecha.getTime() - a.fecha.getTime());
+  const c = candidatos[0];
+  return {
+    ...c,
+    fecha: new Date(c.fecha).toLocaleDateString("es-ES", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    }),
+  };
 }

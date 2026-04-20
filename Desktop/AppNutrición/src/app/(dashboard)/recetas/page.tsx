@@ -115,7 +115,9 @@ export default async function RecetasPage({ searchParams }: Props) {
         </Link>
       </div>
 
-      <RecetasFilter />
+      <div className="mb-6">
+        <RecetasFilter />
+      </div>
 
       {recetas.length === 0 ? (
         <div className="bg-card rounded-xl border border-border p-12 text-center">

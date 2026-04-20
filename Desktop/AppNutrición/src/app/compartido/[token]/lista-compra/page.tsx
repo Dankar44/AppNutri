@@ -32,11 +32,11 @@ export default async function SharedShoppingListPage({ params }: Props) {
           <ArrowLeft className="w-4 h-4" />
           Volver al plan
         </Link>
-        <h1 className="text-xl sm:text-2xl font-bold mb-4">Lista de la compra</h1>
-        <p className="text-sm text-muted-foreground mb-6">
-          Basada en el plan: {plan.nombre}
-        </p>
-        <ShoppingList categorias={categorias} />
+        <ShoppingList
+          planId={plan.id}
+          planNombre={plan.nombre}
+          categoriasIniciales={categorias}
+        />
       </main>
     </div>
   );

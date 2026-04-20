@@ -43,11 +43,11 @@ export function PacientesFilter({ busquedaInicial, activosInicial, vista }: Prop
             setBusqueda(e.target.value);
             applyFilters(e.target.value, soloActivos);
           }}
-          className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+          className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
         />
       </div>
       <div className="flex items-center gap-3">
-      <label className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-input bg-white cursor-pointer hover:bg-muted/50 transition-colors shrink-0">
+      <label className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-input bg-card cursor-pointer hover:bg-muted/50 transition-colors shrink-0">
         <input
           type="checkbox"
           checked={soloActivos}
@@ -55,21 +55,21 @@ export function PacientesFilter({ busquedaInicial, activosInicial, vista }: Prop
             setSoloActivos(e.target.checked);
             applyFilters(busqueda, e.target.checked);
           }}
-          className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+          className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
         />
         <span className="text-sm whitespace-nowrap">Solo activos</span>
       </label>
       <div className="flex border border-input rounded-lg overflow-hidden shrink-0">
         <button
           onClick={() => router.push(buildUrl(busqueda, soloActivos, "tabla"))}
-          className={`px-3 py-2.5 transition-colors ${vista === "tabla" ? "bg-muted text-foreground" : "bg-white text-muted-foreground hover:bg-muted/50"}`}
+          className={`px-3 py-2.5 transition-colors ${vista === "tabla" ? "bg-muted text-foreground" : "bg-card text-muted-foreground hover:bg-muted/50"}`}
           title="Vista tabla"
         >
           <List className="w-4 h-4" />
         </button>
         <button
           onClick={() => router.push(buildUrl(busqueda, soloActivos, "cards"))}
-          className={`px-3 py-2.5 transition-colors ${vista === "cards" ? "bg-muted text-foreground" : "bg-white text-muted-foreground hover:bg-muted/50"}`}
+          className={`px-3 py-2.5 transition-colors ${vista === "cards" ? "bg-muted text-foreground" : "bg-card text-muted-foreground hover:bg-muted/50"}`}
           title="Vista tarjetas"
         >
           <LayoutGrid className="w-4 h-4" />

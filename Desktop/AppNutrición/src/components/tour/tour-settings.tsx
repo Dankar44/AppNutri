@@ -41,7 +41,7 @@ export function TourSettings() {
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-medium">{tour.name}</p>
                   {isCompleted && (
-                    <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-green-50 text-green-700 font-medium">
+                    <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 font-medium">
                       <Check className="w-2.5 h-2.5" /> Completado
                     </span>
                   )}

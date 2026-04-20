@@ -75,7 +75,7 @@ export default async function RecetaDetailPage({ params }: Props) {
                   Receta de la app
                 </span>
               ) : (
-                <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-green-50 text-green-700">
+                <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400">
                   Receta propia
                 </span>
               )}

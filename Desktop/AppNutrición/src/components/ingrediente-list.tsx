@@ -120,7 +120,7 @@ export function IngredienteList({
                     <span className="text-xs text-muted-foreground">g</span>
                     <button
                       onClick={() => removeIngrediente(index)}
-                      className="p-1.5 rounded hover:bg-red-50 text-red-500 transition-colors"
+                      className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-500/15 text-red-500 transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

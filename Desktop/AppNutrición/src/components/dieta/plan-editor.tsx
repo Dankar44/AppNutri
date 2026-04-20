@@ -88,6 +88,7 @@ interface PlanEditorProps {
   compactHeader?: boolean;
   showDayHeader?: boolean;
   showAnalisis?: boolean;
+  readOnly?: boolean;
 }
 
 interface DragItemData {
@@ -111,6 +112,7 @@ export function PlanEditor({
   compactHeader: _compactHeader = false,
   showDayHeader: _showDayHeader = true,
   showAnalisis = true,
+  readOnly = false,
 }: PlanEditorProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -218,6 +220,7 @@ export function PlanEditor({
 
   function handleDragEnd(event: DragEndEvent) {
     setActiveDragItem(null);
+    if (readOnly) return;
     const { active, over } = event;
     if (!over) return;
 
@@ -425,6 +428,7 @@ export function PlanEditor({
                       onRemove={handleRemoveAlimento}
                       onCantidadChange={handleCantidadChange}
                       onReemplazar={handleReemplazar}
+                      readOnly={readOnly}
                     />
                   ))}
                 </div>
@@ -470,7 +474,7 @@ export function PlanEditor({
         </DragOverlay>
 
         <SelectorAlimento
-          open={selectorOpen}
+          open={selectorOpen && !readOnly}
           onClose={() => setSelectorOpen(false)}
           onSelect={handleSelectAlimento}
           comidaId={selectedComidaId || undefined}

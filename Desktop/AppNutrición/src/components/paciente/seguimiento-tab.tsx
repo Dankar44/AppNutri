@@ -647,9 +647,9 @@ function DayDetail({
                     className={cn(
                       "flex items-center gap-3 rounded-xl border px-4 py-3 transition-colors",
                       isDone
-                        ? "border-emerald-200 bg-white"
+                        ? "border-emerald-200 dark:border-emerald-500/30 bg-card"
                         : hasChanges
-                          ? "border-amber-200 bg-white"
+                          ? "border-amber-200 dark:border-amber-500/30 bg-card"
                           : "border-border bg-muted/10"
                     )}
                   >
@@ -657,9 +657,9 @@ function DayDetail({
                     <div className={cn(
                       "w-7 h-7 rounded-full flex items-center justify-center shrink-0",
                       isDone
-                        ? "bg-emerald-100 text-emerald-600"
+                        ? "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
                         : hasChanges
-                          ? "bg-amber-100 text-amber-600"
+                          ? "bg-amber-100 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400"
                           : "bg-muted text-muted-foreground/40"
                     )}>
                       {isDone ? <Check className="w-4 h-4" /> : hasChanges ? <X className="w-4 h-4" /> : <Icon className="w-3.5 h-3.5" />}
@@ -695,11 +695,11 @@ function DayDetail({
               const fib = m?.fibra ?? 0;
 
               const macros = [
-                { label: "Energía", icon: "🔥", value: cal, obj: 2100, unit: "kcal", color: "bg-amber-400", bgColor: "bg-amber-100" },
-                { label: "Grasa", icon: "💧", value: gras, obj: 70, unit: "g", color: "bg-amber-400", bgColor: "bg-amber-50" },
-                { label: "H. Carbono", icon: "○", value: carb, obj: 260, unit: "g", color: "bg-orange-400", bgColor: "bg-orange-50" },
-                { label: "Proteína", icon: "◇", value: prot, obj: 100, unit: "g", color: "bg-blue-400", bgColor: "bg-blue-50" },
-                { label: "Fibra alimentaria", icon: "△", value: fib, obj: 30, unit: "g", color: "bg-emerald-400", bgColor: "bg-emerald-50" },
+                { label: "Energía", icon: "🔥", value: cal, obj: 2100, unit: "kcal", color: "bg-amber-400", bgColor: "bg-amber-100 dark:bg-amber-500/15" },
+                { label: "Grasa", icon: "💧", value: gras, obj: 70, unit: "g", color: "bg-amber-400", bgColor: "bg-amber-50 dark:bg-amber-500/10" },
+                { label: "H. Carbono", icon: "○", value: carb, obj: 260, unit: "g", color: "bg-orange-400", bgColor: "bg-orange-50 dark:bg-orange-500/10" },
+                { label: "Proteína", icon: "◇", value: prot, obj: 100, unit: "g", color: "bg-blue-400", bgColor: "bg-blue-50 dark:bg-blue-500/10" },
+                { label: "Fibra alimentaria", icon: "△", value: fib, obj: 30, unit: "g", color: "bg-emerald-400", bgColor: "bg-emerald-50 dark:bg-emerald-500/10" },
               ];
               return (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
@@ -759,7 +759,7 @@ function DayDetail({
                   Objetivo: {AGUA_OBJETIVO_ML} ml
                 </span>
               </div>
-              <div className="h-4 rounded-full bg-blue-100 dark:bg-blue-950/40 overflow-hidden">
+              <div className="h-4 rounded-full bg-blue-100 dark:bg-blue-500/15 overflow-hidden">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-blue-400 to-blue-500 transition-all"
                   style={{ width: `${aguaPct}%` }}
@@ -780,28 +780,28 @@ function DayDetail({
                 <Dumbbell className="w-4 h-4 text-emerald-500" />
                 Ejercicio
               </h4>
-              <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 dark:border-emerald-800/40 dark:bg-emerald-950/20 p-4">
+              <div className="rounded-lg border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50/50 dark:border-emerald-800/40 dark:bg-emerald-950/20 p-4">
                 <div className="flex flex-wrap gap-2">
                   {dayData.ejercicioTipo && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-xs font-medium">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-xs font-medium">
                       <Dumbbell className="w-3 h-3" />
                       {dayData.ejercicioTipo}
                     </span>
                   )}
                   {dayData.ejercicioMinutos > 0 && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-medium">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400 text-xs font-medium">
                       <Clock className="w-3 h-3" />
                       {dayData.ejercicioMinutos} min
                     </span>
                   )}
                   {dayData.ejercicioKcal > 0 && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-xs font-medium">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 text-xs font-medium">
                       <Flame className="w-3 h-3" />
                       {dayData.ejercicioKcal} kcal
                     </span>
                   )}
                   {dayData.ejercicioDistanciaKm > 0 && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-xs font-medium">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-100 dark:bg-purple-500/15 text-purple-700 dark:text-purple-400 text-xs font-medium">
                       <MapPin className="w-3 h-3" />
                       {dayData.ejercicioDistanciaKm} km
                     </span>
@@ -841,11 +841,11 @@ function DayDetail({
 
 function ActividadCard({ actividad }: { actividad: ActividadPaciente }) {
   const tipoConfig: Record<string, { icon: typeof Check; color: string }> = {
-    diario: { icon: UtensilsCrossed, color: "text-emerald-600 bg-emerald-100" },
-    consulta: { icon: CalendarDays, color: "text-blue-600 bg-blue-100" },
-    ejercicio: { icon: Dumbbell, color: "text-amber-600 bg-amber-100" },
-    comida_cumplida: { icon: Check, color: "text-emerald-600 bg-emerald-100" },
-    comida_cambios: { icon: UtensilsCrossed, color: "text-rose-400 bg-rose-100" },
+    diario: { icon: UtensilsCrossed, color: "text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/15" },
+    consulta: { icon: CalendarDays, color: "text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-500/15" },
+    ejercicio: { icon: Dumbbell, color: "text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-500/15" },
+    comida_cumplida: { icon: Check, color: "text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/15" },
+    comida_cambios: { icon: UtensilsCrossed, color: "text-rose-400 bg-rose-100 dark:bg-rose-500/15" },
   };
 
   const config = tipoConfig[actividad.tipo] ?? tipoConfig.diario;
@@ -891,7 +891,7 @@ function ActividadCard({ actividad }: { actividad: ActividadPaciente }) {
                 if (isDone || isNotDone) {
                   return (
                     <div key={i} className="flex items-start gap-2 text-xs">
-                      <div className={cn("w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5", isDone ? "bg-emerald-100 text-emerald-600" : "bg-rose-100 text-rose-400")}>
+                      <div className={cn("w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5", isDone ? "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" : "bg-rose-100 dark:bg-rose-500/15 text-rose-400")}>
                         {isDone ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
                       </div>
                       <span className={isNotDone ? "text-muted-foreground line-through" : "text-foreground"}>

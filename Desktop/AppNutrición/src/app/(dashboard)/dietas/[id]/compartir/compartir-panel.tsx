@@ -77,7 +77,7 @@ export function CompartirPanel({
           >
             <div className="flex items-center justify-between mb-2">
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                enlace.activo ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"
+                enlace.activo ? "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400" : "bg-muted text-muted-foreground"
               }`}>
                 {enlace.activo ? "Activo" : "Desactivado"}
               </span>
@@ -102,7 +102,7 @@ export function CompartirPanel({
                 </button>
                 <button
                   onClick={() => handleDesactivar(enlace.id)}
-                  className="inline-flex items-center gap-1 px-3 py-1 rounded border border-red-200 text-red-600 hover:bg-red-50 transition-colors text-xs font-medium"
+                  className="inline-flex items-center gap-1 px-3 py-1 rounded border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/15 transition-colors text-xs font-medium"
                 >
                   <XCircle className="w-3 h-3" /> Desactivar
                 </button>

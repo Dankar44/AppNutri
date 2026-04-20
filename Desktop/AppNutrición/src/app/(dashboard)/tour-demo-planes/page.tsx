@@ -28,7 +28,7 @@ export default function TourDemoPlanesPage() {
   return (
     <div>
       <div className="mb-4">
-        <p className="text-xs text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg inline-flex items-center gap-1 mb-3 font-medium">
+        <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-3 py-1.5 rounded-lg inline-flex items-center gap-1 mb-3 font-medium">
           Planes de demostración — Solo para el tour guiado
         </p>
       </div>
@@ -73,7 +73,7 @@ export default function TourDemoPlanesPage() {
                     <h3 className="font-medium group-hover:text-primary transition-colors">{plan.nombre}</h3>
                     <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1"><CalendarDays className="w-3 h-3" />{plan.fecha}</span>
-                      <span className="flex items-center gap-1 text-amber-600"><Flame className="w-3 h-3" />{plan.kcal} kcal</span>
+                      <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400"><Flame className="w-3 h-3" />{plan.kcal} kcal</span>
                     </div>
                   </div>
                   <span className="text-muted-foreground group-hover:text-primary transition-colors text-sm">&rsaquo;</span>

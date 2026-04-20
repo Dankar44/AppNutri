@@ -82,10 +82,10 @@ export default async function ReportesPage() {
       {/* Métricas avanzadas */}
       <h2 className="text-lg font-semibold mb-4">Métricas de consulta</h2>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatsCard icon={Users} label="Tasa de retención" value={`${stats.tasaRetencion}%`} color="text-blue-600 bg-blue-50" />
-        <StatsCard icon={FileText} label="Media consultas/pac." value={stats.mediaConsultas} color="text-green-600 bg-green-50" />
-        <StatsCard icon={Sparkles} label="Planes creados" value={stats.planesIA} color="text-amber-600 bg-amber-50" />
-        <StatsCard icon={UserCheck} label="Pacientes con portal" value={stats.pacientesConPortal} color="text-purple-600 bg-purple-50" />
+        <StatsCard icon={Users} label="Tasa de retención" value={`${stats.tasaRetencion}%`} color="text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10" />
+        <StatsCard icon={FileText} label="Media consultas/pac." value={stats.mediaConsultas} color="text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10" />
+        <StatsCard icon={Sparkles} label="Planes creados" value={stats.planesIA} color="text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10" />
+        <StatsCard icon={UserCheck} label="Pacientes con portal" value={stats.pacientesConPortal} color="text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

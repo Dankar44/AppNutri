@@ -4,7 +4,7 @@ export default function TourDemoIAPage() {
   return (
     <div>
       <div className="mb-4">
-        <p className="text-xs text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg inline-flex items-center gap-1 mb-3 font-medium">
+        <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-3 py-1.5 rounded-lg inline-flex items-center gap-1 mb-3 font-medium">
           Generación IA de demostración — Solo para el tour guiado
         </p>
         <span className="inline-flex items-center gap-1 text-sm text-muted-foreground mb-3">
@@ -66,7 +66,7 @@ export default function TourDemoIAPage() {
           <div data-tour="ia-macros">
             <div className="flex items-center justify-between mb-2">
               <label className="text-sm font-medium">Macros diarios</label>
-              <span className="text-[11px] text-amber-600 font-medium">Ajustados a mantenimiento</span>
+              <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">Ajustados a mantenimiento</span>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -118,11 +118,11 @@ export default function TourDemoIAPage() {
             <div className="mt-3 pt-3 border-t border-border">
               <div className="flex items-start gap-1.5 mb-1">
                 <AlertTriangle className="w-3.5 h-3.5 text-red-500 mt-0.5 shrink-0" />
-                <p className="text-xs"><span className="font-medium text-red-600">Alergias:</span> Frutos secos, Marisco</p>
+                <p className="text-xs"><span className="font-medium text-red-600 dark:text-red-400">Alergias:</span> Frutos secos, Marisco</p>
               </div>
               <div className="flex items-start gap-1.5">
                 <AlertTriangle className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
-                <p className="text-xs"><span className="font-medium text-amber-600">Intolerancias:</span> Lactosa</p>
+                <p className="text-xs"><span className="font-medium text-amber-600 dark:text-amber-400">Intolerancias:</span> Lactosa</p>
               </div>
             </div>
             <div className="mt-2 flex flex-wrap gap-1">

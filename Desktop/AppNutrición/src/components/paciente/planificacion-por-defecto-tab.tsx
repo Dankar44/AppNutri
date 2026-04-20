@@ -91,10 +91,10 @@ function calcularIMC(pesoKg: number, alturaCm: number): number {
 }
 
 function categoriaIMC(imc: number): { label: string; color: string } {
-  if (imc < 18.5) return { label: "Delgadez", color: "bg-blue-100 text-blue-700" };
-  if (imc < 25) return { label: "Eutrofia", color: "bg-green-100 text-green-700" };
-  if (imc < 30) return { label: "Sobrepeso", color: "bg-amber-100 text-amber-700" };
-  return { label: "Obesidad", color: "bg-red-100 text-red-700" };
+  if (imc < 18.5) return { label: "Delgadez", color: "bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400" };
+  if (imc < 25) return { label: "Eutrofia", color: "bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-400" };
+  if (imc < 30) return { label: "Sobrepeso", color: "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400" };
+  return { label: "Obesidad", color: "bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-400" };
 }
 
 /* ─── BMR formulas ─── */
@@ -1121,8 +1121,8 @@ export function PlanificacionPorDefectoTab({
                   {pesoActual != null && pesoObjetivo != null && pesoActual !== pesoObjetivo && (
                     <span className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full mt-1 ${
                       pesoActual > pesoObjetivo
-                        ? "bg-green-100 text-green-700"
-                        : "bg-blue-100 text-blue-700"
+                        ? "bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-400"
+                        : "bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400"
                     }`}>
                       {pesoActual > pesoObjetivo
                         ? `Reducción de ${fmt1(pesoActual - pesoObjetivo)} kg`
@@ -1183,7 +1183,7 @@ export function PlanificacionPorDefectoTab({
                       ) : (
                         <div>
                           <span className="text-muted-foreground">—</span>
-                          <p className="text-[10px] text-amber-600 mt-1">Añade peso y altura en General para calcular</p>
+                          <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">Añade peso y altura en General para calcular</p>
                         </div>
                       )}
                     </td>
@@ -1320,7 +1320,7 @@ export function PlanificacionPorDefectoTab({
               <button
                 type="button"
                 onClick={() => handleEliminarClick(plan.id)}
-                className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-lg hover:bg-red-50 text-red-600 transition-colors"
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-lg hover:bg-red-50 dark:hover:bg-red-500/15 text-red-600 dark:text-red-400 transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
                 Eliminar
@@ -1716,7 +1716,7 @@ export function PlanificacionPorDefectoTab({
 
             {/* Total pct warning */}
             {grasaPct + carbPct + protPct !== 100 && (
-              <div className="px-5 py-2 text-xs text-amber-700 bg-amber-50 border-t border-amber-200">
+              <div className="px-5 py-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border-t border-amber-200 dark:border-amber-500/30">
                 La suma de porcentajes es {grasaPct + carbPct + protPct}% (debe ser 100%).
               </div>
             )}

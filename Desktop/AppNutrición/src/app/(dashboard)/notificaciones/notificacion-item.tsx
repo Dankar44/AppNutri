@@ -1,5 +1,7 @@
 "use client";
 
+import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   CalendarClock,
@@ -12,10 +14,15 @@ import {
   FileWarning,
   BookOpen,
   Bell,
+  Trash2,
+  Wallet,
+  WalletCards,
+  AlertCircle,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import { eliminarNotificacion } from "@/app/actions/notificaciones";
 
 interface Notif {
   id: string;
@@ -38,11 +45,16 @@ const TIPO_CONFIG: Record<string, { icon: LucideIcon; label: string }> = {
   PACIENTE_SIN_MEDIDAS: { icon: Scale, label: "Sin medidas" },
   PLAN_ANTIGUO: { icon: FileWarning, label: "Plan antiguo" },
   DIARIO_NUEVO: { icon: BookOpen, label: "Diario" },
+  PAGO_RECIBIDO: { icon: Wallet, label: "Pago recibido" },
+  PAGO_PENDIENTE: { icon: WalletCards, label: "Pago pendiente" },
+  PAGO_FALLIDO: { icon: AlertCircle, label: "Pago fallido" },
 };
 
 export function NotificacionItem({ notificacion: n }: { notificacion: Notif }) {
   const cfg = TIPO_CONFIG[n.tipo] || { icon: Bell, label: "Notificación" };
   const Icon = cfg.icon;
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
   const fecha = new Date(n.createdAt);
   const hora = fecha.toLocaleTimeString("es-ES", {
     hour: "2-digit",
@@ -51,9 +63,31 @@ export function NotificacionItem({ notificacion: n }: { notificacion: Notif }) {
   });
   const relativo = formatDistanceToNow(fecha, { addSuffix: true, locale: es });
 
+  function handleEliminar(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    startTransition(async () => {
+      await eliminarNotificacion(n.id);
+      router.refresh();
+    });
+  }
+
+  const deleteBtn = (
+    <button
+      type="button"
+      onClick={handleEliminar}
+      disabled={pending}
+      aria-label="Eliminar notificación"
+      title="Eliminar"
+      className="shrink-0 w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/15 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity disabled:opacity-40"
+    >
+      <Trash2 className="w-4 h-4" />
+    </button>
+  );
+
   const content = (
     <div
-      className={`flex items-start gap-3 sm:gap-4 px-4 sm:px-5 py-4 transition-colors ${
+      className={`group relative flex items-start gap-3 sm:gap-4 px-4 sm:px-5 py-4 transition-colors ${
         n.leida ? "" : "bg-primary/5"
       } ${n.enlace ? "hover:bg-muted/40" : ""}`}
     >
@@ -92,6 +126,7 @@ export function NotificacionItem({ notificacion: n }: { notificacion: Notif }) {
                 title="Sin leer"
               />
             )}
+            {deleteBtn}
           </div>
         </div>
         <p className="text-[11px] text-muted-foreground/70 mt-1 sm:hidden">{relativo}</p>

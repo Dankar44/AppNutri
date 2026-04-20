@@ -323,7 +323,7 @@ export default function NuevaCitaPage() {
                 <div className="space-y-2 text-sm">
                   {pacienteSeleccionado.objetivo && (
                     <div className="inline-flex items-start gap-2 w-full">
-                      <Target className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      <Target className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                       <div className="min-w-0 flex-1">
                         <p className="text-xs text-muted-foreground">Objetivo</p>
                         <p className="font-medium text-sm leading-tight">
@@ -372,7 +372,7 @@ export default function NuevaCitaPage() {
 
                     {contexto.proximaCita && (
                       <div className="flex items-start gap-2.5">
-                        <CalendarCheck className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                        <CalendarCheck className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
                         <div className="min-w-0 flex-1">
                           <p className="text-xs text-muted-foreground">Próxima cita</p>
                           <p className="text-sm font-medium">
@@ -410,7 +410,7 @@ export default function NuevaCitaPage() {
 
                     {contexto.planActivo && (
                       <div className="flex items-start gap-2.5">
-                        <Utensils className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <Utensils className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                         <div className="min-w-0 flex-1">
                           <p className="text-xs text-muted-foreground">Dieta actual</p>
                           <p className="text-sm font-medium truncate">
@@ -427,7 +427,7 @@ export default function NuevaCitaPage() {
 
                     {contexto.ultimaMedida && (
                       <div className="flex items-start gap-2.5">
-                        <Scale className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
+                        <Scale className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" />
                         <div className="min-w-0 flex-1">
                           <p className="text-xs text-muted-foreground">Última medida</p>
                           <p className="text-sm font-medium">
@@ -466,19 +466,19 @@ export default function NuevaCitaPage() {
                 </h3>
                 <ul className="space-y-2.5 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
-                    <span className="text-emerald-600 font-bold">·</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">·</span>
                     <span>
                       <strong className="text-foreground">Selecciona el paciente</strong> y verás aquí su perfil, dieta activa y última medida.
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-emerald-600 font-bold">·</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">·</span>
                     <span>
                       Reserva <strong className="text-foreground">30-45 min</strong> para revisiones y <strong className="text-foreground">60 min</strong> para primera consulta.
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-emerald-600 font-bold">·</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">·</span>
                     <span>
                       Anota en <strong className="text-foreground">Notas</strong> los temas a tratar para no olvidarlos durante la sesión.
                     </span>

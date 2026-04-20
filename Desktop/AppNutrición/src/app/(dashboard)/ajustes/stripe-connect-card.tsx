@@ -110,11 +110,11 @@ export function StripeConnectCard({ status }: Props) {
   if (!status.onboarded) {
     return (
       <div className="space-y-4">
-        <div className="flex items-start gap-3 bg-amber-50 rounded-lg p-4">
-          <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+        <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-500/10 rounded-lg p-4">
+          <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
           <div className="text-sm">
-            <p className="font-medium text-amber-800 mb-1">Configuración incompleta</p>
-            <p className="text-amber-700">Tu cuenta de Stripe está conectada pero necesitas completar la verificación para poder recibir pagos.</p>
+            <p className="font-medium text-amber-800 dark:text-amber-300 mb-1">Configuración incompleta</p>
+            <p className="text-amber-700 dark:text-amber-400">Tu cuenta de Stripe está conectada pero necesitas completar la verificación para poder recibir pagos.</p>
           </div>
         </div>
 
@@ -133,7 +133,7 @@ export function StripeConnectCard({ status }: Props) {
           <button
             onClick={handleDisconnect}
             disabled={disconnecting}
-            className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg border border-border text-sm hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg border border-border text-sm hover:bg-red-50 dark:hover:bg-red-500/15 hover:text-red-600 hover:border-red-200 transition-colors disabled:opacity-50"
           >
             {disconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Unplug className="w-4 h-4" />}
           </button>
@@ -145,24 +145,24 @@ export function StripeConnectCard({ status }: Props) {
   // ─── Completamente conectado y verificado ────────────────
   return (
     <div className="space-y-4">
-      <div className="flex items-start gap-3 bg-green-50 rounded-lg p-4">
-        <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+      <div className="flex items-start gap-3 bg-green-50 dark:bg-green-500/10 rounded-lg p-4">
+        <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
         <div className="text-sm">
-          <p className="font-medium text-green-800 mb-1">Stripe conectado</p>
-          <p className="text-green-700">Tu cuenta está verificada y lista para recibir pagos. Los cobros que crees generarán un link de pago automáticamente.</p>
+          <p className="font-medium text-green-800 dark:text-green-300 mb-1">Stripe conectado</p>
+          <p className="text-green-700 dark:text-green-400">Tu cuenta está verificada y lista para recibir pagos. Los cobros que crees generarán un link de pago automáticamente.</p>
         </div>
       </div>
 
       <div className="grid grid-cols-3 gap-2 text-center text-xs">
-        <div className={`rounded-lg p-2 ${status.chargesEnabled ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+        <div className={`rounded-lg p-2 ${status.chargesEnabled ? "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400" : "bg-muted text-muted-foreground"}`}>
           <p className="font-medium">{status.chargesEnabled ? "Activo" : "Inactivo"}</p>
           <p className="text-[10px] mt-0.5">Cobros</p>
         </div>
-        <div className={`rounded-lg p-2 ${status.payoutsEnabled ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+        <div className={`rounded-lg p-2 ${status.payoutsEnabled ? "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400" : "bg-muted text-muted-foreground"}`}>
           <p className="font-medium">{status.payoutsEnabled ? "Activo" : "Inactivo"}</p>
           <p className="text-[10px] mt-0.5">Transferencias</p>
         </div>
-        <div className={`rounded-lg p-2 ${status.detailsSubmitted ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+        <div className={`rounded-lg p-2 ${status.detailsSubmitted ? "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400" : "bg-muted text-muted-foreground"}`}>
           <p className="font-medium">{status.detailsSubmitted ? "Completo" : "Pendiente"}</p>
           <p className="text-[10px] mt-0.5">Verificación</p>
         </div>
@@ -183,7 +183,7 @@ export function StripeConnectCard({ status }: Props) {
         <button
           onClick={handleDisconnect}
           disabled={disconnecting}
-          className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg border border-border text-sm hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg border border-border text-sm hover:bg-red-50 dark:hover:bg-red-500/15 hover:text-red-600 hover:border-red-200 transition-colors disabled:opacity-50"
           title="Desconectar Stripe"
         >
           {disconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Unplug className="w-4 h-4" />}

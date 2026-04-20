@@ -69,7 +69,9 @@ export default async function DietasPage({ searchParams }: Props) {
         }
       />
 
-      <DietasFilter />
+      <div className="mb-6">
+        <DietasFilter />
+      </div>
 
       {planes.length === 0 ? (
         <div className="bg-card rounded-xl border border-border p-12 text-center">

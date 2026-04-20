@@ -44,7 +44,7 @@ function DiffIndicator({ value }: { value: number }) {
   const isUp = rounded > 0;
   return (
     <span className={`inline-flex items-center gap-0.5 text-[10px] font-medium rounded-full px-1.5 py-0.5 ${
-      isUp ? "text-red-600 bg-red-50" : "text-primary bg-primary/10"
+      isUp ? "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10" : "text-primary bg-primary/10"
     }`}>
       {isUp ? <ArrowUp className="w-2.5 h-2.5" /> : <ArrowDown className="w-2.5 h-2.5" />}
       {Math.abs(rounded)}

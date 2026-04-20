@@ -26,7 +26,7 @@ export function MacroResumen({
     <div className="space-y-3">
       {label && <h3 className="text-sm font-semibold text-muted-foreground">{label}</h3>}
       <div className="text-center">
-        <p className="text-2xl font-bold text-amber-600">{Math.round(calorias)}</p>
+        <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{Math.round(calorias)}</p>
         <p className="text-xs text-muted-foreground">kcal</p>
       </div>
       <div className="space-y-2">

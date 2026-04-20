@@ -79,7 +79,7 @@ export default async function PacientesPage({ searchParams }: Props) {
                 {capitalizarNombre(p.nombre)} {capitalizarNombre(p.apellidos)}
               </h3>
               {p.nombre === "Paciente" && p.apellidos === "Prueba" && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-medium border border-amber-200 mt-1">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 text-[10px] font-medium border border-amber-200 dark:border-amber-500/30 mt-1">
                   Paciente de ejemplo
                 </span>
               )}
@@ -89,7 +89,7 @@ export default async function PacientesPage({ searchParams }: Props) {
               <div className="flex items-center justify-center gap-2 mt-2">
                 <span
                   className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-                    p.activo ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-600"
+                    p.activo ? "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400" : "bg-muted text-muted-foreground"
                   }`}
                 >
                   {p.activo ? "Activo" : "Inactivo"}
@@ -132,7 +132,7 @@ export default async function PacientesPage({ searchParams }: Props) {
                             {capitalizarNombre(p.nombre)} {capitalizarNombre(p.apellidos)}
                           </p>
                           {p.nombre === "Paciente" && p.apellidos === "Prueba" && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-medium border border-amber-200 shrink-0">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 text-[10px] font-medium border border-amber-200 dark:border-amber-500/30 shrink-0">
                               Ejemplo
                             </span>
                           )}
@@ -146,7 +146,7 @@ export default async function PacientesPage({ searchParams }: Props) {
                     <td className="px-4 py-3 hidden lg:table-cell text-sm">{OBJETIVO_LABELS[p.objetivo] || p.objetivo}</td>
                     <td className="px-4 py-3 hidden lg:table-cell text-sm">{p.peso && p.altura ? calcularIMC(p.peso, p.altura) : "-"}</td>
                     <td className="px-4 py-3">
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${p.activo ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-600"}`}>
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${p.activo ? "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400" : "bg-muted text-muted-foreground"}`}>
                         {p.activo ? "Activo" : "Inactivo"}
                       </span>
                     </td>

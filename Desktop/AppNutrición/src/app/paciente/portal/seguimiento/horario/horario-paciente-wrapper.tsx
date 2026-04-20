@@ -1,6 +1,6 @@
 "use client";
 
-import { HorarioSemanal } from "@/components/horario-semanal";
+import { HorarioPaciente } from "@/components/paciente/horario/horario-paciente";
 import { guardarHorarioPacientePortal, type HorarioEntry } from "@/app/actions/paciente-auth";
 
 interface Props {
@@ -9,7 +9,7 @@ interface Props {
 
 export function HorarioPacienteWrapper({ initialEntries }: Props) {
   return (
-    <HorarioSemanal
+    <HorarioPaciente
       initialEntries={initialEntries}
       onSave={(entries) => guardarHorarioPacientePortal(entries)}
     />

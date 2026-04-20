@@ -21,7 +21,7 @@ export default async function AdminDashboardPage() {
       change: stats.cambioDietistas,
       nuevos: stats.dietistasEsteMes,
       icon: Users,
-      color: "text-indigo-600 bg-indigo-50",
+      color: "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10",
     },
     {
       label: "Total pacientes",
@@ -29,7 +29,7 @@ export default async function AdminDashboardPage() {
       change: stats.cambioPacientes,
       nuevos: stats.pacientesEsteMes,
       icon: UserPlus,
-      color: "text-green-600 bg-green-50",
+      color: "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10",
     },
     {
       label: "Planes activos",
@@ -37,7 +37,7 @@ export default async function AdminDashboardPage() {
       change: null,
       nuevos: null,
       icon: UtensilsCrossed,
-      color: "text-amber-600 bg-amber-50",
+      color: "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10",
     },
     {
       label: "Consultas este mes",
@@ -45,7 +45,7 @@ export default async function AdminDashboardPage() {
       change: null,
       nuevos: null,
       icon: Stethoscope,
-      color: "text-purple-600 bg-purple-50",
+      color: "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10",
     },
   ];
 
@@ -73,11 +73,11 @@ export default async function AdminDashboardPage() {
             {card.change !== null && (
               <div className="flex items-center gap-1 mt-1 flex-wrap">
                 {card.change >= 0 ? (
-                  <TrendingUp className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-green-600" />
+                  <TrendingUp className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-green-600 dark:text-green-400" />
                 ) : (
-                  <TrendingDown className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-600" />
+                  <TrendingDown className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-600 dark:text-red-400" />
                 )}
-                <span className={`text-[10px] sm:text-xs font-medium ${card.change >= 0 ? "text-green-600" : "text-red-600"}`}>
+                <span className={`text-[10px] sm:text-xs font-medium ${card.change >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
                   {card.change >= 0 ? "+" : ""}{card.change}%
                 </span>
                 <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:inline">

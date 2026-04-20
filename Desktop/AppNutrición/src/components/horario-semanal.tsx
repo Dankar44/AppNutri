@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Plus, X, Save, Loader2, ChevronDown, ChevronUp, Calendar } from "lucide-react";
+import { X, Save, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import type { HorarioEntry } from "@/app/actions/pacientes";
 import { toast } from "sonner";
 
@@ -14,11 +14,11 @@ const HORAS = [
 const PREVIEW_ROWS = 5;
 
 const COLORES = [
-  { id: "trabajo", label: "Trabajo", class: "bg-blue-100 text-blue-700 border-blue-200" },
-  { id: "ejercicio", label: "Ejercicio", class: "bg-green-100 text-green-700 border-green-200" },
-  { id: "comida", label: "Comida", class: "bg-amber-100 text-amber-700 border-amber-200" },
-  { id: "descanso", label: "Descanso", class: "bg-purple-100 text-purple-700 border-purple-200" },
-  { id: "otro", label: "Otro", class: "bg-gray-100 text-gray-700 border-gray-200" },
+  { id: "trabajo", label: "Trabajo", class: "bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/30" },
+  { id: "ejercicio", label: "Ejercicio", class: "bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/30" },
+  { id: "comida", label: "Comida", class: "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30" },
+  { id: "descanso", label: "Descanso", class: "bg-purple-100 dark:bg-purple-500/15 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/30" },
+  { id: "otro", label: "Otro", class: "bg-muted text-foreground border-border" },
 ];
 
 function getColorClass(color?: string) {
@@ -86,42 +86,6 @@ export function HorarioSemanal({ initialEntries, readOnly, onSave }: Props) {
     setDirty(true);
   }
 
-  function exportToGoogleCalendar() {
-    if (entries.length === 0) { toast.error("No hay actividades para exportar"); return; }
-
-    // Calcular las fechas de esta semana (lunes a domingo)
-    const now = new Date();
-    const dayOfWeek = now.getDay();
-    const monday = new Date(now);
-    monday.setDate(now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1));
-
-    const diaIndex: Record<string, number> = {
-      Lunes: 0, Martes: 1, Miércoles: 2, Jueves: 3, Viernes: 4, Sábado: 5, Domingo: 6,
-    };
-
-    // Abrir cada entrada como evento de Google Calendar
-    const events = entries.slice(0, 10); // Máximo 10 para no abrir demasiadas pestañas
-    for (const entry of events) {
-      const offset = diaIndex[entry.dia] ?? 0;
-      const date = new Date(monday);
-      date.setDate(monday.getDate() + offset);
-
-      const [h, m] = entry.hora.split(":").map(Number);
-      const start = new Date(date);
-      start.setHours(h, m, 0, 0);
-      const end = new Date(start);
-      end.setHours(h + 1, m, 0, 0);
-
-      const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
-      const title = encodeURIComponent(`${entry.actividad}${entry.nota ? ` - ${entry.nota}` : ""}`);
-      const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${fmt(start)}/${fmt(end)}`;
-
-      window.open(url, "_blank");
-    }
-
-    toast.success(`${events.length} evento${events.length > 1 ? "s" : ""} exportado${events.length > 1 ? "s" : ""} a Google Calendar`);
-  }
-
   async function handleSave() {
     setSaving(true);
     try {
@@ -145,16 +109,6 @@ export function HorarioSemanal({ initialEntries, readOnly, onSave }: Props) {
             </span>
           ))}
         </div>
-        <div className="flex items-center gap-2">
-          {entries.length > 0 && (
-            <button
-              onClick={exportToGoogleCalendar}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-colors"
-              title="Exportar a Google Calendar"
-            >
-              <Calendar className="w-3.5 h-3.5" /> Google Calendar
-            </button>
-          )}
         {!readOnly && dirty && (
           <button
             onClick={handleSave}
@@ -165,7 +119,6 @@ export function HorarioSemanal({ initialEntries, readOnly, onSave }: Props) {
             Guardar
           </button>
         )}
-        </div>
       </div>
 
       {/* Grid — con scroll horizontal fluido en móvil */}

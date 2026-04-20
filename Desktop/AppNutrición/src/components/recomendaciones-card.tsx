@@ -56,8 +56,8 @@ export function RecomendacionesCard({ pacienteId, initialText }: Props) {
           )}
           {status === "saved" && (
             <>
-              <Check className="w-3 h-3 text-green-600" />
-              <span className="text-green-600">Guardado</span>
+              <Check className="w-3 h-3 text-green-600 dark:text-green-400" />
+              <span className="text-green-600 dark:text-green-400">Guardado</span>
             </>
           )}
         </div>

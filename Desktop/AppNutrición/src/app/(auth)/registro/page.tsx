@@ -178,7 +178,7 @@ export default function RegistroPage() {
                       placeholder="María"
                       required
                       maxLength={100}
-                      className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+                      className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
                     />
                   </div>
                   <div>
@@ -193,7 +193,7 @@ export default function RegistroPage() {
                       placeholder="García López"
                       required
                       maxLength={100}
-                      className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+                      className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
                     />
                   </div>
                 </div>
@@ -210,7 +210,7 @@ export default function RegistroPage() {
                     placeholder="tu@email.com"
                     required
                     maxLength={200}
-                    className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+                    className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
                   />
                 </div>
 
@@ -226,7 +226,7 @@ export default function RegistroPage() {
                     onChange={(e) => updateForm("especialidad", e.target.value)}
                     placeholder="Ej: Nutrición deportiva, Obesidad..."
                     maxLength={200}
-                    className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+                    className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
                   />
                 </div>
 
@@ -244,7 +244,7 @@ export default function RegistroPage() {
                       required
                       minLength={6}
                       maxLength={128}
-                      className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow pr-12"
+                      className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow pr-12"
                     />
                     <button
                       type="button"
@@ -370,7 +370,7 @@ export default function RegistroPage() {
                     placeholder="Ej: AND-00123, CAT-456..."
                     required
                     maxLength={50}
-                    className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+                    className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
                   />
                 </div>
 

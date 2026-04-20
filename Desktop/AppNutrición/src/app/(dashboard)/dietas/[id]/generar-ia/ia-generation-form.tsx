@@ -209,7 +209,7 @@ export function IAGenerationForm({ planId, pacienteId, pacienteNombre, pacienteI
             <div className="flex items-center justify-between mb-2">
               <label className="text-sm font-medium">Macros diarios</label>
               {fase && (
-                <span className="text-[11px] text-amber-600 font-medium">Ajustados a {fase}</span>
+                <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">Ajustados a {fase}</span>
               )}
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -294,13 +294,13 @@ export function IAGenerationForm({ planId, pacienteId, pacienteNombre, pacienteI
                 {pacienteInfo.alergias.length > 0 && (
                   <div className="flex items-start gap-1.5 mb-1">
                     <AlertTriangle className="w-3.5 h-3.5 text-red-500 mt-0.5 shrink-0" />
-                    <p className="text-xs"><span className="font-medium text-red-600">Alergias:</span> {pacienteInfo.alergias.join(", ")}</p>
+                    <p className="text-xs"><span className="font-medium text-red-600 dark:text-red-400">Alergias:</span> {pacienteInfo.alergias.join(", ")}</p>
                   </div>
                 )}
                 {pacienteInfo.intolerancias.length > 0 && (
                   <div className="flex items-start gap-1.5">
                     <AlertTriangle className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
-                    <p className="text-xs"><span className="font-medium text-amber-600">Intolerancias:</span> {pacienteInfo.intolerancias.join(", ")}</p>
+                    <p className="text-xs"><span className="font-medium text-amber-600 dark:text-amber-400">Intolerancias:</span> {pacienteInfo.intolerancias.join(", ")}</p>
                   </div>
                 )}
               </div>

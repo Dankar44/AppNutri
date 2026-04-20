@@ -43,7 +43,7 @@ export function ConsultaActions({ consultaId }: { consultaId: string }) {
   return (
     <button
       onClick={() => setConfirmando(true)}
-      className="p-1.5 rounded hover:bg-red-50 text-red-400 hover:text-red-600 transition-colors"
+      className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-500/15 text-red-400 hover:text-red-600 transition-colors"
     >
       <Trash2 className="w-4 h-4" />
     </button>

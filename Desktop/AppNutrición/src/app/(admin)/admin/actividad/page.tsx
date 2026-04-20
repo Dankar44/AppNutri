@@ -6,11 +6,11 @@ export default async function ActividadPage() {
   const actividad = await getActividadGlobal();
 
   const statsHoy = [
-    { label: "Consultas hoy", value: actividad.consultasHoy, icon: Stethoscope, color: "text-purple-600 bg-purple-50" },
-    { label: "Citas hoy", value: actividad.citasHoy, icon: CalendarDays, color: "text-blue-600 bg-blue-50" },
-    { label: "Entradas diario hoy", value: actividad.diarioHoy, icon: BookOpen, color: "text-green-600 bg-green-50" },
-    { label: "Consultas este mes", value: actividad.consultasMes, icon: Activity, color: "text-amber-600 bg-amber-50" },
-    { label: "Generaciones IA mes", value: actividad.generacionesIA, icon: Sparkles, color: "text-pink-600 bg-pink-50" },
+    { label: "Consultas hoy", value: actividad.consultasHoy, icon: Stethoscope, color: "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10" },
+    { label: "Citas hoy", value: actividad.citasHoy, icon: CalendarDays, color: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10" },
+    { label: "Entradas diario hoy", value: actividad.diarioHoy, icon: BookOpen, color: "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10" },
+    { label: "Consultas este mes", value: actividad.consultasMes, icon: Activity, color: "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10" },
+    { label: "Generaciones IA mes", value: actividad.generacionesIA, icon: Sparkles, color: "text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-500/10" },
   ];
 
   return (
@@ -40,7 +40,7 @@ export default async function ActividadPage() {
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           <div className="px-6 py-4 border-b border-border">
             <h2 className="font-semibold flex items-center gap-2">
-              <Activity className="w-5 h-5 text-indigo-600" />
+              <Activity className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
               Dietistas más activos este mes
             </h2>
           </div>
@@ -79,7 +79,7 @@ export default async function ActividadPage() {
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           <div className="px-6 py-4 border-b border-border">
             <h2 className="font-semibold flex items-center gap-2">
-              <Users className="w-5 h-5 text-indigo-600" />
+              <Users className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
               Últimos dietistas registrados
             </h2>
           </div>

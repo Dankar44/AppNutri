@@ -3,26 +3,60 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Leaf, LayoutDashboard, UtensilsCrossed, BookOpen, TrendingUp, MessageSquareText,
-  ShoppingCart, Settings, FileDown, LogOut, Menu, X, ClipboardCheck, Calendar,
-  MessageSquare,
+  Leaf, LayoutDashboard, UtensilsCrossed, TrendingUp, MessageSquareText,
+  ShoppingCart, Settings, FileDown, LogOut, Menu, X, BookOpen, Calendar,
+  MessageSquare, Clock,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logoutPaciente } from "@/app/actions/paciente-auth";
 import { useState, useEffect } from "react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
-const navItems = [
-  { href: "/paciente/portal", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { href: "/paciente/portal/dieta", label: "Mi dieta", icon: UtensilsCrossed },
-  { href: "/paciente/portal/diario", label: "Diario", icon: BookOpen },
-  { href: "/paciente/portal/seguimiento", label: "Mi seguimiento", icon: ClipboardCheck },
-  { href: "/paciente/portal/citas", label: "Mis citas", icon: Calendar },
-  { href: "/paciente/portal/mensajes", label: "Mensajes", icon: MessageSquare },
-  { href: "/paciente/portal/evolucion", label: "Evolución", icon: TrendingUp },
-  { href: "/paciente/portal/dieta/lista-compra", label: "Lista de la compra", icon: ShoppingCart },
-  { href: "/paciente/portal/recomendaciones", label: "Recomendaciones", icon: MessageSquareText },
-  { href: "/paciente/portal/exportar-pdf", label: "Generar PDF", icon: FileDown },
-  { href: "/paciente/portal/perfil", label: "Mi perfil", icon: Settings },
+type NavItem = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  exact?: boolean;
+};
+
+type NavSection = {
+  title: string;
+  items: NavItem[];
+};
+
+const NAV_SECTIONS: NavSection[] = [
+  {
+    title: "Mi plan",
+    items: [
+      { href: "/paciente/portal", label: "Dashboard", icon: LayoutDashboard, exact: true },
+      { href: "/paciente/portal/dieta", label: "Mi dieta", icon: UtensilsCrossed, exact: true },
+      { href: "/paciente/portal/dieta/lista-compra", label: "Lista de la compra", icon: ShoppingCart },
+      { href: "/paciente/portal/recomendaciones", label: "Recomendaciones", icon: MessageSquareText },
+    ],
+  },
+  {
+    title: "Mi seguimiento",
+    items: [
+      { href: "/paciente/portal/seguimiento", label: "Diario", icon: BookOpen, exact: true },
+      { href: "/paciente/portal/seguimiento/horario", label: "Mi horario", icon: Clock },
+      { href: "/paciente/portal/evolucion", label: "Evolución", icon: TrendingUp },
+    ],
+  },
+  {
+    title: "Con mi nutri",
+    items: [
+      { href: "/paciente/portal/citas", label: "Mis citas", icon: Calendar },
+      { href: "/paciente/portal/mensajes", label: "Mensajes", icon: MessageSquare },
+    ],
+  },
+  {
+    title: "Cuenta",
+    items: [
+      { href: "/paciente/portal/exportar-pdf", label: "Generar PDF", icon: FileDown },
+      { href: "/paciente/portal/perfil", label: "Mi perfil", icon: Settings },
+    ],
+  },
 ];
 
 interface Props {
@@ -32,12 +66,55 @@ interface Props {
   badges?: Record<string, number>;
 }
 
-export function PatientNav({ nombre, apellidos, fotoUrl, badges }: Props) {
+export function PatientNav({ nombre, apellidos, fotoUrl, badges: badgesInit = {} }: Props) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [badges, setBadges] = useState<Record<string, number>>(badgesInit);
 
   const initials = `${nombre[0] || ""}${apellidos[0] || ""}`.toUpperCase();
 
+  // Sincronizar cuando el layout server pase nuevos badges
+  useEffect(() => {
+    setBadges(badgesInit);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(badgesInit)]);
+
+  // Polling cada 45s para refrescar mensajes / contrapropuestas sin navegar
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchCounts() {
+      try {
+        const res = await fetch("/api/patient-sidebar-counts", { cache: "no-store" });
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as { badges: Record<string, number> };
+        setBadges(data.badges ?? {});
+      } catch {
+        // silencioso
+      }
+    }
+    const id = setInterval(fetchCounts, 45_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
+
+  // Refrescar al navegar (si aceptas cita, el badge baja)
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/patient-sidebar-counts", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        setBadges(data.badges ?? {});
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
+
+  // Cerrar menú al navegar / resize
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
@@ -63,33 +140,55 @@ export function PatientNav({ nombre, apellidos, fotoUrl, badges }: Props) {
         )}
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
-        {navItems.map((item) => {
-          const isActive = item.exact
-            ? pathname === item.href
-            : pathname === item.href || pathname.startsWith(item.href + "/");
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              <item.icon className="w-5 h-5 shrink-0" />
-              <span className="flex-1">{item.label}</span>
-              {badges && badges[item.href] > 0 && (
-                <span className="shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
-                  {badges[item.href]}
-                </span>
-              )}
-            </Link>
-          );
-        })}
+      {/* Nav por secciones */}
+      <nav className="flex-1 py-4 px-3 overflow-y-auto">
+        {NAV_SECTIONS.map((section, idx) => (
+          <div key={section.title} className={cn(idx > 0 && "mt-6")}>
+            <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/90 leading-snug">
+              {section.title}
+            </p>
+            <div className="space-y-1">
+              {section.items.map((item) => {
+                const isActive = item.exact
+                  ? pathname === item.href
+                  : pathname === item.href || pathname.startsWith(item.href + "/");
+                const badgeCount = badges[item.href] ?? 0;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "relative flex items-center gap-3 px-3 py-3 lg:py-2.5 rounded-lg text-sm font-medium transition-colors",
+                      isActive
+                        ? "bg-sidebar-accent text-foreground"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    )}
+                  >
+                    <span className="relative shrink-0">
+                      <item.icon className="w-5 h-5" />
+                      {badgeCount > 0 && (
+                        <span className="lg:hidden absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500 ring-2 ring-sidebar" />
+                      )}
+                    </span>
+                    <span className="flex-1">{item.label}</span>
+                    {badgeCount > 0 && (
+                      <span
+                        className={cn(
+                          "inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold shrink-0",
+                          item.href === "/paciente/portal/mensajes"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-red-500 text-white",
+                        )}
+                      >
+                        {badgeCount > 9 ? "9+" : badgeCount}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       {/* Footer con foto */}
@@ -102,10 +201,11 @@ export function PatientNav({ nombre, apellidos, fotoUrl, badges }: Props) {
               {initials}
             </div>
           )}
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="text-sm font-medium truncate">{nombre} {apellidos}</p>
             <p className="text-xs text-muted-foreground">Paciente</p>
           </div>
+          <ThemeToggle className="shrink-0" />
         </div>
         <button
           onClick={() => logoutPaciente()}
@@ -133,6 +233,7 @@ export function PatientNav({ nombre, apellidos, fotoUrl, badges }: Props) {
         <Leaf className="w-5 h-5 text-primary" />
         <span className="font-bold text-sm">NutriApp</span>
         <div className="ml-auto flex items-center gap-2">
+          <ThemeToggle />
           {fotoUrl ? (
             <img src={fotoUrl} alt={nombre} className="w-7 h-7 rounded-full object-cover" />
           ) : (
@@ -143,22 +244,19 @@ export function PatientNav({ nombre, apellidos, fotoUrl, badges }: Props) {
         </div>
       </div>
 
-      {/* Overlay móvil */}
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-40 bg-black/50" onClick={() => setMobileOpen(false)} aria-hidden="true" />
       )}
 
-      {/* Sidebar drawer móvil */}
       <aside
         className={cn(
           "lg:hidden fixed top-0 left-0 z-50 h-full w-64 xs:w-72 max-w-[85vw] pt-safe pb-safe bg-sidebar border-r border-border flex flex-col transition-transform duration-300",
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
+          mobileOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
         {sidebarContent}
       </aside>
 
-      {/* Sidebar desktop */}
       <aside data-tour="sidebar" className="hidden lg:flex h-screen sticky top-0 bg-sidebar border-r border-border flex-col w-64">
         {sidebarContent}
       </aside>

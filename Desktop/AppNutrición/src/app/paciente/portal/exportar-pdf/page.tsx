@@ -4,6 +4,7 @@ import { getCurrentPaciente } from "@/lib/patient-auth";
 import { prisma } from "@/lib/prisma";
 import { capitalizarNombre } from "@/lib/utils";
 import { ExportarPDFPaciente } from "./exportar-form";
+import { PageHeader } from "@/components/page-header";
 
 export default async function ExportarPDFPage() {
   const session = await getCurrentPaciente();
@@ -63,15 +64,11 @@ export default async function ExportarPDFPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-          <FileDown className="w-6 h-6 text-primary" />
-          Generar PDF
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Elige qué incluir en tu documento personalizado
-        </p>
-      </div>
+      <PageHeader
+        icon={FileDown}
+        title="Generar PDF"
+        subtitle="Elige qué incluir en tu documento personalizado"
+      />
 
       {!plan ? (
         <div className="bg-card rounded-xl border border-border p-12 text-center">

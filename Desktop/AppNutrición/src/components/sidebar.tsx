@@ -23,6 +23,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { NotificationBell } from "@/components/notification-bell";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 type NavItem = {
   href: string;
@@ -75,13 +76,67 @@ interface SidebarProps {
   onSignOut: () => void;
   notifCount?: number;
   mensajesCount?: number;
+  /** Badges a pintar por item del sidebar, clave = href. */
+  badges?: Record<string, number>;
   isAdmin?: boolean;
 }
 
-export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCount = 0, isAdmin }: SidebarProps) {
+export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCount: mensajesCountInit = 0, badges: badgesInit = {}, isAdmin }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mensajesCount, setMensajesCount] = useState(mensajesCountInit);
+  const [badges, setBadges] = useState<Record<string, number>>(badgesInit);
+
+  // Sincronizar estado local cuando cambie el SSR (al navegar el server devuelve nuevos counts)
+  useEffect(() => {
+    setMensajesCount(mensajesCountInit);
+  }, [mensajesCountInit]);
+  useEffect(() => {
+    setBadges(badgesInit);
+    // Serializamos para evitar loops por referencia nueva
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(badgesInit)]);
+
+  // Polling cada 45s — así se refresca sin navegar cuando llegan mensajes/notifs nuevas
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchCounts() {
+      try {
+        const res = await fetch("/api/sidebar-counts", { cache: "no-store" });
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as {
+          mensajesCount: number;
+          badges: Record<string, number>;
+        };
+        setMensajesCount(data.mensajesCount);
+        setBadges(data.badges);
+      } catch {
+        // silencioso
+      }
+    }
+    const id = setInterval(fetchCounts, 45_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
+
+  // Al navegar a una ruta, refrescar inmediatamente (pulsar sobre Mensajes marca leído, etc.)
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/sidebar-counts", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        setMensajesCount(data.mensajesCount);
+        setBadges(data.badges);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
 
   // Cerrar menú móvil al navegar
   useEffect(() => {
@@ -137,27 +192,45 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
                     pathname.startsWith("/admin/")
                   : pathname === item.href ||
                     pathname.startsWith(item.href + "/");
+                const badgeCount =
+                  item.href === "/mensajes"
+                    ? mensajesCount
+                    : (badges[item.href] ?? 0);
                 return (
                   <Link
                     key={item.href + (admin ? "-admin" : "")}
                     href={item.href}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-3 lg:py-2.5 rounded-lg text-sm font-medium transition-colors",
+                      "relative flex items-center gap-3 px-3 py-3 lg:py-2.5 rounded-lg text-sm font-medium transition-colors",
                       admin
                         ? isActive
-                          ? "bg-indigo-50 text-indigo-700"
-                          : "text-indigo-600/70 hover:bg-indigo-50 hover:text-indigo-700"
+                          ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400"
+                          : "text-indigo-600/70 hover:bg-indigo-50 dark:hover:bg-indigo-500/15 hover:text-indigo-700"
                         : isActive
                           ? "bg-sidebar-accent text-sidebar-foreground"
                           : "text-muted-foreground hover:bg-muted hover:text-foreground"
                     )}
                     title={collapsed && !mobileOpen ? item.label : undefined}
                   >
-                    <item.icon className="w-5 h-5 shrink-0" />
-                    {(!collapsed || mobileOpen) && <span className="flex-1">{item.label}</span>}
-                    {item.href === "/mensajes" && mensajesCount > 0 && (
-                      <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold shrink-0">
-                        {mensajesCount > 9 ? "9+" : mensajesCount}
+                    <span className="relative shrink-0">
+                      <item.icon className="w-5 h-5" />
+                      {badgeCount > 0 && (!collapsed || mobileOpen) ? null : badgeCount > 0 ? (
+                        <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500 ring-2 ring-sidebar" />
+                      ) : null}
+                    </span>
+                    {(!collapsed || mobileOpen) && (
+                      <span className="flex-1">{item.label}</span>
+                    )}
+                    {badgeCount > 0 && (!collapsed || mobileOpen) && (
+                      <span
+                        className={cn(
+                          "inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold shrink-0",
+                          item.href === "/mensajes"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-red-500 text-white",
+                        )}
+                      >
+                        {badgeCount > 9 ? "9+" : badgeCount}
                       </span>
                     )}
                   </Link>
@@ -170,14 +243,17 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
 
       {/* Footer */}
       <div className="border-t border-border p-3 space-y-2">
-        <div className="flex items-center justify-between px-3 py-2">
+        <div className="flex items-center justify-between px-3 py-2 gap-2">
           {(!collapsed || mobileOpen) && (
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-sm font-medium truncate">{dietistaNombre}</p>
               <p className="text-xs text-muted-foreground">Dietista</p>
             </div>
           )}
-          <NotificationBell initialCount={notifCount} />
+          <div className="flex items-center gap-1 shrink-0">
+            <ThemeToggle />
+            <NotificationBell initialCount={notifCount} />
+          </div>
         </div>
         <button
           onClick={onSignOut}
@@ -204,7 +280,8 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
         </button>
         <Leaf className="w-5 h-5 text-primary shrink-0" />
         <span className="font-bold text-sm truncate">NutriApp</span>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-1">
+          <ThemeToggle />
           <NotificationBell initialCount={notifCount} />
         </div>
       </div>

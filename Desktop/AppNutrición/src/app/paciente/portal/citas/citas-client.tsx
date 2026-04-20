@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Plus, Check, X, CalendarClock, AlertTriangle, Loader2, ChevronRight } from "lucide-react";
@@ -12,14 +13,13 @@ import {
   rechazarPropuestaDietista,
   type CitaPortalPaciente,
 } from "@/app/actions/citas-flujo";
-import { SolicitarCitaModal } from "./solicitar-cita-modal";
 import { ContraproponerPacienteModal } from "./contraproponer-paciente-modal";
 
 const ESTADO_BADGE: Record<string, { label: string; className: string }> = {
-  PENDIENTE:       { label: "Esperando respuesta", className: "bg-amber-100 text-amber-800 border-amber-200" },
-  CONFIRMADA:      { label: "Confirmada",          className: "bg-emerald-100 text-emerald-800 border-emerald-200" },
-  CONTRAPROPUESTA: { label: "Nueva propuesta",     className: "bg-blue-100 text-blue-800 border-blue-200" },
-  CANCELADA:       { label: "Cancelada",           className: "bg-gray-100 text-gray-600 border-gray-200" },
+  PENDIENTE:       { label: "Esperando respuesta", className: "bg-amber-100 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-500/30" },
+  CONFIRMADA:      { label: "Confirmada",          className: "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30" },
+  CONTRAPROPUESTA: { label: "Nueva propuesta",     className: "bg-blue-100 dark:bg-blue-500/15 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-500/30" },
+  CANCELADA:       { label: "Cancelada",           className: "bg-muted text-muted-foreground border-border" },
   COMPLETADA:      { label: "Completada",          className: "bg-muted text-muted-foreground border-border" },
 };
 
@@ -34,7 +34,6 @@ function formatFechaLarga(iso: string): string {
 
 export function CitasPortalClient({ citasIniciales }: { citasIniciales: CitaPortalPaciente[] }) {
   const router = useRouter();
-  const [showModal, setShowModal] = useState(false);
   const [contraponerCita, setContraponerCita] = useState<CitaPortalPaciente | null>(null);
   const [confirmCancelar, setConfirmCancelar] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -126,26 +125,25 @@ export function CitasPortalClient({ citasIniciales }: { citasIniciales: CitaPort
   return (
     <div className="space-y-6">
       {/* Botón solicitar */}
-      <button
-        type="button"
-        onClick={() => setShowModal(true)}
-        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-5 py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors"
+      <Link
+        href="/paciente/portal/citas/nueva"
+        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-5 py-3 rounded-xl font-semibold hover:bg-primary/90 transition-colors"
       >
         <Plus className="w-5 h-5" />
         Solicitar nueva cita
-      </button>
+      </Link>
 
       {/* Propuestas del nutricionista (cita creada por el nutri esperando aceptar) */}
       {propuestasNutri.length > 0 && (
-        <section className="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
+        <section className="rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 p-4">
           <div className="flex items-center gap-2 mb-3">
-            <AlertTriangle className="w-5 h-5 text-indigo-700" />
-            <h2 className="text-base font-semibold text-indigo-900">
+            <AlertTriangle className="w-5 h-5 text-indigo-700 dark:text-indigo-400" />
+            <h2 className="text-base font-semibold text-indigo-900 dark:text-indigo-200">
               Tu nutricionista te ha propuesto una cita
             </h2>
           </div>
           {propuestasNutri.map((c) => (
-            <div key={c.id} className="rounded-lg bg-white border border-indigo-200 p-4 mb-3 last:mb-0">
+            <div key={c.id} className="rounded-lg bg-card border border-indigo-200 dark:border-indigo-500/30 p-4 mb-3 last:mb-0">
               <p className="text-sm text-muted-foreground mb-1">
                 {c.dietista.nombre} {c.dietista.apellidos} propone:
               </p>
@@ -173,7 +171,7 @@ export function CitasPortalClient({ citasIniciales }: { citasIniciales: CitaPort
                   type="button"
                   onClick={() => handleRechazarPropuestaNutri(c.id)}
                   disabled={pending}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-red-300 text-red-600 text-sm font-medium hover:bg-red-50 disabled:opacity-60 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-red-300 dark:border-red-500/40 text-red-600 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-500/15 disabled:opacity-60 transition-colors"
                 >
                   <X className="w-4 h-4" /> Rechazar
                 </button>
@@ -185,15 +183,15 @@ export function CitasPortalClient({ citasIniciales }: { citasIniciales: CitaPort
 
       {/* Contrapropuestas del nutri sobre mi solicitud original */}
       {contrapropuestasNutri.length > 0 && (
-        <section className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+        <section className="rounded-xl border border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 p-4">
           <div className="flex items-center gap-2 mb-3">
-            <AlertTriangle className="w-5 h-5 text-blue-700" />
-            <h2 className="text-base font-semibold text-blue-900">
+            <AlertTriangle className="w-5 h-5 text-blue-700 dark:text-blue-400" />
+            <h2 className="text-base font-semibold text-blue-900 dark:text-blue-200">
               Nueva propuesta de tu nutricionista
             </h2>
           </div>
           {contrapropuestasNutri.map((c) => (
-            <div key={c.id} className="rounded-lg bg-white border border-blue-200 p-4 mb-3 last:mb-0">
+            <div key={c.id} className="rounded-lg bg-card border border-blue-200 dark:border-blue-500/30 p-4 mb-3 last:mb-0">
               <p className="text-sm text-muted-foreground mb-1">
                 {c.dietista.nombre} {c.dietista.apellidos} propone:
               </p>
@@ -247,7 +245,7 @@ export function CitasPortalClient({ citasIniciales }: { citasIniciales: CitaPort
                   <button
                     type="button"
                     onClick={() => setConfirmCancelar(c.id)}
-                    className="text-xs text-red-600 hover:text-red-700 font-medium underline-offset-2 hover:underline"
+                    className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 font-medium underline-offset-2 hover:underline"
                   >
                     Cancelar
                   </button>
@@ -290,17 +288,6 @@ export function CitasPortalClient({ citasIniciales }: { citasIniciales: CitaPort
             {historial.map((c) => <CitaRow key={c.id} cita={c} />)}
           </div>
         </section>
-      )}
-
-      {/* Modal solicitar cita */}
-      {showModal && (
-        <SolicitarCitaModal
-          onClose={() => setShowModal(false)}
-          onDone={() => {
-            setShowModal(false);
-            router.refresh();
-          }}
-        />
       )}
 
       {/* Modal contraproponer otra fecha (sobre una propuesta del nutri) */}

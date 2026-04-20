@@ -46,8 +46,8 @@ export function IntegracionesCard({ integracion, flash }: Props) {
           className={
             "mb-3 rounded-lg px-3 py-2 text-sm flex items-center gap-2 " +
             (flash.type === "ok"
-              ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-              : "bg-red-50 text-red-800 border border-red-200")
+              ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30"
+              : "bg-red-50 dark:bg-red-500/10 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-500/30")
           }
         >
           {flash.type === "ok" ? (
@@ -82,7 +82,7 @@ export function IntegracionesCard({ integracion, flash }: Props) {
           </button>
         ) : (
           <div className="mt-4 space-y-3">
-            <div className="flex items-center gap-2 text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-lg px-3 py-2">
+            <div className="flex items-center gap-2 text-xs bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30 rounded-lg px-3 py-2">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
               <span className="truncate">
                 Conectado como <strong className="font-semibold">{integracion.email}</strong>
@@ -155,7 +155,7 @@ function Toggle({
     >
       <span
         className={
-          "inline-block h-4 w-4 transform rounded-full bg-white transition-transform " +
+          "inline-block h-4 w-4 transform rounded-full bg-card transition-transform " +
           (checked ? "translate-x-6" : "translate-x-1")
         }
       />
@@ -194,9 +194,9 @@ function DisconnectDialog({
           <button
             onClick={() => onConfirm("borrar")}
             disabled={pending}
-            className="w-full text-left rounded-lg border border-red-200 p-3 hover:bg-red-50 disabled:opacity-50"
+            className="w-full text-left rounded-lg border border-red-200 dark:border-red-500/30 p-3 hover:bg-red-50 dark:hover:bg-red-500/15 disabled:opacity-50"
           >
-            <p className="text-sm font-medium text-red-700">Borrar las citas de Google</p>
+            <p className="text-sm font-medium text-red-700 dark:text-red-400">Borrar las citas de Google</p>
             <p className="text-xs text-muted-foreground mt-1">
               Se eliminarán todos los eventos creados por AppNutri de tu calendario.
             </p>
@@ -219,7 +219,7 @@ function DisconnectDialog({
 
 function GoogleCalendarLogo() {
   return (
-    <div className="w-10 h-10 rounded-lg bg-white border border-border flex items-center justify-center shrink-0">
+    <div className="w-10 h-10 rounded-lg bg-card border border-border flex items-center justify-center shrink-0">
       <svg width="22" height="22" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
         <path fill="#fff" d="M37 9H11v30h26z" />
         <path fill="#1e88e5" d="M34 42H14l-5-5V11l5-5h20l5 5v26z" />

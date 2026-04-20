@@ -86,13 +86,13 @@ export function PlanSelector({ planActualId, planes }: Props) {
               {planActual?.nombre ?? "—"}
             </span>
             {esActivo && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium shrink-0">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-medium shrink-0">
                 <CheckCircle2 className="w-3 h-3" />
                 Actual
               </span>
             )}
             {planActual?.caloriasObjetivo != null && (
-              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-xs font-medium shrink-0">
+              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-medium shrink-0">
                 <Flame className="w-3 h-3" />
                 {planActual.caloriasObjetivo}
               </span>
@@ -131,13 +131,13 @@ export function PlanSelector({ planActualId, planes }: Props) {
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="truncate text-base font-medium">{p.nombre}</span>
                       {esEsteElActual && (
-                        <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium shrink-0">
+                        <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-medium shrink-0">
                           <CheckCircle2 className="w-3 h-3" />
                           Actual
                         </span>
                       )}
                       {p.caloriasObjetivo != null && (
-                        <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-xs font-medium shrink-0">
+                        <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-medium shrink-0">
                           <Flame className="w-3 h-3" />
                           {p.caloriasObjetivo}
                         </span>
@@ -161,7 +161,7 @@ export function PlanSelector({ planActualId, planes }: Props) {
         className={`inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors shrink-0 border ${
           esActivo
             ? "bg-muted text-muted-foreground border-border cursor-not-allowed"
-            : "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+            : "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30 hover:bg-emerald-100 dark:hover:bg-emerald-500/20"
         }`}
         title={esActivo ? "Esta dieta ya está marcada como actual" : "Marcar esta dieta como la actual"}
       >

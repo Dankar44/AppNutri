@@ -42,7 +42,7 @@ export async function generarNotificaciones() {
         medidas: { orderBy: { fecha: "desc" }, take: 1, select: { fecha: true } },
       },
     }),
-    prisma.entradaDiario.findMany({
+    prisma.seguimientoDiario.findMany({
       where: { createdAt: { gte: hoy }, paciente: { dietistaId: dietista.id } },
       select: { paciente: { select: { id: true, nombre: true, apellidos: true } } },
       distinct: ["pacienteId"],
@@ -98,15 +98,15 @@ export async function generarNotificaciones() {
     }
   }
 
-  // Entradas de diario hoy
+  // Seguimientos registrados hoy
   for (const e of entradasHoy) {
     if (!existeNotif("DIARIO_NUEVO", e.paciente.id)) {
       nuevas.push({
         dietistaId: dietista.id,
         tipo: "DIARIO_NUEVO",
-        titulo: "Nueva entrada en diario",
-        mensaje: `${e.paciente.nombre} ${e.paciente.apellidos} registró comida hoy - ${e.paciente.id}`,
-        enlace: `/pacientes/${e.paciente.id}/diario`,
+        titulo: "Nuevo seguimiento diario",
+        mensaje: `${e.paciente.nombre} ${e.paciente.apellidos} registró su seguimiento hoy - ${e.paciente.id}`,
+        enlace: `/pacientes/${e.paciente.id}/seguimiento`,
       });
     }
   }
@@ -118,6 +118,69 @@ export async function generarNotificaciones() {
   if (filtradas.length > 0) {
     await prisma.notificacion.createMany({ data: filtradas });
   }
+
+  // Limpieza automática (no bloquea)
+  void limpiarNotificacionesAntiguas(dietista.id).catch((e) =>
+    console.error("[limpiar-notif]", e),
+  );
+}
+
+const LIMITE_MAX = 100;
+const DIAS_LEIDAS = 30;
+
+/**
+ * Mantiene las notificaciones acotadas:
+ *  - Borra leídas con más de 30 días
+ *  - Deja solo las 100 más recientes (borra el excedente)
+ */
+async function limpiarNotificacionesAntiguas(dietistaId: string) {
+  const corte = new Date();
+  corte.setDate(corte.getDate() - DIAS_LEIDAS);
+
+  await prisma.notificacion.deleteMany({
+    where: { dietistaId, leida: true, createdAt: { lt: corte } },
+  });
+
+  const total = await prisma.notificacion.count({ where: { dietistaId } });
+  if (total > LIMITE_MAX) {
+    const excedente = await prisma.notificacion.findMany({
+      where: { dietistaId },
+      orderBy: { createdAt: "desc" },
+      skip: LIMITE_MAX,
+      select: { id: true },
+    });
+    if (excedente.length > 0) {
+      await prisma.notificacion.deleteMany({
+        where: { id: { in: excedente.map((n) => n.id) } },
+      });
+    }
+  }
+}
+
+export async function eliminarNotificacion(id: string) {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return;
+
+  await prisma.notificacion.deleteMany({
+    where: { id, dietistaId: dietista.id },
+  });
+
+  revalidatePath("/notificaciones");
+  revalidatePath("/dashboard");
+  revalidatePath("/", "layout");
+}
+
+export async function eliminarTodasNotificaciones() {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return;
+
+  await prisma.notificacion.deleteMany({
+    where: { dietistaId: dietista.id },
+  });
+
+  revalidatePath("/notificaciones");
+  revalidatePath("/dashboard");
+  revalidatePath("/", "layout");
 }
 
 export async function getNotificaciones(soloNoLeidas = false) {
@@ -130,7 +193,7 @@ export async function getNotificaciones(soloNoLeidas = false) {
       ...(soloNoLeidas ? { leida: false } : {}),
     },
     orderBy: { createdAt: "desc" },
-    take: 50,
+    take: 100,
   });
 }
 
@@ -141,6 +204,53 @@ export async function getNotificacionesCount() {
   return prisma.notificacion.count({
     where: { dietistaId: dietista.id, leida: false },
   });
+}
+
+/**
+ * Cuenta notificaciones no leídas agrupadas por área de la app.
+ * Devuelve un objeto que la sidebar usa para pintar badges junto a cada item.
+ */
+export async function getBadgesNavegacion(): Promise<Record<string, number>> {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return {};
+
+  const rows = await prisma.notificacion.groupBy({
+    by: ["tipo"],
+    where: { dietistaId: dietista.id, leida: false },
+    _count: { _all: true },
+  });
+
+  const countByTipo = Object.fromEntries(
+    rows.map((r) => [r.tipo as string, r._count._all]),
+  );
+
+  const suma = (tipos: string[]) =>
+    tipos.reduce((acc, t) => acc + (countByTipo[t] ?? 0), 0);
+
+  const badges: Record<string, number> = {};
+
+  const agenda = suma([
+    "CITA_HOY",
+    "CITA_SOLICITADA",
+    "CITA_CONTRAPROPUESTA",
+    "CITA_CONFIRMADA",
+    "CITA_RECHAZADA",
+    "CITA_CANCELADA_POR_PACIENTE",
+  ]);
+  if (agenda > 0) badges["/agenda"] = agenda;
+
+  const pagos = suma(["PAGO_RECIBIDO", "PAGO_PENDIENTE", "PAGO_FALLIDO"]);
+  if (pagos > 0) badges["/pagos"] = pagos;
+
+  const pacientes = suma([
+    "PACIENTE_SIN_CONSULTA",
+    "PACIENTE_SIN_MEDIDAS",
+    "DIARIO_NUEVO",
+    "PLAN_ANTIGUO",
+  ]);
+  if (pacientes > 0) badges["/pacientes"] = pacientes;
+
+  return badges;
 }
 
 export async function marcarLeida(id: string) {
@@ -182,6 +292,9 @@ export type NotifPreferencias = {
   PACIENTE_SIN_MEDIDAS: boolean;
   PLAN_ANTIGUO: boolean;
   DIARIO_NUEVO: boolean;
+  PAGO_RECIBIDO: boolean;
+  PAGO_PENDIENTE: boolean;
+  PAGO_FALLIDO: boolean;
 };
 
 const PREFERENCIAS_DEFAULT: NotifPreferencias = {
@@ -195,6 +308,9 @@ const PREFERENCIAS_DEFAULT: NotifPreferencias = {
   PACIENTE_SIN_MEDIDAS: true,
   PLAN_ANTIGUO: true,
   DIARIO_NUEVO: true,
+  PAGO_RECIBIDO: true,
+  PAGO_PENDIENTE: true,
+  PAGO_FALLIDO: true,
 };
 
 export async function getNotifPreferencias(): Promise<NotifPreferencias> {

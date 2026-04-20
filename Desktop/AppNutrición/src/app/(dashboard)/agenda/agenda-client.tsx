@@ -253,7 +253,8 @@ export function AgendaClient({ vista, fechaInicio, citas, diaResaltado }: Props)
         />
       )}
 
-      {diaSeleccionado && vista !== "dia" && (
+      {/* Panel día seleccionado: solo en vista MES (en semana ya se navega a vista día) */}
+      {diaSeleccionado && vista === "mes" && (
         <AgendaDiaDetalle
           fecha={diaSeleccionado}
           citas={citasDia}

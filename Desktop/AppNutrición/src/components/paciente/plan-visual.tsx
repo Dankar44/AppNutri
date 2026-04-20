@@ -14,6 +14,7 @@ import {
   Diamond,
   Triangle,
   ClipboardList,
+  LayoutGrid,
   PieChart as PieChartIcon,
   ChevronLeft,
   ChevronRight,
@@ -142,6 +143,7 @@ export function PlanVisual({
   showNuevaDietaButton = true,
   showAguaEjercicio = true,
   showFoodTable = true,
+  readOnly = false,
 }: {
   plan: PlanVisualDetalle;
   pacienteId: string;
@@ -154,6 +156,7 @@ export function PlanVisual({
   showNuevaDietaButton?: boolean;
   showAguaEjercicio?: boolean;
   showFoodTable?: boolean;
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const [isPendingAssign, startAssign] = useTransition();
@@ -161,7 +164,7 @@ export function PlanVisual({
   const [selectedDayKey, setSelectedDayKey] = useState<"TODOS" | string>("TODOS");
   const [planSelectOpen, setPlanSelectOpen] = useState(false);
   const planSelectWrapRef = useRef<HTMLDivElement | null>(null);
-  const [vista, setVista] = useState<"plan" | "analisis">("plan");
+  const [vista, setVista] = useState<"resumen" | "plan" | "analisis">("resumen");
   const [hoveredMacro, setHoveredMacro] = useState<number | null>(null);
   const [comidaChartOffset, setComidaChartOffset] = useState(0);
   const [foodTablePage, setFoodTablePage] = useState(0);
@@ -376,7 +379,10 @@ export function PlanVisual({
     <section className="space-y-4">
 
       <div className="flex items-center gap-2 flex-wrap">
-        <div className="flex-1 min-w-0 flex items-stretch rounded-xl border border-border bg-card p-1 overflow-x-auto scrollbar-thin touch-scroll-x w-full">
+        <div className={cn(
+          "flex-1 min-w-0 flex items-stretch rounded-xl border border-border bg-card p-1 overflow-x-auto scrollbar-thin touch-scroll-x",
+          vista === "resumen" ? "opacity-50 pointer-events-none" : ""
+        )}>
           <button
             type="button"
             onClick={() => setSelectedDayKey("TODOS")}
@@ -462,6 +468,19 @@ export function PlanVisual({
         <div className="inline-flex items-center gap-2 rounded-xl border border-border bg-card p-1 shrink-0">
           <button
             type="button"
+            onClick={() => setVista("resumen")}
+            className={cn(
+              "flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+              vista === "resumen"
+                ? "bg-primary/10 text-primary border border-primary/20"
+                : "text-muted-foreground hover:bg-muted/60"
+            )}
+          >
+            <LayoutGrid className="w-4 h-4" />
+            Resumen
+          </button>
+          <button
+            type="button"
             onClick={() => setVista("plan")}
             className={cn(
               "flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
@@ -490,7 +509,15 @@ export function PlanVisual({
       </div>
 
       {selectedPlan && totals ? (
-        vista === "plan" ? (
+        vista === "resumen" ? (
+          <ResumenSemanal
+            plan={selectedPlan}
+            onSelectDay={(dayKey) => {
+              setSelectedDayKey(dayKey);
+              setVista("plan");
+            }}
+          />
+        ) : vista === "plan" ? (
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-4">
             <div className="bg-card rounded-xl border border-border p-4">
               {showPlanSelector && (
@@ -506,7 +533,7 @@ export function PlanVisual({
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="truncate font-semibold">{selectedPlan?.nombre || "—"}</span>
                           {selectedPlan?.caloriasObjetivo != null && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-xs font-medium shrink-0">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-medium shrink-0">
                               <Flame className="w-3 h-3" />{selectedPlan.caloriasObjetivo}
                             </span>
                           )}
@@ -523,7 +550,7 @@ export function PlanVisual({
                             <div className="flex items-center gap-2 min-w-0">
                               <span className="truncate">{selectedPlan.nombre}</span>
                               {selectedPlan.caloriasObjetivo != null && (
-                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700"><Flame className="w-2.5 h-2.5 inline" /> {selectedPlan.caloriasObjetivo}</span>
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400"><Flame className="w-2.5 h-2.5 inline" /> {selectedPlan.caloriasObjetivo}</span>
                               )}
                             </div>
                             <Check className="w-4 h-4 text-primary shrink-0" />
@@ -556,6 +583,7 @@ export function PlanVisual({
                           compactHeader
                           showDayHeader={false}
                           showAnalisis={false}
+                          readOnly={readOnly}
                           planId={selectedPlan.id}
                           planNombre={selectedPlan.nombre}
                           dias={[dia as any]}
@@ -574,6 +602,7 @@ export function PlanVisual({
                       compactHeader
                       showDayHeader={false}
                       showAnalisis={false}
+                      readOnly={readOnly}
                       planId={selectedPlan.id}
                       planNombre={selectedPlan.nombre}
                       dias={[diasVisible[0] as any]}
@@ -656,7 +685,7 @@ export function PlanVisual({
                           if (!active || !payload?.length) return null;
                           const d = payload[0].payload;
                           return (
-                            <div className="bg-white border border-border/30 rounded-2xl shadow-xl py-2.5 px-4 text-xs whitespace-nowrap space-y-1.5">
+                            <div className="bg-card border border-border/30 rounded-2xl shadow-xl py-2.5 px-4 text-xs whitespace-nowrap space-y-1.5">
                               <div className="flex items-center gap-2.5">
                                 <span className="w-5 h-5 rounded-full border-2 shrink-0" style={{ borderColor: d.color }} />
                                 <span className="font-semibold px-2 py-0.5 rounded-full text-[11px]" style={{ color: d.color, background: d.color + "22" }}>Actual</span>
@@ -683,10 +712,10 @@ export function PlanVisual({
 
                 <div className="flex-1 space-y-3 pt-1">
                   {[
-                    { key: "grasas", label: "Grasa", value: totals.macros.grasas, kcal: totals.energy.grasasKcal, color: MACRO_COLORS.grasas, bgColor: "bg-yellow-50" },
-                    { key: "carbohidratos", label: "Hidratos de Carbono", value: totals.macros.carbohidratos, kcal: totals.energy.carbKcal, color: MACRO_COLORS.carbohidratos, bgColor: "bg-orange-50" },
-                    { key: "proteinas", label: "Proteína", value: totals.macros.proteinas, kcal: totals.energy.protKcal, color: MACRO_COLORS.proteinas, bgColor: "bg-blue-50" },
-                    { key: "fibra", label: "Fibra alimentaria", value: totals.macros.fibra, kcal: totals.energy.fibraKcal, color: MACRO_COLORS.fibra, bgColor: "bg-emerald-50" },
+                    { key: "grasas", label: "Grasa", value: totals.macros.grasas, kcal: totals.energy.grasasKcal, color: MACRO_COLORS.grasas, bgColor: "bg-yellow-50 dark:bg-yellow-500/10" },
+                    { key: "carbohidratos", label: "Hidratos de Carbono", value: totals.macros.carbohidratos, kcal: totals.energy.carbKcal, color: MACRO_COLORS.carbohidratos, bgColor: "bg-orange-50 dark:bg-orange-500/10" },
+                    { key: "proteinas", label: "Proteína", value: totals.macros.proteinas, kcal: totals.energy.protKcal, color: MACRO_COLORS.proteinas, bgColor: "bg-blue-50 dark:bg-blue-500/10" },
+                    { key: "fibra", label: "Fibra alimentaria", value: totals.macros.fibra, kcal: totals.energy.fibraKcal, color: MACRO_COLORS.fibra, bgColor: "bg-emerald-50 dark:bg-emerald-500/10" },
                   ].map((row, rowIdx) => {
                     const pct = (row.kcal / totals.energy.energyTotal) * 100;
                     return (
@@ -777,7 +806,7 @@ export function PlanVisual({
                         <span className="text-xs text-muted-foreground text-center leading-tight">{meal.label}</span>
 
                         <div className="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50">
-                          <div className="bg-white border border-border/30 rounded-2xl shadow-xl p-3 whitespace-nowrap text-[11px]">
+                          <div className="bg-card border border-border/30 rounded-2xl shadow-xl p-3 whitespace-nowrap text-[11px]">
                             <div className="grid grid-cols-[auto_auto_auto_auto] gap-x-3 gap-y-1.5 items-center">
                               <span className="font-semibold px-2 py-0.5 rounded-full" style={{ color: MACRO_COLORS.grasas, background: MACRO_COLORS.grasas + "22" }}>Grasa</span>
                               <span className="tabular-nums text-right">{meal.grasasKcal} kcal</span>
@@ -978,11 +1007,11 @@ export function PlanVisual({
               <h4 className="text-base font-semibold mb-4">Análisis global</h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                 {[
-                  { icon: <Flame className="w-4 h-4" />, label: "Energía", value: Math.round(totals.macros.calorias), obj: Math.round(calObj), unit: "kcal", color: "#b197fc", bg: "bg-purple-50" },
-                  { icon: <Droplets className="w-4 h-4" />, label: "Grasa", value: Math.round(totals.macros.grasas * 10) / 10, obj: Math.round(grasObj * 10) / 10, unit: "g", color: MACRO_COLORS.grasas, bg: "bg-yellow-50" },
-                  { icon: <Circle className="w-4 h-4" />, label: "H. Carbono", value: Math.round(totals.macros.carbohidratos * 10) / 10, obj: Math.round(carbObj * 10) / 10, unit: "g", color: MACRO_COLORS.carbohidratos, bg: "bg-orange-50" },
-                  { icon: <Diamond className="w-4 h-4" />, label: "Proteína", value: Math.round(totals.macros.proteinas * 10) / 10, obj: Math.round(protObj * 10) / 10, unit: "g", color: MACRO_COLORS.proteinas, bg: "bg-blue-50" },
-                  { icon: <Triangle className="w-4 h-4" />, label: "Fibra", value: Math.round(totals.macros.fibra * 10) / 10, obj: Math.round(fibraObj * 10) / 10, unit: "g", color: MACRO_COLORS.fibra, bg: "bg-emerald-50" },
+                  { icon: <Flame className="w-4 h-4" />, label: "Energía", value: Math.round(totals.macros.calorias), obj: Math.round(calObj), unit: "kcal", color: "#b197fc", bg: "bg-purple-50 dark:bg-purple-500/10" },
+                  { icon: <Droplets className="w-4 h-4" />, label: "Grasa", value: Math.round(totals.macros.grasas * 10) / 10, obj: Math.round(grasObj * 10) / 10, unit: "g", color: MACRO_COLORS.grasas, bg: "bg-yellow-50 dark:bg-yellow-500/10" },
+                  { icon: <Circle className="w-4 h-4" />, label: "H. Carbono", value: Math.round(totals.macros.carbohidratos * 10) / 10, obj: Math.round(carbObj * 10) / 10, unit: "g", color: MACRO_COLORS.carbohidratos, bg: "bg-orange-50 dark:bg-orange-500/10" },
+                  { icon: <Diamond className="w-4 h-4" />, label: "Proteína", value: Math.round(totals.macros.proteinas * 10) / 10, obj: Math.round(protObj * 10) / 10, unit: "g", color: MACRO_COLORS.proteinas, bg: "bg-blue-50 dark:bg-blue-500/10" },
+                  { icon: <Triangle className="w-4 h-4" />, label: "Fibra", value: Math.round(totals.macros.fibra * 10) / 10, obj: Math.round(fibraObj * 10) / 10, unit: "g", color: MACRO_COLORS.fibra, bg: "bg-emerald-50 dark:bg-emerald-500/10" },
                 ].map((m) => {
                   const pct = m.obj > 0 ? Math.min((m.value / m.obj) * 100, 100) : 0;
                   return (
@@ -1393,5 +1422,198 @@ export function PlanVisual({
         )
       ) : null}
     </section>
+  );
+}
+
+const TIPO_LABELS: Record<string, string> = {
+  DESAYUNO: "Desayuno",
+  MEDIA_MANANA: "Media mañana",
+  ALMUERZO: "Almuerzo",
+  MERIENDA: "Merienda",
+  CENA: "Cena",
+  RECENA: "Recena",
+};
+
+function macrosDeItem(a: PlanVisualItem) {
+  if (a.receta) {
+    return {
+      calorias: Math.round(a.receta.calorias * a.cantidad * 10) / 10,
+      proteinas: Math.round(a.receta.proteinas * a.cantidad * 10) / 10,
+      carbohidratos: Math.round(a.receta.carbohidratos * a.cantidad * 10) / 10,
+      grasas: Math.round(a.receta.grasas * a.cantidad * 10) / 10,
+      fibra: Math.round((a.receta.fibra || 0) * a.cantidad * 10) / 10,
+    };
+  }
+  if (a.alimento) {
+    return calcularMacrosPorcion(
+      {
+        calorias: a.alimento.calorias,
+        proteinas: a.alimento.proteinas,
+        carbohidratos: a.alimento.carbohidratos,
+        grasas: a.alimento.grasas,
+        fibra: a.alimento.fibra || 0,
+      },
+      a.cantidad
+    );
+  }
+  return { calorias: 0, proteinas: 0, carbohidratos: 0, grasas: 0, fibra: 0 };
+}
+
+function ResumenSemanal({
+  plan,
+  onSelectDay,
+}: {
+  plan: PlanVisualDetalle;
+  onSelectDay: (dayKey: string) => void;
+}) {
+  const diasOrdenados = useMemo(
+    () => [...plan.dias].sort((a, b) => DIA_KEYS.indexOf(a.dia as typeof DIA_KEYS[number]) - DIA_KEYS.indexOf(b.dia as typeof DIA_KEYS[number])),
+    [plan.dias]
+  );
+
+  const semanal = useMemo(() => {
+    const allMacros = diasOrdenados.flatMap((d) => d.comidas.flatMap((c) => c.alimentos.map(macrosDeItem)));
+    const total = sumarMacros(allMacros);
+    const n = Math.max(diasOrdenados.length, 1);
+    return {
+      calorias: Math.round(total.calorias / n),
+      proteinas: Math.round(total.proteinas / n),
+      carbohidratos: Math.round(total.carbohidratos / n),
+      grasas: Math.round(total.grasas / n),
+    };
+  }, [diasOrdenados]);
+
+  return (
+    <div className="space-y-5">
+      {/* Banner de objetivos semanales */}
+      <div className="rounded-2xl border border-border bg-gradient-to-br from-primary/5 via-card to-card p-5">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+              Media diaria de la semana
+            </p>
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-bold tabular-nums">{semanal.calorias}</span>
+              <span className="text-sm text-muted-foreground">kcal / día</span>
+              {plan.caloriasObjetivo != null && (
+                <span className="text-xs text-muted-foreground ml-2">
+                  objetivo {plan.caloriasObjetivo}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 text-sm font-medium">
+              Grasa {semanal.grasas} g
+            </span>
+            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 text-sm font-medium">
+              H. Carbono {semanal.carbohidratos} g
+            </span>
+            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-sm font-medium">
+              Proteína {semanal.proteinas} g
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Grid de días */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+        {diasOrdenados.map((dia) => {
+          const macrosList = dia.comidas.flatMap((c) => c.alimentos.map(macrosDeItem));
+          const diaTotales = sumarMacros(macrosList);
+          const pctCalorias = plan.caloriasObjetivo
+            ? Math.min(120, Math.round((diaTotales.calorias / plan.caloriasObjetivo) * 100))
+            : null;
+
+          return (
+            <button
+              key={dia.id}
+              type="button"
+              onClick={() => onSelectDay(dia.dia)}
+              className="group text-left rounded-2xl border border-border bg-card hover:border-primary/40 hover:shadow-md transition-all overflow-hidden"
+            >
+              <div className="px-5 py-4 border-b border-border/60 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-primary" />
+                  <h3 className="font-semibold text-foreground">
+                    {DIA_LABELS[dia.dia] || dia.dia}
+                  </h3>
+                </div>
+                <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors">
+                  Ver día →
+                </span>
+              </div>
+
+              <div className="px-5 py-4 space-y-3">
+                <div>
+                  <div className="flex items-baseline justify-between mb-1">
+                    <span className="text-xs font-medium text-muted-foreground">Energía</span>
+                    <span className="text-sm font-bold tabular-nums">
+                      {Math.round(diaTotales.calorias)}
+                      <span className="text-xs font-normal text-muted-foreground ml-1">kcal</span>
+                    </span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-purple-400 to-primary rounded-full"
+                      style={{
+                        width: `${
+                          pctCalorias ??
+                          Math.min(100, Math.round((diaTotales.calorias / Math.max(diaTotales.calorias * 1.1, 1)) * 100))
+                        }%`,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-1.5">
+                  <div className="rounded-lg bg-yellow-50 dark:bg-yellow-500/10 px-2 py-1.5 text-center">
+                    <p className="text-[10px] font-medium text-yellow-700 dark:text-yellow-400 uppercase">Grasa</p>
+                    <p className="text-sm font-bold text-yellow-700 dark:text-yellow-400 tabular-nums">
+                      {diaTotales.grasas.toFixed(0)}g
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-orange-50 dark:bg-orange-500/10 px-2 py-1.5 text-center">
+                    <p className="text-[10px] font-medium text-orange-700 dark:text-orange-400 uppercase">H. C.</p>
+                    <p className="text-sm font-bold text-orange-700 dark:text-orange-400 tabular-nums">
+                      {diaTotales.carbohidratos.toFixed(0)}g
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-blue-50 dark:bg-blue-500/10 px-2 py-1.5 text-center">
+                    <p className="text-[10px] font-medium text-blue-700 dark:text-blue-400 uppercase">Prot.</p>
+                    <p className="text-sm font-bold text-blue-700 dark:text-blue-400 tabular-nums">
+                      {diaTotales.proteinas.toFixed(0)}g
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-1 space-y-1.5">
+                  {dia.comidas.filter((c) => c.alimentos.length > 0).slice(0, 4).map((comida) => {
+                    const previews = comida.alimentos
+                      .map((a) => a.alimento?.nombre || a.receta?.nombre || "")
+                      .filter(Boolean)
+                      .slice(0, 3)
+                      .join(", ");
+                    return (
+                      <div key={comida.id} className="flex items-start gap-2 text-xs">
+                        <span className="font-semibold text-muted-foreground w-20 shrink-0">
+                          {TIPO_LABELS[comida.tipo] || comida.tipo}
+                        </span>
+                        <span className="text-foreground/80 flex-1 line-clamp-1">{previews}</span>
+                      </div>
+                    );
+                  })}
+                  {dia.comidas.filter((c) => c.alimentos.length === 0).length > 0 && (
+                    <p className="text-[10px] text-muted-foreground italic">
+                      {dia.comidas.filter((c) => c.alimentos.length === 0).length} comida(s) sin alimentos
+                    </p>
+                  )}
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }

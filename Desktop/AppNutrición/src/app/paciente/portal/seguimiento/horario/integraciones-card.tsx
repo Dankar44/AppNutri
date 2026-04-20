@@ -34,23 +34,26 @@ export function IntegracionesCardPaciente({ integracion, flash }: Props) {
   };
 
   return (
-    <section className="bg-card rounded-xl border border-border p-6 mt-6">
-      <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
-        <CalendarCheck2 className="w-5 h-5 text-primary" />
-        Google Calendar
-      </h2>
-      <p className="text-sm text-muted-foreground mb-4">
-        Conecta tu cuenta de Google para que tus citas con el nutricionista aparezcan
-        automáticamente en tu calendario personal.
-      </p>
+    <section className="rounded-xl border border-border p-5">
+      <header className="flex items-start gap-3 mb-4">
+        <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl border border-border text-foreground shrink-0">
+          <CalendarCheck2 className="w-5 h-5" strokeWidth={1.75} />
+        </span>
+        <div className="min-w-0">
+          <h2 className="text-base font-semibold">Google Calendar</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Conecta tu cuenta de Google para que tus citas aparezcan automáticamente en tu calendario personal.
+          </p>
+        </div>
+      </header>
 
       {flash && (
         <div
           className={
             "mb-3 rounded-lg px-3 py-2 text-sm flex items-center gap-2 " +
             (flash.type === "ok"
-              ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-              : "bg-red-50 text-red-800 border border-red-200")
+              ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30"
+              : "bg-red-50 dark:bg-red-500/10 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-500/30")
           }
         >
           {flash.type === "ok" ? (
@@ -73,7 +76,7 @@ export function IntegracionesCardPaciente({ integracion, flash }: Props) {
         </button>
       ) : (
         <div className="space-y-3">
-          <div className="flex items-center gap-2 text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-lg px-3 py-2">
+          <div className="flex items-center gap-2 text-xs bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30 rounded-lg px-3 py-2">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span className="truncate">
               Conectado como <strong className="font-semibold">{integracion.email}</strong>
@@ -165,7 +168,7 @@ function Toggle({
     >
       <span
         className={
-          "inline-block h-4 w-4 transform rounded-full bg-white transition-transform " +
+          "inline-block h-4 w-4 transform rounded-full bg-card transition-transform " +
           (checked ? "translate-x-6" : "translate-x-1")
         }
       />

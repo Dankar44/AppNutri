@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Camera, Loader2, Check, Lock } from "lucide-react";
+import { Camera, Loader2, Check, Lock, UserRound } from "lucide-react";
 import { actualizarPerfilPaciente, actualizarFotoPaciente, cambiarPasswordPaciente } from "@/app/actions/paciente-auth";
 import { toast } from "sonner";
 
@@ -91,31 +91,37 @@ export function PerfilPacienteForm({ nombre, apellidos, email, telefono, fotoUrl
   const initials = `${nombre[0] || ""}${apellidos[0] || ""}`.toUpperCase();
 
   return (
-    <div className="space-y-6">
-      {/* Foto + datos */}
-      <section className="bg-card rounded-xl border border-border p-6">
-        <div className="flex flex-col sm:flex-row gap-6 mb-6 pb-6 border-b border-border">
-          <label className="relative cursor-pointer shrink-0 self-center">
-            {foto ? (
-              <img src={foto} alt="Foto" className="w-20 h-20 rounded-full object-cover" />
-            ) : (
-              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-2xl">
-                {initials}
-              </div>
-            )}
-            <div className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center shadow">
-              <Camera className="w-3.5 h-3.5" />
+    <div className="space-y-4">
+      {/* Cabecera con foto + nombre (centrada) */}
+      <section className="bg-card rounded-xl border border-border p-5 flex items-center justify-center gap-4">
+        <label className="relative cursor-pointer shrink-0">
+          {foto ? (
+            <img src={foto} alt="Foto" className="w-20 h-20 rounded-full object-cover" />
+          ) : (
+            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-2xl">
+              {initials}
             </div>
-            <input type="file" accept="image/*" onChange={handleFoto} className="hidden" />
-          </label>
-          <div>
-            <p className="font-semibold text-lg">{nombre} {apellidos}</p>
-            <p className="text-sm text-muted-foreground">{email}</p>
+          )}
+          <div className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center shadow">
+            <Camera className="w-3.5 h-3.5" />
           </div>
+          <input type="file" accept="image/*" onChange={handleFoto} className="hidden" />
+        </label>
+        <div className="min-w-0">
+          <p className="font-semibold text-lg">{nombre} {apellidos}</p>
+          <p className="text-sm text-muted-foreground truncate">{email}</p>
         </div>
+      </section>
 
+      {/* Matriz: datos personales | cambiar contraseña */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+      <section className="bg-card rounded-xl border border-border p-6">
+        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <UserRound className="w-5 h-5 text-muted-foreground" />
+          Datos personales
+        </h2>
         <form onSubmit={handleSave} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1.5">Nombre</label>
               <input
@@ -189,7 +195,7 @@ export function PerfilPacienteForm({ nombre, apellidos, email, telefono, fotoUrl
               className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1.5">Nueva contraseña</label>
               <input
@@ -225,6 +231,7 @@ export function PerfilPacienteForm({ nombre, apellidos, email, telefono, fotoUrl
           </div>
         </form>
       </section>
+      </div>
     </div>
   );
 }

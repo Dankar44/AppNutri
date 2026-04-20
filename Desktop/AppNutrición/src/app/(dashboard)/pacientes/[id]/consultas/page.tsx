@@ -87,17 +87,17 @@ export default async function ConsultasPage({ params }: Props) {
               {consulta.medida && (
                 <div className="flex flex-wrap gap-3 text-xs">
                   {consulta.medida.peso && (
-                    <span className="px-2 py-1 rounded-full bg-blue-50 text-blue-700 font-medium">
+                    <span className="px-2 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 font-medium">
                       Peso: {consulta.medida.peso} kg
                     </span>
                   )}
                   {consulta.medida.imc && (
-                    <span className="px-2 py-1 rounded-full bg-amber-50 text-amber-700 font-medium">
+                    <span className="px-2 py-1 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 font-medium">
                       IMC: {consulta.medida.imc}
                     </span>
                   )}
                   {consulta.medida.grasaCorporal && (
-                    <span className="px-2 py-1 rounded-full bg-red-50 text-red-700 font-medium">
+                    <span className="px-2 py-1 rounded-full bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 font-medium">
                       Grasa: {consulta.medida.grasaCorporal}%
                     </span>
                   )}

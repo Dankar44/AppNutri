@@ -72,7 +72,10 @@ export default async function NotificacionesPage() {
               <Settings className="w-4 h-4" />
               <span className="hidden sm:inline">Preferencias</span>
             </Link>
-            {noLeidas > 0 && <NotificacionActions />}
+            <NotificacionActions
+              mostrarMarcarLeidas={noLeidas > 0}
+              hayNotificaciones={notificaciones.length > 0}
+            />
           </div>
         }
       />

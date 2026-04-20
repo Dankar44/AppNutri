@@ -204,7 +204,7 @@ export async function guardarHorarioPacientePortal(horario: HorarioEntry[]) {
     JSON.stringify(horario), session.pacienteId
   );
 
-  revalidatePath("/paciente/portal/perfil");
+  revalidatePath("/paciente/portal/seguimiento/horario");
 }
 
 export async function getAccesoPaciente(pacienteId: string) {

@@ -66,7 +66,7 @@ function TagInput({
           }}
           placeholder={placeholder}
           maxLength={100}
-          className="flex-1 px-4 py-2 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow text-sm"
+          className="flex-1 px-4 py-2 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow text-sm"
         />
         <button
           type="button"
@@ -236,7 +236,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
               onChange={(e) => update("nombre", e.target.value)}
               required
               maxLength={100}
-              className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+              className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
           </div>
           <div>
@@ -249,7 +249,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
               onChange={(e) => update("apellidos", e.target.value)}
               required
               maxLength={100}
-              className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+              className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
           </div>
           <div>
@@ -262,7 +262,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
               onChange={(e) => update("email", e.target.value)}
               required
               maxLength={200}
-              className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+              className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
             <p className="text-xs text-muted-foreground mt-1">
               Necesario para el acceso al portal del paciente
@@ -277,7 +277,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
               value={form.telefono}
               onChange={(e) => update("telefono", e.target.value)}
               maxLength={20}
-              className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+              className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
           </div>
           <div>
@@ -296,7 +296,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
             <select
               value={form.sexo || ""}
               onChange={(e) => update("sexo", e.target.value || undefined)}
-              className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+              className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             >
               <option value="">Seleccionar...</option>
               {SEXOS.map((s) => (
@@ -327,7 +327,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
                 update("peso", e.target.value ? parseFloat(e.target.value) : undefined)
               }
               placeholder="Ej: 70.5"
-              className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+              className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
           </div>
           <div>
@@ -347,7 +347,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
                 )
               }
               placeholder="Ej: 170"
-              className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+              className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
           </div>
         </div>
@@ -375,7 +375,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
             <select
               value={form.objetivo}
               onChange={(e) => update("objetivo", e.target.value)}
-              className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+              className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             >
               {OBJETIVOS.map((o) => (
                 <option key={o.value} value={o.value}>
@@ -394,7 +394,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
               onChange={(e) => update("objetivoDetalle", e.target.value)}
               placeholder="Ej: Bajar 5kg en 3 meses"
               maxLength={200}
-              className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+              className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
           </div>
         </div>
@@ -449,7 +449,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
               onChange={(e) => update("ocupacion", e.target.value)}
               placeholder="Ej: Oficinista, Profesor, Camarero..."
               maxLength={200}
-              className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+              className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
           </div>
           <div>
@@ -457,7 +457,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
             <select
               value={form.nivelActividad}
               onChange={(e) => update("nivelActividad", e.target.value)}
-              className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+              className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             >
               <option value="">Seleccionar...</option>
               <option value="SEDENTARIO">Sedentario (poco o nada de ejercicio)</option>
@@ -475,7 +475,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
               onChange={(e) => update("frecuenciaEjercicio", e.target.value)}
               placeholder="Ej: 4 veces por semana, 1h cada sesión"
               maxLength={100}
-              className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+              className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
           </div>
           <div>
@@ -486,7 +486,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
               onChange={(e) => update("tipoEjercicio", e.target.value)}
               placeholder="Ej: Musculación, Cardio, CrossFit, Natación..."
               maxLength={200}
-              className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+              className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
           </div>
           <div>
@@ -497,7 +497,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
               onChange={(e) => update("horarioTrabajo", e.target.value)}
               placeholder="Ej: 9:00 - 18:00, turnos rotativos..."
               maxLength={100}
-              className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+              className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
           </div>
           <div>
@@ -508,7 +508,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
               onChange={(e) => update("horarioEjercicio", e.target.value)}
               placeholder="Ej: 7:00 - 8:00, después del trabajo..."
               maxLength={100}
-              className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+              className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
           </div>
           <div>
@@ -519,7 +519,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
               onChange={(e) => update("horasDescanso", e.target.value)}
               placeholder="Ej: 7-8 horas, duerme de 23:00 a 7:00"
               maxLength={100}
-              className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+              className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
           </div>
         </div>
@@ -545,7 +545,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
           rows={4}
           maxLength={2000}
           placeholder="Notas, observaciones, comentarios..."
-          className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow resize-none"
+          className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow resize-none"
         />
       </section>
 
@@ -572,8 +572,8 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-              <AlertTriangle className="w-5 h-5 text-amber-600" />
+            <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-500/15 flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
             </div>
             <h3 className="text-base sm:text-lg font-semibold">Cambios sin guardar</h3>
           </div>

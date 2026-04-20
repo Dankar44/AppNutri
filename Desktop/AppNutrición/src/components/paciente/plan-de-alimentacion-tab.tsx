@@ -456,7 +456,7 @@ export function PlanDeAlimentacionTab({
                       <div className="flex items-center gap-2 min-w-0">
                         <span className="truncate font-semibold">{selectedPlan?.nombre || "—"}</span>
                         {selectedPlan?.caloriasObjetivo != null && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-xs font-medium shrink-0">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-medium shrink-0">
                             <Flame className="w-3 h-3" />{selectedPlan.caloriasObjetivo}
                           </span>
                         )}
@@ -475,7 +475,7 @@ export function PlanDeAlimentacionTab({
                             <div className="flex items-center gap-2 min-w-0">
                               <span className="truncate">{p.nombre}</span>
                               {p.caloriasObjetivo != null && (
-                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700"><Flame className="w-2.5 h-2.5 inline" /> {p.caloriasObjetivo}</span>
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400"><Flame className="w-2.5 h-2.5 inline" /> {p.caloriasObjetivo}</span>
                               )}
                             </div>
                             {p.id === selectedPlanId && <Check className="w-4 h-4 text-primary shrink-0" />}
@@ -587,7 +587,7 @@ export function PlanDeAlimentacionTab({
                           if (!active || !payload?.length) return null;
                           const d = payload[0].payload;
                           return (
-                            <div className="bg-white border border-border/30 rounded-2xl shadow-xl py-2.5 px-4 text-xs whitespace-nowrap space-y-1.5">
+                            <div className="bg-card border border-border/30 rounded-2xl shadow-xl py-2.5 px-4 text-xs whitespace-nowrap space-y-1.5">
                               <div className="flex items-center gap-2.5">
                                 <span className="w-5 h-5 rounded-full border-2 shrink-0" style={{ borderColor: d.color }} />
                                 <span className="font-semibold px-2 py-0.5 rounded-full text-[11px]" style={{ color: d.color, background: d.color + "22" }}>Actual</span>
@@ -615,10 +615,10 @@ export function PlanDeAlimentacionTab({
                 {/* Barras de macros */}
                 <div className="flex-1 space-y-3 pt-1">
                   {[
-                    { key: "grasas", label: "Grasa", value: totals.macros.grasas, kcal: totals.energy.grasasKcal, color: MACRO_COLORS.grasas, bgColor: "bg-yellow-50" },
-                    { key: "carbohidratos", label: "Hidratos de Carbono", value: totals.macros.carbohidratos, kcal: totals.energy.carbKcal, color: MACRO_COLORS.carbohidratos, bgColor: "bg-orange-50" },
-                    { key: "proteinas", label: "Proteína", value: totals.macros.proteinas, kcal: totals.energy.protKcal, color: MACRO_COLORS.proteinas, bgColor: "bg-blue-50" },
-                    { key: "fibra", label: "Fibra alimentaria", value: totals.macros.fibra, kcal: totals.energy.fibraKcal, color: MACRO_COLORS.fibra, bgColor: "bg-emerald-50" },
+                    { key: "grasas", label: "Grasa", value: totals.macros.grasas, kcal: totals.energy.grasasKcal, color: MACRO_COLORS.grasas, bgColor: "bg-yellow-50 dark:bg-yellow-500/10" },
+                    { key: "carbohidratos", label: "Hidratos de Carbono", value: totals.macros.carbohidratos, kcal: totals.energy.carbKcal, color: MACRO_COLORS.carbohidratos, bgColor: "bg-orange-50 dark:bg-orange-500/10" },
+                    { key: "proteinas", label: "Proteína", value: totals.macros.proteinas, kcal: totals.energy.protKcal, color: MACRO_COLORS.proteinas, bgColor: "bg-blue-50 dark:bg-blue-500/10" },
+                    { key: "fibra", label: "Fibra alimentaria", value: totals.macros.fibra, kcal: totals.energy.fibraKcal, color: MACRO_COLORS.fibra, bgColor: "bg-emerald-50 dark:bg-emerald-500/10" },
                   ].map((row, rowIdx) => {
                     const pct = (row.kcal / totals.energy.energyTotal) * 100;
                     return (
@@ -710,7 +710,7 @@ export function PlanDeAlimentacionTab({
 
                         {/* Tooltip hover — aparece a la izquierda del cursor */}
                         <div className="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50">
-                          <div className="bg-white border border-border/30 rounded-2xl shadow-xl p-3 whitespace-nowrap text-[11px]">
+                          <div className="bg-card border border-border/30 rounded-2xl shadow-xl p-3 whitespace-nowrap text-[11px]">
                             <div className="grid grid-cols-2 sm:grid-cols-[auto_auto_auto_auto] gap-x-2 sm:gap-x-3 gap-y-1.5 items-center">
                               <span className="font-semibold px-2 py-0.5 rounded-full" style={{ color: MACRO_COLORS.grasas, background: MACRO_COLORS.grasas + "22" }}>Grasa</span>
                               <span className="tabular-nums text-right">{meal.grasasKcal} kcal</span>
@@ -910,11 +910,11 @@ export function PlanDeAlimentacionTab({
               <h4 className="text-base font-semibold mb-4">Análisis global</h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                 {[
-                  { icon: <Flame className="w-4 h-4" />, label: "Energía", value: Math.round(totals.macros.calorias), obj: Math.round(calObj), unit: "kcal", color: "#b197fc", bg: "bg-purple-50" },
-                  { icon: <Droplets className="w-4 h-4" />, label: "Grasa", value: Math.round(totals.macros.grasas * 10) / 10, obj: Math.round(grasObj * 10) / 10, unit: "g", color: MACRO_COLORS.grasas, bg: "bg-yellow-50" },
-                  { icon: <Circle className="w-4 h-4" />, label: "H. Carbono", value: Math.round(totals.macros.carbohidratos * 10) / 10, obj: Math.round(carbObj * 10) / 10, unit: "g", color: MACRO_COLORS.carbohidratos, bg: "bg-orange-50" },
-                  { icon: <Diamond className="w-4 h-4" />, label: "Proteína", value: Math.round(totals.macros.proteinas * 10) / 10, obj: Math.round(protObj * 10) / 10, unit: "g", color: MACRO_COLORS.proteinas, bg: "bg-blue-50" },
-                  { icon: <Triangle className="w-4 h-4" />, label: "Fibra", value: Math.round(totals.macros.fibra * 10) / 10, obj: Math.round(fibraObj * 10) / 10, unit: "g", color: MACRO_COLORS.fibra, bg: "bg-emerald-50" },
+                  { icon: <Flame className="w-4 h-4" />, label: "Energía", value: Math.round(totals.macros.calorias), obj: Math.round(calObj), unit: "kcal", color: "#b197fc", bg: "bg-purple-50 dark:bg-purple-500/10" },
+                  { icon: <Droplets className="w-4 h-4" />, label: "Grasa", value: Math.round(totals.macros.grasas * 10) / 10, obj: Math.round(grasObj * 10) / 10, unit: "g", color: MACRO_COLORS.grasas, bg: "bg-yellow-50 dark:bg-yellow-500/10" },
+                  { icon: <Circle className="w-4 h-4" />, label: "H. Carbono", value: Math.round(totals.macros.carbohidratos * 10) / 10, obj: Math.round(carbObj * 10) / 10, unit: "g", color: MACRO_COLORS.carbohidratos, bg: "bg-orange-50 dark:bg-orange-500/10" },
+                  { icon: <Diamond className="w-4 h-4" />, label: "Proteína", value: Math.round(totals.macros.proteinas * 10) / 10, obj: Math.round(protObj * 10) / 10, unit: "g", color: MACRO_COLORS.proteinas, bg: "bg-blue-50 dark:bg-blue-500/10" },
+                  { icon: <Triangle className="w-4 h-4" />, label: "Fibra", value: Math.round(totals.macros.fibra * 10) / 10, obj: Math.round(fibraObj * 10) / 10, unit: "g", color: MACRO_COLORS.fibra, bg: "bg-emerald-50 dark:bg-emerald-500/10" },
                 ].map((m) => {
                   const pct = m.obj > 0 ? Math.min((m.value / m.obj) * 100, 100) : 0;
                   return (

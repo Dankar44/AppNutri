@@ -13,10 +13,10 @@ const CITAS_SEMANA = [
 ];
 
 const ESTADO_STYLES: Record<string, string> = {
-  PENDIENTE: "bg-amber-50 text-amber-700 border-amber-200",
-  CONFIRMADA: "bg-blue-50 text-blue-700 border-blue-200",
-  COMPLETADA: "bg-green-50 text-green-700 border-green-200",
-  CANCELADA: "bg-gray-100 text-gray-500 border-gray-200",
+  PENDIENTE: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30",
+  CONFIRMADA: "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/30",
+  COMPLETADA: "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/30",
+  CANCELADA: "bg-muted text-muted-foreground border-border",
 };
 
 const ESTADO_LABELS: Record<string, string> = {
@@ -27,7 +27,7 @@ export default function TourDemoAgendaPage() {
   return (
     <div>
       <div className="mb-4">
-        <p className="text-xs text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg inline-flex items-center gap-1 mb-3 font-medium">
+        <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-3 py-1.5 rounded-lg inline-flex items-center gap-1 mb-3 font-medium">
           Agenda de demostración — Solo para el tour guiado
         </p>
       </div>
@@ -126,7 +126,7 @@ export default function TourDemoAgendaPage() {
               <div data-tour="agenda-acciones-cita" className="flex items-center gap-2 mt-3 pt-3 border-t border-current/10">
                 <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded border border-current/20 font-medium"><Check className="w-3 h-3" /> Completar</span>
                 <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded border border-current/20 font-medium"><Calendar className="w-3 h-3" /> Google Calendar</span>
-                <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded border border-red-200 text-red-600 font-medium"><Trash2 className="w-3 h-3" /> Eliminar</span>
+                <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 font-medium"><Trash2 className="w-3 h-3" /> Eliminar</span>
               </div>
             </div>
           ))}

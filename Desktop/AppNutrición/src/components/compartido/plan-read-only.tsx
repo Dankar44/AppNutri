@@ -56,14 +56,14 @@ function RecetaDesplegable({ receta, cantidad }: { receta: RecetaDetalle; cantid
   const [abierto, setAbierto] = useState(false);
 
   return (
-    <div className="rounded-lg border border-purple-200 bg-purple-50/30 overflow-hidden">
+    <div className="rounded-lg border border-purple-200 dark:border-purple-500/30 bg-purple-50/30 overflow-hidden">
       <button
         onClick={() => setAbierto(!abierto)}
-        className="w-full flex items-center justify-between px-3 py-2 hover:bg-purple-50 transition-colors text-left"
+        className="w-full flex items-center justify-between px-3 py-2 hover:bg-purple-50 dark:hover:bg-purple-500/15 transition-colors text-left"
       >
         <div className="flex items-center gap-2">
           <CookingPot className="w-3.5 h-3.5 text-purple-500 shrink-0" />
-          <span className="text-sm font-medium text-purple-900">{receta.nombre}</span>
+          <span className="text-sm font-medium text-purple-900 dark:text-purple-200">{receta.nombre}</span>
           <span className="text-xs text-purple-500">({cantidad} porc.)</span>
         </div>
         {abierto ? <ChevronUp className="w-4 h-4 text-purple-400" /> : <ChevronDown className="w-4 h-4 text-purple-400" />}
@@ -72,15 +72,15 @@ function RecetaDesplegable({ receta, cantidad }: { receta: RecetaDetalle; cantid
       {abierto && (
         <div className="px-3 pb-3 border-t border-purple-100 pt-2 space-y-2">
           {receta.descripcion && (
-            <p className="text-xs text-purple-700 italic">{receta.descripcion}</p>
+            <p className="text-xs text-purple-700 dark:text-purple-400 italic">{receta.descripcion}</p>
           )}
 
           <div>
-            <p className="text-[11px] sm:text-[10px] font-semibold text-purple-600 uppercase mb-1">Ingredientes</p>
+            <p className="text-[11px] sm:text-[10px] font-semibold text-purple-600 dark:text-purple-400 uppercase mb-1">Ingredientes</p>
             <div className="space-y-0.5">
               {receta.ingredientes.map((ing, i) => (
                 <div key={i} className="flex items-center justify-between text-xs">
-                  <span className="text-purple-800">{ing.alimento.nombre}</span>
+                  <span className="text-purple-800 dark:text-purple-300">{ing.alimento.nombre}</span>
                   <span className="text-purple-500">{ing.cantidad}g</span>
                 </div>
               ))}
@@ -89,8 +89,8 @@ function RecetaDesplegable({ receta, cantidad }: { receta: RecetaDetalle; cantid
 
           {receta.instrucciones && (
             <div>
-              <p className="text-[11px] sm:text-[10px] font-semibold text-purple-600 uppercase mb-1">Preparación</p>
-              <p className="text-xs text-purple-800 whitespace-pre-wrap">{receta.instrucciones}</p>
+              <p className="text-[11px] sm:text-[10px] font-semibold text-purple-600 dark:text-purple-400 uppercase mb-1">Preparación</p>
+              <p className="text-xs text-purple-800 dark:text-purple-300 whitespace-pre-wrap">{receta.instrucciones}</p>
             </div>
           )}
 

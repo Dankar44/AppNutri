@@ -181,6 +181,184 @@ export async function getHuecosLibresDelNutri(
   return slots;
 }
 
+// ─── Vista semanal de disponibilidad (calendario visual) ──────────
+
+export type SlotOcupado = {
+  horaInicio: string; // "HH:MM" en Madrid
+  horaFin: string; // "HH:MM" en Madrid
+};
+
+export type DiaDisponibilidad = {
+  /** "LUNES" | "MARTES" | ... */
+  dia: string;
+  /** "YYYY-MM-DD" en Madrid */
+  fechaLocal: string;
+  /** Si el dietista trabaja ese día */
+  activo: boolean;
+  /** Intervalos del horario laboral (HH:MM - HH:MM) */
+  intervalos: { inicio: string; fin: string }[];
+  /** Citas existentes del dietista que ocupan ese día (horas Madrid) */
+  ocupados: SlotOcupado[];
+  /** Huecos solicitables por el paciente */
+  libres: { fechaHora: string; horaLocal: string; horaFin: string }[];
+};
+
+export type DisponibilidadSemanal = {
+  /** Lunes ISO YYYY-MM-DD en Madrid */
+  lunesFecha: string;
+  /** 7 días ordenados de lunes a domingo */
+  dias: DiaDisponibilidad[];
+  /** Duración default de cita en minutos */
+  duracion: number;
+  dietistaNombre: string;
+  /** Rango horario para pintar el grid (mín-máx de intervalos). */
+  rangoHoras: { inicio: number; fin: number };
+};
+
+function hhmmToMinutes(s: string): number {
+  const [h, m] = s.split(":").map(Number);
+  return h * 60 + (m || 0);
+}
+
+function minutesToHHMM(mins: number): string {
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+/**
+ * Devuelve la disponibilidad de la semana que contiene `lunesISO` (formato
+ * YYYY-MM-DD en Madrid, debe ser lunes). 7 días de datos con: horario
+ * laboral, citas ocupadas, huecos libres solicitables.
+ */
+export async function getDisponibilidadSemanaPaciente(
+  lunesISO: string,
+): Promise<DisponibilidadSemanal | null> {
+  const session = await getCurrentPaciente();
+  if (!session) return null;
+
+  const paciente = await getPacienteConDietista(session.pacienteId);
+  if (!paciente?.dietistaId) return null;
+
+  const horario = await getHorarioLaboralDietista(paciente.dietistaId);
+  if (!horario?.dias) return null;
+
+  const duracion = horario.duracionCitaDefault ?? 30;
+  const dietistaNombre = paciente.dietista
+    ? `${paciente.dietista.nombre} ${paciente.dietista.apellidos}`
+    : "Tu nutricionista";
+
+  const [anyoLunes, mesLunes, diaLunes] = lunesISO.split("-").map(Number);
+  // Lunes 00:00 Madrid
+  const lunesDate = fromMadrid(anyoLunes, mesLunes - 1, diaLunes, 0, 0);
+  // Domingo 23:59
+  const domingoFinMs = lunesDate.getTime() + 7 * 24 * 60 * 60 * 1000 - 1;
+  const domingoFin = new Date(domingoFinMs);
+
+  // Citas ocupadas en la semana
+  const citasOcupadas = await prisma.cita.findMany({
+    where: {
+      dietistaId: paciente.dietistaId,
+      fechaHora: { gte: lunesDate, lte: domingoFin },
+      estado: { in: ["PENDIENTE", "CONFIRMADA", "CONTRAPROPUESTA"] },
+    },
+    select: { fechaHora: true, duracion: true },
+  });
+
+  const diasActivosMap = new Map<string, HorarioLaboralDia>();
+  for (const d of horario.dias) {
+    if (d.activo) diasActivosMap.set(d.dia, d);
+  }
+
+  const DIAS_ORDEN_ES = ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"] as const;
+  const ahora = new Date();
+
+  // Calcular rango horario (min/max en minutos) entre todos los intervalos
+  let minIntervalo = 24 * 60;
+  let maxIntervalo = 0;
+  for (const d of horario.dias) {
+    if (!d.activo) continue;
+    for (const iv of d.intervalos) {
+      const ini = hhmmToMinutes(iv.inicio);
+      const fin = hhmmToMinutes(iv.fin);
+      if (ini < minIntervalo) minIntervalo = ini;
+      if (fin > maxIntervalo) maxIntervalo = fin;
+    }
+  }
+  if (minIntervalo >= maxIntervalo) {
+    minIntervalo = 9 * 60;
+    maxIntervalo = 20 * 60;
+  }
+  // Redondear a hora entera para el grid, con margen mínimo 07:00-21:00
+  const rangoInicioHora = Math.min(Math.floor(minIntervalo / 60), 7);
+  const rangoFinHora = Math.max(Math.ceil(maxIntervalo / 60), 21);
+
+  const dias: DiaDisponibilidad[] = [];
+  for (let idx = 0; idx < 7; idx++) {
+    const thisDateMs = lunesDate.getTime() + idx * 24 * 60 * 60 * 1000;
+    const thisDate = new Date(thisDateMs);
+    const fechaLocal = toMadridDateStr(thisDate);
+    const [y, m, d] = fechaLocal.split("-").map(Number);
+    const diaKey = DIAS_ORDEN_ES[idx];
+    const diaInfo = diasActivosMap.get(diaKey);
+    const activo = !!diaInfo;
+    const intervalos = diaInfo ? diaInfo.intervalos : [];
+
+    // Citas ocupadas en este día
+    const inicioDia = fromMadrid(y, m - 1, d, 0, 0);
+    const finDia = new Date(inicioDia.getTime() + 24 * 60 * 60 * 1000 - 1);
+    const ocupados: SlotOcupado[] = citasOcupadas
+      .filter((c) => c.fechaHora >= inicioDia && c.fechaHora <= finDia)
+      .map((c) => {
+        const inicio = toMadridTimeStr(c.fechaHora);
+        const inicioMin = hhmmToMinutes(inicio);
+        const finMin = inicioMin + c.duracion;
+        return { horaInicio: inicio, horaFin: minutesToHHMM(finMin) };
+      });
+
+    // Slots libres (solicitables)
+    const libres: { fechaHora: string; horaLocal: string; horaFin: string }[] = [];
+    if (diaInfo) {
+      const hoySlots = generarSlotsDelDia(y, m - 1, d, diaInfo.intervalos, duracion);
+      for (const s of hoySlots) {
+        if (s < ahora) continue;
+        const sStart = s.getTime();
+        const sEnd = sStart + duracion * 60 * 1000;
+        const pisa = citasOcupadas.some(
+          (o) =>
+            sStart < o.fechaHora.getTime() + o.duracion * 60 * 1000 &&
+            sEnd > o.fechaHora.getTime(),
+        );
+        if (pisa) continue;
+        const horaLocal = toMadridTimeStr(s);
+        const horaFinMin = hhmmToMinutes(horaLocal) + duracion;
+        libres.push({
+          fechaHora: s.toISOString(),
+          horaLocal,
+          horaFin: minutesToHHMM(horaFinMin),
+        });
+      }
+    }
+
+    dias.push({
+      dia: diaKey,
+      fechaLocal,
+      activo,
+      intervalos,
+      ocupados,
+      libres,
+    });
+  }
+
+  return {
+    lunesFecha: lunesISO,
+    dias,
+    duracion,
+    dietistaNombre,
+    rangoHoras: { inicio: rangoInicioHora, fin: rangoFinHora },
+  };
+}
+
 /**
  * El paciente solicita una cita en un slot libre. La cita queda PENDIENTE con origen=PACIENTE.
  * Se genera una notificación al nutri.

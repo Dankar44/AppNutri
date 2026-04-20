@@ -50,6 +50,7 @@ interface ComidaSlotProps {
   onCantidadChange: (alimentoEnComidaId: string, cantidad: number) => void;
   onReemplazar?: (alimentoEnComidaId: string, nuevoAlimentoId: string, nombre: string, cantidad: number) => void;
   compactHeader?: boolean;
+  readOnly?: boolean;
 }
 
 export function ComidaSlot({
@@ -61,6 +62,7 @@ export function ComidaSlot({
   onRemove,
   onCantidadChange,
   onReemplazar,
+  readOnly = false,
 }: ComidaSlotProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: `comida-${comidaId}`,
@@ -179,9 +181,10 @@ export function ComidaSlot({
                     grasas={a.grasas}
                     fibra={a.fibra}
                     esReceta={a.esReceta}
+                    readOnly={readOnly}
                     onRemove={onRemove}
                     onCantidadChange={onCantidadChange}
-                    onBuscarEquivalente={(_alimentoEnComidaId, nombre, cal, prot, carb, gras, cant) => {
+                    onBuscarEquivalente={readOnly ? undefined : (_alimentoEnComidaId, nombre, cal, prot, carb, gras, cant) => {
                       setEquivalenteOpen(
                         equivalenteOpen?.alimentoEnComidaId === a.id
                           ? null
@@ -213,50 +216,59 @@ export function ComidaSlot({
           </div>
 
           {/* Add food bar */}
-          <button
-            type="button"
-            onClick={() => onAdd(comidaId)}
-            className={cn(
-              "w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors",
-              isOver
-                ? "bg-primary/20 text-primary"
-                : "bg-primary/10 text-primary hover:bg-primary/15"
-            )}
-          >
-            Agregar nuevo alimento +
-          </button>
+          {!readOnly && (
+            <button
+              type="button"
+              onClick={() => onAdd(comidaId)}
+              className={cn(
+                "w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors",
+                isOver
+                  ? "bg-primary/20 text-primary"
+                  : "bg-primary/10 text-primary hover:bg-primary/15"
+              )}
+            >
+              Agregar nuevo alimento +
+            </button>
+          )}
 
           {/* Notes */}
-          <div className="px-4 py-3 border-t border-border/50">
-            <div className="text-sm font-semibold text-foreground mb-1.5">
-              Notas
+          {readOnly ? (
+            desc.trim() ? (
+              <div className="px-4 py-3 border-t border-border/50">
+                <div className="text-sm font-semibold text-foreground mb-1.5">Notas</div>
+                <p className="text-xs text-muted-foreground whitespace-pre-wrap">{desc}</p>
+              </div>
+            ) : null
+          ) : (
+            <div className="px-4 py-3 border-t border-border/50">
+              <div className="text-sm font-semibold text-foreground mb-1.5">Notas</div>
+              <textarea
+                value={desc}
+                onChange={(e) => handleDescChange(e.target.value)}
+                placeholder="Notas sobre esta comida..."
+                maxLength={500}
+                rows={2}
+                className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-border bg-muted/30 text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 focus:text-foreground placeholder:italic resize-none"
+              />
             </div>
-            <textarea
-              value={desc}
-              onChange={(e) => handleDescChange(e.target.value)}
-              placeholder="Notas sobre esta comida..."
-              maxLength={500}
-              rows={2}
-              className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-border bg-muted/30 text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 focus:text-foreground placeholder:italic resize-none"
-            />
-          </div>
+          )}
 
           {/* Macro pills */}
           <div className="px-4 py-3 border-t border-border/50 bg-muted/10">
             <div className="flex flex-wrap items-center justify-center gap-2">
-              <span className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-purple-50 text-purple-600 text-sm font-medium">
+              <span className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 text-sm font-medium">
                 Energía {Math.round(mealTotals.calorias)} kcal
               </span>
-              <span className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-yellow-50 text-yellow-700 text-sm font-medium">
+              <span className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 text-sm font-medium">
                 Grasa {mealTotals.grasas.toFixed(1)} g
               </span>
-              <span className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-orange-50 text-orange-700 text-sm font-medium">
+              <span className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 text-sm font-medium">
                 H. Carbono {mealTotals.carbohidratos.toFixed(1)} g
               </span>
-              <span className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-blue-50 text-blue-600 text-sm font-medium">
+              <span className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-sm font-medium">
                 Proteína {mealTotals.proteinas.toFixed(1)} g
               </span>
-              <span className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-emerald-50 text-emerald-600 text-sm font-medium">
+              <span className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-sm font-medium">
                 Fibra {mealTotals.fibra.toFixed(1)} g
               </span>
             </div>

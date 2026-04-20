@@ -96,7 +96,7 @@ export default function PreciosPage() {
           {PLANES.map((plan) => (
             <div
               key={plan.id}
-              className={`relative rounded-2xl border-2 bg-white p-8 flex flex-col ${
+              className={`relative rounded-2xl border-2 bg-card p-8 flex flex-col ${
                 plan.destacado
                   ? "border-primary shadow-xl shadow-primary/10"
                   : "border-border"
@@ -166,7 +166,7 @@ export default function PreciosPage() {
         <div className="mt-16 max-w-2xl mx-auto text-center">
           <h3 className="text-xl font-bold mb-6">Preguntas frecuentes</h3>
           <div className="space-y-4 text-left">
-            <details className="group bg-white rounded-xl border border-border p-4">
+            <details className="group bg-card rounded-xl border border-border p-4">
               <summary className="font-medium cursor-pointer list-none flex items-center justify-between">
                 ¿Puedo cambiar de plan en cualquier momento?
                 <span className="text-muted-foreground group-open:rotate-180 transition-transform">▾</span>
@@ -175,7 +175,7 @@ export default function PreciosPage() {
                 Sí, puedes subir o bajar de plan cuando quieras. El cambio se aplica en el siguiente ciclo de facturación.
               </p>
             </details>
-            <details className="group bg-white rounded-xl border border-border p-4">
+            <details className="group bg-card rounded-xl border border-border p-4">
               <summary className="font-medium cursor-pointer list-none flex items-center justify-between">
                 ¿Qué pasa después de los 14 días de prueba?
                 <span className="text-muted-foreground group-open:rotate-180 transition-transform">▾</span>
@@ -184,7 +184,7 @@ export default function PreciosPage() {
                 Al finalizar la prueba, se activará tu plan seleccionado. Si no has añadido un método de pago, tu cuenta pasará a modo lectura.
               </p>
             </details>
-            <details className="group bg-white rounded-xl border border-border p-4">
+            <details className="group bg-card rounded-xl border border-border p-4">
               <summary className="font-medium cursor-pointer list-none flex items-center justify-between">
                 ¿Puedo cancelar en cualquier momento?
                 <span className="text-muted-foreground group-open:rotate-180 transition-transform">▾</span>
@@ -193,7 +193,7 @@ export default function PreciosPage() {
                 Sí, sin preguntas. Puedes cancelar desde Ajustes y seguirás teniendo acceso hasta el final de tu periodo pagado.
               </p>
             </details>
-            <details className="group bg-white rounded-xl border border-border p-4">
+            <details className="group bg-card rounded-xl border border-border p-4">
               <summary className="font-medium cursor-pointer list-none flex items-center justify-between">
                 ¿Mis datos están seguros?
                 <span className="text-muted-foreground group-open:rotate-180 transition-transform">▾</span>
@@ -207,7 +207,7 @@ export default function PreciosPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-white py-8">
+      <footer className="border-t border-border bg-card py-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Leaf className="w-4 h-4 text-primary" />

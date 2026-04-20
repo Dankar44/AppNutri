@@ -3,9 +3,9 @@ import { getSuscripcionesAdmin, getDistribucionPlanes } from "@/app/actions/admi
 import { capitalizarNombre, formatDate } from "@/lib/utils";
 
 const PLAN_LABEL: Record<string, string> = { BASICO: "Básico", PROFESIONAL: "Profesional" };
-const PLAN_BADGE: Record<string, string> = { BASICO: "bg-blue-50 text-blue-700", PROFESIONAL: "bg-purple-50 text-purple-700" };
+const PLAN_BADGE: Record<string, string> = { BASICO: "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400", PROFESIONAL: "bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400" };
 const ESTADO_LABEL: Record<string, string> = { ACTIVA: "Activa", PRUEBA: "Prueba", CANCELADA: "Cancelada", EXPIRADA: "Expirada" };
-const ESTADO_COLOR: Record<string, string> = { ACTIVA: "text-green-700 bg-green-50", PRUEBA: "text-amber-700 bg-amber-50", CANCELADA: "text-red-700 bg-red-50", EXPIRADA: "text-gray-600 bg-gray-100" };
+const ESTADO_COLOR: Record<string, string> = { ACTIVA: "text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-500/10", PRUEBA: "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10", CANCELADA: "text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-500/10", EXPIRADA: "text-muted-foreground bg-muted" };
 
 export default async function SuscripcionesPage() {
   const [suscripciones, distribucion] = await Promise.all([

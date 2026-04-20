@@ -11,11 +11,11 @@ interface MacroBadgeProps {
 }
 
 const colorMap = {
-  cal: "bg-purple-50 text-purple-600 border-purple-200",
-  prot: "bg-blue-50 text-blue-600 border-blue-200",
-  carb: "bg-orange-50 text-orange-700 border-orange-200",
-  gras: "bg-yellow-50 text-yellow-700 border-yellow-200",
-  fibra: "bg-emerald-50 text-emerald-600 border-emerald-200",
+  cal: "bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-500/30",
+  prot: "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/30",
+  carb: "bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-500/30",
+  gras: "bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-500/30",
+  fibra: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30",
 };
 
 export function MacroBadge({

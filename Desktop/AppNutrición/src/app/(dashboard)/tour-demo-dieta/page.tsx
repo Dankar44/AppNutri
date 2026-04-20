@@ -37,24 +37,24 @@ const DIAS = [
 ];
 
 const MACRO_COLORS: Record<string, string> = {
-  cal: "bg-amber-50 text-amber-700 border-amber-200",
-  prot: "bg-blue-50 text-blue-700 border-blue-200",
-  carb: "bg-green-50 text-green-700 border-green-200",
-  grasa: "bg-red-50 text-red-700 border-red-200",
+  cal: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30",
+  prot: "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/30",
+  carb: "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/30",
+  grasa: "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/30",
 };
 
 export default function TourDemoDietaPage() {
   return (
     <div>
       <div className="mb-4">
-        <p className="text-xs text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg inline-flex items-center gap-1 mb-3 font-medium">
+        <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-3 py-1.5 rounded-lg inline-flex items-center gap-1 mb-3 font-medium">
           Plan de demostración — Solo para el tour guiado
         </p>
 
         <div className="space-y-3">
           <p className="text-sm font-medium">Paciente: Laura Martínez García</p>
           <div data-tour="plan-actions" className="flex items-center gap-2 flex-wrap">
-            <span data-tour="ia-btn" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-200 text-amber-700 bg-amber-50 text-sm font-medium">
+            <span data-tour="ia-btn" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 text-sm font-medium">
               <Sparkles className="w-3.5 h-3.5" /> IA
             </span>
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm font-medium">Plantilla</span>
@@ -67,7 +67,7 @@ export default function TourDemoDietaPage() {
             <span data-tour="pdf-btn" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm font-medium">
               <FileDown className="w-3.5 h-3.5" /> PDF
             </span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 text-red-600 text-sm font-medium">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 text-sm font-medium">
               <Trash2 className="w-3.5 h-3.5" /> Eliminar
             </span>
           </div>
@@ -118,7 +118,7 @@ export default function TourDemoDietaPage() {
                 ))}
               </div>
               <div className="border border-border rounded-b-lg p-2 bg-muted/30 text-center">
-                <span className="text-sm font-bold text-amber-600">~1800</span>
+                <span className="text-sm font-bold text-amber-600 dark:text-amber-400">~1800</span>
                 <span className="text-[10px] text-muted-foreground ml-0.5">kcal</span>
               </div>
             </div>

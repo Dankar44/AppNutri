@@ -44,7 +44,7 @@ export function RecetaActions({ recetaId }: { recetaId: string }) {
   return (
     <button
       onClick={() => setConfirmando(true)}
-      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors text-sm font-medium"
+      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/15 transition-colors text-sm font-medium"
     >
       <Trash2 className="w-4 h-4" />
       Eliminar

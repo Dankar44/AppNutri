@@ -123,3 +123,92 @@ El **link del producto** (opción C) puede ser parte de la fase 2 como atajo —
 - ¿Los alimentos son por-dietista o globales? Si son globales, hay que moderar lo que se añade (evitar duplicados y basura).
 - ¿Queremos que los valores estimados por IA se marquen como tal en la ficha del paciente (trazabilidad)?
 - ¿Open Food Facts permite uso comercial? (Sí, ODbL — hay que atribuir.)
+
+---
+
+## 4. Revisión manual del flujo Google (Guillermo, pruebas en local)
+
+Integración Google Calendar + Meet + Sign in with Google ya implementada y configurada en `.env.local` (Client ID + Secret reales). OAuth consent screen en modo "Testing" → Guillermo debe añadirse como **Test user** en Google Cloud Console (APIs & Services → OAuth consent screen → Test users) si no lo está ya, o Google lo bloqueará.
+
+### 4.1. Pasos a probar en local (después de reiniciar `npm run dev`)
+
+1. **Conectar Google del nutri**
+   - Ir a `http://localhost:3000/ajustes` → sección **Integraciones** → **Conectar con Google**.
+   - Debe abrir pantalla de consentimiento de Google.
+   - Primera vez aparecerá aviso *"App no verificada"* → pulsar **Avanzado → Ir a NutriApp (no seguro)**.
+   - Aceptar permisos → debe volver a Ajustes con mensaje verde "conectado correctamente".
+   - Verificar que aparece el email conectado y el toggle "Sincronizar citas automáticamente".
+
+2. **Crear una cita online con Meet**
+   - `/agenda/nueva` → seleccionar paciente + fecha + hora → marcar checkbox **"Cita online (Google Meet)"** → Crear cita.
+   - Abrir la cita desde la agenda → en el modal debe aparecer *"Unirse a Google Meet"* con link clicable en pocos segundos.
+   - Comprobar en Google Calendar real que el evento aparece con el link de Meet generado.
+
+3. **Backfill al conectar**
+   - Tras conectar, citas existentes deberían aparecer también en Google Calendar automáticamente (últimos 100 eventos no sincronizados se suben al conectar o al reactivar el toggle).
+
+4. **Desconectar con dialog**
+   - En Ajustes → **Desconectar** → sale modal con dos opciones:
+     - *"Dejar las citas en Google"*: desconecta pero los eventos quedan en el Calendar.
+     - *"Borrar las citas de Google"*: desconecta y elimina todos los eventos creados por AppNutri.
+   - Probar ambas y verificar comportamiento en Google Calendar.
+
+5. **Sign in with Google (login nutri)**
+   - ⚠️ Antes de probar: **habilitar el provider en Supabase**. Ir a `dashboard.supabase.com` → proyecto `kzbrugggurcjwxsmutic` → Authentication → Providers → Google → **Enable** y pegar el mismo `CLIENT_ID` + `CLIENT_SECRET`.
+   - Supabase mostrará una Callback URL (tipo `https://kzbrugggurcjwxsmutic.supabase.co/auth/v1/callback`) — copiarla y añadirla **también** al OAuth Client de Google Cloud como redirect URI adicional.
+   - Cerrar sesión, ir a `/login` → botón **"Continuar con Google"** → debe entrar al dashboard sin pedir contraseña.
+
+6. **Paciente conecta su Google Calendar personal**
+   - Entrar como paciente en `/paciente/portal/perfil` → sección **Google Calendar** → **Conectar con Google**.
+   - Mismo flujo OAuth.
+   - Verificar que las citas confirmadas aparecen también en el calendar personal del paciente (sin link Meet, solo el evento).
+
+### 4.2. Qué mirar con especial atención
+- Que los eventos aparecen en la **zona horaria Europe/Madrid** correcta (no hay shift de hora).
+- Que al **cancelar** o **contraponer** una cita, el evento desaparece del Google Calendar (o se actualiza si es contrapropuesta).
+- Que los **tokens refrescan correctamente** sin pedir re-login al cabo de 1h (los access tokens expiran, el refresh_token los renueva automáticamente).
+- Si Google revoca acceso (ir a myaccount.google.com → Seguridad → Apps con acceso → quitar AppNutri), las siguientes sincronizaciones fallan silenciosamente (se loguean en consola del server, no se muestra error al usuario). Es comportamiento esperado — caso edge.
+
+### 4.3. Si algo falla
+Reportar a Claude con el error concreto (mensaje de error, URL del navegador, captura de consola si hay). Los callbacks están en:
+- `/api/google/callback-nutri` (OAuth nutri)
+- `/api/google/callback-paciente` (OAuth paciente)
+- `/auth/callback` (Supabase Sign in with Google)
+
+### 4.4. Producción (Oracle)
+Todavía **no funciona en Oracle** porque necesita dominio + HTTPS. Pasos detallados en la memoria `project_google_oauth_pendiente_dominio.md`. Cuando haya dominio, seguir esa guía y decirle a Claude *"ya tengo dominio, vamos a configurar Google en Oracle"*.
+
+---
+
+## 5. Tareas para Guillermo — 19 de abril, 10:44
+
+### 5.1. Bug: notificaciones duplicadas al crear paciente desde dashboard
+- En uno de los **accesos rápidos** del dashboard del nutricionista está el botón **"Crear paciente"**.
+- Al usarlo, al paciente le saltan **4 notificaciones** de golpe. No debería llegar ninguna (o como mucho una de bienvenida).
+- Hay que investigar qué evento se está disparando 4 veces (seguramente un efecto duplicado, un listener colgando o un revalidate que re-emite).
+- Revisar el flujo desde el botón del dashboard hasta la creación del paciente y ver qué notificaciones se emiten y por qué se multiplican.
+
+### 5.2. Reorganizar ajustes del nutricionista
+- La página de **Ajustes del nutricionista** está bastante desestructurada actualmente (tarjetas sueltas, jerarquía poco clara, secciones mezcladas).
+- Hay que **reajustar toda la pantalla** para que quede más bonita, ordenada y coherente con el resto del rediseño de la app.
+- Revisar agrupación por bloques (perfil, integraciones, suscripción, seguridad, zona peligrosa, etc.), espaciados, iconos, jerarquía tipográfica.
+
+### 5.3. Actualizar el chat IA de la app
+- El **chat IA** integrado en el programa se construyó hace bastante tiempo.
+- Desde entonces se han añadido muchas funcionalidades nuevas (agenda, recetas globales/propias, favoritos, exportación PDF, Google Calendar, horario paciente, etc.).
+- Hay que **actualizar el contexto/funciones del chat** para que conozca todas las funcionalidades nuevas y pueda ayudar al usuario correctamente.
+- Revisar también el prompt del sistema y las herramientas disponibles.
+
+### 5.4. Actualizar las guías
+- Las **guías** de la app están **obsoletas** (reflejan un estado anterior del producto).
+- Hay que revisarlas una a una y reescribirlas para que reflejen la versión actual de la aplicación.
+
+### 5.5. Portal paciente — simetría perfil y espaciado
+- En **Ajustes del paciente** (portal paciente → perfil), el cuadro de **Datos personales** y el cuadro de **Cambiar contraseña** deben tener **exactamente las mismas dimensiones** (mismos píxeles, perfectamente simétricos).
+- Además, debe quedar **un poco de espacio por debajo** entre estos dos cuadros y la tarjeta siguiente (actualmente están demasiado pegados).
+
+### 5.6. Mover botón de vincular Google Calendar a "Mis citas"
+- En el portal paciente, el botón para **vincular con Google Calendar** está actualmente en **"Mi horario"**.
+- Debería estar en **"Mis citas"**, porque el objetivo real del paciente al vincular Google Calendar es sincronizar **las citas con su nutricionista** (no su horario personal).
+- Mover la tarjeta `IntegracionesCardPaciente` desde `/paciente/portal/seguimiento/horario` hacia la página de citas (`/paciente/portal/citas`).
+- Ajustar también los `revalidatePath` asociados para que apunten a la nueva ruta.

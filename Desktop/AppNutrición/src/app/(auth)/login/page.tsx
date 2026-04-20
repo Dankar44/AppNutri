@@ -103,7 +103,7 @@ export default function LoginPage() {
             type="button"
             onClick={handleGoogleLogin}
             disabled={googleLoading || loading}
-            className="w-full mb-5 flex items-center justify-center gap-3 rounded-lg border border-input bg-white py-2.5 text-sm font-medium hover:bg-muted/50 transition-colors disabled:opacity-60"
+            className="w-full mb-5 flex items-center justify-center gap-3 rounded-lg border border-input bg-card py-2.5 text-sm font-medium hover:bg-muted/50 transition-colors disabled:opacity-60"
           >
             {googleLoading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -135,7 +135,7 @@ export default function LoginPage() {
                 placeholder="tu@email.com"
                 required
                 maxLength={200}
-                className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+                className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
               />
             </div>
 
@@ -155,7 +155,7 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   required
                   maxLength={128}
-                  className="w-full px-4 py-2.5 rounded-lg border border-input bg-white focus:outline-none focus:ring-2 focus:ring-ring transition-shadow pr-12"
+                  className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow pr-12"
                 />
                 <button
                   type="button"

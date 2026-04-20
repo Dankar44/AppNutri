@@ -11,6 +11,13 @@ import {
 
 // ─── Types ───
 
+export interface ComidaSeguimientoItem {
+  tipo: string;
+  alimentos: { nombre: string; cantidad: number; cumplido: boolean }[];
+  horaReal: string | null;
+  notas: string | null;
+}
+
 export interface SeguimientoDia {
   id: string;
   fecha: Date;
@@ -22,6 +29,7 @@ export interface SeguimientoDia {
   ejercicioTipo: string | null;
   ejercicioDistanciaKm: number;
   notas: string | null;
+  comidasData: ComidaSeguimientoItem[] | null;
 }
 
 export interface SeguimientoUpsertData {

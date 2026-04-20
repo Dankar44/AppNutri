@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentDietista } from "@/app/actions/auth";
 import { getCurrentPaciente } from "@/lib/patient-auth";
 import { prisma } from "@/lib/prisma";
-import { buildAuthUrl } from "@/lib/google-oauth";
+import { buildAuthUrl, isGoogleConfigured } from "@/lib/google-oauth";
 import { deleteGoogleEvent } from "@/lib/google-calendar";
 import { backfillCitasNutri, backfillCitasPaciente } from "@/lib/google-sync";
 
@@ -40,6 +40,9 @@ export async function clearStateCookie(name: string) {
 export async function conectarGoogleNutri(): Promise<never> {
   const dietista = await getCurrentDietista();
   if (!dietista) redirect("/login");
+  if (!isGoogleConfigured()) {
+    redirect("/ajustes?google=error&reason=no_configurado");
+  }
   const state = randomBytes(24).toString("hex");
   await setStateCookie(STATE_COOKIE_NUTRI, state);
   const url = buildAuthUrl("nutri", state);
@@ -119,6 +122,9 @@ export async function toggleCrearMeetNutri(activar: boolean) {
 export async function conectarGooglePaciente(): Promise<never> {
   const session = await getCurrentPaciente();
   if (!session) redirect("/paciente/login");
+  if (!isGoogleConfigured()) {
+    redirect("/paciente/portal/seguimiento/horario?google=error&reason=no_configurado");
+  }
   const state = randomBytes(24).toString("hex");
   await setStateCookie(STATE_COOKIE_PACIENTE, state);
   const url = buildAuthUrl("paciente", state);
@@ -139,7 +145,7 @@ export async function desconectarGooglePaciente(options: {
   });
   void options;
 
-  revalidatePath("/paciente/portal/perfil");
+  revalidatePath("/paciente/portal/seguimiento/horario");
 }
 
 export async function toggleSincronizarPaciente(activar: boolean) {
@@ -157,7 +163,7 @@ export async function toggleSincronizarPaciente(activar: boolean) {
     );
   }
 
-  revalidatePath("/paciente/portal/perfil");
+  revalidatePath("/paciente/portal/seguimiento/horario");
 }
 
 export async function getIntegracionNutri() {

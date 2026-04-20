@@ -52,14 +52,14 @@ export function AdminSidebar({ adminNombre, onSignOut }: AdminSidebarProps) {
     <>
       {/* Logo */}
       <div className="h-16 flex items-center gap-2 px-4 border-b border-indigo-100 shrink-0">
-        <ShieldCheck className="w-7 h-7 text-indigo-600 shrink-0" />
+        <ShieldCheck className="w-7 h-7 text-indigo-600 dark:text-indigo-400 shrink-0" />
         {(!collapsed || mobileOpen) && (
           <span className="text-xl font-bold text-foreground">Admin</span>
         )}
         {mobileOpen && (
           <button
             onClick={() => setMobileOpen(false)}
-            className="ml-auto p-1 rounded hover:bg-indigo-50 lg:hidden"
+            className="ml-auto p-1 rounded hover:bg-indigo-50 dark:hover:bg-indigo-500/15 lg:hidden"
           >
             <X className="w-5 h-5" />
           </button>
@@ -80,7 +80,7 @@ export function AdminSidebar({ adminNombre, onSignOut }: AdminSidebarProps) {
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                 isActive
-                  ? "bg-indigo-50 text-indigo-700"
+                  ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
               title={collapsed && !mobileOpen ? item.label : undefined}
@@ -98,7 +98,7 @@ export function AdminSidebar({ adminNombre, onSignOut }: AdminSidebarProps) {
           {(!collapsed || mobileOpen) && (
             <div className="min-w-0">
               <p className="text-sm font-medium truncate">{adminNombre}</p>
-              <p className="text-xs text-indigo-600">Administrador</p>
+              <p className="text-xs text-indigo-600 dark:text-indigo-400">Administrador</p>
             </div>
           )}
         </div>
@@ -131,7 +131,7 @@ export function AdminSidebar({ adminNombre, onSignOut }: AdminSidebarProps) {
         >
           <Menu className="w-5 h-5" />
         </button>
-        <ShieldCheck className="w-5 h-5 text-indigo-600" />
+        <ShieldCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
         <span className="font-bold text-sm">Admin</span>
       </div>
 
@@ -146,7 +146,7 @@ export function AdminSidebar({ adminNombre, onSignOut }: AdminSidebarProps) {
       {/* Sidebar drawer móvil */}
       <aside
         className={cn(
-          "lg:hidden fixed top-0 left-0 z-50 h-full w-72 bg-white border-r border-indigo-100 flex flex-col transition-transform duration-300",
+          "lg:hidden fixed top-0 left-0 z-50 h-full w-72 bg-card border-r border-indigo-100 flex flex-col transition-transform duration-300",
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -156,7 +156,7 @@ export function AdminSidebar({ adminNombre, onSignOut }: AdminSidebarProps) {
       {/* Sidebar desktop */}
       <aside
         className={cn(
-          "hidden lg:flex h-screen sticky top-0 bg-white border-r border-indigo-100 flex-col transition-all duration-300",
+          "hidden lg:flex h-screen sticky top-0 bg-card border-r border-indigo-100 flex-col transition-all duration-300",
           collapsed ? "w-[72px]" : "w-64"
         )}
       >

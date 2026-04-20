@@ -32,7 +32,13 @@ export default async function AjustesPage({
     sp.google === "ok"
       ? { type: "ok" as const, message: "Google Calendar conectado correctamente." }
       : sp.google === "error"
-        ? { type: "error" as const, message: `No se pudo conectar Google (${sp.reason || "error"}).` }
+        ? {
+            type: "error" as const,
+            message:
+              sp.reason === "no_configurado"
+                ? "Google aún no está configurado en este entorno. Añade GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET al .env.local."
+                : `No se pudo conectar Google (${sp.reason || "error"}).`,
+          }
         : null;
 
   return (
@@ -79,13 +85,13 @@ export default async function AjustesPage({
             />
           </section>
 
-          <section className="bg-card rounded-xl border border-red-200 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <section className="bg-card rounded-xl border border-red-200 dark:border-red-500/30 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center flex-shrink-0">
+              <div className="w-9 h-9 rounded-lg bg-red-50 dark:bg-red-500/10 flex items-center justify-center flex-shrink-0">
                 <AlertTriangle className="w-4 h-4 text-red-500" />
               </div>
               <div>
-                <h2 className="text-sm font-semibold text-red-600">Zona peligrosa</h2>
+                <h2 className="text-sm font-semibold text-red-600 dark:text-red-400">Zona peligrosa</h2>
                 <p className="text-xs text-muted-foreground">
                   Se borrarán todos tus datos permanentemente.
                 </p>

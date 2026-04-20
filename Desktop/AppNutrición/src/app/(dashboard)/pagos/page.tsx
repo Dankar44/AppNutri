@@ -1,4 +1,5 @@
 import { CreditCard, CircleDollarSign, Receipt, Clock, Wallet } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { getPagos, getEstadisticasPagos } from "@/app/actions/pagos";
 import { getPacientes } from "@/app/actions/pacientes";
 import { getStripeAccountStatus } from "@/app/actions/stripe";
@@ -7,6 +8,74 @@ import { PageHeader } from "@/components/page-header";
 
 function formatEuro(value: number) {
   return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(value);
+}
+
+type StatVariant = "neutral" | "success" | "warning";
+
+const VARIANT_STYLES: Record<
+  StatVariant,
+  {
+    gradient: string;
+    iconBadgeBg: string;
+    iconBadgeFg: string;
+    bgIcon: string;
+    valueColor: string;
+  }
+> = {
+  neutral: {
+    gradient: "bg-gradient-to-br from-transparent to-muted/30",
+    iconBadgeBg: "bg-muted",
+    iconBadgeFg: "text-muted-foreground",
+    bgIcon: "text-muted-foreground/10",
+    valueColor: "text-foreground",
+  },
+  success: {
+    gradient: "bg-gradient-to-br from-transparent to-emerald-500/[0.06]",
+    iconBadgeBg: "bg-emerald-50 dark:bg-emerald-500/10",
+    iconBadgeFg: "text-emerald-600 dark:text-emerald-400",
+    bgIcon: "text-emerald-500/10",
+    valueColor: "text-emerald-600 dark:text-emerald-400",
+  },
+  warning: {
+    gradient: "bg-gradient-to-br from-transparent to-amber-500/[0.07]",
+    iconBadgeBg: "bg-amber-50 dark:bg-amber-500/10",
+    iconBadgeFg: "text-amber-600 dark:text-amber-400",
+    bgIcon: "text-amber-500/15",
+    valueColor: "text-amber-600 dark:text-amber-400",
+  },
+};
+
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  variant,
+}: {
+  label: string;
+  value: string;
+  icon: LucideIcon;
+  variant: StatVariant;
+}) {
+  const s = VARIANT_STYLES[variant];
+  return (
+    <div
+      className={`group relative overflow-hidden rounded-xl border border-border p-4 ${s.gradient}`}
+    >
+      <Icon
+        strokeWidth={1.25}
+        className={`absolute -bottom-5 -right-5 w-24 h-24 sm:w-28 sm:h-28 ${s.bgIcon} pointer-events-none`}
+      />
+      <div className="relative flex items-center justify-between mb-2">
+        <span className="text-xs sm:text-sm text-muted-foreground font-medium">{label}</span>
+        <div
+          className={`w-8 h-8 rounded-lg flex items-center justify-center ${s.iconBadgeBg} ${s.iconBadgeFg}`}
+        >
+          <Icon className="w-4 h-4" />
+        </div>
+      </div>
+      <p className={`relative text-xl font-bold ${s.valueColor}`}>{value}</p>
+    </div>
+  );
 }
 
 export default async function PagosPage() {
@@ -30,42 +99,30 @@ export default async function PagosPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
-        <div className="bg-card rounded-xl border border-border p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs sm:text-sm text-muted-foreground">Total pagos</span>
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-50 text-blue-600">
-              <Receipt className="w-4 h-4" />
-            </div>
-          </div>
-          <p className="text-xl font-bold">{stats.pagosCount}</p>
-        </div>
-        <div className="bg-card rounded-xl border border-border p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs sm:text-sm text-muted-foreground">Cobrado</span>
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-green-50 text-green-600">
-              <CircleDollarSign className="w-4 h-4" />
-            </div>
-          </div>
-          <p className="text-xl font-bold text-green-600">{formatEuro(stats.cobrado)}</p>
-        </div>
-        <div className="bg-card rounded-xl border border-border p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs sm:text-sm text-muted-foreground">Pendiente</span>
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-amber-50 text-amber-600">
-              <Clock className="w-4 h-4" />
-            </div>
-          </div>
-          <p className="text-xl font-bold text-amber-600">{formatEuro(stats.pendiente)}</p>
-        </div>
-        <div className="bg-card rounded-xl border border-border p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs sm:text-sm text-muted-foreground">Balance</span>
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-purple-50 text-purple-600">
-              <CreditCard className="w-4 h-4" />
-            </div>
-          </div>
-          <p className="text-xl font-bold">{formatEuro(stats.cobrado - stats.pendiente)}</p>
-        </div>
+        <StatCard
+          label="Total pagos"
+          value={String(stats.pagosCount)}
+          icon={Receipt}
+          variant="neutral"
+        />
+        <StatCard
+          label="Cobrado"
+          value={formatEuro(stats.cobrado)}
+          icon={CircleDollarSign}
+          variant="success"
+        />
+        <StatCard
+          label="Pendiente"
+          value={formatEuro(stats.pendiente)}
+          icon={Clock}
+          variant="warning"
+        />
+        <StatCard
+          label="Balance"
+          value={formatEuro(stats.cobrado - stats.pendiente)}
+          icon={CreditCard}
+          variant="neutral"
+        />
       </div>
 
       <PagosClient pagos={pagosSerializados} pacientes={pacientesLista} stripeConnected={stripeStatus.onboarded} />

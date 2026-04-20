@@ -289,7 +289,7 @@ function EjercicioCard({
     <section className="bg-card rounded-xl border border-border p-5">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-base font-semibold flex items-center gap-2">
-          <Dumbbell className="w-5 h-5 text-emerald-600" />
+          <Dumbbell className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
           Ejercicio fisico
         </h2>
         <SaveIndicator saving={saving} />
@@ -485,7 +485,7 @@ function EjercicioCard({
 
           {/* Pagination */}
           {/* Crear ejercicio personalizado — dentro del panel */}
-          <div className="mx-4 my-3 rounded-xl border border-dashed border-primary/30 bg-white p-3">
+          <div className="mx-4 my-3 rounded-xl border border-dashed border-primary/30 bg-card p-3">
             <p className="text-xs font-medium text-primary mb-2">¿No encuentras tu ejercicio? Créalo:</p>
             <div className="flex flex-wrap items-end gap-2">
               <div className="flex-1 min-w-[140px]">
@@ -611,7 +611,7 @@ function AlimentosEvitarCard({
     <section className="bg-card rounded-xl border border-border p-5">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-base font-semibold flex items-center gap-2">
-          <ShieldBan className="w-5 h-5 text-amber-600" />
+          <ShieldBan className="w-5 h-5 text-amber-600 dark:text-amber-400" />
           Alimentos a evitar
         </h2>
         <SaveIndicator saving={saving} />
@@ -647,7 +647,7 @@ function AlimentosEvitarCard({
           {items.map((item, idx) => (
             <span
               key={`${item}-${idx}`}
-              className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-3 py-1 text-sm"
+              className="inline-flex items-center gap-1.5 bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30 rounded-full px-3 py-1 text-sm"
             >
               {item}
               <button

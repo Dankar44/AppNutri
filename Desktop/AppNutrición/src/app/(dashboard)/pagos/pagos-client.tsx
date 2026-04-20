@@ -118,11 +118,11 @@ export function PagosClient({ pagos, pacientes, stripeConnected }: Props) {
     <div className="space-y-6">
       {/* Banner Stripe no conectado */}
       {!stripeConnected && (
-        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <CreditCard className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+        <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-xl p-4">
+          <CreditCard className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
           <div className="text-sm">
-            <p className="font-medium text-amber-800">Stripe no conectado</p>
-            <p className="text-amber-700 mt-0.5">
+            <p className="font-medium text-amber-800 dark:text-amber-300">Stripe no conectado</p>
+            <p className="text-amber-700 dark:text-amber-400 mt-0.5">
               Conecta tu cuenta de Stripe en{" "}
               <a href="/ajustes" className="underline font-medium hover:text-amber-900">Ajustes</a>{" "}
               para generar links de pago automáticos y cobrar a tus pacientes online.
@@ -144,7 +144,7 @@ export function PagosClient({ pagos, pacientes, stripeConnected }: Props) {
         <form onSubmit={handleCrear} className="bg-card rounded-xl border border-border p-6 space-y-4">
           <h3 className="font-semibold">Crear solicitud de cobro</h3>
           {stripeConnected && (
-            <p className="text-xs text-green-700 bg-green-50 px-3 py-1.5 rounded-lg">
+            <p className="text-xs text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-500/10 px-3 py-1.5 rounded-lg">
               Se generará un link de pago de Stripe automáticamente
             </p>
           )}
@@ -238,7 +238,7 @@ export function PagosClient({ pagos, pacientes, stripeConnected }: Props) {
                     <td className="px-4 py-3 text-right font-semibold text-sm">{formatEuro(pago.importe)}</td>
                     <td className="px-4 py-3 text-center">
                       <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-                        pago.estado === "PAGADO" ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-700"
+                        pago.estado === "PAGADO" ? "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400" : "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400"
                       }`}>
                         {pago.estado === "PAGADO" ? "Pagado" : "Pendiente"}
                       </span>
@@ -283,7 +283,7 @@ export function PagosClient({ pagos, pacientes, stripeConnected }: Props) {
                           </>
                         )}
                         <button onClick={() => handleEliminar(pago.id)}
-                          className="p-1 rounded text-muted-foreground hover:text-red-600 hover:bg-red-50 transition-colors">
+                          className="p-1 rounded text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/15 transition-colors">
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>

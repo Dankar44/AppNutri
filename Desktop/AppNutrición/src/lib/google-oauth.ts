@@ -15,6 +15,10 @@ function getRedirectUri(audience: GoogleAudience): string {
   return process.env.GOOGLE_REDIRECT_URI_PACIENTE || "http://localhost:3000/api/google/callback-paciente";
 }
 
+export function isGoogleConfigured(): boolean {
+  return Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+}
+
 export function getOAuthClient(audience: GoogleAudience): OAuth2Client {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;

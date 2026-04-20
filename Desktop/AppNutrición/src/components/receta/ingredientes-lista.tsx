@@ -116,7 +116,7 @@ export function IngredientesLista({ ingredientes, porciones, instrucciones }: Pr
                         <Diamond className="w-2.5 h-2.5" />
                         {macros.proteinas.toFixed(1)}
                       </span>
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium tabular-nums bg-purple-100/60 text-purple-700">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium tabular-nums bg-purple-100/60 text-purple-700 dark:text-purple-400">
                         <Flame className="w-2.5 h-2.5" />
                         {Math.round(macros.calorias)}
                       </span>

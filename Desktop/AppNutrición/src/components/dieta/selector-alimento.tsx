@@ -150,18 +150,18 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
             <div className="mb-4">
               <div className="flex items-center gap-1.5 mb-2">
                 <Sparkles className="w-4 h-4 text-amber-500" />
-                <span className="text-xs font-semibold text-amber-700">Sugerencias para equilibrar macros</span>
+                <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">Sugerencias para equilibrar macros</span>
               </div>
               <div className="space-y-1">
                 {sugerencias.map((s) => (
                   <button
                     key={s.id}
                     onClick={() => handleSelectAlimento(s)}
-                    className="w-full text-left p-3 rounded-lg hover:bg-amber-50 transition-colors border border-amber-100"
+                    className="w-full text-left p-3 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-500/15 transition-colors border border-amber-100"
                   >
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium">{s.nombre}</p>
-                      <span className="text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full font-medium">
+                      <span className="text-[10px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded-full font-medium">
                         {s.razon}
                       </span>
                     </div>
@@ -191,21 +191,21 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
             <div className="mb-3">
               <div className="flex items-center gap-1.5 mb-2">
                 <CookingPot className="w-4 h-4 text-purple-500" />
-                <span className="text-xs font-semibold text-purple-700">Recetas</span>
+                <span className="text-xs font-semibold text-purple-700 dark:text-purple-400">Recetas</span>
               </div>
               <div className="space-y-1">
                 {recetas.map((r) => (
                   <button
                     key={r.id}
                     onClick={() => handleSelectReceta(r)}
-                    className="w-full text-left p-3 rounded-lg hover:bg-purple-50 transition-colors border border-purple-200 bg-purple-50/30"
+                    className="w-full text-left p-3 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-500/15 transition-colors border border-purple-200 dark:border-purple-500/30 bg-purple-50/30"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <CookingPot className="w-3.5 h-3.5 text-purple-500 shrink-0" />
-                        <p className="text-sm font-medium text-purple-900">{r.nombre}</p>
+                        <p className="text-sm font-medium text-purple-900 dark:text-purple-200">{r.nombre}</p>
                       </div>
-                      <span className="text-[10px] text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded-full font-medium">
+                      <span className="text-[10px] text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-500/15 px-1.5 py-0.5 rounded-full font-medium">
                         {r.porciones} porc.
                       </span>
                     </div>
@@ -213,7 +213,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
                       <MacroBadges calorias={r.calorias} proteinas={r.proteinas} carbohidratos={r.carbohidratos} grasas={r.grasas} />
                     </div>
                     {r.ingredientes.length > 0 && (
-                      <p className="mt-1.5 text-[10px] text-purple-600">
+                      <p className="mt-1.5 text-[10px] text-purple-600 dark:text-purple-400">
                         Ingredientes: {r.ingredientes.map((i) => `${i.alimento.nombre} (${i.cantidad}g)`).join(", ")}
                       </p>
                     )}

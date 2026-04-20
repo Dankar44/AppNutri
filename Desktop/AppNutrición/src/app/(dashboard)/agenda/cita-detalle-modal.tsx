@@ -17,11 +17,11 @@ import {
 import { ContraproponerModal } from "./contraproponer-modal";
 
 const ESTADO_STYLES: Record<string, string> = {
-  PENDIENTE: "bg-amber-50 text-amber-700 border-amber-200",
-  CONFIRMADA: "bg-blue-50 text-blue-700 border-blue-200",
-  COMPLETADA: "bg-green-50 text-green-700 border-green-200",
-  CANCELADA: "bg-gray-100 text-gray-500 border-gray-200",
-  CONTRAPROPUESTA: "bg-indigo-50 text-indigo-700 border-indigo-200",
+  PENDIENTE: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30",
+  CONFIRMADA: "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/30",
+  COMPLETADA: "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/30",
+  CANCELADA: "bg-muted text-muted-foreground border-border",
+  CONTRAPROPUESTA: "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/30",
 };
 
 const ESTADO_LABELS: Record<string, string> = {
@@ -145,22 +145,22 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
                 {ESTADO_LABELS[cita.estado] ?? cita.estado}
               </span>
               {esSolicitudPaciente && (
-                <span className="text-xs px-2.5 py-1 rounded-full bg-purple-100 text-purple-700 border border-purple-200 font-medium">
+                <span className="text-xs px-2.5 py-1 rounded-full bg-purple-100 dark:bg-purple-500/15 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-500/30 font-medium">
                   Solicitada por el paciente
                 </span>
               )}
               {esContrapropuestaPaciente && (
-                <span className="text-xs px-2.5 py-1 rounded-full bg-purple-100 text-purple-700 border border-purple-200 font-medium">
+                <span className="text-xs px-2.5 py-1 rounded-full bg-purple-100 dark:bg-purple-500/15 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-500/30 font-medium">
                   Contrapropuesta del paciente
                 </span>
               )}
               {cita.estado === "CONTRAPROPUESTA" && cita.propuestoPor === "DIETISTA" && (
-                <span className="text-xs px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200 font-medium">
+                <span className="text-xs px-2.5 py-1 rounded-full bg-indigo-100 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30 font-medium">
                   Esperando respuesta del paciente
                 </span>
               )}
               {cita.estado === "PENDIENTE" && cita.origen === "DIETISTA" && (
-                <span className="text-xs px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 border border-blue-200 font-medium">
+                <span className="text-xs px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30 font-medium">
                   Propuesta al paciente
                 </span>
               )}
@@ -177,7 +177,7 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
                 <span>{horaInicio} – {horaFin} ({cita.duracion} min)</span>
               </div>
               {cita.isOnline && (
-                <div className="flex items-center gap-2 text-sm text-blue-700">
+                <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-400">
                   <Video className="w-4 h-4" />
                   {cita.googleMeetLink ? (
                     <a
@@ -237,7 +237,7 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
                   type="button"
                   onClick={() => run(() => rechazarSolicitudCita(cita.id), "Solicitud rechazada")}
                   disabled={pending}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-red-300 text-red-600 text-sm font-medium hover:bg-red-50 disabled:opacity-60 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-red-300 dark:border-red-500/40 text-red-600 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-500/15 disabled:opacity-60 transition-colors"
                 >
                   <X className="w-4 h-4" /> Rechazar
                 </button>
@@ -265,7 +265,7 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
                   type="button"
                   onClick={() => run(() => rechazarContrapropuestaDietista(cita.id), "Contrapropuesta rechazada")}
                   disabled={pending}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-red-300 text-red-600 text-sm font-medium hover:bg-red-50 disabled:opacity-60 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-red-300 dark:border-red-500/40 text-red-600 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-500/15 disabled:opacity-60 transition-colors"
                 >
                   <X className="w-4 h-4" /> Rechazar
                 </button>
@@ -324,7 +324,7 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
               <button
                 type="button"
                 onClick={() => setConfirmEliminar(true)}
-                className="inline-flex items-center gap-1.5 text-xs text-red-600 hover:text-red-700 font-medium"
+                className="inline-flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400 hover:text-red-700 font-medium"
               >
                 <Trash2 className="w-3.5 h-3.5" /> Eliminar cita
               </button>

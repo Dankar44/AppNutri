@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
-import { Toaster } from "sonner";
+import Script from "next/script";
+import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeAwareToaster } from "@/components/theme-aware-toaster";
 import "./globals.css";
 
 const inter = Inter({
@@ -42,24 +44,38 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
+// Script inline que aplica la clase `dark` ANTES de que React hidrate,
+// evitando el flash de modo claro cuando el usuario tiene modo oscuro guardado.
+const THEME_INIT_SCRIPT = `
+(function(){
+  try {
+    var t = localStorage.getItem("nutriapp-theme");
+    var d = document.documentElement;
+    if (t === "dark") {
+      d.classList.add("dark");
+      d.style.colorScheme = "dark";
+    } else {
+      d.style.colorScheme = "light";
+    }
+  } catch(e) {}
+})();
+`.trim();
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={inter.variable}>
-      <body className={`${inter.className} antialiased`}>
-        {children}
-        <Toaster
-          position="top-center"
-          richColors
-          closeButton
-          offset={16}
-          toastOptions={{
-            className: "sm:!mr-4 sm:!mt-4",
-          }}
-        />
+    <html lang="es" className={inter.variable} suppressHydrationWarning>
+      <body className={`${inter.className} antialiased bg-background text-foreground`}>
+        <Script id="theme-init" strategy="beforeInteractive">
+          {THEME_INIT_SCRIPT}
+        </Script>
+        <ThemeProvider>
+          {children}
+          <ThemeAwareToaster />
+        </ThemeProvider>
       </body>
     </html>
   );

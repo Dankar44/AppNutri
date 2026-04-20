@@ -19,10 +19,10 @@ const PLAN_LABELS: Record<string, { nombre: string; precio: string }> = {
 };
 
 const ESTADO_LABELS: Record<string, { texto: string; color: string }> = {
-  ACTIVA: { texto: "Activa", color: "bg-green-50 text-green-700" },
-  PRUEBA: { texto: "Periodo de prueba", color: "bg-blue-50 text-blue-700" },
-  CANCELADA: { texto: "Cancelada", color: "bg-red-50 text-red-700" },
-  EXPIRADA: { texto: "Expirada", color: "bg-gray-100 text-gray-600" },
+  ACTIVA: { texto: "Activa", color: "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400" },
+  PRUEBA: { texto: "Periodo de prueba", color: "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400" },
+  CANCELADA: { texto: "Cancelada", color: "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400" },
+  EXPIRADA: { texto: "Expirada", color: "bg-muted text-muted-foreground" },
 };
 
 export function SuscripcionCard({ plan, estado, fechaInicio, fechaFin }: Props) {
@@ -58,8 +58,8 @@ export function SuscripcionCard({ plan, estado, fechaInicio, fechaFin }: Props) 
       {/* Plan actual */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className={`p-2 rounded-lg ${plan === "PROFESIONAL" ? "bg-amber-50" : "bg-primary/10"}`}>
-            <Crown className={`w-5 h-5 ${plan === "PROFESIONAL" ? "text-amber-600" : "text-primary"}`} />
+          <div className={`p-2 rounded-lg ${plan === "PROFESIONAL" ? "bg-amber-50 dark:bg-amber-500/10" : "bg-primary/10"}`}>
+            <Crown className={`w-5 h-5 ${plan === "PROFESIONAL" ? "text-amber-600 dark:text-amber-400" : "text-primary"}`} />
           </div>
           <div>
             <p className="font-semibold">Plan {planInfo.nombre}</p>
@@ -74,7 +74,7 @@ export function SuscripcionCard({ plan, estado, fechaInicio, fechaFin }: Props) 
       {/* Días restantes (prueba o suscripción) */}
       {diasRestantes !== null && (
         <div className={`flex items-center gap-2 px-4 py-3 rounded-lg ${
-          diasRestantes <= 3 ? "bg-red-50 text-red-700" : "bg-muted/50"
+          diasRestantes <= 3 ? "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400" : "bg-muted/50"
         }`}>
           <Clock className="w-4 h-4 flex-shrink-0" />
           <span className="text-sm">
@@ -170,7 +170,7 @@ export function SuscripcionCard({ plan, estado, fechaInicio, fechaFin }: Props) 
             <span>{feature}</span>
             <span className="text-center">
               {basico === "check" ? (
-                <Check className="w-3.5 h-3.5 text-green-600 mx-auto" />
+                <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400 mx-auto" />
               ) : basico === "no" ? (
                 <span className="text-muted-foreground">—</span>
               ) : (
@@ -179,7 +179,7 @@ export function SuscripcionCard({ plan, estado, fechaInicio, fechaFin }: Props) 
             </span>
             <span className="text-center">
               {pro === "check" ? (
-                <Check className="w-3.5 h-3.5 text-green-600 mx-auto" />
+                <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400 mx-auto" />
               ) : (
                 pro
               )}

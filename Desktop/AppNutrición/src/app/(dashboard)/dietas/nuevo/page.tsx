@@ -240,7 +240,7 @@ export default function NuevoPlanPage() {
           {!plantillaId && (
             <section className="bg-card rounded-xl border border-border p-4 sm:p-6 space-y-4">
               <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0">
                   <Activity className="w-5 h-5" />
                 </div>
                 <div className="flex-1">
@@ -311,7 +311,7 @@ export default function NuevoPlanPage() {
               </div>
 
               {contexto?.planActivo?.caloriasObjetivo != null && (
-                <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-900">
+                <div className="rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 p-3 text-xs text-amber-900 dark:text-amber-200">
                   <p className="font-medium mb-0.5">
                     Plan activo actual: {contexto.planActivo.nombre}
                   </p>
@@ -492,18 +492,18 @@ export default function NuevoPlanPage() {
 
               {/* Plan activo */}
               {contexto?.planActivo && (
-                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+                <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <Layers className="w-4 h-4 text-emerald-700" />
-                    <p className="text-[11px] uppercase tracking-wide text-emerald-900 font-bold">
+                    <Layers className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
+                    <p className="text-[11px] uppercase tracking-wide text-emerald-900 dark:text-emerald-200 font-bold">
                       Plan activo
                     </p>
                   </div>
-                  <p className="text-sm font-semibold text-emerald-900 truncate">
+                  <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-200 truncate">
                     {contexto.planActivo.nombre}
                   </p>
                   {contexto.planActivo.caloriasObjetivo && (
-                    <p className="text-xs text-emerald-800 mt-0.5 tabular-nums">
+                    <p className="text-xs text-emerald-800 dark:text-emerald-300 mt-0.5 tabular-nums">
                       {contexto.planActivo.caloriasObjetivo} kcal/día
                     </p>
                   )}

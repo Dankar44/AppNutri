@@ -81,7 +81,7 @@ export default async function PlanDetailPage({ params }: Props) {
           <div className="inline-flex items-center gap-1 rounded-xl border border-border bg-card p-1 flex-wrap w-full sm:w-auto sm:ml-auto">
             <Link
               href={`/dietas/${plan.id}/generar-ia`}
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg border border-amber-200 text-amber-700 hover:bg-amber-50 transition-colors text-xs sm:text-sm font-medium flex-1 sm:flex-none min-h-10 sm:min-h-0"
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg border border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/15 transition-colors text-xs sm:text-sm font-medium flex-1 sm:flex-none min-h-10 sm:min-h-0"
               aria-label="Generar con IA"
             >
               <Sparkles className="w-3.5 h-3.5" />

@@ -15,6 +15,7 @@ interface AlimentoCardProps {
   grasas: number;
   fibra?: number;
   esReceta?: boolean;
+  readOnly?: boolean;
   onRemove: (id: string) => void;
   onCantidadChange: (id: string, cantidad: number) => void;
   onBuscarEquivalente?: (alimentoId: string, nombre: string, calorias: number, proteinas: number, carbohidratos: number, grasas: number, cantidad: number) => void;
@@ -30,6 +31,7 @@ export function AlimentoCard({
   grasas,
   fibra,
   esReceta,
+  readOnly = false,
   onRemove,
   onCantidadChange,
   onBuscarEquivalente,
@@ -56,6 +58,22 @@ export function AlimentoCard({
   }
 
   const unidadLabel = esReceta ? "porc." : "g";
+
+  if (readOnly) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border/50 last:border-b-0">
+        <div className="flex-1 min-w-0 flex items-center gap-1.5 text-sm">
+          <span className="w-16 sm:w-14 px-2 py-1 sm:px-1.5 sm:py-0.5 text-base sm:text-sm text-right tabular-nums font-medium">
+            {cantidad}
+          </span>
+          <span className="text-muted-foreground text-sm shrink-0">
+            {unidadLabel} de
+          </span>
+          <span className="truncate font-medium text-foreground">{nombre}</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -108,7 +126,7 @@ export function AlimentoCard({
       {/* Delete button */}
       <button
         onClick={() => onRemove(id)}
-        className="p-1.5 rounded border border-border/60 hover:bg-red-50 hover:border-red-200 text-muted-foreground/50 hover:text-red-500 transition-all shrink-0"
+        className="p-1.5 rounded border border-border/60 hover:bg-red-50 dark:hover:bg-red-500/15 hover:border-red-200 text-muted-foreground/50 hover:text-red-500 transition-all shrink-0"
         title="Eliminar"
       >
         <Trash2 className="w-4 h-4" />

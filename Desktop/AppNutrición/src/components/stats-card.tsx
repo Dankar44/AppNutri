@@ -21,9 +21,9 @@ export function StatsCard({ icon: Icon, label, value, change, color, muted }: St
           <div
             className={cn(
               "flex items-center gap-0.5 text-xs font-medium px-1.5 py-0.5 rounded-full",
-              change > 0 && "text-green-700 bg-green-50",
-              change < 0 && "text-red-700 bg-red-50",
-              change === 0 && "text-gray-500 bg-gray-50"
+              change > 0 && "text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-500/10",
+              change < 0 && "text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-500/10",
+              change === 0 && "text-muted-foreground bg-muted"
             )}
           >
             {change > 0 ? <TrendingUp className="w-3 h-3" /> : change < 0 ? <TrendingDown className="w-3 h-3" /> : <Minus className="w-3 h-3" />}

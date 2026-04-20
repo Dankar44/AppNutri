@@ -1,19 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Clock, User } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { CitaDetalleModal, type CitaDetalle } from "./cita-detalle-modal";
 import { toMadridDateStr, toMadridTimeStr } from "@/lib/tz";
 
-const DIA_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+const START_HOUR = 6;
+const END_HOUR = 22;
+const PX_PER_HOUR = 52;
+const TOTAL_HEIGHT = (END_HOUR - START_HOUR + 1) * PX_PER_HOUR;
+
+const DIA_LABELS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
 const ESTADO_STYLES: Record<string, string> = {
-  PENDIENTE: "bg-amber-50 text-amber-700 border-amber-200",
-  CONFIRMADA: "bg-blue-50 text-blue-700 border-blue-200",
-  COMPLETADA: "bg-green-50 text-green-700 border-green-200",
-  CANCELADA: "bg-gray-100 text-gray-500 border-gray-200",
-  CONTRAPROPUESTA: "bg-indigo-50 text-indigo-700 border-indigo-200",
+  PENDIENTE: "bg-amber-100/80 text-amber-900 dark:text-amber-200 border-l-4 border-amber-500",
+  CONFIRMADA: "bg-sky-100/80 text-sky-900 dark:text-sky-200 border-l-4 border-sky-500",
+  COMPLETADA: "bg-emerald-100/80 text-emerald-900 dark:text-emerald-200 border-l-4 border-emerald-500",
+  CANCELADA: "bg-muted text-muted-foreground border-l-4 border-border",
+  CONTRAPROPUESTA: "bg-indigo-100/80 text-indigo-900 dark:text-indigo-200 border-l-4 border-indigo-500",
 };
 
 interface Cita {
@@ -37,116 +42,315 @@ interface Props {
   onSelectDia: (dia: string | null) => void;
 }
 
-// Usar zona horaria de Madrid para que la agrupación por día coincida
-// con lo que ve el paciente al solicitar cita.
 const formatLocalDate = toMadridDateStr;
 
-export function AgendaSemanal({ citas, lunes, diaSeleccionado, onSelectDia }: Props) {
+function minutosDesdeInicio(d: Date): number {
+  return d.getHours() * 60 + d.getMinutes() - START_HOUR * 60;
+}
+
+type PosicionCita = { topPx: number; heightPx: number } | null;
+
+function posicionCita(cita: Cita): PosicionCita {
+  const inicio = new Date(cita.fechaHora);
+  const startMin = minutosDesdeInicio(inicio);
+  const durMin = cita.duracion;
+  let topMin = startMin;
+  let visibleMin = durMin;
+  const maxMin = (END_HOUR - START_HOUR + 1) * 60;
+  if (startMin + durMin < 0) return null;
+  if (startMin > maxMin) return null;
+  if (startMin < 0) {
+    visibleMin += startMin;
+    topMin = 0;
+  }
+  if (visibleMin <= 0) return null;
+  if (topMin + visibleMin > maxMin) {
+    visibleMin = maxMin - topMin;
+  }
+  const topPx = (topMin / 60) * PX_PER_HOUR;
+  const heightPx = Math.max((visibleMin / 60) * PX_PER_HOUR, 24);
+  return { topPx, heightPx };
+}
+
+// Algoritmo simple para solapamiento: agrupa citas en columnas dentro del día.
+type CitaLayout = Cita & { _col: number; _nCols: number; _pos: { topPx: number; heightPx: number } };
+
+function layoutCitasDia(citas: Cita[]): CitaLayout[] {
+  const conPos = citas
+    .map((c) => ({ cita: c, pos: posicionCita(c) }))
+    .filter((x): x is { cita: Cita; pos: { topPx: number; heightPx: number } } => x.pos !== null)
+    .sort((a, b) => a.pos.topPx - b.pos.topPx || b.pos.heightPx - a.pos.heightPx);
+
+  // Agrupar en clusters por solapamiento
+  const clusters: { cita: Cita; pos: { topPx: number; heightPx: number } }[][] = [];
+  for (const item of conPos) {
+    const last = clusters[clusters.length - 1];
+    if (!last) {
+      clusters.push([item]);
+      continue;
+    }
+    const maxEnd = Math.max(...last.map((x) => x.pos.topPx + x.pos.heightPx));
+    if (item.pos.topPx < maxEnd) {
+      last.push(item);
+    } else {
+      clusters.push([item]);
+    }
+  }
+
+  const result: CitaLayout[] = [];
+  for (const cluster of clusters) {
+    // Asignar columnas greedy
+    const cols: { end: number }[] = [];
+    const assignments: number[] = [];
+    for (const item of cluster) {
+      let placed = false;
+      for (let i = 0; i < cols.length; i++) {
+        if (cols[i].end <= item.pos.topPx) {
+          cols[i].end = item.pos.topPx + item.pos.heightPx;
+          assignments.push(i);
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) {
+        assignments.push(cols.length);
+        cols.push({ end: item.pos.topPx + item.pos.heightPx });
+      }
+    }
+    const nCols = cols.length;
+    cluster.forEach((item, idx) => {
+      result.push({ ...item.cita, _col: assignments[idx], _nCols: nCols, _pos: item.pos });
+    });
+  }
+  return result;
+}
+
+export function AgendaSemanal({ citas, lunes, onSelectDia }: Props) {
   const router = useRouter();
   const [citaAbierta, setCitaAbierta] = useState<CitaDetalle | null>(null);
+  const [ahora, setAhora] = useState(() => new Date());
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const lunesDate = new Date(lunes + "T12:00:00");
-  const diasSemana = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(lunesDate);
-    d.setDate(d.getDate() + i);
-    return d;
-  });
+  useEffect(() => {
+    const t = setInterval(() => setAhora(new Date()), 60_000);
+    return () => clearInterval(t);
+  }, []);
 
-  const hoyStr = formatLocalDate(new Date());
+  const lunesDate = useMemo(() => new Date(lunes + "T12:00:00"), [lunes]);
+  const diasSemana = useMemo(
+    () =>
+      Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(lunesDate);
+        d.setDate(d.getDate() + i);
+        return d;
+      }),
+    [lunesDate],
+  );
 
-  const citasPorDia = diasSemana.map((dia) => {
-    const diaStr = formatLocalDate(dia);
-    return citas.filter((c) => formatLocalDate(new Date(c.fechaHora)) === diaStr);
-  });
+  const hoyStr = formatLocalDate(ahora);
+  const semanaIncluyeHoy = diasSemana.some((d) => formatLocalDate(d) === hoyStr);
+
+  const citasPorDia = useMemo(
+    () =>
+      diasSemana.map((dia) => {
+        const diaStr = formatLocalDate(dia);
+        const delDia = citas.filter((c) => formatLocalDate(new Date(c.fechaHora)) === diaStr);
+        return layoutCitasDia(delDia);
+      }),
+    [diasSemana, citas],
+  );
+
+  const horas = useMemo(
+    () => Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => START_HOUR + i),
+    [],
+  );
+
+  // Posición de línea "ahora" (dentro del grid)
+  const lineaAhoraTopPx = useMemo(() => {
+    if (!semanaIncluyeHoy) return null;
+    const m = minutosDesdeInicio(ahora);
+    if (m < 0 || m > (END_HOUR - START_HOUR + 1) * 60) return null;
+    return (m / 60) * PX_PER_HOUR;
+  }, [ahora, semanaIncluyeHoy]);
+
+  // Scroll inicial hacia 8 AM o hora actual
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const targetPx = semanaIncluyeHoy && lineaAhoraTopPx !== null ? lineaAhoraTopPx : (8 - START_HOUR) * PX_PER_HOUR;
+    const viewportH = el.clientHeight;
+    const maxScroll = Math.max(0, el.scrollHeight - viewportH);
+    el.scrollTop = Math.max(0, Math.min(maxScroll, targetPx - viewportH / 3));
+    // Solo en el mount inicial; evitamos depender de lineaAhoraTopPx para no re-scrollear cada minuto
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lunes]);
 
   function irAVistaDia(diaStr: string) {
+    onSelectDia(null);
     router.push(`/agenda?vista=dia&fecha=${diaStr}`);
   }
 
   return (
     <>
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3">
-      {diasSemana.map((dia, i) => {
-        const diaStr = formatLocalDate(dia);
-        const isHoy = diaStr === hoyStr;
-        const isSeleccionado = diaStr === diaSeleccionado;
-
-        return (
-          <div key={i} className="min-w-0">
-            <button
-              type="button"
-              onClick={() => onSelectDia(isSeleccionado ? null : diaStr)}
-              className={`w-full text-center text-sm font-semibold py-2 rounded-t-lg border-b border-border transition-colors cursor-pointer ${
-                isSeleccionado
-                  ? "bg-primary text-primary-foreground"
-                  : isHoy
-                    ? "bg-primary/10 text-primary hover:bg-primary/20"
-                    : "bg-muted/50 hover:bg-muted"
-              }`}
-              title="Ver detalle del día"
-            >
-              <p>{DIA_LABELS[i]}</p>
-              <p className={`text-xs font-normal ${isSeleccionado ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                {dia.toLocaleDateString("es-ES", { day: "numeric", month: "short" })}
-              </p>
-            </button>
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={(e) => {
-                // Si el clic fue dentro de una cita, dejar que el button de la cita maneje el onClick
-                if ((e.target as HTMLElement).closest("[data-cita]")) return;
-                irAVistaDia(diaStr);
-              }}
-              onKeyDown={(e) => { if (e.key === "Enter") irAVistaDia(diaStr); }}
-              className="w-full border-x border-b border-border rounded-b-lg p-2 min-h-[120px] space-y-2 hover:bg-muted/30 transition-colors text-left cursor-pointer"
-              title="Ir a vista día"
-            >
-              {citasPorDia[i].length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-4">-</p>
-              ) : (
-                citasPorDia[i].map((cita) => {
-                  const hora = toMadridTimeStr(new Date(cita.fechaHora));
-                  const esSolicitudPaciente = cita.estado === "PENDIENTE" && cita.origen === "PACIENTE";
-                  return (
-                    <button
-                      key={cita.id}
-                      type="button"
-                      data-cita
-                      onClick={(e) => { e.stopPropagation(); setCitaAbierta(cita as CitaDetalle); }}
-                      className={`w-full text-left rounded-lg border p-2 text-xs transition-colors cursor-pointer hover:ring-2 hover:ring-primary/30 ${ESTADO_STYLES[cita.estado] || ESTADO_STYLES.PENDIENTE}`}
-                    >
-                      <div className="flex items-center gap-1 font-semibold mb-0.5">
-                        <Clock className="w-3 h-3 flex-shrink-0" />
-                        {hora} ({cita.duracion}min)
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <User className="w-3 h-3 flex-shrink-0" />
-                        <span className="truncate">
-                          {cita.paciente.nombre} {cita.paciente.apellidos}
-                        </span>
-                      </div>
-                      {esSolicitudPaciente && (
-                        <span className="inline-block mt-1 text-[9px] px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200 font-medium">
-                          Solicitud del paciente
-                        </span>
-                      )}
-                      {cita.motivo && (
-                        <p className="text-[10px] opacity-80 truncate mt-0.5">{cita.motivo}</p>
-                      )}
-                    </button>
-                  );
-                })
-              )}
-            </div>
+      <div className="rounded-xl border border-border bg-card overflow-hidden flex flex-col max-h-[calc(100vh-220px)]">
+        {/* Header sticky con los días */}
+        <div className="flex border-b border-border bg-card z-20">
+          <div className="w-16 shrink-0" />
+          <div className="flex-1 grid grid-cols-7">
+            {diasSemana.map((dia, i) => {
+              const diaStr = formatLocalDate(dia);
+              const isHoy = diaStr === hoyStr;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => irAVistaDia(diaStr)}
+                  className="group flex flex-col items-center justify-center gap-1.5 py-3 text-center hover:bg-muted/30 transition-colors"
+                  title="Ir a vista día"
+                >
+                  <span
+                    className={cn(
+                      "text-[11px] font-semibold uppercase tracking-wider",
+                      isHoy ? "text-primary" : "text-muted-foreground",
+                    )}
+                  >
+                    {DIA_LABELS[i]}
+                  </span>
+                  <span
+                    className={cn(
+                      "flex items-center justify-center text-2xl font-normal w-11 h-11 rounded-full tabular-nums transition-colors",
+                      isHoy
+                        ? "bg-primary text-primary-foreground font-medium"
+                        : "text-foreground group-hover:bg-muted",
+                    )}
+                  >
+                    {dia.getDate()}
+                  </span>
+                </button>
+              );
+            })}
           </div>
-        );
-      })}
-    </div>
+        </div>
 
-    {citaAbierta && (
-      <CitaDetalleModal cita={citaAbierta} onClose={() => setCitaAbierta(null)} />
-    )}
+        {/* Grid scrollable */}
+        <div ref={scrollRef} className="relative flex overflow-y-auto flex-1 min-h-0">
+          {/* Columna de horas */}
+          <div
+            className="w-16 shrink-0 border-r border-border bg-muted/20 relative"
+            style={{ height: TOTAL_HEIGHT }}
+          >
+            {horas.map((h, i) => (
+              <div
+                key={h}
+                className="relative"
+                style={{ height: PX_PER_HOUR }}
+              >
+                {i > 0 && (
+                  <span className="absolute -top-2 right-2 text-xs text-muted-foreground font-medium tabular-nums">
+                    {String(h).padStart(2, "0")}:00
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* 7 columnas de días */}
+          <div
+            className="flex-1 grid grid-cols-7 relative min-w-0"
+            style={{ height: TOTAL_HEIGHT }}
+          >
+            {diasSemana.map((dia, idx) => {
+              const diaStr = formatLocalDate(dia);
+              const isHoy = diaStr === hoyStr;
+              const citasDia = citasPorDia[idx];
+
+              return (
+                <div
+                  key={idx}
+                  className={cn(
+                    "relative border-r border-border last:border-r-0",
+                    isHoy && "bg-primary/[0.03]",
+                  )}
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest("[data-cita]")) return;
+                    irAVistaDia(diaStr);
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") irAVistaDia(diaStr);
+                  }}
+                >
+                  {/* Líneas horizontales */}
+                  {horas.map((h) => (
+                    <div
+                      key={h}
+                      className="border-b border-border/60 last:border-b-0"
+                      style={{ height: PX_PER_HOUR }}
+                    />
+                  ))}
+
+                  {/* Citas */}
+                  {citasDia.map((cita) => {
+                    const hora = toMadridTimeStr(new Date(cita.fechaHora));
+                    const widthPct = 100 / cita._nCols;
+                    const leftPct = widthPct * cita._col;
+                    return (
+                      <button
+                        key={cita.id}
+                        type="button"
+                        data-cita
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCitaAbierta(cita as CitaDetalle);
+                        }}
+                        className={cn(
+                          "absolute rounded-md px-1.5 py-1 shadow-sm overflow-hidden text-left hover:ring-2 hover:ring-primary/40 hover:z-10 transition-all",
+                          ESTADO_STYLES[cita.estado] || ESTADO_STYLES.PENDIENTE,
+                        )}
+                        style={{
+                          top: cita._pos.topPx,
+                          height: cita._pos.heightPx,
+                          left: `calc(${leftPct}% + 2px)`,
+                          width: `calc(${widthPct}% - 4px)`,
+                          minHeight: 20,
+                        }}
+                        title={`${hora} · ${cita.paciente.nombre} ${cita.paciente.apellidos}${cita.motivo ? ` — ${cita.motivo}` : ""}`}
+                      >
+                        <div className="text-[12px] font-semibold truncate leading-tight">
+                          {cita.paciente.nombre} {cita.paciente.apellidos}
+                        </div>
+                        {cita._pos.heightPx > 34 && cita.motivo && (
+                          <div className="text-[10px] opacity-75 truncate mt-0.5">
+                            {cita.motivo}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+
+                  {/* Línea "ahora" solo en la columna del día de hoy */}
+                  {isHoy && lineaAhoraTopPx !== null && (
+                    <div
+                      className="absolute left-0 right-0 z-20 pointer-events-none"
+                      style={{ top: lineaAhoraTopPx }}
+                    >
+                      <div className="relative">
+                        <div className="absolute -left-1 -top-1 w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm" />
+                        <div className="h-0.5 bg-rose-500/90" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {citaAbierta && (
+        <CitaDetalleModal cita={citaAbierta} onClose={() => setCitaAbierta(null)} />
+      )}
     </>
   );
 }

@@ -13,11 +13,11 @@ interface Props {
 }
 
 const ROWS = [
-  { key: "calorias", label: "Energía", unit: "kcal", icon: Flame, color: "#a78bfa", bg: "bg-purple-50" },
-  { key: "grasas", label: "Grasa", unit: "g", icon: Droplets, color: "#f0b845", bg: "bg-yellow-50" },
-  { key: "carbohidratos", label: "Hidratos", unit: "g", icon: Circle, color: "#d9956a", bg: "bg-orange-50" },
-  { key: "proteinas", label: "Proteína", unit: "g", icon: Diamond, color: "#7eaadf", bg: "bg-blue-50" },
-  { key: "fibra", label: "Fibra", unit: "g", icon: Triangle, color: "#4ec4a0", bg: "bg-emerald-50" },
+  { key: "calorias", label: "Energía", unit: "kcal", icon: Flame, color: "#a78bfa", bg: "bg-purple-50 dark:bg-purple-500/10" },
+  { key: "grasas", label: "Grasa", unit: "g", icon: Droplets, color: "#f0b845", bg: "bg-yellow-50 dark:bg-yellow-500/10" },
+  { key: "carbohidratos", label: "Hidratos", unit: "g", icon: Circle, color: "#d9956a", bg: "bg-orange-50 dark:bg-orange-500/10" },
+  { key: "proteinas", label: "Proteína", unit: "g", icon: Diamond, color: "#7eaadf", bg: "bg-blue-50 dark:bg-blue-500/10" },
+  { key: "fibra", label: "Fibra", unit: "g", icon: Triangle, color: "#4ec4a0", bg: "bg-emerald-50 dark:bg-emerald-500/10" },
 ] as const;
 
 export function PorcionesCalculadora({

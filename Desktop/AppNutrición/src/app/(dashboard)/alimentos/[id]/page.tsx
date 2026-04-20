@@ -64,8 +64,8 @@ export default async function AlimentoDetailPage({ params }: Props) {
               <span
                 className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                   alimento.origen === "API"
-                    ? "bg-blue-50 text-blue-700"
-                    : "bg-green-50 text-green-700"
+                    ? "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400"
+                    : "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400"
                 }`}
               >
                 {alimento.origen === "API" ? "Importado" : "Personalizado"}

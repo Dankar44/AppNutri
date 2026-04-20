@@ -312,7 +312,7 @@ export function HorarioLaboralEditor({ inicial }: { inicial: HorarioLaboral }) {
           </span>{" "}
           a la semana
           {dirty && (
-            <span className="ml-3 text-amber-700 text-xs font-medium">
+            <span className="ml-3 text-amber-700 dark:text-amber-400 text-xs font-medium">
               Cambios sin guardar
             </span>
           )}

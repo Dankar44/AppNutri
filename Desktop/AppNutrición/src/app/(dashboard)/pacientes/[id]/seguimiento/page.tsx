@@ -1,14 +1,14 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, BookOpen } from "lucide-react";
+import { ArrowLeft, ClipboardCheck } from "lucide-react";
 import { getPaciente } from "@/app/actions/pacientes";
-import { DiarioDietistaView } from "./diario-dietista-view";
+import { SeguimientoDietistaView } from "./seguimiento-dietista-view";
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
-export default async function DiarioDietistaPage({ params }: Props) {
+export default async function SeguimientoDietistaPage({ params }: Props) {
   const { id } = await params;
   const paciente = await getPaciente(id);
   if (!paciente) notFound();
@@ -24,14 +24,14 @@ export default async function DiarioDietistaPage({ params }: Props) {
           Volver a {paciente.nombre}
         </Link>
         <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
-          <BookOpen className="w-6 h-6 text-green-600" />
-          Diario de {paciente.nombre} {paciente.apellidos}
+          <ClipboardCheck className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+          Seguimiento de {paciente.nombre} {paciente.apellidos}
         </h1>
         <p className="text-muted-foreground mt-1">
-          Registro alimentario del paciente
+          Comidas, agua, ejercicio y notas registradas por el paciente
         </p>
       </div>
-      <DiarioDietistaView pacienteId={id} />
+      <SeguimientoDietistaView pacienteId={id} />
     </div>
   );
 }

@@ -12,11 +12,11 @@ const END_HOUR = 22;
 const PX_PER_HOUR = 52;
 
 const ESTADO_STYLES: Record<string, string> = {
-  PENDIENTE: "bg-amber-100 text-amber-900 border-amber-200",
-  CONFIRMADA: "bg-sky-100 text-sky-900 border-sky-200",
-  COMPLETADA: "bg-emerald-100 text-emerald-900 border-emerald-200",
+  PENDIENTE: "bg-amber-100 dark:bg-amber-500/15 text-amber-900 dark:text-amber-200 border-amber-200 dark:border-amber-500/30",
+  CONFIRMADA: "bg-sky-100 dark:bg-sky-500/15 text-sky-900 dark:text-sky-200 border-sky-200 dark:border-sky-500/30",
+  COMPLETADA: "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-900 dark:text-emerald-200 border-emerald-200 dark:border-emerald-500/30",
   CANCELADA: "bg-muted text-muted-foreground border-border",
-  CONTRAPROPUESTA: "bg-indigo-100 text-indigo-900 border-indigo-200",
+  CONTRAPROPUESTA: "bg-indigo-100 dark:bg-indigo-500/15 text-indigo-900 dark:text-indigo-200 border-indigo-200 dark:border-indigo-500/30",
 };
 
 interface Cita {
@@ -128,16 +128,20 @@ export function AgendaVistaDia({ fecha, citas }: Props) {
     <div className="rounded-xl border border-border bg-card overflow-hidden flex flex-col max-h-[calc(100vh-220px)]">
       <div ref={scrollRef} className="relative flex overflow-y-auto flex-1 min-h-0">
         <div
-          className="w-10 sm:w-14 shrink-0 border-r border-border bg-muted/30"
+          className="w-12 sm:w-16 shrink-0 border-r border-border bg-muted/30"
           style={{ height: totalHeight }}
         >
-          {horas.map((h) => (
+          {horas.map((h, i) => (
             <div
               key={h}
-              className="text-[10px] sm:text-[11px] text-muted-foreground text-right pr-1 sm:pr-2 pt-0 font-medium tabular-nums"
+              className="relative"
               style={{ height: PX_PER_HOUR }}
             >
-              {String(h).padStart(2, "0")}:00
+              {i > 0 && (
+                <span className="absolute -top-2 right-1 sm:right-2 text-[11px] sm:text-xs text-muted-foreground font-medium tabular-nums">
+                  {String(h).padStart(2, "0")}:00
+                </span>
+              )}
             </div>
           ))}
         </div>
@@ -162,7 +166,7 @@ export function AgendaVistaDia({ fecha, citas }: Props) {
               <div className="flex items-center gap-1 -translate-y-1/2">
                 <div className="w-2 h-2 rounded-full bg-rose-500 shrink-0 shadow-sm" />
                 <div className="h-0.5 flex-1 bg-rose-500/90" />
-                <span className="text-[10px] font-semibold text-rose-600 tabular-nums pr-2 shrink-0 bg-card/90 px-1 rounded">
+                <span className="text-[10px] font-semibold text-rose-600 dark:text-rose-400 tabular-nums pr-2 shrink-0 bg-card/90 px-1 rounded">
                   {ahora.toLocaleTimeString("es-ES", {
                     hour: "2-digit",
                     minute: "2-digit",
@@ -190,16 +194,13 @@ export function AgendaVistaDia({ fecha, citas }: Props) {
                   height: pos.heightPx,
                   minHeight: 28,
                 }}
+                title={`${hora} · ${cita.paciente.nombre} ${cita.paciente.apellidos}${cita.motivo ? ` — ${cita.motivo}` : ""}`}
               >
-                <div className="flex items-center gap-1 text-[11px] font-semibold leading-tight">
-                  <Clock className="w-3 h-3 shrink-0 opacity-70" />
-                  <span className="tabular-nums">{hora}</span>
-                  <span className="truncate font-medium">
-                    {cita.paciente.nombre} {cita.paciente.apellidos}
-                  </span>
+                <div className="text-[12px] font-semibold truncate leading-tight">
+                  {cita.paciente.nombre} {cita.paciente.apellidos}
                 </div>
-                {pos.heightPx > 36 && cita.motivo && (
-                  <p className="text-[10px] opacity-80 truncate mt-0.5">
+                {pos.heightPx > 34 && cita.motivo && (
+                  <p className="text-[10px] opacity-75 truncate mt-0.5">
                     {cita.motivo}
                   </p>
                 )}

@@ -21,7 +21,7 @@ export function MedidaDeleteButton({ medidaId }: { medidaId: string }) {
   return (
     <button
       onClick={handleDelete}
-      className="p-1 rounded hover:bg-red-50 text-red-400 hover:text-red-600 transition-colors"
+      className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-500/15 text-red-400 hover:text-red-600 transition-colors"
       title="Eliminar medida"
     >
       <Trash2 className="w-3.5 h-3.5" />

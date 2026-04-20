@@ -33,10 +33,10 @@ export function MacroAnalysisCard({ title, proteinas, carbohidratos, grasas, fib
   ].filter((s) => s.value > 0);
 
   const rows = [
-    { key: "grasas", label: "Grasa", value: grasas, kcal: grasasKcal, color: MACRO_COLORS.grasas, bgColor: "bg-yellow-50" },
-    { key: "carbohidratos", label: "Hidratos", value: carbohidratos, kcal: carbKcal, color: MACRO_COLORS.carbohidratos, bgColor: "bg-orange-50" },
-    { key: "proteinas", label: "Proteína", value: proteinas, kcal: protKcal, color: MACRO_COLORS.proteinas, bgColor: "bg-blue-50" },
-    { key: "fibra", label: "Fibra alimentaria", value: fibra, kcal: fibraKcal, color: MACRO_COLORS.fibra, bgColor: "bg-emerald-50" },
+    { key: "grasas", label: "Grasa", value: grasas, kcal: grasasKcal, color: MACRO_COLORS.grasas, bgColor: "bg-yellow-50 dark:bg-yellow-500/10" },
+    { key: "carbohidratos", label: "Hidratos", value: carbohidratos, kcal: carbKcal, color: MACRO_COLORS.carbohidratos, bgColor: "bg-orange-50 dark:bg-orange-500/10" },
+    { key: "proteinas", label: "Proteína", value: proteinas, kcal: protKcal, color: MACRO_COLORS.proteinas, bgColor: "bg-blue-50 dark:bg-blue-500/10" },
+    { key: "fibra", label: "Fibra alimentaria", value: fibra, kcal: fibraKcal, color: MACRO_COLORS.fibra, bgColor: "bg-emerald-50 dark:bg-emerald-500/10" },
   ];
 
   void energySinFibra;

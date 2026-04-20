@@ -68,7 +68,7 @@ export function PlantillaCard({ id, nombre, createdAt, diasCount, alimentosCount
         <button
           onClick={handleEliminar}
           disabled={deleting}
-          className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+          className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/15 transition-colors disabled:opacity-50"
           title="Eliminar plantilla"
         >
           <Trash2 className="w-4 h-4" />
