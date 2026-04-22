@@ -80,6 +80,7 @@ export default function RegistroPage() {
       email: form.email,
       password: form.password,
       options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
         data: {
           nombre: form.nombre,
           apellidos: form.apellidos,
