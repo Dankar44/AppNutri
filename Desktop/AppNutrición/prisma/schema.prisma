@@ -470,6 +470,8 @@ model Cita {
   createdAt               DateTime    @default(now())
   updatedAt               DateTime    @updatedAt
 
+  notificaciones  Notificacion[]
+
   @@map("citas")
 }
 
@@ -597,6 +599,8 @@ model Notificacion {
   dietista    Dietista?         @relation(fields: [dietistaId], references: [id], onDelete: Cascade)
   pacienteId  String?
   paciente    Paciente?         @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  citaId      String?
+  cita        Cita?             @relation(fields: [citaId], references: [id], onDelete: SetNull)
   tipo        TipoNotificacion
   titulo      String
   mensaje     String
@@ -604,6 +608,9 @@ model Notificacion {
   enlace      String?
   createdAt   DateTime          @default(now())
 
+  @@index([dietistaId, leida])
+  @@index([pacienteId, leida])
+  @@index([citaId, leida])
   @@map("notificaciones")
 }
 

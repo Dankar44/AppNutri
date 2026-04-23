@@ -15,6 +15,7 @@ import {
   BookOpen,
   Bell,
   Trash2,
+  Check,
   Wallet,
   WalletCards,
   AlertCircle,
@@ -22,7 +23,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
-import { eliminarNotificacion } from "@/app/actions/notificaciones";
+import { eliminarNotificacion, marcarLeida } from "@/app/actions/notificaciones";
 
 interface Notif {
   id: string;
@@ -71,6 +72,40 @@ export function NotificacionItem({ notificacion: n }: { notificacion: Notif }) {
       router.refresh();
     });
   }
+
+  function handleLeer(e: React.MouseEvent) {
+    if (n.leida) return;
+    e.preventDefault();
+    const destino = n.enlace;
+    startTransition(async () => {
+      await marcarLeida(n.id).catch(() => {});
+      if (destino) router.push(destino);
+      else router.refresh();
+    });
+  }
+
+  function handleMarcarLeida(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (n.leida) return;
+    startTransition(async () => {
+      await marcarLeida(n.id).catch(() => {});
+      router.refresh();
+    });
+  }
+
+  const markReadBtn = !n.leida ? (
+    <button
+      type="button"
+      onClick={handleMarcarLeida}
+      disabled={pending}
+      aria-label="Marcar como leída"
+      title="Marcar como leída"
+      className="shrink-0 w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-500/15 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity disabled:opacity-40"
+    >
+      <Check className="w-4 h-4" />
+    </button>
+  ) : null;
 
   const deleteBtn = (
     <button
@@ -126,6 +161,7 @@ export function NotificacionItem({ notificacion: n }: { notificacion: Notif }) {
                 title="Sin leer"
               />
             )}
+            {markReadBtn}
             {deleteBtn}
           </div>
         </div>
@@ -136,10 +172,14 @@ export function NotificacionItem({ notificacion: n }: { notificacion: Notif }) {
 
   if (n.enlace) {
     return (
-      <Link href={n.enlace} className="block">
+      <Link href={n.enlace} className="block" onClick={handleLeer}>
         {content}
       </Link>
     );
   }
-  return content;
+  return (
+    <button type="button" onClick={handleLeer} className="block w-full text-left">
+      {content}
+    </button>
+  );
 }

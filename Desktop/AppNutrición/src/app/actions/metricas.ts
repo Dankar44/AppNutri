@@ -64,20 +64,26 @@ export async function getActividadMensual() {
   const ahora = new Date();
   const inicio6Meses = new Date(ahora.getFullYear(), ahora.getMonth() - 5, 1);
 
-  // Solo 2 queries en paralelo en vez de 12 secuenciales
+  // Para "pacientes totales" (acumulado hasta fin de mes) necesitamos TODOS
+  // los pacientes del dietista, no solo los recientes.
+  // Excluimos el paciente demo (nombre='Paciente' + apellidos='Prueba') para no
+  // inflar la gráfica con datos de ejemplo.
   const [consultas, pacientes] = await Promise.all([
     prisma.consulta.findMany({
       where: { dietistaId: dietista.id, fecha: { gte: inicio6Meses } },
       select: { fecha: true },
     }),
     prisma.paciente.findMany({
-      where: { dietistaId: dietista.id, createdAt: { gte: inicio6Meses } },
+      where: {
+        dietistaId: dietista.id,
+        NOT: { AND: [{ nombre: "Paciente" }, { apellidos: "Prueba" }] },
+      },
       select: { createdAt: true },
     }),
   ]);
 
-  // Agrupar en cliente (mucho más rápido que 12 queries)
-  const meses: { mes: string; consultas: number; pacientesNuevos: number }[] = [];
+  // Agrupar en cliente
+  const meses: { mes: string; consultas: number; pacientesTotales: number }[] = [];
   for (let i = 5; i >= 0; i--) {
     const d = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
     const fin = new Date(d.getFullYear(), d.getMonth() + 1, 1);
@@ -88,12 +94,12 @@ export async function getActividadMensual() {
       return f >= d && f < fin;
     }).length;
 
-    const pacientesNuevos = pacientes.filter((p) => {
-      const f = new Date(p.createdAt);
-      return f >= d && f < fin;
+    // Pacientes totales = acumulado hasta el fin del mes
+    const pacientesTotales = pacientes.filter((p) => {
+      return new Date(p.createdAt) < fin;
     }).length;
 
-    meses.push({ mes: label, consultas: consultasMes, pacientesNuevos });
+    meses.push({ mes: label, consultas: consultasMes, pacientesTotales });
   }
 
   return meses;

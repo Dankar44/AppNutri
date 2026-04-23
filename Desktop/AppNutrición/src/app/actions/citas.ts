@@ -72,6 +72,7 @@ export async function crearCita(data: CitaFormData) {
     await prisma.notificacion.create({
       data: {
         pacienteId: paciente.id,
+        citaId: cita.id,
         tipo: "CITA_SOLICITADA",
         titulo: "Tu nutricionista te ha propuesto una cita",
         mensaje: `${dietista.nombre} ${dietista.apellidos} propone una cita para el ${textoFecha}`,

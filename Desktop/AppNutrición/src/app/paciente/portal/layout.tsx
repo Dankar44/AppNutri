@@ -3,6 +3,7 @@ import { getCurrentPaciente } from "@/lib/patient-auth";
 import { prisma } from "@/lib/prisma";
 import { PatientNav } from "@/components/paciente/patient-nav";
 import { TourWrapper } from "@/components/tour/tour-wrapper";
+import { HelpWidget } from "@/components/help/help-widget";
 import { getContrapropuestasPendientesCount } from "@/app/actions/notificaciones-paciente";
 import { getContadorNoLeidosPaciente } from "@/app/actions/mensajes";
 
@@ -44,6 +45,7 @@ export default async function PatientPortalLayout({
             </div>
           </div>
         </main>
+        <HelpWidget />
       </div>
     </TourWrapper>
   );

@@ -5,7 +5,7 @@ import { EvolucionChart } from "@/components/evolucion-chart";
 interface ActividadData {
   mes: string;
   consultas: number;
-  pacientesNuevos: number;
+  pacientesTotales: number;
 }
 
 export function DashboardCharts({
@@ -15,7 +15,7 @@ export function DashboardCharts({
   data: ActividadData[];
   height?: number;
 }) {
-  if (data.every((d) => d.consultas === 0 && d.pacientesNuevos === 0)) {
+  if (data.every((d) => d.consultas === 0 && d.pacientesTotales === 0)) {
     return (
       <div
         className="flex items-center justify-center text-sm text-muted-foreground"
@@ -28,10 +28,10 @@ export function DashboardCharts({
 
   return (
     <EvolucionChart
-      data={data.map((d) => ({ fecha: d.mes, consultas: d.consultas, pacientes: d.pacientesNuevos }))}
+      data={data.map((d) => ({ fecha: d.mes, consultas: d.consultas, pacientes: d.pacientesTotales }))}
       lines={[
         { key: "consultas", label: "Consultas", color: "#3b82f6" },
-        { key: "pacientes", label: "Pacientes nuevos", color: "#22c55e" },
+        { key: "pacientes", label: "Pacientes totales", color: "#22c55e" },
       ]}
       height={height}
     />

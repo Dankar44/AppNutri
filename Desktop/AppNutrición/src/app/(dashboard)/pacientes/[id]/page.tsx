@@ -9,6 +9,8 @@ import { getPlanesPaciente, getPlanesDetallePaciente } from "@/app/actions/plane
 import { getHorarioPaciente, getRecomendaciones } from "@/app/actions/pacientes";
 import { getFichaSidebar } from "@/app/actions/ficha-sidebar";
 import { ensurePlanificacionDefecto, getPlanificaciones } from "@/app/actions/planificaciones";
+import { getMapaNotificacionesPacientes } from "@/app/actions/notificaciones";
+import { AutoMarkLeidas } from "./auto-mark-leidas";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -28,7 +30,7 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
   const needsMedidas = ["mediciones", "planificacion", "plan-alimentacion"].includes(pestana);
 
   // Paralelizar todas las queries secundarias en un solo Promise.all
-  const [horario, recomendaciones, planesResumen, sidebarData, medidas, planes, planificaciones] = await Promise.all([
+  const [horario, recomendaciones, planesResumen, sidebarData, medidas, planes, planificaciones, mapaNotifs] = await Promise.all([
     getHorarioPaciente(id),
     getRecomendaciones(id),
     getPlanesPaciente(id),
@@ -42,10 +44,13 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
     pestana === "planificacion"
       ? ensurePlanificacionDefecto(id).then(() => getPlanificaciones(id))
       : [],
+    getMapaNotificacionesPacientes(),
   ]);
+  const notifsPaciente = mapaNotifs[id] || [];
 
   return (
     <div>
+      <AutoMarkLeidas pacienteId={id} pestana={pestana} />
       <Link
         href="/pacientes"
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 py-2 sm:py-0 -my-2 sm:my-0"
@@ -64,6 +69,10 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
         recomendaciones={recomendaciones}
         planesResumen={JSON.parse(JSON.stringify(planesResumen))}
         sidebarData={sidebarData}
+        notifsPorTipo={notifsPaciente.reduce<Record<string, number>>((acc, n) => {
+          acc[n.tipo] = (acc[n.tipo] ?? 0) + 1;
+          return acc;
+        }, {})}
       />
     </div>
   );

@@ -9,6 +9,7 @@ import {
 import { prisma } from "@/lib/prisma";
 import { AgendaClient } from "./agenda-client";
 import { AgendaSidebar } from "./agenda-sidebar";
+import { AutoMarkLeidasCita } from "./auto-mark-leidas-cita";
 import { PageHeader } from "@/components/page-header";
 
 interface Props {
@@ -90,6 +91,7 @@ export default async function AgendaPage({ searchParams }: Props) {
 
   return (
     <div>
+      {params.cita && <AutoMarkLeidasCita citaId={params.cita} />}
       <PageHeader
         icon={CalendarDays}
         title="Agenda"

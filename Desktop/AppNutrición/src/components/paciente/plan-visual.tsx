@@ -144,6 +144,7 @@ export function PlanVisual({
   showAguaEjercicio = true,
   showFoodTable = true,
   readOnly = false,
+  vistaInicial = "resumen",
 }: {
   plan: PlanVisualDetalle;
   pacienteId: string;
@@ -157,14 +158,17 @@ export function PlanVisual({
   showAguaEjercicio?: boolean;
   showFoodTable?: boolean;
   readOnly?: boolean;
+  vistaInicial?: "resumen" | "plan" | "analisis";
 }) {
   const router = useRouter();
   const [isPendingAssign, startAssign] = useTransition();
 
-  const [selectedDayKey, setSelectedDayKey] = useState<"TODOS" | string>("TODOS");
+  const [selectedDayKey, setSelectedDayKey] = useState<"TODOS" | string>(
+    vistaInicial === "plan" ? "LUNES" : "TODOS",
+  );
   const [planSelectOpen, setPlanSelectOpen] = useState(false);
   const planSelectWrapRef = useRef<HTMLDivElement | null>(null);
-  const [vista, setVista] = useState<"resumen" | "plan" | "analisis">("resumen");
+  const [vista, setVista] = useState<"resumen" | "plan" | "analisis">(vistaInicial);
   const [hoveredMacro, setHoveredMacro] = useState<number | null>(null);
   const [comidaChartOffset, setComidaChartOffset] = useState(0);
   const [foodTablePage, setFoodTablePage] = useState(0);

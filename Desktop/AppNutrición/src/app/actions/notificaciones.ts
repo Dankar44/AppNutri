@@ -23,10 +23,16 @@ export async function generarNotificaciones() {
   // Cargar todas las notificaciones recientes de una sola vez (evita N+1)
   const notificacionesRecientes = await prisma.notificacion.findMany({
     where: { dietistaId: dietista.id, createdAt: { gte: hace24h } },
-    select: { tipo: true, mensaje: true },
+    select: { tipo: true, citaId: true, pacienteId: true, mensaje: true },
   });
-  const existeNotif = (tipo: TipoNotificacion, id: string) =>
-    notificacionesRecientes.some((n) => n.tipo === tipo && n.mensaje.includes(id));
+  const existeCitaNotif = (tipo: TipoNotificacion, citaId: string) =>
+    notificacionesRecientes.some(
+      (n) => n.tipo === tipo && (n.citaId === citaId || n.mensaje.includes(citaId)),
+    );
+  const existePacienteNotif = (tipo: TipoNotificacion, pacienteId: string) =>
+    notificacionesRecientes.some(
+      (n) => n.tipo === tipo && (n.pacienteId === pacienteId || n.mensaje.includes(pacienteId)),
+    );
 
   // Datos necesarios en paralelo (3 queries en vez de separadas)
   const [citasHoy, pacientes, entradasHoy] = await Promise.all([
@@ -52,6 +58,8 @@ export async function generarNotificaciones() {
   // Preparar batch de notificaciones a crear
   const nuevas: {
     dietistaId: string;
+    pacienteId?: string;
+    citaId?: string;
     tipo: TipoNotificacion;
     titulo: string;
     mensaje: string;
@@ -60,13 +68,15 @@ export async function generarNotificaciones() {
 
   // Citas de hoy
   for (const cita of citasHoy) {
-    if (!existeNotif("CITA_HOY", cita.id)) {
+    if (!existeCitaNotif("CITA_HOY", cita.id)) {
       const hora = new Date(cita.fechaHora).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
       nuevas.push({
         dietistaId: dietista.id,
+        pacienteId: cita.pacienteId,
+        citaId: cita.id,
         tipo: "CITA_HOY",
         titulo: `Cita a las ${hora}`,
-        mensaje: `${cita.paciente.nombre} ${cita.paciente.apellidos} - ${cita.id}`,
+        mensaje: `${cita.paciente.nombre} ${cita.paciente.apellidos}`,
         enlace: "/agenda",
       });
     }
@@ -75,23 +85,25 @@ export async function generarNotificaciones() {
   // Pacientes sin consulta/medidas >30 días
   for (const p of pacientes) {
     if (p.consultas.length === 0 || new Date(p.consultas[0].fecha) < hace30Dias) {
-      if (!existeNotif("PACIENTE_SIN_CONSULTA", p.id)) {
+      if (!existePacienteNotif("PACIENTE_SIN_CONSULTA", p.id)) {
         nuevas.push({
           dietistaId: dietista.id,
+          pacienteId: p.id,
           tipo: "PACIENTE_SIN_CONSULTA",
           titulo: "Paciente sin consulta reciente",
-          mensaje: `${p.nombre} ${p.apellidos} lleva >30 días sin consulta - ${p.id}`,
+          mensaje: `${p.nombre} ${p.apellidos} lleva >30 días sin consulta`,
           enlace: `/pacientes/${p.id}`,
         });
       }
     }
     if (p.medidas.length === 0 || new Date(p.medidas[0].fecha) < hace30Dias) {
-      if (!existeNotif("PACIENTE_SIN_MEDIDAS", p.id)) {
+      if (!existePacienteNotif("PACIENTE_SIN_MEDIDAS", p.id)) {
         nuevas.push({
           dietistaId: dietista.id,
+          pacienteId: p.id,
           tipo: "PACIENTE_SIN_MEDIDAS",
           titulo: "Paciente sin medidas recientes",
-          mensaje: `${p.nombre} ${p.apellidos} lleva >30 días sin medidas - ${p.id}`,
+          mensaje: `${p.nombre} ${p.apellidos} lleva >30 días sin medidas`,
           enlace: `/pacientes/${p.id}/medidas`,
         });
       }
@@ -100,12 +112,13 @@ export async function generarNotificaciones() {
 
   // Seguimientos registrados hoy
   for (const e of entradasHoy) {
-    if (!existeNotif("DIARIO_NUEVO", e.paciente.id)) {
+    if (!existePacienteNotif("DIARIO_NUEVO", e.paciente.id)) {
       nuevas.push({
         dietistaId: dietista.id,
+        pacienteId: e.paciente.id,
         tipo: "DIARIO_NUEVO",
         titulo: "Nuevo seguimiento diario",
-        mensaje: `${e.paciente.nombre} ${e.paciente.apellidos} registró su seguimiento hoy - ${e.paciente.id}`,
+        mensaje: `${e.paciente.nombre} ${e.paciente.apellidos} registró su seguimiento hoy`,
         enlace: `/pacientes/${e.paciente.id}/seguimiento`,
       });
     }
@@ -139,6 +152,19 @@ async function limpiarNotificacionesAntiguas(dietistaId: string) {
 
   await prisma.notificacion.deleteMany({
     where: { dietistaId, leida: true, createdAt: { lt: corte } },
+  });
+
+  // Notificaciones de cita cuyo evento ha sido cancelado o cuya cita ya no existe
+  // (citaId=null por SetNull tras delete). Borramos para evitar huérfanas visibles.
+  await prisma.notificacion.deleteMany({
+    where: {
+      dietistaId,
+      tipo: { in: ["CITA_HOY", "CITA_SOLICITADA", "CITA_CONTRAPROPUESTA"] },
+      OR: [
+        { citaId: null },
+        { cita: { estado: "CANCELADA" } },
+      ],
+    },
   });
 
   const total = await prisma.notificacion.count({ where: { dietistaId } });
@@ -251,6 +277,132 @@ export async function getBadgesNavegacion(): Promise<Record<string, number>> {
   if (pacientes > 0) badges["/pacientes"] = pacientes;
 
   return badges;
+}
+
+/**
+ * Mapa pacienteId → notificaciones no leídas del nutri.
+ * Una sola query agrupada para pintar dots en el listado sin N+1.
+ */
+export async function getMapaNotificacionesPacientes(): Promise<
+  Record<string, { id: string; tipo: string; titulo: string; mensaje: string; createdAt: Date }[]>
+> {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return {};
+
+  const notifs = await prisma.notificacion.findMany({
+    where: { dietistaId: dietista.id, leida: false, pacienteId: { not: null } },
+    select: { id: true, pacienteId: true, tipo: true, titulo: true, mensaje: true, createdAt: true },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const mapa: Record<string, { id: string; tipo: string; titulo: string; mensaje: string; createdAt: Date }[]> = {};
+  for (const n of notifs) {
+    if (!n.pacienteId) continue;
+    if (!mapa[n.pacienteId]) mapa[n.pacienteId] = [];
+    mapa[n.pacienteId].push({
+      id: n.id,
+      tipo: n.tipo,
+      titulo: n.titulo,
+      mensaje: n.mensaje,
+      createdAt: n.createdAt,
+    });
+  }
+  return mapa;
+}
+
+/**
+ * Mapa citaId → notificaciones no leídas del nutri.
+ * Usado por la agenda para pintar dots por cita.
+ */
+export async function getMapaNotificacionesCitas(
+  citaIds: string[],
+): Promise<Record<string, { id: string; tipo: string; titulo: string; mensaje: string; createdAt: Date }[]>> {
+  const dietista = await getCurrentDietista();
+  if (!dietista || citaIds.length === 0) return {};
+
+  const notifs = await prisma.notificacion.findMany({
+    where: {
+      dietistaId: dietista.id,
+      leida: false,
+      citaId: { in: citaIds },
+    },
+    select: { id: true, citaId: true, tipo: true, titulo: true, mensaje: true, createdAt: true },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const mapa: Record<string, { id: string; tipo: string; titulo: string; mensaje: string; createdAt: Date }[]> = {};
+  for (const n of notifs) {
+    if (!n.citaId) continue;
+    if (!mapa[n.citaId]) mapa[n.citaId] = [];
+    mapa[n.citaId].push({
+      id: n.id,
+      tipo: n.tipo,
+      titulo: n.titulo,
+      mensaje: n.mensaje,
+      createdAt: n.createdAt,
+    });
+  }
+  return mapa;
+}
+
+/** Marca como leídas todas las notificaciones del nutri asociadas al paciente. */
+export async function marcarLeidasDePaciente(pacienteId: string) {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return;
+
+  const res = await prisma.notificacion.updateMany({
+    where: { dietistaId: dietista.id, pacienteId, leida: false },
+    data: { leida: true },
+  });
+
+  if (res.count > 0) {
+    revalidatePath("/pacientes");
+    revalidatePath("/notificaciones");
+    revalidatePath("/", "layout");
+  }
+}
+
+/** Marca leídas solo las notificaciones del paciente de los tipos indicados. */
+export async function marcarLeidasDePacientePorTipo(
+  pacienteId: string,
+  tipos: TipoNotificacion[],
+) {
+  const dietista = await getCurrentDietista();
+  if (!dietista || tipos.length === 0) return;
+
+  const res = await prisma.notificacion.updateMany({
+    where: {
+      dietistaId: dietista.id,
+      pacienteId,
+      tipo: { in: tipos },
+      leida: false,
+    },
+    data: { leida: true },
+  });
+
+  if (res.count > 0) {
+    revalidatePath(`/pacientes/${pacienteId}`);
+    revalidatePath("/pacientes");
+    revalidatePath("/notificaciones");
+    revalidatePath("/", "layout");
+  }
+}
+
+/** Marca como leídas todas las notificaciones del nutri asociadas a la cita. */
+export async function marcarLeidasDeCita(citaId: string) {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return;
+
+  const res = await prisma.notificacion.updateMany({
+    where: { dietistaId: dietista.id, citaId, leida: false },
+    data: { leida: true },
+  });
+
+  if (res.count > 0) {
+    revalidatePath("/agenda");
+    revalidatePath("/notificaciones");
+    revalidatePath("/", "layout");
+  }
 }
 
 export async function marcarLeida(id: string) {

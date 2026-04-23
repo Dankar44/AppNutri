@@ -21,18 +21,45 @@ const SECTION_LABELS: Record<string, string> = {
   dashboard: "Dashboard",
   pacientes: "Pacientes",
   "paciente-detalle": "Ficha del paciente",
+  "paciente-informacion": "Información del paciente",
+  "paciente-mediciones": "Mediciones",
   "paciente-consultas": "Consultas",
-  "paciente-medidas": "Medidas",
+  "paciente-planificacion": "Planificación",
+  "paciente-plan-alimentacion": "Plan de alimentación",
+  "paciente-seguimiento": "Seguimiento del paciente",
+  "paciente-recomendaciones": "Recomendaciones",
+  "paciente-entregables": "Entregables",
+  "paciente-portal-config": "Portal del paciente",
   dietas: "Dietas",
   "dieta-editor": "Editor de plan",
   "dieta-ia": "Generación con IA",
   "dieta-compartir": "Compartir plan",
+  "dieta-plantillas": "Plantillas",
   alimentos: "Alimentos",
   recetas: "Recetas",
   agenda: "Agenda",
+  "agenda-horario": "Horario laboral",
+  "agenda-citas": "Nueva cita",
+  "agenda-google": "Google Calendar",
+  pagos: "Pagos",
+  mensajes: "Mensajes",
   reportes: "Reportes",
   notificaciones: "Notificaciones",
   ajustes: "Ajustes",
+  "ajustes-perfil": "Ajustes · Perfil",
+  "ajustes-integraciones": "Ajustes · Integraciones",
+  "ajustes-suscripcion": "Ajustes · Suscripción",
+  "ajustes-cobros": "Ajustes · Cobros",
+  "ajustes-demo": "Ajustes · Paciente de ejemplo",
+  "ajustes-guias": "Ajustes · Guías",
+  "ajustes-peligroso": "Ajustes · Zona peligrosa",
+  "portal-general": "Mi portal",
+  "portal-dashboard": "Mi dashboard",
+  "portal-citas": "Mis citas",
+  "portal-horario": "Mi horario",
+  "portal-seguimiento": "Mi seguimiento",
+  "portal-perfil": "Mi perfil",
+  "portal-entregables": "Exportar PDF",
 };
 
 export function HelpWidget() {
@@ -90,12 +117,13 @@ export function HelpWidget() {
     }, 200);
   }
 
-  // No mostrar en rutas fuera del dashboard
+  // No mostrar en auth / admin / vistas compartidas, pero SÍ en el portal paciente
   if (
     pathname.startsWith("/login") ||
     pathname.startsWith("/registro") ||
     pathname.startsWith("/admin") ||
-    pathname.startsWith("/paciente") ||
+    pathname.startsWith("/paciente/login") ||
+    pathname.startsWith("/paciente/registro") ||
     pathname.startsWith("/compartido") ||
     pathname === "/"
   ) {

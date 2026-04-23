@@ -182,16 +182,25 @@ Todavía **no funciona en Oracle** porque necesita dominio + HTTPS. Pasos detall
 
 ## 5. Tareas para Guillermo — 19 de abril, 10:44
 
-### 5.1. Bug: notificaciones duplicadas al crear paciente desde dashboard
-- En uno de los **accesos rápidos** del dashboard del nutricionista está el botón **"Crear paciente"**.
-- Al usarlo, al paciente le saltan **4 notificaciones** de golpe. No debería llegar ninguna (o como mucho una de bienvenida).
-- Hay que investigar qué evento se está disparando 4 veces (seguramente un efecto duplicado, un listener colgando o un revalidate que re-emite).
-- Revisar el flujo desde el botón del dashboard hasta la creación del paciente y ver qué notificaciones se emiten y por qué se multiplican.
+### ~~5.1. Bug: notificaciones duplicadas al crear paciente desde dashboard~~ ✅ HECHO 21/04/2026
 
-### 5.2. Reorganizar ajustes del nutricionista
-- La página de **Ajustes del nutricionista** está bastante desestructurada actualmente (tarjetas sueltas, jerarquía poco clara, secciones mezcladas).
-- Hay que **reajustar toda la pantalla** para que quede más bonita, ordenada y coherente con el resto del rediseño de la app.
-- Revisar agrupación por bloques (perfil, integraciones, suscripción, seguridad, zona peligrosa, etc.), espaciados, iconos, jerarquía tipográfica.
+**Diagnóstico**: No era un bug. `generarNotificaciones()` se ejecuta al cargar el dashboard y recorre TODOS los pacientes activos del nutri, creando notificaciones de `PACIENTE_SIN_MEDIDAS` / `PACIENTE_SIN_CONSULTA` para todos los que lleven >30 días sin datos. Las 4 notifs que saltaban eran legítimas — correspondían a otros pacientes con datos antiguos, no al nuevo.
+
+**Cambio extra hecho**: en el **gráfico de actividad del dashboard**, la línea verde pasó de mostrar "Pacientes nuevos" (nuevos de ese mes) a **"Pacientes totales"** (acumulado hasta fin de cada mes). Ficheros: `src/app/actions/metricas.ts` + `src/app/(dashboard)/dashboard/dashboard-charts.tsx`.
+
+### ~~5.1.bis. Cambiar gráfica del dashboard: "Pacientes nuevos" → "Pacientes totales"~~ ✅ HECHO 21/04/2026
+
+La línea verde de la gráfica de actividad del dashboard ahora representa el **acumulado total de pacientes hasta fin de cada mes**, no los nuevos de ese mes. Además se **excluye al paciente demo** del conteo. Ficheros tocados: `src/app/actions/metricas.ts`, `src/app/(dashboard)/dashboard/dashboard-charts.tsx`.
+
+### ~~5.2. Reorganizar ajustes del nutricionista~~ ✅ HECHO 21/04/2026
+
+Rediseño completo de `/ajustes`:
+- Layout nuevo con **sidebar interno de secciones** (sticky en desktop, scroll en móvil) y tracking de sección activa por IntersectionObserver (`ajustes-nav.tsx`).
+- **Resumen de cuenta** arriba (avatar + nombre + email + chips de especialidad y plan).
+- 8 secciones organizadas: Perfil, Profesional, Integraciones, Paciente de ejemplo, Suscripción, Cobros (Stripe), Guías, Zona peligrosa.
+- `SectionHeader` común con icono coloreado + título + descripción para unificar jerarquía.
+- Incluye la **tarjeta de Paciente de ejemplo** reubicada desde el listado de pacientes (cumple también 5.7).
+- Zona peligrosa en rojo suave con mensaje claro.
 
 ### 5.3. Actualizar el chat IA de la app
 - El **chat IA** integrado en el programa se construyó hace bastante tiempo.
@@ -212,3 +221,11 @@ Todavía **no funciona en Oracle** porque necesita dominio + HTTPS. Pasos detall
 - Debería estar en **"Mis citas"**, porque el objetivo real del paciente al vincular Google Calendar es sincronizar **las citas con su nutricionista** (no su horario personal).
 - Mover la tarjeta `IntegracionesCardPaciente` desde `/paciente/portal/seguimiento/horario` hacia la página de citas (`/paciente/portal/citas`).
 - Ajustar también los `revalidatePath` asociados para que apunten a la nueva ruta.
+
+### ~~5.7. Mover banner de restaurar paciente de ejemplo a Ajustes~~ ✅ HECHO 21/04/2026
+
+Reubicada como tarjeta `PacienteDemoCard` dentro de la sección "Paciente de ejemplo" de Ajustes. Dos estados:
+- **Activo**: muestra mensaje informativo + botón "Ver ficha" (link a `/pacientes?busqueda=Paciente+Prueba`).
+- **Eliminado**: muestra el antiguo banner ámbar con botón "Restaurar".
+
+Retirado el `<RestaurarDemoBanner />` de `src/app/(dashboard)/pacientes/page.tsx`.

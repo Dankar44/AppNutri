@@ -30,6 +30,22 @@ import type { FichaSidebarData } from "@/lib/ficha-sidebar-types";
 
 export type { PestanaFicha };
 
+/** Dado un tabId y el conteo de notifs por tipo, devuelve cuántas notifs corresponden a ese tab. */
+function notifsPorTipoPestana(
+  tabId: string,
+  notifsPorTipo: Record<string, number>,
+): number {
+  const mapa: Record<string, string[]> = {
+    mediciones: ["PACIENTE_SIN_MEDIDAS"],
+    seguimiento: ["DIARIO_NUEVO"],
+    general: ["PACIENTE_SIN_CONSULTA"],
+    "plan-alimentacion": ["PLAN_ANTIGUO"],
+    planificacion: ["PLAN_ANTIGUO"],
+  };
+  const tipos = mapa[tabId] || [];
+  return tipos.reduce((acc, t) => acc + (notifsPorTipo[t] ?? 0), 0);
+}
+
 type PacienteSerializado = {
   id: string;
   nombre: string;
@@ -122,6 +138,7 @@ export function PacienteFichaClient({
   recomendaciones = "",
   planesResumen = [],
   sidebarData = {},
+  notifsPorTipo = {},
 }: {
   paciente: PacienteSerializado;
   pestana: PestanaFicha;
@@ -132,6 +149,7 @@ export function PacienteFichaClient({
   recomendaciones?: string;
   planesResumen?: PlanResumen[];
   sidebarData?: FichaSidebarData;
+  notifsPorTipo?: Record<string, number>;
 }) {
   const nombre = capitalizarNombre(paciente.nombre);
   const apellidos = capitalizarNombre(paciente.apellidos);
@@ -208,21 +226,32 @@ export function PacienteFichaClient({
       </div>
 
       <nav className="flex gap-1 overflow-x-auto pb-px mb-5 sm:mb-6 -mx-1 px-1 scrollbar-thin touch-scroll-x [scroll-snap-type:x_proximity]">
-        {FICHA_TABS.map((t) => (
-          <Link
-            key={t.id}
-            href={`/pacientes/${paciente.id}?pestana=${t.id}`}
-            scroll={false}
-            className={cn(
-              "whitespace-nowrap px-3 py-2.5 sm:py-2 text-sm font-medium rounded-t-lg border-b-2 transition-colors [scroll-snap-align:start] min-h-11 sm:min-h-0 flex items-center",
-              pestana === t.id
-                ? "border-primary text-primary bg-primary/5"
-                : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/60"
-            )}
-          >
-            {t.label}
-          </Link>
-        ))}
+        {FICHA_TABS.map((t) => {
+          const notifCount = notifsPorTipoPestana(t.id, notifsPorTipo);
+          return (
+            <Link
+              key={t.id}
+              href={`/pacientes/${paciente.id}?pestana=${t.id}`}
+              scroll={false}
+              className={cn(
+                "whitespace-nowrap px-3 py-2.5 sm:py-2 text-sm font-medium rounded-t-lg border-b-2 transition-colors [scroll-snap-align:start] min-h-11 sm:min-h-0 flex items-center gap-2",
+                pestana === t.id
+                  ? "border-primary text-primary bg-primary/5"
+                  : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/60"
+              )}
+            >
+              {t.label}
+              {notifCount > 0 && (
+                <span
+                  aria-label={`${notifCount} notificación${notifCount === 1 ? "" : "es"} sin leer`}
+                  className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-red-500 text-white shrink-0"
+                >
+                  {notifCount > 9 ? "9+" : notifCount}
+                </span>
+              )}
+            </Link>
+          );
+        })}
       </nav>
 
       {pestana === "general" && (

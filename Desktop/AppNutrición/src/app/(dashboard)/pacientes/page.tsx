@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { Plus, Users } from "lucide-react";
-import { getPacientes, isDemoEliminado } from "@/app/actions/pacientes";
+import { getPacientes } from "@/app/actions/pacientes";
+import { getMapaNotificacionesPacientes } from "@/app/actions/notificaciones";
 import { formatDate, OBJETIVO_LABELS, calcularIMC, capitalizarNombre } from "@/lib/utils";
 import { AvatarPaciente } from "@/components/avatar-paciente";
+import { NotificationDot } from "@/components/notification-dot";
 import { PacientesFilter } from "./pacientes-filter";
 import { PageHeader } from "@/components/page-header";
-import { RestaurarDemoBanner } from "./restaurar-demo-banner";
 
 interface Props {
   searchParams: Promise<{ busqueda?: string; activos?: string; vista?: string }>;
@@ -16,9 +17,9 @@ export default async function PacientesPage({ searchParams }: Props) {
   const busqueda = params.busqueda || "";
   const soloActivos = params.activos === "true";
   const vista = params.vista || "tabla";
-  const [pacientes, demoEliminado] = await Promise.all([
+  const [pacientes, notifsPorPaciente] = await Promise.all([
     getPacientes(busqueda, soloActivos),
-    isDemoEliminado(),
+    getMapaNotificacionesPacientes(),
   ]);
 
   return (
@@ -38,8 +39,6 @@ export default async function PacientesPage({ searchParams }: Props) {
           </Link>
         }
       />
-
-      {demoEliminado && <RestaurarDemoBanner />}
 
       <div className="mb-6" data-tour="patient-search">
         <PacientesFilter busquedaInicial={busqueda} activosInicial={soloActivos} vista={vista} />
@@ -73,7 +72,10 @@ export default async function PacientesPage({ searchParams }: Props) {
               className="bg-card rounded-xl border border-border p-5 hover:border-primary/30 hover:shadow-sm transition-all text-center"
             >
               <div className="flex justify-center mb-3">
-                <AvatarPaciente nombre={p.nombre} apellidos={p.apellidos} fotoUrl={p.fotoUrl} size="xl" />
+                <span className="relative inline-block">
+                  <AvatarPaciente nombre={p.nombre} apellidos={p.apellidos} fotoUrl={p.fotoUrl} size="xl" />
+                  <NotificationDot notificaciones={notifsPorPaciente[p.id] || []} />
+                </span>
               </div>
               <h3 className="font-semibold">
                 {capitalizarNombre(p.nombre)} {capitalizarNombre(p.apellidos)}
@@ -126,7 +128,10 @@ export default async function PacientesPage({ searchParams }: Props) {
                   <tr key={p.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3">
                       <Link href={`/pacientes/${p.id}`} className="flex items-center gap-3">
-                        <AvatarPaciente nombre={p.nombre} apellidos={p.apellidos} fotoUrl={p.fotoUrl} size="md" />
+                        <span className="relative inline-block shrink-0">
+                          <AvatarPaciente nombre={p.nombre} apellidos={p.apellidos} fotoUrl={p.fotoUrl} size="md" />
+                          <NotificationDot notificaciones={notifsPorPaciente[p.id] || []} />
+                        </span>
                         <div className="min-w-0 flex items-center gap-2 flex-wrap">
                           <p className="font-medium truncate hover:text-primary transition-colors">
                             {capitalizarNombre(p.nombre)} {capitalizarNombre(p.apellidos)}
