@@ -21,7 +21,7 @@ export default async function SharedShoppingListPage({ params }: Props) {
       <header className="border-b border-border bg-card">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center gap-2">
           <Leaf className="w-5 h-5 text-primary" />
-          <span className="font-bold">NutriApp</span>
+          <span className="font-bold">Annonia</span>
         </div>
       </header>
       <main className="max-w-2xl mx-auto p-4 md:p-6">

@@ -87,7 +87,7 @@ export const MENSAJES_ENTRIES: HelpEntry[] = [
     section: "mensajes",
     question: "¿Recibo una notificación cuando un paciente me escribe?",
     answer:
-      "Sí. Cada vez que un paciente envía un mensaje, se genera una notificación interna en AppNutrición que aparece en el centro de notificaciones y como punto en el sidebar. Al hacer clic te lleva directamente a esa conversación. Si tienes activado el correo para eventos de mensajería, también recibirás un aviso por email. La notificación se marca como leída al abrir el chat.",
+      "Sí. Cada vez que un paciente envía un mensaje, se genera una notificación interna en Annonia que aparece en el centro de notificaciones y como punto en el sidebar. Al hacer clic te lleva directamente a esa conversación. Si tienes activado el correo para eventos de mensajería, también recibirás un aviso por email. La notificación se marca como leída al abrir el chat.",
     related: ["msg-11", "msg-17"],
     keywords: ["notificación", "aviso", "recibir", "paciente escribe"],
   },
@@ -141,7 +141,7 @@ export const MENSAJES_ENTRIES: HelpEntry[] = [
     section: "mensajes",
     question: "¿Puedo mencionar a alguien con @?",
     answer:
-      "No. Como las conversaciones son 1 a 1 entre tú y un solo paciente, no existe el concepto de mención con @. No hay otros participantes a los que llamar la atención dentro del chat. Si escribes @ será tratado como texto normal y no activará ninguna funcionalidad especial. Las menciones son propias de chats de equipo, y AppNutrición no los tiene.",
+      "No. Como las conversaciones son 1 a 1 entre tú y un solo paciente, no existe el concepto de mención con @. No hay otros participantes a los que llamar la atención dentro del chat. Si escribes @ será tratado como texto normal y no activará ninguna funcionalidad especial. Las menciones son propias de chats de equipo, y Annonia no los tiene.",
     related: ["msg-7"],
     keywords: ["mención", "arroba", "@", "mencionar"],
   },
@@ -213,7 +213,7 @@ export const MENSAJES_ENTRIES: HelpEntry[] = [
     section: "mensajes",
     question: "¿Cómo puedo hacer una copia de seguridad de los mensajes?",
     answer:
-      "AppNutrición ya hace copias de seguridad internas de toda la base de datos, incluidos los mensajes, como parte de la infraestructura. No hay una herramienta de usuario para descargar backups manualmente. Si necesitas una copia específica de las conversaciones, tendrías que pedirla por soporte. En general, confía en que los datos están resguardados en el servidor.",
+      "Annonia ya hace copias de seguridad internas de toda la base de datos, incluidos los mensajes, como parte de la infraestructura. No hay una herramienta de usuario para descargar backups manualmente. Si necesitas una copia específica de las conversaciones, tendrías que pedirla por soporte. En general, confía en que los datos están resguardados en el servidor.",
     related: ["msg-21", "msg-22"],
     keywords: ["copia", "backup", "seguridad", "respaldo"],
   },
@@ -249,7 +249,7 @@ export const MENSAJES_ENTRIES: HelpEntry[] = [
     section: "mensajes",
     question: "¿Hay respuestas automáticas o plantillas?",
     answer:
-      "No. AppNutrición no ofrece actualmente respuestas automáticas predefinidas ni plantillas guardadas para el chat. Cada mensaje se escribe manualmente en el momento. Si usas las mismas frases con frecuencia, puedes crearte atajos en tu sistema operativo o copiarlos de un documento personal. Estamos evaluando añadir plantillas en el futuro.",
+      "No. Annonia no ofrece actualmente respuestas automáticas predefinidas ni plantillas guardadas para el chat. Cada mensaje se escribe manualmente en el momento. Si usas las mismas frases con frecuencia, puedes crearte atajos en tu sistema operativo o copiarlos de un documento personal. Estamos evaluando añadir plantillas en el futuro.",
     related: ["msg-29", "msg-31"],
     keywords: ["plantilla", "respuesta automática", "auto", "predefinida"],
   },
@@ -258,7 +258,7 @@ export const MENSAJES_ENTRIES: HelpEntry[] = [
     section: "mensajes",
     question: "¿Hay un chatbot o IA que responde por mí?",
     answer:
-      "No. Mensajes es un canal humano-humano: los mensajes los escribes tú y los responde el paciente (o viceversa). No hay ninguna IA que conteste en tu nombre, ni sugerencias automáticas de respuesta. La IA de AppNutrición solo se usa en otras secciones como generación de planes o sugerencias de recetas, nunca en la mensajería.",
+      "No. Mensajes es un canal humano-humano: los mensajes los escribes tú y los responde el paciente (o viceversa). No hay ninguna IA que conteste en tu nombre, ni sugerencias automáticas de respuesta. La IA de Annonia solo se usa en otras secciones como generación de planes o sugerencias de recetas, nunca en la mensajería.",
     related: ["msg-1", "msg-28"],
     keywords: ["IA", "chatbot", "bot", "automático"],
   },
@@ -321,7 +321,7 @@ export const MENSAJES_ENTRIES: HelpEntry[] = [
     section: "mensajes",
     question: "¿Puedo iniciar una videollamada desde el chat?",
     answer:
-      "No directamente desde el chat. Las videollamadas en AppNutrición se gestionan desde Agenda, creando una cita con enlace de Google Meet. Una vez creada, el enlace aparece en la cita y puede compartirse con el paciente. Si el paciente te pide una videollamada por chat, crea una cita en Agenda y contéstale con el enlace. No hay un botón de \"videollamada ahora\" en el chat.",
+      "No directamente desde el chat. Las videollamadas en Annonia se gestionan desde Agenda, creando una cita con enlace de Google Meet. Una vez creada, el enlace aparece en la cita y puede compartirse con el paciente. Si el paciente te pide una videollamada por chat, crea una cita en Agenda y contéstale con el enlace. No hay un botón de \"videollamada ahora\" en el chat.",
     related: ["msg-34", "msg-37"],
     keywords: ["videollamada", "vídeo", "meet", "llamada"],
   },
@@ -330,7 +330,7 @@ export const MENSAJES_ENTRIES: HelpEntry[] = [
     section: "mensajes",
     question: "¿Puedo hacer llamadas de voz desde el chat?",
     answer:
-      "No. AppNutrición no integra llamadas de voz ni videollamadas dentro del chat. Para audio o vídeo, lo habitual es programar una cita con enlace de Google Meet desde Agenda. Si necesitas una llamada urgente por teléfono, hazlo fuera de la app con los datos de contacto del paciente. El chat está pensado para mensajes escritos.",
+      "No. Annonia no integra llamadas de voz ni videollamadas dentro del chat. Para audio o vídeo, lo habitual es programar una cita con enlace de Google Meet desde Agenda. Si necesitas una llamada urgente por teléfono, hazlo fuera de la app con los datos de contacto del paciente. El chat está pensado para mensajes escritos.",
     related: ["msg-36"],
     keywords: ["llamada", "voz", "audio", "teléfono"],
   },
@@ -339,7 +339,7 @@ export const MENSAJES_ENTRIES: HelpEntry[] = [
     section: "mensajes",
     question: "¿Los mensajes están cifrados de extremo a extremo?",
     answer:
-      "No. Los mensajes se almacenan en la base de datos de AppNutrición para que puedan mostrarse tanto a ti como al paciente desde cualquier dispositivo. No usamos cifrado end-to-end como Signal o WhatsApp. Sí se cifran en tránsito (HTTPS) y están protegidos por la infraestructura de la plataforma. Ten esto en cuenta al tratar información muy sensible y usa el canal adecuado.",
+      "No. Los mensajes se almacenan en la base de datos de Annonia para que puedan mostrarse tanto a ti como al paciente desde cualquier dispositivo. No usamos cifrado end-to-end como Signal o WhatsApp. Sí se cifran en tránsito (HTTPS) y están protegidos por la infraestructura de la plataforma. Ten esto en cuenta al tratar información muy sensible y usa el canal adecuado.",
     related: ["msg-39", "msg-40"],
     keywords: ["cifrado", "end to end", "privacidad", "encriptación"],
   },
@@ -348,7 +348,7 @@ export const MENSAJES_ENTRIES: HelpEntry[] = [
     section: "mensajes",
     question: "¿Quién puede ver los mensajes que envío?",
     answer:
-      "Solo tú (el nutricionista) y el paciente destinatario pueden ver el contenido de la conversación a través de sus respectivas vistas en la app. Ningún otro paciente tiene acceso a los mensajes de otro. El personal técnico de AppNutrición no lee rutinariamente conversaciones, aunque técnicamente podría acceder a la base de datos en caso de incidencia. Es tu responsabilidad tratar la información clínica con cuidado.",
+      "Solo tú (el nutricionista) y el paciente destinatario pueden ver el contenido de la conversación a través de sus respectivas vistas en la app. Ningún otro paciente tiene acceso a los mensajes de otro. El personal técnico de Annonia no lee rutinariamente conversaciones, aunque técnicamente podría acceder a la base de datos en caso de incidencia. Es tu responsabilidad tratar la información clínica con cuidado.",
     related: ["msg-38", "msg-40"],
     keywords: ["privacidad", "quién ve", "acceso", "confidencial"],
   },

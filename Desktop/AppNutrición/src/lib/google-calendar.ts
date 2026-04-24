@@ -91,7 +91,7 @@ function buildEventResource(cita: CitaCalendarData, includeMeet: boolean): calen
   if (includeMeet && cita.isOnline) {
     event.conferenceData = {
       createRequest: {
-        requestId: `appnutri-${cita.id}`,
+        requestId: `annonia-${cita.id}`,
         conferenceSolutionKey: { type: "hangoutsMeet" },
       },
     };

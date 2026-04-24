@@ -6,7 +6,7 @@ export const AJUSTES_PELIGROSO_ENTRIES: HelpEntry[] = [
     section: "ajustes-peligroso",
     question: "¿Qué es la sección Zona peligrosa de Ajustes?",
     answer:
-      "La Zona peligrosa es el área de Ajustes que agrupa las acciones irreversibles y definitivas sobre tu cuenta de AppNutrición. Está pensada para operaciones que no se pueden deshacer y que afectan a todos tus datos a la vez. Se separa del resto de ajustes para evitar pulsaciones accidentales y para dejar claro que lo que hagas aquí tiene consecuencias permanentes. Actualmente contiene únicamente la acción Eliminar cuenta, representada por el componente `<EliminarCuentaButton>`.",
+      "La Zona peligrosa es el área de Ajustes que agrupa las acciones irreversibles y definitivas sobre tu cuenta de Annonia. Está pensada para operaciones que no se pueden deshacer y que afectan a todos tus datos a la vez. Se separa del resto de ajustes para evitar pulsaciones accidentales y para dejar claro que lo que hagas aquí tiene consecuencias permanentes. Actualmente contiene únicamente la acción Eliminar cuenta, representada por el componente `<EliminarCuentaButton>`.",
     related: ["ajz-2", "ajz-3", "ajz-5"],
     keywords: ["zona peligrosa", "ajustes", "sección", "irreversible"],
   },
@@ -24,7 +24,7 @@ export const AJUSTES_PELIGROSO_ENTRIES: HelpEntry[] = [
     section: "ajustes-peligroso",
     question: "¿Qué hace la acción Eliminar cuenta?",
     answer:
-      "La acción Eliminar cuenta borra de forma definitiva tu usuario de AppNutrición junto con toda la información asociada a él. Se ejecuta desde el botón `<EliminarCuentaButton>` ubicado en la Zona peligrosa de Ajustes. Al pulsarla se abre un modal de confirmación donde debes aceptar explícitamente antes de que se aplique el borrado. Una vez confirmada, la cuenta deja de existir y no podrás volver a acceder con el mismo correo.",
+      "La acción Eliminar cuenta borra de forma definitiva tu usuario de Annonia junto con toda la información asociada a él. Se ejecuta desde el botón `<EliminarCuentaButton>` ubicado en la Zona peligrosa de Ajustes. Al pulsarla se abre un modal de confirmación donde debes aceptar explícitamente antes de que se aplique el borrado. Una vez confirmada, la cuenta deja de existir y no podrás volver a acceder con el mismo correo.",
     related: ["ajz-1", "ajz-4", "ajz-6"],
     keywords: ["eliminar", "cuenta", "borrar", "acción"],
   },
@@ -33,7 +33,7 @@ export const AJUSTES_PELIGROSO_ENTRIES: HelpEntry[] = [
     section: "ajustes-peligroso",
     question: "¿Qué datos se borran exactamente al eliminar la cuenta?",
     answer:
-      "Al eliminar la cuenta se borra absolutamente todo lo que hayas generado en AppNutrición. Esto incluye tus pacientes, sus consultas, mediciones y seguimientos, así como las dietas, recetas propias y planificaciones asociadas. También se eliminan las citas de la agenda, los mensajes intercambiados con pacientes, los pagos registrados, las integraciones conectadas y la propia suscripción. En la práctica, no queda ningún rastro de contenido que puedas volver a consultar desde la aplicación.",
+      "Al eliminar la cuenta se borra absolutamente todo lo que hayas generado en Annonia. Esto incluye tus pacientes, sus consultas, mediciones y seguimientos, así como las dietas, recetas propias y planificaciones asociadas. También se eliminan las citas de la agenda, los mensajes intercambiados con pacientes, los pagos registrados, las integraciones conectadas y la propia suscripción. En la práctica, no queda ningún rastro de contenido que puedas volver a consultar desde la aplicación.",
     related: ["ajz-3", "ajz-5", "ajz-9"],
     keywords: ["datos", "borrar", "pacientes", "contenido"],
   },
@@ -60,7 +60,7 @@ export const AJUSTES_PELIGROSO_ENTRIES: HelpEntry[] = [
     section: "ajustes-peligroso",
     question: "¿Puedo exportar todos mis datos antes de eliminar la cuenta?",
     answer:
-      "De momento AppNutrición no ofrece una exportación masiva de todos tus datos desde la Zona peligrosa. No hay un botón único que descargue un archivo con pacientes, dietas, consultas y resto de información en conjunto. Como alternativa puedes descargar los PDFs individuales de cada paciente desde su ficha (plan, consulta, mediciones) antes de pulsar Eliminar cuenta. También puedes solicitar una exportación por escrito contactando con soporte si necesitas una copia para tus registros profesionales.",
+      "De momento Annonia no ofrece una exportación masiva de todos tus datos desde la Zona peligrosa. No hay un botón único que descargue un archivo con pacientes, dietas, consultas y resto de información en conjunto. Como alternativa puedes descargar los PDFs individuales de cada paciente desde su ficha (plan, consulta, mediciones) antes de pulsar Eliminar cuenta. También puedes solicitar una exportación por escrito contactando con soporte si necesitas una copia para tus registros profesionales.",
     related: ["ajz-4", "ajz-8", "ajz-9"],
     keywords: ["exportar", "datos", "descargar", "copia"],
   },
@@ -69,7 +69,7 @@ export const AJUSTES_PELIGROSO_ENTRIES: HelpEntry[] = [
     section: "ajustes-peligroso",
     question: "¿Puedo desactivar mi cuenta de forma temporal en lugar de eliminarla?",
     answer:
-      "Actualmente AppNutrición no dispone de una opción para desactivar la cuenta de manera temporal. La única acción destructiva disponible en la Zona peligrosa es Eliminar cuenta, que borra los datos de forma permanente. Si no quieres seguir pagando pero deseas conservar la información, valora cancelar la suscripción desde Ajustes > Suscripción y mantener la cuenta en el plan que quede disponible. Desactivar cuenta temporalmente es una funcionalidad candidata a añadirse en el futuro, pero hoy no está soportada.",
+      "Actualmente Annonia no dispone de una opción para desactivar la cuenta de manera temporal. La única acción destructiva disponible en la Zona peligrosa es Eliminar cuenta, que borra los datos de forma permanente. Si no quieres seguir pagando pero deseas conservar la información, valora cancelar la suscripción desde Ajustes > Suscripción y mantener la cuenta en el plan que quede disponible. Desactivar cuenta temporalmente es una funcionalidad candidata a añadirse en el futuro, pero hoy no está soportada.",
     related: ["ajz-1", "ajz-3", "ajz-7"],
     keywords: ["desactivar", "temporal", "pausar", "suspender"],
   },
@@ -87,7 +87,7 @@ export const AJUSTES_PELIGROSO_ENTRIES: HelpEntry[] = [
     section: "ajustes-peligroso",
     question: "¿Puedo recuperar una cuenta eliminada?",
     answer:
-      "No, una cuenta eliminada no se puede recuperar desde AppNutrición. Una vez confirmado el borrado en el modal, los datos se eliminan de forma permanente y no existe un proceso de restauración disponible para el usuario. Si más adelante quieres volver a usar la aplicación, deberás crear una cuenta nueva desde cero con el registro habitual. Por este motivo, conviene descargar los PDFs de tus pacientes y revisar tu suscripción antes de pulsar Eliminar cuenta.",
+      "No, una cuenta eliminada no se puede recuperar desde Annonia. Una vez confirmado el borrado en el modal, los datos se eliminan de forma permanente y no existe un proceso de restauración disponible para el usuario. Si más adelante quieres volver a usar la aplicación, deberás crear una cuenta nueva desde cero con el registro habitual. Por este motivo, conviene descargar los PDFs de tus pacientes y revisar tu suscripción antes de pulsar Eliminar cuenta.",
     related: ["ajz-3", "ajz-5", "ajz-7"],
     keywords: ["recuperar", "restaurar", "volver", "deshacer"],
   },

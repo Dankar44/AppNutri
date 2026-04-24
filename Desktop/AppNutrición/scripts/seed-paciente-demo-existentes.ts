@@ -271,7 +271,7 @@ async function crearDemoParaDietista(client: pg.PoolClient, dietistaId: string) 
     [
       pacienteId,
       dietistaId,
-      "paciente.prueba@demo.appnutri.es",
+      "paciente.prueba@demo.annonia.com",
       "+34 600 123 456",
       new Date(Date.UTC(1992, 5, 15)),
       "Perder 5 kg de forma saludable en 3 meses",
@@ -625,7 +625,7 @@ async function crearDemoParaDietista(client: pg.PoolClient, dietistaId: string) 
   }
   const pinDemoHash = await hashPinForDemo("123456");
   // El email de AccesoPaciente es UNIQUE a nivel global, así que añadimos un sufijo único por paciente
-  const emailAcceso = `paciente.prueba+${pacienteId.slice(-6)}@demo.appnutri.es`;
+  const emailAcceso = `paciente.prueba+${pacienteId.slice(-6)}@demo.annonia.com`;
   await client.query(
     `INSERT INTO accesos_paciente (id, "pacienteId", email, "pinHash", "perfilCompleto", activo, "createdAt", "updatedAt")
      VALUES ($1, $2, $3, $4, true, true, $5, $5)`,

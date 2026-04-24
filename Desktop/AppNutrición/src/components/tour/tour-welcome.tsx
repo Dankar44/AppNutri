@@ -33,7 +33,7 @@ export function TourWelcome() {
         </div>
 
         <h2 className="text-xl font-bold mb-2">
-          {audience === "dietista" ? "¡Bienvenido a NutriApp!" : "¡Bienvenido a tu portal!"}
+          {audience === "dietista" ? "¡Bienvenido a Annonia!" : "¡Bienvenido a tu portal!"}
         </h2>
         <p className="text-muted-foreground text-sm mb-6 leading-relaxed">
           {audience === "dietista"

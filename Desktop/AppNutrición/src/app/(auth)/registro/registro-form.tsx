@@ -108,13 +108,13 @@ export default function RegistroForm() {
         <div className="absolute inset-0 bg-black/10" />
         <div className="relative z-10 flex flex-col justify-center px-16 text-white">
           <Leaf className="w-16 h-16 mb-8" />
-          <h1 className="text-5xl font-bold mb-4">NutriApp</h1>
+          <h1 className="text-5xl font-bold mb-4">Annonia</h1>
           <p className="text-xl text-green-100 max-w-md">
             {paso === 1
               ? "Únete a la plataforma que está transformando la forma en que los dietistas crean dietas personalizadas."
               : paso === 2
                 ? "Elige el plan que mejor se adapte a tu consulta. 14 días de prueba gratuita incluidos."
-                : "Solo profesionales colegiados pueden acceder a NutriApp. Verificaremos tu número de colegiado."}
+                : "Solo profesionales colegiados pueden acceder a Annonia. Verificaremos tu número de colegiado."}
           </p>
         </div>
       </div>
@@ -124,7 +124,7 @@ export default function RegistroForm() {
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-2 mb-6 sm:mb-8">
             <Leaf className="w-8 h-8 text-primary" />
-            <span className="text-xl sm:text-2xl font-bold">NutriApp</span>
+            <span className="text-xl sm:text-2xl font-bold">Annonia</span>
           </div>
 
           {/* Indicador de pasos */}
@@ -355,7 +355,7 @@ export default function RegistroForm() {
             <>
               <h2 className="text-3xl font-bold mb-2">Verificación profesional</h2>
               <p className="text-muted-foreground mb-6">
-                Solo profesionales colegiados pueden acceder a NutriApp
+                Solo profesionales colegiados pueden acceder a Annonia
               </p>
 
               <div className="space-y-4 mb-6">

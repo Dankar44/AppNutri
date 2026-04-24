@@ -35,7 +35,7 @@ export default async function SharedPlanPage({ params }: Props) {
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Leaf className="w-5 h-5 text-primary" />
-            <span className="font-bold">NutriApp</span>
+            <span className="font-bold">Annonia</span>
           </div>
           <Link
             href={`/compartido/${token}/lista-compra`}

@@ -1,6 +1,6 @@
 {
-  "name": "NutriApp",
-  "short_name": "NutriApp",
+  "name": "Annonia",
+  "short_name": "Annonia",
   "description": "Plataforma profesional para dietistas: crea dietas personalizadas, gestiona pacientes y optimiza tu consulta.",
   "start_url": "/",
   "display": "standalone",

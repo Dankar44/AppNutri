@@ -4,7 +4,7 @@ export const AGENDA_HORARIO_ENTRIES: HelpEntry[] = [
   {
     id: "ah-1",
     section: "agenda-horario",
-    question: "¿Qué es el horario laboral en AppNutrición?",
+    question: "¿Qué es el horario laboral en Annonia?",
     answer:
       "El horario laboral es la configuración de los días y franjas horarias en los que atiendes a pacientes, accesible desde la ruta `/agenda/horario`. Define cuándo estás disponible para recibir solicitudes de cita y sirve como base para que el portal del paciente sepa qué huecos ofrecer. Se guarda en el campo `horarioLaboral` (JSONB) de tu ficha de dietista y se aplica automáticamente a todos tus pacientes. Sin un horario configurado, los pacientes no pueden solicitar cita a través del portal.",
     related: ["ah-2", "ah-3", "ah-9"],
@@ -186,7 +186,7 @@ export const AGENDA_HORARIO_ENTRIES: HelpEntry[] = [
     section: "agenda-horario",
     question: "¿Cómo se integra el horario con Google Calendar?",
     answer:
-      "Si tienes Google Calendar conectado, las citas se sincronizan en ambas direcciones, pero el horario laboral se configura exclusivamente dentro de AppNutrición, no se lee desde Google. Los eventos de Google que ocupen franjas no se marcan automáticamente como bloqueadas en el portal del paciente. Para bloquear un hueco, crea una cita o desactiva el día desde esta pantalla. La sincronización con Google está pensada para reflejar las citas, no para gestionar la disponibilidad.",
+      "Si tienes Google Calendar conectado, las citas se sincronizan en ambas direcciones, pero el horario laboral se configura exclusivamente dentro de Annonia, no se lee desde Google. Los eventos de Google que ocupen franjas no se marcan automáticamente como bloqueadas en el portal del paciente. Para bloquear un hueco, crea una cita o desactiva el día desde esta pantalla. La sincronización con Google está pensada para reflejar las citas, no para gestionar la disponibilidad.",
     related: ["ah-22", "ah-33", "ah-34"],
     keywords: ["google", "calendar", "sincronización", "integración"],
   },
@@ -195,7 +195,7 @@ export const AGENDA_HORARIO_ENTRIES: HelpEntry[] = [
     section: "agenda-horario",
     question: "¿El sistema reconoce feriados nacionales o locales?",
     answer:
-      "No, AppNutrición no incluye un calendario de festivos nacionales ni autonómicos: si un lunes es festivo y no quieres atender, tienes que desactivarlo manualmente o crear un bloqueo. La aplicación no puede saber qué días son festivos en tu comunidad. Es una funcionalidad en el horizonte de mejoras, pero hoy la gestión es manual. Recuerda revisarlo antes de puentes y fechas clave del año.",
+      "No, Annonia no incluye un calendario de festivos nacionales ni autonómicos: si un lunes es festivo y no quieres atender, tienes que desactivarlo manualmente o crear un bloqueo. La aplicación no puede saber qué días son festivos en tu comunidad. Es una funcionalidad en el horizonte de mejoras, pero hoy la gestión es manual. Recuerda revisarlo antes de puentes y fechas clave del año.",
     related: ["ah-18", "ah-27", "ah-39"],
     keywords: ["feriados", "festivos", "puentes", "calendario"],
   },
@@ -240,7 +240,7 @@ export const AGENDA_HORARIO_ENTRIES: HelpEntry[] = [
     section: "agenda-horario",
     question: "¿Se pueden crear citas que crucen la medianoche?",
     answer:
-      "No, AppNutrición no soporta intervalos ni citas que crucen de un día al siguiente: cada franja debe empezar y terminar dentro del mismo día del calendario. Si necesitas atender a las 23:30 durante una hora, la cita no puede extenderse hasta las 00:30. Es un caso de uso muy poco habitual en consulta nutricional y por eso no está contemplado. Si te encuentras con esta limitación, contáctanos y lo valoramos.",
+      "No, Annonia no soporta intervalos ni citas que crucen de un día al siguiente: cada franja debe empezar y terminar dentro del mismo día del calendario. Si necesitas atender a las 23:30 durante una hora, la cita no puede extenderse hasta las 00:30. Es un caso de uso muy poco habitual en consulta nutricional y por eso no está contemplado. Si te encuentras con esta limitación, contáctanos y lo valoramos.",
     related: ["ah-17", "ah-30", "ah-37"],
     keywords: ["medianoche", "cruzar", "día", "edge"],
   },

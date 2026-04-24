@@ -7,7 +7,7 @@ if (!process.env.PATIENT_JWT_SECRET && process.env.NODE_ENV === "production") {
 }
 
 const SECRET = new TextEncoder().encode(
-  process.env.PATIENT_JWT_SECRET || "nutriapp-patient-secret-dev-only"
+  process.env.PATIENT_JWT_SECRET || "annonia-patient-secret-dev-only"
 );
 
 export async function createPatientSession(
@@ -22,7 +22,7 @@ export async function createPatientSession(
   const cookieStore = await cookies();
   const hdrs = await headers();
   const proto = hdrs.get("x-forwarded-proto") ?? (process.env.NODE_ENV === "production" ? "https" : "http");
-  cookieStore.set("appnutri-paciente-session", token, {
+  cookieStore.set("annonia-paciente-session", token, {
     httpOnly: true,
     secure: proto === "https",
     sameSite: "lax",
@@ -36,7 +36,7 @@ export async function getCurrentPaciente(): Promise<{
   email: string;
 } | null> {
   const cookieStore = await cookies();
-  const token = cookieStore.get("appnutri-paciente-session")?.value;
+  const token = cookieStore.get("annonia-paciente-session")?.value;
   if (!token) return null;
 
   try {
@@ -52,7 +52,7 @@ export async function getCurrentPaciente(): Promise<{
 
 export async function clearPatientSession(): Promise<void> {
   const cookieStore = await cookies();
-  cookieStore.delete("appnutri-paciente-session");
+  cookieStore.delete("annonia-paciente-session");
 }
 
 // Hashing con PBKDF2 (mucho más seguro que SHA-256 simple)

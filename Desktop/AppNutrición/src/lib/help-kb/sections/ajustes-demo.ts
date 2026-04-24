@@ -4,9 +4,9 @@ export const AJUSTES_DEMO_ENTRIES: HelpEntry[] = [
   {
     id: "ajd-1",
     section: "ajustes-demo",
-    question: "¿Qué es el paciente de ejemplo en AppNutrición?",
+    question: "¿Qué es el paciente de ejemplo en Annonia?",
     answer:
-      "El paciente de ejemplo es un perfil ficticio que se crea automáticamente al registrarte en AppNutrición y que aparece mezclado con el resto de tus pacientes. Se identifica internamente por el nombre `Paciente` y los apellidos `Prueba`, y llega con datos precargados como consultas, medidas, plan de alimentación y seguimiento diario. Su función es servir de escaparate para que puedas trastear con todas las funciones de la app sin miedo a romper nada importante. Lo gestionas desde la sección \"Paciente de ejemplo\" dentro de Ajustes a través del componente `<PacienteDemoCard>`.",
+      "El paciente de ejemplo es un perfil ficticio que se crea automáticamente al registrarte en Annonia y que aparece mezclado con el resto de tus pacientes. Se identifica internamente por el nombre `Paciente` y los apellidos `Prueba`, y llega con datos precargados como consultas, medidas, plan de alimentación y seguimiento diario. Su función es servir de escaparate para que puedas trastear con todas las funciones de la app sin miedo a romper nada importante. Lo gestionas desde la sección \"Paciente de ejemplo\" dentro de Ajustes a través del componente `<PacienteDemoCard>`.",
     related: ["ajd-2", "ajd-3", "ajd-4"],
     keywords: ["paciente", "ejemplo", "demo", "ficticio"],
   },
@@ -15,7 +15,7 @@ export const AJUSTES_DEMO_ENTRIES: HelpEntry[] = [
     section: "ajustes-demo",
     question: "¿Para qué sirve tener un paciente de ejemplo?",
     answer:
-      "Sirve principalmente para que puedas probar todas las funciones de AppNutrición sin afectar a los datos reales de tus pacientes. Puedes editar sus medidas, modificar su plan, crear consultas, enviar mensajes o trastear con el portal del paciente sin preocuparte por romper nada. Es especialmente útil durante los primeros días de uso, cuando aún no tienes pacientes reales dados de alta y quieres explorar cómo se comporta la aplicación. También es un buen apoyo para formaciones internas o para enseñar la herramienta a compañeros.",
+      "Sirve principalmente para que puedas probar todas las funciones de Annonia sin afectar a los datos reales de tus pacientes. Puedes editar sus medidas, modificar su plan, crear consultas, enviar mensajes o trastear con el portal del paciente sin preocuparte por romper nada. Es especialmente útil durante los primeros días de uso, cuando aún no tienes pacientes reales dados de alta y quieres explorar cómo se comporta la aplicación. También es un buen apoyo para formaciones internas o para enseñar la herramienta a compañeros.",
     related: ["ajd-1", "ajd-4", "ajd-13"],
     keywords: ["sirve", "probar", "practicar", "sandbox"],
   },
@@ -24,7 +24,7 @@ export const AJUSTES_DEMO_ENTRIES: HelpEntry[] = [
     section: "ajustes-demo",
     question: "¿Cómo se identifica al paciente de ejemplo internamente?",
     answer:
-      "AppNutrición reconoce al paciente de ejemplo por la combinación exacta de `nombre='Paciente'` y `apellidos='Prueba'` dentro del modelo `Paciente`. Esta convención se utiliza en todas las consultas de base de datos que deben tratar a este perfil de forma especial, como la exclusión del conteo total de pacientes o la muestra del badge amarillo. Si editas el nombre o los apellidos del paciente demo, dejará de ser reconocido como tal y pasará a comportarse como un paciente normal. Por eso recomendamos no renombrarlo salvo que quieras convertirlo en un caso real.",
+      "Annonia reconoce al paciente de ejemplo por la combinación exacta de `nombre='Paciente'` y `apellidos='Prueba'` dentro del modelo `Paciente`. Esta convención se utiliza en todas las consultas de base de datos que deben tratar a este perfil de forma especial, como la exclusión del conteo total de pacientes o la muestra del badge amarillo. Si editas el nombre o los apellidos del paciente demo, dejará de ser reconocido como tal y pasará a comportarse como un paciente normal. Por eso recomendamos no renombrarlo salvo que quieras convertirlo en un caso real.",
     related: ["ajd-1", "ajd-6", "ajd-7"],
     keywords: ["identificación", "nombre", "apellidos", "convención"],
   },
@@ -42,7 +42,7 @@ export const AJUSTES_DEMO_ENTRIES: HelpEntry[] = [
     section: "ajustes-demo",
     question: "¿Por qué las fechas del paciente de ejemplo siempre parecen recientes?",
     answer:
-      "Porque los datos del paciente demo se auto-alinean al mes actual cada vez que los consultas. AppNutrición recalcula las fechas de consultas, medidas y seguimiento para que caigan dentro del mes en curso, de modo que siempre tengas registros \"frescos\" sin importar cuándo te registraste. Esto hace que el paciente de ejemplo sea útil tanto el primer día como meses después. También evita que las gráficas aparezcan vacías por tener datos demasiado antiguos y facilita probar filtros temporales.",
+      "Porque los datos del paciente demo se auto-alinean al mes actual cada vez que los consultas. Annonia recalcula las fechas de consultas, medidas y seguimiento para que caigan dentro del mes en curso, de modo que siempre tengas registros \"frescos\" sin importar cuándo te registraste. Esto hace que el paciente de ejemplo sea útil tanto el primer día como meses después. También evita que las gráficas aparezcan vacías por tener datos demasiado antiguos y facilita probar filtros temporales.",
     related: ["ajd-4", "ajd-8", "ajd-9"],
     keywords: ["auto-alineación", "fechas", "mes actual", "realista"],
   },

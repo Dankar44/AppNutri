@@ -56,7 +56,7 @@ export default function PreciosPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <Link href="/precios" className="flex items-center gap-2">
             <Leaf className="w-7 h-7 text-primary" />
-            <span className="text-xl font-bold">NutriApp</span>
+            <span className="text-xl font-bold">Annonia</span>
           </Link>
           <div className="flex items-center gap-3">
             <Link
@@ -211,7 +211,7 @@ export default function PreciosPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Leaf className="w-4 h-4 text-primary" />
-            <span>NutriApp © {new Date().getFullYear()}</span>
+            <span>Annonia © {new Date().getFullYear()}</span>
           </div>
           <div className="flex gap-6 text-sm text-muted-foreground">
             <Link href="/login" className="hover:text-foreground transition-colors">

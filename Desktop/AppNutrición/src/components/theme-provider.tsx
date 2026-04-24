@@ -22,7 +22,7 @@ type ThemeContextValue = {
   toggleTheme: (opts?: SetThemeOptions) => void;
 };
 
-const STORAGE_KEY = "nutriapp-theme";
+const STORAGE_KEY = "annonia-theme";
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 

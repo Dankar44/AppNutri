@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import Script from "next/script";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeAwareToaster } from "@/components/theme-aware-toaster";
+import { CookieBanner } from "@/components/cookie-banner";
 import "./globals.css";
 
 const inter = Inter({
@@ -13,22 +14,22 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "NutriApp - Gestión de Dietas para Dietistas",
-    template: "%s | NutriApp",
+    default: "Annonia - Gestión de Dietas para Dietistas",
+    template: "%s | Annonia",
   },
   description:
     "Plataforma profesional para dietistas: crea dietas personalizadas, gestiona pacientes y optimiza tu consulta con inteligencia artificial.",
   keywords: ["nutrición", "dietista", "dietas", "planes alimenticios", "macros", "pacientes"],
-  authors: [{ name: "NutriApp" }],
+  authors: [{ name: "Annonia" }],
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "NutriApp",
+    title: "Annonia",
   },
   formatDetection: { telephone: false },
   openGraph: {
-    title: "NutriApp - Gestión de Dietas para Dietistas",
+    title: "Annonia - Gestión de Dietas para Dietistas",
     description: "Crea dietas personalizadas, gestiona pacientes y optimiza tu consulta.",
     type: "website",
     locale: "es_ES",
@@ -49,7 +50,7 @@ export const viewport: Viewport = {
 const THEME_INIT_SCRIPT = `
 (function(){
   try {
-    var t = localStorage.getItem("nutriapp-theme");
+    var t = localStorage.getItem("annonia-theme");
     var d = document.documentElement;
     if (t === "dark") {
       d.classList.add("dark");
@@ -75,6 +76,7 @@ export default function RootLayout({
         <ThemeProvider>
           {children}
           <ThemeAwareToaster />
+          <CookieBanner />
         </ThemeProvider>
       </body>
     </html>

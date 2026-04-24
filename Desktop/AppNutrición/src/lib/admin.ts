@@ -1,7 +1,7 @@
 import { cookies, headers } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 
-const ADMIN_COOKIE = "appnutri-admin-session";
+const ADMIN_COOKIE = "annonia-admin-session";
 const ADMIN_SESSION_DAYS = 7;
 
 function cleanEnv(val: string | undefined): string {

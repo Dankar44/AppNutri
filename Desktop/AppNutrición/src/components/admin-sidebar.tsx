@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Menu,
   X,
+  Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -22,6 +23,7 @@ const navItems = [
   { href: "/admin", label: "Panel", icon: LayoutDashboard },
   { href: "/admin/dietistas", label: "Dietistas", icon: Users },
   { href: "/admin/verificaciones", label: "Verificaciones", icon: ShieldCheck },
+  { href: "/admin/seguimiento", label: "Seguimiento", icon: Eye },
   { href: "/admin/actividad", label: "Actividad", icon: Activity },
   { href: "/admin/suscripciones", label: "Suscripciones", icon: CreditCard },
 ];
@@ -54,7 +56,7 @@ export function AdminSidebar({ adminNombre, onSignOut }: AdminSidebarProps) {
       <div className="h-16 flex items-center gap-2 px-4 border-b border-indigo-100 shrink-0">
         <ShieldCheck className="w-7 h-7 text-indigo-600 dark:text-indigo-400 shrink-0" />
         {(!collapsed || mobileOpen) && (
-          <span className="text-xl font-bold text-foreground">Admin</span>
+          <span className="text-xl font-bold text-foreground">Annonia</span>
         )}
         {mobileOpen && (
           <button
@@ -132,7 +134,7 @@ export function AdminSidebar({ adminNombre, onSignOut }: AdminSidebarProps) {
           <Menu className="w-5 h-5" />
         </button>
         <ShieldCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-        <span className="font-bold text-sm">Admin</span>
+        <span className="font-bold text-sm">Annonia</span>
       </div>
 
       {/* Overlay móvil */}

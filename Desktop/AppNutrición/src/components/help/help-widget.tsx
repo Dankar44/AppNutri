@@ -147,7 +147,7 @@ export function HelpWidget() {
             <Leaf className="w-4 h-4 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold">Asistente NutriApp</p>
+            <p className="text-sm font-semibold">Asistente Annonia</p>
             <p className="text-[11px] text-muted-foreground">
               {sectionLabel}
             </p>
@@ -176,7 +176,7 @@ export function HelpWidget() {
           {/* Mensaje de bienvenida */}
           {messages.length === 0 && !searchResults && (
             <div className="bg-muted/60 rounded-xl rounded-tl-sm px-3.5 py-2.5 text-sm">
-              Hola, soy el asistente de NutriApp. Estoy aquí para ayudarte con cualquier duda sobre la aplicación.
+              Hola, soy el asistente de Annonia. Estoy aquí para ayudarte con cualquier duda sobre la aplicación.
               {section !== "general" && (
                 <span> Veo que estás en <strong>{sectionLabel}</strong>. Aquí tienes algunas preguntas frecuentes:</span>
               )}

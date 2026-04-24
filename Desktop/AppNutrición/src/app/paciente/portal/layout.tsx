@@ -25,6 +25,11 @@ export default async function PatientPortalLayout({
   ]);
   if (!paciente) redirect("/paciente/login");
 
+  prisma.paciente.update({
+    where: { id: session.pacienteId },
+    data: { lastAccessAt: new Date() },
+  }).catch(() => {});
+
   const badges: Record<string, number> = {};
   if (contrapropuestas > 0) badges["/paciente/portal/citas"] = contrapropuestas;
   if (mensajesNoLeidos > 0) badges["/paciente/portal/mensajes"] = mensajesNoLeidos;

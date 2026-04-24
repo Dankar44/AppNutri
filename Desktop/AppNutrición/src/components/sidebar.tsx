@@ -158,7 +158,7 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
       <div className="h-16 flex items-center gap-2 px-4 border-b border-border shrink-0">
         <Leaf className="w-7 h-7 text-primary shrink-0" />
         {(!collapsed || mobileOpen) && (
-          <span className="text-xl font-bold text-foreground">NutriApp</span>
+          <span className="text-xl font-bold text-foreground">Annonia</span>
         )}
         {/* Botón cerrar en móvil */}
         {mobileOpen && (
@@ -279,7 +279,7 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
           <Menu className="w-5 h-5" />
         </button>
         <Leaf className="w-5 h-5 text-primary shrink-0" />
-        <span className="font-bold text-sm truncate">NutriApp</span>
+        <span className="font-bold text-sm truncate">Annonia</span>
         <div className="ml-auto flex items-center gap-1">
           <ThemeToggle />
           <NotificationBell initialCount={notifCount} />

@@ -4,9 +4,9 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
   {
     id: "al-1",
     section: "alimentos",
-    question: "¿Qué es la sección de alimentos de AppNutrición?",
+    question: "¿Qué es la sección de alimentos de Annonia?",
     answer:
-      "La sección `/alimentos` es tu base de datos nutricional personal dentro de AppNutrición. Aquí se almacenan todos los alimentos que usarás después para construir planes de alimentación en `/dietas` y recetas en `/recetas`. Cada alimento guarda su información nutricional completa: macronutrientes, fibra y hasta 24 micronutrientes opcionales. Funciona como un catálogo mixto entre alimentos globales disponibles para todos los dietistas y alimentos propios que tú creas o importas.",
+      "La sección `/alimentos` es tu base de datos nutricional personal dentro de Annonia. Aquí se almacenan todos los alimentos que usarás después para construir planes de alimentación en `/dietas` y recetas en `/recetas`. Cada alimento guarda su información nutricional completa: macronutrientes, fibra y hasta 24 micronutrientes opcionales. Funciona como un catálogo mixto entre alimentos globales disponibles para todos los dietistas y alimentos propios que tú creas o importas.",
     related: ["al-2", "al-3", "al-7"],
     keywords: ["alimentos", "base de datos", "sección", "nutricional"],
   },
@@ -15,7 +15,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     section: "alimentos",
     question: "¿Cómo accedo al listado de alimentos?",
     answer:
-      "Pulsa el icono de `Apple` o `Carrot` en el sidebar izquierdo o navega directamente a la ruta `/alimentos`. Se abre una tabla con todos los alimentos disponibles para tu cuenta: los globales de AppNutrición y los que tú hayas creado o importado. En la parte superior tienes el buscador, los filtros por categoría y el botón para crear uno nuevo. Por defecto se ordenan alfabéticamente, pero puedes cambiar el orden.",
+      "Pulsa el icono de `Apple` o `Carrot` en el sidebar izquierdo o navega directamente a la ruta `/alimentos`. Se abre una tabla con todos los alimentos disponibles para tu cuenta: los globales de Annonia y los que tú hayas creado o importado. En la parte superior tienes el buscador, los filtros por categoría y el botón para crear uno nuevo. Por defecto se ordenan alfabéticamente, pero puedes cambiar el orden.",
     related: ["al-1", "al-4", "al-5"],
     keywords: ["acceso", "listado", "navegación", "sidebar"],
   },
@@ -24,7 +24,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     section: "alimentos",
     question: "¿Qué diferencia hay entre un alimento global y uno propio?",
     answer:
-      "Los alimentos globales forman parte de la base de datos común de AppNutrición y están disponibles para todos los dietistas de la plataforma. Los alimentos propios los has creado o importado tú y solo tú los ves en tu cuenta. Los globales se identifican con una etiqueta o icono distintivo en el listado. No puedes editar ni eliminar los globales, pero sí puedes duplicarlos para crear una versión propia con ajustes personalizados.",
+      "Los alimentos globales forman parte de la base de datos común de Annonia y están disponibles para todos los dietistas de la plataforma. Los alimentos propios los has creado o importado tú y solo tú los ves en tu cuenta. Los globales se identifican con una etiqueta o icono distintivo en el listado. No puedes editar ni eliminar los globales, pero sí puedes duplicarlos para crear una versión propia con ajustes personalizados.",
     related: ["al-1", "al-22", "al-24"],
     keywords: ["global", "propio", "diferencia", "privado"],
   },
@@ -87,7 +87,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     section: "alimentos",
     question: "¿Cuál es la unidad base de un alimento?",
     answer:
-      "La unidad base es la referencia sobre la que se expresan los valores nutricionales, y por convención en AppNutrición son 100 g para alimentos sólidos y 100 ml para líquidos. Así, las calorías, proteínas, etc., se guardan por cada 100 g de producto. Luego, al incluirlo en un plan o una receta, el sistema escala los valores según la cantidad que indiques. Esta convención facilita comparar alimentos entre sí.",
+      "La unidad base es la referencia sobre la que se expresan los valores nutricionales, y por convención en Annonia son 100 g para alimentos sólidos y 100 ml para líquidos. Así, las calorías, proteínas, etc., se guardan por cada 100 g de producto. Luego, al incluirlo en un plan o una receta, el sistema escala los valores según la cantidad que indiques. Esta convención facilita comparar alimentos entre sí.",
     related: ["al-35", "al-36", "al-37"],
     keywords: ["unidad", "base", "100g", "referencia"],
   },
@@ -103,7 +103,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
   {
     id: "al-12",
     section: "alimentos",
-    question: "¿Cuáles son los 24 micronutrientes que registra AppNutrición?",
+    question: "¿Cuáles son los 24 micronutrientes que registra Annonia?",
     answer:
       "Las 11 vitaminas: vitamina A, B6, B12, C, D, E, K, tiamina (B1), riboflavina (B2), niacina (B3), folato (B9), ácido pantoténico (B5) y colina. Los minerales: calcio, hierro, magnesio, fósforo, potasio, sodio, cinc, cobre, manganeso, selenio y flúor. En total 24 micros que cubren las recomendaciones más habituales. No todos los alimentos los tienen cargados: solo los más completos o los importados desde fuentes con datos detallados.",
     related: ["al-11", "al-60", "al-61"],
@@ -123,7 +123,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     section: "alimentos",
     question: "¿Cómo importo un alimento desde Open Food Facts?",
     answer:
-      "En el botón \"Nuevo alimento\" despliega la opción \"Importar de Open Food Facts\". Puedes escanear o introducir un código de barras (EAN), o bien buscar el producto por nombre. AppNutrición consulta la API pública de Open Food Facts y precarga los datos disponibles (nombre, macros, marca y a veces micros). Revisa y ajusta antes de guardar, porque la calidad de los datos puede variar según el producto.",
+      "En el botón \"Nuevo alimento\" despliega la opción \"Importar de Open Food Facts\". Puedes escanear o introducir un código de barras (EAN), o bien buscar el producto por nombre. Annonia consulta la API pública de Open Food Facts y precarga los datos disponibles (nombre, macros, marca y a veces micros). Revisa y ajusta antes de guardar, porque la calidad de los datos puede variar según el producto.",
     related: ["al-15", "al-16", "al-38"],
     keywords: ["open food facts", "importar", "código de barras", "ean"],
   },
@@ -132,7 +132,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     section: "alimentos",
     question: "¿Cómo escaneo un código de barras?",
     answer:
-      "En el formulario de importación de Open Food Facts encontrarás un campo para el código EAN. Puedes escribirlo manualmente si lo tienes, pegarlo desde otra aplicación o, si usas AppNutrición desde el móvil, activar la cámara para escanearlo directamente. Una vez reconocido, el sistema consulta la base de datos y rellena los campos del alimento. Si el producto no existe en Open Food Facts, recibirás un aviso.",
+      "En el formulario de importación de Open Food Facts encontrarás un campo para el código EAN. Puedes escribirlo manualmente si lo tienes, pegarlo desde otra aplicación o, si usas Annonia desde el móvil, activar la cámara para escanearlo directamente. Una vez reconocido, el sistema consulta la base de datos y rellena los campos del alimento. Si el producto no existe en Open Food Facts, recibirás un aviso.",
     related: ["al-14", "al-16", "al-38"],
     keywords: ["código de barras", "ean", "escanear", "cámara"],
   },
@@ -141,16 +141,16 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     section: "alimentos",
     question: "¿Puedo buscar en Open Food Facts por nombre en vez de código?",
     answer:
-      "Sí. Si no tienes el código de barras, puedes escribir el nombre del producto en el buscador de importación y AppNutrición hace una consulta textual a Open Food Facts. Se muestran resultados con miniaturas y marcas. Elige el que mejor coincida y pulsa \"Importar\". Recuerda que los resultados por nombre son menos precisos que por código de barras, así que comprueba siempre los datos antes de guardar.",
+      "Sí. Si no tienes el código de barras, puedes escribir el nombre del producto en el buscador de importación y Annonia hace una consulta textual a Open Food Facts. Se muestran resultados con miniaturas y marcas. Elige el que mejor coincida y pulsa \"Importar\". Recuerda que los resultados por nombre son menos precisos que por código de barras, así que comprueba siempre los datos antes de guardar.",
     related: ["al-14", "al-15", "al-62"],
     keywords: ["buscar", "nombre", "open food facts", "texto"],
   },
   {
     id: "al-17",
     section: "alimentos",
-    question: "¿AppNutrición se integra con BEDCA?",
+    question: "¿Annonia se integra con BEDCA?",
     answer:
-      "La base de datos española BEDCA (Base Española de Datos de Composición de Alimentos) está parcialmente integrada en AppNutrición. Muchos alimentos globales provienen de BEDCA y los reconocerás por su denominación oficial. No obstante, el importador directo desde BEDCA está limitado a lo que ya existe en la base global. Para alimentos muy específicos de la cocina española, BEDCA es la referencia más fiable de las disponibles.",
+      "La base de datos española BEDCA (Base Española de Datos de Composición de Alimentos) está parcialmente integrada en Annonia. Muchos alimentos globales provienen de BEDCA y los reconocerás por su denominación oficial. No obstante, el importador directo desde BEDCA está limitado a lo que ya existe en la base global. Para alimentos muy específicos de la cocina española, BEDCA es la referencia más fiable de las disponibles.",
     related: ["al-14", "al-62", "al-63"],
     keywords: ["bedca", "españa", "fuente", "datos"],
   },
@@ -186,7 +186,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     section: "alimentos",
     question: "¿Qué pasa si borro un alimento que está en una dieta?",
     answer:
-      "Si el alimento está siendo usado en dietas o recetas, AppNutrición te avisa antes de borrar y te muestra cuántos planes lo contienen. Si confirmas el borrado, el alimento desaparece del listado y queda como referencia \"huérfana\" en esas dietas, normalmente marcada como \"Alimento no disponible\". Para evitar problemas, lo recomendable es no eliminar alimentos activos y, si es necesario, reemplazarlos primero en las dietas afectadas.",
+      "Si el alimento está siendo usado en dietas o recetas, Annonia te avisa antes de borrar y te muestra cuántos planes lo contienen. Si confirmas el borrado, el alimento desaparece del listado y queda como referencia \"huérfana\" en esas dietas, normalmente marcada como \"Alimento no disponible\". Para evitar problemas, lo recomendable es no eliminar alimentos activos y, si es necesario, reemplazarlos primero en las dietas afectadas.",
     related: ["al-20", "al-19", "al-23"],
     keywords: ["borrar", "dieta", "huérfano", "referencia"],
   },
@@ -195,7 +195,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     section: "alimentos",
     question: "¿Puedo borrar un alimento global?",
     answer:
-      "No. Los alimentos globales de AppNutrición no se pueden borrar ni editar desde tu cuenta. Están protegidos para garantizar que otros dietistas sigan teniendo acceso a los mismos datos. Si encuentras un error en un global, lo ideal es crear una copia propia corregida. Si crees que el error es grave y afecta a muchos, puedes reportarlo por el canal de soporte para que el equipo de AppNutrición revise el dato.",
+      "No. Los alimentos globales de Annonia no se pueden borrar ni editar desde tu cuenta. Están protegidos para garantizar que otros dietistas sigan teniendo acceso a los mismos datos. Si encuentras un error en un global, lo ideal es crear una copia propia corregida. Si crees que el error es grave y afecta a muchos, puedes reportarlo por el canal de soporte para que el equipo de Annonia revise el dato.",
     related: ["al-3", "al-20", "al-52"],
     keywords: ["global", "borrar", "bloqueado", "protegido"],
   },
@@ -222,7 +222,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     section: "alimentos",
     question: "¿Qué unidades se pueden usar para medir un alimento?",
     answer:
-      "Las unidades admitidas son gramos (g) para sólidos, mililitros (ml) para líquidos y unidades (ud) para piezas. En el formulario eliges la unidad base al crear el alimento. Luego, al incluirlo en una dieta, puedes cambiar la cantidad en la unidad que tenga sentido (por ejemplo, 60 g de pan o 1 huevo). Si defines una porción estándar, AppNutrición puede convertir automáticamente entre gramos y unidades.",
+      "Las unidades admitidas son gramos (g) para sólidos, mililitros (ml) para líquidos y unidades (ud) para piezas. En el formulario eliges la unidad base al crear el alimento. Luego, al incluirlo en una dieta, puedes cambiar la cantidad en la unidad que tenga sentido (por ejemplo, 60 g de pan o 1 huevo). Si defines una porción estándar, Annonia puede convertir automáticamente entre gramos y unidades.",
     related: ["al-26", "al-27", "al-10"],
     keywords: ["unidades", "gramos", "mililitros", "piezas"],
   },
@@ -249,7 +249,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     section: "alimentos",
     question: "¿De dónde vienen los datos de Open Food Facts?",
     answer:
-      "Open Food Facts es una base de datos colaborativa y abierta, como una \"Wikipedia de los productos alimentarios\". Los datos son aportados por usuarios de todo el mundo y se publican bajo licencia Open Database License (ODbL). AppNutrición usa su API pública para traer la información nutricional de productos con código de barras. Siempre revisa los valores importados porque, al ser colaborativa, la calidad puede variar según el producto.",
+      "Open Food Facts es una base de datos colaborativa y abierta, como una \"Wikipedia de los productos alimentarios\". Los datos son aportados por usuarios de todo el mundo y se publican bajo licencia Open Database License (ODbL). Annonia usa su API pública para traer la información nutricional de productos con código de barras. Siempre revisa los valores importados porque, al ser colaborativa, la calidad puede variar según el producto.",
     related: ["al-14", "al-38", "al-62"],
     keywords: ["open food facts", "licencia", "odbl", "colaborativa"],
   },
@@ -303,7 +303,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     section: "alimentos",
     question: "¿Con cuántos decimales se guardan los nutrientes?",
     answer:
-      "AppNutrición guarda internamente los nutrientes con dos decimales y los muestra con uno o dos según el caso: las calorías se suelen redondear al entero más cercano, los macros en gramos con un decimal y los micros en mg o µg con uno o dos decimales. El redondeo se aplica al mostrar, pero los cálculos usan los valores precisos para evitar errores acumulados. Si introduces más decimales, se truncarán al guardar.",
+      "Annonia guarda internamente los nutrientes con dos decimales y los muestra con uno o dos según el caso: las calorías se suelen redondear al entero más cercano, los macros en gramos con un decimal y los micros en mg o µg con uno o dos decimales. El redondeo se aplica al mostrar, pero los cálculos usan los valores precisos para evitar errores acumulados. Si introduces más decimales, se truncarán al guardar.",
     related: ["al-10", "al-33", "al-11"],
     keywords: ["decimales", "redondeo", "precisión", "números"],
   },
@@ -312,7 +312,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     section: "alimentos",
     question: "¿Puedo exportar mis alimentos a CSV o Excel?",
     answer:
-      "De momento AppNutrición no soporta exportar la base de alimentos a CSV o Excel desde la sección `/alimentos`. Si necesitas un listado, puedes imprimir la pantalla o hacer una captura. Esta funcionalidad está en el roadmap para futuras versiones, sobre todo para dietistas que quieran hacer copias de seguridad o análisis fuera de la app. Si te urge, contáctanos por soporte y valoramos la prioridad.",
+      "De momento Annonia no soporta exportar la base de alimentos a CSV o Excel desde la sección `/alimentos`. Si necesitas un listado, puedes imprimir la pantalla o hacer una captura. Esta funcionalidad está en el roadmap para futuras versiones, sobre todo para dietistas que quieran hacer copias de seguridad o análisis fuera de la app. Si te urge, contáctanos por soporte y valoramos la prioridad.",
     related: ["al-36", "al-37", "al-64"],
     keywords: ["exportar", "csv", "excel", "descarga"],
   },
@@ -357,7 +357,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     section: "alimentos",
     question: "¿Puedo crear categorías personalizadas?",
     answer:
-      "Actualmente las categorías son un conjunto cerrado definido por AppNutrición (frutas, verduras, carnes, pescados, lácteos, cereales, legumbres, frutos secos, aceites, bebidas, huevos, procesados, dulces, preparados...). No puedes crear categorías nuevas propias. Si tu alimento no encaja claramente, elige la más cercana o déjalo sin categoría. Esta limitación mantiene la coherencia del filtro y permite que las estadísticas agregadas sean comparables entre cuentas.",
+      "Actualmente las categorías son un conjunto cerrado definido por Annonia (frutas, verduras, carnes, pescados, lácteos, cereales, legumbres, frutos secos, aceites, bebidas, huevos, procesados, dulces, preparados...). No puedes crear categorías nuevas propias. Si tu alimento no encaja claramente, elige la más cercana o déjalo sin categoría. Esta limitación mantiene la coherencia del filtro y permite que las estadísticas agregadas sean comparables entre cuentas.",
     related: ["al-5", "al-7", "al-41"],
     keywords: ["categoría", "personalizada", "crear", "propia"],
   },
@@ -393,7 +393,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     section: "alimentos",
     question: "¿Puedo generar alimentos con inteligencia artificial?",
     answer:
-      "AppNutrición no genera alimentos completos desde cero con IA, pero sí te sugiere valores aproximados si creas un alimento con un nombre reconocible y pulsas \"Estimar con IA\" (si está disponible en tu versión). La IA rellena macros probables basándose en la denominación. Revisa siempre los valores, porque son estimaciones y no sustituyen una fuente fiable como BEDCA o Open Food Facts. Úsalo como punto de partida, no como dato definitivo.",
+      "Annonia no genera alimentos completos desde cero con IA, pero sí te sugiere valores aproximados si creas un alimento con un nombre reconocible y pulsas \"Estimar con IA\" (si está disponible en tu versión). La IA rellena macros probables basándose en la denominación. Revisa siempre los valores, porque son estimaciones y no sustituyen una fuente fiable como BEDCA o Open Food Facts. Úsalo como punto de partida, no como dato definitivo.",
     related: ["al-13", "al-14", "al-7"],
     keywords: ["ia", "inteligencia artificial", "generar", "estimar"],
   },
@@ -402,7 +402,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     section: "alimentos",
     question: "¿Puedo compartir mis alimentos propios con otros dietistas?",
     answer:
-      "No, actualmente los alimentos propios son privados de tu cuenta y no hay función de compartir directo entre dietistas. Solo los alimentos globales de la base de AppNutrición son comunes a todos. Si trabajas en un equipo y queréis compartir, cada miembro puede crear los mismos alimentos en su cuenta o, si tenéis una cuenta multiusuario, se comparten dentro de esa organización. Esta funcionalidad está en estudio para versiones futuras.",
+      "No, actualmente los alimentos propios son privados de tu cuenta y no hay función de compartir directo entre dietistas. Solo los alimentos globales de la base de Annonia son comunes a todos. Si trabajas en un equipo y queréis compartir, cada miembro puede crear los mismos alimentos en su cuenta o, si tenéis una cuenta multiusuario, se comparten dentro de esa organización. Esta funcionalidad está en estudio para versiones futuras.",
     related: ["al-3", "al-46", "al-66"],
     keywords: ["compartir", "equipo", "colaborar", "dietistas"],
   },
@@ -411,7 +411,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     section: "alimentos",
     question: "¿Puedo aportar mis alimentos a la base global?",
     answer:
-      "De momento no hay un flujo directo para que los dietistas aporten sus alimentos propios a la base global de AppNutrición. Si creas un alimento que crees que sería útil para toda la comunidad, contáctanos por soporte y el equipo lo valorará para incluirlo. Esta vía manual asegura que los datos globales pasen una revisión de calidad antes de publicarse, manteniendo el estándar de la base compartida.",
+      "De momento no hay un flujo directo para que los dietistas aporten sus alimentos propios a la base global de Annonia. Si creas un alimento que crees que sería útil para toda la comunidad, contáctanos por soporte y el equipo lo valorará para incluirlo. Esta vía manual asegura que los datos globales pasen una revisión de calidad antes de publicarse, manteniendo el estándar de la base compartida.",
     related: ["al-3", "al-45", "al-52"],
     keywords: ["aportar", "contribuir", "global", "comunidad"],
   },
@@ -429,7 +429,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     section: "alimentos",
     question: "¿Qué hago si un alimento global está mal clasificado?",
     answer:
-      "Si encuentras un alimento global con categoría errónea o datos incorrectos, no puedes editarlo directamente. Las opciones son: crear una copia propia con los valores corregidos y usar esa en tus planes, o reportar el error a soporte para que el equipo de AppNutrición lo revise y corrija en la base global. Incluye el nombre exacto del alimento y el cambio propuesto para facilitar la verificación.",
+      "Si encuentras un alimento global con categoría errónea o datos incorrectos, no puedes editarlo directamente. Las opciones son: crear una copia propia con los valores corregidos y usar esa en tus planes, o reportar el error a soporte para que el equipo de Annonia lo revise y corrija en la base global. Incluye el nombre exacto del alimento y el cambio propuesto para facilitar la verificación.",
     related: ["al-22", "al-46", "al-52"],
     keywords: ["mal clasificado", "reportar", "corregir", "error"],
   },
@@ -465,7 +465,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     section: "alimentos",
     question: "¿Cómo reporto un error en un alimento global?",
     answer:
-      "Usa el canal de soporte de AppNutrición (chat, email o formulario de contacto en `/ajustes`). Indica el nombre exacto del alimento, qué consideras incorrecto (categoría, calorías, micros...) y, si puedes, una fuente fiable con el valor correcto. El equipo revisa los reportes y, si procede, corrige el dato en la base global para que todos los dietistas se beneficien de la corrección.",
+      "Usa el canal de soporte de Annonia (chat, email o formulario de contacto en `/ajustes`). Indica el nombre exacto del alimento, qué consideras incorrecto (categoría, calorías, micros...) y, si puedes, una fuente fiable con el valor correcto. El equipo revisa los reportes y, si procede, corrige el dato en la base global para que todos los dietistas se beneficien de la corrección.",
     related: ["al-48", "al-46", "al-22"],
     keywords: ["reportar", "error", "global", "soporte"],
   },
@@ -474,7 +474,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     section: "alimentos",
     question: "¿Hay diferencia entre un alimento crudo y cocinado?",
     answer:
-      "Sí, y es importante. Un alimento crudo y su versión cocinada tienen pesos y composiciones distintas porque cocinar cambia el contenido de agua, grasa y a veces nutrientes. Por ejemplo, 100 g de arroz crudo no son 100 g de arroz cocido. AppNutrición incluye versiones separadas de los alimentos más habituales (\"Arroz blanco crudo\" y \"Arroz blanco cocido\"). Usa siempre la versión que corresponda al estado en que el paciente lo va a consumir.",
+      "Sí, y es importante. Un alimento crudo y su versión cocinada tienen pesos y composiciones distintas porque cocinar cambia el contenido de agua, grasa y a veces nutrientes. Por ejemplo, 100 g de arroz crudo no son 100 g de arroz cocido. Annonia incluye versiones separadas de los alimentos más habituales (\"Arroz blanco crudo\" y \"Arroz blanco cocido\"). Usa siempre la versión que corresponda al estado en que el paciente lo va a consumir.",
     related: ["al-54", "al-38", "al-25"],
     keywords: ["crudo", "cocinado", "peso", "preparación"],
   },
@@ -492,7 +492,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     section: "alimentos",
     question: "¿Son privados mis alimentos propios?",
     answer:
-      "Sí, totalmente. Tus alimentos propios solo los ves tú dentro de tu cuenta de AppNutrición. No son visibles para otros dietistas ni para tus pacientes, aunque sí aparecerán en los planes que compartas con ellos como nombres e ingredientes. Los datos se almacenan cifrados en la base de datos y cumplen con la normativa de protección de datos. Solo el personal de AppNutrición con permisos técnicos puede acceder por soporte si lo autorizas.",
+      "Sí, totalmente. Tus alimentos propios solo los ves tú dentro de tu cuenta de Annonia. No son visibles para otros dietistas ni para tus pacientes, aunque sí aparecerán en los planes que compartas con ellos como nombres e ingredientes. Los datos se almacenan cifrados en la base de datos y cumplen con la normativa de protección de datos. Solo el personal de Annonia con permisos técnicos puede acceder por soporte si lo autorizas.",
     related: ["al-3", "al-45", "al-66"],
     keywords: ["privacidad", "propios", "privado", "solo yo"],
   },
@@ -501,7 +501,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     section: "alimentos",
     question: "¿Cómo se usa la cantidad recomendada en los planes?",
     answer:
-      "Cuando añades un alimento a un plan en `/dietas`, introduces la cantidad que el paciente debe consumir (en gramos, mililitros o unidades) y AppNutrición calcula automáticamente las calorías y macros proporcionales. La cantidad recomendada no está fijada en el alimento en sí, sino que se define en cada plan. Puedes guardar cantidades típicas como parte de plantillas de comidas para ahorrarte teclear cada vez.",
+      "Cuando añades un alimento a un plan en `/dietas`, introduces la cantidad que el paciente debe consumir (en gramos, mililitros o unidades) y Annonia calcula automáticamente las calorías y macros proporcionales. La cantidad recomendada no está fijada en el alimento en sí, sino que se define en cada plan. Puedes guardar cantidades típicas como parte de plantillas de comidas para ahorrarte teclear cada vez.",
     related: ["al-25", "al-26", "al-36"],
     keywords: ["cantidad", "recomendada", "plan", "ración"],
   },
@@ -528,7 +528,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     section: "alimentos",
     question: "¿Puedo añadir una foto al alimento?",
     answer:
-      "Los alimentos importados desde Open Food Facts suelen traer una foto del producto si existe en su base de datos. Para alimentos creados manualmente, la función de subir foto propia puede estar disponible como opcional en el formulario, dependiendo de la versión de AppNutrición. Las fotos ayudan a los pacientes a identificar visualmente el ingrediente en los planes. Si no hay foto, se usa un icono genérico de la categoría.",
+      "Los alimentos importados desde Open Food Facts suelen traer una foto del producto si existe en su base de datos. Para alimentos creados manualmente, la función de subir foto propia puede estar disponible como opcional en el formulario, dependiendo de la versión de Annonia. Las fotos ayudan a los pacientes a identificar visualmente el ingrediente en los planes. Si no hay foto, se usa un icono genérico de la categoría.",
     related: ["al-14", "al-7", "al-39"],
     keywords: ["foto", "imagen", "producto", "visual"],
   },
@@ -600,7 +600,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     section: "alimentos",
     question: "¿Qué ocurre si intento crear un alimento con nombre duplicado?",
     answer:
-      "AppNutrición no impide nombres duplicados estrictos, pero al escribir un nombre que ya existe (global o propio), aparece una sugerencia indicando que hay un alimento similar y ofreciendo usarlo en vez de crear uno nuevo. Así se evitan duplicados innecesarios. Si realmente necesitas una versión distinta (por ejemplo, misma denominación pero marca diferente), añade la marca o una coletilla al nombre para diferenciarlo claramente.",
+      "Annonia no impide nombres duplicados estrictos, pero al escribir un nombre que ya existe (global o propio), aparece una sugerencia indicando que hay un alimento similar y ofreciendo usarlo en vez de crear uno nuevo. Así se evitan duplicados innecesarios. Si realmente necesitas una versión distinta (por ejemplo, misma denominación pero marca diferente), añade la marca o una coletilla al nombre para diferenciarlo claramente.",
     related: ["al-30", "al-31", "al-39"],
     keywords: ["duplicado", "nombre", "repetido", "existe"],
   },
@@ -627,7 +627,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     section: "alimentos",
     question: "¿Cómo funciona la búsqueda por ingrediente al crear una receta?",
     answer:
-      "Al añadir un ingrediente a una receta en `/recetas`, AppNutrición abre un selector que consulta tu base `/alimentos` con el mismo buscador y filtros: insensible a acentos, con sugerencias en tiempo real y filtros por categoría. Seleccionas el alimento, indicas la cantidad y se integra en la receta con sus macros proporcionales. Si no encuentras un ingrediente, puedes crearlo en ese momento desde el propio selector sin salir de la receta.",
+      "Al añadir un ingrediente a una receta en `/recetas`, Annonia abre un selector que consulta tu base `/alimentos` con el mismo buscador y filtros: insensible a acentos, con sugerencias en tiempo real y filtros por categoría. Seleccionas el alimento, indicas la cantidad y se integra en la receta con sus macros proporcionales. Si no encuentras un ingrediente, puedes crearlo en ese momento desde el propio selector sin salir de la receta.",
     related: ["al-37", "al-4", "al-56"],
     keywords: ["receta", "ingrediente", "selector", "buscar"],
   },

@@ -150,7 +150,7 @@ export const AGENDA_CITAS_ENTRIES: HelpEntry[] = [
     section: "agenda-citas",
     question: "¿Cómo sincroniza la cita con Google Calendar tras crearla?",
     answer:
-      "Si tienes Google Calendar conectado en `/ajustes/integraciones`, la cita se sincroniza automáticamente al guardar, normalmente en menos de 5 segundos. Aparece en tu calendario de Google con el título, la duración y, si es online, un enlace de Meet generado. Cualquier edición posterior en AppNutrición se propaga también a Google, y viceversa si has activado la sincronización bidireccional. Si Google no está conectado, la cita se guarda solo en AppNutrición sin ningún error.",
+      "Si tienes Google Calendar conectado en `/ajustes/integraciones`, la cita se sincroniza automáticamente al guardar, normalmente en menos de 5 segundos. Aparece en tu calendario de Google con el título, la duración y, si es online, un enlace de Meet generado. Cualquier edición posterior en Annonia se propaga también a Google, y viceversa si has activado la sincronización bidireccional. Si Google no está conectado, la cita se guarda solo en Annonia sin ningún error.",
     related: ["ac-11", "ac-28", "ac-29"],
     keywords: ["sincronización", "google", "calendar", "automática"],
   },
@@ -195,7 +195,7 @@ export const AGENDA_CITAS_ENTRIES: HelpEntry[] = [
     section: "agenda-citas",
     question: "¿Cómo marco una cita como completada tras realizarla?",
     answer:
-      "Cuando termines una consulta, abre el detalle de la cita y pulsa el botón \"Marcar como completada\". La cita pasa a estado COMPLETADA y queda fuera del calendario activo pero disponible en el historial del paciente. Al hacerlo, AppNutrición te sugiere registrar medidas, entregar un plan o enviar un resumen al paciente, enlazando con los siguientes pasos típicos tras una consulta. Mantener las citas bien cerradas te da estadísticas fiables en el dashboard.",
+      "Cuando termines una consulta, abre el detalle de la cita y pulsa el botón \"Marcar como completada\". La cita pasa a estado COMPLETADA y queda fuera del calendario activo pero disponible en el historial del paciente. Al hacerlo, Annonia te sugiere registrar medidas, entregar un plan o enviar un resumen al paciente, enlazando con los siguientes pasos típicos tras una consulta. Mantener las citas bien cerradas te da estadísticas fiables en el dashboard.",
     related: ["ac-21", "ac-20", "ac-18"],
     keywords: ["completada", "terminada", "realizada", "cerrar"],
   },
@@ -204,7 +204,7 @@ export const AGENDA_CITAS_ENTRIES: HelpEntry[] = [
     section: "agenda-citas",
     question: "¿Cómo reprogramo una cita a otra fecha u hora?",
     answer:
-      "Reprogramar una cita es tan simple como editarla: abre el detalle, pulsa \"Editar\" y cambia la fecha y/o la hora al nuevo slot deseado. AppNutrición valida que el nuevo horario no solape con otras citas ni caiga en el pasado. Al guardar, el paciente recibe una notificación informándole del cambio y, si está activada la sincronización, Google Calendar se actualiza automáticamente. En la vista semana puedes también arrastrar la cita a otro slot para reprogramarla rápidamente.",
+      "Reprogramar una cita es tan simple como editarla: abre el detalle, pulsa \"Editar\" y cambia la fecha y/o la hora al nuevo slot deseado. Annonia valida que el nuevo horario no solape con otras citas ni caiga en el pasado. Al guardar, el paciente recibe una notificación informándole del cambio y, si está activada la sincronización, Google Calendar se actualiza automáticamente. En la vista semana puedes también arrastrar la cita a otro slot para reprogramarla rápidamente.",
     related: ["ac-20", "ac-21", "ac-14"],
     keywords: ["reprogramar", "mover", "cambiar", "fecha"],
   },
@@ -339,7 +339,7 @@ export const AGENDA_CITAS_ENTRIES: HelpEntry[] = [
     section: "agenda-citas",
     question: "¿Hay recordatorios automáticos para las citas?",
     answer:
-      "De momento AppNutrición no envía recordatorios automáticos antes de la cita (ni al paciente ni al nutricionista); es una funcionalidad en el roadmap pero aún no disponible. Mientras tanto, puedes apoyarte en Google Calendar (si lo tienes conectado) que sí dispara sus notificaciones nativas unos minutos antes. También puedes enviar mensajes manuales al paciente el día previo para confirmar asistencia. Cuando esté disponible el recordatorio automático lo anunciaremos en la sección de novedades.",
+      "De momento Annonia no envía recordatorios automáticos antes de la cita (ni al paciente ni al nutricionista); es una funcionalidad en el roadmap pero aún no disponible. Mientras tanto, puedes apoyarte en Google Calendar (si lo tienes conectado) que sí dispara sus notificaciones nativas unos minutos antes. También puedes enviar mensajes manuales al paciente el día previo para confirmar asistencia. Cuando esté disponible el recordatorio automático lo anunciaremos en la sección de novedades.",
     related: ["ac-17", "ac-28", "ac-31"],
     keywords: ["recordatorio", "automático", "aviso", "previo"],
   },

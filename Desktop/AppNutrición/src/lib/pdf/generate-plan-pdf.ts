@@ -154,10 +154,10 @@ export function generatePlanPDF(data: PlanPDFData): string {
   const fecha = new Date().toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
   const listaCompra = generarListaCompra(sortedDias as unknown as Parameters<typeof generarListaCompra>[0]);
 
-  const header = `<div class="header"><div><span class="header-name">${data.pacienteNombre.toUpperCase()}</span><br><span class="header-sub">PLAN DIETÉTICO SEMANAL DE ${data.pacienteNombre.toUpperCase()}</span></div><div class="header-logo">NutriApp</div></div>`;
+  const header = `<div class="header"><div><span class="header-name">${data.pacienteNombre.toUpperCase()}</span><br><span class="header-sub">PLAN DIETÉTICO SEMANAL DE ${data.pacienteNombre.toUpperCase()}</span></div><div class="header-logo">Annonia</div></div>`;
 
   // === PORTADA ===
-  let html = `<div class="page cover"><div class="cover-box"><div class="cover-title">PLAN DIETÉTICO<br><strong>PERSONALIZADO</strong></div><div class="cover-name">${data.pacienteNombre.toUpperCase()}</div></div><div class="cover-logo">NutriApp</div></div>`;
+  let html = `<div class="page cover"><div class="cover-box"><div class="cover-title">PLAN DIETÉTICO<br><strong>PERSONALIZADO</strong></div><div class="cover-name">${data.pacienteNombre.toUpperCase()}</div></div><div class="cover-logo">Annonia</div></div>`;
 
   // === RESUMEN SEMANAL ===
   html += `<div class="page">${header}<div class="section-title">PLAN DIETÉTICO SEMANAL</div>`;
@@ -175,7 +175,7 @@ export function generatePlanPDF(data: PlanPDFData): string {
     }
     html += `</tr>`;
   }
-  html += `</tbody></table><div class="footer">NutriApp &mdash; ${fecha}</div></div>`;
+  html += `</tbody></table><div class="footer">Annonia &mdash; ${fecha}</div></div>`;
 
   // === DETALLE POR DÍA ===
   for (const dia of sortedDias) {
@@ -221,12 +221,12 @@ export function generatePlanPDF(data: PlanPDFData): string {
       <div class="macro-item"><div class="macro-value macro-carb">${macros.carbohidratos}g</div><div class="macro-label">Carbohidratos</div></div>
       <div class="macro-item"><div class="macro-value macro-fat">${macros.grasas}g</div><div class="macro-label">Grasas</div></div>
     </div>`;
-    html += `<div class="footer">NutriApp &mdash; ${fecha}</div></div>`;
+    html += `<div class="footer">Annonia &mdash; ${fecha}</div></div>`;
   }
 
   // === RECOMENDACIONES ===
   if (data.recomendaciones.trim()) {
-    html += `<div class="page">${header}<div class="section-title">RECOMENDACIONES</div><div class="reco-text">${data.recomendaciones}</div><div class="footer">NutriApp &mdash; ${fecha}</div></div>`;
+    html += `<div class="page">${header}<div class="section-title">RECOMENDACIONES</div><div class="reco-text">${data.recomendaciones}</div><div class="footer">Annonia &mdash; ${fecha}</div></div>`;
   }
 
   // === LISTA DE LA COMPRA ===
@@ -239,11 +239,11 @@ export function generatePlanPDF(data: PlanPDFData): string {
       }
       html += `</div>`;
     }
-    html += `</div><div class="footer">NutriApp &mdash; ${fecha}</div></div>`;
+    html += `</div><div class="footer">Annonia &mdash; ${fecha}</div></div>`;
   }
 
   // === CONTRAPORTADA ===
-  html += `<div class="page cover"><div class="cover-logo" style="font-size:32px;">NutriApp</div><p style="color:#666; margin-top:12px; font-size:12px;">Generado por ${data.dietistaNombre}</p></div>`;
+  html += `<div class="page cover"><div class="cover-logo" style="font-size:32px;">Annonia</div><p style="color:#666; margin-top:12px; font-size:12px;">Generado por ${data.dietistaNombre}</p></div>`;
 
   return `<!DOCTYPE html><html><head><title>Plan Dietético - ${data.pacienteNombre}</title><style>${CSS}</style></head><body>${html}<script>window.onload=function(){window.print();}</script></body></html>`;
 }

@@ -6,7 +6,7 @@ export const AJUSTES_ENTRIES: HelpEntry[] = [
     section: "ajustes",
     question: "¿Qué es la página de Ajustes?",
     answer:
-      "Ajustes es el centro de configuración de tu cuenta profesional en AppNutrición. Desde aquí controlas tu perfil, datos profesionales, integraciones, suscripción, cobros, paciente de ejemplo, guías y acciones sensibles. Es el sitio al que acudirás al empezar a usar la app y cada vez que necesites cambiar algo estructural. A diferencia del Dashboard, que es un resumen de tu actividad, Ajustes se centra en configurar cómo funciona tu cuenta.",
+      "Ajustes es el centro de configuración de tu cuenta profesional en Annonia. Desde aquí controlas tu perfil, datos profesionales, integraciones, suscripción, cobros, paciente de ejemplo, guías y acciones sensibles. Es el sitio al que acudirás al empezar a usar la app y cada vez que necesites cambiar algo estructural. A diferencia del Dashboard, que es un resumen de tu actividad, Ajustes se centra en configurar cómo funciona tu cuenta.",
     related: ["aj-2", "aj-4", "aj-18"],
     keywords: ["ajustes", "configuración", "cuenta", "panel"],
   },
@@ -238,7 +238,7 @@ export const AJUSTES_ENTRIES: HelpEntry[] = [
   {
     id: "aj-27",
     section: "ajustes",
-    question: "¿Qué cuidados tiene AppNutrición con la privacidad de Ajustes?",
+    question: "¿Qué cuidados tiene Annonia con la privacidad de Ajustes?",
     answer:
       "Los datos que guardas en Ajustes (especialmente Perfil, Profesional y Cobros) se almacenan cifrados y no se comparten con terceros salvo las integraciones que tú mismo autorices. Las credenciales OAuth (por ejemplo Google) no se guardan como contraseña: se guardan tokens revocables. Puedes desconectar cualquier integración desde su tarjeta en Integraciones y puedes iniciar un borrado de cuenta desde la Zona peligrosa.",
     related: ["aj-13", "aj-25", "aj-24"],

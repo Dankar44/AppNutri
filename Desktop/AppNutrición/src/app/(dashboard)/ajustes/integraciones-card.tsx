@@ -198,7 +198,7 @@ function DisconnectDialog({
           >
             <p className="text-sm font-medium text-red-700 dark:text-red-400">Borrar las citas de Google</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Se eliminarán todos los eventos creados por AppNutri de tu calendario.
+              Se eliminarán todos los eventos creados por Annonia de tu calendario.
             </p>
           </button>
         </div>

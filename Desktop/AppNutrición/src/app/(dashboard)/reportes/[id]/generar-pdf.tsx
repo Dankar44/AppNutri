@@ -70,7 +70,7 @@ function abrirVentanaPDF(titulo: string, contenidoHTML: string) {
     </head>
     <body>
       ${contenidoHTML}
-      <div class="footer">NutriApp &mdash; Generado el ${new Date().toLocaleDateString("es-ES")}</div>
+      <div class="footer">Annonia &mdash; Generado el ${new Date().toLocaleDateString("es-ES")}</div>
       <script>window.onload = function() { window.print(); }</script>
     </body>
     </html>

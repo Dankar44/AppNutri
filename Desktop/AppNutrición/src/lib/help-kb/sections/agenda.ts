@@ -4,7 +4,7 @@ export const AGENDA_ENTRIES: HelpEntry[] = [
   {
     id: "ag-1",
     section: "agenda",
-    question: "¿Qué es la sección Agenda de AppNutrición?",
+    question: "¿Qué es la sección Agenda de Annonia?",
     answer:
       "La Agenda es la sección donde gestionas todas las citas con tus pacientes, accesible en la ruta `/agenda` del panel del nutricionista. Te permite ver, crear, reprogramar, cancelar y completar consultas desde tres vistas distintas: semana, mes y día. Funciona como un calendario interactivo con soporte para citas presenciales y online a través de Google Meet. Es el punto central donde se cruzan las citas creadas por ti y las solicitudes enviadas por tus pacientes desde su portal.",
     related: ["ag-2", "ag-3", "ag-11"],
@@ -114,7 +114,7 @@ export const AGENDA_ENTRIES: HelpEntry[] = [
     section: "agenda",
     question: "¿Qué pasa si la cita es online?",
     answer:
-      "Si activas el interruptor \"Cita online\" en el formulario, AppNutrición genera automáticamente una sala de Google Meet al guardar, siempre que tengas Google Calendar conectado en Ajustes. El enlace de Meet se guarda con la cita y se incluye en los recordatorios enviados al paciente. Tanto tú como el paciente veréis el botón \"Unirse\" cerca de la hora de inicio. Si no tienes Google conectado, la cita se marcará como online pero sin enlace de Meet automático.",
+      "Si activas el interruptor \"Cita online\" en el formulario, Annonia genera automáticamente una sala de Google Meet al guardar, siempre que tengas Google Calendar conectado en Ajustes. El enlace de Meet se guarda con la cita y se incluye en los recordatorios enviados al paciente. Tanto tú como el paciente veréis el botón \"Unirse\" cerca de la hora de inicio. Si no tienes Google conectado, la cita se marcará como online pero sin enlace de Meet automático.",
     related: ["ag-14", "ag-54", "ag-55", "ag-56"],
     keywords: ["online", "meet", "google", "videollamada"],
   },
@@ -339,7 +339,7 @@ export const AGENDA_ENTRIES: HelpEntry[] = [
     section: "agenda",
     question: "¿Qué ocurre si varias citas se solapan en la vista semana?",
     answer:
-      "Si tienes dos o más citas en el mismo rango horario, aparecerán como bloques paralelos dentro de la misma franja, compartiendo el ancho de la columna del día. Esto permite identificar a simple vista un conflicto de agenda, aunque la práctica recomendada es evitar solapamientos. Si hay más de tres citas solapadas en la misma franja, verás un indicador \"+n\" al hacer clic para abrir la lista completa. En general, AppNutrición no bloquea la creación de solapamientos, solo los muestra.",
+      "Si tienes dos o más citas en el mismo rango horario, aparecerán como bloques paralelos dentro de la misma franja, compartiendo el ancho de la columna del día. Esto permite identificar a simple vista un conflicto de agenda, aunque la práctica recomendada es evitar solapamientos. Si hay más de tres citas solapadas en la misma franja, verás un indicador \"+n\" al hacer clic para abrir la lista completa. En general, Annonia no bloquea la creación de solapamientos, solo los muestra.",
     related: ["ag-5", "ag-30", "ag-47"],
     keywords: ["solapadas", "semana", "conflicto", "horas"],
   },
@@ -420,7 +420,7 @@ export const AGENDA_ENTRIES: HelpEntry[] = [
     section: "agenda",
     question: "¿Se pueden crear citas recurrentes automáticas?",
     answer:
-      "Actualmente AppNutrición no soporta citas recurrentes automáticas (por ejemplo \"cada lunes a las 10:00 durante 3 meses\"). Cada cita se crea de forma individual. Sí puedes usar la función \"Duplicar\" para agilizar la creación de consultas de seguimiento con el mismo paciente sin rellenar el formulario entero. Es una funcionalidad en la hoja de ruta del producto pero todavía no disponible.",
+      "Actualmente Annonia no soporta citas recurrentes automáticas (por ejemplo \"cada lunes a las 10:00 durante 3 meses\"). Cada cita se crea de forma individual. Sí puedes usar la función \"Duplicar\" para agilizar la creación de consultas de seguimiento con el mismo paciente sin rellenar el formulario entero. Es una funcionalidad en la hoja de ruta del producto pero todavía no disponible.",
     related: ["ag-28", "ag-11"],
     keywords: ["recurrentes", "repetir", "automáticas", "no soportado"],
   },
@@ -429,7 +429,7 @@ export const AGENDA_ENTRIES: HelpEntry[] = [
     section: "agenda",
     question: "¿Se envían recordatorios al paciente?",
     answer:
-      "Sí, AppNutrición envía recordatorios automáticos al paciente por correo: uno cuando se confirma la cita y otro 24 horas antes de la hora prevista. Si la cita es online, el recordatorio incluye el enlace de Google Meet. También generamos notificaciones internas tipo CITA_HOY en el portal del paciente el mismo día. Puedes ajustar algunas preferencias de envío en Ajustes → Notificaciones, aunque los recordatorios clave están activos por defecto.",
+      "Sí, Annonia envía recordatorios automáticos al paciente por correo: uno cuando se confirma la cita y otro 24 horas antes de la hora prevista. Si la cita es online, el recordatorio incluye el enlace de Google Meet. También generamos notificaciones internas tipo CITA_HOY en el portal del paciente el mismo día. Puedes ajustar algunas preferencias de envío en Ajustes → Notificaciones, aunque los recordatorios clave están activos por defecto.",
     related: ["ag-13", "ag-14", "ag-58"],
     keywords: ["recordatorios", "aviso", "paciente", "correo"],
   },
@@ -474,7 +474,7 @@ export const AGENDA_ENTRIES: HelpEntry[] = [
     section: "agenda",
     question: "¿Existe una agenda compartida entre varios nutricionistas?",
     answer:
-      "Actualmente AppNutrición no soporta agendas compartidas entre varios profesionales dentro de la misma cuenta. Cada nutricionista tiene su propia agenda independiente y no es posible ver o gestionar las citas de otro compañero desde tu vista. Si trabajas en una clínica con varios nutricionistas, cada uno debe gestionar su agenda por separado. Es una funcionalidad prevista pero no disponible a día de hoy.",
+      "Actualmente Annonia no soporta agendas compartidas entre varios profesionales dentro de la misma cuenta. Cada nutricionista tiene su propia agenda independiente y no es posible ver o gestionar las citas de otro compañero desde tu vista. Si trabajas en una clínica con varios nutricionistas, cada uno debe gestionar su agenda por separado. Es una funcionalidad prevista pero no disponible a día de hoy.",
     related: ["ag-1", "ag-47"],
     keywords: ["compartida", "equipo", "multi", "no soportado"],
   },
@@ -483,7 +483,7 @@ export const AGENDA_ENTRIES: HelpEntry[] = [
     section: "agenda",
     question: "¿Cómo se genera una sala de Meet para una cita online?",
     answer:
-      "Al crear una cita con el interruptor \"Cita online\" activado, AppNutrición llama a la API de Google Calendar para generar un evento con una conferencia de Meet asociada. El enlace resultante se guarda en la cita y se incluye tanto en el evento del calendario como en los recordatorios al paciente. Todo este proceso requiere que tengas Google Calendar conectado en Ajustes → Integraciones. Si no lo tienes conectado, la cita se marca como online pero sin enlace automático.",
+      "Al crear una cita con el interruptor \"Cita online\" activado, Annonia llama a la API de Google Calendar para generar un evento con una conferencia de Meet asociada. El enlace resultante se guarda en la cita y se incluye tanto en el evento del calendario como en los recordatorios al paciente. Todo este proceso requiere que tengas Google Calendar conectado en Ajustes → Integraciones. Si no lo tienes conectado, la cita se marca como online pero sin enlace automático.",
     related: ["ag-13", "ag-14", "ag-55", "ag-56"],
     keywords: ["meet", "sala", "generar", "automático"],
   },
@@ -492,7 +492,7 @@ export const AGENDA_ENTRIES: HelpEntry[] = [
     section: "agenda",
     question: "¿Cómo se sincroniza la Agenda con Google Calendar?",
     answer:
-      "Si tienes la integración con Google Calendar activa en Ajustes, cada cita que creas, editas, cancelas o confirmas se sincroniza automáticamente con tu calendario de Google. Los eventos aparecen en el calendario \"AppNutrición\" que se crea al conectar la cuenta y llevan un identificador único para no duplicarse. La sincronización es unidireccional por ahora: los cambios en Google Calendar no se reflejan en AppNutrición. Si desconectas la integración, las citas futuras dejan de sincronizarse pero las pasadas se conservan en Google.",
+      "Si tienes la integración con Google Calendar activa en Ajustes, cada cita que creas, editas, cancelas o confirmas se sincroniza automáticamente con tu calendario de Google. Los eventos aparecen en el calendario \"Annonia\" que se crea al conectar la cuenta y llevan un identificador único para no duplicarse. La sincronización es unidireccional por ahora: los cambios en Google Calendar no se reflejan en Annonia. Si desconectas la integración, las citas futuras dejan de sincronizarse pero las pasadas se conservan en Google.",
     related: ["ag-13", "ag-54", "ag-56"],
     keywords: ["sincronizar", "google", "calendar", "integración"],
   },
@@ -537,7 +537,7 @@ export const AGENDA_ENTRIES: HelpEntry[] = [
     section: "agenda",
     question: "¿Qué pasa al abrir el detalle de una cita con notificaciones?",
     answer:
-      "Al abrir el detalle de una cita en la Agenda, AppNutrición marca automáticamente como leídas todas las notificaciones internas que estén asociadas a esa cita concreta. Esto incluye avisos de solicitud, confirmación, contrapropuesta o recordatorio del día. El objetivo es que una vez has tomado nota o actuado sobre la cita, tu bandeja de notificaciones quede limpia sin que tengas que hacer una acción extra. Los badges de la Agenda y del sidebar se actualizan en consecuencia casi al instante gracias al polling.",
+      "Al abrir el detalle de una cita en la Agenda, Annonia marca automáticamente como leídas todas las notificaciones internas que estén asociadas a esa cita concreta. Esto incluye avisos de solicitud, confirmación, contrapropuesta o recordatorio del día. El objetivo es que una vez has tomado nota o actuado sobre la cita, tu bandeja de notificaciones quede limpia sin que tengas que hacer una acción extra. Los badges de la Agenda y del sidebar se actualizan en consecuencia casi al instante gracias al polling.",
     related: ["ag-58", "ag-59", "ag-57"],
     keywords: ["leídas", "abrir", "marcar", "notificaciones"],
   },

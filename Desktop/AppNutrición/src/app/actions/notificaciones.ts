@@ -5,12 +5,22 @@ import { getCurrentDietista } from "./auth";
 import { TipoNotificacion } from "@/generated/prisma/client";
 import { revalidatePath } from "next/cache";
 
+const generacionEnCurso = new Map<string, number>();
+
 export async function generarNotificaciones() {
   const dietista = await getCurrentDietista();
   if (!dietista) return;
 
+  const ahora = Date.now();
+  const ultima = generacionEnCurso.get(dietista.id) ?? 0;
+  if (ahora - ultima < 300_000) return;
+  generacionEnCurso.set(dietista.id, ahora);
+
   const hace24h = new Date();
   hace24h.setHours(hace24h.getHours() - 24);
+
+  const hace7d = new Date();
+  hace7d.setDate(hace7d.getDate() - 7);
 
   const hace30Dias = new Date();
   hace30Dias.setDate(hace30Dias.getDate() - 30);
@@ -20,19 +30,22 @@ export async function generarNotificaciones() {
   const manana = new Date(hoy);
   manana.setDate(manana.getDate() + 1);
 
-  // Cargar todas las notificaciones recientes de una sola vez (evita N+1)
   const notificacionesRecientes = await prisma.notificacion.findMany({
-    where: { dietistaId: dietista.id, createdAt: { gte: hace24h } },
-    select: { tipo: true, citaId: true, pacienteId: true, mensaje: true },
+    where: { dietistaId: dietista.id, createdAt: { gte: hace7d } },
+    select: { tipo: true, citaId: true, pacienteId: true, createdAt: true },
   });
+  const tiposPeriodicos: TipoNotificacion[] = ["PACIENTE_SIN_CONSULTA", "PACIENTE_SIN_MEDIDAS", "PLAN_ANTIGUO"];
+
   const existeCitaNotif = (tipo: TipoNotificacion, citaId: string) =>
     notificacionesRecientes.some(
-      (n) => n.tipo === tipo && (n.citaId === citaId || n.mensaje.includes(citaId)),
+      (n) => n.tipo === tipo && n.createdAt >= hace24h && n.citaId === citaId,
     );
-  const existePacienteNotif = (tipo: TipoNotificacion, pacienteId: string) =>
-    notificacionesRecientes.some(
-      (n) => n.tipo === tipo && (n.pacienteId === pacienteId || n.mensaje.includes(pacienteId)),
+  const existePacienteNotif = (tipo: TipoNotificacion, pacienteId: string) => {
+    const corte = tiposPeriodicos.includes(tipo) ? hace7d : hace24h;
+    return notificacionesRecientes.some(
+      (n) => n.tipo === tipo && n.createdAt >= corte && n.pacienteId === pacienteId,
     );
+  };
 
   // Datos necesarios en paralelo (3 queries en vez de separadas)
   const [citasHoy, pacientes, entradasHoy] = await Promise.all([

@@ -4,7 +4,7 @@ export const NOTIFICACIONES_ENTRIES: HelpEntry[] = [
   {
     id: "not-1",
     section: "notificaciones",
-    question: "¿Qué es la sección de notificaciones en AppNutrición?",
+    question: "¿Qué es la sección de notificaciones en Annonia?",
     answer:
       "La sección `/notificaciones` es el centro de alertas del sistema para el nutricionista. Agrupa en un único sitio todos los avisos automáticos generados por eventos relevantes: citas solicitadas, confirmadas o rechazadas, pacientes que llevan tiempo sin consulta, planes antiguos, pagos recibidos y más. Está pensada para que no se te escape nada importante sin tener que revisar cada apartado manualmente. Puedes entenderla como el buzón operativo de la consulta, distinto del buzón de mensajes con pacientes.",
     related: ["not-2", "not-3", "not-41"],
@@ -348,7 +348,7 @@ export const NOTIFICACIONES_ENTRIES: HelpEntry[] = [
     section: "notificaciones",
     question: "¿Hay notificaciones push en móvil?",
     answer:
-      "No, actualmente AppNutrición no envía notificaciones push al navegador ni a dispositivos móviles. Los avisos se consultan abriendo la aplicación y la campanita se actualiza cada 45 segundos mientras la tienes abierta. Si trabajas mucho desde el móvil, puedes añadir la app como acceso directo en la pantalla de inicio para entrar rápido, pero no recibirás alertas fuera de ella. Es una función contemplada para iteraciones futuras.",
+      "No, actualmente Annonia no envía notificaciones push al navegador ni a dispositivos móviles. Los avisos se consultan abriendo la aplicación y la campanita se actualiza cada 45 segundos mientras la tienes abierta. Si trabajas mucho desde el móvil, puedes añadir la app como acceso directo en la pantalla de inicio para entrar rápido, pero no recibirás alertas fuera de ella. Es una función contemplada para iteraciones futuras.",
     related: ["not-38", "not-48", "not-50"],
     keywords: ["push", "móvil", "no", "navegador"],
   },

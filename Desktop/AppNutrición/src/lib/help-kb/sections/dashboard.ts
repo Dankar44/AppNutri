@@ -4,7 +4,7 @@ export const DASHBOARD_ENTRIES: HelpEntry[] = [
   {
     id: "dash-1",
     section: "dashboard",
-    question: "¿Qué es el dashboard de AppNutrición?",
+    question: "¿Qué es el dashboard de Annonia?",
     answer:
       "El dashboard es la página principal del nutricionista, accesible en la ruta `/dashboard`. Funciona como un centro de mando donde ves de un vistazo tu próxima consulta, la última notificación, un gráfico con la evolución de tu actividad y accesos rápidos para crear pacientes, planes, citas o recetas. Está pensado para que en menos de diez segundos sepas qué tienes que hacer hoy y puedas empezar a trabajar. Es también la primera pantalla que se carga al iniciar sesión.",
     related: ["dash-2", "dash-3", "dash-7"],
@@ -24,7 +24,7 @@ export const DASHBOARD_ENTRIES: HelpEntry[] = [
     section: "dashboard",
     question: "¿Cómo accedo al dashboard?",
     answer:
-      "Al iniciar sesión como nutricionista se te redirige automáticamente a `/dashboard`. También puedes volver en cualquier momento haciendo clic en el icono `LayoutDashboard` del sidebar izquierdo o en el logo de AppNutrición en la parte superior. Si estás en una pantalla interna (un paciente, una dieta, etc.) ese icono te devuelve al dashboard sin perder tu sesión. En móvil, el menú lateral se abre con el botón de hamburguesa.",
+      "Al iniciar sesión como nutricionista se te redirige automáticamente a `/dashboard`. También puedes volver en cualquier momento haciendo clic en el icono `LayoutDashboard` del sidebar izquierdo o en el logo de Annonia en la parte superior. Si estás en una pantalla interna (un paciente, una dieta, etc.) ese icono te devuelve al dashboard sin perder tu sesión. En móvil, el menú lateral se abre con el botón de hamburguesa.",
     related: ["dash-1", "dash-44", "dash-48"],
     keywords: ["acceso", "ruta", "navegación", "sidebar"],
   },
@@ -42,7 +42,7 @@ export const DASHBOARD_ENTRIES: HelpEntry[] = [
     section: "dashboard",
     question: "¿Por qué el saludo dice \"Buenos días\" si ya es tarde?",
     answer:
-      "El saludo depende exclusivamente de la hora local de Madrid, no del idioma del sistema ni de la hora del dispositivo. Si tu ordenador está mal configurado o estás en otra zona horaria, el saludo seguirá mostrando el de Madrid, que es la referencia de AppNutrición. Los cortes son 6:00, 13:00 y 21:00. Si ves un saludo que te parece incorrecto, revisa primero si tu reloj local coincide con el peninsular.",
+      "El saludo depende exclusivamente de la hora local de Madrid, no del idioma del sistema ni de la hora del dispositivo. Si tu ordenador está mal configurado o estás en otra zona horaria, el saludo seguirá mostrando el de Madrid, que es la referencia de Annonia. Los cortes son 6:00, 13:00 y 21:00. Si ves un saludo que te parece incorrecto, revisa primero si tu reloj local coincide con el peninsular.",
     related: ["dash-4", "dash-6"],
     keywords: ["hora", "madrid", "zona horaria", "saludo"],
   },
@@ -87,7 +87,7 @@ export const DASHBOARD_ENTRIES: HelpEntry[] = [
     section: "dashboard",
     question: "¿La próxima consulta se actualiza sola?",
     answer:
-      "Sí. Cada vez que cargas el dashboard o vuelves a él, AppNutrición consulta de nuevo la primera cita futura y repinta la tarjeta. Si acabas una consulta y vuelves al dashboard, la siguiente cita pasará automáticamente a ocupar el hueco. También se actualiza si cancelas o cambias la hora de una cita. No necesitas pulsar ningún botón de refrescar para ver el estado correcto.",
+      "Sí. Cada vez que cargas el dashboard o vuelves a él, Annonia consulta de nuevo la primera cita futura y repinta la tarjeta. Si acabas una consulta y vuelves al dashboard, la siguiente cita pasará automáticamente a ocupar el hueco. También se actualiza si cancelas o cambias la hora de una cita. No necesitas pulsar ningún botón de refrescar para ver el estado correcto.",
     related: ["dash-7", "dash-34", "dash-35"],
     keywords: ["actualización", "refresco", "automático", "tiempo real"],
   },
@@ -249,7 +249,7 @@ export const DASHBOARD_ENTRIES: HelpEntry[] = [
     section: "dashboard",
     question: "¿Qué icono identifica al dashboard en el sidebar?",
     answer:
-      "En el sidebar izquierdo, el dashboard se identifica con el icono `LayoutDashboard`, un cuadrado con divisiones internas que representa el panel de control. Está situado en la parte superior de la lista de secciones junto al texto \"Dashboard\". Al pasar el ratón se resalta con el color de acento de AppNutrición. Hacer clic en él te lleva siempre a `/dashboard` sin importar dónde estuvieras antes.",
+      "En el sidebar izquierdo, el dashboard se identifica con el icono `LayoutDashboard`, un cuadrado con divisiones internas que representa el panel de control. Está situado en la parte superior de la lista de secciones junto al texto \"Dashboard\". Al pasar el ratón se resalta con el color de acento de Annonia. Hacer clic en él te lleva siempre a `/dashboard` sin importar dónde estuvieras antes.",
     related: ["dash-3", "dash-29", "dash-48"],
     keywords: ["icono", "layoutdashboard", "sidebar", "identificación"],
   },
@@ -393,7 +393,7 @@ export const DASHBOARD_ENTRIES: HelpEntry[] = [
     section: "dashboard",
     question: "¿Cómo vuelvo al dashboard desde cualquier pantalla?",
     answer:
-      "Desde cualquier pantalla puedes volver al dashboard haciendo clic en el icono `LayoutDashboard` del sidebar izquierdo, en el logo de AppNutrición de la parte superior o escribiendo manualmente `/dashboard` en la barra de direcciones. En móvil, abre el menú hamburguesa y elige \"Dashboard\". El atajo de teclado estándar del navegador (Alt+flecha izquierda) también te devuelve al paso anterior si venías de ahí.",
+      "Desde cualquier pantalla puedes volver al dashboard haciendo clic en el icono `LayoutDashboard` del sidebar izquierdo, en el logo de Annonia de la parte superior o escribiendo manualmente `/dashboard` en la barra de direcciones. En móvil, abre el menú hamburguesa y elige \"Dashboard\". El atajo de teclado estándar del navegador (Alt+flecha izquierda) también te devuelve al paso anterior si venías de ahí.",
     related: ["dash-3", "dash-28", "dash-48"],
     keywords: ["volver", "dashboard", "navegación", "atajo"],
   },
@@ -429,7 +429,7 @@ export const DASHBOARD_ENTRIES: HelpEntry[] = [
     section: "dashboard",
     question: "¿En móvil puedo acceder al dashboard igual?",
     answer:
-      "Sí. Al iniciar sesión en móvil también se te redirige a `/dashboard`. Puedes volver en cualquier momento abriendo el menú hamburguesa y tocando \"Dashboard\", o simplemente el logo de AppNutrición en la barra superior. La experiencia es totalmente equivalente a escritorio, aunque los bloques se apilen verticalmente. Todos los accesos rápidos son igual de funcionales con un toque.",
+      "Sí. Al iniciar sesión en móvil también se te redirige a `/dashboard`. Puedes volver en cualquier momento abriendo el menú hamburguesa y tocando \"Dashboard\", o simplemente el logo de Annonia en la barra superior. La experiencia es totalmente equivalente a escritorio, aunque los bloques se apilen verticalmente. Todos los accesos rápidos son igual de funcionales con un toque.",
     related: ["dash-3", "dash-38", "dash-44"],
     keywords: ["móvil", "acceso", "hamburguesa", "app"],
   },

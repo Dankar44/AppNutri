@@ -132,7 +132,7 @@ export function PatientNav({ nombre, apellidos, fotoUrl, badges: badgesInit = {}
       {/* Logo */}
       <div className="h-16 flex items-center gap-2 px-4 border-b border-border shrink-0">
         <Leaf className="w-7 h-7 text-primary shrink-0" />
-        <span className="text-xl font-bold">NutriApp</span>
+        <span className="text-xl font-bold">Annonia</span>
         {mobileOpen && (
           <button onClick={() => setMobileOpen(false)} className="ml-auto p-1 rounded hover:bg-muted lg:hidden">
             <X className="w-5 h-5" />
@@ -231,7 +231,7 @@ export function PatientNav({ nombre, apellidos, fotoUrl, badges: badgesInit = {}
           <Menu className="w-5 h-5" />
         </button>
         <Leaf className="w-5 h-5 text-primary" />
-        <span className="font-bold text-sm">NutriApp</span>
+        <span className="font-bold text-sm">Annonia</span>
         <div className="ml-auto flex items-center gap-2">
           <ThemeToggle />
           {fotoUrl ? (

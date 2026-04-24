@@ -35,6 +35,9 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/pendiente");
 
   const isPublicRoute =
+    request.nextUrl.pathname.startsWith("/landing") ||
+    request.nextUrl.pathname.startsWith("/precios") ||
+    request.nextUrl.pathname.startsWith("/legal") ||
     request.nextUrl.pathname.startsWith("/compartido") ||
     request.nextUrl.pathname.startsWith("/paciente") ||
     request.nextUrl.pathname.startsWith("/admin-login") ||

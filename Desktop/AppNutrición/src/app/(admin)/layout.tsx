@@ -1,8 +1,13 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import { signOut } from "@/app/actions/auth";
 import { logoutAdmin } from "@/app/actions/admin";
 import { AdminSidebarWrapper } from "./admin-sidebar-wrapper";
+
+export const metadata: Metadata = {
+  title: "Annonia Admin",
+};
 
 export default async function AdminLayout({
   children,

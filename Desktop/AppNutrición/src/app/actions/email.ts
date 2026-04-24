@@ -149,7 +149,7 @@ function buildCuestionarioHtml(
       </div>
 
       <div style="margin-top:24px;text-align:center;color:#9ca3af;font-size:12px">
-        <p style="margin:0">Enviado desde AppNutri</p>
+        <p style="margin:0">Enviado desde Annonia</p>
       </div>
     </div>
   </div>
@@ -183,7 +183,7 @@ export async function enviarCuestionarioPaciente(
 
   try {
     await mailer.sendMail({
-      from: `${dietistaNombre} - AppNutri <${process.env.GMAIL_USER}>`,
+      from: `${dietistaNombre} - Annonia <${process.env.GMAIL_USER}>`,
       to: paciente.email,
       subject: `Tu cuestionario nutricional \u2014 ${dietistaNombre}`,
       html,
@@ -275,7 +275,7 @@ export async function enviarPlanPorEmail(
 
   try {
     await mailer.sendMail({
-      from: `${dietistaNombre} - AppNutri <${process.env.GMAIL_USER}>`,
+      from: `${dietistaNombre} - Annonia <${process.env.GMAIL_USER}>`,
       to: paciente.email,
       subject: `Tu plan de alimentación — ${escapeHtml(plan.nombre)}`,
       html: htmlBody,
@@ -345,7 +345,7 @@ export async function enviarAccesoPortal(
       </div>
 
       <div style="margin-top:24px;text-align:center;color:#9ca3af;font-size:12px">
-        <p style="margin:0">Enviado desde AppNutri</p>
+        <p style="margin:0">Enviado desde Annonia</p>
       </div>
     </div>
   </div>
@@ -354,7 +354,7 @@ export async function enviarAccesoPortal(
 
   try {
     await mailer.sendMail({
-      from: `${dietistaNombre} - AppNutri <${process.env.GMAIL_USER}>`,
+      from: `${dietistaNombre} - Annonia <${process.env.GMAIL_USER}>`,
       to: paciente.email,
       subject: `Acceso a tu portal de nutricion — ${dietistaNombre}`,
       html,

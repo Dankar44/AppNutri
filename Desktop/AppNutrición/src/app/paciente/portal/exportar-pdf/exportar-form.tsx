@@ -99,7 +99,7 @@ function generateHorarioHTML(horario: HorarioEntry[], pacienteNombre: string) {
   }
   tabla += `</table>`;
 
-  return `<div class="page"><div class="header"><div><span class="header-name">${pacienteNombre.toUpperCase()}</span><br><span class="header-sub">PLAN DIETÉTICO SEMANAL</span></div><div class="header-logo">NutriApp</div></div><div class="section-title">MI HORARIO SEMANAL</div>${tabla}<div class="footer">NutriApp</div></div>`;
+  return `<div class="page"><div class="header"><div><span class="header-name">${pacienteNombre.toUpperCase()}</span><br><span class="header-sub">PLAN DIETÉTICO SEMANAL</span></div><div class="header-logo">Annonia</div></div><div class="section-title">MI HORARIO SEMANAL</div>${tabla}<div class="footer">Annonia</div></div>`;
 }
 
 function applyOptions(baseHtml: string, options: PDFOptions, horarioHtml: string) {

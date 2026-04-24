@@ -69,6 +69,11 @@ export async function loginPaciente(email: string, credencial: string): Promise<
 
   await createPatientSession(acceso.pacienteId, email);
 
+  prisma.paciente.update({
+    where: { id: acceso.pacienteId },
+    data: { lastAccessAt: new Date() },
+  }).catch(() => {});
+
   // Si no ha completado el perfil, redirigir a completar
   if (!acceso.perfilCompleto) {
     redirect("/paciente/completar-perfil");

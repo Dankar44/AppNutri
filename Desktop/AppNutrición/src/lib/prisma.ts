@@ -2,10 +2,6 @@ import { PrismaClient } from "@/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
 
-// Desactivar verificación de certificados TLS para Supabase pooler
-// (usa certificados autofirmados que Prisma/pg no puede verificar)
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
   pgPool: pg.Pool | undefined;

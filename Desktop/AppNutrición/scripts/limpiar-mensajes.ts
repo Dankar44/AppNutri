@@ -11,7 +11,7 @@
  *   npx tsx scripts/limpiar-mensajes.ts --dry-run  # muestra qué borraría sin borrar nada
  *
  * Cron sugerido (Oracle Linux):
- *   0 3 * * * cd /ruta/al/proyecto && /usr/bin/npx tsx scripts/limpiar-mensajes.ts >> /var/log/appnutri-cron.log 2>&1
+ *   0 3 * * * cd /ruta/al/proyecto && /usr/bin/npx tsx scripts/limpiar-mensajes.ts >> /var/log/annonia-cron.log 2>&1
  */
 
 import dotenv from "dotenv";

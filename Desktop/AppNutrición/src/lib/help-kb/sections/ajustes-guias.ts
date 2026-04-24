@@ -4,7 +4,7 @@ export const AJUSTES_GUIAS_ENTRIES: HelpEntry[] = [
   {
     id: "ajg-1",
     section: "ajustes-guias",
-    question: "¿Qué son las guías interactivas de AppNutrición?",
+    question: "¿Qué son las guías interactivas de Annonia?",
     answer:
       "Las guías interactivas son tours paso a paso que te enseñan a usar cada sección de la aplicación directamente sobre la interfaz real. Cada tour ilumina elementos concretos de la pantalla (un botón, una tabla, un gráfico) y muestra una pequeña burbuja con una explicación sobre lo que hace y cómo usarlo. Están pensadas para que aprendas haciendo, sin necesidad de leer manuales largos ni ver vídeos externos. Se gestionan desde Ajustes mediante el componente `<TourSettings>`, en la sección \"Guías interactivas\". Los datos de cada tour viven en `src/lib/tour-data.ts` y definen el id, nombre, descripción y pasos con su selector CSS y contenido.",
     related: ["ajg-2", "ajg-8", "ajg-15"],
@@ -51,7 +51,7 @@ export const AJUSTES_GUIAS_ENTRIES: HelpEntry[] = [
     section: "ajustes-guias",
     question: "¿Dónde se guarda el estado de los tours completados?",
     answer:
-      "El estado de los tours completados se persiste en el `localStorage` del navegador, no en la base de datos de AppNutrición. Esto significa que se guarda localmente en el dispositivo y navegador desde el que uses la aplicación. La ventaja es que es rápido y no necesita consultar al servidor, pero tiene la contrapartida de que el estado es por navegador y por dispositivo. Si cambias de ordenador o de navegador, los tours volverán a aparecer como no completados.",
+      "El estado de los tours completados se persiste en el `localStorage` del navegador, no en la base de datos de Annonia. Esto significa que se guarda localmente en el dispositivo y navegador desde el que uses la aplicación. La ventaja es que es rápido y no necesita consultar al servidor, pero tiene la contrapartida de que el estado es por navegador y por dispositivo. Si cambias de ordenador o de navegador, los tours volverán a aparecer como no completados.",
     related: ["ajg-5", "ajg-7", "ajg-13"],
     keywords: ["localstorage", "persistencia", "navegador", "guardado"],
   },
@@ -60,7 +60,7 @@ export const AJUSTES_GUIAS_ENTRIES: HelpEntry[] = [
     section: "ajustes-guias",
     question: "¿Pierdo el progreso de los tours si borro la caché del navegador?",
     answer:
-      "Sí, al borrar la caché y los datos del sitio en tu navegador también se borra el `localStorage` donde se guarda qué tours has completado. Tras limpiar la caché verás que el contador vuelve a \"0 de M completados\" y todos los tours aparecerán con el botón \"Iniciar\" de nuevo. No es un problema grave porque los tours son siempre los mismos y puedes volver a hacerlos cuando quieras. Si te molesta, evita borrar los datos del sitio o usa un perfil de navegador separado para AppNutrición.",
+      "Sí, al borrar la caché y los datos del sitio en tu navegador también se borra el `localStorage` donde se guarda qué tours has completado. Tras limpiar la caché verás que el contador vuelve a \"0 de M completados\" y todos los tours aparecerán con el botón \"Iniciar\" de nuevo. No es un problema grave porque los tours son siempre los mismos y puedes volver a hacerlos cuando quieras. Si te molesta, evita borrar los datos del sitio o usa un perfil de navegador separado para Annonia.",
     related: ["ajg-5", "ajg-6", "ajg-13"],
     keywords: ["caché", "borrar", "pérdida", "datos navegador"],
   },
@@ -114,7 +114,7 @@ export const AJUSTES_GUIAS_ENTRIES: HelpEntry[] = [
     section: "ajustes-guias",
     question: "¿Por qué no me apareció ningún tour en mi primera visita?",
     answer:
-      "AppNutrición no lanza tours automáticamente al entrar por primera vez para no interrumpir tu exploración libre de la aplicación. Preferimos que eches un vistazo a tu ritmo y, cuando quieras aprender algo concreto, acudas a Ajustes y lances el tour correspondiente. Si en algún momento te apetece hacer el recorrido guiado de bienvenida, entra en \"Guías interactivas\" y pulsa \"Iniciar\" en el tour del dashboard o del que te interese. El hecho de que no aparezca solo no significa que no exista, siempre está disponible a demanda.",
+      "Annonia no lanza tours automáticamente al entrar por primera vez para no interrumpir tu exploración libre de la aplicación. Preferimos que eches un vistazo a tu ritmo y, cuando quieras aprender algo concreto, acudas a Ajustes y lances el tour correspondiente. Si en algún momento te apetece hacer el recorrido guiado de bienvenida, entra en \"Guías interactivas\" y pulsa \"Iniciar\" en el tour del dashboard o del que te interese. El hecho de que no aparezca solo no significa que no exista, siempre está disponible a demanda.",
     related: ["ajg-2", "ajg-5", "ajg-15"],
     keywords: ["primera visita", "onboarding", "no aparece", "bienvenida"],
   },
@@ -132,7 +132,7 @@ export const AJUSTES_GUIAS_ENTRIES: HelpEntry[] = [
     section: "ajustes-guias",
     question: "¿Por dónde me recomiendan empezar si acabo de registrarme?",
     answer:
-      "Si eres nuevo en AppNutrición, te recomendamos empezar por el tour del dashboard, que presenta la vista general con métricas, próximas citas y accesos rápidos a las secciones principales. Desde ahí continúa con el tour de pacientes para aprender a dar de alta a tus clientes y manejar su ficha, y después con el de dietas para crear planes de alimentación. La agenda y los ajustes puedes dejarlos para después, cuando ya te manejes con lo básico. Si quieres expandir el listado inicial, pulsa \"Ver todos los tours (N más)\" para desplegar el resto y elegir a tu antojo.",
+      "Si eres nuevo en Annonia, te recomendamos empezar por el tour del dashboard, que presenta la vista general con métricas, próximas citas y accesos rápidos a las secciones principales. Desde ahí continúa con el tour de pacientes para aprender a dar de alta a tus clientes y manejar su ficha, y después con el de dietas para crear planes de alimentación. La agenda y los ajustes puedes dejarlos para después, cuando ya te manejes con lo básico. Si quieres expandir el listado inicial, pulsa \"Ver todos los tours (N más)\" para desplegar el resto y elegir a tu antojo.",
     related: ["ajg-1", "ajg-2", "ajg-8"],
     keywords: ["recomendación", "empezar", "nuevos usuarios", "dashboard", "ver todos"],
   },

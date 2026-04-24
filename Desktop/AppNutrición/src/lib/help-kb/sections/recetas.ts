@@ -4,7 +4,7 @@ export const RECETAS_ENTRIES: HelpEntry[] = [
   {
     id: "rc-1",
     section: "recetas",
-    question: "¿Qué es la sección Recetas de AppNutrición?",
+    question: "¿Qué es la sección Recetas de Annonia?",
     answer:
       "La sección Recetas, accesible en `/recetas`, es el catálogo gastronómico de la aplicación, pensado para que tengas a mano un repertorio organizado de preparaciones culinarias listas para incluir en los planes de tus pacientes. Cada receta agrupa ingredientes, instrucciones, tiempos, dificultad y macros calculados automáticamente. Conviven recetas globales, compartidas con todos los dietistas de la plataforma, y recetas propias que tú mismo creas. Es una pieza clave para ahorrar tiempo y dar variedad a tus planes sin partir de cero cada vez.",
     related: ["rc-2", "rc-3", "rc-4"],
@@ -33,7 +33,7 @@ export const RECETAS_ENTRIES: HelpEntry[] = [
     section: "recetas",
     question: "¿Qué información contiene una receta?",
     answer:
-      "Una receta en AppNutrición contiene nombre, descripción, número de porciones, lista de ingredientes con cantidad, instrucciones paso a paso, tiempo de preparación, tiempo de cocción, dificultad, categoría, tags y foto. A partir de los ingredientes, el sistema calcula automáticamente las calorías y los macros totales, dividiéndolos después entre las porciones para mostrarte siempre el valor por porción. También puede tener notas privadas que solo tú ves. Es la unidad mínima reutilizable de tu biblioteca culinaria.",
+      "Una receta en Annonia contiene nombre, descripción, número de porciones, lista de ingredientes con cantidad, instrucciones paso a paso, tiempo de preparación, tiempo de cocción, dificultad, categoría, tags y foto. A partir de los ingredientes, el sistema calcula automáticamente las calorías y los macros totales, dividiéndolos después entre las porciones para mostrarte siempre el valor por porción. También puede tener notas privadas que solo tú ves. Es la unidad mínima reutilizable de tu biblioteca culinaria.",
     related: ["rc-5", "rc-10", "rc-22"],
     keywords: ["campos", "información", "estructura", "contenido"],
   },
@@ -303,7 +303,7 @@ export const RECETAS_ENTRIES: HelpEntry[] = [
     section: "recetas",
     question: "¿Qué hago si falta un ingrediente en la base de datos?",
     answer:
-      "Si al buscar no encuentras un alimento, ve a la sección `/alimentos` y créalo tú mismo con sus datos nutricionales (por 100 g o por unidad). Una vez disponible, vuelve a la receta y añádelo desde el buscador. Así el ingrediente queda guardado para usarlo en otras recetas y planes. Si crees que es un alimento común que debería estar en la base global, puedes proponerlo al equipo de AppNutrición desde soporte.",
+      "Si al buscar no encuentras un alimento, ve a la sección `/alimentos` y créalo tú mismo con sus datos nutricionales (por 100 g o por unidad). Una vez disponible, vuelve a la receta y añádelo desde el buscador. Así el ingrediente queda guardado para usarlo en otras recetas y planes. Si crees que es un alimento común que debería estar en la base global, puedes proponerlo al equipo de Annonia desde soporte.",
     related: ["rc-7", "rc-35", "rc-53"],
     keywords: ["falta", "alimento", "base de datos", "crear"],
   },
@@ -312,7 +312,7 @@ export const RECETAS_ENTRIES: HelpEntry[] = [
     section: "recetas",
     question: "¿Puedo contribuir con recetas al catálogo global?",
     answer:
-      "El catálogo global lo cura el equipo de AppNutrición para garantizar calidad y consistencia. No hay un botón directo para publicar una receta propia como global, pero puedes proponerla desde el widget de ayuda o por correo de soporte. Si cumple criterios de claridad, nutrición adecuada y buena foto, el equipo la incorpora al catálogo oficial. Mientras tanto, tu receta sigue siendo tuya y totalmente funcional.",
+      "El catálogo global lo cura el equipo de Annonia para garantizar calidad y consistencia. No hay un botón directo para publicar una receta propia como global, pero puedes proponerla desde el widget de ayuda o por correo de soporte. Si cumple criterios de claridad, nutrición adecuada y buena foto, el equipo la incorpora al catálogo oficial. Mientras tanto, tu receta sigue siendo tuya y totalmente funcional.",
     related: ["rc-3", "rc-34", "rc-46"],
     keywords: ["contribuir", "global", "propuesta", "publicar"],
   },
@@ -339,7 +339,7 @@ export const RECETAS_ENTRIES: HelpEntry[] = [
     section: "recetas",
     question: "¿Cómo se gestionan las alergias y las recetas?",
     answer:
-      "AppNutrición no detecta automáticamente alergias cruzadas entre una receta y las alergias declaradas del paciente. La responsabilidad sigue siendo tuya: revisa los ingredientes de la receta antes de asignarla, apoyándote en los tags (`sin gluten`, `sin frutos secos`, etc.) y en las restricciones anotadas en la ficha del paciente. Puedes crear tags propios de alergias comunes para filtrar el catálogo fácilmente en esos casos.",
+      "Annonia no detecta automáticamente alergias cruzadas entre una receta y las alergias declaradas del paciente. La responsabilidad sigue siendo tuya: revisa los ingredientes de la receta antes de asignarla, apoyándote en los tags (`sin gluten`, `sin frutos secos`, etc.) y en las restricciones anotadas en la ficha del paciente. Puedes crear tags propios de alergias comunes para filtrar el catálogo fácilmente en esos casos.",
     related: ["rc-13", "rc-39", "rc-52"],
     keywords: ["alergias", "restricciones", "detección", "seguridad"],
   },
@@ -384,14 +384,14 @@ export const RECETAS_ENTRIES: HelpEntry[] = [
     section: "recetas",
     question: "¿Puedo añadir una foto desde el móvil?",
     answer:
-      "Sí. Si abres AppNutrición en el navegador del móvil y creas o editas una receta, al pulsar el botón de subida de foto te ofrece la opción de usar la cámara del dispositivo o elegir una imagen de la galería. Esto es muy práctico cuando tienes la preparación delante. La foto se sube al instante, con una leve compresión para optimizar el tamaño, y se muestra en la card de la receta.",
+      "Sí. Si abres Annonia en el navegador del móvil y creas o editas una receta, al pulsar el botón de subida de foto te ofrece la opción de usar la cámara del dispositivo o elegir una imagen de la galería. Esto es muy práctico cuando tienes la preparación delante. La foto se sube al instante, con una leve compresión para optimizar el tamaño, y se muestra en la card de la receta.",
     related: ["rc-14", "rc-44", "rc-45"],
     keywords: ["foto", "móvil", "cámara", "galería"],
   },
   {
     id: "rc-44",
     section: "recetas",
-    question: "¿AppNutrición comprime las fotos de receta?",
+    question: "¿Annonia comprime las fotos de receta?",
     answer:
       "Sí. Al subir una imagen, el sistema aplica una compresión automática para reducir su tamaño sin que se aprecie pérdida visible de calidad. El objetivo es que el catálogo cargue rápido aunque tengas cientos de recetas. No necesitas preparar las fotos previamente: sube el archivo original y la app se encarga de optimizarlo. En cualquier caso, si la imagen inicial ya es pesada, puede tardar unos segundos más en procesarse.",
     related: ["rc-14", "rc-43", "rc-45"],
@@ -438,7 +438,7 @@ export const RECETAS_ENTRIES: HelpEntry[] = [
     section: "recetas",
     question: "¿Cuál es la licencia de las recetas globales?",
     answer:
-      "Las recetas globales son propiedad de AppNutrición y se ofrecen bajo una licencia interna que permite su uso dentro de la plataforma para tus pacientes. No están pensadas para publicarlas en un libro, un blog abierto o redes sociales con tu marca, porque en ese caso habría que revisar términos específicos. Tus recetas propias son íntegramente tuyas y puedes usarlas donde quieras, incluso fuera de la app.",
+      "Las recetas globales son propiedad de Annonia y se ofrecen bajo una licencia interna que permite su uso dentro de la plataforma para tus pacientes. No están pensadas para publicarlas en un libro, un blog abierto o redes sociales con tu marca, porque en ese caso habría que revisar términos específicos. Tus recetas propias son íntegramente tuyas y puedes usarlas donde quieras, incluso fuera de la app.",
     related: ["rc-50", "rc-35", "rc-3"],
     keywords: ["licencia", "propiedad", "derechos", "uso"],
   },
@@ -447,7 +447,7 @@ export const RECETAS_ENTRIES: HelpEntry[] = [
     section: "recetas",
     question: "¿Se citan las fuentes de las recetas globales?",
     answer:
-      "El catálogo global combina recetas desarrolladas internamente por el equipo de AppNutrición y adaptaciones de preparaciones clásicas de cocina mediterránea, sin fuente atribuible concreta. Cuando una receta se inspira claramente en una obra protegida, el equipo la reescribe lo suficiente como para considerarla original. Si tienes dudas sobre la procedencia de una receta concreta, puedes preguntar a soporte y se te informará de su origen.",
+      "El catálogo global combina recetas desarrolladas internamente por el equipo de Annonia y adaptaciones de preparaciones clásicas de cocina mediterránea, sin fuente atribuible concreta. Cuando una receta se inspira claramente en una obra protegida, el equipo la reescribe lo suficiente como para considerarla original. Si tienes dudas sobre la procedencia de una receta concreta, puedes preguntar a soporte y se te informará de su origen.",
     related: ["rc-49", "rc-3", "rc-35"],
     keywords: ["fuentes", "atribución", "origen", "referencias"],
   },

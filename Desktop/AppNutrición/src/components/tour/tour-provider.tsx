@@ -27,7 +27,7 @@ export function useTour() {
 }
 
 function getStorageKey(audience: string) {
-  return `nutriapp-tours-${audience}`;
+  return `annonia-tours-${audience}`;
 }
 
 function getCompleted(audience: string): string[] {
@@ -61,7 +61,7 @@ export function TourProvider({ audience, children }: Props) {
     const completed = getCompleted(audience);
     setCompletedTours(completed);
     // First visit = no tours completed and no welcome dismissed
-    const welcomeDismissed = localStorage.getItem(`nutriapp-welcome-${audience}`);
+    const welcomeDismissed = localStorage.getItem(`annonia-welcome-${audience}`);
     setIsFirstVisit(completed.length === 0 && !welcomeDismissed);
     setMounted(true);
   }, [audience]);
@@ -117,13 +117,13 @@ export function TourProvider({ audience, children }: Props) {
 
   const dismissWelcome = useCallback(() => {
     setIsFirstVisit(false);
-    localStorage.setItem(`nutriapp-welcome-${audience}`, "true");
+    localStorage.setItem(`annonia-welcome-${audience}`, "true");
   }, [audience]);
 
   const resetAllTours = useCallback(() => {
     setCompletedTours([]);
     setCompleted(audience, []);
-    localStorage.removeItem(`nutriapp-welcome-${audience}`);
+    localStorage.removeItem(`annonia-welcome-${audience}`);
     setIsFirstVisit(true);
   }, [audience]);
 

@@ -6,7 +6,7 @@ export const DIETA_IA_ENTRIES: HelpEntry[] = [
     section: "dieta-ia",
     question: "¿Qué es la generación de planes con IA?",
     answer:
-      "La generación con IA es una funcionalidad de AppNutrición que permite crear un plan semanal completo de manera automática a partir de la ficha del paciente y de tus indicaciones. En lugar de montar la dieta comida a comida desde cero, describes los objetivos calóricos, los macros y cualquier preferencia adicional, y un modelo de lenguaje se encarga de proponer un plan coherente usando los alimentos de tu base de datos. El resultado se guarda como borrador para que tú lo revises y decidas si lo aplicas al plan del paciente. Es una herramienta de apoyo, no un sustituto del criterio del dietista.",
+      "La generación con IA es una funcionalidad de Annonia que permite crear un plan semanal completo de manera automática a partir de la ficha del paciente y de tus indicaciones. En lugar de montar la dieta comida a comida desde cero, describes los objetivos calóricos, los macros y cualquier preferencia adicional, y un modelo de lenguaje se encarga de proponer un plan coherente usando los alimentos de tu base de datos. El resultado se guarda como borrador para que tú lo revises y decidas si lo aplicas al plan del paciente. Es una herramienta de apoyo, no un sustituto del criterio del dietista.",
     related: ["dia-2", "dia-6", "dia-12"],
     keywords: ["ia", "inteligencia artificial", "generación", "plan", "automático"],
   },
@@ -33,7 +33,7 @@ export const DIETA_IA_ENTRIES: HelpEntry[] = [
     section: "dieta-ia",
     question: "¿Cómo calculo las kcal objetivo para un paciente?",
     answer:
-      "Las kcal objetivo deberían salir de tu cálculo energético habitual, basado en el gasto metabólico basal del paciente, el factor de actividad y el objetivo de pérdida, mantenimiento o ganancia de peso. AppNutrición no impone una fórmula: tú decides el número y la IA lo respeta. Si no tienes claro el valor, puedes mirar mediciones recientes, el peso actual y el objetivo registrado en la ficha. Una vez generado el plan, comprueba que las kcal reales por día quedan dentro del margen aceptable.",
+      "Las kcal objetivo deberían salir de tu cálculo energético habitual, basado en el gasto metabólico basal del paciente, el factor de actividad y el objetivo de pérdida, mantenimiento o ganancia de peso. Annonia no impone una fórmula: tú decides el número y la IA lo respeta. Si no tienes claro el valor, puedes mirar mediciones recientes, el peso actual y el objetivo registrado en la ficha. Una vez generado el plan, comprueba que las kcal reales por día quedan dentro del margen aceptable.",
     related: ["dia-3", "dia-37", "dia-22"],
     keywords: ["kcal", "calcular", "objetivo", "calorías"],
   },
@@ -94,7 +94,7 @@ export const DIETA_IA_ENTRIES: HelpEntry[] = [
   {
     id: "dia-11",
     section: "dieta-ia",
-    question: "¿Qué modelo de IA utiliza AppNutrición?",
+    question: "¿Qué modelo de IA utiliza Annonia?",
     answer:
       "Por defecto la aplicación usa Groq con el modelo llama-3.3-70b-versatile, una versión de Llama 3.3 de 70 mil millones de parámetros servida con baja latencia. Ese modelo combina buena capacidad de seguimiento de instrucciones con tiempos de respuesta razonables, lo cual es clave porque la generación se hace en varios lotes. Está alojado en infraestructura de Groq, que ofrece endpoints compatibles con estándares de chat completion. El modelo no se entrena con los datos que le envías desde la aplicación.",
     related: ["dia-12", "dia-13", "dia-27"],
@@ -105,7 +105,7 @@ export const DIETA_IA_ENTRIES: HelpEntry[] = [
     section: "dieta-ia",
     question: "¿Qué pasa si Groq falla o no responde?",
     answer:
-      "AppNutrición tiene configurado un fallback automático a OpenAI. Si la llamada a Groq falla por error de red, cuota agotada, timeout o respuesta inválida, el sistema reintenta la generación con un modelo de OpenAI equivalente sin que tengas que hacer nada. El resultado final tiene la misma estructura y se guarda igualmente como borrador. En raras ocasiones pueden fallar los dos proveedores; en ese caso verás un mensaje de error y podrás reintentar pasados unos minutos.",
+      "Annonia tiene configurado un fallback automático a OpenAI. Si la llamada a Groq falla por error de red, cuota agotada, timeout o respuesta inválida, el sistema reintenta la generación con un modelo de OpenAI equivalente sin que tengas que hacer nada. El resultado final tiene la misma estructura y se guarda igualmente como borrador. En raras ocasiones pueden fallar los dos proveedores; en ese caso verás un mensaje de error y podrás reintentar pasados unos minutos.",
     related: ["dia-11", "dia-24", "dia-27"],
     keywords: ["fallback", "openai", "error", "backup"],
   },
@@ -213,7 +213,7 @@ export const DIETA_IA_ENTRIES: HelpEntry[] = [
     section: "dieta-ia",
     question: "¿Cómo se configuran las claves API del proveedor?",
     answer:
-      "Las claves de API de Groq y OpenAI se configuran a nivel de despliegue en variables de entorno del servidor, normalmente en el fichero `.env` junto a otras credenciales. Las variables habituales son `GROQ_API_KEY` y `OPENAI_API_KEY`. Si estás desplegando la aplicación tú mismo, debes obtener las claves en las plataformas correspondientes y añadirlas antes de arrancar. Como usuario final de AppNutrición en una instalación gestionada, no tocas estas claves: ya están configuradas.",
+      "Las claves de API de Groq y OpenAI se configuran a nivel de despliegue en variables de entorno del servidor, normalmente en el fichero `.env` junto a otras credenciales. Las variables habituales son `GROQ_API_KEY` y `OPENAI_API_KEY`. Si estás desplegando la aplicación tú mismo, debes obtener las claves en las plataformas correspondientes y añadirlas antes de arrancar. Como usuario final de Annonia en una instalación gestionada, no tocas estas claves: ya están configuradas.",
     related: ["dia-11", "dia-12", "dia-27"],
     keywords: ["api", "claves", "env", "configuración"],
   },
@@ -249,7 +249,7 @@ export const DIETA_IA_ENTRIES: HelpEntry[] = [
     section: "dieta-ia",
     question: "¿La IA crea alimentos nuevos o solo usa los existentes?",
     answer:
-      "La IA solo usa alimentos que ya existen en tu base de datos dentro de AppNutrición. El sistema le proporciona un catálogo filtrado y el modelo selecciona de ahí; no inventa entradas nuevas. Por eso es importante que tu base de alimentos esté completa y bien categorizada antes de usar la generación, especialmente si trabajas con colectivos específicos (veganos, deportistas, etc.). Si echas en falta un alimento recurrente, añádelo manualmente en la sección Alimentos y aparecerá en las siguientes generaciones.",
+      "La IA solo usa alimentos que ya existen en tu base de datos dentro de Annonia. El sistema le proporciona un catálogo filtrado y el modelo selecciona de ahí; no inventa entradas nuevas. Por eso es importante que tu base de alimentos esté completa y bien categorizada antes de usar la generación, especialmente si trabajas con colectivos específicos (veganos, deportistas, etc.). Si echas en falta un alimento recurrente, añádelo manualmente en la sección Alimentos y aparecerá en las siguientes generaciones.",
     related: ["dia-29", "dia-34", "dia-35"],
     keywords: ["alimentos", "base de datos", "catálogo"],
   },
@@ -258,7 +258,7 @@ export const DIETA_IA_ENTRIES: HelpEntry[] = [
     section: "dieta-ia",
     question: "¿Se puede usar la IA en el Plan Básico?",
     answer:
-      "No. La generación con IA es una funcionalidad exclusiva del Plan Profesional de AppNutrición. En el Plan Básico el botón de \"Generar con IA\" no aparece o aparece bloqueado, y solo puedes crear planes manualmente o a partir de plantillas. Si te interesa probar la IA, puedes actualizar tu suscripción desde la sección de Ajustes, apartado Suscripción. El cambio se aplica de inmediato y podrás generar desde el primer plan que edites.",
+      "No. La generación con IA es una funcionalidad exclusiva del Plan Profesional de Annonia. En el Plan Básico el botón de \"Generar con IA\" no aparece o aparece bloqueado, y solo puedes crear planes manualmente o a partir de plantillas. Si te interesa probar la IA, puedes actualizar tu suscripción desde la sección de Ajustes, apartado Suscripción. El cambio se aplica de inmediato y podrás generar desde el primer plan que edites.",
     related: ["dia-30", "dia-2", "dia-32"],
     keywords: ["plan básico", "suscripción", "profesional"],
   },
@@ -393,7 +393,7 @@ export const DIETA_IA_ENTRIES: HelpEntry[] = [
     section: "dieta-ia",
     question: "¿Puedo entrenar la IA con mis preferencias?",
     answer:
-      "No, la IA usada por AppNutrición es un modelo preentrenado de propósito general y no se reentrena con tus datos ni con tus planes aceptados. Lo que sí puedes hacer es afinar el resultado a través de las instrucciones libres: cuanto mejor describas tu estilo y tus preferencias profesionales en ese campo, más alineado saldrá el plan. También puedes guardarte un prompt estándar en un documento para reutilizarlo entre pacientes con perfiles parecidos.",
+      "No, la IA usada por Annonia es un modelo preentrenado de propósito general y no se reentrena con tus datos ni con tus planes aceptados. Lo que sí puedes hacer es afinar el resultado a través de las instrucciones libres: cuanto mejor describas tu estilo y tus preferencias profesionales en ese campo, más alineado saldrá el plan. También puedes guardarte un prompt estándar en un documento para reutilizarlo entre pacientes con perfiles parecidos.",
     related: ["dia-26", "dia-6", "dia-45"],
     keywords: ["entrenar", "reentrenar", "personalizar"],
   },
@@ -402,7 +402,7 @@ export const DIETA_IA_ENTRIES: HelpEntry[] = [
     section: "dieta-ia",
     question: "¿La IA puede tener sesgos en las recomendaciones?",
     answer:
-      "Sí, como cualquier modelo de lenguaje entrenado con datos de internet. Puede tender a recomendar dietas estándar de cultura occidental, infrarrepresentar ingredientes regionales o replicar estereotipos en las raciones por sexo o edad. El diseño de AppNutrición mitiga estos sesgos usando tu catálogo de alimentos y la ficha específica del paciente, pero la revisión profesional sigue siendo imprescindible. Si detectas un sesgo sistemático, ajusta con instrucciones o pasa del modelo en ese caso concreto.",
+      "Sí, como cualquier modelo de lenguaje entrenado con datos de internet. Puede tender a recomendar dietas estándar de cultura occidental, infrarrepresentar ingredientes regionales o replicar estereotipos en las raciones por sexo o edad. El diseño de Annonia mitiga estos sesgos usando tu catálogo de alimentos y la ficha específica del paciente, pero la revisión profesional sigue siendo imprescindible. Si detectas un sesgo sistemático, ajusta con instrucciones o pasa del modelo en ese caso concreto.",
     related: ["dia-26", "dia-46", "dia-50"],
     keywords: ["sesgos", "bias", "limitaciones"],
   },
@@ -420,7 +420,7 @@ export const DIETA_IA_ENTRIES: HelpEntry[] = [
     section: "dieta-ia",
     question: "¿Quién es responsable del plan final, la IA o el nutricionista?",
     answer:
-      "El nutricionista, siempre. La IA solo genera una propuesta que tú revisas y decides aceptar o descartar; a partir del momento en que pulsas Aceptar, el plan queda bajo tu responsabilidad profesional como cualquier otro. Esto es importante a efectos clínicos, éticos y legales: ante el paciente y ante tu colegiación, el responsable eres tú. AppNutrición te da una herramienta, no delega el criterio. Documenta tus revisiones en las notas del plan si trabajas con casos complejos.",
+      "El nutricionista, siempre. La IA solo genera una propuesta que tú revisas y decides aceptar o descartar; a partir del momento en que pulsas Aceptar, el plan queda bajo tu responsabilidad profesional como cualquier otro. Esto es importante a efectos clínicos, éticos y legales: ante el paciente y ante tu colegiación, el responsable eres tú. Annonia te da una herramienta, no delega el criterio. Documenta tus revisiones en las notas del plan si trabajas con casos complejos.",
     related: ["dia-18", "dia-46", "dia-50"],
     keywords: ["responsabilidad", "supervisión", "profesional"],
   },

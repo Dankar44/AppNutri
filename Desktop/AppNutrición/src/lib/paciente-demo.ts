@@ -294,7 +294,7 @@ export async function crearPacienteDemoSiNoExiste(
       $13::jsonb, $14::jsonb, $15, $16, true, NOW(), NOW()
     ) RETURNING id`,
     dietistaId,
-    "paciente.prueba@demo.appnutri.es",
+    "paciente.prueba@demo.annonia.com",
     "+34 600 123 456",
     "/demo-paciente-avatar.svg",
     new Date(Date.UTC(1992, 5, 15)),
@@ -584,7 +584,7 @@ export async function crearPacienteDemoSiNoExiste(
     return `${saltHex}:${hashHex}`;
   }
   // El email de AccesoPaciente es UNIQUE global, así que añadimos sufijo único por paciente
-  const emailAccesoPortal = `paciente.prueba+${paciente.id.slice(-6)}@demo.appnutri.es`;
+  const emailAccesoPortal = `paciente.prueba+${paciente.id.slice(-6)}@demo.annonia.com`;
   await prisma.accesoPaciente.create({
     data: {
       pacienteId: paciente.id,

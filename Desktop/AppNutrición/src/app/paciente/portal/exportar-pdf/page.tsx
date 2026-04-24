@@ -60,7 +60,7 @@ export default async function ExportarPDFPage() {
   const pacienteNombre = `${capitalizarNombre(paciente.nombre)} ${capitalizarNombre(paciente.apellidos)}`;
   const dietistaNombre = paciente.dietista
     ? `${capitalizarNombre(paciente.dietista.nombre)} ${capitalizarNombre(paciente.dietista.apellidos)}`
-    : "NutriApp";
+    : "Annonia";
 
   return (
     <div>

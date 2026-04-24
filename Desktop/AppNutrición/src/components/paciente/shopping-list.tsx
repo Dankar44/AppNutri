@@ -210,7 +210,7 @@ function normalizar(s: string) {
 // ─── localStorage helpers ───
 
 function storageKey(planId: string, kind: "checked" | "deleted" | "custom" | "collapsed" | "prefs") {
-  return `nutriapp:lista:${planId}:${kind}`;
+  return `annonia:lista:${planId}:${kind}`;
 }
 
 function loadSet(planId: string, kind: "checked" | "deleted" | "collapsed") {

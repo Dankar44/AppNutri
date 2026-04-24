@@ -6,7 +6,7 @@ export const DIETA_COMPARTIR_ENTRIES: HelpEntry[] = [
     section: "dieta-compartir",
     question: "¿Qué significa compartir un plan de dieta?",
     answer:
-      "Compartir un plan consiste en generar un enlace público único (con forma /compartido/[token]) que el paciente puede abrir desde cualquier navegador sin tener cuenta en AppNutri. Al entrar, ve el plan completo en modo lectura: comidas, horarios, ingredientes, cantidades, recetas asociadas y notas. Es una alternativa rápida al portal del paciente cuando no quieres gestionar credenciales ni registros.",
+      "Compartir un plan consiste en generar un enlace público único (con forma /compartido/[token]) que el paciente puede abrir desde cualquier navegador sin tener cuenta en Annonia. Al entrar, ve el plan completo en modo lectura: comidas, horarios, ingredientes, cantidades, recetas asociadas y notas. Es una alternativa rápida al portal del paciente cuando no quieres gestionar credenciales ni registros.",
     related: ["dc-2", "dc-13", "dc-14"],
     keywords: ["compartir", "enlace", "plan", "paciente", "público"],
   },
@@ -42,7 +42,7 @@ export const DIETA_COMPARTIR_ENTRIES: HelpEntry[] = [
     section: "dieta-compartir",
     question: "¿Cómo envío el enlace por email?",
     answer:
-      "El botón Enviar por email abre el cliente de correo predeterminado (Mail, Outlook, Gmail web si está configurado como handler) con un borrador ya preparado: asunto indicativo y cuerpo con el enlace. Solo tienes que añadir la dirección del paciente y pulsar enviar. AppNutri no envía el correo por ti, delega en tu cliente para preservar tu firma y dirección de remitente.",
+      "El botón Enviar por email abre el cliente de correo predeterminado (Mail, Outlook, Gmail web si está configurado como handler) con un borrador ya preparado: asunto indicativo y cuerpo con el enlace. Solo tienes que añadir la dirección del paciente y pulsar enviar. Annonia no envía el correo por ti, delega en tu cliente para preservar tu firma y dirección de remitente.",
     related: ["dc-3", "dc-4", "dc-11"],
     keywords: ["email", "correo", "enviar", "mailto"],
   },

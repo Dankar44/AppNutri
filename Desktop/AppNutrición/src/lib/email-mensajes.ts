@@ -2,8 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { getResend } from "@/lib/resend";
 import { getMailer } from "@/lib/mailer";
 
-const EMAIL_FROM = process.env.EMAIL_FROM || "AppNutri <noreply@appnutri.com>";
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://appnutri.com";
+const EMAIL_FROM = process.env.EMAIL_FROM || "Annonia <noreply@annonia.com>";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://annonia.com";
 
 // Debounce en memoria: no reenviar email al mismo destinatario en <5 min
 const ultimoEnvio = new Map<string, number>();
@@ -112,7 +112,7 @@ export async function notificarPacienteNuevoMensaje(
 <html lang="es"><head><meta charset="utf-8">${BASE_STYLES}</head><body>
 <div class="container">
   <div class="header">
-    <span class="logo">AppNutri</span>
+    <span class="logo">Annonia</span>
   </div>
   <div class="content">
     <h1>Hola, ${escape(paciente.nombre)}</h1>
@@ -122,7 +122,7 @@ export async function notificarPacienteNuevoMensaje(
     <p style="margin-top:18px; font-size:13px;">Responde desde la aplicación para mantener toda la conversación en un único sitio.</p>
   </div>
   <div class="footer">
-    Este correo es una notificación automática de AppNutri.<br>
+    Este correo es una notificación automática de Annonia.<br>
     Si no quieres recibir estos avisos, desactívalos desde tu portal.
   </div>
 </div>
@@ -136,7 +136,7 @@ ${preview}
 
 Responde desde: ${link}
 
-— AppNutri`;
+— Annonia`;
 
   await sendEmail(paciente.email, subject, html, text);
 }
@@ -172,7 +172,7 @@ export async function notificarDietistaNuevoMensaje(
 <html lang="es"><head><meta charset="utf-8">${BASE_STYLES}</head><body>
 <div class="container">
   <div class="header">
-    <span class="logo">AppNutri</span>
+    <span class="logo">Annonia</span>
   </div>
   <div class="content">
     <h1>Hola, ${escape(dietista.nombre)}</h1>
@@ -181,7 +181,7 @@ export async function notificarDietistaNuevoMensaje(
     <a href="${link}" class="cta">Abrir mensajes</a>
   </div>
   <div class="footer">
-    Este correo es una notificación automática de AppNutri.<br>
+    Este correo es una notificación automática de Annonia.<br>
     Puedes ajustar las preferencias desde tu panel.
   </div>
 </div>
@@ -195,7 +195,7 @@ ${preview}
 
 Abre la bandeja: ${link}
 
-— AppNutri`;
+— Annonia`;
 
   await sendEmail(dietista.email, subject, html, text);
 }

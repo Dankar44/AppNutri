@@ -4,7 +4,7 @@ export const PAGOS_ENTRIES: HelpEntry[] = [
   {
     id: "pag-1",
     section: "pagos",
-    question: "¿Qué es la sección Pagos de AppNutrición?",
+    question: "¿Qué es la sección Pagos de Annonia?",
     answer:
       "La sección Pagos es el módulo donde gestionas todos los cobros que haces a tus pacientes por tus servicios como nutricionista, accesible desde la ruta `/pagos` del panel. Te permite registrar pagos manuales, generar enlaces de pago online a través de Stripe Checkout y llevar un control claro de qué está cobrado y qué queda pendiente. Es el centro financiero de tu actividad dentro de la app, separado del resto de secciones clínicas. Funciona tanto si cobras en efectivo, por transferencia o con tarjeta a través de Stripe Connect.",
     related: ["pag-2", "pag-3", "pag-15"],
@@ -222,7 +222,7 @@ export const PAGOS_ENTRIES: HelpEntry[] = [
     section: "pagos",
     question: "¿Qué diferencia hay entre pago manual y pago con Stripe?",
     answer:
-      "Un pago manual es un cobro que recibes fuera de la app (efectivo, transferencia, Bizum) y registras en AppNutrición para llevar el control, marcándolo tú mismo como PAGADO. Un pago con Stripe utiliza la integración Stripe Connect para generar un enlace de Stripe Checkout que el paciente completa online con tarjeta, y el estado se actualiza automáticamente al recibir el webhook. La ventaja de Stripe es la automatización y seguridad; la del manual es que no lleva comisiones de la pasarela.",
+      "Un pago manual es un cobro que recibes fuera de la app (efectivo, transferencia, Bizum) y registras en Annonia para llevar el control, marcándolo tú mismo como PAGADO. Un pago con Stripe utiliza la integración Stripe Connect para generar un enlace de Stripe Checkout que el paciente completa online con tarjeta, y el estado se actualiza automáticamente al recibir el webhook. La ventaja de Stripe es la automatización y seguridad; la del manual es que no lleva comisiones de la pasarela.",
     related: ["pag-26", "pag-27", "pag-31", "pag-40"],
     keywords: ["manual", "stripe", "diferencia", "comparativa"],
   },
@@ -231,7 +231,7 @@ export const PAGOS_ENTRIES: HelpEntry[] = [
     section: "pagos",
     question: "¿Qué es Stripe Connect?",
     answer:
-      "Stripe Connect es la modalidad de la pasarela de pagos Stripe que permite a plataformas como AppNutrición conectar las cuentas individuales de sus usuarios (en este caso, cada nutricionista) para que puedan cobrar directamente en su propia cuenta Stripe. El dinero de los pagos no pasa por AppNutrición, va directo a tu cuenta Stripe. Requiere completar un proceso de verificación de identidad en Stripe antes de empezar a cobrar. Es el estándar habitual para marketplaces y SaaS multi-tenant.",
+      "Stripe Connect es la modalidad de la pasarela de pagos Stripe que permite a plataformas como Annonia conectar las cuentas individuales de sus usuarios (en este caso, cada nutricionista) para que puedan cobrar directamente en su propia cuenta Stripe. El dinero de los pagos no pasa por Annonia, va directo a tu cuenta Stripe. Requiere completar un proceso de verificación de identidad en Stripe antes de empezar a cobrar. Es el estándar habitual para marketplaces y SaaS multi-tenant.",
     related: ["pag-25", "pag-27", "pag-40"],
     keywords: ["stripe connect", "stripe", "qué es", "pasarela"],
   },
@@ -240,7 +240,7 @@ export const PAGOS_ENTRIES: HelpEntry[] = [
     section: "pagos",
     question: "¿Cómo conecto mi cuenta de Stripe?",
     answer:
-      "Para conectar Stripe ve a `/ajustes` y dentro de la pestaña \"Cobros\" encontrarás el botón para iniciar el onboarding de Stripe Connect. Te redirigirá a la página oficial de Stripe, donde completas tus datos fiscales, bancarios y de identidad. Al terminar, vuelves a AppNutrición con la conexión activa y ya puedes generar enlaces de pago. Si no completas todos los pasos, quedas en estado pendiente y no se podrán emitir cobros por Stripe.",
+      "Para conectar Stripe ve a `/ajustes` y dentro de la pestaña \"Cobros\" encontrarás el botón para iniciar el onboarding de Stripe Connect. Te redirigirá a la página oficial de Stripe, donde completas tus datos fiscales, bancarios y de identidad. Al terminar, vuelves a Annonia con la conexión activa y ya puedes generar enlaces de pago. Si no completas todos los pasos, quedas en estado pendiente y no se podrán emitir cobros por Stripe.",
     related: ["pag-26", "pag-28", "pag-40"],
     keywords: ["conectar", "stripe", "ajustes", "onboarding"],
   },
@@ -276,7 +276,7 @@ export const PAGOS_ENTRIES: HelpEntry[] = [
     section: "pagos",
     question: "¿Qué ve el paciente cuando abre el enlace de Stripe?",
     answer:
-      "Al abrir el enlace, el paciente llega a Stripe Checkout, una página de pago oficial de Stripe con el concepto, el importe en euros y un formulario para introducir los datos de tarjeta. La interfaz está en español y cumple con los estándares de seguridad PCI, de forma que los datos de tarjeta no pasan ni por AppNutrición ni por Stripe Connect del nutricionista. Al completar el pago, el paciente ve una confirmación y, en paralelo, Stripe envía un webhook a AppNutrición para actualizar el estado.",
+      "Al abrir el enlace, el paciente llega a Stripe Checkout, una página de pago oficial de Stripe con el concepto, el importe en euros y un formulario para introducir los datos de tarjeta. La interfaz está en español y cumple con los estándares de seguridad PCI, de forma que los datos de tarjeta no pasan ni por Annonia ni por Stripe Connect del nutricionista. Al completar el pago, el paciente ve una confirmación y, en paralelo, Stripe envía un webhook a Annonia para actualizar el estado.",
     related: ["pag-25", "pag-30", "pag-32", "pag-33"],
     keywords: ["paciente", "stripe checkout", "página", "pago"],
   },
@@ -285,7 +285,7 @@ export const PAGOS_ENTRIES: HelpEntry[] = [
     section: "pagos",
     question: "¿Qué pasa después de que el paciente pague?",
     answer:
-      "Cuando el paciente completa el pago por Stripe, la propia plataforma envía un webhook a AppNutrición con la confirmación. Automáticamente, el estado del pago cambia de PENDIENTE a PAGADO, se rellenan los campos `fechaPago` y `metodoPago` (\"Stripe\") y se dispara la notificación PAGO_RECIBIDO. No tienes que hacer nada manualmente: al refrescar la sección Pagos verás la actualización. El dinero llega a tu cuenta de Stripe Connect según los plazos que tenga tu país.",
+      "Cuando el paciente completa el pago por Stripe, la propia plataforma envía un webhook a Annonia con la confirmación. Automáticamente, el estado del pago cambia de PENDIENTE a PAGADO, se rellenan los campos `fechaPago` y `metodoPago` (\"Stripe\") y se dispara la notificación PAGO_RECIBIDO. No tienes que hacer nada manualmente: al refrescar la sección Pagos verás la actualización. El dinero llega a tu cuenta de Stripe Connect según los plazos que tenga tu país.",
     related: ["pag-31", "pag-33", "pag-34", "pag-42"],
     keywords: ["paciente paga", "webhook", "automático", "confirmación"],
   },
@@ -294,7 +294,7 @@ export const PAGOS_ENTRIES: HelpEntry[] = [
     section: "pagos",
     question: "¿Qué es el webhook de Stripe?",
     answer:
-      "Un webhook es una llamada automática que Stripe hace a AppNutrición cada vez que ocurre un evento relevante en un cobro: pago completado, pago fallido, enlace expirado, reembolso, etc. AppNutrición escucha esos webhooks en un endpoint dedicado y, según el tipo de evento, actualiza el estado del pago correspondiente en la base de datos. Es lo que permite que todo ocurra en tiempo real sin que tú tengas que refrescar nada. Si por algún motivo el webhook fallara, Stripe reintenta el envío varias veces.",
+      "Un webhook es una llamada automática que Stripe hace a Annonia cada vez que ocurre un evento relevante en un cobro: pago completado, pago fallido, enlace expirado, reembolso, etc. Annonia escucha esos webhooks en un endpoint dedicado y, según el tipo de evento, actualiza el estado del pago correspondiente en la base de datos. Es lo que permite que todo ocurra en tiempo real sin que tú tengas que refrescar nada. Si por algún motivo el webhook fallara, Stripe reintenta el envío varias veces.",
     related: ["pag-32", "pag-34", "pag-23"],
     keywords: ["webhook", "stripe", "automático", "evento"],
   },
@@ -330,7 +330,7 @@ export const PAGOS_ENTRIES: HelpEntry[] = [
     section: "pagos",
     question: "¿Puedo eliminar un pago?",
     answer:
-      "Sí, desde el detalle de cualquier pago encontrarás una opción para eliminarlo. La app te pedirá confirmación antes de proceder porque la acción es irreversible. Si el pago está asociado a un enlace Stripe pendiente, al eliminarlo el enlace sigue existiendo en Stripe pero ya no está vinculado a ningún registro en AppNutrición, de forma que si se completa igualmente, el webhook no encontrará a qué actualizar. Por eso conviene eliminar solo pagos que aún no se han enviado al paciente.",
+      "Sí, desde el detalle de cualquier pago encontrarás una opción para eliminarlo. La app te pedirá confirmación antes de proceder porque la acción es irreversible. Si el pago está asociado a un enlace Stripe pendiente, al eliminarlo el enlace sigue existiendo en Stripe pero ya no está vinculado a ningún registro en Annonia, de forma que si se completa igualmente, el webhook no encontrará a qué actualizar. Por eso conviene eliminar solo pagos que aún no se han enviado al paciente.",
     related: ["pag-36", "pag-44", "pag-50"],
     keywords: ["eliminar", "borrar", "quitar", "cancelar"],
   },
@@ -339,7 +339,7 @@ export const PAGOS_ENTRIES: HelpEntry[] = [
     section: "pagos",
     question: "¿Se gestiona IVA o impuestos en los pagos?",
     answer:
-      "No, AppNutrición no gestiona IVA ni otros impuestos en la sección de Pagos. Los importes que registras son tal cual los cobras, y eres tú como profesional el responsable de aplicar la fiscalidad que corresponda a tu actividad (IRPF, IVA si procede, facturación, etc.). Si necesitas desglosar impuestos, tendrás que hacerlo en el sistema contable o de facturación que uses en paralelo. En el futuro podría añadirse una gestión básica, pero ahora mismo no está soportado.",
+      "No, Annonia no gestiona IVA ni otros impuestos en la sección de Pagos. Los importes que registras son tal cual los cobras, y eres tú como profesional el responsable de aplicar la fiscalidad que corresponda a tu actividad (IRPF, IVA si procede, facturación, etc.). Si necesitas desglosar impuestos, tendrás que hacerlo en el sistema contable o de facturación que uses en paralelo. En el futuro podría añadirse una gestión básica, pero ahora mismo no está soportado.",
     related: ["pag-39", "pag-41", "pag-45"],
     keywords: ["iva", "impuestos", "tax", "fiscalidad"],
   },
@@ -348,7 +348,7 @@ export const PAGOS_ENTRIES: HelpEntry[] = [
     section: "pagos",
     question: "¿En qué moneda se cobran los pagos?",
     answer:
-      "AppNutrición trabaja exclusivamente en euros (EUR) para todos los pagos, tanto manuales como a través de Stripe. No hay soporte actual para otras monedas como dólares o libras. Si tu actividad requiere cobros en otras divisas, tendrás que gestionarlo fuera de la app. Esta decisión se debe a la orientación inicial del producto al mercado español e iberoamericano con euro, pero podría ampliarse en el futuro.",
+      "Annonia trabaja exclusivamente en euros (EUR) para todos los pagos, tanto manuales como a través de Stripe. No hay soporte actual para otras monedas como dólares o libras. Si tu actividad requiere cobros en otras divisas, tendrás que gestionarlo fuera de la app. Esta decisión se debe a la orientación inicial del producto al mercado español e iberoamericano con euro, pero podría ampliarse en el futuro.",
     related: ["pag-38", "pag-49"],
     keywords: ["moneda", "euros", "eur", "divisa"],
   },
@@ -357,7 +357,7 @@ export const PAGOS_ENTRIES: HelpEntry[] = [
     section: "pagos",
     question: "¿Qué comisiones cobra Stripe por cada pago?",
     answer:
-      "Stripe aplica sus comisiones estándar de pasarela por cada pago completado con tarjeta: aproximadamente un 1,4% más 0,25€ por transacción para tarjetas europeas, y un 2,9% más 0,25€ para tarjetas no europeas. Estas comisiones las descuenta Stripe directamente del importe antes de transferir el dinero a tu cuenta bancaria. AppNutrición no añade ninguna comisión adicional por usar la integración. Puedes consultar las tarifas actualizadas en la web oficial de Stripe.",
+      "Stripe aplica sus comisiones estándar de pasarela por cada pago completado con tarjeta: aproximadamente un 1,4% más 0,25€ por transacción para tarjetas europeas, y un 2,9% más 0,25€ para tarjetas no europeas. Estas comisiones las descuenta Stripe directamente del importe antes de transferir el dinero a tu cuenta bancaria. Annonia no añade ninguna comisión adicional por usar la integración. Puedes consultar las tarifas actualizadas en la web oficial de Stripe.",
     related: ["pag-26", "pag-27", "pag-39"],
     keywords: ["comisiones", "fees", "stripe", "coste"],
   },
@@ -366,7 +366,7 @@ export const PAGOS_ENTRIES: HelpEntry[] = [
     section: "pagos",
     question: "¿Puedo emitir facturas a mis pacientes desde aquí?",
     answer:
-      "No, AppNutrición no emite facturas formales ni tickets fiscales para tus pacientes. La sección Pagos es un registro interno de cobros, no un sistema de facturación. Si necesitas emitir facturas con CIF, numeración correlativa, desglose de IVA, etc., deberás usar un programa de facturación externo (Holded, Contasimple, Quaderno, etc.). Es una funcionalidad que podría incorporarse en el futuro, pero hoy no está soportada.",
+      "No, Annonia no emite facturas formales ni tickets fiscales para tus pacientes. La sección Pagos es un registro interno de cobros, no un sistema de facturación. Si necesitas emitir facturas con CIF, numeración correlativa, desglose de IVA, etc., deberás usar un programa de facturación externo (Holded, Contasimple, Quaderno, etc.). Es una funcionalidad que podría incorporarse en el futuro, pero hoy no está soportada.",
     related: ["pag-38", "pag-45"],
     keywords: ["facturas", "facturación", "invoice", "factura"],
   },
@@ -411,7 +411,7 @@ export const PAGOS_ENTRIES: HelpEntry[] = [
     section: "pagos",
     question: "¿Se integra Pagos con algún software de contabilidad?",
     answer:
-      "No, AppNutrición no tiene integraciones directas con software de contabilidad como Holded, Quaderno, Contasimple o similares. La sección Pagos es un sistema autónomo para tu control interno. Si quieres sincronizarlo con tu contabilidad, tendrás que introducir los datos manualmente en el sistema externo. Es una posible mejora de cara al futuro, especialmente si Stripe ya ofrece exportaciones a estos sistemas.",
+      "No, Annonia no tiene integraciones directas con software de contabilidad como Holded, Quaderno, Contasimple o similares. La sección Pagos es un sistema autónomo para tu control interno. Si quieres sincronizarlo con tu contabilidad, tendrás que introducir los datos manualmente en el sistema externo. Es una posible mejora de cara al futuro, especialmente si Stripe ya ofrece exportaciones a estos sistemas.",
     related: ["pag-41", "pag-45"],
     keywords: ["contabilidad", "integración", "holded", "quaderno"],
   },
@@ -429,7 +429,7 @@ export const PAGOS_ENTRIES: HelpEntry[] = [
     section: "pagos",
     question: "¿Se soportan suscripciones o cobros recurrentes?",
     answer:
-      "No, actualmente AppNutrición no soporta suscripciones recurrentes ni cobros automáticos mensuales a pacientes. Cada pago es un evento único que creas manualmente. Si cobras un plan mensual, tendrás que generar un pago nuevo cada mes con su propio enlace de Stripe. Es una funcionalidad pedida por varios nutricionistas que se está evaluando para futuras versiones, probablemente apoyándose en Stripe Billing. Por ahora todo es puntual.",
+      "No, actualmente Annonia no soporta suscripciones recurrentes ni cobros automáticos mensuales a pacientes. Cada pago es un evento único que creas manualmente. Si cobras un plan mensual, tendrás que generar un pago nuevo cada mes con su propio enlace de Stripe. Es una funcionalidad pedida por varios nutricionistas que se está evaluando para futuras versiones, probablemente apoyándose en Stripe Billing. Por ahora todo es puntual.",
     related: ["pag-15", "pag-41"],
     keywords: ["suscripción", "recurrente", "mensual", "periódico"],
   },
@@ -438,7 +438,7 @@ export const PAGOS_ENTRIES: HelpEntry[] = [
     section: "pagos",
     question: "¿Hay límites mínimos y máximos de importe?",
     answer:
-      "El importe mínimo práctico viene marcado por Stripe, que rechaza transacciones por debajo de ciertos céntimos (habitualmente 0,50€ para euros). En pagos manuales puedes registrar cualquier importe, incluso simbólicos. No hay un máximo explícito en AppNutrición, aunque Stripe tiene límites por transacción según el país y el tipo de cuenta. Los importes admiten hasta dos decimales (céntimos de euro). Si tienes dudas con un importe muy alto, consulta previamente con Stripe.",
+      "El importe mínimo práctico viene marcado por Stripe, que rechaza transacciones por debajo de ciertos céntimos (habitualmente 0,50€ para euros). En pagos manuales puedes registrar cualquier importe, incluso simbólicos. No hay un máximo explícito en Annonia, aunque Stripe tiene límites por transacción según el país y el tipo de cuenta. Los importes admiten hasta dos decimales (céntimos de euro). Si tienes dudas con un importe muy alto, consulta previamente con Stripe.",
     related: ["pag-16", "pag-38", "pag-40"],
     keywords: ["mínimo", "máximo", "importe", "límite"],
   },
@@ -447,7 +447,7 @@ export const PAGOS_ENTRIES: HelpEntry[] = [
     section: "pagos",
     question: "¿Cómo anulo un pago fallido?",
     answer:
-      "Para anular un pago fallido tienes dos caminos: eliminarlo directamente desde su detalle con el botón \"Eliminar\" (desaparece del listado y deja de contar), o regenerar un nuevo enlace de Stripe si quieres darle otra oportunidad al paciente. No existe un estado \"anulado\" específico, así que la anulación pasa por el borrado. Antes de eliminar asegúrate de que el paciente no vaya a pagar el enlace original, porque podría quedar un cobro en Stripe sin reflejo en AppNutrición. Si hay dudas, contacta con soporte.",
+      "Para anular un pago fallido tienes dos caminos: eliminarlo directamente desde su detalle con el botón \"Eliminar\" (desaparece del listado y deja de contar), o regenerar un nuevo enlace de Stripe si quieres darle otra oportunidad al paciente. No existe un estado \"anulado\" específico, así que la anulación pasa por el borrado. Antes de eliminar asegúrate de que el paciente no vaya a pagar el enlace original, porque podría quedar un cobro en Stripe sin reflejo en Annonia. Si hay dudas, contacta con soporte.",
     related: ["pag-23", "pag-34", "pag-37"],
     keywords: ["anular", "fallido", "cancelar", "eliminar"],
   },

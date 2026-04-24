@@ -6,7 +6,7 @@ export const AJUSTES_SUSCRIPCION_ENTRIES: HelpEntry[] = [
     section: "ajustes-suscripcion",
     question: "¿Qué es la sección Suscripción de Ajustes?",
     answer:
-      "La sección Suscripción de Ajustes es el área donde puedes consultar el estado de tu plan contratado en AppNutrición. Muestra de un vistazo qué plan tienes (BÁSICO, PROFESIONAL, GRATIS o TRIAL), en qué estado se encuentra (ACTIVA, CANCELADA o VENCIDA) y las fechas que lo delimitan. Toda la información se presenta en un componente llamado `<SuscripcionCard>` que agrupa los datos relevantes de la cuenta. Desde aquí entiendes qué funcionalidades tienes disponibles y hasta cuándo.",
+      "La sección Suscripción de Ajustes es el área donde puedes consultar el estado de tu plan contratado en Annonia. Muestra de un vistazo qué plan tienes (BÁSICO, PROFESIONAL, GRATIS o TRIAL), en qué estado se encuentra (ACTIVA, CANCELADA o VENCIDA) y las fechas que lo delimitan. Toda la información se presenta en un componente llamado `<SuscripcionCard>` que agrupa los datos relevantes de la cuenta. Desde aquí entiendes qué funcionalidades tienes disponibles y hasta cuándo.",
     related: ["ajs-2", "ajs-3", "ajs-8"],
     keywords: ["suscripción", "ajustes", "plan", "sección"],
   },
@@ -24,7 +24,7 @@ export const AJUSTES_SUSCRIPCION_ENTRIES: HelpEntry[] = [
     section: "ajustes-suscripcion",
     question: "¿Qué estados puede tener mi suscripción?",
     answer:
-      "Una suscripción en AppNutrición puede aparecer en tres estados principales: ACTIVA, CANCELADA o VENCIDA. ACTIVA significa que el plan está en vigor y todas sus funcionalidades funcionan con normalidad hasta la fecha de fin. CANCELADA indica que has solicitado no renovar, pero el servicio sigue disponible hasta agotar el período ya pagado. VENCIDA se muestra cuando la fecha de fin ya ha pasado y no ha habido renovación, por lo que la cuenta queda limitada.",
+      "Una suscripción en Annonia puede aparecer en tres estados principales: ACTIVA, CANCELADA o VENCIDA. ACTIVA significa que el plan está en vigor y todas sus funcionalidades funcionan con normalidad hasta la fecha de fin. CANCELADA indica que has solicitado no renovar, pero el servicio sigue disponible hasta agotar el período ya pagado. VENCIDA se muestra cuando la fecha de fin ya ha pasado y no ha habido renovación, por lo que la cuenta queda limitada.",
     related: ["ajs-1", "ajs-4", "ajs-14"],
     keywords: ["estados", "activa", "cancelada", "vencida"],
   },
@@ -42,7 +42,7 @@ export const AJUSTES_SUSCRIPCION_ENTRIES: HelpEntry[] = [
     section: "ajustes-suscripcion",
     question: "¿En qué consiste el período de prueba de 14 días?",
     answer:
-      "El período de prueba es un TRIAL de 14 días gratuito que se activa al registrarte en AppNutrición. Durante esos 14 días tienes acceso completo a todas las funcionalidades de la plataforma, incluyendo la IA para generar dietas, como si tuvieras un plan Profesional. El objetivo es que puedas probar el producto sin compromiso antes de decidir qué plan contratar. Al terminar, la cuenta pasa al estado que corresponda en función de si has contratado un plan de pago o no.",
+      "El período de prueba es un TRIAL de 14 días gratuito que se activa al registrarte en Annonia. Durante esos 14 días tienes acceso completo a todas las funcionalidades de la plataforma, incluyendo la IA para generar dietas, como si tuvieras un plan Profesional. El objetivo es que puedas probar el producto sin compromiso antes de decidir qué plan contratar. Al terminar, la cuenta pasa al estado que corresponda en función de si has contratado un plan de pago o no.",
     related: ["ajs-1", "ajs-6", "ajs-24"],
     keywords: ["trial", "prueba", "14 días", "gratuito"],
   },
@@ -60,7 +60,7 @@ export const AJUSTES_SUSCRIPCION_ENTRIES: HelpEntry[] = [
     section: "ajustes-suscripcion",
     question: "¿Qué incluye el plan Profesional?",
     answer:
-      "El plan Profesional cuesta 11.99€ al mes e incluye pacientes ilimitados, de modo que no hay tope en tu cartera. Incorpora todo lo del plan Básico y añade la IA para generar dietas automáticamente a partir de los datos del paciente, la exportación de informes en PDF y soporte prioritario en las consultas que envíes al equipo de AppNutrición. Está pensado para nutricionistas con volumen medio o alto que quieren ahorrar tiempo en la creación de planes. La diferencia real con el Básico es el acceso a la IA y la atención preferente.",
+      "El plan Profesional cuesta 11.99€ al mes e incluye pacientes ilimitados, de modo que no hay tope en tu cartera. Incorpora todo lo del plan Básico y añade la IA para generar dietas automáticamente a partir de los datos del paciente, la exportación de informes en PDF y soporte prioritario en las consultas que envíes al equipo de Annonia. Está pensado para nutricionistas con volumen medio o alto que quieren ahorrar tiempo en la creación de planes. La diferencia real con el Básico es el acceso a la IA y la atención preferente.",
     related: ["ajs-6", "ajs-9", "ajs-23"],
     keywords: ["profesional", "plan", "11.99", "ilimitados"],
   },
@@ -87,7 +87,7 @@ export const AJUSTES_SUSCRIPCION_ENTRIES: HelpEntry[] = [
     section: "ajustes-suscripcion",
     question: "¿Cómo cambio de plan?",
     answer:
-      "Por el momento, el cambio de plan se gestiona de forma manual a través de soporte. Para hacerlo, contacta con el equipo de AppNutrición indicando tu usuario y el plan al que quieres moverte (Básico o Profesional). El equipo hará el cambio en tu cuenta y te confirmará la fecha a partir de la cual el nuevo plan está activo. Próximamente se habilitará un flujo de autogestión directamente desde la sección Suscripción.",
+      "Por el momento, el cambio de plan se gestiona de forma manual a través de soporte. Para hacerlo, contacta con el equipo de Annonia indicando tu usuario y el plan al que quieres moverte (Básico o Profesional). El equipo hará el cambio en tu cuenta y te confirmará la fecha a partir de la cual el nuevo plan está activo. Próximamente se habilitará un flujo de autogestión directamente desde la sección Suscripción.",
     related: ["ajs-11", "ajs-12", "ajs-13"],
     keywords: ["cambiar", "plan", "soporte", "manual"],
   },
@@ -177,7 +177,7 @@ export const AJUSTES_SUSCRIPCION_ENTRIES: HelpEntry[] = [
     section: "ajustes-suscripcion",
     question: "¿Existe un plan familiar, de equipo o para consultas con varios nutricionistas?",
     answer:
-      "De momento, AppNutrición no ofrece un plan familiar, de equipo o multiusuario. Cada nutricionista contrata su propia suscripción individual con su cartera de pacientes asociada. Si trabajáis varios profesionales en la misma consulta, cada uno debe tener su cuenta y su plan. Planes compartidos o de equipo con gestión centralizada de pacientes están siendo valorados para futuras versiones de la plataforma.",
+      "De momento, Annonia no ofrece un plan familiar, de equipo o multiusuario. Cada nutricionista contrata su propia suscripción individual con su cartera de pacientes asociada. Si trabajáis varios profesionales en la misma consulta, cada uno debe tener su cuenta y su plan. Planes compartidos o de equipo con gestión centralizada de pacientes están siendo valorados para futuras versiones de la plataforma.",
     related: ["ajs-21", "ajs-7", "ajs-24"],
     keywords: ["equipo", "familiar", "grupo", "multiusuario"],
   },
@@ -222,7 +222,7 @@ export const AJUSTES_SUSCRIPCION_ENTRIES: HelpEntry[] = [
     section: "ajustes-suscripcion",
     question: "¿Los precios incluyen IVA?",
     answer:
-      "Los precios mostrados en AppNutrición (9.99€/mes para el Básico y 11.99€/mes para el Profesional) ya incluyen el IVA aplicable según la normativa vigente. No se añaden impuestos adicionales por encima de la cantidad comunicada en la sección Suscripción. Las facturas que emite el equipo de soporte desglosan la base imponible y la cuota de IVA correspondiente para que puedas contabilizarlas correctamente. Si tienes un caso particular (por ejemplo operaciones intracomunitarias), consúltalo con soporte.",
+      "Los precios mostrados en Annonia (9.99€/mes para el Básico y 11.99€/mes para el Profesional) ya incluyen el IVA aplicable según la normativa vigente. No se añaden impuestos adicionales por encima de la cantidad comunicada en la sección Suscripción. Las facturas que emite el equipo de soporte desglosan la base imponible y la cuota de IVA correspondiente para que puedas contabilizarlas correctamente. Si tienes un caso particular (por ejemplo operaciones intracomunitarias), consúltalo con soporte.",
     related: ["ajs-6", "ajs-7", "ajs-18"],
     keywords: ["iva", "impuestos", "precio", "incluido"],
   },

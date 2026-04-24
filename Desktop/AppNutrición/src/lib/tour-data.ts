@@ -26,7 +26,7 @@ const DIETISTA_TOURS: Tour[] = [
     icon: "LayoutDashboard",
     audience: "dietista",
     steps: [
-      { id: "d1-1", title: "Tu menú de navegación", description: "Desde el sidebar accedes a todas las secciones de NutriApp: pacientes, dietas, alimentos, agenda y más.", target: "sidebar", route: "/dashboard", position: "right" },
+      { id: "d1-1", title: "Tu menú de navegación", description: "Desde el sidebar accedes a todas las secciones de Annonia: pacientes, dietas, alimentos, agenda y más.", target: "sidebar", route: "/dashboard", position: "right" },
       { id: "d1-2", title: "Métricas rápidas", description: "Estas tarjetas te muestran un resumen: pacientes totales, consultas del mes, planes activos y citas de la semana.", target: "stats-cards", position: "bottom" },
       { id: "d1-3", title: "Gráfico de actividad", description: "Visualiza tu actividad de los últimos 6 meses: consultas realizadas y pacientes nuevos.", target: "activity-chart", position: "top" },
       { id: "d1-4", title: "Pacientes que necesitan atención", description: "Alertas automáticas de pacientes sin consulta reciente, sin medidas o con planes antiguos.", target: "patients-attention", position: "top" },

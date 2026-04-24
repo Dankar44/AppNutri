@@ -21,10 +21,16 @@ model Dietista {
   verificado      Boolean   @default(false)
   demoEliminado   Boolean   @default(false)
   notifPreferencias Json?
+  lastAccessAt    DateTime?
+  stripeAccountId String?
+  stripeOnboarded Boolean   @default(false)
+  horarioLaboral  Json?
+  duracionCitaDefault Int?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
   pacientes       Paciente[]
+  planificaciones Planificacion[]
   alimentos       Alimento[]
   recetas         Receta[]
   planes          PlanAlimenticio[]
@@ -35,6 +41,7 @@ model Dietista {
   generacionesIA  GeneracionIA[]
   notificaciones  Notificacion[]
   suscripcion     Suscripcion?
+  pagos           Pago[]
   recetasFavoritas RecetaFavorito[]
   conversaciones  Conversacion[]
   mensajes        Mensaje[]
@@ -69,6 +76,26 @@ model Suscripcion {
   updatedAt       DateTime           @updatedAt
 
   @@map("suscripciones")
+}
+
+model Pago {
+  id                String    @id @default(cuid())
+  dietistaId        String
+  dietista          Dietista  @relation(fields: [dietistaId], references: [id], onDelete: Cascade)
+  pacienteId        String?
+  paciente          Paciente? @relation(fields: [pacienteId], references: [id], onDelete: SetNull)
+  concepto          String
+  importe           Float
+  estado            String    @default("PENDIENTE")
+  metodoPago        String?
+  fechaPago         DateTime?
+  notas             String?
+  stripePaymentUrl  String?
+  stripeSessionId   String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@map("pagos")
 }
 
 enum Sexo {
@@ -182,7 +209,9 @@ model Paciente {
   /// Recomendaciones clínicas (guardadas como texto)
   recomendaciones     String?
 
+  fichaSidebar        Json?
   activo              Boolean           @default(true)
+  lastAccessAt        DateTime?
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
 
@@ -197,9 +226,30 @@ model Paciente {
   notificaciones      Notificacion[]
   conversaciones      Conversacion[]
   mensajes            Mensaje[]
+  pagos               Pago[]
+  planificaciones     Planificacion[]
   googleIntegracion   GoogleIntegracionPaciente?
 
   @@map("pacientes")
+}
+
+model Planificacion {
+  id                String    @id @default(dbgenerated("gen_random_uuid()::text"))
+  pacienteId        String
+  paciente          Paciente  @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  dietistaId        String
+  dietista          Dietista  @relation(fields: [dietistaId], references: [id], onDelete: Cascade)
+  nombre            String
+  estado            String    @default("activa")
+  esDefecto         Boolean   @default(false)
+  datos             Json      @default("{}")
+  fechaInicio       DateTime  @default(now())
+  fechaUltimoCambio DateTime  @default(now())
+  fechaFinPrevista  DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @default(now()) @updatedAt
+
+  @@map("planificaciones")
 }
 
 model Alimento {
@@ -627,6 +677,7 @@ model SeguimientoDiario {
   ejercicioTipo         String?
   ejercicioDistanciaKm  Float    @default(0)
   notas                 String?
+  comidasData           Json?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
