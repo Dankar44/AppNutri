@@ -87,7 +87,7 @@ export function CookieBanner() {
                   onClick={reject}
                   className="text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium text-center sm:ml-2 py-2.5 sm:py-0 transition-colors"
                 >
-                  Más información
+                  Política de cookies
                 </Link>
               </div>
             </div>

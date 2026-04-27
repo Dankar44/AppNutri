@@ -654,7 +654,7 @@ export default function LandingPage() {
               </p>
             </div>
             <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-4">Producto</h4>
+              <p className="text-sm font-semibold text-gray-900 mb-4">Producto</p>
               <ul className="space-y-2.5 text-sm text-gray-400">
                 <li><a href="#funcionalidades" className="hover:text-green-600 transition-colors">Funcionalidades</a></li>
                 <li><Link href="/precios" className="hover:text-green-600 transition-colors">Precios</Link></li>
@@ -662,7 +662,7 @@ export default function LandingPage() {
               </ul>
             </div>
             <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-4">Acceso</h4>
+              <p className="text-sm font-semibold text-gray-900 mb-4">Acceso</p>
               <ul className="space-y-2.5 text-sm text-gray-400">
                 <li><Link href="/login" className="hover:text-green-600 transition-colors">Iniciar sesión</Link></li>
                 <li><Link href="/registro" className="hover:text-green-600 transition-colors">Crear cuenta</Link></li>
@@ -670,7 +670,7 @@ export default function LandingPage() {
               </ul>
             </div>
             <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-4">Legal</h4>
+              <p className="text-sm font-semibold text-gray-900 mb-4">Legal</p>
               <ul className="space-y-2.5 text-sm text-gray-400">
                 <li><Link href="/legal/terminos" className="hover:text-green-600 transition-colors">Términos y condiciones</Link></li>
                 <li><Link href="/legal/privacidad" className="hover:text-green-600 transition-colors">Política de privacidad</Link></li>
