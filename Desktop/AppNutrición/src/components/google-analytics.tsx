@@ -32,6 +32,7 @@ export function GoogleAnalytics() {
 
   useEffect(() => {
     if (!hasConsent || !GA_MEASUREMENT_ID) return;
+
     if (document.querySelector(`script[src*="googletagmanager.com/gtag"]`)) {
       if (typeof window.gtag === "function") {
         window.gtag("config", GA_MEASUREMENT_ID, { page_path: pathname });
@@ -44,15 +45,13 @@ export function GoogleAnalytics() {
     script.async = true;
     document.head.appendChild(script);
 
-    window.dataLayer = window.dataLayer || [];
-    window.gtag = function (...args: unknown[]) {
-      window.dataLayer.push(args);
-    };
-    window.gtag("js", new Date());
-    window.gtag("config", GA_MEASUREMENT_ID, {
-      page_path: pathname,
-      anonymize_ip: true,
-    });
+    const init = document.createElement("script");
+    init.textContent =
+      "window.dataLayer=window.dataLayer||[];" +
+      "function gtag(){dataLayer.push(arguments);}" +
+      "gtag('js',new Date());" +
+      "gtag('config','" + GA_MEASUREMENT_ID + "',{page_path:'" + pathname.replace(/'/g, "\\'") + "',anonymize_ip:true});";
+    document.head.appendChild(init);
   }, [hasConsent, pathname]);
 
   return null;
