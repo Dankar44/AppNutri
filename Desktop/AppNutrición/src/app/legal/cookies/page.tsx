@@ -6,6 +6,7 @@ import {
 export const metadata: Metadata = {
   title: "Política de cookies — Annonia",
   description: "Política de cookies de la plataforma Annonia.",
+  alternates: { canonical: "/legal/cookies" },
 };
 
 function Section({
@@ -117,7 +118,7 @@ export default function CookiesPage() {
                 </li>
                 <li className="flex items-start gap-1.5">
                   <span className="mt-0.5">✓</span>
-                  <span>Sin Google Analytics</span>
+                  <span>Google Analytics solo con consentimiento</span>
                 </li>
                 <li className="flex items-start gap-1.5">
                   <span className="mt-0.5">✓</span>
@@ -209,10 +210,10 @@ export default function CookiesPage() {
           <Section icon={Globe} title="4. Cookies de terceros" id="terceros">
             <div className="bg-green-50 rounded-xl border border-green-200 p-5 mb-4">
               <p className="text-sm text-green-800 font-medium mb-1">
-                Annonia no utiliza cookies de análisis ni de publicidad.
+                Annonia utiliza Google Analytics 4 para mejorar la experiencia del usuario.
               </p>
               <p className="text-sm text-green-700">
-                No usamos Google Analytics, Facebook Pixel ni ningún servicio de tracking publicitario.
+                Solo se activa si aceptas las cookies. No usamos Facebook Pixel ni ningún servicio de tracking publicitario.
               </p>
             </div>
             <p>Los únicos servicios de terceros que pueden establecer cookies son:</p>
@@ -230,9 +231,15 @@ export default function CookiesPage() {
                 type="tercero"
               />
               <CookieCard
-                name="Google"
+                name="Google (Calendar)"
                 purpose="Cuando conectas voluntariamente tu Google Calendar, Google puede establecer cookies de sesión propias."
                 duration="Variable"
+                type="tercero"
+              />
+              <CookieCard
+                name="_ga, _ga_* (Google Analytics 4)"
+                purpose="Cookies de análisis anónimo de uso. Solo se cargan si aceptas las cookies al visitar la web."
+                duration="Hasta 2 años"
                 type="tercero"
               />
             </div>

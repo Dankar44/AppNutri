@@ -4,6 +4,7 @@ import Script from "next/script";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeAwareToaster } from "@/components/theme-aware-toaster";
 import { CookieBanner } from "@/components/cookie-banner";
+import { GoogleAnalytics } from "@/components/google-analytics";
 import "./globals.css";
 
 const inter = Inter({
@@ -13,13 +14,30 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://annonia.com"),
   title: {
-    default: "Annonia - Gestión de Dietas para Dietistas",
+    default: "Annonia — Software para Dietistas y Nutricionistas",
     template: "%s | Annonia",
   },
   description:
-    "Plataforma profesional para dietistas: crea dietas personalizadas, gestiona pacientes y optimiza tu consulta con inteligencia artificial.",
-  keywords: ["nutrición", "dietista", "dietas", "planes alimenticios", "macros", "pacientes"],
+    "Software de nutrición para dietistas: crea dietas personalizadas, gestiona pacientes, agenda citas y genera planes alimenticios con inteligencia artificial. Prueba gratis 14 días.",
+  keywords: [
+    "software nutricionista",
+    "software para dietistas",
+    "app para nutricionistas",
+    "programa de nutrición",
+    "gestión de pacientes nutrición",
+    "dietas personalizadas online",
+    "software nutrición clínica",
+    "herramienta para dietistas",
+    "plan alimenticio online",
+    "software consulta nutrición",
+    "app dietista",
+    "gestión consulta dietética",
+    "planes alimenticios",
+    "macros",
+    "cálculo nutricional",
+  ],
   authors: [{ name: "Annonia" }],
   manifest: "/manifest.webmanifest",
   appleWebApp: {
@@ -28,11 +46,42 @@ export const metadata: Metadata = {
     title: "Annonia",
   },
   formatDetection: { telephone: false },
+  icons: {
+    icon: [{ url: "/favicon.ico", sizes: "32x32" }],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  alternates: { canonical: "/" },
   openGraph: {
-    title: "Annonia - Gestión de Dietas para Dietistas",
-    description: "Crea dietas personalizadas, gestiona pacientes y optimiza tu consulta.",
+    title: "Annonia — Software para Dietistas y Nutricionistas",
+    description: "Software de nutrición profesional: dietas personalizadas, gestión de pacientes y agenda con IA. Desde 9,99€/mes.",
     type: "website",
     locale: "es_ES",
+    siteName: "Annonia",
+    url: "https://annonia.com",
+    images: [{
+      url: "/og-image.png",
+      width: 1200,
+      height: 630,
+      alt: "Annonia - Plataforma profesional para dietistas",
+      type: "image/png",
+    }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Annonia — Software para Dietistas y Nutricionistas",
+    description: "Software de nutrición profesional: dietas personalizadas, gestión de pacientes y agenda con IA. Prueba gratis 14 días.",
+    images: ["/og-image.png"],
   },
 };
 
@@ -78,6 +127,7 @@ export default function RootLayout({
           <ThemeAwareToaster />
           <CookieBanner />
         </ThemeProvider>
+        <GoogleAnalytics />
       </body>
     </html>
   );

@@ -61,12 +61,12 @@ export function CookieBanner() {
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1.5 leading-relaxed">
                 Usamos cookies <strong className="text-gray-700 dark:text-gray-300">estrictamente necesarias</strong> para que la app funcione
                 y cookies de <strong className="text-gray-700 dark:text-gray-300">preferencias</strong> para recordar tu configuración (tema, tours).
-                No usamos cookies de publicidad ni de análisis de terceros.
+                Usamos cookies de análisis (Google Analytics) solo si aceptas. No usamos cookies de publicidad.
               </p>
 
               <div className="flex items-center gap-2 mt-3 text-xs text-gray-400 dark:text-gray-500">
                 <Shield className="w-3.5 h-3.5" />
-                <span>Sin tracking · Sin publicidad · Cumplimos con la LSSI-CE y RGPD</span>
+                <span>Analytics solo con consentimiento · Sin publicidad · LSSI-CE y RGPD</span>
               </div>
 
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 mt-5">

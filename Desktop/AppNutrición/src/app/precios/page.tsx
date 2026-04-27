@@ -1,5 +1,24 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Leaf, Check, Star, Zap, Users, Brain, Share2, BarChart3, Shield } from "lucide-react";
+import { JsonLd } from "@/components/json-ld";
+import { ORGANIZATION_JSONLD, SOFTWARE_APPLICATION_JSONLD, PRECIOS_FAQ_JSONLD } from "@/lib/structured-data";
+
+export const metadata: Metadata = {
+  title: "Precios — Software para Dietistas desde 9,99€/mes",
+  description:
+    "Planes de Annonia, software de nutrición para dietistas: Plan Básico (25 pacientes, 9,99€/mes) o Profesional (ilimitados + IA, 11,99€/mes). Prueba gratis 14 días sin tarjeta.",
+  alternates: { canonical: "/precios" },
+  openGraph: {
+    title: "Precios de Annonia — Software para Dietistas desde 9,99€/mes",
+    description: "Software de nutrición profesional. Plan Básico o Profesional con IA. 14 días gratis sin tarjeta.",
+    url: "/precios",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Precios de Annonia — Software para Dietistas desde 9,99€/mes",
+  },
+};
 
 const PLANES = [
   {
@@ -7,7 +26,7 @@ const PLANES = [
     nombre: "Básico",
     precio: "9,99",
     periodo: "mes",
-    descripcion: "Ideal para dietistas que empiezan o tienen una consulta pequeña.",
+    descripcion: "Ideal para nutricionistas que empiezan o tienen una consulta pequeña.",
     destacado: false,
     features: [
       { texto: "Hasta 25 pacientes activos", icon: Users },
@@ -30,7 +49,7 @@ const PLANES = [
     nombre: "Profesional",
     precio: "11,99",
     periodo: "mes",
-    descripcion: "Para dietistas con consultas establecidas que quieren escalar.",
+    descripcion: "Para dietistas-nutricionistas con consultas establecidas que quieren escalar.",
     destacado: true,
     features: [
       { texto: "Pacientes ilimitados", icon: Users },
@@ -51,6 +70,9 @@ const PLANES = [
 export default function PreciosPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-green-50/30">
+      <JsonLd data={ORGANIZATION_JSONLD} />
+      <JsonLd data={SOFTWARE_APPLICATION_JSONLD} />
+      <JsonLd data={PRECIOS_FAQ_JSONLD} />
       {/* Header */}
       <header className="border-b border-border/50 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
@@ -82,10 +104,10 @@ export default function PreciosPage() {
           14 días de prueba gratuita
         </div>
         <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
-          El plan perfecto para tu consulta
+          El plan perfecto para tu consulta de nutrición
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Elige el plan que mejor se adapte a tu práctica profesional.
+          Elige el software de nutrición que mejor se adapte a tu práctica como dietista.
           Sin compromisos, cancela cuando quieras.
         </p>
       </section>

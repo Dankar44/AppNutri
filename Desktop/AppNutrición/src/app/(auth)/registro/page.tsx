@@ -1,6 +1,22 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Leaf, Lock, ArrowRight } from "lucide-react";
 import RegistroForm from "./registro-form";
+
+export const metadata: Metadata = {
+  title: "Crear cuenta — Prueba gratis el software de nutrición",
+  description:
+    "Regístrate en Annonia y empieza tu prueba gratuita de 14 días. Software para dietistas: crea dietas personalizadas, gestiona pacientes y agenda citas online.",
+  alternates: { canonical: "/registro" },
+  openGraph: {
+    title: "Prueba Annonia gratis — Software para dietistas",
+    description: "14 días de prueba gratuita del software de nutrición. Sin tarjeta de crédito.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Prueba Annonia gratis — Software para dietistas",
+  },
+};
 
 export default function RegistroPage() {
   const abierto = process.env.REGISTRATION_OPEN === "true";

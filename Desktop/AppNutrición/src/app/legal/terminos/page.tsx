@@ -7,6 +7,7 @@ import {
 export const metadata: Metadata = {
   title: "Términos y condiciones — Annonia",
   description: "Términos y condiciones de uso de la plataforma Annonia.",
+  alternates: { canonical: "/legal/terminos" },
 };
 
 function Section({

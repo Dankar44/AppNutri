@@ -8,16 +8,33 @@ import {
   Grape, IceCreamCone, Milk, Nut, Salad, Sandwich, Soup, Wheat, Beef, Banana, Croissant, Pizza, Vegan, Bean,
 } from "lucide-react";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
+import { JsonLd } from "@/components/json-ld";
+import {
+  ORGANIZATION_JSONLD,
+  WEBSITE_JSONLD,
+  SOFTWARE_APPLICATION_JSONLD,
+  LANDING_FAQ_JSONLD,
+} from "@/lib/structured-data";
 
 export const metadata: Metadata = {
-  title: "Annonia — Nutrición profesional al alcance de todos",
+  title: "Annonia — Software de Nutrición para Dietistas | Dietas Personalizadas con IA",
   description:
-    "Plataforma profesional para dietistas. Crea dietas personalizadas, gestiona tus pacientes y optimiza tu consulta con inteligencia artificial.",
+    "Software para nutricionistas y dietistas: crea dietas personalizadas, gestiona pacientes, agenda citas online y genera planes alimenticios con inteligencia artificial. Prueba gratis 14 días.",
+  alternates: { canonical: "/landing" },
   openGraph: {
-    title: "Annonia — Nutrición profesional al alcance de todos",
-    description: "Crea dietas personalizadas, gestiona pacientes y optimiza tu consulta.",
+    title: "Annonia — Software de Nutrición para Dietistas",
+    description: "Software para nutricionistas: dietas personalizadas con IA, gestión de pacientes, agenda y portal del paciente. Desde 9,99€/mes.",
     type: "website",
     locale: "es_ES",
+    siteName: "Annonia",
+    url: "/landing",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Annonia — Software de nutrición para dietistas y nutricionistas" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Annonia — Software de Nutrición para Dietistas",
+    description: "Dietas personalizadas con IA, gestión de pacientes y agenda online. Prueba gratis 14 días.",
+    images: ["/og-image.png"],
   },
 };
 
@@ -25,51 +42,51 @@ const FEATURES = [
   {
     icon: Utensils,
     title: "Dietas personalizadas",
-    description: "Planes alimenticios completos con +2.600 alimentos y cálculo automático de macros.",
+    description: "Planes alimenticios completos con +2.600 alimentos y cálculo automático de macronutrientes.",
   },
   {
     icon: Users,
     title: "Gestión de pacientes",
-    description: "Ficha completa, historial, medidas corporales, evolución y seguimiento en un solo lugar.",
+    description: "Ficha clínica completa, historial nutricional, medidas corporales y seguimiento en un solo lugar.",
   },
   {
     icon: Brain,
-    title: "Inteligencia artificial",
-    description: "Genera dietas optimizadas con IA adaptadas a cada paciente en segundos.",
+    title: "Generación de dietas con IA",
+    description: "Crea planes nutricionales optimizados con inteligencia artificial, adaptados a cada paciente.",
   },
   {
     icon: CalendarDays,
-    title: "Agenda integrada",
-    description: "Citas presenciales y online con sincronización a Google Calendar.",
+    title: "Agenda de consultas",
+    description: "Gestión de citas presenciales y online con Google Calendar y Google Meet integrados.",
   },
   {
     icon: MessageSquare,
-    title: "Mensajería directa",
-    description: "Comunicación segura con tus pacientes. Archivos, imágenes y notificaciones.",
+    title: "Mensajería con pacientes",
+    description: "Comunicación directa y segura con tus pacientes. Archivos, imágenes y notificaciones.",
   },
   {
     icon: Smartphone,
     title: "Portal del paciente",
-    description: "Acceso a dieta, seguimiento y recomendaciones desde cualquier dispositivo.",
+    description: "Tus pacientes acceden a su dieta, seguimiento y recomendaciones desde cualquier dispositivo.",
   },
   {
     icon: LineChart,
-    title: "Informes y evolución",
-    description: "Gráficas interactivas e informes PDF profesionales con un clic.",
+    title: "Informes nutricionales",
+    description: "Gráficas de evolución interactivas e informes PDF profesionales con un clic.",
   },
   {
     icon: Share2,
     title: "Compartir y exportar",
-    description: "Comparte planes por enlace, exporta PDFs y envía todo por email.",
+    description: "Comparte planes alimenticios por enlace, exporta PDFs y envía todo por email.",
   },
 ];
 
 const SHOWCASE_SECTIONS = [
   {
     tag: "Para dietistas",
-    title: "El software que optimiza tu consulta",
+    title: "Software de gestión para tu consulta de nutrición",
     description:
-      "Dedica más tiempo a tus pacientes y menos a tareas administrativas. Annonia centraliza fichas, planes, citas y mensajería en una plataforma diseñada por y para profesionales.",
+      "Dedica más tiempo a tus pacientes y menos a tareas administrativas. Annonia centraliza fichas, planes alimenticios, citas y mensajería en un software de nutrición diseñado por y para dietistas.",
     features: [
       "Planes alimenticios con cálculo automático de macros",
       "Recetas propias y globales con ingredientes vinculados",
@@ -83,9 +100,9 @@ const SHOWCASE_SECTIONS = [
   },
   {
     tag: "Para pacientes",
-    title: "Un portal completo para el seguimiento",
+    title: "Portal del paciente con seguimiento nutricional",
     description:
-      "Tus pacientes acceden desde el móvil o el ordenador. Consultan su dieta, registran su evolución y se comunican contigo de forma directa.",
+      "Tus pacientes acceden desde el móvil o el ordenador. Consultan su dieta personalizada, registran su evolución y se comunican contigo de forma directa.",
     features: [
       "Dieta semanal con horarios personalizados",
       "Registro diario de seguimiento y peso",
@@ -99,9 +116,9 @@ const SHOWCASE_SECTIONS = [
   },
   {
     tag: "Inteligencia artificial",
-    title: "Genera dietas optimizadas en segundos",
+    title: "Genera planes alimenticios con IA en segundos",
     description:
-      "Nuestra IA analiza el perfil, objetivos y restricciones de cada paciente para proponerte un plan equilibrado que puedes ajustar antes de asignarlo.",
+      "Nuestra IA analiza el perfil, objetivos y restricciones de cada paciente para proponerte un plan nutricional equilibrado que puedes ajustar antes de asignarlo.",
     features: [
       "Adaptada a alergias, intolerancias y preferencias",
       "Respeta los objetivos calóricos y de macros",
@@ -176,6 +193,10 @@ const FAQS = [
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white text-gray-900 overflow-x-hidden">
+      <JsonLd data={ORGANIZATION_JSONLD} />
+      <JsonLd data={WEBSITE_JSONLD} />
+      <JsonLd data={SOFTWARE_APPLICATION_JSONLD} />
+      <JsonLd data={LANDING_FAQ_JSONLD} />
 
       {/* ─── NAVBAR ─── */}
       <header className="absolute top-0 left-0 right-0 z-50">
@@ -237,7 +258,7 @@ export default function LandingPage() {
           </ScrollReveal>
           <ScrollReveal direction="up" delay={250}>
             <p className="text-lg sm:text-xl text-gray-600 mt-6 mb-8 max-w-xl leading-relaxed">
-              Crea dietas personalizadas, gestiona tus pacientes y haz crecer tu consulta con inteligencia artificial.
+              El software para dietistas que te permite crear dietas personalizadas, gestionar pacientes y hacer crecer tu consulta con inteligencia artificial.
             </p>
           </ScrollReveal>
           <ScrollReveal direction="up" delay={350}>
@@ -272,7 +293,7 @@ export default function LandingPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
             <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
               <p className="text-sm font-medium text-green-200 shrink-0">
-                La plataforma elegida por profesionales de la nutrición
+                El software elegido por dietistas y nutricionistas
               </p>
               <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-12">
                 {[
@@ -325,10 +346,10 @@ export default function LandingPage() {
         <ScrollReveal>
           <div className="relative max-w-4xl mx-auto px-4 text-center">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 mb-3">
-              Soluciones nutricionales personalizadas.
+              Software de nutrición personalizada.
             </h2>
             <p className="text-xl sm:text-2xl text-gray-400">
-              Personas únicas, soluciones únicas.
+              Pacientes únicos, planes alimenticios únicos.
             </p>
           </div>
         </ScrollReveal>
@@ -401,11 +422,11 @@ export default function LandingPage() {
           <ScrollReveal>
             <div className="max-w-3xl mx-auto text-center mb-14">
               <h2 className="text-3xl sm:text-4xl font-bold text-white mb-5">
-                Diseñada para profesionales
+                Software diseñado para dietistas-nutricionistas
               </h2>
               <p className="text-green-100 text-lg leading-relaxed">
-                Cada funcionalidad ha sido pensada para ahorrar tiempo y mejorar la experiencia de
-                pacientes y profesionales de la nutrición.
+                Cada funcionalidad ha sido pensada para ahorrar tiempo en tu consulta de nutrición
+                y mejorar la experiencia de tus pacientes.
               </p>
             </div>
           </ScrollReveal>
@@ -455,10 +476,10 @@ export default function LandingPage() {
                 <div className="bg-white rounded-sm p-6 sm:p-8">
                   <div className="text-center mb-8">
                     <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
-                      Todo lo que necesitas
+                      Todo lo que necesita tu consulta de nutrición
                     </h2>
                     <p className="text-gray-400 text-sm">
-                      Desde la primera consulta hasta el seguimiento a largo plazo.
+                      Desde la primera consulta dietética hasta el seguimiento nutricional a largo plazo.
                     </p>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -597,11 +618,11 @@ export default function LandingPage() {
               </div>
               <div className="relative">
                 <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-                  Empieza a transformar tu consulta
+                  Empieza a digitalizar tu consulta de nutrición
                 </h2>
                 <p className="text-green-100 text-lg mb-10 max-w-xl mx-auto leading-relaxed">
-                  Únete a los profesionales que confían en Annonia para ofrecer una nutrición
-                  personalizada y un seguimiento excepcional.
+                  Únete a los dietistas-nutricionistas que confían en Annonia para ofrecer
+                  dietas personalizadas y un seguimiento nutricional excepcional.
                 </p>
                 <Link
                   href="/registro"
@@ -629,7 +650,7 @@ export default function LandingPage() {
                 <span className="text-lg font-bold">Annonia</span>
               </div>
               <p className="text-sm text-gray-400 leading-relaxed">
-                Plataforma profesional de nutrición para dietistas y pacientes.
+                Software de nutrición profesional para dietistas-nutricionistas. Gestión de consulta, dietas personalizadas y seguimiento de pacientes.
               </p>
             </div>
             <div>

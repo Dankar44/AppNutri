@@ -7,6 +7,7 @@ import {
 export const metadata: Metadata = {
   title: "Política de privacidad — Annonia",
   description: "Política de privacidad y protección de datos de Annonia.",
+  alternates: { canonical: "/legal/privacidad" },
 };
 
 function Section({

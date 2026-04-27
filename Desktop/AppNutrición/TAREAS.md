@@ -50,30 +50,79 @@ La fase 1 (micronutrientes opcionales) y parte de la fase 2 (Open Food Facts + e
 
 Existe un plan detallado de 50 pasos en `PLAN-MOVIL.md` (34-47 horas estimadas) y un checklist de QA en `CHECKLIST-QA-MOVIL.md`. Cubre: cimientos globales, sistema de diseño, navegación, listings, ficha paciente, editores de dietas, formularios, portal paciente y testing en dispositivos reales. Ningún paso se ha ejecutado todavía.
 
-### 8. SEO y posicionamiento web
+### 8. SEO — Pasos manuales de Guillermo
 
-Para que Annonia aparezca correctamente en Google (favicon, sitelinks, posicionamiento), hay dos bloques de trabajo:
+Las 8 tareas técnicas de SEO ya están implementadas (ver sección "Tareas completadas"). Quedan los pasos manuales:
 
-#### 8.1. Tareas técnicas (desarrollo)
+#### 8.1. Google Analytics 4 — Crear propiedad (5 min)
 
-- **sitemap.xml** — Crear sitemap dinámico con todas las páginas públicas (landing, login, registro, precios, legal).
-- **robots.txt** — Crear robots.txt permitiendo indexación de páginas públicas y bloqueando dashboard/admin/portal.
-- **JSON-LD / Schema.org** — Añadir datos estructurados en la landing: `Organization`, `WebSite` con `SearchAction`, `SoftwareApplication`, `FAQPage`.
-- **Google Analytics 4** — Añadir tag de medición (gtag.js) en el `<head>`. Configurar conversiones (registro, login, visita a /precios) y eventos (click en "Empieza gratis", scroll, etc.).
-- **apple-touch-icon.png** — Crear icono 180x180 para iOS.
-- **Open Graph image** — Añadir imagen OG para compartir en redes (1200x630).
-- **Twitter Cards** — Añadir meta tags de Twitter Card.
-- **Canonical URLs** — Añadir `<link rel="canonical">` en páginas públicas.
+1. Ir a https://analytics.google.com
+2. Click "Administrar" (rueda dentada abajo izquierda)
+3. Click "Crear propiedad"
+4. Nombre: "Annonia" — Zona horaria: España — Moneda: EUR
+5. Tipo de negocio: "Tecnología" → Tamaño: "Pequeña"
+6. Objetivo: "Generar clientes potenciales" + "Analizar el comportamiento del usuario"
+7. Click "Crear"
+8. En "Flujos de datos" → Click "Web"
+9. URL: `https://annonia.com` — Nombre: "Annonia Web"
+10. Copiar el **ID de medición** (empieza por `G-`)
+11. Ponerlo en `.env.local` como `NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX`
+12. Redesplegar la app (Vercel + Oracle)
 
-#### 8.2. Tareas manuales (Guillermo)
+#### 8.2. Google Search Console — Dar de alta (10 min)
 
-- **Google Search Console** — Dar de alta annonia.com, verificar propiedad, enviar sitemap, monitorizar cobertura.
-- **Google Analytics 4** — Crear propiedad GA4 en analytics.google.com (el tag lo añadimos en 8.1).
-- **Google Business Profile** — Crear perfil en business.google.com (categoría "Software de nutrición", descripción, logo, enlace).
-- **Extensiones Chrome** — Instalar: SEOquake, Ahrefs SEO Toolbar, Keywords Everywhere, MozBar, GeoClark.
-- **Monitorización semanal** — Revisar Search Console (impresiones, clicks, posición) y GA4 (comportamiento usuarios).
-- **Favicon en Search Console** — Verificar que aparece correctamente con la herramienta de inspección de URLs.
-- **PageSpeed Insights** — Comprobar velocidad (objetivo: >90 en mobile).
+1. Ir a https://search.google.com/search-console
+2. Click "Añadir propiedad" → seleccionar "Dominio" → escribir `annonia.com`
+3. Google pedirá verificar con registro DNS TXT
+4. Ir al panel del registrador de dominio (donde se compró annonia.com)
+5. Añadir un registro TXT con el valor que da Google (tipo `google-site-verification=XXXXX`)
+6. Esperar 5-10 min → Click "Verificar" en Search Console
+7. Una vez verificado, ir a "Sitemaps" en el menú izquierdo
+8. Escribir `https://annonia.com/sitemap.xml` → Click "Enviar"
+9. Esperar a que Google lo procese (puede tardar 1-3 días)
+10. Revisar "Cobertura" para ver qué páginas se indexan y si hay errores
+11. Ir a "Inspección de URLs" → escribir `https://annonia.com/landing` → Click "Solicitar indexación"
+12. Repetir para `/precios`, `/login`, `/registro`
+
+#### 8.3. Google Business Profile (15 min)
+
+1. Ir a https://business.google.com
+2. Click "Gestionar ahora"
+3. Buscar "Annonia Software S.L." → Si no aparece, click "Añadir tu empresa"
+4. Nombre: "Annonia"
+5. Categoría: "Consultoría informática" o "Software"
+6. Dirección: poner la dirección fiscal de Annonia Software S.L.
+7. Zona de servicio: "España"
+8. Teléfono y web: `https://annonia.com`
+9. Subir logo (usar `public/icon-512.png`)
+10. Escribir descripción: "Annonia es una plataforma profesional para dietistas-nutricionistas. Permite crear dietas personalizadas con inteligencia artificial, gestionar pacientes, agendar citas y mucho más."
+11. Verificar la empresa (Google enviará carta postal o verificará por email/teléfono)
+
+#### 8.4. Extensiones Chrome SEO (5 min)
+
+Instalar desde Chrome Web Store:
+- **SEOquake** — métricas SEO en tiempo real
+- **Ahrefs SEO Toolbar** — DR, backlinks, keywords
+- **Keywords Everywhere** — volúmenes de búsqueda
+- **MozBar** — autoridad de dominio y página
+- **GeoClark** — simular búsquedas desde otras ubicaciones
+
+#### 8.5. PageSpeed Insights (5 min)
+
+1. Ir a https://pagespeed.web.dev
+2. Introducir `https://annonia.com/landing`
+3. Esperar análisis — Objetivo: >90 en Performance mobile
+4. Repetir para `/precios` y `/login`
+
+#### 8.6. Monitorización semanal (5 min/semana)
+
+**Cada lunes:**
+1. Search Console → "Rendimiento" → ver impresiones, clicks, CTR, posición media
+2. Search Console → "Cobertura" → ver si hay errores de indexación
+3. Google Analytics → "En tiempo real" → ¿hay usuarios activos?
+4. Google Analytics → "Adquisición" → ¿de dónde viene el tráfico?
+5. Buscar "Annonia" en Google → ¿aparece el favicon? ¿sitelinks? ¿qué posición?
+6. Comparar métricas con competidores usando las extensiones de Chrome
 
 ### 9. Google OAuth en producción
 
@@ -160,3 +209,21 @@ Reubicado como `PacienteDemoCard` en sección "Paciente de ejemplo" de Ajustes. 
 - `manifest.webmanifest` con PWA standalone.
 - `icon.svg` como favicon.
 - `lang="es"` en HTML.
+
+### ~~SEO completo — Infraestructura técnica~~ ✅ 27/04/2026
+
+Implementación completa de las 8 tareas técnicas SEO:
+
+- **robots.txt** dinámico (`src/app/robots.ts`) — Allow páginas públicas, Disallow dashboard/admin/portal/api.
+- **sitemap.xml** dinámico (`src/app/sitemap.ts`) — 7 URLs públicas con prioridades y frecuencias.
+- **JSON-LD / Schema.org** — 5 schemas: Organization, WebSite (con SearchAction para sitelinks), SoftwareApplication (3 ofertas), FAQPage landing (5 Q&A), FAQPage precios (4 Q&A). Componente `<JsonLd>` reutilizable.
+- **Google Analytics 4** — Componente `<GoogleAnalytics>` que solo carga gtag.js si hay consentimiento de cookies (`annonia-cookie-consent === "accepted"`). Cumple RGPD/LSSI-CE. Variable `NEXT_PUBLIC_GA_MEASUREMENT_ID` preparada en `.env.local`.
+- **Iconos PNG** — favicon.ico (16+32), apple-touch-icon.png (180x180), icon-192.png, icon-512.png, icon-maskable-512.png. Manifest actualizado.
+- **Imagen Open Graph** — `og-image.png` 1200x630 con gradiente verde + logo + texto.
+- **Twitter Cards** — `summary_large_image` en landing/precios/registro, `summary` en login. Tags en todas las páginas públicas.
+- **Canonical URLs** — `<link rel="canonical">` en las 7 páginas públicas.
+- **Metadata por página** — OG + Twitter + canonical en landing, precios, login (via layout.tsx wrapper), registro, y 3 páginas legales.
+- **CSP actualizado** — Dominios de Google Analytics añadidos a script-src y connect-src.
+- **Middleware fix** — Excluidos robots.txt, sitemap.xml y manifest.webmanifest del middleware de autenticación.
+- **Cookie banner + política** — Actualizados para reflejar Google Analytics con consentimiento.
+- **Optimización de keywords SEO/GEO** — Textos de landing, precios, registro, login y datos estructurados optimizados para keywords objetivo: "software nutricionista", "software para dietistas", "app para nutricionistas", "gestión de pacientes nutrición", "dietas personalizadas online", etc. Keywords integradas naturalmente en títulos (H1, H2), meta descriptions, OG tags, Twitter cards, JSON-LD y textos visibles.
