@@ -18,8 +18,17 @@ export function GoogleAnalytics() {
         setHasConsent(e.newValue === "accepted");
       }
     };
+
+    const onConsentChange = (e: Event) => {
+      setHasConsent((e as CustomEvent).detail === "accepted");
+    };
+
     window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    window.addEventListener("cookie-consent-change", onConsentChange);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("cookie-consent-change", onConsentChange);
+    };
   }, []);
 
   useEffect(() => {

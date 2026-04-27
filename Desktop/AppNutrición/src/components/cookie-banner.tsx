@@ -19,11 +19,13 @@ export function CookieBanner() {
 
   function accept() {
     localStorage.setItem(COOKIE_KEY, "accepted");
+    window.dispatchEvent(new CustomEvent("cookie-consent-change", { detail: "accepted" }));
     setVisible(false);
   }
 
   function reject() {
     localStorage.setItem(COOKIE_KEY, "rejected");
+    window.dispatchEvent(new CustomEvent("cookie-consent-change", { detail: "rejected" }));
     setVisible(false);
   }
 
