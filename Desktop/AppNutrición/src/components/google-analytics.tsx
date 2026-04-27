@@ -1,9 +1,8 @@
 "use client";
 
-import Script from "next/script";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { pageview, GA_MEASUREMENT_ID } from "@/lib/gtag";
+import { GA_MEASUREMENT_ID } from "@/lib/gtag";
 
 export function GoogleAnalytics() {
   const pathname = usePathname();
@@ -32,20 +31,29 @@ export function GoogleAnalytics() {
   }, []);
 
   useEffect(() => {
-    if (hasConsent && pathname) pageview(pathname);
-  }, [pathname, hasConsent]);
+    if (!hasConsent || !GA_MEASUREMENT_ID) return;
+    if (document.querySelector(`script[src*="googletagmanager.com/gtag"]`)) {
+      if (typeof window.gtag === "function") {
+        window.gtag("config", GA_MEASUREMENT_ID, { page_path: pathname });
+      }
+      return;
+    }
 
-  if (!GA_MEASUREMENT_ID || !hasConsent) return null;
+    const script = document.createElement("script");
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
+    script.async = true;
+    document.head.appendChild(script);
 
-  return (
-    <>
-      <Script
-        src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-        strategy="afterInteractive"
-      />
-      <Script id="google-analytics" strategy="afterInteractive">
-        {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_MEASUREMENT_ID}',{page_path:window.location.pathname,anonymize_ip:true});`}
-      </Script>
-    </>
-  );
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function (...args: unknown[]) {
+      window.dataLayer.push(args);
+    };
+    window.gtag("js", new Date());
+    window.gtag("config", GA_MEASUREMENT_ID, {
+      page_path: pathname,
+      anonymize_ip: true,
+    });
+  }, [hasConsent, pathname]);
+
+  return null;
 }
