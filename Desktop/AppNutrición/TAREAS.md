@@ -1,6 +1,6 @@
 # Tareas — AppNutri (Annonia)
 
-Registro consolidado de tareas del proyecto. Actualizado el 27 de abril de 2026.
+Registro consolidado de tareas del proyecto. Actualizado el 27 de abril de 2026 (tarde).
 
 ---
 
@@ -127,6 +127,46 @@ Instalar desde Chrome Web Store:
 ### 9. Google OAuth en producción
 
 Google Calendar, Meet y Sign in with Google funcionan en local pero **no en producción** (Oracle) porque necesitan dominio con HTTPS. Pasos detallados en la memoria `project_google_oauth_pendiente_dominio.md`. Cuando haya dominio, seguir esa guía.
+
+### 10. Email del paciente opcional
+
+Actualmente el email es obligatorio al crear un paciente. Hay pacientes (sobre todo personas mayores) que no tienen correo o no quieren darlo. El email debe ser **opcional**: el nutricionista puede dejarlo en blanco y el paciente funciona igual, simplemente sin acceso al portal de paciente ni notificaciones por email.
+
+### 11. Colores personalizables en entregables
+
+Los entregables (PDF del plan de alimentación) usan siempre los mismos colores (verde, rojo). El nutricionista debería poder **elegir la paleta de colores** de sus entregables: colores de cabeceras, bordes de tabla, badges de comidas, etc. Permitir al menos 4-5 opciones de tema o un selector de color primario/secundario.
+
+### 12. Logo y nombre del nutricionista en entregables
+
+Permitir al nutricionista **subir su logo** (imagen) para que aparezca como encabezado en los entregables y, si quiere, en las páginas de la app. Posición configurable: arriba a la derecha o arriba a la izquierda. También opción de mostrar su **nombre/nombre de la consulta** como cabecera personalizada. Esto hace que los entregables sean más profesionales y con marca propia.
+
+### 13. BUG — Calorías no coinciden entre plan y entregables
+
+Las calorías que aparecen en el **plan de alimentación** (editor de dietas) no coinciden con las que salen en los **entregables** (PDF/vista compartida). Ejemplo: el plan marca ~1227 kcal pero el entregable muestra ~729 kcal para el mismo día. La diferencia es muy grande y no debería existir. Investigar de dónde viene la discrepancia y corregir.
+
+### 14. Cantidades editables en entregables
+
+En los entregables, las cantidades de cada alimento deben ser **editables por el nutricionista**:
+
+- Todo viene predeterminado como hasta ahora (calculado automáticamente).
+- Pero el nutricionista puede ajustar: más gramos, menos gramos, cambiar unidades (gramos → unidades → cucharadas, etc.).
+- Opción de poner "libre" o "sin cantidad" para un alimento concreto.
+- **Importante**: al modificar cantidades, las calorías y macros ya calculados **NO se modifican**. El nutricionista ya tiene el cálculo hecho y los ajustes de cantidad son solo orientativos para el paciente.
+
+### 15. Lista de la compra — cantidades editables y unidad por defecto
+
+La lista de la compra se genera automáticamente pero a veces las unidades son incorrectas. Ejemplo: "mousse de chocolate" aparece como "4g" cuando debería ser "4 unidades".
+
+- La lista de la compra debe ser **editable**: el nutricionista o paciente puede cambiar cantidades y unidades antes de exportar/compartir.
+- **Al crear un alimento propio**, añadir un campo: "¿Cómo se añade a la lista de la compra?" con opciones: gramos, unidades, mililitros, etc. Así no hay que corregirlo manualmente cada vez. Solo aplica a alimentos propios del nutricionista (los de la base de datos general ya están bien).
+
+### 16. Link al alimento (alimentos propios)
+
+Al crear un alimento propio, el nutricionista puede opcionalmente añadir un **enlace (URL)** al producto. Cuando el paciente ve el alimento en su plan/lista de la compra, puede hacer clic en el enlace para ver el producto exacto en la web del supermercado o tienda. Esto evita tener que cargar imágenes (que pesan mucho) y el paciente puede ver las fotos directamente en la página del producto.
+
+### 17. PREGUNTA PARA CLAUDIA — Ingredientes de "café con leche"
+
+Duda pendiente de consultar con Claudia: cuando se pone "café con leche semidesnatada" como alimento, en los ingredientes del entregable no aparece "café" como ingrediente (o no como primer ingrediente). Parece que el desglose de ingredientes no refleja bien la composición del alimento compuesto. Preguntar a Claudia exactamente qué problema ve y qué esperaría que apareciera.
 
 ---
 
