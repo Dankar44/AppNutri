@@ -91,7 +91,7 @@ export function PerfilPacienteForm({ nombre, apellidos, email, telefono, fotoUrl
   const initials = `${nombre[0] || ""}${apellidos[0] || ""}`.toUpperCase();
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Cabecera con foto + nombre (centrada) */}
       <section className="bg-card rounded-xl border border-border p-5 flex items-center justify-center gap-4">
         <label className="relative cursor-pointer shrink-0">
@@ -114,13 +114,13 @@ export function PerfilPacienteForm({ nombre, apellidos, email, telefono, fotoUrl
       </section>
 
       {/* Matriz: datos personales | cambiar contraseña */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-      <section className="bg-card rounded-xl border border-border p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+      <section className="bg-card rounded-xl border border-border p-6 flex flex-col">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <UserRound className="w-5 h-5 text-muted-foreground" />
           Datos personales
         </h2>
-        <form onSubmit={handleSave} className="space-y-4">
+        <form onSubmit={handleSave} className="flex-1 flex flex-col space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1.5">Nombre</label>
@@ -165,7 +165,7 @@ export function PerfilPacienteForm({ nombre, apellidos, email, telefono, fotoUrl
               <p className="text-xs text-muted-foreground mt-1">El email no se puede cambiar</p>
             </div>
           </div>
-          <div className="flex justify-end">
+          <div className="flex justify-end mt-auto pt-2">
             <button
               type="submit"
               disabled={saving}
@@ -179,12 +179,12 @@ export function PerfilPacienteForm({ nombre, apellidos, email, telefono, fotoUrl
       </section>
 
       {/* Cambiar contraseña */}
-      <section className="bg-card rounded-xl border border-border p-6">
+      <section className="bg-card rounded-xl border border-border p-6 flex flex-col">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Lock className="w-5 h-5 text-muted-foreground" />
           Cambiar contraseña
         </h2>
-        <form onSubmit={handlePassword} className="space-y-4">
+        <form onSubmit={handlePassword} className="flex-1 flex flex-col space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1.5">Contraseña actual</label>
             <input
@@ -219,7 +219,7 @@ export function PerfilPacienteForm({ nombre, apellidos, email, telefono, fotoUrl
               />
             </div>
           </div>
-          <div className="flex justify-end">
+          <div className="flex justify-end mt-auto pt-2">
             <button
               type="submit"
               disabled={savingPass}

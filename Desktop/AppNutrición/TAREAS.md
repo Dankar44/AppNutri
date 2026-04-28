@@ -1,6 +1,6 @@
 # Tareas — AppNutri (Annonia)
 
-Registro consolidado de tareas del proyecto. Actualizado el 27 de abril de 2026 (tarde).
+Registro consolidado de tareas del proyecto. Actualizado el 28 de abril de 2026.
 
 ---
 
@@ -18,15 +18,7 @@ El widget de ayuda flotante ("Asistente Annonia") tiene ~400-500 preguntas y res
 
 Las guías/tours de la app están obsoletas. Hay que revisarlas una a una y reescribirlas para que reflejen la versión actual de la aplicación. Relacionado con la tarea 1 (el contenido de las guías está en la misma base de conocimiento).
 
-### 3. Portal paciente — simetría perfil y espaciado
-
-En **Ajustes del paciente** (`/paciente/portal/perfil`), el cuadro de **Datos personales** y el cuadro de **Cambiar contraseña** deben tener exactamente las mismas dimensiones (mismos píxeles, perfectamente simétricos). Actualmente el grid usa `items-start` lo que permite alturas diferentes.
-
-- Igualar alturas de ambas cards (quitar `items-start` o añadir min-height).
-- Dejar un poco de espacio por debajo entre estos dos cuadros y la tarjeta siguiente.
-- Archivo: `src/app/paciente/portal/perfil/perfil-form.tsx`
-
-### 4. Mover botón de vincular Google Calendar a "Mis citas"
+### 3. Mover botón de vincular Google Calendar a "Mis citas"
 
 En el portal paciente, el botón para vincular con Google Calendar está actualmente en **"Mi horario"** (`/paciente/portal/seguimiento/horario`). Debería estar en **"Mis citas"** (`/paciente/portal/citas`).
 
@@ -50,79 +42,14 @@ La fase 1 (micronutrientes opcionales) y parte de la fase 2 (Open Food Facts + e
 
 Existe un plan detallado de 50 pasos en `PLAN-MOVIL.md` (34-47 horas estimadas) y un checklist de QA en `CHECKLIST-QA-MOVIL.md`. Cubre: cimientos globales, sistema de diseño, navegación, listings, ficha paciente, editores de dietas, formularios, portal paciente y testing en dispositivos reales. Ningún paso se ha ejecutado todavía.
 
-### 8. SEO — Pasos manuales de Guillermo
+### 8. SEO — Monitorización semanal
 
-Las 8 tareas técnicas de SEO ya están implementadas (ver sección "Tareas completadas"). Quedan los pasos manuales:
-
-#### 8.1. Google Analytics 4 — Crear propiedad (5 min)
-
-1. Ir a https://analytics.google.com
-2. Click "Administrar" (rueda dentada abajo izquierda)
-3. Click "Crear propiedad"
-4. Nombre: "Annonia" — Zona horaria: España — Moneda: EUR
-5. Tipo de negocio: "Tecnología" → Tamaño: "Pequeña"
-6. Objetivo: "Generar clientes potenciales" + "Analizar el comportamiento del usuario"
-7. Click "Crear"
-8. En "Flujos de datos" → Click "Web"
-9. URL: `https://annonia.com` — Nombre: "Annonia Web"
-10. Copiar el **ID de medición** (empieza por `G-`)
-11. Ponerlo en `.env.local` como `NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX`
-12. Redesplegar la app (Vercel + Oracle)
-
-#### 8.2. Google Search Console — Dar de alta (10 min)
-
-1. Ir a https://search.google.com/search-console
-2. Click "Añadir propiedad" → seleccionar "Dominio" → escribir `annonia.com`
-3. Google pedirá verificar con registro DNS TXT
-4. Ir al panel del registrador de dominio (donde se compró annonia.com)
-5. Añadir un registro TXT con el valor que da Google (tipo `google-site-verification=XXXXX`)
-6. Esperar 5-10 min → Click "Verificar" en Search Console
-7. Una vez verificado, ir a "Sitemaps" en el menú izquierdo
-8. Escribir `https://annonia.com/sitemap.xml` → Click "Enviar"
-9. Esperar a que Google lo procese (puede tardar 1-3 días)
-10. Revisar "Cobertura" para ver qué páginas se indexan y si hay errores
-11. Ir a "Inspección de URLs" → escribir `https://annonia.com/landing` → Click "Solicitar indexación"
-12. Repetir para `/precios`, `/login`, `/registro`
-
-#### 8.3. Google Business Profile (15 min)
-
-1. Ir a https://business.google.com
-2. Click "Gestionar ahora"
-3. Buscar "Annonia Software S.L." → Si no aparece, click "Añadir tu empresa"
-4. Nombre: "Annonia"
-5. Categoría: "Consultoría informática" o "Software"
-6. Dirección: poner la dirección fiscal de Annonia Software S.L.
-7. Zona de servicio: "España"
-8. Teléfono y web: `https://annonia.com`
-9. Subir logo (usar `public/icon-512.png`)
-10. Escribir descripción: "Annonia es una plataforma profesional para dietistas-nutricionistas. Permite crear dietas personalizadas con inteligencia artificial, gestionar pacientes, agendar citas y mucho más."
-11. Verificar la empresa (Google enviará carta postal o verificará por email/teléfono)
-
-#### 8.4. Extensiones Chrome SEO (5 min)
-
-Instalar desde Chrome Web Store:
-- **SEOquake** — métricas SEO en tiempo real
-- **Ahrefs SEO Toolbar** — DR, backlinks, keywords
-- **Keywords Everywhere** — volúmenes de búsqueda
-- **MozBar** — autoridad de dominio y página
-- **GeoClark** — simular búsquedas desde otras ubicaciones
-
-#### 8.5. PageSpeed Insights (5 min)
-
-1. Ir a https://pagespeed.web.dev
-2. Introducir `https://annonia.com/landing`
-3. Esperar análisis — Objetivo: >90 en Performance mobile
-4. Repetir para `/precios` y `/login`
-
-#### 8.6. Monitorización semanal (5 min/semana)
-
-**Cada lunes:**
+**Cada lunes (5 min):**
 1. Search Console → "Rendimiento" → ver impresiones, clicks, CTR, posición media
 2. Search Console → "Cobertura" → ver si hay errores de indexación
 3. Google Analytics → "En tiempo real" → ¿hay usuarios activos?
 4. Google Analytics → "Adquisición" → ¿de dónde viene el tráfico?
 5. Buscar "Annonia" en Google → ¿aparece el favicon? ¿sitelinks? ¿qué posición?
-6. Comparar métricas con competidores usando las extensiones de Chrome
 
 ### 9. Google OAuth en producción
 
@@ -267,3 +194,14 @@ Implementación completa de las 8 tareas técnicas SEO:
 - **Middleware fix** — Excluidos robots.txt, sitemap.xml y manifest.webmanifest del middleware de autenticación.
 - **Cookie banner + política** — Actualizados para reflejar Google Analytics con consentimiento.
 - **Optimización de keywords SEO/GEO** — Textos de landing, precios, registro, login y datos estructurados optimizados para keywords objetivo: "software nutricionista", "software para dietistas", "app para nutricionistas", "gestión de pacientes nutrición", "dietas personalizadas online", etc. Keywords integradas naturalmente en títulos (H1, H2), meta descriptions, OG tags, Twitter cards, JSON-LD y textos visibles.
+
+### ~~Portal paciente — simetría perfil y espaciado~~ ✅ 28/04/2026
+
+Grid cambiado de `items-start` a `items-stretch`, ambas cards con `flex flex-col` y botones alineados al fondo con `mt-auto`. Espaciado `space-y-8` entre secciones de la página.
+
+### ~~SEO — Pasos manuales de Guillermo~~ ✅ 28/04/2026
+
+- **Google Analytics 4** — Propiedad creada, ID `G-ZSXTK43JY0` configurado en producción. Componente reescrito con inyección DOM directa y `function gtag(){dataLayer.push(arguments);}` (no rest params). CSP actualizada con wildcard `*.google-analytics.com` para endpoints regionales EU.
+- **Google Search Console** — Dominio verificado con DNS TXT en DonDominio. Sitemap enviado.
+- **Google Business Profile** — Perfil creado y verificado.
+- **PageSpeed Insights** — Desktop 99/92/100/92. Fixes de accesibilidad: headings footer (h4→p), link descriptivo cookie banner.

@@ -24,7 +24,7 @@ export default async function PerfilPacientePage() {
   if (!paciente) redirect("/paciente/login");
 
   return (
-    <div>
+    <div className="space-y-8">
       <PageHeader
         icon={User}
         title="Mi perfil"
