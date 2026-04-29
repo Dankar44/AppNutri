@@ -424,6 +424,7 @@ export function EntregablesTab({
                   type="button"
                   onClick={handleEnviarPlan}
                   disabled={sendingPlan || !pdfHtml || !pacienteEmail}
+                  title={!pacienteEmail ? "El paciente no tiene email registrado" : undefined}
                   className={cn(
                     "inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors",
                     pdfHtml && pacienteEmail

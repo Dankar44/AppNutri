@@ -35,12 +35,22 @@ export async function getSugerencias(
   // Calcular macros actuales del día completo
   const todosAlimentos = comida.diaDelPlan.comidas.flatMap((c) =>
     c.alimentos.map((a) => {
-      const item = a.alimento || a.receta;
-      if (!item) return { calorias: 0, proteinas: 0, carbohidratos: 0, grasas: 0, fibra: 0 };
-      return calcularMacrosPorcion(
-        { calorias: item.calorias, proteinas: item.proteinas, carbohidratos: item.carbohidratos, grasas: item.grasas, fibra: 0 },
-        a.cantidad
-      );
+      if (a.receta) {
+        return {
+          calorias: Math.round(a.receta.calorias * a.cantidad * 10) / 10,
+          proteinas: Math.round(a.receta.proteinas * a.cantidad * 10) / 10,
+          carbohidratos: Math.round(a.receta.carbohidratos * a.cantidad * 10) / 10,
+          grasas: Math.round(a.receta.grasas * a.cantidad * 10) / 10,
+          fibra: 0,
+        };
+      }
+      if (a.alimento) {
+        return calcularMacrosPorcion(
+          { calorias: a.alimento.calorias, proteinas: a.alimento.proteinas, carbohidratos: a.alimento.carbohidratos, grasas: a.alimento.grasas, fibra: 0 },
+          a.cantidad
+        );
+      }
+      return { calorias: 0, proteinas: 0, carbohidratos: 0, grasas: 0, fibra: 0 };
     })
   );
   const macrosActuales = sumarMacros(todosAlimentos);

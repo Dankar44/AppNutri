@@ -10,7 +10,7 @@ import type { FichaInformacionData } from "@/lib/ficha-informacion-types";
 export interface PacienteFormData {
   nombre: string;
   apellidos: string;
-  email: string;
+  email?: string;
   telefono?: string;
   fechaNacimiento?: string;
   sexo?: Sexo;
@@ -73,7 +73,7 @@ function validatePacienteData(data: PacienteFormData): string | null {
   if (apellidos.length < 1 || apellidos.length > 100) return "Los apellidos son obligatorios (máx 100 caracteres)";
 
   const email = sanitizeString(data.email);
-  if (!email || !EMAIL_REGEX.test(email)) return "El email es obligatorio y debe ser válido";
+  if (email && !EMAIL_REGEX.test(email)) return "El formato del email no es válido";
 
   if (data.telefono) {
     const tel = sanitizeString(data.telefono);
@@ -103,7 +103,7 @@ function sanitizeFormData(data: PacienteFormData) {
   return {
     nombre: capitalizeName(sanitizeString(data.nombre, 100)),
     apellidos: capitalizeName(sanitizeString(data.apellidos, 100)),
-    email: sanitizeString(data.email, 200).toLowerCase(),
+    email: sanitizeString(data.email, 200).toLowerCase() || null,
     telefono: sanitizeString(data.telefono, 20) || null,
     fechaNacimiento: data.fechaNacimiento ? new Date(data.fechaNacimiento) : null,
     sexo: (data.sexo && SEXOS_VALIDOS.includes(data.sexo) ? data.sexo : null) as Sexo | null,

@@ -1,6 +1,6 @@
 # Tareas — AppNutri (Annonia)
 
-Registro consolidado de tareas del proyecto. Actualizado el 28 de abril de 2026.
+Registro consolidado de tareas pendientes. Actualizado el 28 de abril de 2026.
 
 ---
 
@@ -25,11 +25,11 @@ En el portal paciente, el botón para vincular con Google Calendar está actualm
 - Mover `IntegracionesCardPaciente` de `src/app/paciente/portal/seguimiento/horario/` a la página de citas.
 - Ajustar los `revalidatePath` asociados para que apunten a la nueva ruta.
 
-### 5. Seed de pagos de ejemplo en paciente demo
+### 4. Seed de pagos de ejemplo en paciente demo
 
 Stripe Connect está integrado y funcional, pero el paciente demo no incluye pagos de ejemplo en su seed. Añadir 2-3 pagos (1 pagado, 1 pendiente) al seed del paciente demo en `src/lib/paciente-demo.ts`.
 
-### 6. Micronutrientes — funcionalidades pendientes
+### 5. Micronutrientes — funcionalidades pendientes
 
 La fase 1 (micronutrientes opcionales) y parte de la fase 2 (Open Food Facts + equivalentes) ya están hechas. Queda:
 
@@ -38,11 +38,11 @@ La fase 1 (micronutrientes opcionales) y parte de la fase 2 (Open Food Facts + e
 - **Link del producto** (opcional) — Pegar URL de supermercado, extraer EAN, buscar en Open Food Facts.
 - **Importación CSV** (opcional) — Botón "Importar CSV" con plantilla descargable para nutricionistas con muchos alimentos propios.
 
-### 7. Responsividad móvil
+### 6. Responsividad móvil
 
 Existe un plan detallado de 50 pasos en `PLAN-MOVIL.md` (34-47 horas estimadas) y un checklist de QA en `CHECKLIST-QA-MOVIL.md`. Cubre: cimientos globales, sistema de diseño, navegación, listings, ficha paciente, editores de dietas, formularios, portal paciente y testing en dispositivos reales. Ningún paso se ha ejecutado todavía.
 
-### 8. SEO — Monitorización semanal
+### 7. SEO — Monitorización semanal
 
 **Cada lunes (5 min):**
 1. Search Console → "Rendimiento" → ver impresiones, clicks, CTR, posición media
@@ -51,27 +51,36 @@ Existe un plan detallado de 50 pasos en `PLAN-MOVIL.md` (34-47 horas estimadas) 
 4. Google Analytics → "Adquisición" → ¿de dónde viene el tráfico?
 5. Buscar "Annonia" en Google → ¿aparece el favicon? ¿sitelinks? ¿qué posición?
 
-### 9. Google OAuth en producción
+### 8. Google OAuth en producción
 
-Google Calendar, Meet y Sign in with Google funcionan en local pero **no en producción** (Oracle) porque necesitan dominio con HTTPS. Pasos detallados en la memoria `project_google_oauth_pendiente_dominio.md`. Cuando haya dominio, seguir esa guía.
+Google Calendar, Meet y Sign in with Google funcionan en local pero **no en producción** (Oracle). Pasos:
 
-### 10. Email del paciente opcional
+1. Ir a Google Cloud Console → APIs & Services → Credentials
+2. Editar el OAuth 2.0 Client
+3. Añadir redirect URIs:
+   - `https://annonia.com/api/google/callback-nutri`
+   - `https://annonia.com/api/google/callback-paciente`
+   - `https://annonia.com/auth/callback`
+4. Añadir las env vars correspondientes en Oracle `.env.local`
+5. `pm2 restart nutriapp --update-env`
 
-Actualmente el email es obligatorio al crear un paciente. Hay pacientes (sobre todo personas mayores) que no tienen correo o no quieren darlo. El email debe ser **opcional**: el nutricionista puede dejarlo en blanco y el paciente funciona igual, simplemente sin acceso al portal de paciente ni notificaciones por email.
+### ~~9. Email del paciente opcional~~ ✅ (28/04/2026)
 
-### 11. Colores personalizables en entregables
+Email ahora es opcional en el formulario de crear/editar paciente. Si no tiene email: botón de enviar email desactivado, banner de aviso en portal, y las funciones de email devuelven error controlado. La base de datos ya era `String?`; se quitó la validación obligatoria del form y del server action.
+
+### 10. Colores personalizables en entregables
 
 Los entregables (PDF del plan de alimentación) usan siempre los mismos colores (verde, rojo). El nutricionista debería poder **elegir la paleta de colores** de sus entregables: colores de cabeceras, bordes de tabla, badges de comidas, etc. Permitir al menos 4-5 opciones de tema o un selector de color primario/secundario.
 
-### 12. Logo y nombre del nutricionista en entregables
+### 11. Logo y nombre del nutricionista en entregables
 
 Permitir al nutricionista **subir su logo** (imagen) para que aparezca como encabezado en los entregables y, si quiere, en las páginas de la app. Posición configurable: arriba a la derecha o arriba a la izquierda. También opción de mostrar su **nombre/nombre de la consulta** como cabecera personalizada. Esto hace que los entregables sean más profesionales y con marca propia.
 
-### 13. BUG — Calorías no coinciden entre plan y entregables
+### ~~12. BUG — Calorías no coinciden entre plan y entregables~~ ✅ (28/04/2026)
 
-Las calorías que aparecen en el **plan de alimentación** (editor de dietas) no coinciden con las que salen en los **entregables** (PDF/vista compartida). Ejemplo: el plan marca ~1227 kcal pero el entregable muestra ~729 kcal para el mismo día. La diferencia es muy grande y no debería existir. Investigar de dónde viene la discrepancia y corregir.
+Corregido. El bug afectaba solo a **recetas** (no a alimentos individuales). Tres archivos usaban `calcularMacrosPorcion` para recetas, que divide por 100 como si fueran gramos — pero las recetas almacenan macros por porción. Fórmula correcta: `receta.calorias * cantidad`. Archivos corregidos: `generate-plan-pdf.ts`, `plan-read-only.tsx`, `sugerencias.ts`.
 
-### 14. Cantidades editables en entregables
+### 13. Cantidades editables en entregables
 
 En los entregables, las cantidades de cada alimento deben ser **editables por el nutricionista**:
 
@@ -80,18 +89,18 @@ En los entregables, las cantidades de cada alimento deben ser **editables por el
 - Opción de poner "libre" o "sin cantidad" para un alimento concreto.
 - **Importante**: al modificar cantidades, las calorías y macros ya calculados **NO se modifican**. El nutricionista ya tiene el cálculo hecho y los ajustes de cantidad son solo orientativos para el paciente.
 
-### 15. Lista de la compra — cantidades editables y unidad por defecto
+### 14. Lista de la compra — cantidades editables y unidad por defecto
 
 La lista de la compra se genera automáticamente pero a veces las unidades son incorrectas. Ejemplo: "mousse de chocolate" aparece como "4g" cuando debería ser "4 unidades".
 
 - La lista de la compra debe ser **editable**: el nutricionista o paciente puede cambiar cantidades y unidades antes de exportar/compartir.
 - **Al crear un alimento propio**, añadir un campo: "¿Cómo se añade a la lista de la compra?" con opciones: gramos, unidades, mililitros, etc. Así no hay que corregirlo manualmente cada vez. Solo aplica a alimentos propios del nutricionista (los de la base de datos general ya están bien).
 
-### 16. Link al alimento (alimentos propios)
+### 15. Link al alimento (alimentos propios)
 
 Al crear un alimento propio, el nutricionista puede opcionalmente añadir un **enlace (URL)** al producto. Cuando el paciente ve el alimento en su plan/lista de la compra, puede hacer clic en el enlace para ver el producto exacto en la web del supermercado o tienda. Esto evita tener que cargar imágenes (que pesan mucho) y el paciente puede ver las fotos directamente en la página del producto.
 
-### 17. PREGUNTA PARA CLAUDIA — Ingredientes de "café con leche"
+### 16. PREGUNTA PARA CLAUDIA — Ingredientes de "café con leche"
 
 Duda pendiente de consultar con Claudia: cuando se pone "café con leche semidesnatada" como alimento, en los ingredientes del entregable no aparece "café" como ingrediente (o no como primer ingrediente). Parece que el desglose de ingredientes no refleja bien la composición del alimento compuesto. Preguntar a Claudia exactamente qué problema ve y qué esperaría que apareciera.
 
@@ -125,81 +134,9 @@ Reportar con error concreto. Callbacks en: `/api/google/callback-nutri`, `/api/g
 
 ---
 
-## Tareas completadas
+## Info externa (no derivable del código)
 
-### ~~Sistema de solicitud de citas paciente → nutricionista~~ ✅
-
-Flujo completo implementado:
-- Horario configurable del nutricionista (editor visual drag).
-- Paciente ve disponibilidad y solicita citas.
-- Notificaciones al nutricionista (`CITA_SOLICITADA`).
-- Aceptar/Rechazar/Contraponer bidireccional.
-- Google Calendar sync (nutri + paciente, backfill, token refresh).
-- Google Meet para citas online.
-- Anti-solapes y restricción por nutricionista asignado.
-
-### ~~Paciente demo~~ ✅
-
-Seed automático al registrarse, badge "Paciente de ejemplo", auto-ajuste de fechas al mes actual, flag de eliminación + restaurar, seguimiento diario con estados reales. Tarjeta `PacienteDemoCard` reubicada en Ajustes.
-
-### ~~Integración Stripe Connect~~ ✅
-
-Modelo `Pago`, Stripe Connect Express para dietistas, webhooks (`checkout.session.completed`, `account.updated`), UI de onboarding y gestión de pagos, links de pago con expiración 24h.
-
-### ~~Micronutrientes — fases 1 y 2 (parcial)~~ ✅
-
-- Micronutrientes opcionales (24 campos `Float?` nullable).
-- Open Food Facts API integrada (búsqueda por nombre + página de importación).
-- Alimentos equivalentes por categoría y similitud de macros.
-
-### ~~Bug notificaciones duplicadas al crear paciente~~ ✅ 21/04/2026
-
-No era bug. `generarNotificaciones()` recorre todos los pacientes activos >30 días sin datos. Las notificaciones eran legítimas.
-
-### ~~Gráfica dashboard: "Pacientes nuevos" → "Pacientes totales"~~ ✅ 21/04/2026
-
-Línea verde del gráfico de actividad ahora muestra acumulado total hasta fin de cada mes. Paciente demo excluido del conteo.
-
-### ~~Reorganizar ajustes del nutricionista~~ ✅ 21/04/2026
-
-Rediseño completo de `/ajustes` con sidebar interno de secciones (sticky desktop, scroll móvil), resumen de cuenta, 8 secciones organizadas y `SectionHeader` unificado.
-
-### ~~Mover banner de restaurar paciente demo a Ajustes~~ ✅ 21/04/2026
-
-Reubicado como `PacienteDemoCard` en sección "Paciente de ejemplo" de Ajustes. Retirado `RestaurarDemoBanner` de pacientes.
-
-### ~~SEO básico (titles, meta, keywords, OG parcial, PWA manifest)~~ ✅
-
-- `<title>` y `<meta description>` en root layout y landing.
-- Keywords configuradas.
-- Open Graph title/description/locale.
-- `manifest.webmanifest` con PWA standalone.
-- `icon.svg` como favicon.
-- `lang="es"` en HTML.
-
-### ~~SEO completo — Infraestructura técnica~~ ✅ 27/04/2026
-
-Implementación completa de las 8 tareas técnicas SEO:
-
-- **robots.txt** dinámico (`src/app/robots.ts`) — Allow páginas públicas, Disallow dashboard/admin/portal/api.
-- **sitemap.xml** dinámico (`src/app/sitemap.ts`) — 7 URLs públicas con prioridades y frecuencias.
-- **JSON-LD / Schema.org** — 5 schemas: Organization, WebSite (con SearchAction para sitelinks), SoftwareApplication (3 ofertas), FAQPage landing (5 Q&A), FAQPage precios (4 Q&A). Componente `<JsonLd>` reutilizable.
-- **Google Analytics 4** — Componente `<GoogleAnalytics>` que solo carga gtag.js si hay consentimiento de cookies (`annonia-cookie-consent === "accepted"`). Cumple RGPD/LSSI-CE. Variable `NEXT_PUBLIC_GA_MEASUREMENT_ID` preparada en `.env.local`.
-- **Iconos PNG** — favicon.ico (16+32), apple-touch-icon.png (180x180), icon-192.png, icon-512.png, icon-maskable-512.png. Manifest actualizado.
-- **Imagen Open Graph** — `og-image.png` 1200x630 con gradiente verde + logo + texto.
-- **Twitter Cards** — `summary_large_image` en landing/precios/registro, `summary` en login. Tags en todas las páginas públicas.
-- **Canonical URLs** — `<link rel="canonical">` en las 7 páginas públicas.
-- **Metadata por página** — OG + Twitter + canonical en landing, precios, login (via layout.tsx wrapper), registro, y 3 páginas legales.
-- **CSP actualizado** — Dominios de Google Analytics añadidos a script-src y connect-src.
-- **Middleware fix** — Excluidos robots.txt, sitemap.xml y manifest.webmanifest del middleware de autenticación.
-- **Cookie banner + política** — Actualizados para reflejar Google Analytics con consentimiento.
-- **Optimización de keywords SEO/GEO** — Textos de landing, precios, registro, login y datos estructurados optimizados para keywords objetivo: "software nutricionista", "software para dietistas", "app para nutricionistas", "gestión de pacientes nutrición", "dietas personalizadas online", etc. Keywords integradas naturalmente en títulos (H1, H2), meta descriptions, OG tags, Twitter cards, JSON-LD y textos visibles.
-
-### ~~Portal paciente — simetría perfil y espaciado~~ ✅ 28/04/2026
-
-Grid cambiado de `items-start` a `items-stretch`, ambas cards con `flex flex-col` y botones alineados al fondo con `mt-auto`. Espaciado `space-y-8` entre secciones de la página.
-
-### ~~SEO — Pasos manuales de Guillermo~~ ✅ 28/04/2026
+### SEO — Pasos manuales completados (28/04/2026)
 
 - **Google Analytics 4** — Propiedad creada, ID `G-ZSXTK43JY0` configurado en producción. Componente reescrito con inyección DOM directa y `function gtag(){dataLayer.push(arguments);}` (no rest params). CSP actualizada con wildcard `*.google-analytics.com` para endpoints regionales EU.
 - **Google Search Console** — Dominio verificado con DNS TXT en DonDominio. Sitemap enviado.

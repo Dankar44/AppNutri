@@ -131,6 +131,22 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
         </div>
       )}
 
+      {!pacienteEmail && !esDemo && (
+        <div className="rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-4 mb-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+                Este paciente no tiene email registrado
+              </p>
+              <p className="text-xs text-amber-800/80 dark:text-amber-300/80 mt-0.5">
+                Sin email no podrá acceder al portal ni recibir notificaciones por correo. Puedes añadir uno editando los datos del paciente.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="rounded-xl border border-border bg-card p-5">
         <h2 className="text-base font-semibold text-foreground mb-4">
           Aplicacion para el cliente

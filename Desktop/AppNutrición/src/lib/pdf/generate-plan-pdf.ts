@@ -130,10 +130,10 @@ function getMacrosForItem(a: AlimentoEnComida) {
   }
   if (a.receta) {
     return {
-      calorias: Math.round(a.receta.calorias / a.receta.porciones * a.cantidad / 100),
-      proteinas: Math.round(a.receta.proteinas / a.receta.porciones * a.cantidad / 100),
-      carbohidratos: Math.round(a.receta.carbohidratos / a.receta.porciones * a.cantidad / 100),
-      grasas: Math.round(a.receta.grasas / a.receta.porciones * a.cantidad / 100),
+      calorias: Math.round(a.receta.calorias * a.cantidad * 10) / 10,
+      proteinas: Math.round(a.receta.proteinas * a.cantidad * 10) / 10,
+      carbohidratos: Math.round(a.receta.carbohidratos * a.cantidad * 10) / 10,
+      grasas: Math.round(a.receta.grasas * a.cantidad * 10) / 10,
       fibra: 0,
     };
   }

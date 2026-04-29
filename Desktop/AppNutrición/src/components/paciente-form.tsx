@@ -195,8 +195,8 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
       toast.error("Nombre y apellidos son obligatorios.");
       return;
     }
-    if (!form.email || !form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      toast.error("El email es obligatorio y debe ser válido.");
+    if (form.email && form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      toast.error("El formato del email no es válido.");
       return;
     }
     if (!form.fechaNacimiento) {
@@ -254,18 +254,18 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1.5">
-              Email <span className="text-destructive">*</span>
+              Email
             </label>
             <input
               type="email"
               value={form.email}
               onChange={(e) => update("email", e.target.value)}
-              required
               maxLength={200}
+              placeholder="Opcional"
               className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
             <p className="text-xs text-muted-foreground mt-1">
-              Necesario para el acceso al portal del paciente
+              Necesario solo para el portal del paciente y envío de emails
             </p>
           </div>
           <div>
