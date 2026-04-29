@@ -18,12 +18,9 @@ El widget de ayuda flotante ("Asistente Annonia") tiene ~400-500 preguntas y res
 
 Las guías/tours de la app están obsoletas. Hay que revisarlas una a una y reescribirlas para que reflejen la versión actual de la aplicación. Relacionado con la tarea 1 (el contenido de las guías está en la misma base de conocimiento).
 
-### 3. Mover botón de vincular Google Calendar a "Mis citas"
+### ~~3. Mover botón de vincular Google Calendar a "Mis citas"~~ ✅ (29/04/2026)
 
-En el portal paciente, el botón para vincular con Google Calendar está actualmente en **"Mi horario"** (`/paciente/portal/seguimiento/horario`). Debería estar en **"Mis citas"** (`/paciente/portal/citas`).
-
-- Mover `IntegracionesCardPaciente` de `src/app/paciente/portal/seguimiento/horario/` a la página de citas.
-- Ajustar los `revalidatePath` asociados para que apunten a la nueva ruta.
+Movido `IntegracionesCardPaciente` de `/paciente/portal/seguimiento/horario` a `/paciente/portal/citas`. Actualizados los `revalidatePath`, el redirect del callback OAuth y los flash messages de Google.
 
 ### 4. Seed de pagos de ejemplo en paciente demo
 
