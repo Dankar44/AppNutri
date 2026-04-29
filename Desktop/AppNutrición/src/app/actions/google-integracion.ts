@@ -123,7 +123,7 @@ export async function conectarGooglePaciente(): Promise<never> {
   const session = await getCurrentPaciente();
   if (!session) redirect("/paciente/login");
   if (!isGoogleConfigured()) {
-    redirect("/paciente/portal/seguimiento/horario?google=error&reason=no_configurado");
+    redirect("/paciente/portal/citas?google=error&reason=no_configurado");
   }
   const state = randomBytes(24).toString("hex");
   await setStateCookie(STATE_COOKIE_PACIENTE, state);
@@ -145,7 +145,7 @@ export async function desconectarGooglePaciente(options: {
   });
   void options;
 
-  revalidatePath("/paciente/portal/seguimiento/horario");
+  revalidatePath("/paciente/portal/citas");
 }
 
 export async function toggleSincronizarPaciente(activar: boolean) {
@@ -163,7 +163,7 @@ export async function toggleSincronizarPaciente(activar: boolean) {
     );
   }
 
-  revalidatePath("/paciente/portal/seguimiento/horario");
+  revalidatePath("/paciente/portal/citas");
 }
 
 export async function getIntegracionNutri() {

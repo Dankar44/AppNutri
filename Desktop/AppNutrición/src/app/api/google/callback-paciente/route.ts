@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   const state = searchParams.get("state");
   const error = searchParams.get("error");
 
-  const redirectBase = "/paciente/portal/seguimiento/horario";
+  const redirectBase = "/paciente/portal/citas";
 
   if (error) {
     return NextResponse.redirect(new URL(`${redirectBase}?google=error&reason=${encodeURIComponent(error)}`, req.url));
