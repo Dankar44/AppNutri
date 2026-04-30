@@ -3,6 +3,7 @@ import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { CalendarDays, ArrowRight } from "lucide-react";
 import { AvatarPaciente } from "@/components/avatar-paciente";
+import { GoogleCalendarSidebar } from "./google-calendar-sidebar";
 
 export type ProximaCitaAgenda = {
   id: string;
@@ -19,9 +20,13 @@ export type ProximaCitaAgenda = {
 export function AgendaSidebar({
   proximaCita,
   esPrimeraConsulta,
+  googleConfigured,
+  googleIntegracion,
 }: {
   proximaCita: ProximaCitaAgenda | null;
   esPrimeraConsulta: boolean;
+  googleConfigured: boolean;
+  googleIntegracion: { email: string; sincronizar: boolean } | null;
 }) {
   return (
     <aside className="w-full xl:w-[min(100%,20rem)] shrink-0 space-y-4 xl:sticky xl:top-6 self-start">
@@ -141,6 +146,10 @@ export function AgendaSidebar({
           </div>
         </Link>
       </div>
+
+      {googleConfigured && (
+        <GoogleCalendarSidebar integracion={googleIntegracion} />
+      )}
     </aside>
   );
 }

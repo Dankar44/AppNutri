@@ -22,9 +22,9 @@ Las guías/tours de la app están obsoletas. Hay que revisarlas una a una y rees
 
 Movido `IntegracionesCardPaciente` de `/paciente/portal/seguimiento/horario` a `/paciente/portal/citas`. Actualizados los `revalidatePath`, el redirect del callback OAuth y los flash messages de Google.
 
-### 4. Seed de pagos de ejemplo en paciente demo
+### ~~4. Seed de pagos de ejemplo en paciente demo~~ ✅ (30/04/2026)
 
-Stripe Connect está integrado y funcional, pero el paciente demo no incluye pagos de ejemplo en su seed. Añadir 2-3 pagos (1 pagado, 1 pendiente) al seed del paciente demo en `src/lib/paciente-demo.ts`.
+Añadidos 3 pagos demo: consulta inicial 45€ (pagado, transferencia), revisión 30€ (pagado, Stripe), revisión pendiente 30€. Se eliminan al borrar el paciente demo (antes del delete, por el `onDelete: SetNull` del modelo Pago). Se recrean al restaurar. Auto-alineación mensual de fechas incluida. Script `seed-paciente-demo-existentes.ts` también actualizado.
 
 ### 5. Micronutrientes — funcionalidades pendientes
 
@@ -50,16 +50,7 @@ Existe un plan detallado de 50 pasos en `PLAN-MOVIL.md` (34-47 horas estimadas) 
 
 ### 8. Google OAuth en producción
 
-Google Calendar, Meet y Sign in with Google funcionan en local pero **no en producción** (Oracle). Pasos:
-
-1. Ir a Google Cloud Console → APIs & Services → Credentials
-2. Editar el OAuth 2.0 Client
-3. Añadir redirect URIs:
-   - `https://annonia.com/api/google/callback-nutri`
-   - `https://annonia.com/api/google/callback-paciente`
-   - `https://annonia.com/auth/callback`
-4. Añadir las env vars correspondientes en Oracle `.env.local`
-5. `pm2 restart nutriapp --update-env`
+Google Calendar, Meet y Sign in with Google funcionan en local pero **no en producción** (annonia.com). El código ya está listo; faltan configuraciones manuales en Google Cloud Console, Oracle y opcionalmente Supabase. Ver instrucciones detalladas compartidas aparte.
 
 ### ~~9. Email del paciente opcional~~ ✅ (28/04/2026)
 
@@ -103,28 +94,34 @@ Duda pendiente de consultar con Claudia: cuando se pone "café con leche semides
 
 ---
 
-## Guía de pruebas — Flujo Google (para Guillermo)
+## Guía de pruebas — Flujo Google
 
-Integración Google Calendar + Meet + Sign in with Google ya implementada y configurada en `.env.local`. OAuth consent screen en modo "Testing" — Guillermo debe añadirse como **Test user** en Google Cloud Console si no lo está ya.
+Integración Google Calendar + Meet + Sign in with Google ya implementada. En local, configurada en `.env.local`. OAuth consent screen en modo **"Testing"** — quien pruebe debe estar añadido como **Test user** en Google Cloud Console (ver tarea #8, paso 4).
 
-### Pasos a probar en local (después de reiniciar `npm run dev`)
+### Dónde se conecta Google Calendar
 
-1. **Conectar Google del nutri** — `http://localhost:3000/ajustes` > Integraciones > Conectar con Google. Aceptar aviso "App no verificada" > Avanzado > Ir a NutriApp. Verificar email conectado y toggle de sincronización.
+- **Nutricionista**: desde `/ajustes` (sección Integraciones) o desde `/agenda` (tarjeta en el sidebar derecho)
+- **Paciente**: desde `/paciente/portal/citas` (tarjeta al final de la página)
 
-2. **Crear una cita online con Meet** — `/agenda/nueva` > seleccionar paciente + fecha + hora > checkbox "Cita online (Google Meet)" > Crear. Verificar link de Meet en el modal y en Google Calendar real.
+### Pasos a probar
+
+1. **Conectar Google del nutri** — Ir a Ajustes o Agenda > Conectar con Google. Si sale aviso "App no verificada" > Avanzado > Ir a NutriApp. Verificar email conectado y toggles de sincronización y Meet.
+
+2. **Crear una cita online con Meet** — Agenda > Nueva cita > seleccionar paciente + fecha + hora > checkbox "Cita online (Google Meet)" > Crear. Verificar link de Meet en el modal y en Google Calendar real.
 
 3. **Backfill al conectar** — Tras conectar, las citas existentes deben aparecer en Google Calendar automáticamente.
 
 4. **Desconectar con dialog** — Ajustes > Desconectar > probar "Dejar citas en Google" y "Borrar citas de Google".
 
-5. **Sign in with Google** — Antes: habilitar provider en Supabase (proyecto `kzbrugggurcjwxsmutic`) + pegar Client ID/Secret + añadir Callback URL como redirect URI en Google Cloud. Luego: `/login` > "Continuar con Google".
+5. **Sign in with Google** — Requiere configurar Supabase primero (ver tarea #8, paso 5). Luego: `/login` > "Continuar con Google".
 
-6. **Paciente conecta su Google Calendar** — `/paciente/portal/perfil` > sección Google Calendar > Conectar. Verificar que citas confirmadas aparecen en el calendar personal.
+6. **Paciente conecta su Google Calendar** — Portal paciente > Mis citas > sección Google Calendar > Conectar. Verificar que citas confirmadas aparecen en el calendar personal del paciente.
 
 ### Qué mirar con atención
-- Zona horaria Europe/Madrid correcta.
+- Zona horaria Europe/Madrid correcta en los eventos.
 - Al cancelar/contraponer cita, el evento desaparece de Google Calendar.
 - Tokens refrescan sin pedir re-login tras 1h.
+- En producción: verificar que los redirects van a `https://annonia.com/...` (no localhost).
 
 ### Si algo falla
 Reportar con error concreto. Callbacks en: `/api/google/callback-nutri`, `/api/google/callback-paciente`, `/auth/callback`.

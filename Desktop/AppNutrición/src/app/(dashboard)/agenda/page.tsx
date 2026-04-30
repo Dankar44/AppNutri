@@ -6,6 +6,8 @@ import {
   getCitasDia,
   getProximasCitas,
 } from "@/app/actions/citas";
+import { getIntegracionNutri } from "@/app/actions/google-integracion";
+import { isGoogleConfigured } from "@/lib/google-oauth";
 import { prisma } from "@/lib/prisma";
 import { AgendaClient } from "./agenda-client";
 import { AgendaSidebar } from "./agenda-sidebar";
@@ -70,7 +72,10 @@ export default async function AgendaPage({ searchParams }: Props) {
     fechaInicio = formatLocalDate(lunes);
   }
 
-  const proximas = await getProximasCitas(1);
+  const [proximas, googleIntegracion] = await Promise.all([
+    getProximasCitas(1),
+    isGoogleConfigured() ? getIntegracionNutri() : null,
+  ]);
   const primera = proximas[0];
   let esPrimeraConsulta = false;
   if (primera) {
@@ -119,6 +124,8 @@ export default async function AgendaPage({ searchParams }: Props) {
         <AgendaSidebar
           proximaCita={proximaSidebar}
           esPrimeraConsulta={esPrimeraConsulta}
+          googleConfigured={isGoogleConfigured()}
+          googleIntegracion={googleIntegracion}
         />
       </div>
     </div>
