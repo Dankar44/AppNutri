@@ -7,6 +7,12 @@ import { prisma } from "@/lib/prisma";
 
 const STATE_COOKIE_PACIENTE = "google_oauth_state_paciente";
 
+function getBaseUrl(req: NextRequest): string {
+  const proto = req.headers.get("x-forwarded-proto") || "https";
+  const host = req.headers.get("host") || "localhost:3000";
+  return `${proto}://${host}`;
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get("code");
@@ -14,24 +20,25 @@ export async function GET(req: NextRequest) {
   const error = searchParams.get("error");
 
   const redirectBase = "/paciente/portal/citas";
+  const base = getBaseUrl(req);
 
   if (error) {
-    return NextResponse.redirect(new URL(`${redirectBase}?google=error&reason=${encodeURIComponent(error)}`, req.url));
+    return NextResponse.redirect(new URL(`${redirectBase}?google=error&reason=${encodeURIComponent(error)}`, base));
   }
   if (!code || !state) {
-    return NextResponse.redirect(new URL(`${redirectBase}?google=error&reason=missing_params`, req.url));
+    return NextResponse.redirect(new URL(`${redirectBase}?google=error&reason=missing_params`, base));
   }
 
   const jar = await cookies();
   const storedState = jar.get(STATE_COOKIE_PACIENTE)?.value;
   if (!storedState || storedState !== state) {
-    return NextResponse.redirect(new URL(`${redirectBase}?google=error&reason=state_mismatch`, req.url));
+    return NextResponse.redirect(new URL(`${redirectBase}?google=error&reason=state_mismatch`, base));
   }
   jar.delete(STATE_COOKIE_PACIENTE);
 
   const session = await getCurrentPaciente();
   if (!session) {
-    return NextResponse.redirect(new URL("/paciente/login", req.url));
+    return NextResponse.redirect(new URL("/paciente/login", base));
   }
 
   try {
@@ -41,7 +48,7 @@ export async function GET(req: NextRequest) {
     const expiryDate = tokens.expiry_date ? new Date(tokens.expiry_date) : new Date(Date.now() + 3600_000);
 
     if (!accessToken || !refreshToken) {
-      return NextResponse.redirect(new URL(`${redirectBase}?google=error&reason=no_tokens`, req.url));
+      return NextResponse.redirect(new URL(`${redirectBase}?google=error&reason=no_tokens`, base));
     }
 
     const paciente = await prisma.paciente.findUnique({
@@ -67,9 +74,9 @@ export async function GET(req: NextRequest) {
       console.error("[backfill-paciente-callback]", e),
     );
 
-    return NextResponse.redirect(new URL(`${redirectBase}?google=ok`, req.url));
+    return NextResponse.redirect(new URL(`${redirectBase}?google=ok`, base));
   } catch (e) {
     console.error("[google/callback-paciente]", e);
-    return NextResponse.redirect(new URL(`${redirectBase}?google=error&reason=exchange_failed`, req.url));
+    return NextResponse.redirect(new URL(`${redirectBase}?google=error&reason=exchange_failed`, base));
   }
 }
