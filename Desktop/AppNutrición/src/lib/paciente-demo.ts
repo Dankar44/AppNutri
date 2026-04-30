@@ -270,6 +270,14 @@ export async function crearPacienteDemoSiNoExiste(
            WHERE "pacienteId" = $2`,
           intervalo, existente.id,
         );
+        await prisma.$executeRawUnsafe(
+          `UPDATE pagos
+           SET "createdAt" = "createdAt" + $1::interval,
+               "updatedAt" = "updatedAt" + $1::interval,
+               "fechaPago" = CASE WHEN "fechaPago" IS NOT NULL THEN "fechaPago" + $1::interval ELSE NULL END
+           WHERE "pacienteId" = $2`,
+          intervalo, existente.id,
+        );
       }
     }
     return { id: existente.id, creado: false };
@@ -754,6 +762,26 @@ export async function crearPacienteDemoSiNoExiste(
         descripcion: e.descripcion, notas: e.notas,
       },
     });
+  }
+
+  // Pagos de ejemplo (3 registros: 1 pagado transferencia, 1 pagado Stripe, 1 pendiente)
+  const pagosDemo = [
+    { diasAtras: 60, concepto: "Consulta inicial — valoración y plan", importe: 45, estado: "PAGADO", metodoPago: "Transferencia", diasHastaPago: 2, notas: "Primera consulta. Incluye valoración completa y elaboración del plan nutricional." },
+    { diasAtras: 25, concepto: "Revisión mensual — seguimiento", importe: 30, estado: "PAGADO", metodoPago: "Stripe", diasHastaPago: 0, notas: "Revisión de evolución a los 30 días." },
+    { diasAtras: 3, concepto: "Próxima revisión mensual", importe: 30, estado: "PENDIENTE", metodoPago: null, diasHastaPago: null as number | null, notas: "Pendiente de cobro. Revisión programada." },
+  ];
+  for (const p of pagosDemo) {
+    const createdAt = new Date(now);
+    createdAt.setDate(now.getDate() - p.diasAtras);
+    const fechaPago = p.diasHastaPago !== null
+      ? (() => { const d = new Date(createdAt); d.setDate(d.getDate() + p.diasHastaPago); return d; })()
+      : null;
+    await prisma.$queryRawUnsafe(
+      `INSERT INTO pagos (id, "dietistaId", "pacienteId", concepto, importe, estado, "metodoPago", "fechaPago", notas, "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, $9, $9)`,
+      dietistaId, paciente.id, p.concepto, p.importe, p.estado,
+      p.metodoPago, fechaPago, p.notas, createdAt,
+    );
   }
 
   return { id: paciente.id, creado: true };

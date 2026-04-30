@@ -33,9 +33,9 @@ export const AJUSTES_DEMO_ENTRIES: HelpEntry[] = [
     section: "ajustes-demo",
     question: "¿Qué datos precargados trae el paciente de ejemplo?",
     answer:
-      "El paciente demo viene con un conjunto realista de datos para que puedas explorar cada sección sin tener que rellenar nada. Incluye varias consultas pasadas y alguna próxima, un histórico de medidas antropométricas como peso e IMC, un plan de alimentación completo con comidas reparti­das a lo largo del día y registros de seguimiento diario. También tiene notas clínicas y archivos asociados para que compruebes cómo se visualizan los entregables. En conjunto simula un caso típico con el que podrás practicar flujos completos.",
+      "El paciente demo viene con un conjunto realista de datos para que puedas explorar cada sección sin tener que rellenar nada. Incluye varias consultas pasadas y alguna próxima, un histórico de medidas antropométricas como peso e IMC, un plan de alimentación completo con comidas reparti­das a lo largo del día, registros de seguimiento diario y pagos de ejemplo con diferentes estados (pagado y pendiente). También tiene notas clínicas y archivos asociados para que compruebes cómo se visualizan los entregables. En conjunto simula un caso típico con el que podrás practicar flujos completos.",
     related: ["ajd-1", "ajd-2", "ajd-5"],
-    keywords: ["datos", "precargados", "consultas", "medidas", "plan"],
+    keywords: ["datos", "precargados", "consultas", "medidas", "plan", "pagos"],
   },
   {
     id: "ajd-5",

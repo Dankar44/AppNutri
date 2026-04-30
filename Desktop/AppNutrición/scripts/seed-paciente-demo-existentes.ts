@@ -228,6 +228,7 @@ async function borrarDemoExistente(client: pg.PoolClient, dietistaId: string) {
     [dietistaId],
   );
   for (const { id } of res.rows) {
+    await client.query(`DELETE FROM pagos WHERE "pacienteId" = $1`, [id]);
     await client.query(`DELETE FROM pacientes WHERE id = $1`, [id]);
   }
   return res.rows.length;
@@ -802,6 +803,29 @@ async function crearDemoParaDietista(client: pg.PoolClient, dietistaId: string) 
       );
     } catch (err) {
       console.warn(`  ! No se pudo insertar entrada de diario: ${(err as Error).message}`);
+    }
+  }
+
+  // Pagos de ejemplo (3 registros: 1 pagado transferencia, 1 pagado Stripe, 1 pendiente)
+  const pagosDemo = [
+    { diasAtras: 60, concepto: "Consulta inicial — valoración y plan", importe: 45, estado: "PAGADO", metodoPago: "Transferencia", diasHastaPago: 2, notas: "Primera consulta. Incluye valoración completa y elaboración del plan nutricional." },
+    { diasAtras: 25, concepto: "Revisión mensual — seguimiento", importe: 30, estado: "PAGADO", metodoPago: "Stripe", diasHastaPago: 0, notas: "Revisión de evolución a los 30 días." },
+    { diasAtras: 3, concepto: "Próxima revisión mensual", importe: 30, estado: "PENDIENTE", metodoPago: null, diasHastaPago: null as number | null, notas: "Pendiente de cobro. Revisión programada." },
+  ];
+  for (const p of pagosDemo) {
+    const createdAt = new Date(now);
+    createdAt.setDate(now.getDate() - p.diasAtras);
+    const fechaPago = p.diasHastaPago !== null
+      ? (() => { const d = new Date(createdAt); d.setDate(d.getDate() + p.diasHastaPago); return d; })()
+      : null;
+    try {
+      await client.query(
+        `INSERT INTO pagos (id, "dietistaId", "pacienteId", concepto, importe, estado, "metodoPago", "fechaPago", notas, "createdAt", "updatedAt")
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10)`,
+        [cuid(), dietistaId, pacienteId, p.concepto, p.importe, p.estado, p.metodoPago, fechaPago, p.notas, createdAt],
+      );
+    } catch (err) {
+      console.warn(`  ! No se pudo insertar pago demo: ${(err as Error).message}`);
     }
   }
 

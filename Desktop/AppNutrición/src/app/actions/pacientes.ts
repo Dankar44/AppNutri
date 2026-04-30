@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
+import { crearPacienteDemoSiNoExiste } from "@/lib/paciente-demo";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { ObjetivoPaciente, Sexo } from "@/generated/prisma/client";
@@ -238,6 +239,15 @@ export async function eliminarPaciente(id: string) {
   });
   const esDemo = paciente?.nombre === "Paciente" && paciente?.apellidos === "Prueba";
 
+  // Borrar pagos ANTES de eliminar el paciente: el modelo Pago usa onDelete: SetNull,
+  // así que si borramos primero el paciente, los pagos quedan huérfanos (pacienteId = NULL).
+  if (esDemo) {
+    await prisma.$queryRawUnsafe(
+      `DELETE FROM pagos WHERE "pacienteId" = $1 AND "dietistaId" = $2`,
+      id, dietista.id,
+    );
+  }
+
   await prisma.paciente.delete({
     where: { id, dietistaId: dietista.id },
   });
@@ -251,12 +261,12 @@ export async function eliminarPaciente(id: string) {
 
   revalidatePath("/pacientes");
   revalidatePath("/dashboard");
+  revalidatePath("/pagos");
 }
 
 /**
  * Restaura el paciente demo que el nutri había eliminado previamente.
- * Limpia la flag `demoEliminado` para que la siguiente llamada a
- * `crearPacienteDemoSiNoExiste` lo regenere automáticamente.
+ * Resetea la flag y recrea el paciente con todos sus datos de inmediato.
  */
 export async function restaurarPacienteDemo() {
   const dietista = await getCurrentDietista();
@@ -267,8 +277,11 @@ export async function restaurarPacienteDemo() {
     dietista.id,
   );
 
+  await crearPacienteDemoSiNoExiste(prisma, dietista.id);
+
   revalidatePath("/pacientes");
   revalidatePath("/dashboard");
+  revalidatePath("/pagos");
 }
 
 /** Devuelve true si el nutri borró el paciente demo y aún no lo ha restaurado. */
