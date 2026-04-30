@@ -55,6 +55,25 @@ function SectionHeader({
   );
 }
 
+function googleErrorMessage(reason?: string): string {
+  switch (reason) {
+    case "no_configurado":
+      return "Google no está configurado en este entorno.";
+    case "state_mismatch":
+      return "La conexión con Google se canceló o expiró. Inténtalo de nuevo.";
+    case "missing_params":
+      return "No se recibió la respuesta de Google. Inténtalo de nuevo.";
+    case "no_tokens":
+      return "Google no concedió los permisos necesarios. Asegúrate de aceptar todos los permisos.";
+    case "exchange_failed":
+      return "Error al conectar con Google. Inténtalo de nuevo en unos minutos.";
+    case "access_denied":
+      return "Se denegó el acceso a Google. Inténtalo de nuevo y acepta los permisos.";
+    default:
+      return "No se pudo conectar con Google. Inténtalo de nuevo.";
+  }
+}
+
 export default async function AjustesPage({
   searchParams,
 }: {
@@ -77,10 +96,7 @@ export default async function AjustesPage({
       : sp.google === "error"
         ? {
             type: "error" as const,
-            message:
-              sp.reason === "no_configurado"
-                ? "Google aún no está configurado en este entorno. Añade GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET al .env.local."
-                : `No se pudo conectar Google (${sp.reason || "error"}).`,
+            message: googleErrorMessage(sp.reason),
           }
         : null;
 

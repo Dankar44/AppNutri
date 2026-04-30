@@ -65,18 +65,26 @@ export async function desconectarGoogleNutri(options: {
       where: { dietistaId: dietista.id, googleEventId: { not: null } },
       select: { id: true, googleEventId: true },
     });
+    const borrados: string[] = [];
     for (const c of citas) {
       if (!c.googleEventId) continue;
       try {
         await deleteGoogleEvent(integracion, "nutri", c.googleEventId);
+        borrados.push(c.id);
       } catch (e) {
         console.warn(`[google] borrar evento ${c.googleEventId} falló:`, e);
       }
     }
-    await prisma.cita.updateMany({
-      where: { dietistaId: dietista.id },
-      data: { googleEventId: null, googleMeetLink: null },
-    });
+    if (borrados.length > 0) {
+      await prisma.cita.updateMany({
+        where: { id: { in: borrados } },
+        data: { googleEventId: null, googleMeetLink: null },
+      });
+    }
+    const fallidos = citas.length - borrados.length;
+    if (fallidos > 0) {
+      console.error(`[google] ${fallidos} eventos no se pudieron borrar de Google Calendar`);
+    }
   }
 
   await prisma.googleIntegracion.delete({

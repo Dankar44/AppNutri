@@ -5,6 +5,25 @@ import { CitasPortalClient } from "./citas-client";
 import { IntegracionesCardPaciente } from "./integraciones-card";
 import { PageHeader } from "@/components/page-header";
 
+function googleErrorMessagePaciente(reason?: string): string {
+  switch (reason) {
+    case "no_configurado":
+      return "Google aún no está disponible. Tu nutricionista debe terminar la configuración.";
+    case "state_mismatch":
+      return "La conexión con Google se canceló o expiró. Inténtalo de nuevo.";
+    case "missing_params":
+      return "No se recibió la respuesta de Google. Inténtalo de nuevo.";
+    case "no_tokens":
+      return "Google no concedió los permisos necesarios. Asegúrate de aceptar todos los permisos.";
+    case "exchange_failed":
+      return "Error al conectar con Google. Inténtalo de nuevo en unos minutos.";
+    case "access_denied":
+      return "Se denegó el acceso a Google. Inténtalo de nuevo y acepta los permisos.";
+    default:
+      return "No se pudo conectar con Google. Inténtalo de nuevo.";
+  }
+}
+
 export default async function CitasPortalPage({
   searchParams,
 }: {
@@ -22,10 +41,7 @@ export default async function CitasPortalPage({
       : sp.google === "error"
         ? {
             type: "error" as const,
-            message:
-              sp.reason === "no_configurado"
-                ? "Google aún no está disponible. Tu nutricionista debe terminar la configuración."
-                : `No se pudo conectar Google (${sp.reason || "error"}).`,
+            message: googleErrorMessagePaciente(sp.reason),
           }
         : null;
 
