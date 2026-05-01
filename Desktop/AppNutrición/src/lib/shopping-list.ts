@@ -8,7 +8,7 @@ const CATEGORIA_LABELS: Record<string, string> = {
 
 interface AlimentoEnPlan {
   cantidad: number;
-  alimento: { id: string; nombre: string; categoria: string; porcion: number } | null;
+  alimento: { id: string; nombre: string; categoria: string; porcion: number; enlaceProducto?: string | null } | null;
   receta: { id: string; nombre: string } | null;
 }
 
@@ -24,6 +24,7 @@ export interface ItemCompra {
   nombre: string;
   cantidadTotal: number;
   categoria: string;
+  enlaceProducto?: string | null;
 }
 
 export interface CategoriaCompra {
@@ -48,6 +49,7 @@ export function generarListaCompra(dias: DiaEnPlan[]): CategoriaCompra[] {
               nombre: a.alimento.nombre,
               cantidadTotal: a.cantidad,
               categoria: a.alimento.categoria,
+              enlaceProducto: a.alimento.enlaceProducto || null,
             });
           }
         } else if (a.receta) {

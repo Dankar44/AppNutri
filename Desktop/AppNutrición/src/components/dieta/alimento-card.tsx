@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2, GripVertical, ListFilter } from "lucide-react";
+import { Trash2, GripVertical, ListFilter, ExternalLink } from "lucide-react";
 import { useState, useRef } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,7 @@ interface AlimentoCardProps {
   grasas: number;
   fibra?: number;
   esReceta?: boolean;
+  enlaceProducto?: string | null;
   readOnly?: boolean;
   onRemove: (id: string) => void;
   onCantidadChange: (id: string, cantidad: number) => void;
@@ -31,6 +32,7 @@ export function AlimentoCard({
   grasas,
   fibra,
   esReceta,
+  enlaceProducto,
   readOnly = false,
   onRemove,
   onCantidadChange,
@@ -70,6 +72,11 @@ export function AlimentoCard({
             {unidadLabel} de
           </span>
           <span className="truncate font-medium text-foreground">{nombre}</span>
+          {enlaceProducto && (
+            <a href={enlaceProducto} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="shrink-0">
+              <ExternalLink className="w-3.5 h-3.5 text-primary/60 hover:text-primary" />
+            </a>
+          )}
         </div>
       </div>
     );
@@ -110,6 +117,11 @@ export function AlimentoCard({
           {unidadLabel} de
         </span>
         <span className="truncate font-medium text-foreground">{nombre}</span>
+        {enlaceProducto && (
+          <a href={enlaceProducto} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="shrink-0">
+            <ExternalLink className="w-3.5 h-3.5 text-primary/60 hover:text-primary" />
+          </a>
+        )}
       </div>
 
       {/* Equivalente button */}

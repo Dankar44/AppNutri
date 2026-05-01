@@ -38,6 +38,7 @@ export default async function EditarAlimentoPage({ params }: Props) {
           fibra: alimento.fibra,
           porcion: alimento.porcion,
           unidad: alimento.unidad,
+          enlaceProducto: alimento.enlaceProducto ?? "",
         }}
       />
     </div>

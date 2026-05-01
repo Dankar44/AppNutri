@@ -61,7 +61,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     question: "¿Cómo creo un nuevo alimento?",
     answer:
       "Pulsa el botón \"Nuevo alimento\" en la parte superior derecha del listado. Se abre un formulario con los campos básicos: nombre, categoría, unidad base y los macros principales (calorías, proteínas, hidratos, grasas). Rellena al menos los obligatorios y pulsa \"Guardar\". El alimento queda registrado como propio de tu cuenta y ya está disponible para usarlo en dietas y recetas. Si quieres, después puedes editarlo para añadir micronutrientes.",
-    related: ["al-8", "al-9", "al-12"],
+    related: ["al-8", "al-9", "al-12", "al-71"],
     keywords: ["crear", "nuevo", "alta", "alimento"],
   },
   {
@@ -70,7 +70,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     question: "¿Qué campos son obligatorios al crear un alimento?",
     answer:
       "Los campos obligatorios son el nombre del alimento y los cuatro macros principales: calorías (kcal), proteínas (g), carbohidratos (g) y grasas (g), todos referidos a la unidad base (normalmente 100 g). Sin estos datos no puedes guardar porque el plan no podría calcular totales. El resto (fibra, micros, categoría, marca) son opcionales. Si intentas guardar con algún obligatorio vacío, el formulario te marcará los errores en rojo.",
-    related: ["al-7", "al-9", "al-58"],
+    related: ["al-7", "al-9", "al-58", "al-71"],
     keywords: ["obligatorio", "requerido", "campos", "validación"],
   },
   {
@@ -630,5 +630,41 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
       "Al añadir un ingrediente a una receta en `/recetas`, Annonia abre un selector que consulta tu base `/alimentos` con el mismo buscador y filtros: insensible a acentos, con sugerencias en tiempo real y filtros por categoría. Seleccionas el alimento, indicas la cantidad y se integra en la receta con sus macros proporcionales. Si no encuentras un ingrediente, puedes crearlo en ese momento desde el propio selector sin salir de la receta.",
     related: ["al-37", "al-4", "al-56"],
     keywords: ["receta", "ingrediente", "selector", "buscar"],
+  },
+  {
+    id: "al-71",
+    section: "alimentos",
+    question: "¿Cómo añado un enlace al producto de un alimento?",
+    answer:
+      "Al crear o editar un alimento propio, encontrarás un campo opcional llamado \"Enlace al producto\" debajo de la unidad y la porción. Pega la URL de la página del producto en la web de la tienda o supermercado (por ejemplo, https://www.mercadona.es/...). Solo se admiten enlaces con protocolo http o https. Al guardar, la URL se valida automáticamente y queda vinculada al alimento. Si dejas el campo vacío, no se muestra ningún enlace.",
+    related: ["al-7", "al-72", "al-74"],
+    keywords: ["enlace", "link", "producto", "url", "tienda"],
+  },
+  {
+    id: "al-72",
+    section: "alimentos",
+    question: "¿Dónde ve el paciente el enlace al producto?",
+    answer:
+      "El enlace aparece en todos los lugares donde se muestra el alimento: en el plan de alimentación del portal del paciente (icono de enlace junto al nombre), en la lista de la compra (nombre clicable que lleva al producto), en el PDF imprimible (nombre subrayado con link) y en la vista compartida por token. Al pulsar, se abre una nueva pestaña del navegador con la web del producto. Así el paciente sabe exactamente qué comprar sin necesitar fotos.",
+    related: ["al-71", "al-73", "al-66"],
+    keywords: ["paciente", "ver", "enlace", "portal", "lista compra"],
+  },
+  {
+    id: "al-73",
+    section: "alimentos",
+    question: "¿Puedo poner un enlace en un alimento importado o global?",
+    answer:
+      "Solo puedes añadir enlaces a alimentos propios de tu cuenta. Los alimentos globales de Annonia no se pueden editar, así que no admiten enlace. Si quieres vincular un producto a un global, crea una copia propia con \"Copiar desde otro alimento\" y añádele la URL. Los alimentos importados de Open Food Facts se guardan como propios, así que sí puedes editarlos después para añadirles el enlace a la tienda que prefieras.",
+    related: ["al-71", "al-3", "al-14"],
+    keywords: ["enlace", "global", "importado", "propio", "copiar"],
+  },
+  {
+    id: "al-74",
+    section: "alimentos",
+    question: "¿Qué formatos de enlace acepta Annonia?",
+    answer:
+      "Solo se aceptan URLs con protocolo http:// o https://. No se admiten protocolos como ftp://, javascript: ni data: por seguridad. La URL debe ser válida según el estándar web y puede tener hasta 2048 caracteres. Ejemplos válidos: https://www.mercadona.es/producto/123 o https://tienda.ejemplo.com/avena. Si la URL no cumple el formato, el sistema muestra un error al guardar. Puedes borrar la URL en cualquier momento dejando el campo vacío.",
+    related: ["al-71", "al-32", "al-8"],
+    keywords: ["formato", "url", "protocolo", "https", "validación"],
   },
 ];

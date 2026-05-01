@@ -290,6 +290,7 @@ model Alimento {
   unidad          UnidadMedida      @default(GRAMOS)
   origen          OrigenAlimento    @default(PERSONALIZADO)
   codigoBarras    String?
+  enlaceProducto  String?
   dietistaId      String?
   dietista        Dietista?         @relation(fields: [dietistaId], references: [id], onDelete: Cascade)
   createdAt       DateTime          @default(now())

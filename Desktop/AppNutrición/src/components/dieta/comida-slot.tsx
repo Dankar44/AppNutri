@@ -38,6 +38,7 @@ interface AlimentoEnSlot {
   grasas: number;
   fibra?: number;
   esReceta?: boolean;
+  enlaceProducto?: string | null;
 }
 
 interface ComidaSlotProps {
@@ -181,6 +182,7 @@ export function ComidaSlot({
                     grasas={a.grasas}
                     fibra={a.fibra}
                     esReceta={a.esReceta}
+                    enlaceProducto={a.enlaceProducto}
                     readOnly={readOnly}
                     onRemove={onRemove}
                     onCantidadChange={onCantidadChange}

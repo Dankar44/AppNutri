@@ -58,6 +58,7 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
       fibra: parseFloat(form.get("fibra") as string) || 0,
       porcion: parseFloat(form.get("porcion") as string) || 100,
       unidad: form.get("unidad") as AlimentoFormData["unidad"],
+      enlaceProducto: (form.get("enlaceProducto") as string)?.trim() || null,
     };
 
     try {
@@ -130,6 +131,20 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
               defaultValue={defaultValues?.porcion || 100}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium mb-1">Enlace al producto</label>
+            <input
+              name="enlaceProducto"
+              type="url"
+              maxLength={2048}
+              placeholder="https://www.ejemplo.com/producto"
+              defaultValue={defaultValues?.enlaceProducto || ""}
+              className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              URL del producto en la web de la tienda o supermercado (opcional)
+            </p>
           </div>
         </div>
       </section>

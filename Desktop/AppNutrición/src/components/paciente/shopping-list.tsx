@@ -31,6 +31,7 @@ import {
   Wheat,
   Wine,
   X,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -178,7 +179,7 @@ function metaFor(cat: string) {
 // ─── Tipos locales ───
 
 interface LocalItem extends ItemCompra {
-  id: string; // key único estable
+  id: string;
   custom?: boolean;
 }
 
@@ -292,6 +293,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
           nombre: item.nombre,
           categoria: cat.categoria,
           cantidadTotal: item.cantidadTotal,
+          enlaceProducto: item.enlaceProducto || null,
         });
       }
     }
@@ -551,7 +553,8 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
       lines.push(`📌 ${metaFor(cat).label}`);
       for (const it of items) {
         const check = checkedIds.has(it.id) ? "✅" : "▫️";
-        lines.push(`  ${check} ${it.nombre} — ${formatearCantidad(it.cantidadTotal)}`);
+        const urlSuffix = it.enlaceProducto ? ` → ${it.enlaceProducto}` : "";
+        lines.push(`  ${check} ${it.nombre} — ${formatearCantidad(it.cantidadTotal)}${urlSuffix}`);
       }
       lines.push("");
     }
@@ -687,7 +690,15 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
                       <Icon className={cn("w-5 h-5", meta.color)} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-lg font-semibold truncate">{it.nombre}</p>
+                      <p className="text-lg font-semibold truncate">
+                        {it.enlaceProducto ? (
+                          <a href={it.enlaceProducto} target="_blank" rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1.5 hover:text-primary hover:underline">
+                            {it.nombre}
+                            <ExternalLink className="w-4 h-4 shrink-0 text-muted-foreground/60" />
+                          </a>
+                        ) : it.nombre}
+                      </p>
                       <p className="text-sm text-muted-foreground">{meta.label}</p>
                     </div>
                     <span className="text-lg font-bold tabular-nums">
@@ -1252,7 +1263,20 @@ function ItemRow({
             checked && "line-through text-muted-foreground"
           )}
         >
-          {item.nombre}
+          {item.enlaceProducto ? (
+            <a
+              href={item.enlaceProducto}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1 hover:text-primary hover:underline"
+            >
+              {item.nombre}
+              <ExternalLink className="w-3 h-3 shrink-0 text-muted-foreground/60" />
+            </a>
+          ) : (
+            item.nombre
+          )}
           {item.custom && (
             <span className="ml-2 text-[10px] uppercase tracking-wider text-primary font-semibold">
               Añadido

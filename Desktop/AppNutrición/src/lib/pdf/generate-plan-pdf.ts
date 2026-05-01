@@ -25,6 +25,7 @@ interface AlimentoEnComida {
   alimento: {
     id: string; nombre: string; categoria: string;
     calorias: number; proteinas: number; carbohidratos: number; grasas: number; fibra: number; porcion: number;
+    enlaceProducto?: string | null;
   } | null;
   receta: {
     id: string; nombre: string; descripcion?: string | null; instrucciones?: string | null;
@@ -112,6 +113,9 @@ const CSS = `
   .shop-item:last-child { border-radius: 0 0 4px 4px; }
   .shop-check { width: 10px; height: 10px; border: 1.5px solid #bcc9c0; border-radius: 2px; flex-shrink: 0; }
 
+  /* Food links */
+  .food-link { color: #6b9e80; text-decoration: underline; text-underline-offset: 2px; }
+
   /* Recommendations */
   .reco-text { font-size: 11px; line-height: 1.6; white-space: pre-line; color: #3d5a48; }
 
@@ -123,6 +127,18 @@ const CSS = `
     .header { margin: -20px -30px 16px; padding: 10px 30px; }
   }
 `;
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function getItemNameHtml(a: AlimentoEnComida): string {
+  const name = a.alimento?.nombre || a.receta?.nombre || "?";
+  if (a.alimento?.enlaceProducto) {
+    return `<a href="${escapeHtml(a.alimento.enlaceProducto)}" target="_blank" class="food-link">${escapeHtml(name)}</a>`;
+  }
+  return escapeHtml(name);
+}
 
 function getMacrosForItem(a: AlimentoEnComida) {
   if (a.alimento) {
@@ -189,16 +205,17 @@ export function generatePlanPDF(data: PlanPDFData): string {
 
       const rows = comida.alimentos.map((a) => {
         const name = getItemName(a);
+        const nameHtml = getItemNameHtml(a);
         const qty = `${Math.round(a.cantidad)}g`;
-        let detail = `${name}: ${qty}`;
+        let detail = `${nameHtml}: ${qty}`;
         if (a.receta?.ingredientes && a.receta.ingredientes.length > 0) {
-          const ingList = a.receta.ingredientes.map((i) => `${i.alimento.nombre}: ${Math.round(i.cantidad)}g`).join(", ");
+          const ingList = a.receta.ingredientes.map((i) => `${escapeHtml(i.alimento.nombre)}: ${Math.round(i.cantidad)}g`).join(", ");
           detail = `<strong>INGREDIENTES:</strong> ${ingList}`;
           if (a.receta.instrucciones) {
-            detail += `<br><strong>RECETA:</strong> ${a.receta.instrucciones.replace(/\n/g, "<br>")}`;
+            detail += `<br><strong>RECETA:</strong> ${escapeHtml(a.receta.instrucciones).replace(/\n/g, "<br>")}`;
           }
         }
-        return { name, qty, detail };
+        return { name, nameHtml, qty, detail };
       });
 
       const firstRow = rows[0];
@@ -210,7 +227,7 @@ export function generatePlanPDF(data: PlanPDFData): string {
       html += `<td class="ingredientes-cell">${firstRow.detail}</td></tr>`;
 
       for (let i = 1; i < rows.length; i++) {
-        html += `<tr><td class="plato-cell">${rows[i].name}</td><td class="ingredientes-cell">${rows[i].detail}</td></tr>`;
+        html += `<tr><td class="plato-cell">${rows[i].nameHtml}</td><td class="ingredientes-cell">${rows[i].detail}</td></tr>`;
       }
     }
 
@@ -235,7 +252,10 @@ export function generatePlanPDF(data: PlanPDFData): string {
     for (const cat of listaCompra) {
       html += `<div class="shop-cat"><div class="shop-cat-title">${cat.label}</div>`;
       for (const item of cat.items) {
-        html += `<div class="shop-item"><div class="shop-check"></div>${Math.round(item.cantidadTotal)}g ${item.nombre}</div>`;
+        const linkHtml = item.enlaceProducto
+          ? ` <a href="${escapeHtml(item.enlaceProducto)}" target="_blank" class="food-link" style="font-size:9px;">(ver)</a>`
+          : "";
+        html += `<div class="shop-item"><div class="shop-check"></div>${Math.round(item.cantidadTotal)}g ${escapeHtml(item.nombre)}${linkHtml}</div>`;
       }
       html += `</div>`;
     }

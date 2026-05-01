@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { ArrowLeft, ExternalLink, Pencil } from "lucide-react";
 import { getAlimento } from "@/app/actions/alimentos";
 import { prisma } from "@/lib/prisma";
 import { AlimentoActions } from "./alimento-actions";
@@ -70,6 +70,18 @@ export default async function AlimentoDetailPage({ params }: Props) {
               >
                 {alimento.origen === "API" ? "Importado" : "Personalizado"}
               </span>
+              {alimento.enlaceProducto && (
+                <a
+                  href={alimento.enlaceProducto}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={(() => { try { return new URL(alimento.enlaceProducto).hostname; } catch { return undefined; } })()}
+                  className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  Ver producto
+                </a>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2">

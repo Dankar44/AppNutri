@@ -60,9 +60,20 @@ La lista de la compra se genera automáticamente pero a veces las unidades son i
 - La lista de la compra debe ser **editable**: el nutricionista o paciente puede cambiar cantidades y unidades antes de exportar/compartir.
 - **Al crear un alimento propio**, añadir un campo: "¿Cómo se añade a la lista de la compra?" con opciones: gramos, unidades, mililitros, etc. Así no hay que corregirlo manualmente cada vez. Solo aplica a alimentos propios del nutricionista (los de la base de datos general ya están bien).
 
-### 15. Link al alimento (alimentos propios)
+### ~~15. Link al alimento (alimentos propios)~~ ✅
 
-Al crear un alimento propio, el nutricionista puede opcionalmente añadir un **enlace (URL)** al producto. Cuando el paciente ve el alimento en su plan/lista de la compra, puede hacer clic en el enlace para ver el producto exacto en la web del supermercado o tienda. Esto evita tener que cargar imágenes (que pesan mucho) y el paciente puede ver las fotos directamente en la página del producto.
+Completado. Campo `enlaceProducto` en schema, validación segura de URLs (solo http/https), formulario de alta/edición, icono de link en editor de dieta, portal paciente, lista de la compra (UI + texto), PDF con links clicables, vista compartida, y 4 entradas nuevas en help-kb.
+
+### 18. Probar todas las opciones de Google en producción
+
+Una vez las inscripciones estén abiertas, probar todos los flujos de Google de principio a fin:
+
+- **Nutri — Google Calendar:** conectar, sincronizar cita, desconectar con "dejar", desconectar con "borrar", toggle sincronización on/off.
+- **Nutri — Vincular cuenta Google:** vincular desde Ajustes, cerrar sesión, volver a entrar con "Continuar con Google".
+- **Nutri — Sign in con Google:** registrarse directamente con Google (cuando esté implementado).
+- **Paciente — Google Calendar:** conectar, ver cita sincronizada, desconectar.
+- **Cancelar flujo OAuth:** empezar a conectar y cancelar a medias → debe volver sin error roto.
+- **Verificar en móvil** (Safari iOS, Chrome Android).
 
 ### 17. Sign in with Google (Supabase)
 

@@ -74,6 +74,7 @@ export type PlanVisualItem = {
     grasas: number;
     fibra: number;
     categoria?: string;
+    enlaceProducto?: string | null;
   } & MicronutrientesOpcionales) | null;
   receta: {
     id: string;

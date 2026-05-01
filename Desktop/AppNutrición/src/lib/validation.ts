@@ -110,6 +110,25 @@ export function sanitizeSearch(value: unknown): string {
   return sanitizeString(value, 100);
 }
 
+// --- Validación de URL ---
+
+export function validateUrl(value: unknown): string | null {
+  if (value === null || value === undefined || value === "") return null;
+  const sanitized = sanitizeString(value, 2048);
+  if (!sanitized) return null;
+  const trimmed = sanitized.trim();
+  if (!trimmed) return null;
+  const lower = trimmed.toLowerCase();
+  if (lower.startsWith("javascript:") || lower.startsWith("data:")) return null;
+  try {
+    const url = new URL(trimmed);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    return trimmed;
+  } catch {
+    return null;
+  }
+}
+
 // --- Constantes de límites ---
 
 export const LIMITS = {
@@ -134,6 +153,7 @@ export const LIMITS = {
   MACROS_MAX: 2000,
   PORCION_MAX: 10000,
   CANTIDAD_MAX: 99999,
+  URL_MAX: 2048,
   PESO_MAX: 500,
   ALTURA_MAX: 300,
   PERIMETRO_MAX: 300,

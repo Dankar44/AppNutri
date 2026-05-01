@@ -19,7 +19,7 @@ export default async function SharedPlanPage({ params }: Props) {
       tipo: comida.tipo,
       alimentos: comida.alimentos.map((a) => ({
         cantidad: a.cantidad,
-        alimento: a.alimento ? { nombre: a.alimento.nombre, calorias: a.alimento.calorias, proteinas: a.alimento.proteinas, carbohidratos: a.alimento.carbohidratos, grasas: a.alimento.grasas } : null,
+        alimento: a.alimento ? { nombre: a.alimento.nombre, calorias: a.alimento.calorias, proteinas: a.alimento.proteinas, carbohidratos: a.alimento.carbohidratos, grasas: a.alimento.grasas, enlaceProducto: a.alimento.enlaceProducto } : null,
         receta: a.receta ? {
           nombre: a.receta.nombre, descripcion: a.receta.descripcion, instrucciones: a.receta.instrucciones, porciones: a.receta.porciones,
           calorias: a.receta.calorias, proteinas: a.receta.proteinas, carbohidratos: a.receta.carbohidratos, grasas: a.receta.grasas,

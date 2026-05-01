@@ -49,6 +49,7 @@ interface AlimentoEnComidaData {
     carbohidratos: number;
     grasas: number;
     fibra?: number;
+    enlaceProducto?: string | null;
   } | null;
   receta: {
     id: string;
@@ -147,6 +148,7 @@ export function PlanEditor({
               grasas: item?.grasas || 0,
               fibra: item?.fibra || 0,
               esReceta: !!a.receta,
+              enlaceProducto: a.alimento?.enlaceProducto || null,
             };
           }),
         })),

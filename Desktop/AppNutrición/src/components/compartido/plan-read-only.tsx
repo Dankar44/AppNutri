@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { MacroBadges } from "@/components/macro-badge";
 import { calcularMacrosPorcion, sumarMacros } from "@/lib/macros";
-import { Printer, CookingPot, ChevronDown, ChevronUp } from "lucide-react";
+import { Printer, CookingPot, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const DIA_LABELS: Record<string, string> = {
@@ -30,7 +30,7 @@ interface RecetaDetalle {
 
 interface AlimentoData {
   cantidad: number;
-  alimento: { nombre: string; calorias: number; proteinas: number; carbohidratos: number; grasas: number } | null;
+  alimento: { nombre: string; calorias: number; proteinas: number; carbohidratos: number; grasas: number; enlaceProducto?: string | null } | null;
   receta: RecetaDetalle | null;
 }
 
@@ -184,7 +184,14 @@ export function PlanReadOnly({ nombre, pacienteNombre, dias, showPrint = true }:
                           }
                           return (
                             <div key={ai} className="flex items-center justify-between text-sm">
-                              <span>{a.alimento?.nombre || "Sin nombre"}</span>
+                              <span className="flex items-center gap-1">
+                                {a.alimento?.nombre || "Sin nombre"}
+                                {a.alimento?.enlaceProducto && (
+                                  <a href={a.alimento.enlaceProducto} target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink className="w-3 h-3 text-primary/60 hover:text-primary" />
+                                  </a>
+                                )}
+                              </span>
                               <span className="text-muted-foreground text-xs">{a.cantidad}g</span>
                             </div>
                           );

@@ -11,7 +11,7 @@ import {
 } from "@/generated/prisma/client";
 import { buscarAlimentosOFF, type AlimentoAPIResult } from "@/lib/openfoodfacts";
 import { normalizarNombreAlimento, redondearMacros } from "@/lib/alimento-utils";
-import { sanitizeString, validateNumber, validateEnum, sanitizeSearch, LIMITS } from "@/lib/validation";
+import { sanitizeString, validateNumber, validateEnum, validateUrl, sanitizeSearch, LIMITS } from "@/lib/validation";
 
 export interface AlimentoFormData {
   nombre: string;
@@ -23,6 +23,7 @@ export interface AlimentoFormData {
   fibra: number;
   porcion: number;
   unidad: UnidadMedida;
+  enlaceProducto?: string | null;
 }
 
 export async function crearAlimento(data: AlimentoFormData) {
@@ -44,6 +45,9 @@ export async function crearAlimento(data: AlimentoFormData) {
   const unidadValida = validateEnum(data.unidad, Object.values(UnidadMedida));
   if (!unidadValida) throw new Error("Unidad no válida");
   data.unidad = unidadValida;
+  const enlaceValidado = validateUrl(data.enlaceProducto);
+  if (data.enlaceProducto && data.enlaceProducto.trim() && !enlaceValidado)
+    throw new Error("El enlace no es una URL válida");
 
   const nombreNorm = normalizarNombreAlimento(nombreSanitizado);
 
@@ -68,6 +72,7 @@ export async function crearAlimento(data: AlimentoFormData) {
       fibra: redondearMacros(data.fibra),
       porcion: data.porcion,
       unidad: data.unidad,
+      enlaceProducto: enlaceValidado,
       origen: "PERSONALIZADO",
     },
   });
@@ -95,6 +100,9 @@ export async function actualizarAlimento(id: string, data: AlimentoFormData) {
   const unidadValida = validateEnum(data.unidad, Object.values(UnidadMedida));
   if (!unidadValida) throw new Error("Unidad no válida");
   data.unidad = unidadValida;
+  const enlaceValidado = validateUrl(data.enlaceProducto);
+  if (data.enlaceProducto && data.enlaceProducto.trim() && !enlaceValidado)
+    throw new Error("El enlace no es una URL válida");
 
   await prisma.alimento.update({
     where: { id, dietistaId: dietista.id },
@@ -108,6 +116,7 @@ export async function actualizarAlimento(id: string, data: AlimentoFormData) {
       fibra: redondearMacros(data.fibra),
       porcion: data.porcion,
       unidad: data.unidad,
+      enlaceProducto: enlaceValidado,
     },
   });
 
