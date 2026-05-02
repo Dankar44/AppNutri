@@ -6,7 +6,7 @@ interface DietaDia {
   dia: string;
   comidas: {
     tipo: string;
-    alimentos: { nombre: string; cantidad: number }[];
+    alimentos: { nombre: string; cantidad: number; enlaceProducto?: string | null }[];
   }[];
 }
 
@@ -182,7 +182,10 @@ export function GenerarPDFButtons({ paciente, medidas, consultas, dieta }: Props
         html += `<p style="margin-bottom:2px;"><strong>${TIPO_COMIDA_LABELS[comida.tipo] || comida.tipo}</strong></p>`;
         html += `<table><tr><th>Alimento</th><th>Cantidad</th></tr>`;
         for (const a of comida.alimentos) {
-          html += `<tr><td>${a.nombre}</td><td>${a.cantidad}g</td></tr>`;
+          const nombreHtml = a.enlaceProducto
+            ? `<a href="${a.enlaceProducto}" target="_blank" style="color:#6b9e80;text-decoration:underline;">${a.nombre}</a>`
+            : a.nombre;
+          html += `<tr><td>${nombreHtml}</td><td>${a.cantidad}g</td></tr>`;
         }
         html += `</table>`;
       }

@@ -79,7 +79,7 @@ export default async function AlimentosPage({ searchParams }: Props) {
       </div>
 
       {alimentos.length === 0 ? (
-        <div className="bg-card rounded-xl border border-border p-12 text-center">
+        <div data-tour="food-list" className="bg-card rounded-xl border border-border p-12 text-center">
           <Apple className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="font-medium text-lg mb-1">Sin alimentos</h3>
           <p className="text-muted-foreground mb-4">
@@ -98,12 +98,14 @@ export default async function AlimentosPage({ searchParams }: Props) {
           )}
         </div>
       ) : (
-        <AlimentosTable
-          initial={alimentos}
-          initialCursor={nextCursor}
-          busqueda={busqueda}
-          categoria={categoria}
-        />
+        <div data-tour="food-list">
+          <AlimentosTable
+            initial={alimentos}
+            initialCursor={nextCursor}
+            busqueda={busqueda}
+            categoria={categoria}
+          />
+        </div>
       )}
     </div>
   );

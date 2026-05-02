@@ -44,6 +44,7 @@ export default async function PacientesPage({ searchParams }: Props) {
         <PacientesFilter busquedaInicial={busqueda} activosInicial={soloActivos} vista={vista} />
       </div>
 
+      <div data-tour="patient-list">
       {pacientes.length === 0 ? (
         <div className="bg-card rounded-xl border border-border p-12 text-center">
           <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
@@ -163,6 +164,7 @@ export default async function PacientesPage({ searchParams }: Props) {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

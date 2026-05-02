@@ -49,7 +49,7 @@ export default async function ReportesPage() {
       />
 
       {/* Resumen del mes */}
-      <section className="mb-8">
+      <section data-tour="reports-kpis" className="mb-8">
         <h2 className="text-lg font-semibold mb-4">Resumen del mes</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {kpisMes.map((kpi) => (
@@ -103,7 +103,7 @@ export default async function ReportesPage() {
       </div>
 
       {/* Exportar PDF por paciente */}
-      <section className="bg-card rounded-xl border border-border p-6">
+      <section data-tour="patient-reports" className="bg-card rounded-xl border border-border p-6">
         <h2 className="text-lg font-semibold mb-4">Exportar informes por paciente</h2>
         <div className="space-y-2">
           {pacientesRecientes.map((p) => (

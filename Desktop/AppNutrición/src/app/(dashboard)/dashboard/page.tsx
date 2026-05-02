@@ -139,7 +139,7 @@ export default async function DashboardPage() {
         </section>
 
         {/* FILA 2 - DER: Accesos rápidos 2x2 */}
-        <section className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col min-w-0 order-4">
+        <section data-tour="dashboard-quick-access" className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col min-w-0 order-4">
           <div className="px-5 py-4 border-b border-border shrink-0">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -185,7 +185,7 @@ export default async function DashboardPage() {
         </section>
 
         {/* FILA 1 - IZQ: Próxima consulta */}
-        <section className="lg:col-span-2 bg-card rounded-2xl border border-border overflow-hidden flex flex-col min-w-0 order-1">
+        <section data-tour="dashboard-proxima-cita" className="lg:col-span-2 bg-card rounded-2xl border border-border overflow-hidden flex flex-col min-w-0 order-1">
           <div className="px-5 py-4 border-b border-border flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -302,7 +302,7 @@ export default async function DashboardPage() {
         </section>
 
         {/* FILA 1 - DER: Última notificación */}
-        <section className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col min-w-0 order-2">
+        <section data-tour="dashboard-notificacion" className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col min-w-0 order-2">
           <div className="px-5 py-4 border-b border-border flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">

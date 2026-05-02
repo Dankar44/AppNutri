@@ -64,7 +64,7 @@ export default async function PatientEvolucionPage() {
       {data.length === 0 ? (
         <EmptyState />
       ) : (
-        <div className="space-y-5">
+        <div data-tour="evolution-charts" className="space-y-5">
           <div className="grid gap-5 lg:grid-cols-2">
             {hasPeso && (
               <EvolucionCard

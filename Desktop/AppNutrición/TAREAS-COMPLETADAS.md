@@ -59,6 +59,10 @@ Google Calendar, Meet y Sign in with Google configurados en producción (annonia
 
 Campo `enlaceProducto` en schema, validación segura de URLs (solo http/https), formulario de alta/edición, icono de link en editor de dieta, portal paciente, lista de la compra (UI + texto), PDF con links clicables, vista compartida, y 4 entradas nuevas en help-kb.
 
+### #17. Sign in with Google (Supabase)
+
+Supabase Google provider configurado (Client ID, Client Secret, Callback URL). Botón "Continuar con Google" funcional en login. Vincular cuenta Google desde Ajustes con `GoogleLoginCard` y `linkIdentity()`. Los edge cases pendientes (usuario Google sin cuenta dietista, flujo de registro con Google) se verificarán en #18 (testing Google en producción).
+
 ### Vincular cuenta de Google desde Ajustes
 
 Nuevo componente `GoogleLoginCard` en la sección Integraciones de Ajustes. Permite vincular la cuenta de Google para iniciar sesión sin contraseña usando `supabase.auth.linkIdentity()`. Muestra el email vinculado cuando ya está conectado. Callback mejorado para manejar errores del flujo de linking sin redirigir a `/login`.
@@ -70,3 +74,16 @@ Tokens OAuth (`accessToken`, `refreshToken`) de Google Calendar cifrados con AES
 ### #5a. Micronutrientes editables en formulario de alimentos
 
 Sección colapsable "Micronutrientes por 100g" en el formulario de crear/editar alimento con los 24 campos (13 vitaminas + 11 minerales). Semántica null/0/undefined: campo vacío = null (no medido), 0 = medido como cero, sección no abierta = no toca valores existentes en BD. Constantes compartidas extraídas a `src/lib/micronutrientes.ts` (reutilizadas por el formulario y la tarjeta de ficha). Tarjeta de micronutrientes actualizada para distinguir visualmente null (—) de 0. Fix del tipo de retorno de `validarMicros` (de `Record<string, ...>` a `Partial<Record<MicroKey, ...>>`) para evitar conflicto de overloads de Prisma. Mejora del manejo de errores del formulario: toast con mensaje específico del server action + reset del botón "Guardando" en caso de error. Fix de `enlaceProducto` faltante en los mapeos de datos del entregable PDF (`planes.ts`).
+
+### #2. Revisar y actualizar las guías interactivas
+
+Revisión completa del sistema de tours (14 tours: 11 dietista + 3 paciente). Cambios:
+
+- **11 selectores rotos reparados**: Dashboard rediseñado (stats-cards → dashboard-proxima-cita, patients-attention → dashboard-quick-access, today-appointments → dashboard-notificacion), alimentos (food-list), reportes (reports-kpis, patient-reports), portal paciente (dietista-info → portal-hoy-card, quick-access → portal-progreso-card, diet-plan, shopping-list-link, evolution-charts).
+- **Race condition con navegación**: Añadido `transitioning` state + `isNavigatingRef` guard en tour-provider. `usePathname()` para detectar cuándo la ruta ha cambiado. El overlay espera a que la ruta coincida antes de buscar el target.
+- **Polling de elementos**: Reemplazado el timeout único de 300ms por polling (15 intentos × 200ms = 3s) que encuentra el target incluso si tarda en renderizar.
+- **Doble-click salta pasos**: Guard con `isNavigatingRef` — si se está navegando, `nextStep()` y `prevStep()` no hacen nada.
+- **Click accidental cierra tour**: Eliminado `onClick={skipTour}` del overlay. Ahora solo se cierra con el botón X.
+- **Feedback visual**: Indicador `Loader2` spinning durante transición + botones deshabilitados + tooltip con opacity 0→1 en transición.
+- **Pasos intro (sin target)**: Scrim ligero (bg-black/30) + tooltip centrado tipo modal, sin highlight confuso.
+- **Responsividad móvil**: Tooltip con ancho dinámico `Math.min(340, window.innerWidth - 32)`, posiciones left/right forzadas a bottom en ≤480px, medición real de tooltipH con useRef+useLayoutEffect, overflow-y-auto max-h-[60vh] para landscape, botones min-h-[44px] para accesibilidad táctil, welcome modal max-w-sm en móvil, listener de orientationchange.

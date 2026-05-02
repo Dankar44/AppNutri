@@ -1,7 +1,7 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { getToursByAudience, getTourById, type Tour, type TourStep } from "@/lib/tour-data";
 
 interface TourContextType {
@@ -10,10 +10,13 @@ interface TourContextType {
   currentStep: TourStep | null;
   completedTours: string[];
   isFirstVisit: boolean;
+  transitioning: boolean;
+  pathname: string;
   startTour: (tourId: string) => void;
   nextStep: () => void;
   prevStep: () => void;
   skipTour: () => void;
+  settleStep: () => void;
   dismissWelcome: () => void;
   resetAllTours: () => void;
   audience: "dietista" | "paciente";
@@ -50,32 +53,40 @@ interface Props {
 
 export function TourProvider({ audience, children }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
   const tours = getToursByAudience(audience);
   const [activeTour, setActiveTour] = useState<Tour | null>(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [completedTours, setCompletedTours] = useState<string[]>([]);
   const [isFirstVisit, setIsFirstVisit] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [transitioning, setTransitioning] = useState(false);
+  const isNavigatingRef = useRef(false);
 
   useEffect(() => {
     const completed = getCompleted(audience);
     setCompletedTours(completed);
-    // First visit = no tours completed and no welcome dismissed
     const welcomeDismissed = localStorage.getItem(`annonia-welcome-${audience}`);
     setIsFirstVisit(completed.length === 0 && !welcomeDismissed);
     setMounted(true);
   }, [audience]);
+
+  const settleStep = useCallback(() => {
+    setTransitioning(false);
+    isNavigatingRef.current = false;
+  }, []);
 
   const startTour = useCallback((tourId: string) => {
     const tour = getTourById(tourId);
     if (!tour) return;
     setActiveTour(tour);
     setCurrentStepIndex(0);
-    // Navigate to first step's route if needed
-    if (tour.steps[0]?.route) {
+    if (tour.steps[0]?.route && tour.steps[0].route !== pathname) {
+      setTransitioning(true);
+      isNavigatingRef.current = true;
       router.push(tour.steps[0].route);
     }
-  }, [router]);
+  }, [router, pathname]);
 
   const completeTour = useCallback(() => {
     if (!activeTour) return;
@@ -84,32 +95,37 @@ export function TourProvider({ audience, children }: Props) {
     setCompleted(audience, newCompleted);
     setActiveTour(null);
     setCurrentStepIndex(0);
+    setTransitioning(false);
+    isNavigatingRef.current = false;
   }, [activeTour, completedTours, audience]);
 
   const nextStep = useCallback(() => {
-    if (!activeTour) return;
+    if (!activeTour || isNavigatingRef.current) return;
     if (currentStepIndex >= activeTour.steps.length - 1) {
       completeTour();
       return;
     }
     const nextIdx = currentStepIndex + 1;
     const nextStepData = activeTour.steps[nextIdx];
-    if (nextStepData?.route) {
+    if (nextStepData?.route && nextStepData.route !== pathname) {
+      setTransitioning(true);
+      isNavigatingRef.current = true;
       router.push(nextStepData.route);
     }
     setCurrentStepIndex(nextIdx);
-  }, [activeTour, currentStepIndex, completeTour, router]);
+  }, [activeTour, currentStepIndex, completeTour, router, pathname]);
 
   const prevStep = useCallback(() => {
-    if (currentStepIndex > 0) {
-      const prevIdx = currentStepIndex - 1;
-      const prevStepData = activeTour?.steps[prevIdx];
-      if (prevStepData?.route) {
-        router.push(prevStepData.route);
-      }
-      setCurrentStepIndex(prevIdx);
+    if (currentStepIndex <= 0 || isNavigatingRef.current) return;
+    const prevIdx = currentStepIndex - 1;
+    const prevStepData = activeTour?.steps[prevIdx];
+    if (prevStepData?.route && prevStepData.route !== pathname) {
+      setTransitioning(true);
+      isNavigatingRef.current = true;
+      router.push(prevStepData.route);
     }
-  }, [currentStepIndex, activeTour, router]);
+    setCurrentStepIndex(prevIdx);
+  }, [currentStepIndex, activeTour, router, pathname]);
 
   const skipTour = useCallback(() => {
     completeTour();
@@ -132,7 +148,8 @@ export function TourProvider({ audience, children }: Props) {
   return (
     <TourContext.Provider value={{
       activeTour, currentStepIndex, currentStep, completedTours, isFirstVisit: mounted && isFirstVisit,
-      startTour, nextStep, prevStep, skipTour, dismissWelcome, resetAllTours,
+      transitioning, pathname,
+      startTour, nextStep, prevStep, skipTour, settleStep, dismissWelcome, resetAllTours,
       audience, tours,
     }}>
       {children}

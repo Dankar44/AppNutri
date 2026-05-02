@@ -27,10 +27,10 @@ const DIETISTA_TOURS: Tour[] = [
     audience: "dietista",
     steps: [
       { id: "d1-1", title: "Tu menú de navegación", description: "Desde el sidebar accedes a todas las secciones de Annonia: pacientes, dietas, alimentos, agenda y más.", target: "sidebar", route: "/dashboard", position: "right" },
-      { id: "d1-2", title: "Métricas rápidas", description: "Estas tarjetas te muestran un resumen: pacientes totales, consultas del mes, planes activos y citas de la semana.", target: "stats-cards", position: "bottom" },
-      { id: "d1-3", title: "Gráfico de actividad", description: "Visualiza tu actividad de los últimos 6 meses: consultas realizadas y pacientes nuevos.", target: "activity-chart", position: "top" },
-      { id: "d1-4", title: "Pacientes que necesitan atención", description: "Alertas automáticas de pacientes sin consulta reciente, sin medidas o con planes antiguos.", target: "patients-attention", position: "top" },
-      { id: "d1-5", title: "Citas de hoy", description: "Tus citas programadas para hoy aparecen aquí con hora, paciente y motivo.", target: "today-appointments", position: "top" },
+      { id: "d1-2", title: "Próxima consulta", description: "Tu próxima cita aparece aquí con el nombre del paciente, fecha, hora y motivo. Pulsa para ir a su ficha.", target: "dashboard-proxima-cita", position: "bottom" },
+      { id: "d1-3", title: "Notificaciones", description: "Tu última notificación aparece aquí. Las notificaciones te avisan de pacientes sin consulta reciente, planes caducados y más.", target: "dashboard-notificacion", position: "left" },
+      { id: "d1-4", title: "Gráfico de actividad", description: "Visualiza tu actividad de los últimos 6 meses: consultas realizadas y pacientes nuevos.", target: "activity-chart", position: "top" },
+      { id: "d1-5", title: "Accesos rápidos", description: "Crea un nuevo paciente, plan dietético, cita o receta con un solo clic desde estas tarjetas.", target: "dashboard-quick-access", position: "left" },
     ],
   },
   {
@@ -40,7 +40,7 @@ const DIETISTA_TOURS: Tour[] = [
     icon: "Users",
     audience: "dietista",
     steps: [
-      { id: "d2-1", title: "Lista de pacientes", description: "Aquí están todos tus pacientes. Puedes ver sus datos, estado y objetivo nutricional.", route: "/pacientes", target: "new-patient-btn", position: "bottom" },
+      { id: "d2-1", title: "Lista de pacientes", description: "Aquí están todos tus pacientes. Puedes ver sus datos, estado y objetivo nutricional.", route: "/pacientes", target: "patient-list", position: "top" },
       { id: "d2-2", title: "Crear nuevo paciente", description: "Pulsa este botón para registrar un nuevo paciente con todos sus datos: personales, médicos, alergias, suplementos, actividad física y más.", target: "new-patient-btn", position: "bottom" },
       { id: "d2-3", title: "Buscar y filtrar", description: "Usa el buscador para encontrar pacientes por nombre. Filtra entre activos e inactivos.", target: "patient-search", position: "bottom" },
     ],
@@ -162,8 +162,8 @@ const PACIENTE_TOURS: Tour[] = [
     audience: "paciente",
     steps: [
       { id: "p1-1", title: "Tu menú", description: "Desde el sidebar accedes a todas las secciones: dieta, diario, evolución, recomendaciones y más.", target: "sidebar", route: "/paciente/portal", position: "right" },
-      { id: "p1-2", title: "Tu nutricionista", description: "Aquí ves los datos de tu nutricionista asignado.", target: "dietista-info", position: "bottom" },
-      { id: "p1-3", title: "Accesos rápidos", description: "Tarjetas de acceso directo a tu dieta, diario alimentario, evolución y lista de la compra.", target: "quick-access", position: "top" },
+      { id: "p1-2", title: "Tu día de hoy", description: "Aquí ves tu progreso del día: comidas registradas, agua y ejercicio. Pulsa para registrar tu seguimiento diario.", target: "portal-hoy-card", position: "bottom" },
+      { id: "p1-3", title: "Tu progreso", description: "Peso, IMC y porcentaje de grasa con la variación respecto a la semana anterior.", target: "portal-progreso-card", position: "top" },
     ],
   },
   {

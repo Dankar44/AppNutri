@@ -59,7 +59,7 @@ export default async function DietasPage({ searchParams }: Props) {
             )}
             <Link
               href="/dietas/nuevo"
-              data-tour="new-plan-btn"
+              data-tour="nuevo-plan-btn"
               className="inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium flex-1 sm:flex-none min-h-11 sm:min-h-0"
             >
               <Plus className="w-4 h-4" />

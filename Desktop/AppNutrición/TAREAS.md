@@ -6,14 +6,6 @@ Registro consolidado de tareas pendientes. Actualizado el 1 de mayo de 2026.
 
 ## Tareas pendientes
 
-### 2. Revisar y actualizar las guías interactivas
-
-Las guías/tours paso a paso (`src/lib/tour-data.ts`) que señalan elementos de la UI necesitan revisión completa:
-
-- Verificar que cada tour funciona correctamente y los selectores (`data-tour`) apuntan a elementos que existen.
-- Actualizar pasos que referencien UI obsoleta o reorganizada.
-- Añadir tours nuevos para secciones que no existían: **recetas**, **pagos**, **seguimiento diario** (lado dietista) y **mensajes**.
-
 ### 5. Micronutrientes — funcionalidades pendientes
 
 La fase 1 (micronutrientes opcionales), parte de la fase 2 (Open Food Facts + equivalentes), y la edición de micros en el formulario de alimentos ya están hechas. Queda:
@@ -65,24 +57,21 @@ Una vez las inscripciones estén abiertas, probar todos los flujos de Google de 
 
 - **Nutri — Google Calendar:** conectar, sincronizar cita, desconectar con "dejar", desconectar con "borrar", toggle sincronización on/off.
 - **Nutri — Vincular cuenta Google:** vincular desde Ajustes, cerrar sesión, volver a entrar con "Continuar con Google".
-- **Nutri — Sign in con Google:** registrarse directamente con Google (cuando esté implementado).
+- **Nutri — Sign in con Google:** registrarse directamente con Google → verificar que si no tiene cuenta de dietista muestra mensaje claro (no estado roto) y que si crea cuenta sigue el flujo de registro (datos + colegiado).
 - **Paciente — Google Calendar:** conectar, ver cita sincronizada, desconectar.
 - **Cancelar flujo OAuth:** empezar a conectar y cancelar a medias → debe volver sin error roto.
 - **Verificar en móvil** (Safari iOS, Chrome Android).
 
-### 17. Sign in with Google (Supabase)
+### 19. Preferencias del portal del paciente — conectar a funcionalidad real
 
-Permitir iniciar sesión y registrarse con Google. Independiente de la integración de Google Calendar (que ya funciona).
+Los toggles de "Preferencias de la aplicación del cliente" en la pestaña de entregables (acceso móvil, mensajes, registro de peso, confirmación de consultas, diario alimentario, información nutricional) son puramente visuales: solo actualizan un `useState` local y no se persisten ni afectan a nada. Hay que:
 
-**Configuración manual en Supabase (pendiente):**
-1. Supabase dashboard → Authentication → Providers → Google → activar
-2. Pegar Client ID y Client Secret (mismos que Calendar)
-3. Copiar la Callback URL que da Supabase y añadirla como redirect URI en Google Cloud Console
+- Persistir las preferencias en BD (campo JSON en Dietista o tabla aparte por paciente).
+- Que cada toggle condicione la funcionalidad correspondiente en el portal del paciente (ocultar/mostrar secciones, bloquear acciones).
 
-**Cambios de código necesarios:**
-- Manejar el caso de alguien que entra con Google pero no tiene cuenta de dietista (mostrar mensaje, no estado roto)
-- Opción de vincular cuenta de Google desde Ajustes (para usuarios que se registraron con email/contraseña)
-- Que al crear cuenta con Google se siga el flujo de registro (datos + colegiado)
+### 20. Mostrar motivo de la notificación dentro de cada pestaña
+
+Actualmente el badge de notificaciones (ej. "3" en Pacientes, "1" en Plan de alimentación) indica que hay algo pendiente, pero al entrar en la pestaña no se explica **qué** notificación es. El usuario tiene que ir a la pestaña de Notificaciones para leer el detalle. Mejora: al entrar en una pestaña con notificaciones pendientes, mostrar un aviso inline (banner, alerta o tooltip) que indique el motivo — por ejemplo "Paciente sin cita en los últimos 30 días", "Plan de alimentación caducado", etc. Así el nutricionista entiende el problema sin salir de la pestaña.
 
 ### 16. PREGUNTA PARA CLAUDIA — Ingredientes de "café con leche"
 

@@ -103,7 +103,7 @@ export default async function AgendaPage({ searchParams }: Props) {
         action={
           <Link
             href="/agenda/nueva"
-            data-tour="new-appointment-btn"
+            data-tour="agenda-nueva-cita"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium shrink-0"
           >
             <Plus className="w-4 h-4" />

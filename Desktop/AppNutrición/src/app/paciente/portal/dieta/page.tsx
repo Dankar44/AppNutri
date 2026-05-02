@@ -99,6 +99,7 @@ export default async function PatientDietPage() {
         action={
           <Link
             href="/paciente/portal/dieta/lista-compra"
+            data-tour="shopping-list-link"
             className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
           >
             <ShoppingCart className="w-4 h-4" />
@@ -107,7 +108,8 @@ export default async function PatientDietPage() {
         }
       />
 
-      <PlanVisual
+      <div data-tour="diet-plan">
+        <PlanVisual
         plan={{
           id: plan.id,
           nombre: plan.nombre,
@@ -159,6 +161,7 @@ export default async function PatientDietPage() {
         showFoodTable={false}
         readOnly
       />
+      </div>
     </div>
   );
 }
