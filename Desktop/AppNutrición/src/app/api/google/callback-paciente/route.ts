@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getCurrentPaciente } from "@/lib/patient-auth";
 import { exchangeCodeForTokens, getUserEmail } from "@/lib/google-oauth";
+import { encryptToken } from "@/lib/encryption";
 import { backfillCitasPaciente } from "@/lib/google-sync";
 import { prisma } from "@/lib/prisma";
 
@@ -57,14 +58,17 @@ export async function GET(req: NextRequest) {
     });
     const email = (await getUserEmail(accessToken)) ?? paciente?.email ?? "desconocido";
 
+    const encAccessToken = encryptToken(accessToken);
+    const encRefreshToken = encryptToken(refreshToken);
+
     await prisma.googleIntegracionPaciente.upsert({
       where: { pacienteId: session.pacienteId },
-      update: { accessToken, refreshToken, expiryDate, email, sincronizar: true },
+      update: { accessToken: encAccessToken, refreshToken: encRefreshToken, expiryDate, email, sincronizar: true },
       create: {
         pacienteId: session.pacienteId,
         email,
-        accessToken,
-        refreshToken,
+        accessToken: encAccessToken,
+        refreshToken: encRefreshToken,
         expiryDate,
         sincronizar: true,
       },

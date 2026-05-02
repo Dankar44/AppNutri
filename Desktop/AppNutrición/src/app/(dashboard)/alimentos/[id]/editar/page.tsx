@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getAlimento } from "@/app/actions/alimentos";
 import { AlimentoForm } from "@/components/alimento-form";
+import { MICRO_KEYS } from "@/lib/micronutrientes";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -39,6 +40,9 @@ export default async function EditarAlimentoPage({ params }: Props) {
           porcion: alimento.porcion,
           unidad: alimento.unidad,
           enlaceProducto: alimento.enlaceProducto ?? "",
+          micronutrientes: Object.fromEntries(
+            MICRO_KEYS.map((key) => [key, (alimento as Record<string, unknown>)[key] as number | null ?? null])
+          ),
         }}
       />
     </div>

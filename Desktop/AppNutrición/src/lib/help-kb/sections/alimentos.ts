@@ -60,7 +60,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     section: "alimentos",
     question: "¿Cómo creo un nuevo alimento?",
     answer:
-      "Pulsa el botón \"Nuevo alimento\" en la parte superior derecha del listado. Se abre un formulario con los campos básicos: nombre, categoría, unidad base y los macros principales (calorías, proteínas, hidratos, grasas). Rellena al menos los obligatorios y pulsa \"Guardar\". El alimento queda registrado como propio de tu cuenta y ya está disponible para usarlo en dietas y recetas. Si quieres, después puedes editarlo para añadir micronutrientes.",
+      "Pulsa el botón \"Nuevo alimento\" en la parte superior derecha del listado. Se abre un formulario con tres secciones: información general (nombre, categoría, unidad), macronutrientes (calorías, proteínas, hidratos, grasas, fibra) y una sección colapsable de micronutrientes (24 vitaminas y minerales, opcional). Rellena al menos los macros obligatorios y pulsa \"Guardar\". El alimento queda registrado como propio de tu cuenta y ya está disponible para usarlo en dietas y recetas.",
     related: ["al-8", "al-9", "al-12", "al-71"],
     keywords: ["crear", "nuevo", "alta", "alimento"],
   },
@@ -78,7 +78,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     section: "alimentos",
     question: "¿Qué campos son opcionales?",
     answer:
-      "Son opcionales la fibra, la categoría, la marca comercial y los 24 micronutrientes (vitaminas y minerales). También son opcionales las notas internas y las porciones estándar si las usas. Puedes crear un alimento solo con macros y añadir los micros más adelante cuando tengas los datos. Dejar un campo vacío no lo guarda como 0, sino como `null`, lo que es importante para distinguir \"no medido\" de \"sin contenido\".",
+      "Son opcionales la fibra, la categoría, la marca comercial, el enlace al producto y los 24 micronutrientes (vitaminas y minerales, en una sección colapsable del formulario). Puedes crear un alimento solo con macros y añadir los micros más adelante editándolo. Importante: dejar un campo vacío lo guarda como `null` (\"no medido\"), mientras que poner 0 significa \"medido como cero\". Esta distinción es relevante para los informes.",
     related: ["al-8", "al-11", "al-60"],
     keywords: ["opcional", "micros", "fibra", "no obligatorio"],
   },
@@ -96,7 +96,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     section: "alimentos",
     question: "¿Cómo añado los micronutrientes a un alimento?",
     answer:
-      "En el formulario de alta o edición de un alimento, despliega la sección \"Micronutrientes\" o \"Vitaminas y minerales\". Se muestran los 24 campos en dos grupos: vitaminas y minerales. Rellena solo los que conozcas y deja el resto vacíos. Las unidades estándar son mg, µg o UI según el micro, y se indican junto al campo. Guarda los cambios y tu alimento queda con el perfil nutricional completo.",
+      "En el formulario de alta o edición de un alimento, encontrarás una tercera sección colapsable titulada \"Micronutrientes por 100g\". Pulsa sobre ella para desplegarla. Se muestran los 24 campos organizados en dos columnas: vitaminas (13) y minerales (11). Cada campo indica su unidad (mg o ug). Rellena solo los que conozcas y deja el resto vacíos. Si editas un alimento que ya tiene micros, la sección se abre automáticamente con los valores precargados.",
     related: ["al-9", "al-12", "al-60"],
     keywords: ["micros", "vitaminas", "minerales", "añadir"],
   },
@@ -285,7 +285,7 @@ export const ALIMENTOS_ENTRIES: HelpEntry[] = [
     section: "alimentos",
     question: "¿Qué validaciones hace el formulario de alimento?",
     answer:
-      "El formulario valida que el nombre no esté vacío y que los macros principales sean números no negativos. Las calorías deberían coincidir aproximadamente con la suma de proteínas×4 + hidratos×4 + grasas×9, y si no cuadran aparece un aviso (no bloqueante). También se comprueba que no uses símbolos raros en el nombre y que la unidad base sea válida. Los micros admiten cero o vacío, pero no negativos.",
+      "El formulario valida que el nombre no esté vacío y que los macros principales sean números no negativos. Las calorías deberían coincidir aproximadamente con la suma de proteínas×4 + hidratos×4 + grasas×9, y si no cuadran aparece un aviso (no bloqueante). También se comprueba que no uses símbolos raros en el nombre y que la unidad base sea válida. Los 24 micronutrientes admiten valores no negativos (entre 0 y 100000) o vacío; un valor negativo se ajusta a 0 automáticamente.",
     related: ["al-8", "al-33", "al-58"],
     keywords: ["validación", "formulario", "errores", "comprobar"],
   },

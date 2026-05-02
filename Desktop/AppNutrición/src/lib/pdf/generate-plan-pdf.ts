@@ -122,8 +122,10 @@ const CSS = `
   .footer { text-align: center; color: #a3b0a6; font-size: 9px; padding: 10px 0; border-top: 1px solid #e2ebe5; margin-top: 20px; }
 
   @media print {
+    * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
     body { margin: 0; }
-    .page { padding: 20px 30px; }
+    .page { padding: 20px 30px; break-after: page; }
+    .page:last-child { break-after: avoid; }
     .header { margin: -20px -30px 16px; padding: 10px 30px; }
   }
 `;

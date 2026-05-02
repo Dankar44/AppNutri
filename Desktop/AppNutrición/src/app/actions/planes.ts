@@ -549,6 +549,7 @@ export async function getPlanesDetallePaciente(pacienteId: string) {
                   grasas: a.alimento.grasas ?? 0,
                   fibra: a.alimento.fibra ?? 0,
                   categoria: a.alimento.categoria ?? "OTROS",
+                  enlaceProducto: a.alimento.enlaceProducto ?? null,
                   ...micros,
                 }
               : null,
@@ -673,6 +674,7 @@ export async function getPlanPDFData(planId: string): Promise<PlanPDFData | null
                 grasas: a.alimento.grasas ?? 0,
                 fibra: a.alimento.fibra ?? 0,
                 porcion: a.alimento.porcion ?? 100,
+                enlaceProducto: a.alimento.enlaceProducto ?? null,
               }
             : null,
           receta: a.receta

@@ -51,6 +51,17 @@ export const getCurrentDietista = cache(async function getCurrentDietista() {
   return { ...dietista, verificado };
 });
 
+export async function getGoogleIdentityLinked(): Promise<{ email: string } | null> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.identities) return null;
+
+  const google = user.identities.find((i) => i.provider === "google");
+  if (!google) return null;
+
+  return { email: (google.identity_data?.email as string) || user.email || "" };
+}
+
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();

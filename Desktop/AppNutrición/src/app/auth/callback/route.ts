@@ -18,7 +18,13 @@ export async function GET(req: NextRequest) {
   const errorDescription = searchParams.get("error_description");
   const origin = getBaseUrl(req);
 
+  const supabase = await createClient();
+
   if (error) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      return NextResponse.redirect(`${origin}${next}`);
+    }
     return NextResponse.redirect(
       `${origin}/login?error=${encodeURIComponent(errorDescription || error)}`,
     );
@@ -28,11 +34,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${origin}/login?error=missing_code`);
   }
 
-  const supabase = await createClient();
   const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
 
   if (exchangeError) {
     console.error("[auth/callback] exchange failed", exchangeError);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      return NextResponse.redirect(`${origin}${next}`);
+    }
     return NextResponse.redirect(`${origin}/login?error=exchange_failed`);
   }
 

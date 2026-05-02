@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getCurrentDietista } from "@/app/actions/auth";
 import { exchangeCodeForTokens, getUserEmail } from "@/lib/google-oauth";
+import { encryptToken } from "@/lib/encryption";
 import { backfillCitasNutri } from "@/lib/google-sync";
 import { prisma } from "@/lib/prisma";
 
@@ -51,14 +52,17 @@ export async function GET(req: NextRequest) {
 
     const email = (await getUserEmail(accessToken)) ?? dietista.email;
 
+    const encAccessToken = encryptToken(accessToken);
+    const encRefreshToken = encryptToken(refreshToken);
+
     await prisma.googleIntegracion.upsert({
       where: { dietistaId: dietista.id },
-      update: { accessToken, refreshToken, expiryDate, email, sincronizar: true },
+      update: { accessToken: encAccessToken, refreshToken: encRefreshToken, expiryDate, email, sincronizar: true },
       create: {
         dietistaId: dietista.id,
         email,
-        accessToken,
-        refreshToken,
+        accessToken: encAccessToken,
+        refreshToken: encRefreshToken,
         expiryDate,
         sincronizar: true,
         crearMeet: false,

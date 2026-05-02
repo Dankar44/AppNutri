@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { crearAlimento, actualizarAlimento, type AlimentoFormData } from "@/app/actions/alimentos";
+import { VITAMINAS, MINERALES, type MicroKey } from "@/lib/micronutrientes";
 
 const CATEGORIAS = [
   { value: "FRUTAS", label: "Frutas" },
@@ -43,6 +45,30 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
   const [loading, setLoading] = useState(false);
   const isEdit = !!alimentoId;
 
+  const hasAnyMicro = defaultValues?.micronutrientes && Object.values(defaultValues.micronutrientes).some((v) => v !== null && v !== undefined);
+  const [microsOpen, setMicrosOpen] = useState(!!hasAnyMicro);
+  const [microsTracked, setMicrosTracked] = useState(!!hasAnyMicro);
+
+  function toggleMicros() {
+    if (!microsOpen && !microsTracked) setMicrosTracked(true);
+    setMicrosOpen(!microsOpen);
+  }
+
+  function parseMicros(form: FormData): Partial<Record<MicroKey, number | null>> | undefined {
+    if (!microsTracked) return undefined;
+    const result: Partial<Record<MicroKey, number | null>> = {};
+    for (const micro of [...VITAMINAS, ...MINERALES]) {
+      const raw = form.get(micro.key) as string;
+      if (raw === null || raw === undefined || raw.trim() === "") {
+        result[micro.key] = null;
+      } else {
+        const num = parseFloat(raw);
+        result[micro.key] = isNaN(num) ? null : num;
+      }
+    }
+    return result;
+  }
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
@@ -59,6 +85,7 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
       porcion: parseFloat(form.get("porcion") as string) || 100,
       unidad: form.get("unidad") as AlimentoFormData["unidad"],
       enlaceProducto: (form.get("enlaceProducto") as string)?.trim() || null,
+      micronutrientes: parseMicros(form),
     };
 
     try {
@@ -70,8 +97,11 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
         toast.success("Alimento creado");
       }
     } catch (error) {
-      if (error && typeof error === "object" && "digest" in error) throw error;
-      toast.error("Error al guardar el alimento");
+      const digest = error && typeof error === "object" && "digest" in error
+        ? String((error as Record<string, unknown>).digest) : "";
+      if (digest.startsWith("NEXT_REDIRECT") || digest.startsWith("NEXT_NOT_FOUND")) throw error;
+      const message = error instanceof Error ? error.message : "Error al guardar el alimento";
+      toast.error(message);
       setLoading(false);
     }
   }
@@ -217,6 +247,74 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
             />
           </div>
         </div>
+      </section>
+
+      <section className="bg-card rounded-xl border border-border p-4 sm:p-6 space-y-4">
+        <button
+          type="button"
+          onClick={toggleMicros}
+          className="w-full flex items-center justify-between"
+        >
+          <h2 className="text-base sm:text-lg font-semibold">Micronutrientes por 100g</h2>
+          <span className="text-sm text-muted-foreground flex items-center gap-1">
+            {microsOpen ? "Cerrar" : "Opcional"}
+            {microsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </span>
+        </button>
+
+        {microsOpen && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6 pt-2">
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Vitaminas</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {VITAMINAS.map((micro) => {
+                  const dv = defaultValues?.micronutrientes?.[micro.key];
+                  return (
+                    <div key={micro.key}>
+                      <label className="block text-xs font-medium mb-1">{micro.label} ({micro.unit})</label>
+                      <input
+                        name={micro.key}
+                        type="number"
+                        inputMode="decimal"
+                        step="any"
+                        min={0}
+                        defaultValue={typeof dv === "number" ? dv : ""}
+                        className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Minerales</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {MINERALES.map((micro) => {
+                  const dv = defaultValues?.micronutrientes?.[micro.key];
+                  return (
+                    <div key={micro.key}>
+                      <label className="block text-xs font-medium mb-1">{micro.label} ({micro.unit})</label>
+                      <input
+                        name={micro.key}
+                        type="number"
+                        inputMode="decimal"
+                        step="any"
+                        min={0}
+                        defaultValue={typeof dv === "number" ? dv : ""}
+                        className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground lg:col-span-2">
+              Deja en blanco los campos que no conozcas. Solo se guardarán los que rellenes.
+            </p>
+          </div>
+        )}
       </section>
 
       <div className="flex justify-end gap-3">

@@ -1,6 +1,6 @@
 # Tareas — AppNutri (Annonia)
 
-Registro consolidado de tareas pendientes. Actualizado el 30 de abril de 2026.
+Registro consolidado de tareas pendientes. Actualizado el 1 de mayo de 2026.
 
 ---
 
@@ -16,11 +16,10 @@ Las guías/tours paso a paso (`src/lib/tour-data.ts`) que señalan elementos de 
 
 ### 5. Micronutrientes — funcionalidades pendientes
 
-La fase 1 (micronutrientes opcionales) y parte de la fase 2 (Open Food Facts + equivalentes) ya están hechas. Queda:
+La fase 1 (micronutrientes opcionales), parte de la fase 2 (Open Food Facts + equivalentes), y la edición de micros en el formulario de alimentos ya están hechas. Queda:
 
 - **Escaneo de código de barras** — UI con cámara para escanear EAN y buscar en Open Food Facts.
 - **Estimación por IA** — Pasar nombre del alimento a un LLM para estimar los 24 micronutrientes cuando no haya datos. Marcar como "estimado por IA".
-- **Link del producto** (opcional) — Pegar URL de supermercado, extraer EAN, buscar en Open Food Facts.
 - **Importación CSV** (opcional) — Botón "Importar CSV" con plantilla descargable para nutricionistas con muchos alimentos propios.
 
 ### 6. Responsividad móvil
@@ -60,10 +59,6 @@ La lista de la compra se genera automáticamente pero a veces las unidades son i
 - La lista de la compra debe ser **editable**: el nutricionista o paciente puede cambiar cantidades y unidades antes de exportar/compartir.
 - **Al crear un alimento propio**, añadir un campo: "¿Cómo se añade a la lista de la compra?" con opciones: gramos, unidades, mililitros, etc. Así no hay que corregirlo manualmente cada vez. Solo aplica a alimentos propios del nutricionista (los de la base de datos general ya están bien).
 
-### ~~15. Link al alimento (alimentos propios)~~ ✅
-
-Completado. Campo `enlaceProducto` en schema, validación segura de URLs (solo http/https), formulario de alta/edición, icono de link en editor de dieta, portal paciente, lista de la compra (UI + texto), PDF con links clicables, vista compartida, y 4 entradas nuevas en help-kb.
-
 ### 18. Probar todas las opciones de Google en producción
 
 Una vez las inscripciones estén abiertas, probar todos los flujos de Google de principio a fin:
@@ -92,3 +87,4 @@ Permitir iniciar sesión y registrarse con Google. Independiente de la integraci
 ### 16. PREGUNTA PARA CLAUDIA — Ingredientes de "café con leche"
 
 Duda pendiente de consultar con Claudia: cuando se pone "café con leche semidesnatada" como alimento, en los ingredientes del entregable no aparece "café" como ingrediente (o no como primer ingrediente). Parece que el desglose de ingredientes no refleja bien la composición del alimento compuesto. Preguntar a Claudia exactamente qué problema ve y qué esperaría que apareciera.
+

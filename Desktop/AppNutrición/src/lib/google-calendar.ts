@@ -2,6 +2,7 @@ import { google, calendar_v3 } from "googleapis";
 import { OAuth2Client } from "google-auth-library";
 import { prisma } from "@/lib/prisma";
 import { getOAuthClient, refreshAccessToken, type GoogleAudience } from "@/lib/google-oauth";
+import { encryptToken, decryptToken } from "@/lib/encryption";
 
 type IntegracionNutri = {
   id: string;
@@ -24,27 +25,31 @@ type IntegracionPaciente = {
 async function ensureFreshToken<
   T extends IntegracionNutri | IntegracionPaciente
 >(integracion: T, audience: GoogleAudience): Promise<T> {
+  const plainAccess = decryptToken(integracion.accessToken);
+  const plainRefresh = decryptToken(integracion.refreshToken);
+
   const now = Date.now();
   const expiry = integracion.expiryDate.getTime();
-  // Refrescar 60s antes de expirar
-  if (expiry - now > 60_000) return integracion;
+  if (expiry - now > 60_000) {
+    return { ...integracion, accessToken: plainAccess, refreshToken: plainRefresh };
+  }
 
-  const creds = await refreshAccessToken(integracion.refreshToken, audience);
-  const newAccess = creds.access_token ?? integracion.accessToken;
+  const creds = await refreshAccessToken(plainRefresh, audience);
+  const newAccess = creds.access_token ?? plainAccess;
   const newExpiry = creds.expiry_date ? new Date(creds.expiry_date) : new Date(Date.now() + 3600_000);
 
   if (audience === "nutri") {
     await prisma.googleIntegracion.update({
       where: { id: integracion.id },
-      data: { accessToken: newAccess, expiryDate: newExpiry },
+      data: { accessToken: encryptToken(newAccess), expiryDate: newExpiry },
     });
   } else {
     await prisma.googleIntegracionPaciente.update({
       where: { id: integracion.id },
-      data: { accessToken: newAccess, expiryDate: newExpiry },
+      data: { accessToken: encryptToken(newAccess), expiryDate: newExpiry },
     });
   }
-  return { ...integracion, accessToken: newAccess, expiryDate: newExpiry };
+  return { ...integracion, accessToken: newAccess, refreshToken: plainRefresh, expiryDate: newExpiry };
 }
 
 function buildAuthedClient(integracion: IntegracionNutri | IntegracionPaciente, audience: GoogleAudience): OAuth2Client {

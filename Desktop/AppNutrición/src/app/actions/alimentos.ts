@@ -12,6 +12,7 @@ import {
 import { buscarAlimentosOFF, type AlimentoAPIResult } from "@/lib/openfoodfacts";
 import { normalizarNombreAlimento, redondearMacros } from "@/lib/alimento-utils";
 import { sanitizeString, validateNumber, validateEnum, validateUrl, sanitizeSearch, LIMITS } from "@/lib/validation";
+import { type MicroKey, MICRO_KEYS } from "@/lib/micronutrientes";
 
 export interface AlimentoFormData {
   nombre: string;
@@ -24,6 +25,21 @@ export interface AlimentoFormData {
   porcion: number;
   unidad: UnidadMedida;
   enlaceProducto?: string | null;
+  micronutrientes?: Partial<Record<MicroKey, number | null>>;
+}
+
+function validarMicros(raw: Partial<Record<MicroKey, number | null>> | undefined): Partial<Record<MicroKey, number | null>> {
+  if (!raw) return {};
+  const result: Partial<Record<MicroKey, number | null>> = {};
+  for (const key of MICRO_KEYS) {
+    const v = raw[key];
+    if (v === null || v === undefined) {
+      result[key] = null;
+    } else {
+      result[key] = redondearMacros(validateNumber(v, 0, LIMITS.MICRO_MAX));
+    }
+  }
+  return result;
 }
 
 export async function crearAlimento(data: AlimentoFormData) {
@@ -48,6 +64,7 @@ export async function crearAlimento(data: AlimentoFormData) {
   const enlaceValidado = validateUrl(data.enlaceProducto);
   if (data.enlaceProducto && data.enlaceProducto.trim() && !enlaceValidado)
     throw new Error("El enlace no es una URL válida");
+  const micros = validarMicros(data.micronutrientes);
 
   const nombreNorm = normalizarNombreAlimento(nombreSanitizado);
 
@@ -74,6 +91,7 @@ export async function crearAlimento(data: AlimentoFormData) {
       unidad: data.unidad,
       enlaceProducto: enlaceValidado,
       origen: "PERSONALIZADO",
+      ...micros,
     },
   });
 
@@ -103,6 +121,7 @@ export async function actualizarAlimento(id: string, data: AlimentoFormData) {
   const enlaceValidado = validateUrl(data.enlaceProducto);
   if (data.enlaceProducto && data.enlaceProducto.trim() && !enlaceValidado)
     throw new Error("El enlace no es una URL válida");
+  const micros = validarMicros(data.micronutrientes);
 
   await prisma.alimento.update({
     where: { id, dietistaId: dietista.id },
@@ -117,6 +136,7 @@ export async function actualizarAlimento(id: string, data: AlimentoFormData) {
       porcion: data.porcion,
       unidad: data.unidad,
       enlaceProducto: enlaceValidado,
+      ...micros,
     },
   });
 

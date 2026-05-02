@@ -10,7 +10,7 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { TourSettings } from "@/components/tour/tour-settings";
-import { getCurrentDietista } from "@/app/actions/auth";
+import { getCurrentDietista, getGoogleIdentityLinked } from "@/app/actions/auth";
 import { getSuscripcion } from "@/app/actions/suscripcion";
 import { getStripeAccountStatus } from "@/app/actions/stripe";
 import { getIntegracionNutri } from "@/app/actions/google-integracion";
@@ -25,6 +25,7 @@ import { EliminarCuentaButton } from "./eliminar-cuenta-button";
 import { PageHeader } from "@/components/page-header";
 import { AjustesNav } from "./ajustes-nav";
 import { PacienteDemoCard } from "./paciente-demo-card";
+import { GoogleLoginCard } from "./google-login-card";
 
 /** Encabezado común de cada bloque: icono + título + descripción. */
 function SectionHeader({
@@ -82,10 +83,11 @@ export default async function AjustesPage({
   const dietista = await getCurrentDietista();
   if (!dietista) redirect("/login");
 
-  const [suscripcion, stripeStatus, googleIntegracion, demoEliminado, sp] = await Promise.all([
+  const [suscripcion, stripeStatus, googleIntegracion, googleLinked, demoEliminado, sp] = await Promise.all([
     getSuscripcion(),
     getStripeAccountStatus(),
     getIntegracionNutri(),
+    getGoogleIdentityLinked(),
     isDemoEliminado(),
     searchParams,
   ]);
@@ -185,7 +187,10 @@ export default async function AjustesPage({
               title="Integraciones"
               description="Conecta servicios externos para automatizar tu día a día."
             />
-            <IntegracionesCard integracion={googleIntegracion} flash={googleFlash} />
+            <div className="space-y-4">
+              <IntegracionesCard integracion={googleIntegracion} flash={googleFlash} />
+              <GoogleLoginCard googleLinked={googleLinked} />
+            </div>
           </section>
 
           {/* PACIENTE DEMO */}
