@@ -173,6 +173,9 @@ function TourOverlayContent() {
 
   const tooltipWidth = typeof window !== "undefined" ? Math.min(340, window.innerWidth - 32) : 340;
   const tooltipStyle: React.CSSProperties = { position: "fixed", zIndex: 61, maxWidth: tooltipWidth, width: "calc(100vw - 2rem)" };
+  const targetTooBig = targetRect && typeof window !== "undefined" && (
+    targetRect.width > window.innerWidth * 0.9 || targetRect.height > window.innerHeight * 0.7
+  );
 
   if (targetRect && !busy && !targetTooBig) {
     const preferred = isMobile ? "bottom" : (currentStep.position || "bottom");
@@ -207,10 +210,6 @@ function TourOverlayContent() {
     tooltipStyle.left = "50%";
     tooltipStyle.transform = "translate(-50%, -50%)";
   }
-
-  const targetTooBig = targetRect && typeof window !== "undefined" && (
-    targetRect.width > window.innerWidth * 0.9 || targetRect.height > window.innerHeight * 0.7
-  );
 
   const showHighlight = targetRect && !isIntro && !targetTooBig && !busy;
 
