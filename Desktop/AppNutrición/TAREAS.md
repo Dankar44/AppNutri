@@ -1,6 +1,6 @@
 # Tareas — AppNutri (Annonia)
 
-Registro consolidado de tareas pendientes. Actualizado el 1 de mayo de 2026.
+Registro consolidado de tareas pendientes. Actualizado el 2 de mayo de 2026.
 
 ---
 
@@ -72,6 +72,17 @@ Los toggles de "Preferencias de la aplicación del cliente" en la pestaña de en
 ### 20. Mostrar motivo de la notificación dentro de cada pestaña
 
 Actualmente el badge de notificaciones (ej. "3" en Pacientes, "1" en Plan de alimentación) indica que hay algo pendiente, pero al entrar en la pestaña no se explica **qué** notificación es. El usuario tiene que ir a la pestaña de Notificaciones para leer el detalle. Mejora: al entrar en una pestaña con notificaciones pendientes, mostrar un aviso inline (banner, alerta o tooltip) que indique el motivo — por ejemplo "Paciente sin cita en los últimos 30 días", "Plan de alimentación caducado", etc. Así el nutricionista entiende el problema sin salir de la pestaña.
+
+### 21. Comprobar guías interactivas en modo móvil
+
+Las guías interactivas (#2) ya están revisadas y funcionan en desktop. Falta **probarlas en dispositivos móviles reales** (o DevTools → device toolbar):
+
+- Verificar que el tooltip no desborda en iPhone SE (375px), iPhone 15 (393px) y Android típicos.
+- Verificar que los botones tienen suficiente área táctil (min 44px).
+- Comprobar que las posiciones "left"/"right" se convierten a "bottom" en pantallas ≤ 480px.
+- Verificar el welcome modal en pantallas pequeñas (márgenes, padding, scroll).
+- Probar en landscape: tooltip con scroll si el contenido es alto.
+- Verificar resize/rotación: tooltip se reposiciona correctamente.
 
 ### 16. PREGUNTA PARA CLAUDIA — Ingredientes de "café con leche"
 

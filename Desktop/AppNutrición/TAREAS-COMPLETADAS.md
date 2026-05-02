@@ -87,3 +87,19 @@ Revisión completa del sistema de tours (14 tours: 11 dietista + 3 paciente). Ca
 - **Feedback visual**: Indicador `Loader2` spinning durante transición + botones deshabilitados + tooltip con opacity 0→1 en transición.
 - **Pasos intro (sin target)**: Scrim ligero (bg-black/30) + tooltip centrado tipo modal, sin highlight confuso.
 - **Responsividad móvil**: Tooltip con ancho dinámico `Math.min(340, window.innerWidth - 32)`, posiciones left/right forzadas a bottom en ≤480px, medición real de tooltipH con useRef+useLayoutEffect, overflow-y-auto max-h-[60vh] para landscape, botones min-h-[44px] para accesibilidad táctil, welcome modal max-w-sm en móvil, listener de orientationchange.
+
+---
+
+## 2 de mayo de 2026
+
+### #2b. Arreglos adicionales en guías interactivas
+
+Correcciones tras testing manual de las guías:
+
+- **Flash entre pasos**: La `transition-opacity` CSS hacía que al ocultar el tooltip se viera brevemente el texto nuevo en la posición vieja. Corregido: transición solo al mostrar (fade-in), ocultado instantáneo.
+- **Highlight descuadrado con "Anterior"**: El timeout fijo de 350ms tras `scrollIntoView` no era suficiente para scrolls largos hacia arriba. Reemplazado por polling de estabilidad: lee `getBoundingClientRect()` cada 50ms hasta que la posición se estabiliza (3 lecturas < 2px, máx 1.5s).
+- **Tooltip aparece antes de cargar la página**: Los pasos intro (sin target) que navegan a ruta nueva se mostraban inmediatamente. Ahora esperan 500ms tras llegar a la ruta para que la página renderice.
+- **Paso "Lista de pacientes" señalaba botón incorrecto**: El target `new-patient-btn` apuntaba al botón "Nuevo paciente" en vez de la tabla. Añadido `data-tour="patient-list"` en la página de pacientes y actualizado el target del paso.
+- **Elementos demasiado anchos**: Targets que ocupan >90% del ancho del viewport no muestran highlight box (confuso). Tooltip se centra en pantalla con scrim ligero.
+- **Fallback vertical**: Si el tooltip no cabe ni arriba ni abajo del target, se centra en pantalla en vez de quedar fuera del viewport.
+- **Parpadeo esporádico**: Dos `useEffect` distintos podían llamar a `findTarget` simultáneamente. Añadido guard: el efecto de pathname solo dispara búsqueda si no hay timers activos.

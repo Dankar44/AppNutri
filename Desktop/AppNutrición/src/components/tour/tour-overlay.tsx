@@ -46,9 +46,23 @@ function TourOverlayContent() {
     elRef.current = null;
 
     if (!currentStep?.target) {
-      setSearching(false);
-      setSettled(true);
-      settleStep();
+      if (currentStep?.route && pathname !== currentStep.route) {
+        setSearching(true);
+        setSettled(false);
+        return;
+      }
+      if (currentStep?.route) {
+        setSearching(true);
+        timerRef.current = setTimeout(() => {
+          setSearching(false);
+          setSettled(true);
+          settleStep();
+        }, 500);
+      } else {
+        setSearching(false);
+        setSettled(true);
+        settleStep();
+      }
       return;
     }
 
@@ -124,7 +138,7 @@ function TourOverlayContent() {
   }, [currentStepIndex, findTarget, clearTimers]);
 
   useEffect(() => {
-    if (currentStep?.route && pathname === currentStep.route && searching) {
+    if (currentStep?.route && pathname === currentStep.route && searching && !timerRef.current && !pollRef.current) {
       findTarget();
     }
   }, [pathname, currentStep?.route, searching, findTarget]);
@@ -173,9 +187,8 @@ function TourOverlayContent() {
 
   const tooltipWidth = typeof window !== "undefined" ? Math.min(340, window.innerWidth - 32) : 340;
   const tooltipStyle: React.CSSProperties = { position: "fixed", zIndex: 61, maxWidth: tooltipWidth, width: "calc(100vw - 2rem)" };
-  const targetTooBig = targetRect && typeof window !== "undefined" && (
-    targetRect.width > window.innerWidth * 0.9 || targetRect.height > window.innerHeight * 0.7
-  );
+  const targetTooBig = targetRect && typeof window !== "undefined" &&
+    targetRect.width > window.innerWidth * 0.9;
 
   if (targetRect && !busy && !targetTooBig) {
     const preferred = isMobile ? "bottom" : (currentStep.position || "bottom");
