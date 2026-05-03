@@ -73,6 +73,11 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
           acc[n.tipo] = (acc[n.tipo] ?? 0) + 1;
           return acc;
         }, {})}
+        notifsDetalle={notifsPaciente.map((n) => ({
+          tipo: n.tipo,
+          titulo: n.titulo,
+          mensaje: n.mensaje,
+        }))}
       />
     </div>
   );

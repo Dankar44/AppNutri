@@ -1,6 +1,6 @@
 # Tareas — AppNutri (Annonia)
 
-Registro consolidado de tareas pendientes. Actualizado el 2 de mayo de 2026.
+Registro consolidado de tareas pendientes. Actualizado el 3 de mayo de 2026.
 
 ---
 
@@ -26,14 +26,6 @@ Existe un plan detallado de 50 pasos en `PLAN-MOVIL.md` (34-47 horas estimadas) 
 3. Google Analytics → "En tiempo real" → ¿hay usuarios activos?
 4. Google Analytics → "Adquisición" → ¿de dónde viene el tráfico?
 5. Buscar "Annonia" en Google → ¿aparece el favicon? ¿sitelinks? ¿qué posición?
-
-### 10. Colores personalizables en entregables
-
-Los entregables (PDF del plan de alimentación) usan siempre los mismos colores (verde, rojo). El nutricionista debería poder **elegir la paleta de colores** de sus entregables: colores de cabeceras, bordes de tabla, badges de comidas, etc. Permitir al menos 4-5 opciones de tema o un selector de color primario/secundario.
-
-### 11. Logo y nombre del nutricionista en entregables
-
-Permitir al nutricionista **subir su logo** (imagen) para que aparezca como encabezado en los entregables y, si quiere, en las páginas de la app. Posición configurable: arriba a la derecha o arriba a la izquierda. También opción de mostrar su **nombre/nombre de la consulta** como cabecera personalizada. Esto hace que los entregables sean más profesionales y con marca propia.
 
 ### 13. Cantidades editables en entregables
 
@@ -62,16 +54,14 @@ Una vez las inscripciones estén abiertas, probar todos los flujos de Google de 
 - **Cancelar flujo OAuth:** empezar a conectar y cancelar a medias → debe volver sin error roto.
 - **Verificar en móvil** (Safari iOS, Chrome Android).
 
-### 19. Preferencias del portal del paciente — conectar a funcionalidad real
+### 19. Preferencias del portal del paciente — PREGUNTAR A DANIEL
 
-Los toggles de "Preferencias de la aplicación del cliente" en la pestaña de entregables (acceso móvil, mensajes, registro de peso, confirmación de consultas, diario alimentario, información nutricional) son puramente visuales: solo actualizan un `useState` local y no se persisten ni afectan a nada. Hay que:
+Los toggles de "Preferencias de la aplicación del cliente" en la pestaña de entregables (acceso móvil, mensajes, registro de peso, confirmación de consultas, diario alimentario, información nutricional) son puramente visuales: no se persisten ni afectan a nada. Preguntar a Daniel: **¿merece la pena darle funcionalidad real a estos toggles (que controlen qué ve el paciente en su portal) o los quitamos directamente?**
 
-- Persistir las preferencias en BD (campo JSON en Dietista o tabla aparte por paciente).
-- Que cada toggle condicione la funcionalidad correspondiente en el portal del paciente (ocultar/mostrar secciones, bloquear acciones).
-
-### 20. Mostrar motivo de la notificación dentro de cada pestaña
-
-Actualmente el badge de notificaciones (ej. "3" en Pacientes, "1" en Plan de alimentación) indica que hay algo pendiente, pero al entrar en la pestaña no se explica **qué** notificación es. El usuario tiene que ir a la pestaña de Notificaciones para leer el detalle. Mejora: al entrar en una pestaña con notificaciones pendientes, mostrar un aviso inline (banner, alerta o tooltip) que indique el motivo — por ejemplo "Paciente sin cita en los últimos 30 días", "Plan de alimentación caducado", etc. Así el nutricionista entiende el problema sin salir de la pestaña.
+Si se mantienen, habría que:
+- Persistir las preferencias en BD (campo JSON por paciente).
+- Que cada toggle oculte/muestre la sección correspondiente en el portal del paciente.
+- "Acceso a la app móvil" no aplica (el portal ya es responsive) → marcar como "Próximamente" o eliminar.
 
 ### 21. Comprobar guías interactivas en modo móvil
 

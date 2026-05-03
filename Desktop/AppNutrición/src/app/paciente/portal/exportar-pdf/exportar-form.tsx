@@ -9,7 +9,12 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { generatePlanPDF, type PlanPDFData } from "@/lib/pdf/generate-plan-pdf";
+import { generatePlanPDF, type PlanPDFData, type PDFSectionOptions } from "@/lib/pdf/generate-plan-pdf";
+import type { PdfColorTheme } from "@/lib/pdf/pdf-themes";
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
 
 interface HorarioEntry {
   dia: string;
@@ -27,6 +32,10 @@ interface Props {
   dietistaNombre: string;
   recomendaciones: string;
   horario: HorarioEntry[];
+  tema?: PdfColorTheme;
+  brandName?: string;
+  logoDataUrl?: string;
+  clinica?: string;
 }
 
 type PDFOptions = {
@@ -75,7 +84,7 @@ const COLOR_LABELS: Record<string, { bg: string; text: string }> = {
   otro: { bg: "#f3f4f6", text: "#374151" },
 };
 
-function generateHorarioHTML(horario: HorarioEntry[], pacienteNombre: string) {
+function generateHorarioHTML(horario: HorarioEntry[], pacienteNombre: string, brand = "Annonia") {
   const dias = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
   const horasConDatos = HORAS.filter((h) => horario.some((e) => e.hora === h));
   if (horasConDatos.length === 0) return "";
@@ -90,7 +99,7 @@ function generateHorarioHTML(horario: HorarioEntry[], pacienteNombre: string) {
       const entry = horario.find((e) => e.dia === dia && e.hora === hora);
       if (entry) {
         const c = COLOR_LABELS[entry.color || "otro"];
-        tabla += `<td style="padding:3px 5px;border:1px solid #e5e5e5;background:${c.bg};color:${c.text};font-size:8px;">${entry.actividad}${entry.nota ? `<br><span style="opacity:0.7">${entry.nota}</span>` : ""}</td>`;
+        tabla += `<td style="padding:3px 5px;border:1px solid #e5e5e5;background:${c.bg};color:${c.text};font-size:8px;">${escapeHtml(entry.actividad)}${entry.nota ? `<br><span style="opacity:0.7">${escapeHtml(entry.nota)}</span>` : ""}</td>`;
       } else {
         tabla += `<td style="border:1px solid #e5e5e5;"></td>`;
       }
@@ -99,25 +108,22 @@ function generateHorarioHTML(horario: HorarioEntry[], pacienteNombre: string) {
   }
   tabla += `</table>`;
 
-  return `<div class="page"><div class="header"><div><span class="header-name">${pacienteNombre.toUpperCase()}</span><br><span class="header-sub">PLAN DIETÉTICO SEMANAL</span></div><div class="header-logo">Annonia</div></div><div class="section-title">MI HORARIO SEMANAL</div>${tabla}<div class="footer">Annonia</div></div>`;
+  return `<div class="page"><div class="header"><div><span class="header-name">${escapeHtml(pacienteNombre).toUpperCase()}</span><br><span class="header-sub">PLAN DIETÉTICO SEMANAL</span></div><div class="header-logo">${escapeHtml(brand)}</div></div><div class="section-title">MI HORARIO SEMANAL</div>${tabla}<div class="footer">${escapeHtml(brand)}<div style="color:#c0c8c3;font-size:8px;margin-top:2px;">annonia.com</div></div></div>`;
 }
 
-function applyOptions(baseHtml: string, options: PDFOptions, horarioHtml: string) {
-  let html = baseHtml;
-  if (!options.listaCompra) {
-    html = html.replace(/<div class="page"[^>]*>(?:(?!<\/div>\s*<div class="page")[\s\S])*?LISTA DE LA COMPRA[\s\S]*?<\/div>\s*(?=<div class="page"|<\/body>)/g, "");
-  }
-  if (!options.planSemanal) {
-    html = html.replace(/<div class="page"[^>]*>(?:(?!<\/div>\s*<div class="page")[\s\S])*?PLAN SEMANAL[\s\S]*?<\/div>\s*(?=<div class="page"|<\/body>)/g, "");
-  }
-  if (!options.detalleDiario) {
-    html = html.replace(/<div class="page day"[\s\S]*?<\/div>\s*(?=<div class="page"|<\/body>)/g, "");
-  }
-  if (!options.recomendaciones) {
-    html = html.replace(/<div class="page"[^>]*>(?:(?!<\/div>\s*<div class="page")[\s\S])*?RECOMENDACIONES[\s\S]*?<\/div>\s*(?=<div class="page"|<\/body>)/g, "");
-  }
+function toSections(options: PDFOptions): PDFSectionOptions {
+  return {
+    portada: options.portada,
+    planSemanal: options.planSemanal,
+    detalleDiario: options.detalleDiario,
+    recomendaciones: options.recomendaciones,
+    listaCompra: options.listaCompra,
+  };
+}
+
+function applyHorario(html: string, options: PDFOptions, horarioHtml: string): string {
   if (options.horarioPaciente && horarioHtml) {
-    html = html.replace("</body>", `${horarioHtml}</body>`);
+    return html.replace("</body>", `${horarioHtml}</body>`);
   }
   return html;
 }
@@ -128,6 +134,10 @@ export function ExportarPDFPaciente({
   dietistaNombre,
   recomendaciones,
   horario,
+  tema,
+  brandName,
+  logoDataUrl,
+  clinica,
 }: Props) {
   const [options, setOptions] = useState<PDFOptions>(() => ({
     ...DEFAULT_OPTIONS,
@@ -136,29 +146,31 @@ export function ExportarPDFPaciente({
   }));
   const [applied, setApplied] = useState<PDFOptions>(options);
 
-  const baseHtml = useMemo(() => {
-    return generatePlanPDF({
+  const horarioHtml = useMemo(
+    () => generateHorarioHTML(horario, pacienteNombre, brandName || "Annonia"),
+    [horario, pacienteNombre, brandName]
+  );
+
+  const previewHtml = useMemo(() => {
+    const html = generatePlanPDF({
       planNombre: plan.nombre,
       pacienteNombre,
       dietistaNombre,
       dias: plan.dias,
       recomendaciones,
       caloriasObjetivo: plan.caloriasObjetivo,
+      tema,
+      brandName,
+      logoDataUrl,
+      clinica,
+      sections: toSections(applied),
     });
-  }, [plan, pacienteNombre, dietistaNombre, recomendaciones]);
-
-  const horarioHtml = useMemo(
-    () => generateHorarioHTML(horario, pacienteNombre),
-    [horario, pacienteNombre]
-  );
-
-  const previewHtml = useMemo(() => {
-    const withOptions = applyOptions(baseHtml, applied, horarioHtml);
-    return withOptions.replace(
+    const withHorario = applyHorario(html, applied, horarioHtml);
+    return withHorario.replace(
       /<script>window\.onload=function\(\)\{window\.print\(\);\}<\/script>/,
       ""
     );
-  }, [baseHtml, applied, horarioHtml]);
+  }, [plan, pacienteNombre, dietistaNombre, recomendaciones, tema, brandName, logoDataUrl, clinica, applied, horarioHtml]);
 
   const totalPages = Math.max(1, (previewHtml.match(/class="page/g) || []).length);
   const [previewPage, setPreviewPage] = useState(0);
@@ -185,10 +197,23 @@ export function ExportarPDFPaciente({
   }
 
   function handleDescargar() {
-    const html = applyOptions(baseHtml, applied, horarioHtml);
+    const html = generatePlanPDF({
+      planNombre: plan.nombre,
+      pacienteNombre,
+      dietistaNombre,
+      dias: plan.dias,
+      recomendaciones,
+      caloriasObjetivo: plan.caloriasObjetivo,
+      tema,
+      brandName,
+      logoDataUrl,
+      clinica,
+      sections: toSections(applied),
+    });
+    const withHorario = applyHorario(html, applied, horarioHtml);
     const ventana = window.open("", "_blank");
     if (!ventana) return;
-    ventana.document.write(html);
+    ventana.document.write(withHorario);
     ventana.document.close();
   }
 

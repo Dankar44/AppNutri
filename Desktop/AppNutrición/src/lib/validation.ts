@@ -162,4 +162,16 @@ export const LIMITS = {
   DURACION_MAX: 480,
   PORCIONES_MAX: 100,
   TIEMPO_PREP_MAX: 1440,
+  MARCA_PDF: 200,
 } as const;
+
+export const TEMA_PDF_OPCIONES = ["verde", "azul", "morado", "naranja", "oscuro", "personalizado"] as const;
+export type TemaPdfOpcion = (typeof TEMA_PDF_OPCIONES)[number];
+
+const HEX_COLOR_REGEX = /^#[0-9a-fA-F]{6}$/;
+
+export function validateHexColor(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return HEX_COLOR_REGEX.test(trimmed) ? trimmed : null;
+}

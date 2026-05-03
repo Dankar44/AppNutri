@@ -271,13 +271,20 @@ export async function enviarPlanPorEmail(
     caloriasObjetivo: plan.caloriasObjetivo,
   };
 
+  const { getTheme } = await import("@/lib/pdf/pdf-themes");
+  pdfData.tema = getTheme(dietista.temaPdf, dietista.colorPrimarioPdf);
+  pdfData.brandName = dietista.marcaPdf || undefined;
+  pdfData.logoDataUrl = dietista.pdfLogoUrl || undefined;
+  pdfData.clinica = dietista.clinica || undefined;
+
   const htmlBody = generatePlanPDF(pdfData);
+  const brandFrom = dietista.marcaPdf || "Annonia";
 
   try {
     await mailer.sendMail({
-      from: `${dietistaNombre} - Annonia <${process.env.GMAIL_USER}>`,
+      from: `${dietistaNombre} - ${brandFrom} <${process.env.GMAIL_USER}>`,
       to: paciente.email,
-      subject: `Tu plan de alimentación — ${escapeHtml(plan.nombre)}`,
+      subject: `Tu plan de alimentación — ${plan.nombre}`,
       html: htmlBody,
       replyTo: dietista.email,
     });

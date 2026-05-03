@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { Mail, Calendar, Pencil } from "lucide-react";
+import { Mail, Calendar, Pencil, X } from "lucide-react";
 import type { FichaInformacionData } from "@/lib/ficha-informacion-types";
 import { AvatarPaciente } from "@/components/avatar-paciente";
 import {
@@ -30,21 +31,23 @@ import type { FichaSidebarData } from "@/lib/ficha-sidebar-types";
 
 export type { PestanaFicha };
 
-/** Dado un tabId y el conteo de notifs por tipo, devuelve cuántas notifs corresponden a ese tab. */
+const TIPOS_POR_PESTANA: Record<string, string[]> = {
+  mediciones: ["PACIENTE_SIN_MEDIDAS"],
+  seguimiento: ["DIARIO_NUEVO"],
+  general: ["PACIENTE_SIN_CONSULTA"],
+  "plan-alimentacion": ["PLAN_ANTIGUO"],
+  planificacion: ["PLAN_ANTIGUO"],
+};
+
 function notifsPorTipoPestana(
   tabId: string,
   notifsPorTipo: Record<string, number>,
 ): number {
-  const mapa: Record<string, string[]> = {
-    mediciones: ["PACIENTE_SIN_MEDIDAS"],
-    seguimiento: ["DIARIO_NUEVO"],
-    general: ["PACIENTE_SIN_CONSULTA"],
-    "plan-alimentacion": ["PLAN_ANTIGUO"],
-    planificacion: ["PLAN_ANTIGUO"],
-  };
-  const tipos = mapa[tabId] || [];
+  const tipos = TIPOS_POR_PESTANA[tabId] || [];
   return tipos.reduce((acc, t) => acc + (notifsPorTipo[t] ?? 0), 0);
 }
+
+export type NotifDetalle = { tipo: string; titulo: string; mensaje: string };
 
 type PacienteSerializado = {
   id: string;
@@ -139,6 +142,7 @@ export function PacienteFichaClient({
   planesResumen = [],
   sidebarData = {},
   notifsPorTipo = {},
+  notifsDetalle = [],
 }: {
   paciente: PacienteSerializado;
   pestana: PestanaFicha;
@@ -150,6 +154,7 @@ export function PacienteFichaClient({
   planesResumen?: PlanResumen[];
   sidebarData?: FichaSidebarData;
   notifsPorTipo?: Record<string, number>;
+  notifsDetalle?: NotifDetalle[];
 }) {
   const nombre = capitalizarNombre(paciente.nombre);
   const apellidos = capitalizarNombre(paciente.apellidos);
@@ -253,6 +258,8 @@ export function PacienteFichaClient({
           );
         })}
       </nav>
+
+      <NotifBannerPestana pestana={pestana} notifsDetalle={notifsDetalle} />
 
       {pestana === "general" && (
         <PacienteFichaGeneralTab
@@ -385,6 +392,58 @@ export function PacienteFichaClient({
           <EnlacesRapidos pacienteId={paciente.id} pestana={pestana} />
         </div>
       )}
+    </div>
+  );
+}
+
+function NotifBannerPestana({
+  pestana,
+  notifsDetalle,
+}: {
+  pestana: string;
+  notifsDetalle: NotifDetalle[];
+}) {
+  const tipos = TIPOS_POR_PESTANA[pestana] || [];
+  const relevantes = notifsDetalle.filter((n) => tipos.includes(n.tipo));
+
+  const [cached, setCached] = useState<NotifDetalle[]>(relevantes);
+  const [dismissedTab, setDismissedTab] = useState<string | null>(null);
+
+  // Capturar las notificaciones la primera vez que llegan (antes de que revalidatePath las borre)
+  if (relevantes.length > 0 && cached.length === 0) {
+    setCached(relevantes);
+  }
+
+  const items = cached.length > 0 ? cached : relevantes;
+  if (dismissedTab === pestana || items.length === 0) return null;
+
+  return (
+    <div className="mb-4 space-y-2">
+      {items.map((n, i) => (
+        <div
+          key={`${n.tipo}-${i}`}
+          className="flex items-start gap-3 rounded-lg border border-amber-300 dark:border-amber-500/50 bg-amber-100 dark:bg-amber-500/20 px-4 py-3 text-sm"
+        >
+          <span className="mt-0.5 text-amber-700 dark:text-amber-400 shrink-0">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M12 3a9 9 0 100 18 9 9 0 000-18z" />
+            </svg>
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="font-medium text-amber-900 dark:text-amber-200">{n.titulo}</p>
+            <p className="text-amber-800 dark:text-amber-300 text-xs mt-0.5">{n.mensaje}</p>
+          </div>
+          {i === 0 && (
+            <button
+              onClick={() => setDismissedTab(pestana)}
+              className="mt-0.5 p-0.5 rounded hover:bg-amber-200 dark:hover:bg-amber-500/30 text-amber-700 dark:text-amber-400 transition-colors shrink-0"
+              aria-label="Cerrar aviso"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      ))}
     </div>
   );
 }

@@ -103,3 +103,24 @@ Correcciones tras testing manual de las guías:
 - **Elementos demasiado anchos**: Targets que ocupan >90% del ancho del viewport no muestran highlight box (confuso). Tooltip se centra en pantalla con scrim ligero.
 - **Fallback vertical**: Si el tooltip no cabe ni arriba ni abajo del target, se centra en pantalla en vez de quedar fuera del viewport.
 - **Parpadeo esporádico**: Dos `useEffect` distintos podían llamar a `findTarget` simultáneamente. Añadido guard: el efecto de pathname solo dispara búsqueda si no hay timers activos.
+
+### #10 + #11. Colores personalizables + Logo y marca en entregables PDF
+
+Sistema completo de personalización de entregables PDF:
+
+- **5 temas de color predefinidos** (verde, azul, morado, naranja, oscuro) + **color personalizado** con derivación HSL automática desde un color primario. Módulo `src/lib/pdf/pdf-themes.ts`.
+- **Logo del nutricionista** en portada, cabecera y contraportada del PDF. Upload como base64 data URL. PNGs transparentes soportados.
+- **Nombre de marca** personalizable que reemplaza "Annonia" en cabeceras y footers. "Annonia" y "annonia.com" siempre visibles como atribución de plataforma (portada + footers).
+- **Sección "Documentos" en Ajustes** con selector de tema (swatches), color picker nativo, upload de logo, campo de marca, y vista previa mini en tiempo real.
+- **Checkboxes de secciones del PDF funcionales**: portada, plan semanal, detalle diario, recomendaciones, lista de la compra, valores nutricionales. Generación condicional en origen (reemplaza regex rota de post-procesado).
+- **Botón "Personalizar entregables"** en pestaña de entregables del paciente, enlaza a Ajustes > Documentos.
+- **Headers/footers del navegador eliminados** en print (`@page { margin: 0 }`).
+- **Branding propagado** a: PDF principal, email del plan, vista compartida, lista de la compra compartida, portal del paciente (exportar PDF), reportes simples (evolución, ficha, dieta semanal).
+- **4 server actions** nuevas: `actualizarTemaPdf`, `actualizarLogoPdf`, `eliminarLogoPdf`, `actualizarMarcaPdf`.
+- **4 campos nuevos en Dietista**: `pdfLogoUrl`, `marcaPdf`, `temaPdf`, `colorPrimarioPdf`.
+- **Backward compatible**: sin branding configurado → PDF idéntico al anterior (tema verde, "Annonia").
+- **XSS audit**: `escapeHtml()` aplicado a todo dato de usuario inyectado en HTML.
+
+### #20. Mostrar motivo de la notificación dentro de cada pestaña
+
+Banner ámbar inline dentro de cada pestaña de la ficha del paciente que muestra el motivo de la notificación (ej. "Paciente sin medidas recientes — Daniel Prieto lleva >30 días sin medidas"). El badge rojo desaparece al entrar en la pestaña, pero el banner persiste hasta que el usuario lo cierra con la X. Notificaciones cacheadas en estado cliente para que sobrevivan al `revalidatePath`. Tooltip de notificaciones en la lista de pacientes corregido: de `bg-popover` (transparente) a `bg-card` (opaco).

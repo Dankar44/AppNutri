@@ -20,8 +20,14 @@ export default async function SharedShoppingListPage({ params }: Props) {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center gap-2">
-          <Leaf className="w-5 h-5 text-primary" />
-          <span className="font-bold">Annonia</span>
+          {plan.branding?.pdfLogoUrl ? (
+            <img src={plan.branding.pdfLogoUrl} alt={plan.branding?.marcaPdf || "Annonia"} className="h-8 max-w-[120px] object-contain" />
+          ) : (
+            <>
+              <Leaf className="w-5 h-5 text-primary" />
+              <span className="font-bold">{plan.branding?.marcaPdf || "Annonia"}</span>
+            </>
+          )}
         </div>
       </header>
       <main className="max-w-2xl mx-auto p-4 md:p-6">

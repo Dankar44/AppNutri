@@ -26,6 +26,7 @@ import { PageHeader } from "@/components/page-header";
 import { AjustesNav } from "./ajustes-nav";
 import { PacienteDemoCard } from "./paciente-demo-card";
 import { GoogleLoginCard } from "./google-login-card";
+import { DocumentosPdfSection } from "./documentos-pdf-section";
 
 /** Encabezado común de cada bloque: icono + título + descripción. */
 function SectionHeader({
@@ -176,6 +177,24 @@ export default async function AjustesPage({
               <InfoItem label="Especialidad" value={dietista.especialidad || "—"} />
               <InfoItem label="Nº colegiado" value={dietista.numColegiado || "—"} />
               <InfoItem label="Clínica" value={dietista.clinica || "—"} />
+            </div>
+          </section>
+
+          {/* DOCUMENTOS PDF */}
+          <section>
+            <SectionHeader
+              id="documentos"
+              icon={Briefcase}
+              title="Personalizar documentos"
+              description="Elige los colores, logo y nombre de marca de tus entregables PDF."
+            />
+            <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
+              <DocumentosPdfSection
+                temaPdf={dietista.temaPdf}
+                colorPrimarioPdf={dietista.colorPrimarioPdf}
+                pdfLogoUrl={dietista.pdfLogoUrl}
+                marcaPdf={dietista.marcaPdf}
+              />
             </div>
           </section>
 

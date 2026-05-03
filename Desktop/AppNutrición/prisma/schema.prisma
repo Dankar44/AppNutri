@@ -26,6 +26,10 @@ model Dietista {
   stripeOnboarded Boolean   @default(false)
   horarioLaboral  Json?
   duracionCitaDefault Int?
+  pdfLogoUrl      String?
+  marcaPdf        String?
+  temaPdf         String?
+  colorPrimarioPdf String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 

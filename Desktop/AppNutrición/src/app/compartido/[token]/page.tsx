@@ -29,13 +29,22 @@ export default async function SharedPlanPage({ params }: Props) {
     })),
   }));
 
+  const brandName = plan.branding?.marcaPdf || "Annonia";
+  const logoUrl = plan.branding?.pdfLogoUrl;
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Leaf className="w-5 h-5 text-primary" />
-            <span className="font-bold">Annonia</span>
+            {logoUrl ? (
+              <img src={logoUrl} alt={brandName} className="h-8 max-w-[120px] object-contain" />
+            ) : (
+              <>
+                <Leaf className="w-5 h-5 text-primary" />
+                <span className="font-bold">{brandName}</span>
+              </>
+            )}
           </div>
           <Link
             href={`/compartido/${token}/lista-compra`}

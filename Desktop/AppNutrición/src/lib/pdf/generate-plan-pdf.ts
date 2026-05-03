@@ -1,5 +1,6 @@
 import { generarListaCompra } from "@/lib/shopping-list";
 import { calcularMacrosPorcion, sumarMacros, macrosVacios } from "@/lib/macros";
+import { type PdfColorTheme, TEMAS_PDF } from "./pdf-themes";
 
 const DIA_LABELS: Record<string, string> = {
   LUNES: "Lunes", MARTES: "Martes", MIERCOLES: "Miércoles",
@@ -45,6 +46,15 @@ interface Dia {
   comidas: Comida[];
 }
 
+export interface PDFSectionOptions {
+  portada?: boolean;
+  planSemanal?: boolean;
+  detalleDiario?: boolean;
+  recomendaciones?: boolean;
+  listaCompra?: boolean;
+  valoresNutricionales?: boolean;
+}
+
 export interface PlanPDFData {
   planNombre: string;
   pacienteNombre: string;
@@ -52,54 +62,63 @@ export interface PlanPDFData {
   dias: Dia[];
   recomendaciones: string;
   caloriasObjetivo?: number | null;
+  tema?: PdfColorTheme;
+  brandName?: string;
+  logoDataUrl?: string;
+  clinica?: string;
+  sections?: PDFSectionOptions;
 }
 
-const CSS = `
+function generateCSS(t: PdfColorTheme): string {
+  return `
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', Arial, sans-serif; color: #2c3e33; font-size: 11px; line-height: 1.4; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; color: ${t.textDark}; font-size: 11px; line-height: 1.4; }
 
   .page { page-break-after: always; padding: 30px 40px; min-height: 100vh; position: relative; }
   .page:last-child { page-break-after: avoid; }
 
-  .header { background: #6b9e80; color: white; padding: 8px 20px; display: flex; justify-content: space-between; align-items: center; margin: -30px -40px 20px; padding: 12px 40px; }
+  .header { background: ${t.primary}; color: white; padding: 8px 20px; display: flex; justify-content: space-between; align-items: center; margin: -30px -40px 20px; padding: 12px 40px; }
   .header-name { font-weight: 700; font-size: 13px; letter-spacing: 0.3px; }
   .header-sub { font-size: 10px; opacity: 0.9; }
   .header-logo { font-weight: 800; font-size: 16px; letter-spacing: -0.5px; }
+  .header-logo-img { max-height: 28px; vertical-align: middle; }
 
-  .section-title { background: #eaf3ec; padding: 10px 20px; text-align: center; font-weight: 700; font-size: 14px; color: #3d5a48; margin: 20px 0 16px; border-radius: 6px; border: 1px solid #d4e4d9; }
+  .section-title { background: ${t.sectionBg}; padding: 10px 20px; text-align: center; font-weight: 700; font-size: 14px; color: ${t.textMedium}; margin: 20px 0 16px; border-radius: 6px; border: 1px solid ${t.border}; }
 
-  .day-title { background: #e8d8a8; color: #6b5932; padding: 8px 16px; text-align: center; font-weight: 700; font-size: 13px; border-radius: 6px; margin-bottom: 12px; }
+  .day-title { background: ${t.dayHeaderBg}; color: ${t.dayHeaderText}; padding: 8px 16px; text-align: center; font-weight: 700; font-size: 13px; border-radius: 6px; margin-bottom: 12px; }
 
   /* Cover */
   .cover { display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; text-align: center; }
-  .cover-box { background: #f5f9f6; border-radius: 16px; padding: 60px 80px; max-width: 500px; border: 1px solid #dce8df; }
-  .cover-title { font-size: 28px; color: #3d5a48; font-weight: 300; margin-bottom: 4px; }
-  .cover-title strong { font-weight: 800; color: #6b9e80; }
-  .cover-name { background: #6b9e80; color: white; padding: 8px 24px; font-weight: 700; font-size: 14px; margin-top: 16px; display: inline-block; letter-spacing: 0.5px; border-radius: 4px; }
-  .cover-logo { margin-top: 60px; font-size: 24px; font-weight: 800; color: #6b9e80; }
+  .cover-box { background: ${t.lightBg}; border-radius: 16px; padding: 60px 80px; max-width: 500px; border: 1px solid ${t.borderLight}; }
+  .cover-title { font-size: 28px; color: ${t.textMedium}; font-weight: 300; margin-bottom: 4px; }
+  .cover-title strong { font-weight: 800; color: ${t.primary}; }
+  .cover-name { background: ${t.primary}; color: white; padding: 8px 24px; font-weight: 700; font-size: 14px; margin-top: 16px; display: inline-block; letter-spacing: 0.5px; border-radius: 4px; }
+  .cover-logo { margin-top: 60px; font-size: 24px; font-weight: 800; color: ${t.primary}; }
+  .cover-logo-img { max-width: 180px; max-height: 80px; }
+  .cover-platform { position: absolute; bottom: 40px; left: 0; right: 0; text-align: center; font-size: 18px; font-weight: 700; color: #c0c8c3; letter-spacing: 1px; }
 
   /* Summary table */
   .summary-table { width: 100%; border-collapse: collapse; font-size: 9px; }
-  .summary-table th { background: #6b9e80; color: white; padding: 8px 4px; text-align: center; font-weight: 700; font-size: 10px; }
-  .summary-table td { padding: 6px 4px; border: 1px solid #e2ebe5; vertical-align: top; text-align: center; font-size: 9px; color: #3d5a48; }
-  .summary-table .meal-label { background: #8bb39a; color: white; font-weight: 700; font-size: 9px; padding: 6px 8px; text-align: center; writing-mode: vertical-rl; transform: rotate(180deg); min-width: 30px; }
-  .summary-table tr:nth-child(even) td:not(.meal-label) { background: #f5f9f6; }
+  .summary-table th { background: ${t.primary}; color: white; padding: 8px 4px; text-align: center; font-weight: 700; font-size: 10px; }
+  .summary-table td { padding: 6px 4px; border: 1px solid ${t.borderLight}; vertical-align: top; text-align: center; font-size: 9px; color: ${t.textMedium}; }
+  .summary-table .meal-label { background: ${t.accent}; color: white; font-weight: 700; font-size: 9px; padding: 6px 8px; text-align: center; writing-mode: vertical-rl; transform: rotate(180deg); min-width: 30px; }
+  .summary-table tr:nth-child(even) td:not(.meal-label) { background: ${t.lightBg}; }
 
   /* Day detail table */
   .detail-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-  .detail-table th { background: #6b9e80; color: white; padding: 8px; font-size: 10px; text-align: left; font-weight: 600; }
-  .detail-table td { padding: 8px; border: 1px solid #e2ebe5; vertical-align: top; font-size: 10px; }
-  .detail-table .meal-cell { background: #8bb39a; color: white; font-weight: 700; text-align: center; width: 90px; font-size: 11px; }
+  .detail-table th { background: ${t.primary}; color: white; padding: 8px; font-size: 10px; text-align: left; font-weight: 600; }
+  .detail-table td { padding: 8px; border: 1px solid ${t.borderLight}; vertical-align: top; font-size: 10px; }
+  .detail-table .meal-cell { background: ${t.accent}; color: white; font-weight: 700; text-align: center; width: 90px; font-size: 11px; }
   .detail-table .meal-cell .hora { font-weight: 400; font-size: 9px; opacity: 0.85; }
-  .detail-table .plato-cell { width: 160px; font-weight: 600; font-size: 10px; color: #3d5a48; }
-  .detail-table .ingredientes-cell { font-size: 10px; color: #55695c; }
-  .detail-table tr:nth-child(even) td:not(.meal-cell) { background: #f5f9f6; }
+  .detail-table .plato-cell { width: 160px; font-weight: 600; font-size: 10px; color: ${t.textMedium}; }
+  .detail-table .ingredientes-cell { font-size: 10px; color: ${t.textLight}; }
+  .detail-table tr:nth-child(even) td:not(.meal-cell) { background: ${t.lightBg}; }
 
   /* Macros */
-  .macros-row { display: flex; justify-content: center; gap: 20px; margin-top: 12px; padding: 12px; background: #eef5f0; border-radius: 8px; border: 1px solid #dce8df; }
+  .macros-row { display: flex; justify-content: center; gap: 20px; margin-top: 12px; padding: 12px; background: ${t.sectionBg}; border-radius: 8px; border: 1px solid ${t.borderLight}; }
   .macro-item { text-align: center; }
   .macro-value { font-weight: 800; font-size: 16px; }
-  .macro-label { font-size: 9px; color: #7a8a80; margin-top: 2px; }
+  .macro-label { font-size: 9px; color: ${t.textLight}; margin-top: 2px; }
   .macro-cal { color: #c88a5c; }
   .macro-prot { color: #7d9bb5; }
   .macro-carb { color: #6b9e80; }
@@ -108,27 +127,32 @@ const CSS = `
   /* Shopping list */
   .shop-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
   .shop-cat { break-inside: avoid; }
-  .shop-cat-title { background: #6b9e80; color: white; padding: 6px 10px; font-weight: 700; font-size: 10px; border-radius: 4px 4px 0 0; }
-  .shop-item { padding: 4px 10px; font-size: 10px; border-bottom: 1px solid #eaf0ec; display: flex; align-items: center; gap: 6px; background: #f5f9f6; color: #3d5a48; }
+  .shop-cat-title { background: ${t.primary}; color: white; padding: 6px 10px; font-weight: 700; font-size: 10px; border-radius: 4px 4px 0 0; }
+  .shop-item { padding: 4px 10px; font-size: 10px; border-bottom: 1px solid ${t.borderLight}; display: flex; align-items: center; gap: 6px; background: ${t.lightBg}; color: ${t.textMedium}; }
   .shop-item:last-child { border-radius: 0 0 4px 4px; }
-  .shop-check { width: 10px; height: 10px; border: 1.5px solid #bcc9c0; border-radius: 2px; flex-shrink: 0; }
+  .shop-check { width: 10px; height: 10px; border: 1.5px solid ${t.border}; border-radius: 2px; flex-shrink: 0; }
 
   /* Food links */
-  .food-link { color: #6b9e80; text-decoration: underline; text-underline-offset: 2px; }
+  .food-link { color: ${t.linkColor}; text-decoration: underline; text-underline-offset: 2px; }
 
   /* Recommendations */
-  .reco-text { font-size: 11px; line-height: 1.6; white-space: pre-line; color: #3d5a48; }
+  .reco-text { font-size: 11px; line-height: 1.6; white-space: pre-line; color: ${t.textMedium}; }
 
-  .footer { text-align: center; color: #a3b0a6; font-size: 9px; padding: 10px 0; border-top: 1px solid #e2ebe5; margin-top: 20px; }
+  .footer { text-align: center; color: #a3b0a6; font-size: 9px; padding: 10px 0; border-top: 1px solid ${t.borderLight}; margin-top: 20px; }
+  .footer-platform { color: #c0c8c3; font-size: 8px; margin-top: 2px; }
 
+  @page { margin: 0; }
   @media print {
     * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
     body { margin: 0; }
     .page { padding: 20px 30px; break-after: page; }
     .page:last-child { break-after: avoid; }
     .header { margin: -20px -30px 16px; padding: 10px 30px; }
+    .cover-logo-img { max-width: 150px; }
+    .header-logo-img { max-height: 24px; }
   }
 `;
+}
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -168,88 +192,110 @@ function getDayMacros(dia: Dia) {
 }
 
 export function generatePlanPDF(data: PlanPDFData): string {
+  const theme = data.tema ?? TEMAS_PDF.verde;
+  const sec = { portada: true, planSemanal: true, detalleDiario: true, recomendaciones: true, listaCompra: true, valoresNutricionales: true, ...data.sections };
+  const brandName = escapeHtml(data.brandName || "Annonia");
   const sortedDias = DIAS_ORDEN.map((d) => data.dias.find((dia) => dia.dia === d)).filter(Boolean) as Dia[];
   const fecha = new Date().toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
   const listaCompra = generarListaCompra(sortedDias as unknown as Parameters<typeof generarListaCompra>[0]);
 
-  const header = `<div class="header"><div><span class="header-name">${data.pacienteNombre.toUpperCase()}</span><br><span class="header-sub">PLAN DIETÉTICO SEMANAL DE ${data.pacienteNombre.toUpperCase()}</span></div><div class="header-logo">Annonia</div></div>`;
+  const logoHeaderHtml = data.logoDataUrl
+    ? `<img src="${data.logoDataUrl}" alt="${brandName}" class="header-logo-img" onerror="this.style.display='none';this.parentNode.textContent='${brandName}'">`
+    : brandName;
+  const logoCoverHtml = data.logoDataUrl
+    ? `<img src="${data.logoDataUrl}" alt="${brandName}" class="cover-logo-img" onerror="this.style.display='none';this.parentNode.textContent='${brandName}'">`
+    : brandName;
+
+  const footer = `<div class="footer">${brandName} &mdash; ${fecha}<div class="footer-platform">annonia.com</div></div>`;
+  const pacNombre = escapeHtml(data.pacienteNombre).toUpperCase();
+  const header = `<div class="header"><div><span class="header-name">${pacNombre}</span><br><span class="header-sub">PLAN DIETÉTICO SEMANAL DE ${pacNombre}</span></div><div class="header-logo">${logoHeaderHtml}</div></div>`;
+
+  let html = "";
 
   // === PORTADA ===
-  let html = `<div class="page cover"><div class="cover-box"><div class="cover-title">PLAN DIETÉTICO<br><strong>PERSONALIZADO</strong></div><div class="cover-name">${data.pacienteNombre.toUpperCase()}</div></div><div class="cover-logo">Annonia</div></div>`;
+  if (sec.portada) {
+    html += `<div class="page cover"><div class="cover-box"><div class="cover-title">PLAN DIETÉTICO<br><strong>PERSONALIZADO</strong></div><div class="cover-name">${pacNombre}</div></div><div class="cover-logo">${logoCoverHtml}</div><p class="cover-platform">Annonia</p></div>`;
+  }
 
   // === RESUMEN SEMANAL ===
-  html += `<div class="page">${header}<div class="section-title">PLAN DIETÉTICO SEMANAL</div>`;
-  html += `<table class="summary-table"><thead><tr><th></th>`;
-  for (const d of DIAS_ORDEN) html += `<th>${DIA_LABELS[d]}</th>`;
-  html += `</tr></thead><tbody>`;
-
-  for (const tipo of TIPOS_ORDEN) {
-    html += `<tr><td class="meal-label">${TIPO_LABELS[tipo]}</td>`;
-    for (const dia of sortedDias) {
-      const comida = dia.comidas.find((c) => c.tipo === tipo);
-      const items = comida?.alimentos.map((a) => getItemName(a)).join("<br>") || "-";
-      const desc = comida?.descripcion || "";
-      html += `<td>${desc ? `<strong style="font-size:8px;">${desc}</strong><br>` : ""}${items}</td>`;
-    }
-    html += `</tr>`;
-  }
-  html += `</tbody></table><div class="footer">Annonia &mdash; ${fecha}</div></div>`;
-
-  // === DETALLE POR DÍA ===
-  for (const dia of sortedDias) {
-    const macros = getDayMacros(dia);
-    html += `<div class="page">${header}<div class="day-title">${DIA_LABELS[dia.dia]}</div>`;
-    html += `<table class="detail-table"><thead><tr><th style="width:90px">Comida</th><th style="width:160px">Platos</th><th>Ingredientes y cantidades</th></tr></thead><tbody>`;
+  if (sec.planSemanal) {
+    html += `<div class="page">${header}<div class="section-title">PLAN DIETÉTICO SEMANAL</div>`;
+    html += `<table class="summary-table"><thead><tr><th></th>`;
+    for (const d of DIAS_ORDEN) html += `<th>${DIA_LABELS[d]}</th>`;
+    html += `</tr></thead><tbody>`;
 
     for (const tipo of TIPOS_ORDEN) {
-      const comida = dia.comidas.find((c) => c.tipo === tipo);
-      if (!comida || comida.alimentos.length === 0) continue;
-
-      const rows = comida.alimentos.map((a) => {
-        const name = getItemName(a);
-        const nameHtml = getItemNameHtml(a);
-        const qty = `${Math.round(a.cantidad)}g`;
-        let detail = `${nameHtml}: ${qty}`;
-        if (a.receta?.ingredientes && a.receta.ingredientes.length > 0) {
-          const ingList = a.receta.ingredientes.map((i) => `${escapeHtml(i.alimento.nombre)}: ${Math.round(i.cantidad)}g`).join(", ");
-          detail = `<strong>INGREDIENTES:</strong> ${ingList}`;
-          if (a.receta.instrucciones) {
-            detail += `<br><strong>RECETA:</strong> ${escapeHtml(a.receta.instrucciones).replace(/\n/g, "<br>")}`;
-          }
-        }
-        return { name, nameHtml, qty, detail };
-      });
-
-      const firstRow = rows[0];
-      const desc = comida.descripcion || rows.map((r) => r.name).join(", ");
-
-      html += `<tr>`;
-      html += `<td class="meal-cell" rowspan="${rows.length}"><strong>${TIPO_LABELS[tipo]}</strong><br><span class="hora">${HORA_DEFAULT[tipo]}</span></td>`;
-      html += `<td class="plato-cell">${desc}</td>`;
-      html += `<td class="ingredientes-cell">${firstRow.detail}</td></tr>`;
-
-      for (let i = 1; i < rows.length; i++) {
-        html += `<tr><td class="plato-cell">${rows[i].nameHtml}</td><td class="ingredientes-cell">${rows[i].detail}</td></tr>`;
+      html += `<tr><td class="meal-label">${TIPO_LABELS[tipo]}</td>`;
+      for (const dia of sortedDias) {
+        const comida = dia.comidas.find((c) => c.tipo === tipo);
+        const items = comida?.alimentos.map((a) => escapeHtml(getItemName(a))).join("<br>") || "-";
+        const desc = comida?.descripcion ? escapeHtml(comida.descripcion) : "";
+        html += `<td>${desc ? `<strong style="font-size:8px;">${desc}</strong><br>` : ""}${items}</td>`;
       }
+      html += `</tr>`;
     }
+    html += `</tbody></table>${footer}</div>`;
+  }
 
-    html += `</tbody></table>`;
-    html += `<div class="macros-row">
-      <div class="macro-item"><div class="macro-value macro-cal">${macros.calorias}</div><div class="macro-label">kcal</div></div>
-      <div class="macro-item"><div class="macro-value macro-prot">${macros.proteinas}g</div><div class="macro-label">Proteínas</div></div>
-      <div class="macro-item"><div class="macro-value macro-carb">${macros.carbohidratos}g</div><div class="macro-label">Carbohidratos</div></div>
-      <div class="macro-item"><div class="macro-value macro-fat">${macros.grasas}g</div><div class="macro-label">Grasas</div></div>
-    </div>`;
-    html += `<div class="footer">Annonia &mdash; ${fecha}</div></div>`;
+  // === DETALLE POR DÍA ===
+  if (sec.detalleDiario) {
+    for (const dia of sortedDias) {
+      const macros = getDayMacros(dia);
+      html += `<div class="page">${header}<div class="day-title">${DIA_LABELS[dia.dia]}</div>`;
+      html += `<table class="detail-table"><thead><tr><th style="width:90px">Comida</th><th style="width:160px">Platos</th><th>Ingredientes y cantidades</th></tr></thead><tbody>`;
+
+      for (const tipo of TIPOS_ORDEN) {
+        const comida = dia.comidas.find((c) => c.tipo === tipo);
+        if (!comida || comida.alimentos.length === 0) continue;
+
+        const rows = comida.alimentos.map((a) => {
+          const name = getItemName(a);
+          const nameHtml = getItemNameHtml(a);
+          const qty = `${Math.round(a.cantidad)}g`;
+          let detail = `${nameHtml}: ${qty}`;
+          if (a.receta?.ingredientes && a.receta.ingredientes.length > 0) {
+            const ingList = a.receta.ingredientes.map((i) => `${escapeHtml(i.alimento.nombre)}: ${Math.round(i.cantidad)}g`).join(", ");
+            detail = `<strong>INGREDIENTES:</strong> ${ingList}`;
+            if (a.receta.instrucciones) {
+              detail += `<br><strong>RECETA:</strong> ${escapeHtml(a.receta.instrucciones).replace(/\n/g, "<br>")}`;
+            }
+          }
+          return { name, nameHtml, qty, detail };
+        });
+
+        const firstRow = rows[0];
+        const desc = escapeHtml(comida.descripcion || rows.map((r) => r.name).join(", "));
+
+        html += `<tr>`;
+        html += `<td class="meal-cell" rowspan="${rows.length}"><strong>${TIPO_LABELS[tipo]}</strong><br><span class="hora">${HORA_DEFAULT[tipo]}</span></td>`;
+        html += `<td class="plato-cell">${desc}</td>`;
+        html += `<td class="ingredientes-cell">${firstRow.detail}</td></tr>`;
+
+        for (let i = 1; i < rows.length; i++) {
+          html += `<tr><td class="plato-cell">${rows[i].nameHtml}</td><td class="ingredientes-cell">${rows[i].detail}</td></tr>`;
+        }
+      }
+
+      html += `</tbody></table>`;
+      if (sec.valoresNutricionales) {
+        html += `<div class="macros-row">
+          <div class="macro-item"><div class="macro-value macro-cal">${macros.calorias}</div><div class="macro-label">kcal</div></div>
+          <div class="macro-item"><div class="macro-value macro-prot">${macros.proteinas}g</div><div class="macro-label">Proteínas</div></div>
+          <div class="macro-item"><div class="macro-value macro-carb">${macros.carbohidratos}g</div><div class="macro-label">Carbohidratos</div></div>
+          <div class="macro-item"><div class="macro-value macro-fat">${macros.grasas}g</div><div class="macro-label">Grasas</div></div>
+        </div>`;
+      }
+      html += `${footer}</div>`;
+    }
   }
 
   // === RECOMENDACIONES ===
-  if (data.recomendaciones.trim()) {
-    html += `<div class="page">${header}<div class="section-title">RECOMENDACIONES</div><div class="reco-text">${data.recomendaciones}</div><div class="footer">Annonia &mdash; ${fecha}</div></div>`;
+  if (sec.recomendaciones && data.recomendaciones.trim()) {
+    html += `<div class="page">${header}<div class="section-title">RECOMENDACIONES</div><div class="reco-text">${escapeHtml(data.recomendaciones)}</div>${footer}</div>`;
   }
 
   // === LISTA DE LA COMPRA ===
-  if (listaCompra.length > 0) {
+  if (sec.listaCompra && listaCompra.length > 0) {
     html += `<div class="page">${header}<div class="section-title">LISTA DE LA COMPRA</div><div class="shop-grid">`;
     for (const cat of listaCompra) {
       html += `<div class="shop-cat"><div class="shop-cat-title">${cat.label}</div>`;
@@ -261,11 +307,12 @@ export function generatePlanPDF(data: PlanPDFData): string {
       }
       html += `</div>`;
     }
-    html += `</div><div class="footer">Annonia &mdash; ${fecha}</div></div>`;
+    html += `</div>${footer}</div>`;
   }
 
   // === CONTRAPORTADA ===
-  html += `<div class="page cover"><div class="cover-logo" style="font-size:32px;">Annonia</div><p style="color:#666; margin-top:12px; font-size:12px;">Generado por ${data.dietistaNombre}</p></div>`;
+  const clinicaLine = data.clinica ? ` &mdash; ${escapeHtml(data.clinica)}` : "";
+  html += `<div class="page cover"><div class="cover-logo" style="font-size:32px;">${logoCoverHtml}</div><p style="color:#666; margin-top:12px; font-size:12px;">Generado por ${escapeHtml(data.dietistaNombre)}${clinicaLine}</p><p style="color:#b0b8b3; margin-top:24px; font-size:10px;">annonia.com</p></div>`;
 
-  return `<!DOCTYPE html><html><head><title>Plan Dietético - ${data.pacienteNombre}</title><style>${CSS}</style></head><body>${html}<script>window.onload=function(){window.print();}</script></body></html>`;
+  return `<!DOCTYPE html><html><head><title>Plan Dietético - ${data.pacienteNombre}</title><style>${generateCSS(theme)}</style></head><body>${html}<script>window.onload=function(){window.print();}</script></body></html>`;
 }

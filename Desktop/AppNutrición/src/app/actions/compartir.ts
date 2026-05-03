@@ -42,6 +42,7 @@ export async function getPlanPorToken(token: string) {
   const enlace = await prisma.enlaceCompartido.findUnique({
     where: { token, activo: true },
     include: {
+      dietista: { select: { marcaPdf: true, pdfLogoUrl: true, temaPdf: true, colorPrimarioPdf: true, clinica: true, nombre: true, apellidos: true } },
       plan: {
         include: {
           paciente: { select: { nombre: true, apellidos: true } },
@@ -69,5 +70,15 @@ export async function getPlanPorToken(token: string) {
 
   if (!enlace) return null;
   if (enlace.expiraEn && enlace.expiraEn < new Date()) return null;
-  return enlace.plan;
+  return {
+    ...enlace.plan,
+    branding: {
+      marcaPdf: enlace.dietista.marcaPdf,
+      pdfLogoUrl: enlace.dietista.pdfLogoUrl,
+      temaPdf: enlace.dietista.temaPdf,
+      colorPrimarioPdf: enlace.dietista.colorPrimarioPdf,
+      clinica: enlace.dietista.clinica,
+      dietistaNombre: `${enlace.dietista.nombre} ${enlace.dietista.apellidos}`,
+    },
+  };
 }

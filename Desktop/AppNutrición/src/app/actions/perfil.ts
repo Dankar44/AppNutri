@@ -9,7 +9,10 @@ import {
   sanitizeStringOptional,
   validatePhone,
   validateImageDataUrl,
+  validateHexColor,
+  validateEnum,
   LIMITS,
+  TEMA_PDF_OPCIONES,
 } from "@/lib/validation";
 
 export interface PerfilFormData {
@@ -79,4 +82,63 @@ export async function actualizarFotoDietista(fotoUrl: string) {
 
   revalidatePath("/ajustes");
   revalidatePath("/dashboard");
+}
+
+export async function actualizarTemaPdf(tema: string, colorPrimario: string | null) {
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error("No autorizado");
+
+  const temaValido = validateEnum(tema, TEMA_PDF_OPCIONES);
+  if (!temaValido) throw new Error("Tema no válido");
+
+  const color = temaValido === "personalizado" ? validateHexColor(colorPrimario) : null;
+  if (temaValido === "personalizado" && !color) throw new Error("Color no válido");
+
+  await prisma.dietista.update({
+    where: { id: dietista.id },
+    data: { temaPdf: temaValido, colorPrimarioPdf: color },
+  });
+
+  revalidatePath("/ajustes");
+}
+
+export async function actualizarLogoPdf(logoDataUrl: string) {
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error("No autorizado");
+
+  const validatedUrl = validateImageDataUrl(logoDataUrl);
+  if (!validatedUrl) throw new Error("Imagen inválida");
+
+  await prisma.dietista.update({
+    where: { id: dietista.id },
+    data: { pdfLogoUrl: validatedUrl },
+  });
+
+  revalidatePath("/ajustes");
+}
+
+export async function eliminarLogoPdf() {
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error("No autorizado");
+
+  await prisma.dietista.update({
+    where: { id: dietista.id },
+    data: { pdfLogoUrl: null },
+  });
+
+  revalidatePath("/ajustes");
+}
+
+export async function actualizarMarcaPdf(marca: string) {
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error("No autorizado");
+
+  const cleaned = sanitizeStringOptional(marca, LIMITS.MARCA_PDF);
+
+  await prisma.dietista.update({
+    where: { id: dietista.id },
+    data: { marcaPdf: cleaned },
+  });
+
+  revalidatePath("/ajustes");
 }

@@ -2,6 +2,10 @@
 
 import { FileDown } from "lucide-react";
 
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 interface DietaDia {
   dia: string;
   comidas: {
@@ -10,7 +14,13 @@ interface DietaDia {
   }[];
 }
 
+interface Branding {
+  brandName?: string;
+  linkColor?: string;
+}
+
 interface Props {
+  branding?: Branding;
   paciente: {
     nombre: string;
     apellidos: string;
@@ -43,7 +53,7 @@ const OBJETIVO_LABELS: Record<string, string> = {
   OTRO: "Otro",
 };
 
-function abrirVentanaPDF(titulo: string, contenidoHTML: string) {
+function abrirVentanaPDF(titulo: string, contenidoHTML: string, brandName = "Annonia") {
   const ventana = window.open("", "_blank");
   if (!ventana) return;
 
@@ -65,12 +75,13 @@ function abrirVentanaPDF(titulo: string, contenidoHTML: string) {
         .consulta-motivo { color: #666; font-size: 13px; }
         .consulta-notas { margin-top: 6px; font-size: 13px; white-space: pre-wrap; }
         .footer { margin-top: 40px; text-align: center; color: #999; font-size: 11px; border-top: 1px solid #ddd; padding-top: 10px; }
+        @page { margin: 0; }
         @media print { body { margin: 20px; } }
       </style>
     </head>
     <body>
       ${contenidoHTML}
-      <div class="footer">Annonia &mdash; Generado el ${new Date().toLocaleDateString("es-ES")}</div>
+      <div class="footer">${brandName} &mdash; Generado el ${new Date().toLocaleDateString("es-ES")}<div style="color:#c0c8c3;font-size:8px;margin-top:2px;">annonia.com</div></div>
       <script>window.onload = function() { window.print(); }</script>
     </body>
     </html>
@@ -88,13 +99,15 @@ const TIPO_COMIDA_LABELS: Record<string, string> = {
   MERIENDA: "Merienda", CENA: "Cena", RECENA: "Recena",
 };
 
-export function GenerarPDFButtons({ paciente, medidas, consultas, dieta }: Props) {
+export function GenerarPDFButtons({ paciente, medidas, consultas, dieta, branding }: Props) {
+  const brand = branding?.brandName || "Annonia";
+  const linkCol = branding?.linkColor || "#6b9e80";
   function generarInformeEvolucion() {
     let html = `
       <h1>Informe de Evolución</h1>
       <p class="meta">
-        <strong>${paciente.nombre} ${paciente.apellidos}</strong><br>
-        Objetivo: ${OBJETIVO_LABELS[paciente.objetivo] || paciente.objetivo}
+        <strong>${escapeHtml(paciente.nombre)} ${escapeHtml(paciente.apellidos)}</strong><br>
+        Objetivo: ${OBJETIVO_LABELS[paciente.objetivo] || escapeHtml(paciente.objetivo)}
       </p>
     `;
 
@@ -124,26 +137,27 @@ export function GenerarPDFButtons({ paciente, medidas, consultas, dieta }: Props
       html += `<h2>Historial de consultas</h2>`;
       for (const c of consultas) {
         html += `<div class="consulta">
-          <div class="consulta-fecha">${c.fecha}${c.motivo ? ` - ${c.motivo}` : ""}</div>
-          ${c.notas ? `<div class="consulta-notas">${c.notas}</div>` : ""}
+          <div class="consulta-fecha">${escapeHtml(c.fecha)}${c.motivo ? ` - ${escapeHtml(c.motivo)}` : ""}</div>
+          ${c.notas ? `<div class="consulta-notas">${escapeHtml(c.notas)}</div>` : ""}
         </div>`;
       }
     }
 
     abrirVentanaPDF(
       `Evolución - ${paciente.nombre} ${paciente.apellidos}`,
-      html
+      html,
+      brand
     );
   }
 
   function generarFichaPaciente() {
     let html = `
       <h1>Ficha del Paciente</h1>
-      <h2>${paciente.nombre} ${paciente.apellidos}</h2>
+      <h2>${escapeHtml(paciente.nombre)} ${escapeHtml(paciente.apellidos)}</h2>
       <p>
-        ${paciente.email ? `Email: ${paciente.email}<br>` : ""}
-        ${paciente.telefono ? `Teléfono: ${paciente.telefono}<br>` : ""}
-        Objetivo: ${OBJETIVO_LABELS[paciente.objetivo] || paciente.objetivo}<br>
+        ${paciente.email ? `Email: ${escapeHtml(paciente.email)}<br>` : ""}
+        ${paciente.telefono ? `Teléfono: ${escapeHtml(paciente.telefono)}<br>` : ""}
+        Objetivo: ${OBJETIVO_LABELS[paciente.objetivo] || escapeHtml(paciente.objetivo)}<br>
         ${paciente.peso ? `Peso: ${paciente.peso} kg<br>` : ""}
         ${paciente.altura ? `Altura: ${paciente.altura} cm` : ""}
       </p>
@@ -160,7 +174,8 @@ export function GenerarPDFButtons({ paciente, medidas, consultas, dieta }: Props
 
     abrirVentanaPDF(
       `Ficha - ${paciente.nombre} ${paciente.apellidos}`,
-      html
+      html,
+      brand
     );
   }
 
@@ -183,8 +198,8 @@ export function GenerarPDFButtons({ paciente, medidas, consultas, dieta }: Props
         html += `<table><tr><th>Alimento</th><th>Cantidad</th></tr>`;
         for (const a of comida.alimentos) {
           const nombreHtml = a.enlaceProducto
-            ? `<a href="${a.enlaceProducto}" target="_blank" style="color:#6b9e80;text-decoration:underline;">${a.nombre}</a>`
-            : a.nombre;
+            ? `<a href="${escapeHtml(a.enlaceProducto)}" target="_blank" style="color:${linkCol};text-decoration:underline;">${escapeHtml(a.nombre)}</a>`
+            : escapeHtml(a.nombre);
           html += `<tr><td>${nombreHtml}</td><td>${a.cantidad}g</td></tr>`;
         }
         html += `</table>`;
@@ -193,7 +208,8 @@ export function GenerarPDFButtons({ paciente, medidas, consultas, dieta }: Props
 
     abrirVentanaPDF(
       `Dieta - ${paciente.nombre} ${paciente.apellidos}`,
-      html
+      html,
+      brand
     );
   }
 

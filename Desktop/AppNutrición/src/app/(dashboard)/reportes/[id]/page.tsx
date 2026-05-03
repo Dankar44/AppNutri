@@ -7,6 +7,8 @@ import { getMedidasEvolucion } from "@/app/actions/medidas";
 import { getConsultas } from "@/app/actions/consultas";
 import { formatDate } from "@/lib/utils";
 import { GenerarPDFButtons } from "./generar-pdf";
+import { getCurrentDietista } from "@/app/actions/auth";
+import { getTheme } from "@/lib/pdf/pdf-themes";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -17,11 +19,15 @@ export default async function ReportesPacientePage({ params }: Props) {
   const paciente = await getPaciente(id);
   if (!paciente) notFound();
 
-  const [planes, medidas, consultas] = await Promise.all([
+  const [planes, medidas, consultas, dietista] = await Promise.all([
     getPlanesPaciente(id),
     getMedidasEvolucion(id),
     getConsultas(id),
+    getCurrentDietista(),
   ]);
+
+  const tema = dietista ? getTheme(dietista.temaPdf, dietista.colorPrimarioPdf) : undefined;
+  const reportBranding = dietista ? { brandName: dietista.marcaPdf || undefined, linkColor: tema?.linkColor } : undefined;
 
   const ultimaMedida = medidas.length > 0 ? medidas[medidas.length - 1] : null;
   const primeraMedida = medidas.length > 0 ? medidas[0] : null;
@@ -91,6 +97,7 @@ export default async function ReportesPacientePage({ params }: Props) {
       <section className="bg-card rounded-xl border border-border p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4">Generar informes PDF</h2>
         <GenerarPDFButtons
+          branding={reportBranding}
           paciente={{
             nombre: paciente.nombre,
             apellidos: paciente.apellidos,

@@ -3,6 +3,7 @@
 import { useState, useTransition, useEffect, useRef } from "react";
 import {
   Mail,
+  Palette,
   Plus,
   Info,
   ChevronDown,
@@ -16,11 +17,12 @@ import {
   Eye,
   Sparkles,
 } from "lucide-react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { enviarPlanPorEmail } from "@/app/actions/email";
 import { getPlanPDFData, getPlanesPaciente } from "@/app/actions/planes";
-import { generatePlanPDF, type PlanPDFData } from "@/lib/pdf/generate-plan-pdf";
+import { generatePlanPDF, type PlanPDFData, type PDFSectionOptions } from "@/lib/pdf/generate-plan-pdf";
 
 // ─── Types ───
 
@@ -98,8 +100,6 @@ type PDFOptions = {
   recomendaciones: boolean;
   listaCompra: boolean;
   valoresNutricionales: boolean;
-  micronutrientes: boolean;
-  horarioPaciente: boolean;
 };
 
 const PDF_OPTIONS_DEFAULT: PDFOptions = {
@@ -109,8 +109,6 @@ const PDF_OPTIONS_DEFAULT: PDFOptions = {
   recomendaciones: true,
   listaCompra: true,
   valoresNutricionales: true,
-  micronutrientes: true,
-  horarioPaciente: false,
 };
 
 const PDF_OPTIONS_LABELS: {
@@ -125,8 +123,6 @@ const PDF_OPTIONS_LABELS: {
   { key: "recomendaciones", label: "Recomendaciones", description: "Consejos y recomendaciones personalizadas para el paciente" },
   { key: "listaCompra", label: "Lista de la compra", description: "Lista de ingredientes organizada por categorias" },
   { key: "valoresNutricionales", label: "Valores nutricionales por comida", description: "Calorias, proteinas, carbohidratos y grasas por comida" },
-  { key: "micronutrientes", label: "Micronutrientes", description: "Detalle de vitaminas y minerales" },
-  { key: "horarioPaciente", label: "Horario del paciente", description: "Incluye los horarios habituales del paciente" },
 ];
 
 // ─── Toggle Dropdown ───
@@ -272,17 +268,26 @@ export function EntregablesTab({
     return () => ro.disconnect();
   }, [pdfHtml]);
 
+  function toSections(opts: PDFOptions): PDFSectionOptions {
+    return {
+      portada: opts.portada,
+      planSemanal: opts.planSemanal,
+      detalleDiario: opts.detalleDiario,
+      recomendaciones: opts.recomendaciones,
+      listaCompra: opts.listaCompra,
+      valoresNutricionales: opts.valoresNutricionales,
+    };
+  }
+
   // Regenerate PDF HTML when data o opciones aplicadas cambian (no cuando cambia pdfOptions)
   useEffect(() => {
     if (!pdfData) { setPdfHtml(null); return; }
-    const html = generatePlanPDF(pdfData);
-    // Remove the auto-print script for preview purposes
+    const html = generatePlanPDF({ ...pdfData, sections: toSections(appliedOptions) });
     const previewHtml = html.replace(
       /<script>window\.onload=function\(\)\{window\.print\(\);\}<\/script>/,
       ""
     );
     setPdfHtml(previewHtml);
-    // Count pages by counting .page divs
     const count = (previewHtml.match(/class="page/g) || []).length;
     setTotalPages(Math.max(1, count));
     setPreviewPage(0);
@@ -301,8 +306,7 @@ export function EntregablesTab({
       toast.error("No hay un plan activo para exportar");
       return;
     }
-    // Generate with print script for actual PDF export
-    const printHtml = generatePlanPDF(pdfData);
+    const printHtml = generatePlanPDF({ ...pdfData, sections: toSections(appliedOptions) });
     const ventana = window.open("", "_blank");
     if (!ventana) return;
     ventana.document.write(printHtml);
@@ -454,6 +458,14 @@ export function EntregablesTab({
                   Descargar PDF
                 </button>
                 </div>
+
+                <Link
+                  href="/ajustes#documentos"
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2 text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
+                >
+                  <Palette className="w-3.5 h-3.5" />
+                  Personalizar entregables
+                </Link>
               </div>
             </div>
 

@@ -96,7 +96,7 @@ export function Tooltip({
               left: coords?.left ?? -9999,
               visibility: coords ? "visible" : "hidden",
             }}
-            className="pointer-events-none fixed z-[100] px-2.5 py-2 rounded-md bg-popover text-popover-foreground border border-border shadow-lg text-xs w-64 whitespace-normal leading-snug"
+            className="pointer-events-none fixed z-[100] px-2.5 py-2 rounded-md bg-card text-card-foreground border border-border shadow-lg text-xs w-64 whitespace-normal leading-snug"
           >
             {content}
           </div>,

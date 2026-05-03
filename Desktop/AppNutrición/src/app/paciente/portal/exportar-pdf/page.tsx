@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { capitalizarNombre } from "@/lib/utils";
 import { ExportarPDFPaciente } from "./exportar-form";
 import { PageHeader } from "@/components/page-header";
+import { getTheme } from "@/lib/pdf/pdf-themes";
 
 export default async function ExportarPDFPage() {
   const session = await getCurrentPaciente();
@@ -15,7 +16,7 @@ export default async function ExportarPDFPage() {
     select: {
       nombre: true,
       apellidos: true,
-      dietista: { select: { nombre: true, apellidos: true } },
+      dietista: { select: { nombre: true, apellidos: true, marcaPdf: true, pdfLogoUrl: true, temaPdf: true, colorPrimarioPdf: true, clinica: true } },
     },
   });
   if (!paciente) redirect("/paciente/login");
@@ -62,6 +63,11 @@ export default async function ExportarPDFPage() {
     ? `${capitalizarNombre(paciente.dietista.nombre)} ${capitalizarNombre(paciente.dietista.apellidos)}`
     : "Annonia";
 
+  const tema = paciente.dietista ? getTheme(paciente.dietista.temaPdf, paciente.dietista.colorPrimarioPdf) : undefined;
+  const brandName = paciente.dietista?.marcaPdf || undefined;
+  const logoDataUrl = paciente.dietista?.pdfLogoUrl || undefined;
+  const clinica = paciente.dietista?.clinica || undefined;
+
   return (
     <div>
       <PageHeader
@@ -83,6 +89,10 @@ export default async function ExportarPDFPage() {
           dietistaNombre={dietistaNombre}
           recomendaciones={recomendaciones}
           horario={JSON.parse(JSON.stringify(horario))}
+          tema={tema ? JSON.parse(JSON.stringify(tema)) : undefined}
+          brandName={brandName}
+          logoDataUrl={logoDataUrl}
+          clinica={clinica}
         />
       )}
     </div>

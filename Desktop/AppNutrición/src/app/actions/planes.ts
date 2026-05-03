@@ -651,10 +651,17 @@ export async function getPlanPDFData(planId: string): Promise<PlanPDFData | null
 
   const recomendaciones = await getRecomendaciones(plan.pacienteId);
 
+  const { getTheme } = await import("@/lib/pdf/pdf-themes");
+  const tema = getTheme(dietista.temaPdf, dietista.colorPrimarioPdf);
+
   return {
     planNombre: plan.nombre,
     pacienteNombre: `${capitalizarNombre(plan.paciente.nombre)} ${capitalizarNombre(plan.paciente.apellidos)}`,
     dietistaNombre: `${dietista.nombre} ${dietista.apellidos}`,
+    tema,
+    brandName: dietista.marcaPdf || undefined,
+    logoDataUrl: dietista.pdfLogoUrl || undefined,
+    clinica: dietista.clinica || undefined,
     dias: plan.dias.map((dia) => ({
       dia: dia.dia,
       comidas: dia.comidas.map((comida) => ({

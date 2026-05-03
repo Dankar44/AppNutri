@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   User,
   Briefcase,
+  FileText,
   Plug,
   Sparkles,
   CreditCard,
@@ -27,6 +28,7 @@ interface NavSection {
 const SECTIONS: NavSection[] = [
   { id: "perfil", label: "Perfil", icon: User },
   { id: "profesional", label: "Profesional", icon: Briefcase },
+  { id: "documentos", label: "Documentos", icon: FileText },
   { id: "integraciones", label: "Integraciones", icon: Plug },
   { id: "paciente-demo", label: "Paciente de ejemplo", icon: Sparkles },
   { id: "suscripcion", label: "Suscripción", icon: CreditCard },
@@ -42,6 +44,19 @@ const SECTIONS: NavSection[] = [
 export function AjustesNav() {
   const [activeId, setActiveId] = useState<string>(SECTIONS[0]?.id ?? "");
   const clickLockRef = useRef<number>(0);
+
+  useEffect(() => {
+    const hash = window.location.hash.replace("#", "");
+    if (!hash) return;
+    const timer = setTimeout(() => {
+      const el = document.getElementById(hash);
+      if (el) {
+        setActiveId(hash);
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
