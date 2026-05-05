@@ -16,13 +16,12 @@ export async function crearEnlace(planId: string) {
   return enlace;
 }
 
-export async function desactivarEnlace(id: string) {
+export async function eliminarEnlace(id: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
 
-  await prisma.enlaceCompartido.update({
+  await prisma.enlaceCompartido.delete({
     where: { id, dietistaId: dietista.id },
-    data: { activo: false },
   });
 
   revalidatePath("/dietas");
@@ -33,7 +32,7 @@ export async function getEnlacesDelPlan(planId: string) {
   if (!dietista) return [];
 
   return prisma.enlaceCompartido.findMany({
-    where: { planId, dietistaId: dietista.id },
+    where: { planId, dietistaId: dietista.id, activo: true },
     orderBy: { createdAt: "desc" },
   });
 }

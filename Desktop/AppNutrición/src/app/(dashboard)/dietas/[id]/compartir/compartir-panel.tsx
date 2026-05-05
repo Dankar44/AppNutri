@@ -3,14 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Link2, Copy, Check, XCircle } from "lucide-react";
-import { crearEnlace, desactivarEnlace } from "@/app/actions/compartir";
+import { crearEnlace, eliminarEnlace } from "@/app/actions/compartir";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
 
 interface Enlace {
   id: string;
   token: string;
-  activo: boolean;
   createdAt: Date | string;
 }
 
@@ -38,13 +37,13 @@ export function CompartirPanel({
     }
   }
 
-  async function handleDesactivar(id: string) {
+  async function handleEliminar(id: string) {
     try {
-      await desactivarEnlace(id);
-      toast.success("Enlace desactivado");
+      await eliminarEnlace(id);
+      toast.success("Enlace eliminado");
       router.refresh();
     } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
-      toast.error("Error al desactivar");
+      toast.error("Error al eliminar");
     }
   }
 
@@ -71,15 +70,11 @@ export function CompartirPanel({
         {enlaces.map((enlace) => (
           <div
             key={enlace.id}
-            className={`p-4 rounded-lg border ${
-              enlace.activo ? "border-border" : "border-border bg-muted/50 opacity-60"
-            }`}
+            className="p-4 rounded-lg border border-border"
           >
             <div className="flex items-center justify-between mb-2">
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                enlace.activo ? "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400" : "bg-muted text-muted-foreground"
-              }`}>
-                {enlace.activo ? "Activo" : "Desactivado"}
+              <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400">
+                Activo
               </span>
               <span className="text-xs text-muted-foreground">
                 {formatDate(enlace.createdAt)}
@@ -88,26 +83,24 @@ export function CompartirPanel({
             <code className="text-xs text-muted-foreground block truncate mb-2">
               /compartido/{enlace.token}
             </code>
-            {enlace.activo && (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => copyUrl(enlace.token)}
-                  className="inline-flex items-center gap-1 px-3 py-1 rounded border border-border hover:bg-muted transition-colors text-xs font-medium"
-                >
-                  {copied === enlace.token ? (
-                    <><Check className="w-3 h-3" /> Copiado</>
-                  ) : (
-                    <><Copy className="w-3 h-3" /> Copiar enlace</>
-                  )}
-                </button>
-                <button
-                  onClick={() => handleDesactivar(enlace.id)}
-                  className="inline-flex items-center gap-1 px-3 py-1 rounded border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/15 transition-colors text-xs font-medium"
-                >
-                  <XCircle className="w-3 h-3" /> Desactivar
-                </button>
-              </div>
-            )}
+            <div className="flex gap-2">
+              <button
+                onClick={() => copyUrl(enlace.token)}
+                className="inline-flex items-center gap-1 px-3 py-1 rounded border border-border hover:bg-muted transition-colors text-xs font-medium"
+              >
+                {copied === enlace.token ? (
+                  <><Check className="w-3 h-3" /> Copiado</>
+                ) : (
+                  <><Copy className="w-3 h-3" /> Copiar enlace</>
+                )}
+              </button>
+              <button
+                onClick={() => handleEliminar(enlace.id)}
+                className="inline-flex items-center gap-1 px-3 py-1 rounded border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/15 transition-colors text-xs font-medium"
+              >
+                <XCircle className="w-3 h-3" /> Eliminar
+              </button>
+            </div>
           </div>
         ))}
         {enlaces.length === 0 && (
