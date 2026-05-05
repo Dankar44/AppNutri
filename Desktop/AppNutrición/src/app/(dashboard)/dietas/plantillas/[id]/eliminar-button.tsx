@@ -30,10 +30,11 @@ export function EliminarPlantillaButton({ id, nombre }: { id: string; nombre: st
       <button
         onClick={() => setShowConfirm(true)}
         disabled={deleting}
-        className="p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/15 transition-colors disabled:opacity-50 border border-border"
+        className="inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/15 transition-colors text-xs sm:text-sm font-medium flex-1 sm:flex-none min-h-10 sm:min-h-0 disabled:opacity-50"
         title="Eliminar plantilla"
       >
-        <Trash2 className="w-4 h-4" />
+        <Trash2 className="w-3.5 h-3.5" />
+        <span className="hidden xs:inline sm:inline">Eliminar</span>
       </button>
 
       <ConfirmModal

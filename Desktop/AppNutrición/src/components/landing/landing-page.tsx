@@ -1,0 +1,598 @@
+"use client";
+
+import { useState, useEffect, useRef, useCallback } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import {
+  Leaf, ArrowRight, ChevronRight, X,
+  Shield, Globe, Zap,
+  Utensils, Fish, Croissant, Salad, Wheat, Vegan, Pizza, Soup, Beef, CupSoda,
+  Carrot, Egg, Nut, Cherry, Banana, Bean, Sandwich, IceCreamCone, Apple, Grape, Citrus,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { ScrollReveal } from "@/components/landing/scroll-reveal";
+
+const SHOWCASE_SECTIONS = [
+  {
+    tag: "Para dietistas:",
+    title: "Software de gestión para tu consulta de nutrición",
+    description:
+      "Dedica más tiempo a tus pacientes y menos a tareas administrativas. Annonia centraliza fichas, planes alimenticios, citas y mensajería en un software de nutrición diseñado por y para dietistas.",
+    ctaText: "Empieza gratis",
+    ctaHref: "/registro",
+    imageSrc: "/images/landing/sw_gestion.png",
+    imageAlt: "Software de gestión Annonia",
+    imagePosition: "right" as const,
+    gradientClasses: "from-green-50 to-green-200/60 border-green-200/60",
+    direction: "left" as const,
+  },
+  {
+    tag: "Para pacientes:",
+    title: "Portal del paciente con seguimiento nutricional",
+    description:
+      "Tus pacientes acceden desde el móvil o el ordenador. Consultan su dieta personalizada, registran su evolución y se comunican contigo de forma directa.",
+    ctaText: "Descubre el portal",
+    ctaHref: "/registro",
+    imageSrc: "/images/landing/pacientes.png",
+    imageAlt: "Portal del paciente Annonia",
+    imagePosition: "left" as const,
+    gradientClasses: "from-emerald-50 to-green-100/70 border-emerald-200/60",
+    direction: "right" as const,
+  },
+  {
+    tag: "Inteligencia artificial:",
+    title: "Genera planes alimenticios con IA en segundos",
+    description:
+      "Nuestra IA analiza el perfil, objetivos y restricciones de cada paciente para proponerte un plan nutricional equilibrado que puedes ajustar antes de asignarlo.",
+    ctaText: "Prueba la IA",
+    ctaHref: "/registro",
+    imageSrc: "/images/landing/planes_ai.png",
+    imageAlt: "Generación de planes con IA Annonia",
+    imagePosition: "right" as const,
+    gradientClasses: "from-green-100/80 to-emerald-200/50 border-green-200/60",
+    direction: "left" as const,
+  },
+];
+
+const FAQS = [
+  {
+    q: "¿Puedo probar Annonia gratis?",
+    a: "Sí, tienes 14 días de prueba gratuita con acceso completo. No necesitas tarjeta de crédito.",
+  },
+  {
+    q: "¿Mis datos y los de mis pacientes están seguros?",
+    a: "Absolutamente. Usamos encriptación, servidores en la UE y cumplimos con el RGPD. La seguridad de los datos clínicos es nuestra prioridad.",
+  },
+  {
+    q: "¿Puedo cambiar de plan o cancelar?",
+    a: "Sí, sin compromisos. Cambia o cancela desde Ajustes. Mantienes acceso hasta el final del periodo pagado.",
+  },
+  {
+    q: "¿Mis pacientes necesitan crear cuenta?",
+    a: "No. Tú les envías un acceso con email y PIN. Ellos acceden al portal sin registrarse.",
+  },
+  {
+    q: "¿Funciona en el móvil?",
+    a: "Sí, todo está optimizado para móvil, tablet y escritorio. Es una web app progresiva que puedes instalar.",
+  },
+];
+
+const TRUST_CARDS = [
+  { icon: Shield, title: "Segura", desc: "Datos cifrados, servidores en la UE, cumplimiento RGPD" },
+  { icon: Globe, title: "Accesible", desc: "Desde cualquier dispositivo, en cualquier momento" },
+  { icon: Zap, title: "Rápida", desc: "Interfaz ligera optimizada para tu día a día" },
+];
+
+export function LandingPage() {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const heroRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    function handleScroll() {
+      const heroBottom = heroRef.current?.getBoundingClientRect().bottom ?? 0;
+      setScrolled(heroBottom <= 64);
+    }
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [menuOpen]);
+
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
+
+  return (
+    <div className="min-h-screen bg-white text-gray-900 overflow-x-hidden">
+      {/* ─── NAVBAR ─── */}
+      <header
+        className={cn(
+          "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+          scrolled && "bg-white shadow-md"
+        )}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <Link href="/landing" className="flex items-center gap-2.5">
+            <Leaf
+              className={cn(
+                "w-7 h-7 transition-colors duration-300",
+                scrolled ? "text-green-600" : "text-white drop-shadow-md"
+              )}
+            />
+            <span
+              className={cn(
+                "text-xl font-bold transition-colors duration-300",
+                scrolled ? "text-gray-900" : "text-white drop-shadow-md"
+              )}
+            >
+              Annonia
+            </span>
+          </Link>
+
+          <nav className="hidden md:flex items-center gap-8 text-base font-extrabold drop-shadow-md">
+            <a
+              href="#como-funciona"
+              className={cn(
+                "transition-colors duration-300",
+                scrolled ? "text-gray-700 hover:text-green-600 drop-shadow-none" : "text-white hover:text-green-200"
+              )}
+            >
+              Cómo funciona
+            </a>
+            <Link
+              href="/precios"
+              className={cn(
+                "transition-colors duration-300",
+                scrolled ? "text-gray-700 hover:text-green-600 drop-shadow-none" : "text-white hover:text-green-200"
+              )}
+            >
+              Precios
+            </Link>
+            <a
+              href="#faq"
+              className={cn(
+                "transition-colors duration-300",
+                scrolled ? "text-gray-700 hover:text-green-600 drop-shadow-none" : "text-white hover:text-green-200"
+              )}
+            >
+              FAQ
+            </a>
+          </nav>
+
+          <div className="hidden md:flex items-center gap-3">
+            <Link
+              href="/login"
+              className={cn(
+                "px-4 py-2 text-base font-extrabold transition-colors duration-300",
+                scrolled ? "text-gray-700 hover:text-green-600 drop-shadow-none" : "text-white drop-shadow-md hover:text-green-200"
+              )}
+            >
+              Iniciar sesión
+            </Link>
+            <Link
+              href="/registro"
+              className="px-5 py-2.5 text-sm font-semibold rounded-xl bg-green-600 text-white hover:bg-green-700 transition-colors shadow-sm shadow-green-600/20"
+            >
+              Empezar gratis
+            </Link>
+          </div>
+
+          {/* Hamburger */}
+          <button
+            onClick={() => setMenuOpen((prev) => !prev)}
+            className="md:hidden flex flex-col items-center justify-center w-10 h-10 gap-[5px] z-[60]"
+            aria-label="Abrir menú"
+          >
+            <span
+              className={cn(
+                "block w-6 h-[2px] rounded-full transition-all duration-300",
+                scrolled ? "bg-gray-800" : "bg-white drop-shadow-md",
+                menuOpen && "translate-y-[7px] rotate-45"
+              )}
+            />
+            <span
+              className={cn(
+                "block w-6 h-[2px] rounded-full transition-all duration-300",
+                scrolled ? "bg-gray-800" : "bg-white drop-shadow-md",
+                menuOpen && "opacity-0"
+              )}
+            />
+            <span
+              className={cn(
+                "block w-6 h-[2px] rounded-full transition-all duration-300",
+                scrolled ? "bg-gray-800" : "bg-white drop-shadow-md",
+                menuOpen && "-translate-y-[7px] -rotate-45"
+              )}
+            />
+          </button>
+        </div>
+      </header>
+
+      {/* Mobile overlay */}
+      <div
+        onClick={closeMenu}
+        className={cn(
+          "fixed inset-0 bg-black/40 z-[55] md:hidden transition-opacity duration-300",
+          menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        )}
+      />
+
+      {/* Mobile slide-in menu */}
+      <div
+        className="fixed top-0 right-0 w-full h-full bg-white z-[60] shadow-2xl md:hidden overflow-y-auto"
+        style={{
+          transform: menuOpen ? "translateX(0)" : "translateX(100%)",
+          transition: "transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
+        }}
+      >
+        <div className="flex items-center justify-between px-6 h-16">
+          <Link href="/landing" className="flex items-center gap-2" onClick={closeMenu}>
+            <Leaf className="w-6 h-6 text-green-600" />
+            <span className="text-lg font-bold text-green-600">Annonia</span>
+          </Link>
+          <button
+            onClick={closeMenu}
+            className="w-10 h-10 flex items-center justify-center text-gray-800 hover:text-gray-900 transition-colors"
+            aria-label="Cerrar menú"
+          >
+            <X className="w-7 h-7" />
+          </button>
+        </div>
+        <nav className="flex flex-col px-6 pt-6">
+          <a href="#como-funciona" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 border-b border-gray-200 hover:text-green-700 transition-colors">Cómo funciona</a>
+          <Link href="/precios" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 border-b border-gray-200 hover:text-green-700 transition-colors">Precios</Link>
+          <a href="#faq" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 border-b border-gray-200 hover:text-green-700 transition-colors">FAQ</a>
+          <Link href="/login" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 border-b border-gray-200 hover:text-green-700 transition-colors">Iniciar sesión</Link>
+          <Link href="/registro" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 border-b border-gray-200 hover:text-green-700 transition-colors">Empezar gratis</Link>
+        </nav>
+      </div>
+
+      {/* ─── HERO ─── */}
+      <section ref={heroRef} className="relative bg-green-50 overflow-hidden">
+        <Image
+          src="/images/landing/banner.png"
+          alt="Banner Annonia"
+          width={1920}
+          height={1080}
+          priority
+          className="w-full block relative z-0 object-cover aspect-square sm:aspect-auto sm:h-auto object-[75%_center] sm:object-center"
+        />
+
+        {/* Vignette */}
+        <div
+          className="absolute inset-0 z-[1] pointer-events-none"
+          style={{ background: "radial-gradient(ellipse at center, rgba(0,0,0,0.12) 22%, rgba(0,0,0,0.55) 65%, rgba(0,0,0,0.85) 100%)" }}
+        />
+
+        {/* Blurred edges */}
+        <div
+          className="absolute inset-y-0 left-0 w-[24%] sm:w-[20%] lg:w-[18%] z-[2] pointer-events-none"
+          style={{
+            backdropFilter: "blur(28px)",
+            WebkitBackdropFilter: "blur(28px)",
+            WebkitMaskImage: "linear-gradient(to right, black 0%, transparent 100%)",
+            maskImage: "linear-gradient(to right, black 0%, transparent 100%)",
+          }}
+        />
+        <div
+          className="absolute inset-y-0 right-0 w-[24%] sm:w-[20%] lg:w-[18%] z-[2] pointer-events-none"
+          style={{
+            backdropFilter: "blur(28px)",
+            WebkitBackdropFilter: "blur(28px)",
+            WebkitMaskImage: "linear-gradient(to left, black 0%, transparent 100%)",
+            maskImage: "linear-gradient(to left, black 0%, transparent 100%)",
+          }}
+        />
+        <div
+          className="absolute inset-x-0 top-0 h-[20%] z-[2] pointer-events-none"
+          style={{
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+            WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
+            maskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
+          }}
+        />
+
+        {/* Floating notification card */}
+        <ScrollReveal direction="right" delay={600} className="hidden lg:block absolute top-[55%] right-[12%] z-20">
+          <div className="bg-white rounded-2xl shadow-xl shadow-black/10 px-5 py-4 flex items-start gap-3 max-w-xs">
+            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+              <Leaf className="w-5 h-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-900">Nutricionista Teresa</p>
+              <p className="text-xs text-gray-500 leading-relaxed mt-0.5">
+                ¡Muy bien Carmen, ya veo más colores en el plato! 👏
+              </p>
+            </div>
+          </div>
+        </ScrollReveal>
+
+        {/* Hero text */}
+        <div className="absolute inset-x-0 bottom-[28%] sm:bottom-[46%] lg:bottom-[48%] z-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pl-3 sm:pl-5 lg:pl-8 xl:pl-12">
+            <ScrollReveal direction="up" delay={100}>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black tracking-tight leading-[1.1] text-white drop-shadow-md max-w-3xl">
+                Nutrición{" "}
+                <span className="bg-[#bdd9c5] px-1.5 -mx-0.5 text-gray-900 drop-shadow-none">
+                  personalizada
+                </span>
+                <br />
+                para cada paciente
+              </h1>
+            </ScrollReveal>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── WAVE hero → spacer ─── */}
+      <div className="relative -mt-[3vw] z-30">
+        <svg viewBox="0 0 1440 80" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-[5vw] sm:h-[4vw] lg:h-[3.5vw] block">
+          <path d="M0 80V40C240 0 480 0 720 20C960 40 1200 60 1440 30V80H0Z" fill="#bdd9c5" />
+        </svg>
+        <section className="bg-[#bdd9c5] -mt-px h-12 sm:h-16 lg:h-20" />
+      </div>
+
+      {/* ─── FOOD ICONS + HEADLINE ─── */}
+      <section className="relative pt-20 pb-16 sm:pt-24 sm:pb-20 overflow-hidden bg-gradient-to-b from-green-50/40 to-white">
+        <div className="absolute inset-0 pointer-events-none select-none" aria-hidden="true">
+          <Utensils className="absolute top-[2%] left-[2%] w-8 h-8 text-green-300 opacity-[0.55]" style={{ transform: "rotate(-15deg)" }} />
+          <Fish className="absolute top-[3%] left-[11%] w-9 h-9 text-green-300 opacity-[0.50]" style={{ transform: "rotate(5deg)" }} />
+          <Croissant className="absolute top-[1%] left-[22%] w-8 h-8 text-green-300 opacity-[0.45]" style={{ transform: "rotate(8deg)" }} />
+          <Salad className="absolute top-[4%] left-[33%] w-8 h-8 text-green-300 opacity-[0.40]" style={{ transform: "rotate(-8deg)" }} />
+          <Wheat className="absolute top-[2%] left-[43%] w-7 h-7 text-green-200 opacity-[0.35]" style={{ transform: "rotate(12deg)" }} />
+          <Vegan className="absolute top-[5%] left-[52%] w-7 h-7 text-green-200 opacity-[0.30]" style={{ transform: "rotate(-5deg)" }} />
+          <Pizza className="absolute top-[1%] right-[33%] w-8 h-8 text-green-300 opacity-[0.40]" style={{ transform: "rotate(-12deg)" }} />
+          <Soup className="absolute top-[3%] right-[22%] w-9 h-9 text-green-300 opacity-[0.45]" style={{ transform: "rotate(-5deg)" }} />
+          <Beef className="absolute top-[4%] right-[11%] w-8 h-8 text-green-300 opacity-[0.50]" style={{ transform: "rotate(-10deg)" }} />
+          <CupSoda className="absolute top-[2%] right-[2%] w-8 h-8 text-green-300 opacity-[0.55]" style={{ transform: "rotate(15deg)" }} />
+          <Carrot className="absolute top-[13%] left-[5%] w-8 h-8 text-green-300 opacity-[0.40]" style={{ transform: "rotate(10deg)" }} />
+          <Egg className="absolute top-[16%] left-[16%] w-7 h-7 text-green-200 opacity-[0.35]" style={{ transform: "rotate(20deg)" }} />
+          <Nut className="absolute top-[12%] left-[27%] w-6 h-6 text-green-200 opacity-[0.30]" style={{ transform: "rotate(-8deg)" }} />
+          <Cherry className="absolute top-[19%] left-[37%] w-7 h-7 text-green-200 opacity-[0.25]" style={{ transform: "rotate(12deg)" }} />
+          <Banana className="absolute top-[14%] right-[37%] w-7 h-7 text-green-200 opacity-[0.25]" style={{ transform: "rotate(8deg)" }} />
+          <Bean className="absolute top-[17%] right-[27%] w-6 h-6 text-green-200 opacity-[0.30]" style={{ transform: "rotate(15deg)" }} />
+          <Sandwich className="absolute top-[12%] right-[16%] w-8 h-8 text-green-200 opacity-[0.35]" style={{ transform: "rotate(8deg)" }} />
+          <IceCreamCone className="absolute top-[15%] right-[5%] w-7 h-7 text-green-300 opacity-[0.40]" style={{ transform: "rotate(-20deg)" }} />
+          <Apple className="absolute top-[27%] left-[4%] w-7 h-7 text-green-200 opacity-[0.20]" style={{ transform: "rotate(-20deg)" }} />
+          <Grape className="absolute top-[32%] left-[18%] w-7 h-7 text-green-200 opacity-[0.16]" style={{ transform: "rotate(5deg)" }} />
+          <Citrus className="absolute top-[29%] right-[18%] w-7 h-7 text-green-200 opacity-[0.16]" style={{ transform: "rotate(10deg)" }} />
+          <Croissant className="absolute top-[34%] right-[4%] w-7 h-7 text-green-200 opacity-[0.20]" style={{ transform: "rotate(8deg)" }} />
+        </div>
+        <ScrollReveal>
+          <div className="relative max-w-4xl mx-auto px-4 text-center">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 mb-3">
+              Software de nutrición personalizada.
+            </h2>
+            <p className="text-xl sm:text-2xl text-gray-400">
+              Pacientes únicos, planes alimenticios únicos.
+            </p>
+          </div>
+        </ScrollReveal>
+      </section>
+
+      {/* ─── SHOWCASE: Cómo funciona ─── */}
+      <section id="como-funciona">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-8 sm:pt-4 sm:pb-12 space-y-16 sm:space-y-24">
+          {SHOWCASE_SECTIONS.map((section, idx) => (
+            <ScrollReveal key={idx} direction={section.direction} delay={100}>
+              <div
+                className={cn(
+                  "flex flex-col-reverse items-center gap-10 lg:gap-16",
+                  section.imagePosition === "right" ? "lg:flex-row" : "lg:flex-row-reverse"
+                )}
+              >
+                <div className="flex-1">
+                  <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-5 leading-[1.2]">
+                    <span className="bg-[#bdd9c5] px-1.5 -mx-0.5">{section.tag}</span>{" "}
+                    {section.title}
+                  </h3>
+                  <p className="text-base sm:text-lg text-gray-500 leading-relaxed mb-7">
+                    {section.description}
+                  </p>
+                  <Link
+                    href={section.ctaHref}
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-green-600 text-white text-sm font-semibold hover:bg-green-700 transition-all shadow-sm shadow-green-600/20 hover:-translate-y-0.5"
+                  >
+                    {section.ctaText}
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
+                <div className="flex-1 w-full max-w-lg lg:max-w-xl flex justify-center">
+                  <div className="relative aspect-square w-full max-w-lg">
+                    <div
+                      className={cn(
+                        "absolute inset-0 rounded-full bg-gradient-to-br border shadow-sm",
+                        section.gradientClasses
+                      )}
+                    />
+                    <Image
+                      src={section.imageSrc}
+                      alt={section.imageAlt}
+                      width={800}
+                      height={600}
+                      sizes="(min-width: 1024px) 35vw, 68vw"
+                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[68%] h-auto shadow-md"
+                      style={{ borderRadius: "1.75rem" }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </ScrollReveal>
+          ))}
+        </div>
+      </section>
+
+      {/* ─── WAVE white → green (Trust) ─── */}
+      <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto block -mb-px">
+        <path d="M0 80V50C240 20 480 40 720 60C960 80 1200 70 1440 40V80H0Z" fill="#bdd9c5" />
+      </svg>
+
+      {/* ─── TRUST ─── */}
+      <section className="relative bg-[#bdd9c5] overflow-hidden">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32">
+          <ScrollReveal>
+            <div className="max-w-5xl mx-auto text-center mb-14">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-5">
+                Software diseñado para{" "}
+                <span className="bg-[#9bc4a8] px-2 -mx-0.5 text-white">nutricionistas</span>
+              </h2>
+              <p className="text-green-900/70 text-lg leading-relaxed">
+                Cada funcionalidad ha sido pensada para ahorrar tiempo en tu consulta de nutrición y mejorar la experiencia de tus pacientes.
+              </p>
+            </div>
+          </ScrollReveal>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            {TRUST_CARDS.map((item, i) => (
+              <ScrollReveal key={item.title} delay={i * 150} direction="up">
+                <div className="bg-white rounded-2xl p-8 text-center border border-white shadow-xl shadow-green-900/10 hover:shadow-2xl hover:shadow-green-900/15 hover:-translate-y-2 transition-all duration-300">
+                  <div className="w-14 h-14 rounded-2xl bg-green-50 flex items-center justify-center mx-auto mb-5 shadow-sm shadow-green-900/5">
+                    <item.icon className="w-7 h-7 text-green-700" />
+                  </div>
+                  <h3 className="font-bold text-green-900 text-lg mb-2">{item.title}</h3>
+                  <p className="text-green-900/60 text-sm leading-relaxed">{item.desc}</p>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── WAVE green → white ─── */}
+      <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto block -mt-px">
+        <path d="M0 0V30C240 60 480 40 720 20C960 0 1200 10 1440 40V0H0Z" fill="#bdd9c5" />
+      </svg>
+
+      {/* ─── FAQ ─── */}
+      <section id="faq" className="py-24 sm:py-32">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <ScrollReveal>
+            <div className="max-w-3xl mx-auto text-center mb-14 sm:mb-16">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-5">
+                Respuestas{" "}
+                <span className="bg-[#bdd9c5] px-2 -mx-0.5">más cerca</span>{" "}
+                que nunca
+              </h2>
+              <p className="text-gray-500 text-base sm:text-lg leading-relaxed">
+                Resolvemos las preguntas más comunes sobre Annonia y cómo puede transformar tu consulta de nutrición.
+              </p>
+            </div>
+          </ScrollReveal>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center max-w-6xl mx-auto">
+            <ScrollReveal direction="left">
+              <div className="divide-y divide-gray-200 border-l-2 border-[#bdd9c5] pl-6 sm:pl-8">
+                {FAQS.map((faq, i) => (
+                  <details key={i} className="group py-5 first:pt-0 last:pb-0">
+                    <summary className="flex items-center justify-between cursor-pointer text-lg sm:text-xl font-semibold text-gray-900 hover:text-green-700 transition-colors [&::-webkit-details-marker]:hidden list-none">
+                      <span>{faq.q}</span>
+                      <ChevronRight className="w-5 h-5 text-gray-400 shrink-0 ml-4 transition-transform duration-200 group-open:rotate-90" />
+                    </summary>
+                    <div className="pt-3 text-gray-500 leading-relaxed">
+                      {faq.a}
+                    </div>
+                  </details>
+                ))}
+              </div>
+            </ScrollReveal>
+            <ScrollReveal direction="right" className="flex justify-center">
+              <div className="relative w-full max-w-[240px] sm:max-w-[280px]">
+                <div className="absolute -inset-6 bg-gradient-to-br from-green-100/60 to-[#bdd9c5]/40 rounded-[2rem] blur-2xl" />
+                <Image
+                  src="/images/landing/pacientes.png"
+                  alt="Annonia — portal del paciente"
+                  width={560}
+                  height={800}
+                  sizes="280px"
+                  className="relative w-full h-auto rounded-2xl shadow-2xl shadow-green-900/15"
+                />
+              </div>
+            </ScrollReveal>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── CTA ─── */}
+      <section className="py-24 sm:py-32">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <ScrollReveal>
+            <div className="relative rounded-3xl bg-gradient-to-br from-[#bdd9c5] to-[#9bc4a8] overflow-hidden px-8 sm:px-16 py-16 sm:py-20 text-center">
+              <div className="relative">
+                <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+                  Empieza a digitalizar tu consulta de nutrición
+                </h2>
+                <p className="text-green-900/70 text-lg mb-10 max-w-xl mx-auto leading-relaxed">
+                  Únete a los dietistas-nutricionistas que confían en Annonia para ofrecer
+                  dietas personalizadas y un seguimiento nutricional excepcional.
+                </p>
+                <Link
+                  href="/registro"
+                  className="inline-flex items-center gap-2 px-8 py-4 text-base font-semibold rounded-2xl bg-green-600 text-white hover:bg-green-700 transition-all shadow-lg shadow-green-600/25 hover:-translate-y-0.5"
+                >
+                  Crear cuenta gratis
+                  <ArrowRight className="w-5 h-5" />
+                </Link>
+                <p className="mt-5 text-sm text-green-900/50">
+                  14 días gratis · Sin tarjeta · Cancela cuando quieras
+                </p>
+              </div>
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
+
+      {/* ─── WAVE white → dark (Footer) ─── */}
+      <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto block -mb-px">
+        <path d="M0 80V50C240 20 480 40 720 60C960 80 1200 70 1440 40V80H0Z" fill="#2d3748" />
+      </svg>
+
+      {/* ─── FOOTER ─── */}
+      <footer className="bg-[#2d3748]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 mb-12">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <Leaf className="w-6 h-6 text-green-400" />
+                <span className="text-lg font-bold text-white">Annonia</span>
+              </div>
+              <p className="text-sm text-gray-400 leading-relaxed max-w-md">
+                Software de nutrición profesional para dietistas-nutricionistas. Gestión de consulta, dietas personalizadas y seguimiento de pacientes.
+              </p>
+            </div>
+            <div className="grid grid-cols-3 gap-4 sm:gap-6">
+              <div>
+                <p className="text-sm font-semibold text-white mb-4">Producto</p>
+                <ul className="space-y-2.5 text-sm text-gray-400">
+                  <li><a href="#como-funciona" className="hover:text-green-300 transition-colors">Cómo funciona</a></li>
+                  <li><Link href="/precios" className="hover:text-green-300 transition-colors">Precios</Link></li>
+                  <li><a href="#faq" className="hover:text-green-300 transition-colors">FAQ</a></li>
+                </ul>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white mb-4">Acceso</p>
+                <ul className="space-y-2.5 text-sm text-gray-400">
+                  <li><Link href="/login" className="hover:text-green-300 transition-colors">Iniciar sesión</Link></li>
+                  <li><Link href="/registro" className="hover:text-green-300 transition-colors">Crear cuenta</Link></li>
+                  <li><Link href="/paciente/login" className="hover:text-green-300 transition-colors">Portal pacientes</Link></li>
+                </ul>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white mb-4">Legal</p>
+                <ul className="space-y-2.5 text-sm text-gray-400">
+                  <li><Link href="/legal/terminos" className="hover:text-green-300 transition-colors">Términos y condiciones</Link></li>
+                  <li><Link href="/legal/privacidad" className="hover:text-green-300 transition-colors">Política de privacidad</Link></li>
+                  <li><Link href="/legal/cookies" className="hover:text-green-300 transition-colors">Política de cookies</Link></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-white/10 pt-8 text-sm text-gray-500 text-center">
+            &copy; {new Date().getFullYear()} Annonia. Todos los derechos reservados.
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}

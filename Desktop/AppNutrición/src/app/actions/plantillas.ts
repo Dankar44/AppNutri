@@ -61,13 +61,21 @@ export async function getPlantillaDetalle(id: string) {
     alimentoIds.size > 0
       ? prisma.alimento.findMany({
           where: { id: { in: [...alimentoIds] } },
-          select: { id: true, nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true, porcion: true, unidad: true },
+          select: {
+            id: true, nombre: true, calorias: true, proteinas: true, carbohidratos: true,
+            grasas: true, fibra: true, porcion: true, unidad: true, categoria: true, enlaceProducto: true,
+            vitaminaA: true, vitaminaB6: true, vitaminaB12: true, vitaminaC: true, vitaminaD: true,
+            vitaminaE: true, vitaminaK: true, tiamina: true, riboflavina: true, niacina: true,
+            folato: true, acidoPantotenico: true, colina: true, calcio: true, hierro: true,
+            magnesio: true, fosforo: true, potasio: true, sodio: true, cinc: true,
+            cobre: true, manganeso: true, selenio: true, fluor: true,
+          },
         })
       : [],
     recetaIds.size > 0
       ? prisma.receta.findMany({
           where: { id: { in: [...recetaIds] } },
-          select: { id: true, nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true },
+          select: { id: true, nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true, fibra: true, porciones: true },
         })
       : [],
   ]);
@@ -83,6 +91,37 @@ export async function getPlantillaDetalle(id: string) {
     alimentosMap,
     recetasMap,
   };
+}
+
+export async function actualizarDatosPlantilla(id: string, datos: PlantillaDia[]) {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return { ok: false, error: "No autorizado" };
+
+  await prisma.plantilla.update({
+    where: { id, dietistaId: dietista.id },
+    data: { datos: JSON.parse(JSON.stringify(datos)) },
+  });
+
+  revalidatePath("/dietas/plantillas");
+  revalidatePath(`/dietas/plantillas/${id}`);
+  return { ok: true };
+}
+
+export async function renombrarPlantilla(id: string, nombre: string) {
+  nombre = sanitizeString(nombre, LIMITS.NOMBRE);
+  if (!nombre) return { ok: false, error: "El nombre es obligatorio" };
+
+  const dietista = await getCurrentDietista();
+  if (!dietista) return { ok: false, error: "No autorizado" };
+
+  await prisma.plantilla.update({
+    where: { id, dietistaId: dietista.id },
+    data: { nombre },
+  });
+
+  revalidatePath("/dietas/plantillas");
+  revalidatePath(`/dietas/plantillas/${id}`);
+  return { ok: true };
 }
 
 export async function eliminarPlantilla(id: string) {

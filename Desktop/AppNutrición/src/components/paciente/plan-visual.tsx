@@ -147,6 +147,7 @@ export function PlanVisual({
   showFoodTable = true,
   readOnly = false,
   vistaInicial = "resumen",
+  localCallbacks,
 }: {
   plan: PlanVisualDetalle;
   pacienteId: string;
@@ -161,6 +162,12 @@ export function PlanVisual({
   showFoodTable?: boolean;
   readOnly?: boolean;
   vistaInicial?: "resumen" | "plan" | "analisis";
+  localCallbacks?: {
+    onAdd: (comidaId: string, item: { alimentoId: string | null; recetaId: string | null; nombre: string; cantidad: number; unidad: string; calorias: number; proteinas: number; carbohidratos: number; grasas: number; fibra?: number; porcion?: number }) => void;
+    onRemove: (alimentoEnComidaId: string) => void;
+    onCantidadChange: (alimentoEnComidaId: string, cantidad: number) => void;
+    onMove: (alimentoEnComidaId: string, comidaId: string) => void;
+  };
 }) {
   const router = useRouter();
   const [isPendingAssign, startAssign] = useTransition();
@@ -631,6 +638,7 @@ export function PlanVisual({
                           showDayHeader={false}
                           showAnalisis={false}
                           readOnly={readOnly}
+                          localCallbacks={localCallbacks}
                           planId={selectedPlan.id}
                           planNombre={selectedPlan.nombre}
                           dias={[dia as any]}
@@ -650,6 +658,7 @@ export function PlanVisual({
                       showDayHeader={false}
                       showAnalisis={false}
                       readOnly={readOnly}
+                      localCallbacks={localCallbacks}
                       planId={selectedPlan.id}
                       planNombre={selectedPlan.nombre}
                       dias={[diasVisible[0] as any]}

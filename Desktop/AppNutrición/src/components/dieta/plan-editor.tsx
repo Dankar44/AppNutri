@@ -77,6 +77,13 @@ interface DiaData {
   comidas: ComidaData[];
 }
 
+interface LocalMutationCallbacks {
+  onAdd: (comidaId: string, item: { alimentoId: string | null; recetaId: string | null; nombre: string; cantidad: number; unidad: string; calorias: number; proteinas: number; carbohidratos: number; grasas: number; fibra?: number; porcion?: number }) => void;
+  onRemove: (alimentoEnComidaId: string) => void;
+  onCantidadChange: (alimentoEnComidaId: string, cantidad: number) => void;
+  onMove: (alimentoEnComidaId: string, comidaId: string) => void;
+}
+
 interface PlanEditorProps {
   planId: string;
   planNombre: string;
@@ -92,6 +99,7 @@ interface PlanEditorProps {
   showDayHeader?: boolean;
   showAnalisis?: boolean;
   readOnly?: boolean;
+  localCallbacks?: LocalMutationCallbacks;
 }
 
 interface DragItemData {
@@ -118,6 +126,7 @@ export function PlanEditor({
   showDayHeader: _showDayHeader = true,
   showAnalisis = true,
   readOnly = false,
+  localCallbacks,
 }: PlanEditorProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -236,6 +245,11 @@ export function PlanEditor({
     const droppableData = over.data.current as { comidaId?: string } | undefined;
     if (!droppableData?.comidaId) return;
 
+    if (localCallbacks) {
+      localCallbacks.onMove(alimentoEnComidaId, droppableData.comidaId!);
+      return;
+    }
+
     startTransition(async () => {
       try {
         await moverAlimentoAComida(alimentoEnComidaId, droppableData.comidaId!);
@@ -258,8 +272,16 @@ export function PlanEditor({
     nombre: string;
     cantidad: number;
     unidad: string;
+    calorias: number;
+    proteinas: number;
+    carbohidratos: number;
+    grasas: number;
   }) {
     if (!selectedComidaId) return;
+    if (localCallbacks) {
+      localCallbacks.onAdd(selectedComidaId, item);
+      return;
+    }
     startTransition(async () => {
       try {
         await addAlimentoAComida(
@@ -278,6 +300,10 @@ export function PlanEditor({
   }
 
   async function handleRemoveAlimento(alimentoEnComidaId: string) {
+    if (localCallbacks) {
+      localCallbacks.onRemove(alimentoEnComidaId);
+      return;
+    }
     try {
       await removeAlimentoDeComida(alimentoEnComidaId);
     } catch (error) {
@@ -288,10 +314,23 @@ export function PlanEditor({
   }
 
   async function handleReemplazar(alimentoEnComidaId: string, nuevoAlimentoId: string, _nombre: string, cantidad: number) {
+    if (localCallbacks) {
+      let comidaId: string | null = null;
+      for (const dia of dias) {
+        for (const comida of dia.comidas) {
+          for (const a of comida.alimentos) {
+            if (a.id === alimentoEnComidaId) comidaId = comida.id;
+          }
+        }
+      }
+      if (!comidaId) return;
+      localCallbacks.onRemove(alimentoEnComidaId);
+      localCallbacks.onAdd(comidaId, { alimentoId: nuevoAlimentoId, recetaId: null, nombre: _nombre, cantidad, unidad: "GRAMOS", calorias: 0, proteinas: 0, carbohidratos: 0, grasas: 0 });
+      toast.success("Alimento reemplazado");
+      return;
+    }
     startTransition(async () => {
       try {
-        // Eliminar el alimento actual y añadir el nuevo en la misma comida
-        // Primero encontrar la comidaId del alimento actual
         let comidaId: string | null = null;
         for (const dia of dias) {
           for (const comida of dia.comidas) {
@@ -313,6 +352,10 @@ export function PlanEditor({
   }
 
   function handleCantidadChange(alimentoEnComidaId: string, cantidad: number) {
+    if (localCallbacks) {
+      localCallbacks.onCantidadChange(alimentoEnComidaId, cantidad);
+      return;
+    }
     startTransition(async () => {
       try {
         await actualizarCantidadAlimento(alimentoEnComidaId, cantidad);

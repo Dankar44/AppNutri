@@ -27,11 +27,9 @@ Existe un plan detallado de 50 pasos en `PLAN-MOVIL.md` (34-47 horas estimadas) 
 4. Google Analytics → "Adquisición" → ¿de dónde viene el tráfico?
 5. Buscar "Annonia" en Google → ¿aparece el favicon? ¿sitelinks? ¿qué posición?
 
-### 14. Lista de la compra — cantidades editables
+### 14. Lista de la compra — PREGUNTAR A CLAUDIA
 
-~~Las unidades incorrectas (ej: "mousse de chocolate" como "4g" en vez de "4 unidades") y el campo de unidad al crear alimentos ya están resueltos con el sistema de unidades end-to-end (mayo 2026).~~
-
-- La lista de la compra debe ser **editable**: el nutricionista o paciente puede cambiar cantidades y unidades antes de exportar/compartir.
+Las unidades ya se muestran correctamente gracias al sistema de unidades end-to-end. Preguntar a Claudia si con la lista automática con unidades correctas le vale o si realmente necesita poder editar cantidades/unidades manualmente antes de exportar.
 
 ### 18. Probar todas las opciones de Google en producción
 
@@ -63,6 +61,14 @@ Las guías interactivas (#2) ya están revisadas y funcionan en desktop. Falta *
 - Verificar el welcome modal en pantallas pequeñas (márgenes, padding, scroll).
 - Probar en landscape: tooltip con scroll si el contenido es alto.
 - Verificar resize/rotación: tooltip se reposiciona correctamente.
+
+### 23. Revisar lista de la compra — opciones de compartir y link compartido
+
+Las opciones del menú "···" de la lista de la compra (Copiar al portapapeles, Enviar por WhatsApp, Enviar por email, Imprimir) y el link compartido público necesitan revisión:
+
+- Verificar que cada opción funciona correctamente.
+- Comprobar que el enlace compartido público muestra la lista correctamente para quien lo reciba.
+- Revisar formato y presentación del contenido compartido.
 
 ### 22. Rediseñar visualización de objetivos de macros en dietas
 

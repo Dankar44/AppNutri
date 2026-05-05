@@ -37,7 +37,7 @@ export default async function SharedPlanPage({ params }: Props) {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
-        <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
+        <div className="max-w-4xl mx-auto px-4 h-14 grid grid-cols-3 items-center">
           <div className="flex items-center gap-2">
             {logoUrl ? (
               <img src={logoUrl} alt={brandName || "Annonia"} className="h-8 max-w-[120px] object-contain" />
@@ -48,12 +48,18 @@ export default async function SharedPlanPage({ params }: Props) {
               </>
             )}
           </div>
-          <Link
-            href={`/compartido/${token}/lista-compra`}
-            className="text-sm text-primary hover:underline font-medium"
-          >
-            Lista de la compra
-          </Link>
+          <div className="flex items-center justify-center gap-1.5 text-primary font-bold text-lg">
+            <Leaf className="w-5 h-5" />
+            Annonia
+          </div>
+          <div className="flex justify-end">
+            <Link
+              href={`/compartido/${token}/lista-compra`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary text-primary text-sm font-medium hover:bg-primary/5 transition-colors"
+            >
+              Lista de la compra
+            </Link>
+          </div>
         </div>
       </header>
       <main className="max-w-4xl mx-auto p-4 md:p-6">
