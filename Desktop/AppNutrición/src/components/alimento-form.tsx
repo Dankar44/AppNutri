@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { crearAlimento, actualizarAlimento, type AlimentoFormData } from "@/app/actions/alimentos";
 import { VITAMINAS, MINERALES, type MicroKey } from "@/lib/micronutrientes";
+import { UNIDAD_LABELS_FULL } from "@/lib/units";
 
 const CATEGORIAS = [
   { value: "FRUTAS", label: "Frutas" },
@@ -45,6 +46,7 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
   const [loading, setLoading] = useState(false);
   const isEdit = !!alimentoId;
 
+  const [selectedUnidad, setSelectedUnidad] = useState<string>(defaultValues?.unidad || "GRAMOS");
   const hasAnyMicro = defaultValues?.micronutrientes && Object.values(defaultValues.micronutrientes).some((v) => v !== null && v !== undefined);
   const [microsOpen, setMicrosOpen] = useState(!!hasAnyMicro);
   const [microsTracked, setMicrosTracked] = useState(!!hasAnyMicro);
@@ -140,7 +142,8 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
             <label className="block text-sm font-medium mb-1">Unidad de medida</label>
             <select
               name="unidad"
-              defaultValue={defaultValues?.unidad || "GRAMOS"}
+              value={selectedUnidad}
+              onChange={(e) => setSelectedUnidad(e.target.value)}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
             >
               {UNIDADES.map((u) => (
@@ -151,7 +154,11 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Porción base (g)</label>
+            <label className="block text-sm font-medium mb-1">
+              {selectedUnidad === "GRAMOS" || selectedUnidad === "MILILITROS"
+                ? "Porción base (g)"
+                : `Gramos por 1 ${UNIDADES.find((u) => u.value === selectedUnidad)?.label.toLowerCase() || "unidad"}`}
+            </label>
             <input
               name="porcion"
               type="number" inputMode="decimal"

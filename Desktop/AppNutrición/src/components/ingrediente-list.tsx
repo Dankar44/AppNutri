@@ -4,7 +4,8 @@ import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { AlimentoSearch } from "./alimento-search";
 import { MacroBadges } from "./macro-badge";
-import { calcularMacrosPorcion, type Macros } from "@/lib/macros";
+import { calcularMacrosPorcion, convertirAGramos, type Macros } from "@/lib/macros";
+import { getCantidadDefault, UNIDAD_LABELS } from "@/lib/units";
 import { buscarAlimentosParaReceta } from "@/app/actions/recetas";
 
 export interface IngredienteItem {
@@ -12,6 +13,7 @@ export interface IngredienteItem {
   nombre: string;
   cantidad: number;
   unidad: string;
+  porcion?: number;
   macrosPor100g: Macros;
 }
 
@@ -34,14 +36,16 @@ export function IngredienteList({
     carbohidratos: number;
     grasas: number;
     porcion: number;
+    unidad: string;
   }) {
     onChange([
       ...ingredientes,
       {
         alimentoId: alimento.id,
         nombre: alimento.nombre,
-        cantidad: alimento.porcion,
-        unidad: "GRAMOS",
+        cantidad: getCantidadDefault(alimento.unidad, alimento.porcion),
+        unidad: alimento.unidad,
+        porcion: alimento.porcion,
         macrosPor100g: {
           calorias: alimento.calorias,
           proteinas: alimento.proteinas,
@@ -63,7 +67,7 @@ export function IngredienteList({
     onChange(ingredientes.filter((_, i) => i !== index));
   }
 
-  const pesoTotal = ingredientes.reduce((sum, ing) => sum + (ing.cantidad || 0), 0);
+  const pesoTotal = ingredientes.reduce((sum, ing) => sum + convertirAGramos(ing.cantidad || 0, ing.unidad, ing.porcion || 100), 0);
   void porciones;
 
   return (
@@ -82,8 +86,9 @@ export function IngredienteList({
         <>
           <div className="space-y-2">
             {ingredientes.map((ing, index) => {
-              const macros = calcularMacrosPorcion(ing.macrosPor100g, ing.cantidad);
-              const pct = pesoTotal > 0 ? (ing.cantidad / pesoTotal) * 100 : 0;
+              const gramos = convertirAGramos(ing.cantidad, ing.unidad, ing.porcion || 100);
+              const macros = calcularMacrosPorcion(ing.macrosPor100g, gramos);
+              const pct = pesoTotal > 0 ? (gramos / pesoTotal) * 100 : 0;
               return (
                 <div
                   key={`${ing.alimentoId}-${index}`}
@@ -117,7 +122,7 @@ export function IngredienteList({
                       step="1"
                       className="w-20 px-2 py-1 text-sm rounded border border-border bg-background text-center"
                     />
-                    <span className="text-xs text-muted-foreground">g</span>
+                    <span className="text-xs text-muted-foreground">{UNIDAD_LABELS[ing.unidad] || "g"}</span>
                     <button
                       onClick={() => removeIngrediente(index)}
                       className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-500/15 text-red-500 transition-colors"

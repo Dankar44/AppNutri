@@ -7,7 +7,7 @@ import { AlimentoCard } from "./alimento-card";
 import { EquivalentePanel } from "./equivalente-panel";
 import { cn } from "@/lib/utils";
 import { actualizarDescripcionComida } from "@/app/actions/planes";
-import { calcularMacrosPorcion } from "@/lib/macros";
+import { calcularMacrosPorcion, convertirAGramos } from "@/lib/macros";
 
 const TIPO_LABELS: Record<string, string> = {
   DESAYUNO: "Desayuno",
@@ -32,6 +32,8 @@ interface AlimentoEnSlot {
   alimentoRealId?: string | null;
   nombre: string;
   cantidad: number;
+  unidad?: string;
+  porcion?: number;
   calorias: number;
   proteinas: number;
   carbohidratos: number;
@@ -108,6 +110,7 @@ export function ComidaSlot({
         grasas += Math.round(a.grasas * a.cantidad * 10) / 10;
         fibra += Math.round((a.fibra || 0) * a.cantidad * 10) / 10;
       } else {
+        const gramos = convertirAGramos(a.cantidad, a.unidad || "GRAMOS", a.porcion || 100);
         const m = calcularMacrosPorcion(
           {
             calorias: a.calorias,
@@ -116,7 +119,7 @@ export function ComidaSlot({
             grasas: a.grasas,
             fibra: a.fibra || 0,
           },
-          a.cantidad
+          gramos
         );
         calorias += m.calorias;
         proteinas += m.proteinas;
@@ -176,6 +179,8 @@ export function ComidaSlot({
                     id={a.id}
                     nombre={a.nombre}
                     cantidad={a.cantidad}
+                    unidad={a.unidad}
+                    porcion={a.porcion}
                     calorias={a.calorias}
                     proteinas={a.proteinas}
                     carbohidratos={a.carbohidratos}

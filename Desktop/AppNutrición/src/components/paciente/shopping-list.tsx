@@ -193,7 +193,16 @@ interface ShoppingListProps {
 
 // ─── Helpers de formato ───
 
-function formatearCantidad(g: number) {
+function formatearCantidad(g: number, unidad?: string) {
+  if (unidad && unidad !== "GRAMOS") {
+    const labels: Record<string, string> = {
+      MILILITROS: "ml", UNIDAD: "ud", CUCHARADA: "cda",
+      CUCHARADITA: "cdta", TAZA: "tz", REBANADA: "reb", PIEZA: "pza",
+    };
+    const label = labels[unidad] || unidad.toLowerCase();
+    const rounded = Number.isInteger(g) ? g : Math.round(g * 10) / 10;
+    return `${rounded} ${label}`;
+  }
   const rounded = Math.round(g);
   if (rounded >= 1000) {
     return `${(rounded / 1000).toFixed(rounded % 1000 === 0 ? 0 : 2)} kg`;
@@ -293,6 +302,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
           nombre: item.nombre,
           categoria: cat.categoria,
           cantidadTotal: item.cantidadTotal,
+          unidad: item.unidad || "GRAMOS",
           enlaceProducto: item.enlaceProducto || null,
         });
       }
@@ -511,6 +521,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
         nombre: nombre.trim(),
         categoria,
         cantidadTotal: cantidad,
+        unidad: "GRAMOS",
         custom: true,
       };
       setCustomItems((prev) => [...prev, nuevo]);
@@ -554,7 +565,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
       for (const it of items) {
         const check = checkedIds.has(it.id) ? "✅" : "▫️";
         const urlSuffix = it.enlaceProducto ? ` → ${it.enlaceProducto}` : "";
-        lines.push(`  ${check} ${it.nombre} — ${formatearCantidad(it.cantidadTotal)}${urlSuffix}`);
+        lines.push(`  ${check} ${it.nombre} — ${formatearCantidad(it.cantidadTotal, it.unidad)}${urlSuffix}`);
       }
       lines.push("");
     }
@@ -702,7 +713,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
                       <p className="text-sm text-muted-foreground">{meta.label}</p>
                     </div>
                     <span className="text-lg font-bold tabular-nums">
-                      {formatearCantidad(it.cantidadTotal)}
+                      {formatearCantidad(it.cantidadTotal, it.unidad)}
                     </span>
                     <span className="w-6 h-6 rounded-full border-2 border-muted-foreground/40 shrink-0" />
                   </button>
@@ -1309,7 +1320,7 @@ function ItemRow({
           )}
           title={item.custom ? "Editar cantidad" : undefined}
         >
-          {formatearCantidad(item.cantidadTotal)}
+          {formatearCantidad(item.cantidadTotal, item.unidad)}
           {item.custom && <Pencil className="w-3 h-3 ml-1 inline opacity-0 group-hover:opacity-60" />}
         </button>
       )}

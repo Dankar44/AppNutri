@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
 
-// Callback de Supabase OAuth (Google Sign-In para nutris).
-// Supabase redirige aquí con ?code=... tras el login con Google.
-// Intercambiamos el code por una sesión y redirigimos al dashboard.
 function getBaseUrl(req: NextRequest): string {
   const proto = req.headers.get("x-forwarded-proto") || "https";
   const host = req.headers.get("host") || "localhost:3000";
@@ -43,6 +41,34 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(`${origin}${next}`);
     }
     return NextResponse.redirect(`${origin}/login?error=exchange_failed`);
+  }
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    const dietista = await prisma.dietista.findUnique({
+      where: { authId: user.id },
+    });
+
+    if (!dietista) {
+      if (process.env.REGISTRATION_OPEN !== "true") {
+        await supabase.auth.signOut();
+        return NextResponse.redirect(
+          `${origin}/login?error=${encodeURIComponent("Los registros están cerrados. Si ya tienes cuenta de dietista, inicia sesión con email y contraseña.")}`,
+        );
+      }
+
+      if (user.email) {
+        const paciente = await prisma.paciente.findFirst({
+          where: { email: user.email },
+        });
+        if (paciente) {
+          await supabase.auth.signOut();
+          return NextResponse.redirect(
+            `${origin}/login?error=${encodeURIComponent("Este email está registrado como paciente. No es posible crear una cuenta de dietista con el mismo email.")}`,
+          );
+        }
+      }
+    }
   }
 
   return NextResponse.redirect(`${origin}${next}`);

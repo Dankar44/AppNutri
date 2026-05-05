@@ -5,6 +5,7 @@ import { getCurrentDietista } from "./auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { UnidadMedida } from "@/generated/prisma/client";
+import { convertirAGramos } from "@/lib/macros";
 import {
   sanitizeString,
   sanitizeStringOptional,
@@ -47,11 +48,11 @@ async function recalcularMacrosReceta(recetaId: string) {
     if (recetaRows.length === 0) return;
     const porciones = Number(recetaRows[0].porciones) || 1;
 
-    // 2. Ingredientes
+    // 2. Ingredientes (con unidad)
     const ingredientes = await prisma.$queryRawUnsafe<
-      Array<{ alimentoId: string; cantidad: number }>
+      Array<{ alimentoId: string; cantidad: number; unidad: string }>
     >(
-      `SELECT "alimentoId", cantidad FROM receta_ingredientes WHERE "recetaId" = $1`,
+      `SELECT "alimentoId", cantidad, unidad FROM receta_ingredientes WHERE "recetaId" = $1`,
       recetaId,
     );
 
@@ -66,32 +67,34 @@ async function recalcularMacrosReceta(recetaId: string) {
       return;
     }
 
-    const alimentoIds = ingredientes.map((i) => i.alimentoId);
-    const cantidadesPorId = new Map(
-      ingredientes.map((i) => [i.alimentoId, Number(i.cantidad)]),
-    );
+    const alimentoIds = [...new Set(ingredientes.map((i) => i.alimentoId))];
 
-    // 3. Macros + micros de los alimentos (todo en una query)
+    // 3. Macros + micros de los alimentos (con porcion)
     const allCols = ["calorias", "proteinas", "carbohidratos", "grasas", "fibra", ...MICRO_COLUMNS];
     const colsSelect = allCols.map((c) => `"${c}"`).join(", ");
     const placeholders = alimentoIds.map((_, i) => `$${i + 1}`).join(", ");
     const rows = await prisma.$queryRawUnsafe<
       Array<Record<string, unknown>>
     >(
-      `SELECT id, ${colsSelect} FROM alimentos WHERE id IN (${placeholders})`,
+      `SELECT id, porcion, ${colsSelect} FROM alimentos WHERE id IN (${placeholders})`,
       ...alimentoIds,
     );
 
-    // 4. Sumar macros y micros
+    const alimentosMap = new Map(rows.map((r) => [r.id as string, r]));
+
+    // 4. Sumar macros y micros (iterando ingredientes, no alimentos)
     const totalesMacros: Record<string, number> = {
       calorias: 0, proteinas: 0, carbohidratos: 0, grasas: 0, fibra: 0,
     };
     const totalesMicros: Record<string, number | null> = {};
     for (const col of MICRO_COLUMNS) totalesMicros[col] = null;
 
-    for (const row of rows) {
-      const cantidad = cantidadesPorId.get(row.id as string) ?? 0;
-      const factor = cantidad / 100;
+    for (const ing of ingredientes) {
+      const row = alimentosMap.get(ing.alimentoId);
+      if (!row) continue;
+      const porcion = Number(row.porcion) || 100;
+      const gramos = convertirAGramos(Number(ing.cantidad), ing.unidad || "GRAMOS", porcion);
+      const factor = gramos / 100;
       for (const col of Object.keys(totalesMacros)) {
         const v = Number(row[col]);
         if (isFinite(v)) totalesMacros[col] += v * factor;
@@ -472,60 +475,106 @@ export async function toggleFavoritoReceta(recetaId: string) {
   return { favorito };
 }
 
-export async function buscarAlimentosYRecetas(query: string) {
+export async function buscarAlimentosYRecetas(
+  query: string,
+  filtro: "todos" | "mis-alimentos" | "mis-recetas" = "todos",
+) {
   const dietista = await getCurrentDietista();
   if (!dietista) return { alimentos: [], recetas: [] };
 
   const querySanitizada = sanitizeSearch(query);
-  if (!querySanitizada) return { alimentos: [], recetas: [] };
 
-  const [alimentos, recetas] = await Promise.all([
-    prisma.alimento.findMany({
-      where: {
-        OR: [{ dietistaId: dietista.id }, { dietistaId: null }],
-        nombre: { contains: querySanitizada, mode: "insensitive" },
-      },
-      take: 10,
+  if (!querySanitizada && filtro === "todos") return { alimentos: [], recetas: [] };
+
+  let alimentos: Array<{
+    id: string; nombre: string; calorias: number; proteinas: number;
+    carbohidratos: number; grasas: number; porcion: number; unidad: string;
+    esPropio: boolean;
+  }> = [];
+
+  if (filtro !== "mis-recetas") {
+    const nombreFilter = querySanitizada
+      ? { nombre: { contains: querySanitizada, mode: "insensitive" as const } }
+      : {};
+    const ownerFilter = filtro === "mis-alimentos"
+      ? { dietistaId: dietista.id }
+      : { OR: [{ dietistaId: dietista.id }, { dietistaId: null }] };
+
+    const raw = await prisma.alimento.findMany({
+      where: { ...ownerFilter, ...nombreFilter },
+      take: filtro === "mis-alimentos" ? 30 : 10,
       orderBy: { nombre: "asc" },
-      select: { id: true, nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true, porcion: true },
-    }),
-    // Propias + globales marcadas como favoritas
-    prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
-      `
-      SELECT r.id, r.nombre, r.porciones,
-             r.calorias, r.proteinas, r.carbohidratos, r.grasas,
-             r."dietistaId" AS "dietistaId"
-      FROM recetas r
-      LEFT JOIN receta_favoritos fav
-        ON fav."recetaId" = r.id AND fav."dietistaId" = $1
-      WHERE (r."dietistaId" = $1 OR (r."dietistaId" IS NULL AND fav.id IS NOT NULL))
-        AND r."nombre" ILIKE $2
-      ORDER BY r."nombre" ASC
-      LIMIT 5
-      `,
-      dietista.id,
-      `%${querySanitizada}%`,
-    ).then((rows) =>
-      Promise.all(
-        rows.map(async (r) => {
-          const ingredientes = await prisma.recetaIngrediente.findMany({
-            where: { recetaId: r.id as string },
-            select: { cantidad: true, alimento: { select: { nombre: true } } },
-          });
-          return {
-            id: r.id as string,
-            nombre: r.nombre as string,
-            porciones: Number(r.porciones),
-            calorias: Number(r.calorias),
-            proteinas: Number(r.proteinas),
-            carbohidratos: Number(r.carbohidratos),
-            grasas: Number(r.grasas),
-            ingredientes,
-          };
-        }),
-      ),
-    ),
-  ]);
+      select: {
+        id: true, nombre: true, calorias: true, proteinas: true,
+        carbohidratos: true, grasas: true, porcion: true, unidad: true,
+        dietistaId: true,
+      },
+    });
+
+    alimentos = raw.map(({ dietistaId, ...rest }) => ({
+      ...rest,
+      esPropio: dietistaId === dietista.id,
+    }));
+  }
+
+  let recetas: Array<{
+    id: string; nombre: string; porciones: number;
+    calorias: number; proteinas: number; carbohidratos: number; grasas: number;
+    ingredientes: { alimento: { nombre: string }; cantidad: number; unidad: string }[];
+    esPropio: boolean;
+  }> = [];
+
+  if (filtro !== "mis-alimentos") {
+    let rawRecetas: Array<Record<string, unknown>>;
+
+    if (filtro === "mis-recetas") {
+      rawRecetas = querySanitizada
+        ? await prisma.$queryRawUnsafe(
+            `SELECT r.id, r.nombre, r.porciones, r.calorias, r.proteinas, r.carbohidratos, r.grasas, r."dietistaId"
+             FROM recetas r WHERE r."dietistaId" = $1 AND r."nombre" ILIKE $2
+             ORDER BY r."nombre" ASC LIMIT 30`,
+            dietista.id, `%${querySanitizada}%`,
+          )
+        : await prisma.$queryRawUnsafe(
+            `SELECT r.id, r.nombre, r.porciones, r.calorias, r.proteinas, r.carbohidratos, r.grasas, r."dietistaId"
+             FROM recetas r WHERE r."dietistaId" = $1
+             ORDER BY r."nombre" ASC LIMIT 30`,
+            dietista.id,
+          );
+    } else {
+      rawRecetas = querySanitizada
+        ? await prisma.$queryRawUnsafe(
+            `SELECT r.id, r.nombre, r.porciones, r.calorias, r.proteinas, r.carbohidratos, r.grasas, r."dietistaId"
+             FROM recetas r
+             LEFT JOIN receta_favoritos fav ON fav."recetaId" = r.id AND fav."dietistaId" = $1
+             WHERE (r."dietistaId" = $1 OR (r."dietistaId" IS NULL AND fav.id IS NOT NULL))
+               AND r."nombre" ILIKE $2
+             ORDER BY r."nombre" ASC LIMIT 5`,
+            dietista.id, `%${querySanitizada}%`,
+          )
+        : [];
+    }
+
+    recetas = await Promise.all(
+      rawRecetas.map(async (r) => {
+        const ingredientes = await prisma.recetaIngrediente.findMany({
+          where: { recetaId: r.id as string },
+          select: { cantidad: true, unidad: true, alimento: { select: { nombre: true } } },
+        });
+        return {
+          id: r.id as string,
+          nombre: r.nombre as string,
+          porciones: Number(r.porciones),
+          calorias: Number(r.calorias),
+          proteinas: Number(r.proteinas),
+          carbohidratos: Number(r.carbohidratos),
+          grasas: Number(r.grasas),
+          ingredientes,
+          esPropio: (r.dietistaId as string | null) === dietista.id,
+        };
+      }),
+    );
+  }
 
   return { alimentos, recetas };
 }
@@ -552,6 +601,7 @@ export async function buscarAlimentosParaReceta(query: string) {
       carbohidratos: true,
       grasas: true,
       porcion: true,
+      unidad: true,
     },
   });
 }

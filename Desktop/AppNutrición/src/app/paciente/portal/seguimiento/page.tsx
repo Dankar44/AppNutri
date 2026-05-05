@@ -409,6 +409,7 @@ function inicializarComidas(comidas: ComidaPlanificada[]): ComidaSeguimiento[] {
     alimentos: c.alimentos.map((a) => ({
       nombre: a.nombre,
       cantidad: a.cantidad,
+      unidad: a.unidad,
       cumplido: false,
     })),
     horaReal: null,

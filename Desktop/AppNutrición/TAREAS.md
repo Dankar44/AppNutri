@@ -1,6 +1,6 @@
 # Tareas — AppNutri (Annonia)
 
-Registro consolidado de tareas pendientes. Actualizado el 3 de mayo de 2026.
+Registro consolidado de tareas pendientes. Actualizado el 5 de mayo de 2026.
 
 ---
 
@@ -27,21 +27,11 @@ Existe un plan detallado de 50 pasos en `PLAN-MOVIL.md` (34-47 horas estimadas) 
 4. Google Analytics → "Adquisición" → ¿de dónde viene el tráfico?
 5. Buscar "Annonia" en Google → ¿aparece el favicon? ¿sitelinks? ¿qué posición?
 
-### 13. Cantidades editables en entregables
+### 14. Lista de la compra — cantidades editables
 
-En los entregables, las cantidades de cada alimento deben ser **editables por el nutricionista**:
-
-- Todo viene predeterminado como hasta ahora (calculado automáticamente).
-- Pero el nutricionista puede ajustar: más gramos, menos gramos, cambiar unidades (gramos → unidades → cucharadas, etc.).
-- Opción de poner "libre" o "sin cantidad" para un alimento concreto.
-- **Importante**: al modificar cantidades, las calorías y macros ya calculados **NO se modifican**. El nutricionista ya tiene el cálculo hecho y los ajustes de cantidad son solo orientativos para el paciente.
-
-### 14. Lista de la compra — cantidades editables y unidad por defecto
-
-La lista de la compra se genera automáticamente pero a veces las unidades son incorrectas. Ejemplo: "mousse de chocolate" aparece como "4g" cuando debería ser "4 unidades".
+~~Las unidades incorrectas (ej: "mousse de chocolate" como "4g" en vez de "4 unidades") y el campo de unidad al crear alimentos ya están resueltos con el sistema de unidades end-to-end (mayo 2026).~~
 
 - La lista de la compra debe ser **editable**: el nutricionista o paciente puede cambiar cantidades y unidades antes de exportar/compartir.
-- **Al crear un alimento propio**, añadir un campo: "¿Cómo se añade a la lista de la compra?" con opciones: gramos, unidades, mililitros, etc. Así no hay que corregirlo manualmente cada vez. Solo aplica a alimentos propios del nutricionista (los de la base de datos general ya están bien).
 
 ### 18. Probar todas las opciones de Google en producción
 
@@ -74,7 +64,7 @@ Las guías interactivas (#2) ya están revisadas y funcionan en desktop. Falta *
 - Probar en landscape: tooltip con scroll si el contenido es alto.
 - Verificar resize/rotación: tooltip se reposiciona correctamente.
 
-### 16. PREGUNTA PARA CLAUDIA — Ingredientes de "café con leche"
+### 22. Rediseñar visualización de objetivos de macros en dietas
 
-Duda pendiente de consultar con Claudia: cuando se pone "café con leche semidesnatada" como alimento, en los ingredientes del entregable no aparece "café" como ingrediente (o no como primer ingrediente). Parece que el desglose de ingredientes no refleja bien la composición del alimento compuesto. Preguntar a Claudia exactamente qué problema ve y qué esperaría que apareciera.
+La fila de objetivos (calorías, proteínas, carbos, grasas) que aparece debajo de los tabs Resumen/Plan/Análisis usa los mismos badges de colores que la sección "Media diaria de la semana" del resumen. Queda repetitivo y visualmente confuso al verlos juntos. Rediseñar los objetivos para que se diferencien claramente: usar barras de progreso que se vayan rellenando (actual vs objetivo), o un formato distinto que no repita la misma paleta de pastillas de colores.
 

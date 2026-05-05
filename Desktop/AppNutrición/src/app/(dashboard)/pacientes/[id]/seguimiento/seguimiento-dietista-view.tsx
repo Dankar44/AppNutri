@@ -13,6 +13,7 @@ import {
   Clock,
 } from "lucide-react";
 import { getSeguimientoDia, type SeguimientoDia } from "@/app/actions/seguimiento";
+import { formatQuantity } from "@/lib/units";
 
 const TIPO_LABELS: Record<string, string> = {
   DESAYUNO: "Desayuno",
@@ -190,7 +191,7 @@ export function SeguimientoDietistaView({ pacienteId }: { pacienteId: string }) 
                             </span>
                             {a.cantidad > 0 && (
                               <span className="text-xs text-muted-foreground">
-                                ({a.cantidad}g)
+                                ({formatQuantity(a.cantidad, a.unidad || "GRAMOS")})
                               </span>
                             )}
                           </li>

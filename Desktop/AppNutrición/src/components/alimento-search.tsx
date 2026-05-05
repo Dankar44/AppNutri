@@ -12,6 +12,7 @@ interface AlimentoOption {
   carbohidratos: number;
   grasas: number;
   porcion: number;
+  unidad: string;
 }
 
 interface AlimentoSearchProps {

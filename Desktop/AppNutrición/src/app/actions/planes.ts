@@ -548,6 +548,7 @@ export async function getPlanesDetallePaciente(pacienteId: string) {
                   carbohidratos: a.alimento.carbohidratos ?? 0,
                   grasas: a.alimento.grasas ?? 0,
                   fibra: a.alimento.fibra ?? 0,
+                  porcion: a.alimento.porcion ?? 100,
                   categoria: a.alimento.categoria ?? "OTROS",
                   enlaceProducto: a.alimento.enlaceProducto ?? null,
                   ...micros,

@@ -8,6 +8,7 @@ interface AlimentoParaSugerir {
   carbohidratos: number;
   grasas: number;
   porcion: number;
+  unidad: string;
 }
 
 export interface AlimentoSugerido extends AlimentoParaSugerir {

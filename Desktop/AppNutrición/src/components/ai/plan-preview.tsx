@@ -1,6 +1,7 @@
 "use client";
 
 import type { AIPlanGenerado, AIDia } from "@/lib/ai/types";
+import { formatQuantity } from "@/lib/units";
 
 const DIA_LABELS: Record<string, string> = {
   LUNES: "Lunes", MARTES: "Martes", MIERCOLES: "Miércoles",
@@ -101,7 +102,7 @@ export function PlanPreview({ plan, onAccept, onReject, loading }: PlanPreviewPr
                             <div className="space-y-0.5">
                               {comida.alimentos.map((a, i) => (
                                 <p key={i} className="text-xs text-muted-foreground">
-                                  {a.nombre} · {a.cantidadGramos}g
+                                  {a.nombre} · {formatQuantity(a.cantidadGramos, "GRAMOS")}
                                 </p>
                               ))}
                             </div>

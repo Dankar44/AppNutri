@@ -2,7 +2,7 @@
 
 import { ComidaSlot } from "./comida-slot";
 import { ResumenDiario } from "./resumen-diario";
-import { calcularMacrosPorcion, sumarMacros } from "@/lib/macros";
+import { calcularMacrosPorcion, sumarMacros, convertirAGramos } from "@/lib/macros";
 
 const DIA_LABELS: Record<string, string> = {
   LUNES: "Lunes",
@@ -18,6 +18,8 @@ interface AlimentoData {
   id: string;
   nombre: string;
   cantidad: number;
+  unidad?: string;
+  porcion?: number;
   calorias: number;
   proteinas: number;
   carbohidratos: number;
@@ -71,10 +73,9 @@ export function DiaColumna({
           fibra: 0,
         };
       }
-      // Alimentos: macros por 100g, cantidad en gramos
       return calcularMacrosPorcion(
         { calorias: a.calorias, proteinas: a.proteinas, carbohidratos: a.carbohidratos, grasas: a.grasas, fibra: 0 },
-        a.cantidad
+        convertirAGramos(a.cantidad, a.unidad || "GRAMOS", a.porcion || 100)
       );
     })
   );

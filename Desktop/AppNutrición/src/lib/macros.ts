@@ -6,6 +6,26 @@ export interface Macros {
   fibra: number;
 }
 
+const UNITS_GRAMOS_DIRECTOS = new Set(["GRAMOS", "MILILITROS"]);
+
+export function convertirAGramos(
+  cantidad: number,
+  unidad: string,
+  porcionGramos: number,
+): number {
+  if (UNITS_GRAMOS_DIRECTOS.has(unidad)) return cantidad;
+  return cantidad * (porcionGramos || 100);
+}
+
+export function calcularMacrosConUnidad(
+  macrosPor100g: Macros,
+  cantidad: number,
+  unidad: string,
+  porcionGramos: number,
+): Macros {
+  return calcularMacrosPorcion(macrosPor100g, convertirAGramos(cantidad, unidad, porcionGramos));
+}
+
 export function calcularMacrosPorcion(
   macrosPor100g: Macros,
   cantidadGramos: number

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { MacroBadges } from "@/components/macro-badge";
-import { calcularMacrosPorcion, sumarMacros } from "@/lib/macros";
+import { calcularMacrosPorcion, sumarMacros, convertirAGramos } from "@/lib/macros";
+import { formatQuantity } from "@/lib/pdf/generate-plan-pdf";
 import { Printer, CookingPot, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +31,8 @@ interface RecetaDetalle {
 
 interface AlimentoData {
   cantidad: number;
-  alimento: { nombre: string; calorias: number; proteinas: number; carbohidratos: number; grasas: number; enlaceProducto?: string | null } | null;
+  unidad?: string;
+  alimento: { nombre: string; calorias: number; proteinas: number; carbohidratos: number; grasas: number; porcion?: number; enlaceProducto?: string | null } | null;
   receta: RecetaDetalle | null;
 }
 
@@ -81,7 +83,7 @@ function RecetaDesplegable({ receta, cantidad }: { receta: RecetaDetalle; cantid
               {receta.ingredientes.map((ing, i) => (
                 <div key={i} className="flex items-center justify-between text-xs">
                   <span className="text-purple-800 dark:text-purple-300">{ing.alimento.nombre}</span>
-                  <span className="text-purple-500">{ing.cantidad}g</span>
+                  <span className="text-purple-500">{formatQuantity(ing.cantidad, ing.unidad || "GRAMOS")}</span>
                 </div>
               ))}
             </div>
@@ -147,7 +149,7 @@ export function PlanReadOnly({ nombre, pacienteNombre, dias, showPrint = true }:
               if (a.alimento) {
                 return calcularMacrosPorcion(
                   { calorias: a.alimento.calorias, proteinas: a.alimento.proteinas, carbohidratos: a.alimento.carbohidratos, grasas: a.alimento.grasas, fibra: 0 },
-                  a.cantidad
+                  convertirAGramos(a.cantidad, a.unidad || "GRAMOS", a.alimento.porcion || 100)
                 );
               }
               return { calorias: 0, proteinas: 0, carbohidratos: 0, grasas: 0, fibra: 0 };
@@ -192,7 +194,7 @@ export function PlanReadOnly({ nombre, pacienteNombre, dias, showPrint = true }:
                                   </a>
                                 )}
                               </span>
-                              <span className="text-muted-foreground text-xs">{a.cantidad}g</span>
+                              <span className="text-muted-foreground text-xs">{formatQuantity(a.cantidad, a.unidad || "GRAMOS")}</span>
                             </div>
                           );
                         })}

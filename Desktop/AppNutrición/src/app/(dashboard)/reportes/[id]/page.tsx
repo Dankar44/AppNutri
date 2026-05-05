@@ -49,6 +49,7 @@ export default async function ReportesPacientePage({ params }: Props) {
             alimentos: c.alimentos.map((a) => ({
               nombre: a.alimento?.nombre || a.receta?.nombre || "Sin nombre",
               cantidad: a.cantidad,
+              unidad: a.unidad ?? "GRAMOS",
               enlaceProducto: a.alimento?.enlaceProducto ?? null,
             })),
           })),

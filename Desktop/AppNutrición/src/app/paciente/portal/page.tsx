@@ -218,6 +218,7 @@ export default async function PatientPortalPage() {
     ? comidaPlan.alimentos.map((a) => ({
         nombre: a.alimento?.nombre || a.receta?.nombre || "Alimento",
         cantidad: a.cantidad,
+        unidad: a.unidad ?? "GRAMOS",
       }))
     : [];
 

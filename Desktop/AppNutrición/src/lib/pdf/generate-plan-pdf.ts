@@ -1,6 +1,9 @@
 import { generarListaCompra } from "@/lib/shopping-list";
-import { calcularMacrosPorcion, sumarMacros, macrosVacios } from "@/lib/macros";
+import { calcularMacrosPorcion, sumarMacros, macrosVacios, convertirAGramos } from "@/lib/macros";
 import { type PdfColorTheme, TEMAS_PDF } from "./pdf-themes";
+
+import { UNIDAD_LABELS, UNIDAD_LABELS_FULL, formatQuantity } from "@/lib/units";
+export { UNIDAD_LABELS, UNIDAD_LABELS_FULL, formatQuantity };
 
 const DIA_LABELS: Record<string, string> = {
   LUNES: "Lunes", MARTES: "Martes", MIERCOLES: "Miércoles",
@@ -18,6 +21,30 @@ const HORA_DEFAULT: Record<string, string> = {
   DESAYUNO: "09:00", MEDIA_MANANA: "11:00", ALMUERZO: "14:00",
   MERIENDA: "17:00", CENA: "21:00", RECENA: "23:00",
 };
+
+export interface QuantityOverride {
+  cantidad?: number | null;
+  unidad?: string | null;
+  libre?: boolean;
+}
+
+export type DisplayOverrides = Record<string, QuantityOverride>;
+
+
+function resolveDisplay(
+  original: { cantidad: number; unidad: string },
+  override: QuantityOverride | undefined,
+): string {
+  if (!override) return formatQuantity(original.cantidad, original.unidad);
+  if (override.libre) return "libre";
+  const qty = override.cantidad ?? original.cantidad;
+  const unit = override.unidad ?? original.unidad;
+  return formatQuantity(qty, unit);
+}
+
+function overrideKey(dia: string, tipo: string, idx: number): string {
+  return `${dia}-${tipo}-${idx}`;
+}
 
 // Types
 interface AlimentoEnComida {
@@ -67,6 +94,7 @@ export interface PlanPDFData {
   logoDataUrl?: string;
   clinica?: string;
   sections?: PDFSectionOptions;
+  displayOverrides?: DisplayOverrides;
 }
 
 function generateCSS(t: PdfColorTheme): string {
@@ -168,7 +196,7 @@ function getItemNameHtml(a: AlimentoEnComida): string {
 
 function getMacrosForItem(a: AlimentoEnComida) {
   if (a.alimento) {
-    return calcularMacrosPorcion(a.alimento, a.cantidad);
+    return calcularMacrosPorcion(a.alimento, convertirAGramos(a.cantidad, a.unidad, a.alimento.porcion));
   }
   if (a.receta) {
     return {
@@ -195,9 +223,10 @@ export function generatePlanPDF(data: PlanPDFData): string {
   const theme = data.tema ?? TEMAS_PDF.verde;
   const sec = { portada: true, planSemanal: true, detalleDiario: true, recomendaciones: true, listaCompra: true, valoresNutricionales: true, ...data.sections };
   const brandName = escapeHtml(data.brandName || "Annonia");
+  const ov = data.displayOverrides ?? {};
   const sortedDias = DIAS_ORDEN.map((d) => data.dias.find((dia) => dia.dia === d)).filter(Boolean) as Dia[];
   const fecha = new Date().toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
-  const listaCompra = generarListaCompra(sortedDias as unknown as Parameters<typeof generarListaCompra>[0]);
+  const listaCompra = generarListaCompra(sortedDias as unknown as Parameters<typeof generarListaCompra>[0], ov);
 
   const logoHeaderHtml = data.logoDataUrl
     ? `<img src="${data.logoDataUrl}" alt="${brandName}" class="header-logo-img" onerror="this.style.display='none';this.parentNode.textContent='${brandName}'">`
@@ -248,13 +277,14 @@ export function generatePlanPDF(data: PlanPDFData): string {
         const comida = dia.comidas.find((c) => c.tipo === tipo);
         if (!comida || comida.alimentos.length === 0) continue;
 
-        const rows = comida.alimentos.map((a) => {
+        const rows = comida.alimentos.map((a, aIdx) => {
           const name = getItemName(a);
           const nameHtml = getItemNameHtml(a);
-          const qty = `${Math.round(a.cantidad)}g`;
+          const key = overrideKey(dia.dia, tipo, aIdx);
+          const qty = resolveDisplay({ cantidad: a.cantidad, unidad: a.unidad }, ov[key]);
           let detail = `${nameHtml}: ${qty}`;
           if (a.receta?.ingredientes && a.receta.ingredientes.length > 0) {
-            const ingList = a.receta.ingredientes.map((i) => `${escapeHtml(i.alimento.nombre)}: ${Math.round(i.cantidad)}g`).join(", ");
+            const ingList = a.receta.ingredientes.map((i) => `${escapeHtml(i.alimento.nombre)}: ${formatQuantity(i.cantidad, i.unidad)}`).join(", ");
             detail = `<strong>INGREDIENTES:</strong> ${ingList}`;
             if (a.receta.instrucciones) {
               detail += `<br><strong>RECETA:</strong> ${escapeHtml(a.receta.instrucciones).replace(/\n/g, "<br>")}`;
@@ -263,16 +293,22 @@ export function generatePlanPDF(data: PlanPDFData): string {
           return { name, nameHtml, qty, detail };
         });
 
-        const firstRow = rows[0];
-        const desc = escapeHtml(comida.descripcion || rows.map((r) => r.name).join(", "));
+        const hasDesc = !!comida.descripcion;
+        const totalRows = hasDesc ? rows.length + 1 : rows.length;
 
         html += `<tr>`;
-        html += `<td class="meal-cell" rowspan="${rows.length}"><strong>${TIPO_LABELS[tipo]}</strong><br><span class="hora">${HORA_DEFAULT[tipo]}</span></td>`;
-        html += `<td class="plato-cell">${desc}</td>`;
-        html += `<td class="ingredientes-cell">${firstRow.detail}</td></tr>`;
+        html += `<td class="meal-cell" rowspan="${totalRows}"><strong>${TIPO_LABELS[tipo]}</strong><br><span class="hora">${HORA_DEFAULT[tipo]}</span></td>`;
 
-        for (let i = 1; i < rows.length; i++) {
-          html += `<tr><td class="plato-cell">${rows[i].nameHtml}</td><td class="ingredientes-cell">${rows[i].detail}</td></tr>`;
+        if (hasDesc) {
+          html += `<td class="plato-cell" colspan="2"><strong>${escapeHtml(comida.descripcion!)}</strong></td></tr>`;
+          for (const row of rows) {
+            html += `<tr><td class="plato-cell">${row.nameHtml}</td><td class="ingredientes-cell">${row.detail}</td></tr>`;
+          }
+        } else {
+          html += `<td class="plato-cell">${rows[0].nameHtml}</td><td class="ingredientes-cell">${rows[0].detail}</td></tr>`;
+          for (let i = 1; i < rows.length; i++) {
+            html += `<tr><td class="plato-cell">${rows[i].nameHtml}</td><td class="ingredientes-cell">${rows[i].detail}</td></tr>`;
+          }
         }
       }
 
@@ -303,7 +339,7 @@ export function generatePlanPDF(data: PlanPDFData): string {
         const linkHtml = item.enlaceProducto
           ? ` <a href="${escapeHtml(item.enlaceProducto)}" target="_blank" class="food-link" style="font-size:9px;">(ver)</a>`
           : "";
-        html += `<div class="shop-item"><div class="shop-check"></div>${Math.round(item.cantidadTotal)}g ${escapeHtml(item.nombre)}${linkHtml}</div>`;
+        html += `<div class="shop-item"><div class="shop-check"></div>${formatQuantity(item.cantidadTotal, item.unidad)} ${escapeHtml(item.nombre)}${linkHtml}</div>`;
       }
       html += `</div>`;
     }

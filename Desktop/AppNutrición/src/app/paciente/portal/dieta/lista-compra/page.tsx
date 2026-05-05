@@ -20,7 +20,7 @@ export default async function PatientShoppingListPage() {
             include: {
               alimentos: {
                 include: {
-                  alimento: { select: { id: true, nombre: true, categoria: true, porcion: true, enlaceProducto: true } },
+                  alimento: { select: { id: true, nombre: true, categoria: true, porcion: true, unidad: true, enlaceProducto: true } },
                   receta: { select: { id: true, nombre: true } },
                 },
               },

@@ -16,13 +16,14 @@ import { ComidaSlot } from "./comida-slot";
 import { AnalisisSidebar } from "./analisis-sidebar";
 import { SelectorAlimento } from "./selector-alimento";
 import { MacroBadges } from "@/components/macro-badge";
-import { calcularMacrosPorcion, sumarMacros } from "@/lib/macros";
+import { calcularMacrosPorcion, sumarMacros, convertirAGramos } from "@/lib/macros";
 import {
   addAlimentoAComida,
   removeAlimentoDeComida,
   actualizarCantidadAlimento,
   moverAlimentoAComida,
 } from "@/app/actions/planes";
+import type { UnidadMedida } from "@/generated/prisma/client";
 import { cn } from "@/lib/utils";
 
 const DIA_LABELS: Record<string, string> = {
@@ -49,6 +50,7 @@ interface AlimentoEnComidaData {
     carbohidratos: number;
     grasas: number;
     fibra?: number;
+    porcion?: number;
     enlaceProducto?: string | null;
   } | null;
   receta: {
@@ -96,6 +98,8 @@ interface DragItemData {
   id: string;
   nombre: string;
   cantidad: number;
+  unidad?: string;
+  porcion?: number;
   calorias: number;
   proteinas: number;
   carbohidratos: number;
@@ -142,6 +146,8 @@ export function PlanEditor({
               alimentoRealId: a.alimento?.id || null,
               nombre: item?.nombre || "Sin nombre",
               cantidad: a.cantidad,
+              unidad: a.unidad || "GRAMOS",
+              porcion: a.alimento?.porcion || 100,
               calorias: item?.calorias || 0,
               proteinas: item?.proteinas || 0,
               carbohidratos: item?.carbohidratos || 0,
@@ -196,7 +202,7 @@ export function PlanEditor({
           grasas: a.grasas,
           fibra: a.fibra || 0,
         },
-        a.cantidad
+        convertirAGramos(a.cantidad, a.unidad || "GRAMOS", a.porcion || 100)
       );
     });
     const total = sumarMacros(macrosList);
@@ -251,6 +257,7 @@ export function PlanEditor({
     recetaId: string | null;
     nombre: string;
     cantidad: number;
+    unidad: string;
   }) {
     if (!selectedComidaId) return;
     startTransition(async () => {
@@ -259,7 +266,8 @@ export function PlanEditor({
           selectedComidaId,
           item.alimentoId,
           item.recetaId,
-          item.cantidad
+          item.cantidad,
+          item.unidad as UnidadMedida
         );
         router.refresh();
       } catch (error) {
@@ -325,7 +333,7 @@ export function PlanEditor({
           grasas: activeDragItem.grasas,
           fibra: 0,
         },
-        activeDragItem.cantidad
+        convertirAGramos(activeDragItem.cantidad, activeDragItem.unidad || "GRAMOS", activeDragItem.porcion || 100)
       )
     : null;
 

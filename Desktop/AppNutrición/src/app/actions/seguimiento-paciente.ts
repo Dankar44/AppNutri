@@ -16,6 +16,7 @@ export interface ComidaSeguimiento {
   alimentos: {
     nombre: string;
     cantidad: number;
+    unidad?: string;
     cumplido: boolean;
   }[];
   horaReal: string | null;
@@ -178,6 +179,7 @@ export async function guardarSeguimientoPaciente(
           alimentos: (c.alimentos || []).slice(0, 30).map((a) => ({
             nombre: String(a.nombre).slice(0, 200),
             cantidad: Number(a.cantidad) || 0,
+            unidad: a.unidad ? String(a.unidad).slice(0, 20) : undefined,
             cumplido: Boolean(a.cumplido),
           })),
           horaReal: c.horaReal ? String(c.horaReal).slice(0, 10) : null,

@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
 import { sugerirComplementos, type AlimentoSugerido } from "@/lib/ai/suggest-complement";
-import { calcularMacrosPorcion, sumarMacros, type Macros } from "@/lib/macros";
+import { calcularMacrosPorcion, sumarMacros, convertirAGramos, type Macros } from "@/lib/macros";
 
 export async function getSugerencias(
   comidaId: string,
@@ -47,7 +47,7 @@ export async function getSugerencias(
       if (a.alimento) {
         return calcularMacrosPorcion(
           { calorias: a.alimento.calorias, proteinas: a.alimento.proteinas, carbohidratos: a.alimento.carbohidratos, grasas: a.alimento.grasas, fibra: 0 },
-          a.cantidad
+          convertirAGramos(a.cantidad, a.unidad, a.alimento.porcion)
         );
       }
       return { calorias: 0, proteinas: 0, carbohidratos: 0, grasas: 0, fibra: 0 };
@@ -58,7 +58,7 @@ export async function getSugerencias(
   // Obtener alimentos disponibles del dietista
   const alimentosDB = await prisma.alimento.findMany({
     where: { OR: [{ dietistaId: dietista.id }, { dietistaId: null }] },
-    select: { id: true, nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true, porcion: true },
+    select: { id: true, nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true, porcion: true, unidad: true },
     take: 200,
   });
 

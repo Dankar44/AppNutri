@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { ArrowRight, Clock, UtensilsCrossed } from "lucide-react";
 import { TIPO_LABELS, TIPO_HORAS } from "@/lib/seguimiento";
+import { formatQuantity } from "@/lib/units";
 
 interface Alimento {
   nombre: string;
   cantidad: number;
+  unidad?: string;
 }
 
 interface Props {
@@ -101,7 +103,7 @@ export function ComidaActualCard({
               <span className="truncate">{a.nombre}</span>
               {a.cantidad > 0 && (
                 <span className="text-xs text-muted-foreground shrink-0">
-                  {a.cantidad}g
+                  {formatQuantity(a.cantidad, a.unidad || "GRAMOS")}
                 </span>
               )}
             </li>

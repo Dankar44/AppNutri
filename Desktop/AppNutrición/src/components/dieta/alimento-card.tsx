@@ -4,11 +4,15 @@ import { Trash2, GripVertical, ListFilter, ExternalLink } from "lucide-react";
 import { useState, useRef } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
+import { getUnidadLabel } from "@/lib/units";
+import { convertirAGramos } from "@/lib/macros";
 
 interface AlimentoCardProps {
   id: string;
   nombre: string;
   cantidad: number;
+  unidad?: string;
+  porcion?: number;
   calorias: number;
   proteinas: number;
   carbohidratos: number;
@@ -26,6 +30,8 @@ export function AlimentoCard({
   id,
   nombre,
   cantidad,
+  unidad,
+  porcion,
   calorias,
   proteinas,
   carbohidratos,
@@ -44,7 +50,7 @@ export function AlimentoCard({
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
       id,
-      data: { id, nombre, cantidad, calorias, proteinas, carbohidratos, grasas },
+      data: { id, nombre, cantidad, unidad, porcion, calorias, proteinas, carbohidratos, grasas },
     });
 
   const style = transform
@@ -59,7 +65,7 @@ export function AlimentoCard({
     }, 500);
   }
 
-  const unidadLabel = esReceta ? "porc." : "g";
+  const unidadLabel = getUnidadLabel(unidad || "GRAMOS", esReceta);
 
   if (readOnly) {
     return (
@@ -127,7 +133,7 @@ export function AlimentoCard({
       {/* Equivalente button */}
       {onBuscarEquivalente && !esReceta && (
         <button
-          onClick={() => onBuscarEquivalente(id, nombre, calorias, proteinas, carbohidratos, grasas, cantidad)}
+          onClick={() => onBuscarEquivalente(id, nombre, calorias, proteinas, carbohidratos, grasas, convertirAGramos(cantidad, unidad || "GRAMOS", porcion || 100))}
           className="p-1.5 rounded border border-border/60 hover:bg-primary/10 hover:border-primary/30 text-muted-foreground/50 hover:text-primary transition-all shrink-0"
           title="Buscar alimento equivalente"
         >

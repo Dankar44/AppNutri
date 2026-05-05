@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useTransition, useEffect, useRef } from "react";
+import { useState, useTransition, useEffect, useRef, useCallback } from "react";
 import {
   Mail,
   Palette,
   Plus,
   Info,
   ChevronDown,
+  ChevronUp,
   ChevronLeft,
   ChevronRight,
   Loader2,
@@ -16,13 +17,22 @@ import {
   Download,
   Eye,
   Sparkles,
+  RotateCcw,
+  Ban,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { enviarPlanPorEmail } from "@/app/actions/email";
 import { getPlanPDFData, getPlanesPaciente } from "@/app/actions/planes";
-import { generatePlanPDF, type PlanPDFData, type PDFSectionOptions } from "@/lib/pdf/generate-plan-pdf";
+import {
+  generatePlanPDF,
+  type PlanPDFData,
+  type PDFSectionOptions,
+  type DisplayOverrides,
+  type QuantityOverride,
+  UNIDAD_LABELS_FULL,
+} from "@/lib/pdf/generate-plan-pdf";
 
 // ─── Types ───
 
@@ -125,6 +135,220 @@ const PDF_OPTIONS_LABELS: {
   { key: "valoresNutricionales", label: "Valores nutricionales por comida", description: "Calorias, proteinas, carbohidratos y grasas por comida" },
 ];
 
+const DIA_LABELS: Record<string, string> = {
+  LUNES: "Lunes", MARTES: "Martes", MIERCOLES: "Miércoles",
+  JUEVES: "Jueves", VIERNES: "Viernes", SABADO: "Sábado", DOMINGO: "Domingo",
+};
+
+const TIPO_LABELS: Record<string, string> = {
+  DESAYUNO: "Desayuno", MEDIA_MANANA: "Media mañana", ALMUERZO: "Almuerzo",
+  MERIENDA: "Merienda", CENA: "Cena", RECENA: "Recena",
+};
+
+const UNIDADES = ["GRAMOS", "MILILITROS", "UNIDAD", "CUCHARADA", "CUCHARADITA", "TAZA", "REBANADA", "PIEZA"] as const;
+
+// ─── Quantity Editor ───
+
+function QuantityEditor({
+  pdfData,
+  overrides,
+  onChange,
+}: {
+  pdfData: PlanPDFData;
+  overrides: DisplayOverrides;
+  onChange: (ov: DisplayOverrides) => void;
+}) {
+  const [expandedDia, setExpandedDia] = useState<string | null>(null);
+  const [sectionOpen, setSectionOpen] = useState(false);
+  const hasOverrides = Object.keys(overrides).length > 0;
+
+  const updateOverride = useCallback(
+    (key: string, patch: Partial<QuantityOverride>) => {
+      onChange({ ...overrides, [key]: { ...overrides[key], ...patch } });
+    },
+    [overrides, onChange],
+  );
+
+  const removeOverride = useCallback(
+    (key: string) => {
+      const next = { ...overrides };
+      delete next[key];
+      onChange(next);
+    },
+    [overrides, onChange],
+  );
+
+  const resetAll = useCallback(() => onChange({}), [onChange]);
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setSectionOpen(!sectionOpen)}
+        className="w-full flex items-center justify-between py-2 text-left group"
+      >
+        <div className="flex items-center gap-2">
+          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            Cantidades del entregable
+          </h4>
+          {hasOverrides && (
+            <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-semibold">
+              {Object.keys(overrides).length}
+            </span>
+          )}
+        </div>
+        {sectionOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+      </button>
+
+      {sectionOpen && (
+      <div className="space-y-2 mt-1">
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Ajusta las cantidades que aparecen en el PDF sin modificar los valores nutricionales calculados.
+          </p>
+          {hasOverrides && (
+            <button
+              type="button"
+              onClick={resetAll}
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0 ml-2"
+            >
+              <RotateCcw className="w-3 h-3" />
+              Restablecer
+            </button>
+          )}
+        </div>
+
+      <div className="space-y-1 max-h-[400px] overflow-y-auto pr-1">
+        {pdfData.dias.map((dia) => {
+          const isExpanded = expandedDia === dia.dia;
+          const diaOverrideCount = dia.comidas.reduce((count, comida) =>
+            count + comida.alimentos.filter((_, aIdx) => {
+              const key = `${dia.dia}-${comida.tipo}-${aIdx}`;
+              return overrides[key] !== undefined;
+            }).length, 0);
+
+          return (
+            <div key={dia.dia} className="rounded-lg border border-border overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setExpandedDia(isExpanded ? null : dia.dia)}
+                className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium hover:bg-muted/50 transition-colors"
+              >
+                <span className="flex items-center gap-2">
+                  {DIA_LABELS[dia.dia] || dia.dia}
+                  {diaOverrideCount > 0 && (
+                    <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-semibold">
+                      {diaOverrideCount}
+                    </span>
+                  )}
+                </span>
+                {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </button>
+
+              {isExpanded && (
+                <div className="border-t border-border divide-y divide-border/50">
+                  {dia.comidas.map((comida) => {
+                    if (comida.alimentos.length === 0) return null;
+                    return (
+                      <div key={comida.tipo} className="px-3 py-2">
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1.5">
+                          {TIPO_LABELS[comida.tipo] || comida.tipo}
+                        </p>
+                        <div className="space-y-1.5">
+                          {comida.alimentos.map((a, aIdx) => {
+                            const key = `${dia.dia}-${comida.tipo}-${aIdx}`;
+                            const ov = overrides[key];
+                            const nombre = a.alimento?.nombre || a.receta?.nombre || "?";
+                            const isModified = ov !== undefined;
+                            const isLibre = ov?.libre === true;
+
+                            return (
+                              <div key={key} className={cn(
+                                "flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors",
+                                isModified ? "bg-amber-50 dark:bg-amber-500/10" : "bg-muted/30"
+                              )}>
+                                <span className="flex-1 min-w-0 truncate font-medium" title={nombre}>
+                                  {nombre}
+                                </span>
+
+                                {isLibre ? (
+                                  <span className="text-muted-foreground italic shrink-0">libre</span>
+                                ) : (
+                                  <>
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      step="any"
+                                      value={ov?.cantidad ?? a.cantidad}
+                                      onChange={(e) => {
+                                        if (e.target.value === "") {
+                                          updateOverride(key, { cantidad: null, libre: false });
+                                          return;
+                                        }
+                                        const parsed = parseFloat(e.target.value);
+                                        if (Number.isNaN(parsed) || parsed < 0) return;
+                                        updateOverride(key, { cantidad: parsed, libre: false });
+                                      }}
+                                      className="w-16 px-1.5 py-0.5 rounded border border-border bg-background text-right text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-primary/30"
+                                    />
+                                    <select
+                                      value={ov?.unidad ?? a.unidad}
+                                      onChange={(e) => updateOverride(key, { unidad: e.target.value, libre: false })}
+                                      className="w-24 px-1 py-0.5 rounded border border-border bg-background text-xs focus:outline-none focus:ring-1 focus:ring-primary/30"
+                                    >
+                                      {UNIDADES.map((u) => (
+                                        <option key={u} value={u}>{UNIDAD_LABELS_FULL[u]}</option>
+                                      ))}
+                                    </select>
+                                  </>
+                                )}
+
+                                <button
+                                  type="button"
+                                  onClick={() => isLibre
+                                    ? removeOverride(key)
+                                    : updateOverride(key, { libre: true, cantidad: null, unidad: null })
+                                  }
+                                  title={isLibre ? "Restaurar cantidad" : "Marcar como libre"}
+                                  className={cn(
+                                    "p-1 rounded transition-colors shrink-0",
+                                    isLibre
+                                      ? "text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-500/20"
+                                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                                  )}
+                                >
+                                  <Ban className="w-3 h-3" />
+                                </button>
+
+                                {isModified && !isLibre && (
+                                  <button
+                                    type="button"
+                                    onClick={() => removeOverride(key)}
+                                    title="Restablecer"
+                                    className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+                                  >
+                                    <RotateCcw className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Toggle Dropdown ───
 
 function ToggleDropdown({
@@ -225,6 +449,8 @@ export function EntregablesTab({
   const [loadingPdf, setLoadingPdf] = useState(false);
   const [previewPage, setPreviewPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [displayOverrides, setDisplayOverrides] = useState<DisplayOverrides>({});
+  const [appliedOverrides, setAppliedOverrides] = useState<DisplayOverrides>({});
 
   // Cargar la lista de planes del paciente
   useEffect(() => {
@@ -243,6 +469,8 @@ export function EntregablesTab({
     if (!selectedPlanId) { setPdfData(null); return; }
     let cancelled = false;
     setLoadingPdf(true);
+    setDisplayOverrides({});
+    setAppliedOverrides({});
     getPlanPDFData(selectedPlanId).then((data) => {
       if (cancelled) return;
       setPdfData(data);
@@ -279,10 +507,10 @@ export function EntregablesTab({
     };
   }
 
-  // Regenerate PDF HTML when data o opciones aplicadas cambian (no cuando cambia pdfOptions)
+  // Regenerate PDF HTML when data o opciones aplicadas cambian (no cuando cambia pdfOptions/overrides en edición)
   useEffect(() => {
     if (!pdfData) { setPdfHtml(null); return; }
-    const html = generatePlanPDF({ ...pdfData, sections: toSections(appliedOptions) });
+    const html = generatePlanPDF({ ...pdfData, sections: toSections(appliedOptions), displayOverrides: appliedOverrides });
     const previewHtml = html.replace(
       /<script>window\.onload=function\(\)\{window\.print\(\);\}<\/script>/,
       ""
@@ -291,10 +519,12 @@ export function EntregablesTab({
     const count = (previewHtml.match(/class="page/g) || []).length;
     setTotalPages(Math.max(1, count));
     setPreviewPage(0);
-  }, [pdfData, appliedOptions]);
+  }, [pdfData, appliedOptions, appliedOverrides]);
 
   // ¿Hay cambios sin aplicar?
-  const hasUnappliedChanges = JSON.stringify(pdfOptions) !== JSON.stringify(appliedOptions);
+  const hasUnappliedChanges =
+    JSON.stringify(pdfOptions) !== JSON.stringify(appliedOptions) ||
+    JSON.stringify(displayOverrides) !== JSON.stringify(appliedOverrides);
 
 
   function handlePdfOptionChange(key: keyof PDFOptions, value: boolean) {
@@ -306,7 +536,7 @@ export function EntregablesTab({
       toast.error("No hay un plan activo para exportar");
       return;
     }
-    const printHtml = generatePlanPDF({ ...pdfData, sections: toSections(appliedOptions) });
+    const printHtml = generatePlanPDF({ ...pdfData, sections: toSections(appliedOptions), displayOverrides: appliedOverrides });
     const ventana = window.open("", "_blank");
     if (!ventana) return;
     ventana.document.write(printHtml);
@@ -406,11 +636,22 @@ export function EntregablesTab({
                 ))}
               </div>
 
+              {/* Editor de cantidades */}
+              {pdfData && !loadingPdf && (
+                <div className="mt-5 pt-4 border-t border-border">
+                  <QuantityEditor
+                    pdfData={pdfData}
+                    overrides={displayOverrides}
+                    onChange={setDisplayOverrides}
+                  />
+                </div>
+              )}
+
               <div className="mt-5 pt-4 border-t border-border space-y-3">
                 {/* Botón generar — aplica las opciones actuales a la vista previa */}
                 <button
                   type="button"
-                  onClick={() => setAppliedOptions(pdfOptions)}
+                  onClick={() => { setAppliedOptions(pdfOptions); setAppliedOverrides(displayOverrides); }}
                   disabled={!hasUnappliedChanges}
                   className={cn(
                     "w-full inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors",

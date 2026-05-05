@@ -109,7 +109,7 @@ Ejecutar **Lighthouse** en Chrome DevTools con perfil "Mobile" para cada página
 - [ ] `viewport` meta tag presente (✅ añadido en Paso 1)
 - [ ] `tap-targets` sin fallos (click targets ≥ 48dp)
 - [ ] `font-size` legible sin zoom
-- [ ] `image-aspect-ratio` correcto (SVG demo-paciente-avatar.svg)
+- [ ] `image-aspect-ratio` correcto (avatar demo embebido como data URL base64)
 - [ ] `color-contrast` cumple WCAG AA (ratio ≥ 4.5:1)
 - [ ] `html-has-lang="es"` (✅ ya está)
 - [ ] Sin `document.write`, sin APIs obsoletas

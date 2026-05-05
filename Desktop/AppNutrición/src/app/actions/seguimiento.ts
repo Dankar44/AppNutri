@@ -8,12 +8,14 @@ import {
   sanitizeStringOptional,
   validateNumberOptional,
 } from "@/lib/validation";
+import { convertirAGramos } from "@/lib/macros";
+import { formatQuantity } from "@/lib/units";
 
 // ─── Types ───
 
 export interface ComidaSeguimientoItem {
   tipo: string;
-  alimentos: { nombre: string; cantidad: number; cumplido: boolean }[];
+  alimentos: { nombre: string; cantidad: number; unidad?: string; cumplido: boolean }[];
   horaReal: string | null;
   notas: string | null;
 }
@@ -317,7 +319,7 @@ export async function getActividadesPaciente(
       const comidas = seg.comidasData as Array<{
         tipo: string;
         horaReal?: string | null;
-        alimentos?: Array<{ nombre: string; cantidad: number; cumplido: boolean }>;
+        alimentos?: Array<{ nombre: string; cantidad: number; unidad?: string; cumplido: boolean }>;
       }>;
       if (!Array.isArray(comidas)) continue;
 
@@ -349,9 +351,9 @@ export async function getActividadesPaciente(
           const detalles: string[] = [];
           for (const a of comida.alimentos) {
             if (a.cumplido) {
-              detalles.push(`✅ ${a.nombre} (${a.cantidad} g)`);
+              detalles.push(`✅ ${a.nombre} (${formatQuantity(a.cantidad, a.unidad || "GRAMOS")})`);
             } else {
-              detalles.push(`❌ ~~${a.nombre} (${a.cantidad} g)~~`);
+              detalles.push(`❌ ~~${a.nombre} (${formatQuantity(a.cantidad, a.unidad || "GRAMOS")})~~`);
             }
           }
           actividades.push({
@@ -384,14 +386,14 @@ export async function calcularMacrosDia(pacienteId: string, fecha: string) {
     `SELECT "comidasData" FROM seguimiento_diario WHERE "pacienteId" = $1 AND fecha = $2::date`,
     pacienteId, fecha
   );
-  const comidasData = rows[0]?.comidasData as Array<{ tipo: string; alimentos?: Array<{ nombre: string; cantidad: number; cumplido: boolean }> }> | null;
+  const comidasData = rows[0]?.comidasData as Array<{ tipo: string; alimentos?: Array<{ nombre: string; cantidad: number; unidad?: string; cumplido: boolean }> }> | null;
   if (!comidasData) return { macros: { calorias: 0, proteinas: 0, carbohidratos: 0, grasas: 0, fibra: 0 }, micro: {} as Record<string, number> };
 
   // Collect all food names that are cumplido
-  const foodsToCalc: { nombre: string; cantidad: number }[] = [];
+  const foodsToCalc: { nombre: string; cantidad: number; unidad: string }[] = [];
   for (const c of comidasData) {
     for (const a of (c.alimentos || [])) {
-      if (a.cumplido) foodsToCalc.push({ nombre: a.nombre, cantidad: a.cantidad });
+      if (a.cumplido) foodsToCalc.push({ nombre: a.nombre, cantidad: a.cantidad, unidad: a.unidad || "GRAMOS" });
     }
   }
   if (foodsToCalc.length === 0) return { macros: { calorias: 0, proteinas: 0, carbohidratos: 0, grasas: 0, fibra: 0 }, micro: {} as Record<string, number> };
@@ -400,7 +402,7 @@ export async function calcularMacrosDia(pacienteId: string, fecha: string) {
   const names = [...new Set(foodsToCalc.map(f => f.nombre))];
   const placeholders = names.map((_, i) => `$${i + 1}`).join(",");
   const dbFoods = await prisma.$queryRawUnsafe<Record<string, unknown>[]>(
-    `SELECT nombre, calorias, proteinas, carbohidratos, grasas, fibra,
+    `SELECT nombre, porcion, calorias, proteinas, carbohidratos, grasas, fibra,
             "vitaminaA","vitaminaB6","vitaminaB12","vitaminaC","vitaminaD","vitaminaE","vitaminaK",
             tiamina,riboflavina,niacina,folato,"acidoPantotenico",colina,
             calcio,hierro,magnesio,fosforo,potasio,sodio,cinc,cobre,manganeso,selenio,fluor
@@ -419,7 +421,8 @@ export async function calcularMacrosDia(pacienteId: string, fecha: string) {
   for (const item of foodsToCalc) {
     const food = foodMap.get(item.nombre);
     if (!food) continue;
-    const factor = item.cantidad / 100;
+    const porcion = Number(food.porcion) || 100;
+    const factor = convertirAGramos(item.cantidad, item.unidad, porcion) / 100;
     cal += ((food.calorias as number) || 0) * factor;
     prot += ((food.proteinas as number) || 0) * factor;
     carb += ((food.carbohidratos as number) || 0) * factor;

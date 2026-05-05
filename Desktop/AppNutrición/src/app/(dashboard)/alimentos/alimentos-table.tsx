@@ -5,12 +5,14 @@ import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { MacroBadges } from "@/components/macro-badge";
 import { cargarMasAlimentos } from "@/app/actions/alimentos";
+import { UNIDAD_LABELS } from "@/lib/units";
 
 type Alimento = {
   id: string;
   nombre: string;
   categoria: string;
   porcion: number;
+  unidad: string;
   calorias: number;
   proteinas: number;
   carbohidratos: number;
@@ -109,7 +111,9 @@ export function AlimentosTable({ initial, initialCursor, busqueda, categoria }: 
                 </span>
               </td>
               <td className="px-4 py-3 text-sm text-muted-foreground hidden md:table-cell">
-                {alimento.porcion}g
+                {alimento.unidad === "GRAMOS" || alimento.unidad === "MILILITROS"
+                  ? `${alimento.porcion}${UNIDAD_LABELS[alimento.unidad]}`
+                  : `1 ${UNIDAD_LABELS[alimento.unidad] || alimento.unidad} (${alimento.porcion}g)`}
               </td>
               <td className="px-4 py-3">
                 <MacroBadges

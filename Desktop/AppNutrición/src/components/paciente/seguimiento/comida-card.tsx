@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatQuantity } from "@/lib/units";
 import {
   Check,
   Clock,
@@ -166,7 +167,7 @@ export function ComidaCard({
                 </span>
                 {a.cantidad > 0 && (
                   <span className="text-[11px] text-muted-foreground shrink-0">
-                    {a.cantidad}g
+                    {formatQuantity(a.cantidad, a.unidad || "GRAMOS")}
                   </span>
                 )}
               </span>

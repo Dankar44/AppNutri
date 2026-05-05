@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft, User, Sparkles, Mail, Phone, Calendar, Target,
   Activity, Scale, BookOpen, FileText, Loader2, ChefHat, Apple,
-  Layers,
+  Layers, Plus,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -61,11 +61,13 @@ function getInitials(nombre: string, apellidos: string) {
 
 export default function NuevoPlanPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const plantillaParam = searchParams.get("plantilla") || "";
   const [loading, setLoading] = useState(false);
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [plantillas, setPlantillas] = useState<{ id: string; nombre: string }[]>([]);
-  const [plantillaId, setPlantillaId] = useState("");
-  const [pacienteId, setPacienteId] = useState("");
+  const [plantillaId, setPlantillaId] = useState(plantillaParam);
+  const [pacienteId, setPacienteId] = useState(searchParams.get("pacienteId") || "");
   const [contexto, setContexto] = useState<Contexto>(null);
   const [cargandoContexto, setCargandoContexto] = useState(false);
 
@@ -352,7 +354,6 @@ export default function NuevoPlanPage() {
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-4 h-4" />
                   Crear plan
                 </>
               )}

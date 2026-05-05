@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Check, Flame, CheckCircle2, Loader2 } from "lucide-react";
+import { ChevronDown, Check, Flame, CheckCircle2, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { asignarPlanComoActual } from "@/app/actions/planes";
 
@@ -16,10 +17,11 @@ interface PlanItem {
 
 interface Props {
   planActualId: string;
+  pacienteId: string;
   planes: PlanItem[];
 }
 
-export function PlanSelector({ planActualId, planes }: Props) {
+export function PlanSelector({ planActualId, pacienteId, planes }: Props) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -153,6 +155,15 @@ export function PlanSelector({ planActualId, planes }: Props) {
           </div>
         )}
       </div>
+
+      <Link
+        href={`/dietas/nuevo?pacienteId=${pacienteId}`}
+        className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors shrink-0 border border-primary/30 text-primary hover:bg-primary/5"
+        title="Crear nuevo plan para este paciente"
+      >
+        <Plus className="w-4 h-4" />
+        <span className="hidden sm:inline">Nuevo plan</span>
+      </Link>
 
       <button
         type="button"

@@ -23,7 +23,7 @@ import {
   FileDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { calcularMacrosPorcion, sumarMacros } from "@/lib/macros";
+import { calcularMacrosPorcion, sumarMacros, convertirAGramos } from "@/lib/macros";
 import { PlanEditor } from "@/components/dieta/plan-editor";
 import {
   PieChart,
@@ -73,6 +73,7 @@ export type PlanVisualItem = {
     carbohidratos: number;
     grasas: number;
     fibra: number;
+    porcion?: number;
     categoria?: string;
     enlaceProducto?: string | null;
   } & MicronutrientesOpcionales) | null;
@@ -241,6 +242,7 @@ export function PlanVisual({
     for (const comida of diaVista.comidas) {
       for (const item of comida.alimentos) {
         if (item.alimento) {
+          const gramos = convertirAGramos(item.cantidad, item.unidad, item.alimento.porcion || 100);
           macroList.push(
             calcularMacrosPorcion(
               {
@@ -250,7 +252,7 @@ export function PlanVisual({
                 grasas: item.alimento.grasas,
                 fibra: item.alimento.fibra,
               },
-              item.cantidad
+              gramos
             )
           );
           continue;
@@ -289,7 +291,7 @@ export function PlanVisual({
     for (const comida of diaVista.comidas) {
       for (const item of comida.alimentos) {
         if (item.alimento) {
-          const factor = item.cantidad / 100;
+          const factor = convertirAGramos(item.cantidad, item.unidad, item.alimento.porcion || 100) / 100;
           for (const key of MICRO_KEYS) {
             const val = (item.alimento as Record<string, unknown>)[key];
             if (typeof val === "number") microTotals[key] += val * factor;
@@ -314,7 +316,7 @@ export function PlanVisual({
       let gF = 0, cF = 0, pF = 0;
       for (const item of comida.alimentos) {
         if (item.alimento) {
-          const f = item.cantidad / 100;
+          const f = convertirAGramos(item.cantidad, item.unidad, item.alimento.porcion || 100) / 100;
           gF += item.alimento.grasas * f;
           cF += item.alimento.carbohidratos * f;
           pF += item.alimento.proteinas * f;
@@ -384,16 +386,20 @@ export function PlanVisual({
     <section className="space-y-4">
 
       <div className="flex items-center gap-2 flex-wrap">
-        <div className={cn(
-          "flex-1 min-w-0 flex items-stretch rounded-xl border border-border bg-card p-1 overflow-x-auto scrollbar-thin touch-scroll-x",
-          vista === "resumen" ? "opacity-50 pointer-events-none" : ""
-        )}>
+        <div className="flex-1 min-w-0 flex items-stretch rounded-xl border border-border bg-card p-1 overflow-x-auto scrollbar-thin touch-scroll-x">
           <button
             type="button"
-            onClick={() => setSelectedDayKey("TODOS")}
+            onClick={() => {
+              if (vista === "resumen") {
+                setSelectedDayKey("TODOS");
+                setVista("plan");
+              } else {
+                setSelectedDayKey("TODOS");
+              }
+            }}
             className={cn(
               "flex-1 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors",
-              isTodos
+              isTodos && vista !== "resumen"
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
             )}
@@ -402,13 +408,17 @@ export function PlanVisual({
           </button>
           {DIA_KEYS.map((key) => {
             const exists = diasDisponibles.some((d) => d.dia === key);
-            const isActive = !isTodos && selectedDayKey === key;
+            const isActive = !isTodos && selectedDayKey === key && vista !== "resumen";
             return (
               <button
                 key={key}
                 type="button"
                 disabled={!exists}
-                onClick={() => exists && setSelectedDayKey(key)}
+                onClick={() => {
+                  if (!exists) return;
+                  setSelectedDayKey(key);
+                  if (vista === "resumen") setVista("plan");
+                }}
                 className={cn(
                   "flex-1 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors",
                   isActive
@@ -512,6 +522,38 @@ export function PlanVisual({
           </button>
         </div>
       </div>
+
+      {/* Objetivos de macros */}
+      {selectedPlan && (() => {
+        const { caloriasObjetivo: co, proteinasObjetivo: po, carbohidratosObjetivo: cho, grasasObjetivo: go } = selectedPlan;
+        const hayObjetivos = co != null || po != null || cho != null || go != null;
+        if (!hayObjetivos) return null;
+        return (
+          <div className="flex items-center gap-3 flex-wrap text-xs">
+            <span className="font-semibold text-muted-foreground uppercase tracking-wide">Objetivos</span>
+            {co != null && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 font-medium">
+                <Flame className="w-3 h-3" />{co} kcal
+              </span>
+            )}
+            {po != null && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium">
+                {po}g proteínas
+              </span>
+            )}
+            {cho != null && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 font-medium">
+                {cho}g carbos
+              </span>
+            )}
+            {go != null && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 font-medium">
+                {go}g grasas
+              </span>
+            )}
+          </div>
+        );
+      })()}
 
       {selectedPlan && totals ? (
         vista === "resumen" ? (
@@ -958,7 +1000,7 @@ export function PlanVisual({
               for (const comida of diaVista.comidas) {
                 for (const item of comida.alimentos) {
                   if (item.alimento) {
-                    const kcal = Math.round((item.alimento.calorias * item.cantidad) / 100);
+                    const kcal = Math.round((item.alimento.calorias * convertirAGramos(item.cantidad, item.unidad, item.alimento.porcion || 100)) / 100);
                     allFoods.push({ nombre: item.alimento.nombre, calorias: kcal, comida: TIPO_LABELS_TABLE[comida.tipo] || comida.tipo });
                   } else if (item.receta) {
                     const kcal = Math.round(item.receta.calorias * item.cantidad);
@@ -1458,7 +1500,7 @@ function macrosDeItem(a: PlanVisualItem) {
         grasas: a.alimento.grasas,
         fibra: a.alimento.fibra || 0,
       },
-      a.cantidad
+      convertirAGramos(a.cantidad, a.unidad, a.alimento.porcion || 100)
     );
   }
   return { calorias: 0, proteinas: 0, carbohidratos: 0, grasas: 0, fibra: 0 };

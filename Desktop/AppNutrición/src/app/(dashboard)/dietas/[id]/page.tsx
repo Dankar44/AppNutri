@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Pencil, Share2, Sparkles } from "lucide-react";
+import { ArrowLeft, Pencil, Share2, Sparkles, Plus } from "lucide-react";
 import { AvatarPaciente } from "@/components/avatar-paciente";
 import { getPlan, getPlanesPaciente } from "@/app/actions/planes";
 import { capitalizarNombre } from "@/lib/utils";
@@ -111,6 +111,7 @@ export default async function PlanDetailPage({ params }: Props) {
         <div className="mt-4">
           <PlanSelector
             planActualId={plan.id}
+            pacienteId={plan.pacienteId}
             planes={planesPaciente.map((p) => ({
               id: p.id,
               nombre: p.nombre,

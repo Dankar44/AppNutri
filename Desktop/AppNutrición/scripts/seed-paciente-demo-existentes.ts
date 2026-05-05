@@ -16,6 +16,8 @@ function cuid() {
   return ("c" + ts + rand).slice(0, 25);
 }
 
+const AVATAR_DEMO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIiBmaWxsPSJub25lIj4KICA8Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iI0U4RjVFOSIvPgogIDxjaXJjbGUgY3g9IjEwMCIgY3k9IjcyIiByPSIyOCIgZmlsbD0iIzY2QkI2QSIvPgogIDxwYXRoIGQ9Ik0xMDAgMTA4Yy0zMCAwLTU0IDE2LTU0IDM2djhjMCA0IDIgNyA2IDkgMTIgNiAzMCA5IDQ4IDlzMzYtMyA0OC05YzQtMiA2LTUgNi05di04YzAtMjAtMjQtMzYtNTQtMzZ6IiBmaWxsPSIjNjZCQjZBIi8+Cjwvc3ZnPgo=";
+
 const DIAS = ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"];
 const COMIDAS = ["DESAYUNO", "MEDIA_MANANA", "ALMUERZO", "MERIENDA", "CENA"];
 
@@ -281,7 +283,7 @@ async function crearDemoParaDietista(client: pg.PoolClient, dietistaId: string) 
       JSON.stringify(RECOMENDACIONES),
       "Paciente de prueba preconfigurado para que explores las funciones de la app. Puedes editarlo o eliminarlo cuando quieras.",
       now,
-      "/demo-paciente-avatar.svg",
+      AVATAR_DEMO,
     ],
   );
 

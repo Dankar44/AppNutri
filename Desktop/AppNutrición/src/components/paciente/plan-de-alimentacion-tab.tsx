@@ -11,6 +11,7 @@ import {
   Flame,
   CheckCircle2,
   Loader2,
+  Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PlanVisual, type PlanVisualDetalle } from "./plan-visual";
@@ -267,6 +268,15 @@ export function PlanDeAlimentacionTab({
             </div>
           )}
         </div>
+
+        <Link
+          href={`/dietas/nuevo?pacienteId=${pacienteId}`}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors shrink-0 border border-primary/30 text-primary hover:bg-primary/5"
+          title="Crear nuevo plan para este paciente"
+        >
+          <Plus className="w-4 h-4" />
+          <span className="hidden sm:inline">Nuevo plan</span>
+        </Link>
 
         <button
           type="button"

@@ -1,6 +1,7 @@
 "use client";
 
 import { FileDown } from "lucide-react";
+import { formatQuantity } from "@/lib/pdf/generate-plan-pdf";
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -10,7 +11,7 @@ interface DietaDia {
   dia: string;
   comidas: {
     tipo: string;
-    alimentos: { nombre: string; cantidad: number; enlaceProducto?: string | null }[];
+    alimentos: { nombre: string; cantidad: number; unidad?: string; enlaceProducto?: string | null }[];
   }[];
 }
 
@@ -200,7 +201,7 @@ export function GenerarPDFButtons({ paciente, medidas, consultas, dieta, brandin
           const nombreHtml = a.enlaceProducto
             ? `<a href="${escapeHtml(a.enlaceProducto)}" target="_blank" style="color:${linkCol};text-decoration:underline;">${escapeHtml(a.nombre)}</a>`
             : escapeHtml(a.nombre);
-          html += `<tr><td>${nombreHtml}</td><td>${a.cantidad}g</td></tr>`;
+          html += `<tr><td>${nombreHtml}</td><td>${formatQuantity(a.cantidad, a.unidad || "GRAMOS")}</td></tr>`;
         }
         html += `</table>`;
       }

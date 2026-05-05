@@ -190,7 +190,18 @@ export async function crearPaciente(data: PacienteFormData) {
   const error = validatePacienteData(data);
   if (error) throw new Error(error);
 
-  const { prismaFields, extraFields } = splitExtraFields(sanitizeFormData(data));
+  const sanitized = sanitizeFormData(data);
+
+  if (sanitized.email) {
+    const dietistaExistente = await prisma.dietista.findUnique({
+      where: { email: sanitized.email },
+    });
+    if (dietistaExistente) {
+      throw new Error("Este email pertenece a una cuenta de dietista. Una persona no puede ser dietista y paciente a la vez.");
+    }
+  }
+
+  const { prismaFields, extraFields } = splitExtraFields(sanitized);
 
   const paciente = await prisma.paciente.create({
     data: {
@@ -213,7 +224,18 @@ export async function actualizarPaciente(id: string, data: PacienteFormData) {
   const error = validatePacienteData(data);
   if (error) throw new Error(error);
 
-  const { prismaFields, extraFields } = splitExtraFields(sanitizeFormData(data));
+  const sanitized = sanitizeFormData(data);
+
+  if (sanitized.email) {
+    const dietistaExistente = await prisma.dietista.findUnique({
+      where: { email: sanitized.email },
+    });
+    if (dietistaExistente) {
+      throw new Error("Este email pertenece a una cuenta de dietista. Una persona no puede ser dietista y paciente a la vez.");
+    }
+  }
+
+  const { prismaFields, extraFields } = splitExtraFields(sanitized);
 
   await prisma.paciente.update({
     where: { id, dietistaId: dietista.id },

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, BookCopy, Plus } from "lucide-react";
+import { ArrowLeft, BookCopy } from "lucide-react";
 import { getPlantillas } from "@/app/actions/plantillas";
 import { PlantillaCard } from "./plantilla-card";
 import { PlantillasFilter } from "./plantillas-filter";
@@ -29,13 +29,6 @@ export default async function PlantillasPage({ searchParams }: Props) {
               {plantillas.length} plantilla{plantillas.length !== 1 ? "s" : ""} guardada{plantillas.length !== 1 ? "s" : ""}
             </p>
           </div>
-          <Link
-            href="/dietas/nuevo"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium"
-          >
-            <Plus className="w-4 h-4" />
-            Nuevo plan desde plantilla
-          </Link>
         </div>
       </div>
 
@@ -56,10 +49,10 @@ export default async function PlantillasPage({ searchParams }: Props) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {plantillas.map((plantilla) => {
-            const datos = plantilla.datos as unknown as {
+            const datos = (plantilla.datos as unknown as {
               dia: string;
               comidas: { tipo: string; alimentos: unknown[] }[];
-            }[];
+            }[]) || [];
             const totalComidas = datos.reduce(
               (acc, dia) => acc + dia.comidas.reduce((a, c) => a + c.alimentos.length, 0),
               0

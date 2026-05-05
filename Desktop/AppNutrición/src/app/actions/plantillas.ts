@@ -35,6 +35,56 @@ export async function getPlantillas(busqueda?: string) {
   });
 }
 
+export async function getPlantillaDetalle(id: string) {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return null;
+
+  const plantilla = await prisma.plantilla.findUnique({
+    where: { id, dietistaId: dietista.id },
+  });
+  if (!plantilla) return null;
+
+  const datos = (plantilla.datos as unknown as PlantillaDia[]) || [];
+
+  const alimentoIds = new Set<string>();
+  const recetaIds = new Set<string>();
+  for (const dia of datos) {
+    for (const comida of dia.comidas) {
+      for (const a of comida.alimentos) {
+        if (a.alimentoId) alimentoIds.add(a.alimentoId);
+        if (a.recetaId) recetaIds.add(a.recetaId);
+      }
+    }
+  }
+
+  const [alimentosDB, recetasDB] = await Promise.all([
+    alimentoIds.size > 0
+      ? prisma.alimento.findMany({
+          where: { id: { in: [...alimentoIds] } },
+          select: { id: true, nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true, porcion: true, unidad: true },
+        })
+      : [],
+    recetaIds.size > 0
+      ? prisma.receta.findMany({
+          where: { id: { in: [...recetaIds] } },
+          select: { id: true, nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true },
+        })
+      : [],
+  ]);
+
+  const alimentosMap = Object.fromEntries(alimentosDB.map((a) => [a.id, a]));
+  const recetasMap = Object.fromEntries(recetasDB.map((r) => [r.id, r]));
+
+  return {
+    id: plantilla.id,
+    nombre: plantilla.nombre,
+    createdAt: plantilla.createdAt,
+    datos,
+    alimentosMap,
+    recetasMap,
+  };
+}
+
 export async function eliminarPlantilla(id: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");

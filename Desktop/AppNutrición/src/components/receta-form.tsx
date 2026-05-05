@@ -11,7 +11,7 @@ import {
 } from "@/app/actions/recetas";
 import { IngredienteList, type IngredienteItem } from "./ingrediente-list";
 import { MacroAnalysisCard } from "./alimento/macro-analysis-card";
-import { calcularMacrosPorcion, sumarMacros } from "@/lib/macros";
+import { calcularMacrosPorcion, sumarMacros, convertirAGramos } from "@/lib/macros";
 
 interface RecetaFormProps {
   recetaId?: string;
@@ -75,7 +75,7 @@ export function RecetaForm({
 
   const macrosTotales = sumarMacros(
     ingredientes.map((ing) =>
-      calcularMacrosPorcion(ing.macrosPor100g, ing.cantidad)
+      calcularMacrosPorcion(ing.macrosPor100g, convertirAGramos(ing.cantidad, ing.unidad, ing.porcion || 100))
     )
   );
   const macrosPorPorcion = porciones > 0
@@ -87,7 +87,7 @@ export function RecetaForm({
         fibra: macrosTotales.fibra / porciones,
       }
     : macrosTotales;
-  const pesoTotal = ingredientes.reduce((sum, ing) => sum + (ing.cantidad || 0), 0);
+  const pesoTotal = ingredientes.reduce((sum, ing) => sum + convertirAGramos(ing.cantidad || 0, ing.unidad, ing.porcion || 100), 0);
 
   return (
     <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-6 items-start">

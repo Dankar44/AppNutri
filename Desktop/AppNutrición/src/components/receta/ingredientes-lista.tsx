@@ -1,7 +1,8 @@
 "use client";
 
 import { Droplets, Circle, Diamond, Flame, Carrot, ListChecks } from "lucide-react";
-import { calcularMacrosPorcion } from "@/lib/macros";
+import { calcularMacrosPorcion, convertirAGramos } from "@/lib/macros";
+import { formatQuantity } from "@/lib/units";
 
 const MACRO_COLORS = {
   grasas: "#f0b845",
@@ -12,6 +13,7 @@ const MACRO_COLORS = {
 export interface IngredienteItem {
   id: string;
   cantidad: number;
+  unidad?: string;
   alimento: {
     id: string;
     nombre: string;
@@ -20,6 +22,7 @@ export interface IngredienteItem {
     carbohidratos: number;
     grasas: number;
     fibra: number;
+    porcion?: number;
   };
 }
 
@@ -39,7 +42,7 @@ function parseInstrucciones(text: string): string[] {
 }
 
 export function IngredientesLista({ ingredientes, porciones, instrucciones }: Props) {
-  const totalPeso = ingredientes.reduce((acc, i) => acc + (i.cantidad || 0), 0);
+  const totalPeso = ingredientes.reduce((acc, i) => acc + convertirAGramos(i.cantidad || 0, i.unidad || "GRAMOS", i.alimento.porcion || 100), 0);
   const pasos = instrucciones ? parseInstrucciones(instrucciones) : [];
 
   return (
@@ -67,6 +70,7 @@ export function IngredientesLista({ ingredientes, porciones, instrucciones }: Pr
           ) : (
             <div className="divide-y divide-border/50">
               {ingredientes.map((ing) => {
+                const gramos = convertirAGramos(ing.cantidad, ing.unidad || "GRAMOS", ing.alimento.porcion || 100);
                 const macros = calcularMacrosPorcion(
                   {
                     calorias: ing.alimento.calorias,
@@ -75,16 +79,16 @@ export function IngredientesLista({ ingredientes, porciones, instrucciones }: Pr
                     grasas: ing.alimento.grasas,
                     fibra: ing.alimento.fibra,
                   },
-                  ing.cantidad,
+                  gramos,
                 );
                 return (
                   <div key={ing.id} className="flex items-center gap-3 py-3">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{ing.alimento.nombre}</p>
                       <p className="text-xs text-muted-foreground">
-                        {ing.cantidad} g
+                        {formatQuantity(ing.cantidad, ing.unidad || "GRAMOS")}
                         {porciones > 1
-                          ? ` · ${Math.round(ing.cantidad / porciones)} g / porción`
+                          ? ` · ${Math.round(gramos / porciones)} g / porción`
                           : ""}
                       </p>
                     </div>
