@@ -1,11 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { MacroBadges } from "@/components/macro-badge";
 import { calcularMacrosPorcion, sumarMacros, convertirAGramos } from "@/lib/macros";
 import { formatQuantity } from "@/lib/pdf/generate-plan-pdf";
-import { Printer, CookingPot, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Printer, CookingPot, ExternalLink, Leaf } from "lucide-react";
 
 const DIA_LABELS: Record<string, string> = {
   LUNES: "Lunes", MARTES: "Martes", MIERCOLES: "Miércoles",
@@ -52,68 +50,55 @@ interface PlanReadOnlyProps {
   pacienteNombre?: string;
   dias: DiaData[];
   showPrint?: boolean;
+  brandName?: string | null;
+  dietistaNombre?: string | null;
 }
 
-function RecetaDesplegable({ receta, cantidad }: { receta: RecetaDetalle; cantidad: number }) {
-  const [abierto, setAbierto] = useState(false);
-
+function RecetaInline({ receta, cantidad }: { receta: RecetaDetalle; cantidad: number }) {
   return (
     <div className="rounded-lg border border-purple-200 dark:border-purple-500/30 bg-purple-50/30 overflow-hidden">
-      <button
-        onClick={() => setAbierto(!abierto)}
-        className="w-full flex items-center justify-between px-3 py-2 hover:bg-purple-50 dark:hover:bg-purple-500/15 transition-colors text-left"
-      >
-        <div className="flex items-center gap-2">
+      <div className="px-3 py-2">
+        <div className="flex items-center gap-2 mb-1.5">
           <CookingPot className="w-3.5 h-3.5 text-purple-500 shrink-0" />
           <span className="text-sm font-medium text-purple-900 dark:text-purple-200">{receta.nombre}</span>
           <span className="text-xs text-purple-500">({cantidad} porc.)</span>
         </div>
-        {abierto ? <ChevronUp className="w-4 h-4 text-purple-400" /> : <ChevronDown className="w-4 h-4 text-purple-400" />}
-      </button>
 
-      {abierto && (
-        <div className="px-3 pb-3 border-t border-purple-100 pt-2 space-y-2">
-          {receta.descripcion && (
-            <p className="text-xs text-purple-700 dark:text-purple-400 italic">{receta.descripcion}</p>
-          )}
+        {receta.descripcion && (
+          <p className="text-xs text-purple-700 dark:text-purple-400 italic mb-2">{receta.descripcion}</p>
+        )}
 
-          <div>
-            <p className="text-[11px] sm:text-[10px] font-semibold text-purple-600 dark:text-purple-400 uppercase mb-1">Ingredientes</p>
-            <div className="space-y-0.5">
-              {receta.ingredientes.map((ing, i) => (
-                <div key={i} className="flex items-center justify-between text-xs">
-                  <span className="text-purple-800 dark:text-purple-300">{ing.alimento.nombre}</span>
-                  <span className="text-purple-500">{formatQuantity(ing.cantidad, ing.unidad || "GRAMOS")}</span>
-                </div>
-              ))}
-            </div>
+        {receta.ingredientes.length > 0 && (
+          <div className="ml-5 space-y-0.5">
+            {receta.ingredientes.map((ing, i) => (
+              <div key={i} className="flex items-center justify-between text-xs">
+                <span className="text-purple-800 dark:text-purple-300">{ing.alimento.nombre}</span>
+                <span className="text-purple-500">{formatQuantity(ing.cantidad, ing.unidad || "GRAMOS")}</span>
+              </div>
+            ))}
           </div>
-
-          {receta.instrucciones && (
-            <div>
-              <p className="text-[11px] sm:text-[10px] font-semibold text-purple-600 dark:text-purple-400 uppercase mb-1">Preparación</p>
-              <p className="text-xs text-purple-800 dark:text-purple-300 whitespace-pre-wrap">{receta.instrucciones}</p>
-            </div>
-          )}
-
-          <div className="pt-1">
-            <MacroBadges
-              calorias={receta.calorias}
-              proteinas={receta.proteinas}
-              carbohidratos={receta.carbohidratos}
-              grasas={receta.grasas}
-            />
-            <p className="text-[11px] sm:text-[10px] text-purple-500 mt-0.5">Macros por porción</p>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
 
-export function PlanReadOnly({ nombre, pacienteNombre, dias, showPrint = true }: PlanReadOnlyProps) {
+export function PlanReadOnly({ nombre, pacienteNombre, dias, showPrint = true, brandName, dietistaNombre }: PlanReadOnlyProps) {
+  const showBranding = brandName || dietistaNombre;
+
   return (
     <div>
+      {showBranding && (
+        <div className="text-center mb-6 pb-4 border-b border-border">
+          {brandName && (
+            <p className="text-lg font-semibold text-foreground">{brandName}</p>
+          )}
+          {dietistaNombre && (
+            <p className="text-sm text-muted-foreground">{dietistaNombre}</p>
+          )}
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-xl font-bold">{nombre}</h2>
@@ -182,7 +167,7 @@ export function PlanReadOnly({ nombre, pacienteNombre, dias, showPrint = true }:
                       <div className="space-y-1.5">
                         {comida.alimentos.map((a, ai) => {
                           if (a.receta) {
-                            return <RecetaDesplegable key={ai} receta={a.receta} cantidad={a.cantidad} />;
+                            return <RecetaInline key={ai} receta={a.receta} cantidad={a.cantidad} />;
                           }
                           return (
                             <div key={ai} className="flex items-center justify-between text-sm">
@@ -206,6 +191,14 @@ export function PlanReadOnly({ nombre, pacienteNombre, dias, showPrint = true }:
             </div>
           );
         })}
+      </div>
+
+      <div className="mt-10 pt-6 border-t border-border text-center">
+        <div className="flex items-center justify-center gap-2 mb-1">
+          <Leaf className="w-5 h-5 text-primary" />
+          <span className="text-lg font-bold text-primary">Annonia</span>
+        </div>
+        <p className="text-xs text-muted-foreground">Plan generado con annonia.com</p>
       </div>
     </div>
   );

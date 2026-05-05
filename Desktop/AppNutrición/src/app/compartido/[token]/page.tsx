@@ -30,8 +30,9 @@ export default async function SharedPlanPage({ params }: Props) {
     })),
   }));
 
-  const brandName = plan.branding?.marcaPdf || "Annonia";
+  const brandName = plan.branding?.marcaPdf || null;
   const logoUrl = plan.branding?.pdfLogoUrl;
+  const dietistaNombre = plan.branding?.dietistaNombre || null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -39,11 +40,11 @@ export default async function SharedPlanPage({ params }: Props) {
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
             {logoUrl ? (
-              <img src={logoUrl} alt={brandName} className="h-8 max-w-[120px] object-contain" />
+              <img src={logoUrl} alt={brandName || "Annonia"} className="h-8 max-w-[120px] object-contain" />
             ) : (
               <>
                 <Leaf className="w-5 h-5 text-primary" />
-                <span className="font-bold">{brandName}</span>
+                <span className="font-bold">{brandName || "Annonia"}</span>
               </>
             )}
           </div>
@@ -60,6 +61,8 @@ export default async function SharedPlanPage({ params }: Props) {
           nombre={plan.nombre}
           pacienteNombre={`${plan.paciente.nombre} ${plan.paciente.apellidos}`}
           dias={dias}
+          brandName={brandName}
+          dietistaNombre={dietistaNombre}
         />
       </main>
     </div>
