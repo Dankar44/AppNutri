@@ -8,6 +8,7 @@ import { EquivalentePanel } from "./equivalente-panel";
 import { cn } from "@/lib/utils";
 import { actualizarDescripcionComida } from "@/app/actions/planes";
 import { calcularMacrosPorcion, convertirAGramos } from "@/lib/macros";
+import type { InteractionMode } from "@/components/food-hover-card";
 
 const TIPO_LABELS: Record<string, string> = {
   DESAYUNO: "Desayuno",
@@ -40,7 +41,11 @@ interface AlimentoEnSlot {
   grasas: number;
   fibra?: number;
   esReceta?: boolean;
+  esPropio?: boolean;
   enlaceProducto?: string | null;
+  recetaIngredientes?: { nombre: string; cantidad: number; unidad: string }[];
+  recetaDescripcion?: string | null;
+  recetaPorciones?: number;
 }
 
 interface ComidaSlotProps {
@@ -54,6 +59,7 @@ interface ComidaSlotProps {
   onReemplazar?: (alimentoEnComidaId: string, nuevoAlimentoId: string, nombre: string, cantidad: number) => void;
   compactHeader?: boolean;
   readOnly?: boolean;
+  interactionMode?: InteractionMode;
 }
 
 export function ComidaSlot({
@@ -66,6 +72,7 @@ export function ComidaSlot({
   onCantidadChange,
   onReemplazar,
   readOnly = false,
+  interactionMode = "dashboard",
 }: ComidaSlotProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: `comida-${comidaId}`,
@@ -177,6 +184,7 @@ export function ComidaSlot({
                 <div key={a.id}>
                   <AlimentoCard
                     id={a.id}
+                    alimentoRealId={a.alimentoRealId}
                     nombre={a.nombre}
                     cantidad={a.cantidad}
                     unidad={a.unidad}
@@ -187,8 +195,13 @@ export function ComidaSlot({
                     grasas={a.grasas}
                     fibra={a.fibra}
                     esReceta={a.esReceta}
+                    esPropio={a.esPropio}
                     enlaceProducto={a.enlaceProducto}
+                    recetaIngredientes={a.recetaIngredientes}
+                    recetaDescripcion={a.recetaDescripcion}
+                    recetaPorciones={a.recetaPorciones}
                     readOnly={readOnly}
+                    interactionMode={interactionMode}
                     onRemove={onRemove}
                     onCantidadChange={onCantidadChange}
                     onBuscarEquivalente={readOnly ? undefined : (_alimentoEnComidaId, nombre, cal, prot, carb, gras, cant) => {

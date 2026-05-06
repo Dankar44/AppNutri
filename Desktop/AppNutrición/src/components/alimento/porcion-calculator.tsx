@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Flame, Droplets, Circle, Diamond, Triangle, Minus, Plus } from "lucide-react";
 
 interface Props {
@@ -23,7 +24,15 @@ const ROWS = [
 const PRESETS = [50, 100, 150, 200];
 
 export function PorcionCalculator({ calorias, proteinas, carbohidratos, grasas, fibra, porcionDefault }: Props) {
-  const [gramos, setGramos] = useState<number>(porcionDefault || 100);
+  const searchParams = useSearchParams();
+  const cantidadUrl = searchParams.get("cantidad");
+  const [gramos, setGramos] = useState<number>(() =>
+    cantidadUrl ? Number(cantidadUrl) : (porcionDefault || 100)
+  );
+
+  useEffect(() => {
+    if (cantidadUrl) setGramos(Number(cantidadUrl));
+  }, [cantidadUrl]);
 
   const factor = gramos / 100;
   const values: Record<string, number> = {

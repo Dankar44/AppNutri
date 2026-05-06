@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Flame, Droplets, Circle, Diamond, Triangle, Minus, Plus, Users } from "lucide-react";
 
 interface Props {
@@ -28,7 +29,16 @@ export function PorcionesCalculadora({
   fibra,
   porcionesReceta,
 }: Props) {
-  const [porciones, setPorciones] = useState<number>(1);
+  const searchParams = useSearchParams();
+  const porcionesUrl = searchParams.get("porciones");
+  const [porciones, setPorciones] = useState<number>(() =>
+    porcionesUrl ? Number(porcionesUrl) : 1
+  );
+
+  useEffect(() => {
+    if (porcionesUrl) setPorciones(Number(porcionesUrl));
+  }, [porcionesUrl]);
+
   const presets = Array.from(new Set([1, 2, 4, porcionesReceta])).sort((a, b) => a - b);
 
   const clamp = (n: number) => Math.max(0.5, Math.min(50, n));

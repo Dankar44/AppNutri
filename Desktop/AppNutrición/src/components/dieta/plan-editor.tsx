@@ -52,6 +52,7 @@ interface AlimentoEnComidaData {
     fibra?: number;
     porcion?: number;
     enlaceProducto?: string | null;
+    esPropio?: boolean;
   } | null;
   receta: {
     id: string;
@@ -61,6 +62,10 @@ interface AlimentoEnComidaData {
     carbohidratos: number;
     grasas: number;
     fibra?: number;
+    porciones?: number;
+    descripcion?: string | null;
+    ingredientes?: { nombre: string; cantidad: number; unidad: string }[];
+    esPropio?: boolean;
   } | null;
 }
 
@@ -99,6 +104,7 @@ interface PlanEditorProps {
   showDayHeader?: boolean;
   showAnalisis?: boolean;
   readOnly?: boolean;
+  interactionMode?: "dashboard" | "patient" | "shared";
   localCallbacks?: LocalMutationCallbacks;
 }
 
@@ -126,6 +132,7 @@ export function PlanEditor({
   showDayHeader: _showDayHeader = true,
   showAnalisis = true,
   readOnly = false,
+  interactionMode = "dashboard",
   localCallbacks,
 }: PlanEditorProps) {
   const router = useRouter();
@@ -152,7 +159,7 @@ export function PlanEditor({
             const item = a.alimento || a.receta;
             return {
               id: a.id,
-              alimentoRealId: a.alimento?.id || null,
+              alimentoRealId: a.alimento?.id || a.receta?.id || null,
               nombre: item?.nombre || "Sin nombre",
               cantidad: a.cantidad,
               unidad: a.unidad || "GRAMOS",
@@ -163,7 +170,11 @@ export function PlanEditor({
               grasas: item?.grasas || 0,
               fibra: item?.fibra || 0,
               esReceta: !!a.receta,
+              esPropio: a.alimento?.esPropio || a.receta?.esPropio,
               enlaceProducto: a.alimento?.enlaceProducto || null,
+              recetaIngredientes: a.receta?.ingredientes,
+              recetaDescripcion: a.receta?.descripcion,
+              recetaPorciones: a.receta?.porciones,
             };
           }),
         })),
@@ -482,6 +493,7 @@ export function PlanEditor({
                       onCantidadChange={handleCantidadChange}
                       onReemplazar={handleReemplazar}
                       readOnly={readOnly}
+                      interactionMode={interactionMode}
                     />
                   ))}
                 </div>

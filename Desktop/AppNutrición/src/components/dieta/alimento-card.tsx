@@ -6,9 +6,11 @@ import { useDraggable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
 import { getUnidadLabel } from "@/lib/units";
 import { convertirAGramos } from "@/lib/macros";
+import { FoodHoverCard, type InteractionMode } from "@/components/food-hover-card";
 
 interface AlimentoCardProps {
   id: string;
+  alimentoRealId?: string | null;
   nombre: string;
   cantidad: number;
   unidad?: string;
@@ -19,8 +21,13 @@ interface AlimentoCardProps {
   grasas: number;
   fibra?: number;
   esReceta?: boolean;
+  esPropio?: boolean;
   enlaceProducto?: string | null;
+  recetaIngredientes?: { nombre: string; cantidad: number; unidad: string }[];
+  recetaDescripcion?: string | null;
+  recetaPorciones?: number;
   readOnly?: boolean;
+  interactionMode?: InteractionMode;
   onRemove: (id: string) => void;
   onCantidadChange: (id: string, cantidad: number) => void;
   onBuscarEquivalente?: (alimentoId: string, nombre: string, calorias: number, proteinas: number, carbohidratos: number, grasas: number, cantidad: number) => void;
@@ -28,6 +35,7 @@ interface AlimentoCardProps {
 
 export function AlimentoCard({
   id,
+  alimentoRealId,
   nombre,
   cantidad,
   unidad,
@@ -38,8 +46,13 @@ export function AlimentoCard({
   grasas,
   fibra,
   esReceta,
+  esPropio,
   enlaceProducto,
+  recetaIngredientes,
+  recetaDescripcion,
+  recetaPorciones,
   readOnly = false,
+  interactionMode = "dashboard",
   onRemove,
   onCantidadChange,
   onBuscarEquivalente,
@@ -66,6 +79,38 @@ export function AlimentoCard({
   }
 
   const unidadLabel = getUnidadLabel(unidad || "GRAMOS", esReceta);
+  const realId = alimentoRealId || id;
+  const href = interactionMode === "dashboard"
+    ? (esReceta
+      ? `/recetas/${realId}?porciones=${cantidad}`
+      : `/alimentos/${realId}?cantidad=${Math.round(convertirAGramos(cantidad, unidad || "GRAMOS", porcion || 100))}`)
+    : null;
+
+  const nameColor = esReceta
+    ? "text-purple-600 dark:text-purple-400"
+    : esPropio
+      ? "text-emerald-600 dark:text-emerald-400"
+      : "text-foreground";
+
+  const foodHoverProps = {
+    nombre,
+    calorias,
+    proteinas,
+    carbohidratos,
+    grasas,
+    fibra: fibra ?? 0,
+    cantidad,
+    unidad: unidad || "GRAMOS",
+    porcion,
+    esReceta,
+    esPropio,
+    recetaIngredientes,
+    recetaDescripcion,
+    recetaPorciones,
+    enlaceProducto,
+    href,
+    interactionMode,
+  };
 
   if (readOnly) {
     return (
@@ -77,7 +122,9 @@ export function AlimentoCard({
           <span className="text-muted-foreground text-sm shrink-0">
             {unidadLabel} de
           </span>
-          <span className="truncate font-medium text-foreground">{nombre}</span>
+          <FoodHoverCard {...foodHoverProps}>
+            <span className={cn("truncate font-medium", nameColor, interactionMode === "dashboard" && "hover:underline")}>{nombre}</span>
+          </FoodHoverCard>
           {enlaceProducto && (
             <a href={enlaceProducto} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="shrink-0">
               <ExternalLink className="w-3.5 h-3.5 text-primary/60 hover:text-primary" />
@@ -99,7 +146,6 @@ export function AlimentoCard({
         isDragging && "opacity-50 shadow-lg z-50 bg-card"
       )}
     >
-      {/* Drag handle */}
       <button
         {...listeners}
         {...attributes}
@@ -108,7 +154,6 @@ export function AlimentoCard({
         <GripVertical className="w-4 h-4" />
       </button>
 
-      {/* Food description with inline editable quantity */}
       <div className="flex-1 min-w-0 flex items-center gap-1.5 text-sm">
         <input
           type="number"
@@ -122,7 +167,9 @@ export function AlimentoCard({
         <span className="text-muted-foreground text-sm shrink-0">
           {unidadLabel} de
         </span>
-        <span className="truncate font-medium text-foreground">{nombre}</span>
+        <FoodHoverCard {...foodHoverProps}>
+          <span className={cn("truncate font-medium", nameColor, interactionMode === "dashboard" && "hover:underline")}>{nombre}</span>
+        </FoodHoverCard>
         {enlaceProducto && (
           <a href={enlaceProducto} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="shrink-0">
             <ExternalLink className="w-3.5 h-3.5 text-primary/60 hover:text-primary" />
@@ -130,7 +177,6 @@ export function AlimentoCard({
         )}
       </div>
 
-      {/* Equivalente button */}
       {onBuscarEquivalente && !esReceta && (
         <button
           onClick={() => onBuscarEquivalente(id, nombre, calorias, proteinas, carbohidratos, grasas, convertirAGramos(cantidad, unidad || "GRAMOS", porcion || 100))}
@@ -141,7 +187,6 @@ export function AlimentoCard({
         </button>
       )}
 
-      {/* Delete button */}
       <button
         onClick={() => onRemove(id)}
         className="p-1.5 rounded border border-border/60 hover:bg-red-50 dark:hover:bg-red-500/15 hover:border-red-200 text-muted-foreground/50 hover:text-red-500 transition-all shrink-0"

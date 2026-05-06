@@ -1,6 +1,7 @@
 "use client";
 
 import { Droplets, Circle, Diamond, Flame, Carrot, ListChecks } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { calcularMacrosPorcion, convertirAGramos } from "@/lib/macros";
 import { formatQuantity } from "@/lib/units";
 
@@ -42,7 +43,13 @@ function parseInstrucciones(text: string): string[] {
 }
 
 export function IngredientesLista({ ingredientes, porciones, instrucciones }: Props) {
-  const totalPeso = ingredientes.reduce((acc, i) => acc + convertirAGramos(i.cantidad || 0, i.unidad || "GRAMOS", i.alimento.porcion || 100), 0);
+  const searchParams = useSearchParams();
+  const urlPorcionesRaw = searchParams.get("porciones");
+  const urlPorcionesNum = urlPorcionesRaw ? Number(urlPorcionesRaw) : NaN;
+  const factor = Number.isFinite(urlPorcionesNum) && urlPorcionesNum > 0 ? urlPorcionesNum / (porciones || 1) : 1;
+  const displayPorciones = Number.isFinite(urlPorcionesNum) && urlPorcionesNum > 0 ? urlPorcionesNum : porciones;
+
+  const totalPeso = ingredientes.reduce((acc, i) => acc + convertirAGramos(i.cantidad || 0, i.unidad || "GRAMOS", i.alimento.porcion || 100), 0) * factor;
   const pasos = instrucciones ? parseInstrucciones(instrucciones) : [];
 
   return (
@@ -59,7 +66,7 @@ export function IngredientesLista({ ingredientes, porciones, instrucciones }: Pr
             </h2>
             <span className="text-xs text-muted-foreground">
               {Math.round(totalPeso)} g totales
-              {porciones > 1 ? ` · ${Math.round(totalPeso / porciones)} g / porción` : ""}
+              {displayPorciones > 1 ? ` · ${Math.round(totalPeso / displayPorciones)} g / porción` : ""}
             </span>
           </div>
 
@@ -70,7 +77,8 @@ export function IngredientesLista({ ingredientes, porciones, instrucciones }: Pr
           ) : (
             <div className="divide-y divide-border/50">
               {ingredientes.map((ing) => {
-                const gramos = convertirAGramos(ing.cantidad, ing.unidad || "GRAMOS", ing.alimento.porcion || 100);
+                const scaledCantidad = ing.cantidad * factor;
+                const gramos = convertirAGramos(scaledCantidad, ing.unidad || "GRAMOS", ing.alimento.porcion || 100);
                 const macros = calcularMacrosPorcion(
                   {
                     calorias: ing.alimento.calorias,
@@ -86,9 +94,9 @@ export function IngredientesLista({ ingredientes, porciones, instrucciones }: Pr
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{ing.alimento.nombre}</p>
                       <p className="text-xs text-muted-foreground">
-                        {formatQuantity(ing.cantidad, ing.unidad || "GRAMOS")}
-                        {porciones > 1
-                          ? ` · ${Math.round(gramos / porciones)} g / porción`
+                        {formatQuantity(scaledCantidad, ing.unidad || "GRAMOS")}
+                        {displayPorciones > 1
+                          ? ` · ${Math.round(gramos / displayPorciones)} g / porción`
                           : ""}
                       </p>
                     </div>

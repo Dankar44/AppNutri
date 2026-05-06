@@ -25,7 +25,11 @@ export default async function PatientDietPage() {
                 orderBy: { orden: "asc" },
                 include: {
                   alimento: true,
-                  receta: true,
+                  receta: {
+                    include: {
+                      ingredientes: { include: { alimento: { select: { nombre: true } } } },
+                    },
+                  },
                 },
               },
             },
@@ -143,6 +147,8 @@ export default async function PatientDietPage() {
                       grasas: a.receta.grasas,
                       fibra: a.receta.fibra,
                       porciones: (a.receta as unknown as { porciones: number }).porciones ?? 1,
+                      descripcion: a.receta.descripcion ?? null,
+                      ingredientes: (a.receta as unknown as { ingredientes?: { alimento: { nombre: string }; cantidad: number; unidad: string }[] }).ingredientes?.map((i) => ({ nombre: i.alimento.nombre, cantidad: i.cantidad, unidad: i.unidad })) ?? [],
                     }
                   : null,
               })),
@@ -160,6 +166,7 @@ export default async function PatientDietPage() {
         showAguaEjercicio={false}
         showFoodTable={false}
         readOnly
+        interactionMode="patient"
       />
       </div>
     </div>

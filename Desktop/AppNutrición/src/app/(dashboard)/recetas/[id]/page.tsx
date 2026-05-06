@@ -1,10 +1,11 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Pencil, Clock, Sparkles, Scale, Users } from "lucide-react";
+import { ArrowLeft, Pencil, Clock, Sparkles } from "lucide-react";
 import { getReceta } from "@/app/actions/recetas";
 import { MacroAnalysisCard } from "@/components/alimento/macro-analysis-card";
 import { MicronutrientesCard } from "@/components/alimento/micronutrientes-card";
 import { PorcionesCalculadora } from "@/components/receta/porciones-calculadora";
+import { RecetaPesoBadges } from "@/components/receta/receta-peso-badges";
 import { IngredientesLista } from "@/components/receta/ingredientes-lista";
 import { RecetaActions } from "./receta-actions";
 import { FavoritoButton } from "../favorito-button";
@@ -35,38 +36,7 @@ export default async function RecetaDetailPage({ params }: Props) {
           <div className="min-w-0">
             <div className="flex items-center gap-4 flex-wrap">
               <h1 className="text-2xl sm:text-3xl font-bold">{receta.nombre}</h1>
-              <div className="inline-flex items-center gap-0 rounded-xl border border-primary/30 bg-primary/5 overflow-hidden">
-                <div className="flex items-center gap-2.5 px-3 py-2">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 text-primary shrink-0">
-                    <Scale className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <p className="text-[9px] uppercase tracking-wide text-muted-foreground font-medium leading-tight">
-                      Peso total
-                    </p>
-                    <p className="text-base font-bold tabular-nums leading-tight">
-                      {Math.round(pesoTotal)} g
-                    </p>
-                  </div>
-                </div>
-                <div className="w-px bg-primary/20 self-stretch" />
-                <div className="flex items-center gap-2.5 px-3 py-2">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 text-primary shrink-0">
-                    <Users className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <p className="text-[9px] uppercase tracking-wide text-muted-foreground font-medium leading-tight">
-                      Por porción
-                    </p>
-                    <p className="text-base font-bold tabular-nums leading-tight">
-                      {Math.round(pesoPorPorcion)} g
-                      <span className="text-xs text-muted-foreground font-normal ml-1">
-                        × {receta.porciones}
-                      </span>
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <RecetaPesoBadges pesoTotal={pesoTotal} pesoPorPorcion={pesoPorPorcion} porciones={receta.porciones} />
             </div>
             <div className="flex items-center gap-2 mt-2 flex-wrap">
               {receta.esGlobal ? (
@@ -114,6 +84,7 @@ export default async function RecetaDetailPage({ params }: Props) {
         ingredientes={receta.ingredientes.map((ing) => ({
           id: ing.id,
           cantidad: ing.cantidad,
+          unidad: ing.unidad,
           alimento: {
             id: ing.alimento.id,
             nombre: ing.alimento.nombre,
@@ -122,6 +93,7 @@ export default async function RecetaDetailPage({ params }: Props) {
             carbohidratos: ing.alimento.carbohidratos,
             grasas: ing.alimento.grasas,
             fibra: ing.alimento.fibra,
+            porcion: ing.alimento.porcion,
           },
         }))}
         porciones={receta.porciones}

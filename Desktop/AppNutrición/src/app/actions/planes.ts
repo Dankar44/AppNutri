@@ -457,7 +457,6 @@ export async function getPlanesDetallePaciente(pacienteId: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) return [];
 
-  // 1 sola query: todos los planes con nested includes (sin ingredientes de recetas)
   const planes = await prisma.planAlimenticio.findMany({
     where: { dietistaId: dietista.id, pacienteId },
     orderBy: { createdAt: "desc" },
@@ -476,6 +475,8 @@ export async function getPlanesDetallePaciente(pacienteId: string) {
                     select: {
                       id: true, nombre: true, calorias: true, proteinas: true,
                       carbohidratos: true, grasas: true, fibra: true, porciones: true,
+                      descripcion: true, dietistaId: true,
+                      ingredientes: { include: { alimento: { select: { nombre: true } } } },
                     },
                   },
                 },
@@ -551,6 +552,7 @@ export async function getPlanesDetallePaciente(pacienteId: string) {
                   porcion: a.alimento.porcion ?? 100,
                   categoria: a.alimento.categoria ?? "OTROS",
                   enlaceProducto: a.alimento.enlaceProducto ?? null,
+                  esPropio: !!a.alimento.dietistaId && a.alimento.dietistaId === dietista.id,
                   ...micros,
                 }
               : null,
@@ -564,6 +566,9 @@ export async function getPlanesDetallePaciente(pacienteId: string) {
                   grasas: a.receta.grasas ?? 0,
                   fibra: a.receta.fibra ?? 0,
                   porciones: a.receta.porciones ?? 1,
+                  descripcion: a.receta.descripcion ?? null,
+                  ingredientes: a.receta.ingredientes?.map((i) => ({ nombre: i.alimento.nombre, cantidad: i.cantidad, unidad: i.unidad })) ?? [],
+                  esPropio: !!a.receta.dietistaId && a.receta.dietistaId === dietista.id,
                 }
               : null,
           };

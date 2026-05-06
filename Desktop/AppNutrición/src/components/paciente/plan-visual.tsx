@@ -25,6 +25,8 @@ import {
 import { cn } from "@/lib/utils";
 import { calcularMacrosPorcion, sumarMacros, convertirAGramos } from "@/lib/macros";
 import { PlanEditor } from "@/components/dieta/plan-editor";
+import { FoodHoverCard, type InteractionMode } from "@/components/food-hover-card";
+export type { InteractionMode };
 import {
   PieChart,
   Pie,
@@ -76,6 +78,7 @@ export type PlanVisualItem = {
     porcion?: number;
     categoria?: string;
     enlaceProducto?: string | null;
+    esPropio?: boolean;
   } & MicronutrientesOpcionales) | null;
   receta: {
     id: string;
@@ -86,6 +89,9 @@ export type PlanVisualItem = {
     grasas: number;
     fibra: number;
     porciones: number;
+    descripcion?: string | null;
+    ingredientes?: { nombre: string; cantidad: number; unidad: string }[];
+    esPropio?: boolean;
   } | null;
 };
 
@@ -147,6 +153,7 @@ export function PlanVisual({
   showFoodTable = true,
   readOnly = false,
   vistaInicial = "resumen",
+  interactionMode = "dashboard",
   localCallbacks,
 }: {
   plan: PlanVisualDetalle;
@@ -162,6 +169,7 @@ export function PlanVisual({
   showFoodTable?: boolean;
   readOnly?: boolean;
   vistaInicial?: "resumen" | "plan" | "analisis";
+  interactionMode?: InteractionMode;
   localCallbacks?: {
     onAdd: (comidaId: string, item: { alimentoId: string | null; recetaId: string | null; nombre: string; cantidad: number; unidad: string; calorias: number; proteinas: number; carbohidratos: number; grasas: number; fibra?: number; porcion?: number }) => void;
     onRemove: (alimentoEnComidaId: string) => void;
@@ -638,6 +646,7 @@ export function PlanVisual({
                           showDayHeader={false}
                           showAnalisis={false}
                           readOnly={readOnly}
+                          interactionMode={interactionMode}
                           localCallbacks={localCallbacks}
                           planId={selectedPlan.id}
                           planNombre={selectedPlan.nombre}
@@ -658,6 +667,7 @@ export function PlanVisual({
                       showDayHeader={false}
                       showAnalisis={false}
                       readOnly={readOnly}
+                      interactionMode={interactionMode}
                       localCallbacks={localCallbacks}
                       planId={selectedPlan.id}
                       planNombre={selectedPlan.nombre}
@@ -680,15 +690,26 @@ export function PlanVisual({
             <div className="bg-card rounded-xl border border-border p-5">
               <h4 className="text-base font-semibold mb-4">Análisis global</h4>
 
-              <div className="mb-4">
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="text-foreground font-medium flex items-center gap-1.5"><Flame className="w-3.5 h-3.5" /> Energía</span>
-                  <span className="font-bold tabular-nums text-sm">{Math.round(totals.macros.calorias)} <span className="text-muted-foreground font-normal text-xs">/ {Math.round((totals.energy.energyTotal || 1) / 1)} kcal</span></span>
-                </div>
-                <div className="h-3 bg-purple-100/60 rounded-full overflow-hidden">
-                  <div className="h-full bg-purple-300 rounded-full" style={{ width: `${Math.min(100, (totals.macros.calorias / Math.max(totals.macros.calorias * 1.15, 1)) * 100)}%` }} />
-                </div>
-              </div>
+              {(() => {
+                const calObj = selectedPlan.caloriasObjetivo;
+                const calActual = totals.macros.calorias;
+                const overCal = calObj != null && calActual > calObj;
+                const calPct = calObj != null ? Math.min(100, (calActual / calObj) * 100) : Math.min(100, (calActual / (calActual * 1.15 || 1)) * 100);
+                return (
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="text-foreground font-medium flex items-center gap-1.5"><Flame className="w-3.5 h-3.5" /> Energía</span>
+                      <span className="font-bold tabular-nums text-sm">
+                        <span className={overCal ? "text-red-500" : ""}>{Math.round(calActual)}</span>
+                        {calObj != null ? <span className="text-muted-foreground font-normal text-xs"> / {calObj} kcal</span> : <span className="text-muted-foreground font-normal text-xs"> kcal</span>}
+                      </span>
+                    </div>
+                    <div className="h-3 bg-purple-100/60 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${calPct}%`, background: overCal ? "#ef4444" : "#d8b4fe" }} />
+                    </div>
+                  </div>
+                );
+              })()}
 
               {(() => {
                 const energySinFibra = totals.energy.grasasKcal + totals.energy.carbKcal + totals.energy.protKcal || 1;
@@ -768,26 +789,33 @@ export function PlanVisual({
 
                 <div className="flex-1 space-y-3 pt-1">
                   {[
-                    { key: "grasas", label: "Grasa", value: totals.macros.grasas, kcal: totals.energy.grasasKcal, color: MACRO_COLORS.grasas, bgColor: "bg-yellow-50 dark:bg-yellow-500/10" },
-                    { key: "carbohidratos", label: "Hidratos de Carbono", value: totals.macros.carbohidratos, kcal: totals.energy.carbKcal, color: MACRO_COLORS.carbohidratos, bgColor: "bg-orange-50 dark:bg-orange-500/10" },
-                    { key: "proteinas", label: "Proteína", value: totals.macros.proteinas, kcal: totals.energy.protKcal, color: MACRO_COLORS.proteinas, bgColor: "bg-blue-50 dark:bg-blue-500/10" },
-                    { key: "fibra", label: "Fibra alimentaria", value: totals.macros.fibra, kcal: totals.energy.fibraKcal, color: MACRO_COLORS.fibra, bgColor: "bg-emerald-50 dark:bg-emerald-500/10" },
+                    { key: "grasas", label: "Grasa", value: totals.macros.grasas, kcal: totals.energy.grasasKcal, color: MACRO_COLORS.grasas, bgColor: "bg-yellow-50 dark:bg-yellow-500/10", objetivo: selectedPlan.grasasObjetivo },
+                    { key: "carbohidratos", label: "H. Carbono", value: totals.macros.carbohidratos, kcal: totals.energy.carbKcal, color: MACRO_COLORS.carbohidratos, bgColor: "bg-orange-50 dark:bg-orange-500/10", objetivo: selectedPlan.carbohidratosObjetivo },
+                    { key: "proteinas", label: "Proteína", value: totals.macros.proteinas, kcal: totals.energy.protKcal, color: MACRO_COLORS.proteinas, bgColor: "bg-blue-50 dark:bg-blue-500/10", objetivo: selectedPlan.proteinasObjetivo },
+                    { key: "fibra", label: "Fibra", value: totals.macros.fibra, kcal: totals.energy.fibraKcal, color: MACRO_COLORS.fibra, bgColor: "bg-emerald-50 dark:bg-emerald-500/10", objetivo: null },
                   ].map((row, rowIdx) => {
-                    const pct = (row.kcal / totals.energy.energyTotal) * 100;
+                    const hasObj = row.objetivo != null && row.objetivo > 0;
+                    const overObj = hasObj && row.value > row.objetivo!;
+                    const barPct = hasObj
+                      ? Math.min(100, (row.value / row.objetivo!) * 100)
+                      : (row.kcal / totals.energy.energyTotal) * 100;
                     return (
                       <div key={row.key} style={{ transition: "opacity 0.2s", opacity: hoveredMacro === null ? 1 : hoveredMacro === rowIdx ? 1 : 0.25 }}>
                         <div className="flex items-center justify-between gap-2 text-xs mb-0.5">
-                          <span className="text-foreground font-medium flex items-center gap-1.5">
+                          <span className="text-foreground font-medium flex items-center gap-1.5 whitespace-nowrap">
                             {row.key === "grasas" && <Droplets className="w-3 h-3" />}
                             {row.key === "carbohidratos" && <Circle className="w-3 h-3" />}
                             {row.key === "proteinas" && <Diamond className="w-3 h-3" />}
                             {row.key === "fibra" && <Triangle className="w-3 h-3" />}
                             {row.label}
                           </span>
-                          <span className="font-bold tabular-nums">{row.value.toFixed(1)} g</span>
+                          <span className="font-bold tabular-nums whitespace-nowrap">
+                            <span className={overObj ? "text-red-500" : ""}>{row.value.toFixed(1)}</span>
+                            {hasObj ? <span className="text-muted-foreground font-normal"> / {row.objetivo} g</span> : <span> g</span>}
+                          </span>
                         </div>
                         <div className={`h-3 ${row.bgColor} rounded-full overflow-hidden`}>
-                          <div className="h-full rounded-full" style={{ width: `${pct}%`, background: row.color }} />
+                          <div className="h-full rounded-full" style={{ width: `${barPct}%`, background: overObj ? "#ef4444" : row.color }} />
                         </div>
                       </div>
                     );
@@ -960,11 +988,10 @@ export function PlanVisual({
           </div>
         ) : (
           (() => {
-            const calObj = selectedPlan.caloriasObjetivo ?? totals.macros.calorias;
-            const protObj = selectedPlan.proteinasObjetivo ?? totals.macros.proteinas;
-            const carbObj = selectedPlan.carbohidratosObjetivo ?? totals.macros.carbohidratos;
-            const grasObj = selectedPlan.grasasObjetivo ?? totals.macros.grasas;
-            const fibraObj = totals.macros.fibra;
+            const calObj = selectedPlan.caloriasObjetivo;
+            const protObj = selectedPlan.proteinasObjetivo;
+            const carbObj = selectedPlan.carbohidratosObjetivo;
+            const grasObj = selectedPlan.grasasObjetivo;
 
             const MEAL_COLORS = ["#60a5fa","#93c5fd","#fdba74","#fbbf24","#fde68a","#d9f99d"];
             const mealsWithEnergy = totals.comidasMacros.filter(c => c.calTotal > 0);
@@ -1004,16 +1031,37 @@ export function PlanVisual({
               DESAYUNO: "Desayuno", MEDIA_MANANA: "Media mañana", ALMUERZO: "Comida",
               MERIENDA: "Merienda", CENA: "Cena", RECENA: "Recena",
             };
-            const allFoods: { nombre: string; calorias: number; comida: string }[] = [];
+            type FoodRow = {
+              nombre: string; calorias: number; comida: string;
+              itemCalorias: number; itemProteinas: number; itemCarbohidratos: number; itemGrasas: number; itemFibra: number;
+              cantidad: number; unidad: string; porcion?: number;
+              esReceta?: boolean; esPropio?: boolean; href?: string;
+              recetaIngredientes?: { nombre: string; cantidad: number; unidad: string }[];
+              recetaDescripcion?: string | null; recetaPorciones?: number;
+            };
+            const allFoods: FoodRow[] = [];
             if (diaVista) {
               for (const comida of diaVista.comidas) {
                 for (const item of comida.alimentos) {
                   if (item.alimento) {
                     const kcal = Math.round((item.alimento.calorias * convertirAGramos(item.cantidad, item.unidad, item.alimento.porcion || 100)) / 100);
-                    allFoods.push({ nombre: item.alimento.nombre, calorias: kcal, comida: TIPO_LABELS_TABLE[comida.tipo] || comida.tipo });
+                    allFoods.push({
+                      nombre: item.alimento.nombre, calorias: kcal, comida: TIPO_LABELS_TABLE[comida.tipo] || comida.tipo,
+                      itemCalorias: item.alimento.calorias, itemProteinas: item.alimento.proteinas, itemCarbohidratos: item.alimento.carbohidratos, itemGrasas: item.alimento.grasas, itemFibra: item.alimento.fibra,
+                      cantidad: item.cantidad, unidad: item.unidad, porcion: item.alimento.porcion,
+                      esPropio: item.alimento.esPropio,
+                      href: interactionMode === "dashboard" ? `/alimentos/${item.alimento.id}?cantidad=${Math.round(convertirAGramos(item.cantidad, item.unidad, item.alimento.porcion || 100))}` : undefined,
+                    });
                   } else if (item.receta) {
                     const kcal = Math.round(item.receta.calorias * item.cantidad);
-                    allFoods.push({ nombre: item.receta.nombre, calorias: kcal, comida: TIPO_LABELS_TABLE[comida.tipo] || comida.tipo });
+                    allFoods.push({
+                      nombre: item.receta.nombre, calorias: kcal, comida: TIPO_LABELS_TABLE[comida.tipo] || comida.tipo,
+                      itemCalorias: item.receta.calorias, itemProteinas: item.receta.proteinas, itemCarbohidratos: item.receta.carbohidratos, itemGrasas: item.receta.grasas, itemFibra: item.receta.fibra,
+                      cantidad: item.cantidad, unidad: item.unidad,
+                      esReceta: true, esPropio: item.receta.esPropio,
+                      recetaIngredientes: item.receta.ingredientes, recetaDescripcion: item.receta.descripcion, recetaPorciones: item.receta.porciones,
+                      href: interactionMode === "dashboard" ? `/recetas/${item.receta.id}?porciones=${item.cantidad}` : undefined,
+                    });
                   }
                 }
               }
@@ -1063,24 +1111,26 @@ export function PlanVisual({
               <h4 className="text-base font-semibold mb-4">Análisis global</h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                 {[
-                  { icon: <Flame className="w-4 h-4" />, label: "Energía", value: Math.round(totals.macros.calorias), obj: Math.round(calObj), unit: "kcal", color: "#b197fc", bg: "bg-purple-50 dark:bg-purple-500/10" },
-                  { icon: <Droplets className="w-4 h-4" />, label: "Grasa", value: Math.round(totals.macros.grasas * 10) / 10, obj: Math.round(grasObj * 10) / 10, unit: "g", color: MACRO_COLORS.grasas, bg: "bg-yellow-50 dark:bg-yellow-500/10" },
-                  { icon: <Circle className="w-4 h-4" />, label: "H. Carbono", value: Math.round(totals.macros.carbohidratos * 10) / 10, obj: Math.round(carbObj * 10) / 10, unit: "g", color: MACRO_COLORS.carbohidratos, bg: "bg-orange-50 dark:bg-orange-500/10" },
-                  { icon: <Diamond className="w-4 h-4" />, label: "Proteína", value: Math.round(totals.macros.proteinas * 10) / 10, obj: Math.round(protObj * 10) / 10, unit: "g", color: MACRO_COLORS.proteinas, bg: "bg-blue-50 dark:bg-blue-500/10" },
-                  { icon: <Triangle className="w-4 h-4" />, label: "Fibra", value: Math.round(totals.macros.fibra * 10) / 10, obj: Math.round(fibraObj * 10) / 10, unit: "g", color: MACRO_COLORS.fibra, bg: "bg-emerald-50 dark:bg-emerald-500/10" },
+                  { icon: <Flame className="w-4 h-4" />, label: "Energía", value: Math.round(totals.macros.calorias), obj: calObj != null ? Math.round(calObj) : null, unit: "kcal", color: "#b197fc", bg: "bg-purple-50 dark:bg-purple-500/10" },
+                  { icon: <Droplets className="w-4 h-4" />, label: "Grasa", value: Math.round(totals.macros.grasas * 10) / 10, obj: grasObj != null ? Math.round(grasObj * 10) / 10 : null, unit: "g", color: MACRO_COLORS.grasas, bg: "bg-yellow-50 dark:bg-yellow-500/10" },
+                  { icon: <Circle className="w-4 h-4" />, label: "H. Carbono", value: Math.round(totals.macros.carbohidratos * 10) / 10, obj: carbObj != null ? Math.round(carbObj * 10) / 10 : null, unit: "g", color: MACRO_COLORS.carbohidratos, bg: "bg-orange-50 dark:bg-orange-500/10" },
+                  { icon: <Diamond className="w-4 h-4" />, label: "Proteína", value: Math.round(totals.macros.proteinas * 10) / 10, obj: protObj != null ? Math.round(protObj * 10) / 10 : null, unit: "g", color: MACRO_COLORS.proteinas, bg: "bg-blue-50 dark:bg-blue-500/10" },
+                  { icon: <Triangle className="w-4 h-4" />, label: "Fibra", value: Math.round(totals.macros.fibra * 10) / 10, obj: null, unit: "g", color: MACRO_COLORS.fibra, bg: "bg-emerald-50 dark:bg-emerald-500/10" },
                 ].map((m) => {
-                  const pct = m.obj > 0 ? Math.min((m.value / m.obj) * 100, 100) : 0;
+                  const hasObj = m.obj != null && m.obj > 0;
+                  const over = hasObj && m.value > m.obj!;
+                  const pct = hasObj ? Math.min((m.value / m.obj!) * 100, 100) : 85;
                   return (
                     <div key={m.label} className="space-y-2">
                       <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                         {m.icon} {m.label}
                       </div>
                       <div className={`h-2.5 ${m.bg} rounded-full overflow-hidden`}>
-                        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: m.color }} />
+                        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: over ? "#ef4444" : m.color }} />
                       </div>
                       <div className="text-xs tabular-nums">
-                        <span className="font-bold">{m.value}</span>
-                        <span className="text-muted-foreground"> / {m.obj} {m.unit}</span>
+                        <span className={cn("font-bold", over && "text-red-500")}>{m.value}</span>
+                        {hasObj ? <span className="text-muted-foreground"> / {m.obj} {m.unit}</span> : <span className="text-muted-foreground"> {m.unit}</span>}
                       </div>
                     </div>
                   );
@@ -1449,7 +1499,21 @@ export function PlanVisual({
                     <tbody>
                       {foodsVisible.map((food, i) => (
                         <tr key={`${food.nombre}-${i}`} className="border-b border-border/30 last:border-0">
-                          <td className="py-2.5 pr-2">{food.nombre}</td>
+                          <td className="py-2.5 pr-2">
+                            <FoodHoverCard
+                              nombre={food.nombre}
+                              calorias={food.itemCalorias} proteinas={food.itemProteinas} carbohidratos={food.itemCarbohidratos} grasas={food.itemGrasas} fibra={food.itemFibra}
+                              cantidad={food.cantidad} unidad={food.unidad} porcion={food.porcion}
+                              esReceta={food.esReceta} esPropio={food.esPropio}
+                              recetaIngredientes={food.recetaIngredientes} recetaDescripcion={food.recetaDescripcion} recetaPorciones={food.recetaPorciones}
+                              href={food.href} interactionMode={interactionMode}
+                            >
+                              <span className={cn(
+                                interactionMode === "dashboard" && "hover:underline",
+                                food.esReceta ? "text-purple-600 dark:text-purple-400" : food.esPropio ? "text-emerald-600 dark:text-emerald-400" : "",
+                              )}>{food.nombre}</span>
+                            </FoodHoverCard>
+                          </td>
                           <td className="py-2.5 text-right tabular-nums font-medium pr-3">{food.calorias}</td>
                           <td className="py-2.5 text-muted-foreground">{food.comida}</td>
                         </tr>

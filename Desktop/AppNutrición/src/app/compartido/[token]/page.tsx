@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import { Leaf } from "lucide-react";
 import Link from "next/link";
 import { getPlanPorToken } from "@/app/actions/compartir";
-import { PlanReadOnly } from "@/components/compartido/plan-read-only";
+import { SharedPlanClient } from "@/components/compartido/shared-plan-client";
+import type { PlanVisualDetalle } from "@/components/paciente/plan-visual";
 
 interface Props {
   params: Promise<{ token: string }>;
@@ -13,31 +14,66 @@ export default async function SharedPlanPage({ params }: Props) {
   const plan = await getPlanPorToken(token);
   if (!plan) notFound();
 
-  const dias = plan.dias.map((dia) => ({
-    dia: dia.dia,
-    comidas: dia.comidas.map((comida) => ({
-      tipo: comida.tipo,
-      alimentos: comida.alimentos.map((a) => ({
-        cantidad: a.cantidad,
-        unidad: a.unidad ?? "GRAMOS",
-        alimento: a.alimento ? { nombre: a.alimento.nombre, calorias: a.alimento.calorias, proteinas: a.alimento.proteinas, carbohidratos: a.alimento.carbohidratos, grasas: a.alimento.grasas, porcion: a.alimento.porcion ?? 100, enlaceProducto: a.alimento.enlaceProducto } : null,
-        receta: a.receta ? {
-          nombre: a.receta.nombre, descripcion: a.receta.descripcion, instrucciones: a.receta.instrucciones, porciones: a.receta.porciones,
-          calorias: a.receta.calorias, proteinas: a.receta.proteinas, carbohidratos: a.receta.carbohidratos, grasas: a.receta.grasas,
-          ingredientes: (a.receta as unknown as { ingredientes: { alimento: { nombre: string }; cantidad: number; unidad: string }[] }).ingredientes || [],
-        } : null,
+  const planData: PlanVisualDetalle = {
+    id: plan.id,
+    nombre: plan.nombre,
+    caloriasObjetivo: null,
+    activo: true,
+    proteinasObjetivo: null,
+    carbohidratosObjetivo: null,
+    grasasObjetivo: null,
+    dias: plan.dias.map((dia) => ({
+      id: dia.id,
+      dia: dia.dia,
+      comidas: dia.comidas.map((comida) => ({
+        id: comida.id,
+        tipo: comida.tipo,
+        descripcion: comida.descripcion,
+        alimentos: comida.alimentos.map((a) => ({
+          id: a.id,
+          cantidad: a.cantidad,
+          unidad: a.unidad ?? "GRAMOS",
+          alimento: a.alimento
+            ? {
+                id: a.alimento.id,
+                nombre: a.alimento.nombre,
+                calorias: a.alimento.calorias,
+                proteinas: a.alimento.proteinas,
+                carbohidratos: a.alimento.carbohidratos,
+                grasas: a.alimento.grasas,
+                fibra: a.alimento.fibra,
+                porcion: a.alimento.porcion ?? 100,
+                enlaceProducto: a.alimento.enlaceProducto,
+              }
+            : null,
+          receta: a.receta
+            ? {
+                id: a.receta.id,
+                nombre: a.receta.nombre,
+                calorias: a.receta.calorias,
+                proteinas: a.receta.proteinas,
+                carbohidratos: a.receta.carbohidratos,
+                grasas: a.receta.grasas,
+                fibra: a.receta.fibra,
+                porciones: a.receta.porciones,
+                descripcion: a.receta.descripcion ?? null,
+                ingredientes: a.receta.ingredientes?.map((i: { alimento: { nombre: string }; cantidad: number; unidad: string }) => ({ nombre: i.alimento.nombre, cantidad: i.cantidad, unidad: i.unidad })) ?? [],
+              }
+            : null,
+        })),
       })),
     })),
-  }));
+  };
 
   const brandName = plan.branding?.marcaPdf || null;
   const logoUrl = plan.branding?.pdfLogoUrl;
   const dietistaNombre = plan.branding?.dietistaNombre || null;
+  const pacienteNombre = `${plan.paciente.nombre} ${plan.paciente.apellidos}`;
 
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
-        <div className="max-w-4xl mx-auto px-4 h-14 grid grid-cols-3 items-center">
+        <div className="max-w-[1400px] mx-auto px-4 h-14 grid grid-cols-3 items-center">
           <div className="flex items-center gap-2">
             {logoUrl ? (
               <img src={logoUrl} alt={brandName || "Annonia"} className="h-8 max-w-[120px] object-contain" />
@@ -62,11 +98,10 @@ export default async function SharedPlanPage({ params }: Props) {
           </div>
         </div>
       </header>
-      <main className="max-w-4xl mx-auto p-4 md:p-6">
-        <PlanReadOnly
-          nombre={plan.nombre}
-          pacienteNombre={`${plan.paciente.nombre} ${plan.paciente.apellidos}`}
-          dias={dias}
+      <main className="max-w-[1400px] mx-auto p-4 md:p-6">
+        <SharedPlanClient
+          planData={planData}
+          pacienteNombre={pacienteNombre}
           brandName={brandName}
           dietistaNombre={dietistaNombre}
         />
