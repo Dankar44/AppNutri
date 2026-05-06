@@ -1,6 +1,6 @@
 "use server";
 
-import { getMailer } from "@/lib/mailer";
+import { sendEmail } from "@/lib/mailer";
 import { getCurrentDietista } from "./auth";
 import { getPaciente } from "./pacientes";
 import { getPlan } from "./planes";
@@ -171,19 +171,13 @@ export async function enviarCuestionarioPaciente(
     return { ok: false, error: "El paciente no tiene email registrado" };
   }
 
-  const mailer = getMailer();
-  if (!mailer) {
-    return { ok: false, error: "Email no configurado (falta GMAIL_USER / GMAIL_APP_PASSWORD en .env.local)" };
-  }
-
   const pacienteNombre = `${paciente.nombre} ${paciente.apellidos}`.trim();
   const dietistaNombre = `${dietista.nombre} ${dietista.apellidos}`.trim();
 
   const html = buildCuestionarioHtml(ficha, pacienteNombre, dietistaNombre);
 
   try {
-    await mailer.sendMail({
-      from: `${dietistaNombre} - Annonia <${process.env.GMAIL_USER}>`,
+    await sendEmail({
       to: paciente.email,
       subject: `Tu cuestionario nutricional \u2014 ${dietistaNombre}`,
       html,
@@ -211,11 +205,6 @@ export async function enviarPlanPorEmail(
 
   const plan = await getPlan(planId);
   if (!plan) return { ok: false, error: "Plan no encontrado" };
-
-  const mailer = getMailer();
-  if (!mailer) {
-    return { ok: false, error: "Email no configurado (falta GMAIL_USER / GMAIL_APP_PASSWORD en .env.local)" };
-  }
 
   const pacienteNombre = `${paciente.nombre} ${paciente.apellidos}`.trim();
   const dietistaNombre = `${dietista.nombre} ${dietista.apellidos}`.trim();
@@ -278,11 +267,8 @@ export async function enviarPlanPorEmail(
   pdfData.clinica = dietista.clinica || undefined;
 
   const htmlBody = generatePlanPDF(pdfData);
-  const brandFrom = dietista.marcaPdf || "Annonia";
-
   try {
-    await mailer.sendMail({
-      from: `${dietistaNombre} - ${brandFrom} <${process.env.GMAIL_USER}>`,
+    await sendEmail({
       to: paciente.email,
       subject: `Tu plan de alimentación — ${plan.nombre}`,
       html: htmlBody,
@@ -306,11 +292,6 @@ export async function enviarAccesoPortal(
   const paciente = await getPaciente(pacienteId);
   if (!paciente) return { ok: false, error: "Paciente no encontrado" };
   if (!paciente.email) return { ok: false, error: "El paciente no tiene email registrado" };
-
-  const mailer = getMailer();
-  if (!mailer) {
-    return { ok: false, error: "Email no configurado (falta GMAIL_USER / GMAIL_APP_PASSWORD en .env.local)" };
-  }
 
   const pacienteNombre = `${paciente.nombre} ${paciente.apellidos}`.trim();
   const dietistaNombre = `${dietista.nombre} ${dietista.apellidos}`.trim();
@@ -360,8 +341,7 @@ export async function enviarAccesoPortal(
 </html>`;
 
   try {
-    await mailer.sendMail({
-      from: `${dietistaNombre} - Annonia <${process.env.GMAIL_USER}>`,
+    await sendEmail({
       to: paciente.email,
       subject: `Acceso a tu portal de nutricion — ${dietistaNombre}`,
       html,

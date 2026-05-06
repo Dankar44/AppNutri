@@ -1,11 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { getResend } from "@/lib/resend";
-import { getMailer } from "@/lib/mailer";
+import { sendEmail } from "@/lib/mailer";
 
-const EMAIL_FROM = process.env.EMAIL_FROM || "Annonia <noreply@annonia.com>";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://annonia.com";
 
-// Debounce en memoria: no reenviar email al mismo destinatario en <5 min
 const ultimoEnvio = new Map<string, number>();
 const DEBOUNCE_MS = 5 * 60 * 1000;
 
@@ -17,42 +14,14 @@ function puedeEnviar(key: string): boolean {
   return true;
 }
 
-async function sendEmail(to: string, subject: string, html: string, text: string) {
-  // Intenta primero con Resend
-  const resend = getResend();
-  if (resend) {
-    try {
-      await resend.emails.send({
-        from: EMAIL_FROM,
-        to,
-        subject,
-        html,
-        text,
-      });
-      return true;
-    } catch (err) {
-      console.error("[email-mensajes] Resend error:", err);
-    }
+async function trySendEmail(to: string, subject: string, html: string) {
+  try {
+    await sendEmail({ to, subject, html });
+    return true;
+  } catch (err) {
+    console.error("[email-mensajes]", err);
+    return false;
   }
-
-  // Fallback a Gmail/nodemailer
-  const mailer = getMailer();
-  if (mailer) {
-    try {
-      await mailer.sendMail({
-        from: EMAIL_FROM,
-        to,
-        subject,
-        html,
-        text,
-      });
-      return true;
-    } catch (err) {
-      console.error("[email-mensajes] Mailer error:", err);
-    }
-  }
-
-  return false;
 }
 
 function escape(s: string): string {
@@ -128,17 +97,7 @@ export async function notificarPacienteNuevoMensaje(
 </div>
 </body></html>`;
 
-  const text = `Hola ${paciente.nombre},
-
-${nombreDietista} te ha enviado un mensaje:
-
-${preview}
-
-Responde desde: ${link}
-
-— Annonia`;
-
-  await sendEmail(paciente.email, subject, html, text);
+  await trySendEmail(paciente.email, subject, html);
 }
 
 /** Envía email al dietista avisando de un nuevo mensaje del paciente. */
@@ -187,15 +146,5 @@ export async function notificarDietistaNuevoMensaje(
 </div>
 </body></html>`;
 
-  const text = `Hola ${dietista.nombre},
-
-${nombrePaciente} te ha enviado un mensaje:
-
-${preview}
-
-Abre la bandeja: ${link}
-
-— Annonia`;
-
-  await sendEmail(dietista.email, subject, html, text);
+  await trySendEmail(dietista.email, subject, html);
 }
