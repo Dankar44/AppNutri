@@ -7,10 +7,14 @@ import { crearPacienteDemoSiNoExiste } from "@/lib/paciente-demo";
 import { redirect } from "next/navigation";
 
 export const getCurrentDietista = cache(async function getCurrentDietista() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user;
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch {
+    return null;
+  }
 
   if (!user) return null;
 
@@ -58,18 +62,26 @@ export const getCurrentDietista = cache(async function getCurrentDietista() {
 });
 
 export async function getGoogleIdentityLinked(): Promise<{ email: string } | null> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user?.identities) return null;
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.identities) return null;
 
   const google = user.identities.find((i) => i.provider === "google");
   if (!google) return null;
 
   return { email: (google.identity_data?.email as string) || user.email || "" };
+  } catch {
+    return null;
+  }
 }
 
 export async function signOut() {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
+  try {
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+  } catch {
+    // Ignore — redirect to login regardless
+  }
   redirect("/login");
 }
