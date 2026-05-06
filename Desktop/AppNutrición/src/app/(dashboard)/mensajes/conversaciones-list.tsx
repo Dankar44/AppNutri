@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useTransition } from "react";
-import { Search, Archive, Inbox, Plus, MessageSquarePlus, Loader2 } from "lucide-react";
+import { Search, Archive, Inbox, Plus, MessageSquarePlus, Loader2, Leaf } from "lucide-react";
 import { AvatarPaciente } from "@/components/avatar-paciente";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
@@ -14,6 +14,7 @@ import {
   type ConversacionConPaciente,
   type PacienteParaConversacion,
 } from "@/app/actions/mensajes";
+import type { SoporteResumen } from "@/app/actions/soporte";
 import { toast } from "sonner";
 
 interface Props {
@@ -21,6 +22,8 @@ interface Props {
   conversacionActivaId: string | null;
   onSeleccionar: (id: string) => void;
   archivadas: boolean;
+  soporteNoLeidos: number;
+  soporteResumen: SoporteResumen | null;
 }
 
 export function ConversacionesList({
@@ -28,6 +31,8 @@ export function ConversacionesList({
   conversacionActivaId,
   onSeleccionar,
   archivadas,
+  soporteNoLeidos,
+  soporteResumen,
 }: Props) {
   const router = useRouter();
   const [busqueda, setBusqueda] = useState("");
@@ -147,6 +152,64 @@ export function ConversacionesList({
 
       {/* Lista scrolleable */}
       <div className="flex-1 overflow-y-auto">
+        {/* Entrada fijada: Soporte Annonia (solo en bandeja) */}
+        {!archivadas && (
+          <>
+            <button
+              type="button"
+              onClick={() => onSeleccionar("soporte")}
+              className={cn(
+                "w-full flex items-start gap-3 p-3 hover:bg-muted/40 transition-colors text-left border-b border-border",
+                conversacionActivaId === "soporte" && "bg-primary/5",
+              )}
+            >
+              <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
+                <Leaf className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2 mb-0.5">
+                  <p className={cn("text-sm truncate", soporteNoLeidos > 0 ? "font-bold" : "font-semibold")}>
+                    Soporte Annonia
+                  </p>
+                  {soporteResumen && (
+                    <span className={cn(
+                      "text-[10px] tabular-nums shrink-0",
+                      soporteNoLeidos > 0 ? "text-primary font-semibold" : "text-muted-foreground",
+                    )}>
+                      {formatDistanceToNow(new Date(soporteResumen.createdAt), { addSuffix: false, locale: es })}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <p className={cn(
+                    "text-xs truncate flex-1",
+                    soporteNoLeidos > 0 ? "text-foreground font-medium" : "text-muted-foreground",
+                  )}>
+                    {soporteResumen
+                      ? `${soporteResumen.autor === "DIETISTA" ? "Tú: " : ""}${soporteResumen.texto.slice(0, 80)}`
+                      : "Escríbenos cualquier duda o sugerencia"}
+                  </p>
+                  {soporteNoLeidos > 0 && (
+                    <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold shrink-0">
+                      {soporteNoLeidos}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </button>
+            {!q && conversacionActivaId !== "soporte" && (
+              <button
+                type="button"
+                onClick={() => onSeleccionar("soporte")}
+                className="w-full px-3 py-2 text-[11px] text-muted-foreground hover:text-foreground transition-colors text-center border-b border-border bg-muted/20"
+              >
+                ¿Algo no funciona? ¿Tienes alguna sugerencia?{" "}
+                <span className="font-medium text-primary">Escríbenos a Soporte</span>
+              </button>
+            )}
+          </>
+        )}
+
         {/* Conversaciones existentes */}
         {filtradas.length > 0 && (
           <ul className="divide-y divide-border">

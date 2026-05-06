@@ -1,6 +1,7 @@
 import { MessageSquare } from "lucide-react";
 import { getCurrentDietista } from "@/app/actions/auth";
 import { getConversaciones, getMensajes } from "@/app/actions/mensajes";
+import { getSoporteResumen, getMensajesSoporte, getNoLeidosSoporteCount } from "@/app/actions/soporte";
 import { redirect } from "next/navigation";
 import { MensajesClient } from "./mensajes-client";
 
@@ -14,10 +15,20 @@ export default async function MensajesPage({
   if (!dietista) redirect("/login");
 
   const archivadas = params.archivadas === "1";
-  const conversaciones = await getConversaciones({ archivadas });
-  const conversacionActiva = params.c
-    ? conversaciones.find((c) => c.id === params.c) ?? null
-    : conversaciones[0] ?? null;
+  const esSoporte = params.c === "soporte";
+
+  const [conversaciones, soporteResumen, soporteNoLeidos, soporteMensajes] = await Promise.all([
+    getConversaciones({ archivadas }),
+    getSoporteResumen(),
+    getNoLeidosSoporteCount(),
+    esSoporte ? getMensajesSoporte() : Promise.resolve([]),
+  ]);
+
+  const conversacionActiva = esSoporte
+    ? null
+    : params.c
+      ? conversaciones.find((c) => c.id === params.c) ?? null
+      : conversaciones[0] ?? null;
 
   const mensajesIniciales = conversacionActiva
     ? await getMensajes(conversacionActiva.id)
@@ -40,10 +51,13 @@ export default async function MensajesPage({
 
       <MensajesClient
         conversaciones={conversaciones}
-        conversacionActivaId={conversacionActiva?.id ?? null}
+        conversacionActivaId={esSoporte ? "soporte" : conversacionActiva?.id ?? null}
         mensajesIniciales={mensajesIniciales}
         archivadas={archivadas}
         dietistaId={dietista.id}
+        soporteNoLeidos={soporteNoLeidos}
+        soporteResumen={soporteResumen}
+        soporteMensajesIniciales={soporteMensajes}
       />
     </div>
   );

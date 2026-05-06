@@ -49,7 +49,9 @@ model Dietista {
   recetasFavoritas RecetaFavorito[]
   conversaciones  Conversacion[]
   mensajes        Mensaje[]
+  mensajesSoporte MensajeSoporte[]
   googleIntegracion GoogleIntegracion?
+  noLeidosSoporte Int       @default(0)
 
   @@map("dietistas")
 }
@@ -742,4 +744,22 @@ model Mensaje {
 
   @@index([conversacionId, createdAt])
   @@map("mensajes")
+}
+
+enum AutorSoporte {
+  DIETISTA
+  ADMIN
+}
+
+model MensajeSoporte {
+  id         String       @id @default(cuid())
+  dietistaId String
+  dietista   Dietista     @relation(fields: [dietistaId], references: [id], onDelete: Cascade)
+  autor      AutorSoporte
+  texto      String
+  leidoEn    DateTime?
+  createdAt  DateTime     @default(now())
+
+  @@index([dietistaId, createdAt])
+  @@map("mensajes_soporte")
 }

@@ -15,6 +15,7 @@ import {
   Menu,
   X,
   Eye,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -24,6 +25,7 @@ const navItems = [
   { href: "/admin/dietistas", label: "Dietistas", icon: Users },
   { href: "/admin/verificaciones", label: "Verificaciones", icon: ShieldCheck },
   { href: "/admin/seguimiento", label: "Seguimiento", icon: Eye },
+  { href: "/admin/mensajes", label: "Mensajes", icon: MessageSquare },
   { href: "/admin/actividad", label: "Actividad", icon: Activity },
   { href: "/admin/suscripciones", label: "Suscripciones", icon: CreditCard },
 ];
@@ -31,9 +33,10 @@ const navItems = [
 interface AdminSidebarProps {
   adminNombre: string;
   onSignOut: () => void;
+  mensajesCount?: number;
 }
 
-export function AdminSidebar({ adminNombre, onSignOut }: AdminSidebarProps) {
+export function AdminSidebar({ adminNombre, onSignOut, mensajesCount = 0 }: AdminSidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -80,7 +83,7 @@ export function AdminSidebar({ adminNombre, onSignOut }: AdminSidebarProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                "relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                 isActive
                   ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -88,7 +91,19 @@ export function AdminSidebar({ adminNombre, onSignOut }: AdminSidebarProps) {
               title={collapsed && !mobileOpen ? item.label : undefined}
             >
               <item.icon className="w-5 h-5 shrink-0" />
-              {(!collapsed || mobileOpen) && <span>{item.label}</span>}
+              {(!collapsed || mobileOpen) && (
+                <>
+                  <span className="flex-1">{item.label}</span>
+                  {item.href === "/admin/mensajes" && mensajesCount > 0 && (
+                    <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-indigo-600 text-white text-[10px] font-bold">
+                      {mensajesCount}
+                    </span>
+                  )}
+                </>
+              )}
+              {collapsed && !mobileOpen && item.href === "/admin/mensajes" && mensajesCount > 0 && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-indigo-600" />
+              )}
             </Link>
           );
         })}
