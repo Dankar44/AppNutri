@@ -203,7 +203,10 @@ export function AdminMensajesClient({
               dietista={dietistaActiva}
               mensajes={mensajes}
               cargando={cargando}
-              onMensajeEnviado={(m) => setMensajes((prev) => [...prev, m])}
+              onMensajeEnviado={(m) => setMensajes((prev) => {
+                if (prev.some((existing) => existing.id === m.id)) return prev;
+                return [...prev, m];
+              })}
             />
           </>
         ) : (
@@ -303,6 +306,7 @@ function AdminChatView({
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const enviandoRef = useRef(false);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -324,7 +328,8 @@ function AdminChatView({
 
   async function handleEnviar(e?: React.FormEvent) {
     e?.preventDefault();
-    if (!texto.trim() || enviando) return;
+    if (!texto.trim() || enviandoRef.current) return;
+    enviandoRef.current = true;
     setEnviando(true);
     try {
       const m = await enviarMensajeSoporteAdmin(dietista.dietistaId, texto);
@@ -333,6 +338,7 @@ function AdminChatView({
     } catch {
       toast.error("No se pudo enviar");
     } finally {
+      enviandoRef.current = false;
       setEnviando(false);
     }
   }

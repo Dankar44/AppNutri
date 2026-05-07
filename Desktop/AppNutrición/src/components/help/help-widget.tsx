@@ -125,6 +125,8 @@ export function HelpWidget() {
     pathname.startsWith("/paciente/login") ||
     pathname.startsWith("/paciente/registro") ||
     pathname.startsWith("/compartido") ||
+    pathname.startsWith("/mensajes") ||
+    pathname.startsWith("/paciente/portal/mensajes") ||
     pathname === "/"
   ) {
     return null;

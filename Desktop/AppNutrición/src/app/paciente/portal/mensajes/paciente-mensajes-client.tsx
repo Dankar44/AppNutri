@@ -116,7 +116,10 @@ export function PacienteMensajesClient({
   }, []);
 
   const onEnviado = useCallback((m: Mensaje) => {
-    setMensajes((prev) => [...prev, m]);
+    setMensajes((prev) => {
+      if (prev.some((existing) => existing.id === m.id)) return prev;
+      return [...prev, m];
+    });
   }, []);
 
   return (
@@ -265,6 +268,7 @@ function MensajeInputPaciente({ onEnviado }: { onEnviado: (m: Mensaje) => void }
   const [subiendo, setSubiendo] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const enviandoRef = useRef(false);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -296,7 +300,8 @@ function MensajeInputPaciente({ onEnviado }: { onEnviado: (m: Mensaje) => void }
 
   async function handleEnviar(e?: React.FormEvent) {
     e?.preventDefault();
-    if ((!texto.trim() && !adjunto) || enviando) return;
+    if ((!texto.trim() && !adjunto) || enviandoRef.current) return;
+    enviandoRef.current = true;
     setEnviando(true);
     try {
       const m = await enviarMensajePaciente(
@@ -311,6 +316,7 @@ function MensajeInputPaciente({ onEnviado }: { onEnviado: (m: Mensaje) => void }
     } catch {
       toast.error("No se pudo enviar");
     } finally {
+      enviandoRef.current = false;
       setEnviando(false);
     }
   }

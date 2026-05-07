@@ -264,6 +264,7 @@ function MensajeInput({
   const [subiendo, setSubiendo] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const enviandoRef = useRef(false);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -304,8 +305,8 @@ function MensajeInput({
 
   async function handleEnviar(e?: React.FormEvent) {
     e?.preventDefault();
-    if ((!texto.trim() && !adjunto) || enviando) return;
-
+    if ((!texto.trim() && !adjunto) || enviandoRef.current) return;
+    enviandoRef.current = true;
     setEnviando(true);
     try {
       const mensaje = await enviarMensaje(
@@ -321,6 +322,7 @@ function MensajeInput({
     } catch {
       toast.error("No se pudo enviar");
     } finally {
+      enviandoRef.current = false;
       setEnviando(false);
     }
   }

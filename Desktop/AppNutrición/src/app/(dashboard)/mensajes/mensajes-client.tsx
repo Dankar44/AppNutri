@@ -230,7 +230,10 @@ export function MensajesClient({
   }, [router, searchParams]);
 
   const onMensajeEnviado = useCallback((nuevoMensaje: Mensaje) => {
-    setMensajes((prev) => [...prev, nuevoMensaje]);
+    setMensajes((prev) => {
+      if (prev.some((m) => m.id === nuevoMensaje.id)) return prev;
+      return [...prev, nuevoMensaje];
+    });
     router.refresh();
   }, [router]);
 
@@ -273,7 +276,10 @@ export function MensajesClient({
             <SoporteChatView
               mensajes={mensajesSoporte}
               cargando={cargandoSoporte}
-              onMensajeEnviado={(m) => setMensajesSoporte((prev) => [...prev, m])}
+              onMensajeEnviado={(m) => setMensajesSoporte((prev) => {
+                if (prev.some((existing) => existing.id === m.id)) return prev;
+                return [...prev, m];
+              })}
             />
           </>
         ) : conversacionActiva ? (
@@ -314,6 +320,7 @@ function SoporteChatView({
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const enviandoRef = useRef(false);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -330,7 +337,8 @@ function SoporteChatView({
 
   async function handleEnviar(e?: React.FormEvent) {
     e?.preventDefault();
-    if (!texto.trim() || enviando) return;
+    if (!texto.trim() || enviandoRef.current) return;
+    enviandoRef.current = true;
     setEnviando(true);
     try {
       const m = await enviarMensajeSoporte(texto);
@@ -339,6 +347,7 @@ function SoporteChatView({
     } catch {
       toast.error("No se pudo enviar");
     } finally {
+      enviandoRef.current = false;
       setEnviando(false);
     }
   }
