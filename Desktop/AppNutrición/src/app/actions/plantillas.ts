@@ -63,7 +63,7 @@ export async function getPlantillaDetalle(id: string) {
           where: { id: { in: [...alimentoIds] } },
           select: {
             id: true, nombre: true, calorias: true, proteinas: true, carbohidratos: true,
-            grasas: true, fibra: true, porcion: true, unidad: true, categoria: true, enlaceProducto: true,
+            grasas: true, fibra: true, porcion: true, unidad: true, categoria: true, enlaceProducto: true, imagenUrl: true,
             vitaminaA: true, vitaminaB6: true, vitaminaB12: true, vitaminaC: true, vitaminaD: true,
             vitaminaE: true, vitaminaK: true, tiamina: true, riboflavina: true, niacina: true,
             folato: true, acidoPantotenico: true, colina: true, calcio: true, hierro: true,
@@ -188,8 +188,8 @@ export async function crearPlanDesdePlantilla(
   // 1. Crear el plan vacío
   const plan = await prisma.planAlimenticio.create({
     data: {
-      dietistaId: dietista.id,
-      pacienteId,
+      dietista: { connect: { id: dietista.id } },
+      paciente: { connect: { id: pacienteId } },
       nombre,
     },
   });

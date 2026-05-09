@@ -52,6 +52,7 @@ interface AlimentoEnComidaData {
     fibra?: number;
     porcion?: number;
     enlaceProducto?: string | null;
+    imagenUrl?: string | null;
     esPropio?: boolean;
   } | null;
   receta: {
@@ -172,6 +173,7 @@ export function PlanEditor({
               esReceta: !!a.receta,
               esPropio: a.alimento?.esPropio || a.receta?.esPropio,
               enlaceProducto: a.alimento?.enlaceProducto || null,
+              imagenUrl: a.alimento?.imagenUrl || null,
               recetaIngredientes: a.receta?.ingredientes,
               recetaDescripcion: a.receta?.descripcion,
               recetaPorciones: a.receta?.porciones,

@@ -9,7 +9,18 @@ import { toMadridDateStr, toMadridTimeStr } from "@/lib/tz";
 
 const START_HOUR = 6;
 const END_HOUR = 22;
-const PX_PER_HOUR = 52;
+
+function useIsMobile(bp = 640) {
+  const [m, setM] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${bp - 1}px)`);
+    setM(mq.matches);
+    const h = (e: MediaQueryListEvent) => setM(e.matches);
+    mq.addEventListener("change", h);
+    return () => mq.removeEventListener("change", h);
+  }, [bp]);
+  return m;
+}
 
 const ESTADO_STYLES: Record<string, string> = {
   PENDIENTE: "bg-amber-100 dark:bg-amber-500/15 text-amber-900 dark:text-amber-200 border-amber-200 dark:border-amber-500/30",
@@ -41,6 +52,8 @@ interface Props {
 const formatLocalDate = toMadridDateStr;
 
 export function AgendaVistaDia({ fecha, citas }: Props) {
+  const isMobile = useIsMobile();
+  const pxPerHour = isMobile ? 56 : 52;
   const [ahora, setAhora] = useState(() => new Date());
   const [citaAbierta, setCitaAbierta] = useState<CitaDetalle | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -61,22 +74,22 @@ export function AgendaVistaDia({ fecha, citas }: Props) {
     if (esHoyInit) {
       const minutosDesde = now.getHours() * 60 + now.getMinutes() - START_HOUR * 60;
       const clamped = Math.max(0, Math.min(minutosDesde, (END_HOUR - START_HOUR + 1) * 60));
-      targetPx = (clamped / 60) * PX_PER_HOUR;
+      targetPx = (clamped / 60) * pxPerHour;
     } else if (citas.length > 0) {
       const primera = new Date(
         citas.reduce((min, c) => (c.fechaHora < min ? c.fechaHora : min), citas[0].fechaHora),
       );
       const min = primera.getHours() * 60 + primera.getMinutes() - START_HOUR * 60;
-      targetPx = Math.max(0, (min / 60) * PX_PER_HOUR);
+      targetPx = Math.max(0, (min / 60) * pxPerHour);
     } else {
-      targetPx = (8 - START_HOUR) * PX_PER_HOUR;
+      targetPx = (8 - START_HOUR) * pxPerHour;
     }
 
     const viewportH = el.clientHeight;
     const maxScroll = Math.max(0, el.scrollHeight - viewportH);
     const scrollTop = Math.max(0, Math.min(maxScroll, targetPx - viewportH / 2));
     el.scrollTop = scrollTop;
-  }, [fecha, citas]);
+  }, [fecha, citas, pxPerHour]);
 
   const esHoy = formatLocalDate(ahora) === fecha;
 
@@ -89,7 +102,7 @@ export function AgendaVistaDia({ fecha, citas }: Props) {
     []
   );
 
-  const totalHeight = (END_HOUR - START_HOUR + 1) * PX_PER_HOUR;
+  const totalHeight = (END_HOUR - START_HOUR + 1) * pxPerHour;
 
   const minutosDesdeInicio = (d: Date) =>
     d.getHours() * 60 + d.getMinutes() - START_HOUR * 60;
@@ -119,13 +132,13 @@ export function AgendaVistaDia({ fecha, citas }: Props) {
     if (topMin + visibleMin > maxMin) {
       visibleMin = maxMin - topMin;
     }
-    const topPx = (topMin / 60) * PX_PER_HOUR;
-    const heightPx = Math.max((visibleMin / 60) * PX_PER_HOUR, 28);
+    const topPx = (topMin / 60) * pxPerHour;
+    const heightPx = Math.max((visibleMin / 60) * pxPerHour, 28);
     return { topPx, heightPx };
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden flex flex-col max-h-[calc(100vh-220px)]">
+    <div className="rounded-xl border border-border bg-card overflow-hidden flex flex-col" style={{ maxHeight: isMobile ? 'calc(100dvh - 280px)' : 'calc(100vh - 220px)' }}>
       <div ref={scrollRef} className="relative flex overflow-y-auto flex-1 min-h-0">
         <div
           className="w-12 sm:w-16 shrink-0 border-r border-border bg-muted/30"
@@ -135,7 +148,7 @@ export function AgendaVistaDia({ fecha, citas }: Props) {
             <div
               key={h}
               className="relative"
-              style={{ height: PX_PER_HOUR }}
+              style={{ height: pxPerHour }}
             >
               {i > 0 && (
                 <span className="absolute -top-2 right-1 sm:right-2 text-[11px] sm:text-xs text-muted-foreground font-medium tabular-nums">
@@ -154,7 +167,7 @@ export function AgendaVistaDia({ fecha, citas }: Props) {
             <div
               key={h}
               className="border-b border-border/70 last:border-b-0"
-              style={{ height: PX_PER_HOUR }}
+              style={{ height: pxPerHour }}
             />
           ))}
 

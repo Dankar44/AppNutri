@@ -205,7 +205,7 @@ export async function crearPaciente(data: PacienteFormData) {
 
   const paciente = await prisma.paciente.create({
     data: {
-      dietistaId: dietista.id,
+      dietista: { connect: { id: dietista.id } },
       ...prismaFields,
     },
   });

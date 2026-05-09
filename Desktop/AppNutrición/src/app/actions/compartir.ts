@@ -9,7 +9,7 @@ export async function crearEnlace(planId: string) {
   if (!dietista) throw new Error("No autorizado");
 
   const enlace = await prisma.enlaceCompartido.create({
-    data: { planId, dietistaId: dietista.id },
+    data: { plan: { connect: { id: planId } }, dietista: { connect: { id: dietista.id } } },
   });
 
   revalidatePath(`/dietas/${planId}/compartir`);

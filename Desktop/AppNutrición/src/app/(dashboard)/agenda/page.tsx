@@ -104,7 +104,7 @@ export default async function AgendaPage({ searchParams }: Props) {
           <Link
             href="/agenda/nueva"
             data-tour="agenda-nueva-cita"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium shrink-0"
+            className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium shrink-0"
           >
             <Plus className="w-4 h-4" />
             Nueva cita
@@ -113,7 +113,7 @@ export default async function AgendaPage({ searchParams }: Props) {
       />
 
       <div className="flex flex-col xl:flex-row xl:gap-8 xl:items-start">
-        <div className="flex-1 min-w-0 mb-8 xl:mb-0">
+        <div className="flex-1 min-w-0 mb-8 xl:mb-0 order-1">
           <AgendaClient
             vista={vista}
             fechaInicio={fechaInicio}

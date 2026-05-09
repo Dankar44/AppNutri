@@ -167,8 +167,8 @@ export function PacienteFichaGeneralTab({
           </div>
         </div>
       </section>
-      <section className="rounded-xl border border-border bg-card p-5">
-        <h3 className="text-2xl font-semibold mb-4 inline-flex items-center gap-2">
+      <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
+        <h3 className="text-base sm:text-2xl font-semibold mb-4 inline-flex items-center gap-2">
           <Heart className="w-5 h-5 text-rose-500" />
           Historial médico
         </h3>
@@ -210,8 +210,8 @@ export function PacienteFichaGeneralTab({
           </div>
         </div>
       </section>
-      <section className="rounded-xl border border-border bg-card p-5">
-        <h3 className="text-2xl font-semibold mb-2 inline-flex items-center gap-2">
+      <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
+        <h3 className="text-base sm:text-2xl font-semibold mb-2 inline-flex items-center gap-2">
           <Clock3 className="w-5 h-5 text-indigo-500" />
           Horario semanal
         </h3>
@@ -220,9 +220,9 @@ export function PacienteFichaGeneralTab({
         </p>
         <HorarioSemanal initialEntries={horario} readOnly onSave={async () => {}} />
       </section>
-      <section className="rounded-xl border border-border bg-card p-5">
+      <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h3 className="text-2xl font-semibold inline-flex items-center gap-2">
+          <h3 className="text-base sm:text-2xl font-semibold inline-flex items-center gap-2">
             <UtensilsCrossed className="w-5 h-5 text-green-600 dark:text-green-400" />
             Planes alimenticios
           </h3>
@@ -267,9 +267,9 @@ export function PacienteFichaGeneralTab({
 
       <div className="space-y-5">
       {/* Objetivos unificados: principal + parciales */}
-      <section className="rounded-xl border border-border bg-card p-5">
+      <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-2xl font-semibold inline-flex items-center gap-2">
+          <h3 className="text-base sm:text-2xl font-semibold inline-flex items-center gap-2">
             <Target className="w-5 h-5 text-green-600 dark:text-green-400" />
             Objetivos
           </h3>
@@ -302,7 +302,7 @@ export function PacienteFichaGeneralTab({
       </section>
 
       <section className="rounded-xl border border-border bg-card p-5 space-y-4">
-        <h3 className="text-2xl font-semibold inline-flex items-center gap-2">
+        <h3 className="text-base sm:text-2xl font-semibold inline-flex items-center gap-2">
           <Ruler className="w-5 h-5 text-blue-500" />
           Medidas
         </h3>
@@ -356,8 +356,8 @@ export function PacienteFichaGeneralTab({
         ))}
       </SeguimientoSection>
 
-      <section className="rounded-xl border border-border bg-card p-5">
-        <h3 className="text-2xl font-semibold mb-4 inline-flex items-center gap-2">
+      <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
+        <h3 className="text-base sm:text-2xl font-semibold mb-4 inline-flex items-center gap-2">
           <BookOpen className="w-5 h-5 text-amber-600 dark:text-amber-400" />
           Seguimiento diario
         </h3>
@@ -369,8 +369,8 @@ export function PacienteFichaGeneralTab({
         </Link>
       </section>
 
-      <section className="rounded-xl border border-border bg-card p-5">
-        <h3 className="text-2xl font-semibold mb-4 inline-flex items-center gap-2">
+      <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
+        <h3 className="text-base sm:text-2xl font-semibold mb-4 inline-flex items-center gap-2">
           <Shield className="w-5 h-5 text-violet-500" />
           Portal del paciente
         </h3>
@@ -445,16 +445,16 @@ function SeguimientoSection({
 }) {
   const hasChildren = Array.isArray(children) ? children.filter(Boolean).length > 0 : !!children;
   return (
-    <section className="rounded-xl border border-border bg-card p-5">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-2xl font-semibold inline-flex items-center gap-2">
-          <Icon className={`w-5 h-5 ${iconColor}`} />
+    <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
+      <div className="flex items-start justify-between gap-2 mb-3">
+        <h3 className="text-base sm:text-2xl font-semibold inline-flex items-center gap-2">
+          <Icon className={`w-5 h-5 shrink-0 ${iconColor}`} />
           {title}
         </h3>
         <button
           type="button"
           onClick={onAdd}
-          className="px-3 py-1.5 text-xs font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          className="px-3 py-1.5 text-xs font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
         >
           + Añadir
         </button>

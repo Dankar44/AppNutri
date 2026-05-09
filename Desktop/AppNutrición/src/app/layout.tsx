@@ -94,23 +94,6 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-// Script inline que aplica la clase `dark` ANTES de que React hidrate,
-// evitando el flash de modo claro cuando el usuario tiene modo oscuro guardado.
-const THEME_INIT_SCRIPT = `
-(function(){
-  try {
-    var t = localStorage.getItem("annonia-theme");
-    var d = document.documentElement;
-    if (t === "dark") {
-      d.classList.add("dark");
-      d.style.colorScheme = "dark";
-    } else {
-      d.style.colorScheme = "light";
-    }
-  } catch(e) {}
-})();
-`.trim();
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -119,9 +102,10 @@ export default function RootLayout({
   return (
     <html lang="es" className={inter.variable} suppressHydrationWarning>
       <body className={`${inter.className} antialiased bg-background text-foreground`}>
-        <Script id="theme-init" strategy="beforeInteractive">
-          {THEME_INIT_SCRIPT}
-        </Script>
+        <Script
+          id="theme-init"
+          strategy="beforeInteractive"
+        >{`(function(){try{var t=localStorage.getItem("annonia-theme");var d=document.documentElement;if(t==="dark"){d.classList.add("dark");d.style.colorScheme="dark"}else{d.style.colorScheme="light"}}catch(e){}})()`}</Script>
         <ThemeProvider>
           {children}
           <ThemeAwareToaster />

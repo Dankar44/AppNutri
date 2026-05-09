@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Send, MoreVertical, Archive, Loader2, User, Paperclip, X, FileText, Image as ImageIcon } from "lucide-react";
+import { Send, MoreVertical, Archive, Loader2, User, Paperclip, X, FileText, Image as ImageIcon, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { AvatarPaciente } from "@/components/avatar-paciente";
 import { cn } from "@/lib/utils";
@@ -21,12 +21,13 @@ interface Props {
   mensajes: Mensaje[];
   cargando: boolean;
   onMensajeEnviado: (m: Mensaje) => void;
+  onVolver?: () => void;
 }
 
-export function ChatView({ conversacion, mensajes, cargando, onMensajeEnviado }: Props) {
+export function ChatView({ conversacion, mensajes, cargando, onMensajeEnviado, onVolver }: Props) {
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      <ChatHeader conversacion={conversacion} />
+      <ChatHeader conversacion={conversacion} onVolver={onVolver} />
       <MensajesList mensajes={mensajes} cargando={cargando} />
       <MensajeInput
         conversacionId={conversacion.id}
@@ -36,7 +37,7 @@ export function ChatView({ conversacion, mensajes, cargando, onMensajeEnviado }:
   );
 }
 
-function ChatHeader({ conversacion: c }: { conversacion: ConversacionConPaciente }) {
+function ChatHeader({ conversacion: c, onVolver }: { conversacion: ConversacionConPaciente; onVolver?: () => void }) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -61,6 +62,16 @@ function ChatHeader({ conversacion: c }: { conversacion: ConversacionConPaciente
 
   return (
     <div className="flex items-center gap-3 px-4 py-3 border-b border-border shrink-0 bg-card">
+      {onVolver && (
+        <button
+          type="button"
+          onClick={onVolver}
+          className="md:hidden p-1 -ml-1 rounded-lg hover:bg-muted transition-colors shrink-0"
+          aria-label="Volver"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+      )}
       <AvatarPaciente
         nombre={c.paciente.nombre}
         apellidos={c.paciente.apellidos}
@@ -337,7 +348,7 @@ function MensajeInput({
   return (
     <form
       onSubmit={handleEnviar}
-      className="border-t border-border bg-card p-3 shrink-0"
+      className="border-t border-border bg-card p-3 pb-safe shrink-0 md:pb-3"
     >
       {adjunto && (
         <div className="mb-2 flex items-center gap-2 rounded-lg border border-border bg-muted/40 p-2">

@@ -20,12 +20,12 @@ export async function crearConsulta(data: ConsultaFormData) {
 
   const consulta = await prisma.consulta.create({
     data: {
-      pacienteId: data.pacienteId,
-      dietistaId: dietista.id,
+      paciente: { connect: { id: data.pacienteId } },
+      dietista: { connect: { id: dietista.id } },
       fecha: data.fecha ? new Date(data.fecha) : new Date(),
       motivo: sanitizeStringOptional(data.motivo, LIMITS.MOTIVO),
       notas: sanitizeStringOptional(data.notas, LIMITS.NOTAS),
-      medidaId: data.medidaId || null,
+      ...(data.medidaId ? { medida: { connect: { id: data.medidaId } } } : {}),
     },
   });
 

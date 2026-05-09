@@ -22,7 +22,9 @@ export function SidebarWrapper({
   return (
     <Sidebar
       dietistaNombre={dietistaNombre}
-      onSignOut={() => signOutAction()}
+      onSignOut={() => {
+        signOutAction();
+      }}
       notifCount={notifCount}
       mensajesCount={mensajesCount}
       badges={badges}

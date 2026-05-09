@@ -83,7 +83,7 @@ export default async function RecetasPage({ searchParams }: Props) {
         action={
           <Link
             href="/recetas/nueva"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium"
+            className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium"
           >
             <Plus className="w-4 h-4" />
             Nueva receta
@@ -111,7 +111,8 @@ export default async function RecetasPage({ searchParams }: Props) {
           }`}
         >
           <Sparkles className="w-3.5 h-3.5" />
-          Recetas de la app
+          <span className="hidden sm:inline">Recetas de la app</span>
+          <span className="sm:hidden">De la app</span>
         </Link>
       </div>
 

@@ -2,7 +2,8 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useCallback } from "react";
-import { Search, List, LayoutGrid } from "lucide-react";
+import { Search, List, LayoutGrid, Plus } from "lucide-react";
+import Link from "next/link";
 
 interface Props {
   busquedaInicial: string;
@@ -46,7 +47,14 @@ export function PacientesFilter({ busquedaInicial, activosInicial, vista }: Prop
           className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
         />
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
+      <Link
+        href="/pacientes/nuevo"
+        className="sm:hidden inline-flex items-center justify-center gap-1.5 flex-1 py-2.5 rounded-lg border border-border hover:bg-muted/50 transition-colors text-sm font-medium"
+      >
+        <Plus className="w-4 h-4" />
+        Nuevo
+      </Link>
       <label className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-input bg-card cursor-pointer hover:bg-muted/50 transition-colors shrink-0">
         <input
           type="checkbox"

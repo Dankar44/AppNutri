@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { actualizarLogoPdf, eliminarLogoPdf, actualizarMarcaPdf } from "@/app/actions/perfil";
 import { validateImageDataUrl } from "@/lib/validation";
+import { compressImage, IMAGE_PRESETS } from "@/lib/image-compress";
 
 interface Props {
   logoUrlInicial: string | null;
@@ -25,16 +26,17 @@ export function LogoPdfForm({ logoUrlInicial, marcaPdfInicial, onBrandChange }: 
 
     const reader = new FileReader();
     reader.onload = () => {
-      const dataUrl = reader.result as string;
-      if (!validateImageDataUrl(dataUrl)) {
+      const raw = reader.result as string;
+      if (!validateImageDataUrl(raw)) {
         toast.error("Imagen no válida (solo JPEG, PNG, WebP o GIF, máx ~2MB)");
         return;
       }
-      setLogoPreview(dataUrl);
-      onBrandChange?.(marca || "Annonia", dataUrl);
 
       startTransition(async () => {
         try {
+          const dataUrl = await compressImage(raw, IMAGE_PRESETS.LOGO);
+          setLogoPreview(dataUrl);
+          onBrandChange?.(marca || "Annonia", dataUrl);
           await actualizarLogoPdf(dataUrl);
           toast.success("Logo actualizado");
         } catch (err) {

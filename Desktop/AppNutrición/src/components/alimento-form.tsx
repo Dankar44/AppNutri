@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, ImageIcon } from "lucide-react";
 import { crearAlimento, actualizarAlimento, type AlimentoFormData } from "@/app/actions/alimentos";
 import { VITAMINAS, MINERALES, type MicroKey } from "@/lib/micronutrientes";
 import { UNIDAD_LABELS_FULL } from "@/lib/units";
@@ -47,6 +47,8 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
   const isEdit = !!alimentoId;
 
   const [selectedUnidad, setSelectedUnidad] = useState<string>(defaultValues?.unidad || "GRAMOS");
+  const [imagenPreview, setImagenPreview] = useState<string | null>(defaultValues?.imagenUrl || null);
+  const [imagenError, setImagenError] = useState(false);
   const hasAnyMicro = defaultValues?.micronutrientes && Object.values(defaultValues.micronutrientes).some((v) => v !== null && v !== undefined);
   const [microsOpen, setMicrosOpen] = useState(!!hasAnyMicro);
   const [microsTracked, setMicrosTracked] = useState(!!hasAnyMicro);
@@ -73,6 +75,10 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (imagenPreview && imagenError) {
+      toast.error("La URL de imagen no es válida. Corrígela o déjala vacía.");
+      return;
+    }
     setLoading(true);
 
     const form = new FormData(e.currentTarget);
@@ -87,6 +93,7 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
       porcion: parseFloat(form.get("porcion") as string) || 100,
       unidad: form.get("unidad") as AlimentoFormData["unidad"],
       enlaceProducto: (form.get("enlaceProducto") as string)?.trim() || null,
+      imagenUrl: (form.get("imagenUrl") as string)?.trim() || null,
       micronutrientes: parseMicros(form),
     };
 
@@ -182,6 +189,45 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
             <p className="text-xs text-muted-foreground mt-1">
               URL del producto en la web de la tienda o supermercado (opcional)
             </p>
+          </div>
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium mb-1">URL de imagen del alimento</label>
+            <input
+              name="imagenUrl"
+              type="url"
+              maxLength={2048}
+              placeholder="https://www.ejemplo.com/imagen-producto.jpg"
+              defaultValue={defaultValues?.imagenUrl || ""}
+              onChange={(e) => {
+                const v = e.target.value.trim();
+                setImagenPreview(v || null);
+                setImagenError(false);
+              }}
+              className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              URL de una imagen del alimento (opcional)
+            </p>
+            {imagenPreview && !imagenError && (
+              <div className="mt-2 flex items-start gap-3">
+                <div className="w-24 h-24 rounded-lg overflow-hidden border border-border bg-muted/10 shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={imagenPreview}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                    onError={() => setImagenError(true)}
+                  />
+                </div>
+                <span className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  Vista previa
+                </span>
+              </div>
+            )}
+            {imagenPreview && imagenError && (
+              <p className="text-xs text-red-500 mt-1">No se pudo cargar la imagen de esa URL</p>
+            )}
           </div>
         </div>
       </section>
@@ -334,7 +380,7 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
         </button>
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || (!!imagenPreview && imagenError)}
           className="px-6 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium disabled:opacity-50"
         >
           {loading ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear alimento"}

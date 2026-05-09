@@ -44,6 +44,7 @@ export default async function SharedPlanPage({ params }: Props) {
                 fibra: a.alimento.fibra,
                 porcion: a.alimento.porcion ?? 100,
                 enlaceProducto: a.alimento.enlaceProducto,
+                imagenUrl: a.alimento.imagenUrl,
               }
             : null,
           receta: a.receta

@@ -304,14 +304,15 @@ export function PacienteFichaMedicionesTab({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center gap-2 sm:justify-between">
         <Link
           href={`/pacientes/${pacienteId}/medidas`}
-          className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors w-full sm:w-auto"
+          className="inline-flex items-center justify-center rounded-lg bg-primary px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors flex-1 sm:flex-none"
         >
-          Registrar varias mediciones simultáneamente
+          <span className="sm:hidden">Registrar mediciones múltiples</span>
+          <span className="hidden sm:inline">Registrar varias mediciones simultáneamente</span>
         </Link>
-        <div className="flex items-center justify-end gap-1">
+        <div className="flex items-center gap-1 shrink-0">
           <button
             type="button"
             onClick={() =>

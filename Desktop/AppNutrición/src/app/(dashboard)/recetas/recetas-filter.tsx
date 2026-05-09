@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, SlidersHorizontal, X, Sparkles, ChevronDown } from "lucide-react";
+import { Search, SlidersHorizontal, X, Sparkles, ChevronDown, Plus } from "lucide-react";
+import Link from "next/link";
 import { useRef, useState } from "react";
 
 const VITAMINAS_FILTER = [
@@ -45,7 +46,7 @@ export function RecetasFilter() {
   const searchParams = useSearchParams();
   const searchDebounce = useRef<NodeJS.Timeout>(null);
   const numberDebounce = useRef<NodeJS.Timeout>(null);
-  const [showAdvanced, setShowAdvanced] = useState(true);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [showMicros, setShowMicros] = useState(false);
 
   function updateParams(updates: Record<string, string>) {
@@ -83,8 +84,8 @@ export function RecetasFilter() {
   const hasMicroFilters = ALL_MICRO_FILTERS.some((m) => searchParams.has(`m_${m.key}`));
 
   return (
-    <div className="mb-6 space-y-3">
-      <div className="flex gap-3">
+    <div className="space-y-2 sm:space-y-3">
+      <div className="flex gap-1.5 sm:gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
@@ -98,20 +99,29 @@ export function RecetasFilter() {
         </div>
         <button
           onClick={() => setShowAdvanced(!showAdvanced)}
-          className={`inline-flex items-center gap-1.5 px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors ${
-            showAdvanced || hasFilters
+          className={`relative inline-flex items-center justify-center gap-1.5 w-10 h-10 sm:w-auto sm:h-auto sm:px-3 sm:py-2.5 rounded-lg border text-sm font-medium transition-colors shrink-0 ${
+            showAdvanced || hasFilters || hasMicroFilters
               ? "border-primary bg-primary/5 text-primary"
               : "border-border hover:bg-muted"
           }`}
         >
           <SlidersHorizontal className="w-4 h-4" />
           <span className="hidden sm:inline">Filtros</span>
-          {hasFilters && <span className="w-2 h-2 rounded-full bg-primary" />}
+          {(hasFilters || hasMicroFilters) && (
+            <span className="absolute top-1 right-1 sm:static sm:w-2 sm:h-2 w-2 h-2 rounded-full bg-primary" />
+          )}
         </button>
+        <Link
+          href="/recetas/nueva"
+          className="sm:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
+          aria-label="Nueva receta"
+        >
+          <Plus className="w-4 h-4" />
+        </Link>
       </div>
 
       {showAdvanced && (
-        <div className="bg-card rounded-xl border border-border p-5 space-y-4">
+        <div className="bg-card rounded-xl border border-border p-3 sm:p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold">Filtros</h3>
             {hasFilters && (
@@ -177,12 +187,12 @@ export function RecetasFilter() {
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           <button
             onClick={() => setShowMicros(!showMicros)}
-            className="w-full flex items-center justify-between px-5 py-4 hover:bg-muted/40 transition-colors"
+            className="w-full flex items-center justify-between px-3 sm:px-5 py-3 sm:py-4 hover:bg-muted/40 transition-colors"
           >
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-primary" />
               <h3 className="text-sm font-semibold">Filtros avanzados</h3>
-              <span className="text-xs text-muted-foreground">· Mínimos de vitaminas y minerales por porción</span>
+              <span className="text-xs text-muted-foreground hidden sm:inline">· Mínimos de vitaminas y minerales por porción</span>
               {hasMicroFilters && <span className="w-2 h-2 rounded-full bg-primary ml-1" />}
             </div>
             <div className="flex items-center gap-3">
@@ -202,7 +212,7 @@ export function RecetasFilter() {
           </button>
 
           {showMicros && (
-            <div className="px-5 pb-5 space-y-5 border-t border-border/60 pt-5">
+            <div className="px-3 sm:px-5 pb-3 sm:pb-5 space-y-4 sm:space-y-5 border-t border-border/60 pt-3 sm:pt-5">
               <div>
                 <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Vitaminas</h4>
                 <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">

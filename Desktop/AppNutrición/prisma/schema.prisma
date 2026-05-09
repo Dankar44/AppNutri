@@ -297,6 +297,7 @@ model Alimento {
   origen          OrigenAlimento    @default(PERSONALIZADO)
   codigoBarras    String?
   enlaceProducto  String?
+  imagenUrl       String?
   dietistaId      String?
   dietista        Dietista?         @relation(fields: [dietistaId], references: [id], onDelete: Cascade)
   createdAt       DateTime          @default(now())

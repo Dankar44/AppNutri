@@ -46,8 +46,8 @@ export async function crearCita(data: CitaFormData) {
 
   const cita = await prisma.cita.create({
     data: {
-      pacienteId: data.pacienteId,
-      dietistaId: dietista.id,
+      paciente: { connect: { id: data.pacienteId } },
+      dietista: { connect: { id: dietista.id } },
       fechaHora,
       duracion,
       motivo,

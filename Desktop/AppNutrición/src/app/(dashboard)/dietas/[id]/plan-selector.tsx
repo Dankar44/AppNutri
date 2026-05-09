@@ -171,8 +171,8 @@ export function PlanSelector({ planActualId, pacienteId, planes }: Props) {
         disabled={esActivo || pending || !planActual}
         className={`inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors shrink-0 border ${
           esActivo
-            ? "bg-muted text-muted-foreground border-border cursor-not-allowed"
-            : "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30 hover:bg-emerald-100 dark:hover:bg-emerald-500/20"
+            ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30 cursor-default"
+            : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
         }`}
         title={esActivo ? "Esta dieta ya está marcada como actual" : "Marcar esta dieta como la actual"}
       >
@@ -184,7 +184,6 @@ export function PlanSelector({ planActualId, pacienteId, planes }: Props) {
         <span className="hidden sm:inline">
           {esActivo ? "Marcada como actual" : "Marcar como dieta actual"}
         </span>
-        <span className="sm:hidden">{esActivo ? "Marcada" : "Marcar"}</span>
       </button>
     </div>
   );

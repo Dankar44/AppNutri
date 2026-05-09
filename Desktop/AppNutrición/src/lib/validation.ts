@@ -129,6 +129,18 @@ export function validateUrl(value: unknown): string | null {
   }
 }
 
+const IMAGE_EXTENSIONS = /\.(jpe?g|png|gif|webp|avif|svg|bmp|ico|tiff?)(\?|#|$)/i;
+
+export function validateImageUrl(value: unknown): string | null {
+  const url = validateUrl(value);
+  if (!url) return null;
+  try {
+    const pathname = new URL(url).pathname.toLowerCase();
+    if (IMAGE_EXTENSIONS.test(pathname)) return url;
+  } catch {}
+  return null;
+}
+
 // --- Constantes de límites ---
 
 export const LIMITS = {

@@ -42,6 +42,7 @@ interface SeguimientoTabProps {
 // ─── Constants ───
 
 const DIAS_SEMANA = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+const DIAS_SEMANA_CORTO = ["D", "L", "M", "X", "J", "V", "S"];
 
 const MESES = [
   "Enero",
@@ -372,12 +373,13 @@ export function SeguimientoTab({
           {/* Calendar grid with outer border */}
           <div className="border border-border rounded-xl">
           <div className="grid grid-cols-7 border-b border-border bg-muted/20">
-            {DIAS_SEMANA.map((d) => (
+            {DIAS_SEMANA.map((d, i) => (
               <div
                 key={d}
-                className="text-center text-xs font-bold text-muted-foreground py-2 border-r border-border last:border-r-0 italic"
+                className="text-center text-[11px] sm:text-xs font-bold text-muted-foreground py-2 border-r border-border last:border-r-0 italic"
               >
-                {d}
+                <span className="sm:hidden">{DIAS_SEMANA_CORTO[i]}</span>
+                <span className="hidden sm:inline">{d}</span>
               </div>
             ))}
           </div>
@@ -391,7 +393,7 @@ export function SeguimientoTab({
             <div className="grid grid-cols-7">
               {calendarCells.map((day, idx) => {
                 if (day === null) {
-                  return <div key={`empty-${idx}`} className="min-h-[110px] border-r border-b border-border last:border-r-0 bg-muted/10" />;
+                  return <div key={`empty-${idx}`} className="min-h-[80px] sm:min-h-[110px] border-r border-b border-border last:border-r-0 bg-muted/10" />;
                 }
 
                 const dateStr = toDateStr(currentYear, currentMonth, day);
@@ -410,7 +412,7 @@ export function SeguimientoTab({
                     type="button"
                     onClick={() => setSelectedDate(dateStr)}
                     className={cn(
-                      "flex flex-col p-2 min-h-[110px] border-r border-b border-border last:border-r-0 transition-colors text-left",
+                      "flex flex-col p-1 sm:p-2 min-h-[80px] sm:min-h-[110px] border-r border-b border-border last:border-r-0 transition-colors text-left",
                       isSelected
                         ? "bg-primary/5 ring-2 ring-inset ring-primary/30"
                         : "hover:bg-muted/30"
@@ -432,7 +434,7 @@ export function SeguimientoTab({
                     <div className="relative group/bar w-full">
                       <div
                         className={cn(
-                          "w-full h-7 rounded-lg",
+                          "w-full h-5 sm:h-7 rounded-md sm:rounded-lg",
                           cumplido
                             ? "bg-emerald-400"
                             : hasData
@@ -454,7 +456,7 @@ export function SeguimientoTab({
                     <div className="flex items-center gap-1 w-full mt-1.5">
                       <Droplets className={cn("w-3 h-3 shrink-0", aguaML > 0 ? "text-blue-400" : "text-muted-foreground/30")} />
                       <div className="relative group/water flex-1">
-                        <div className="h-4 rounded bg-blue-100/60 overflow-hidden">
+                        <div className="h-3 sm:h-4 rounded bg-blue-100/60 overflow-hidden">
                           <div className="h-full rounded bg-blue-400/70 transition-all" style={{ width: `${aguaPct}%` }} />
                         </div>
                         {aguaML > 0 && (
@@ -490,7 +492,7 @@ export function SeguimientoTab({
           </div>{/* close border wrapper */}
 
           {/* Legend */}
-          <div className="flex items-center gap-4 mt-4 pt-3 border-t border-border">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-4 pt-3 border-t border-border">
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-1.5 rounded-full bg-emerald-400" />
               <span className="text-[10px] text-muted-foreground">

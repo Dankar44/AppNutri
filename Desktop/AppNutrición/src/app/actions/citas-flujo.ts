@@ -397,8 +397,8 @@ export async function solicitarCitaPaciente(fechaHoraISO: string, motivo?: strin
 
   const cita = await prisma.cita.create({
     data: {
-      pacienteId: paciente.id,
-      dietistaId: paciente.dietistaId,
+      paciente: { connect: { id: paciente.id } },
+      dietista: { connect: { id: paciente.dietistaId } },
       fechaHora,
       duracion,
       motivo: motivo?.trim().slice(0, 500) || null,
@@ -412,9 +412,9 @@ export async function solicitarCitaPaciente(fechaHoraISO: string, motivo?: strin
   // Notificar al nutri
   await prisma.notificacion.create({
     data: {
-      dietistaId: paciente.dietistaId,
-      pacienteId: paciente.id,
-      citaId: cita.id,
+      dietista: { connect: { id: paciente.dietistaId } },
+      paciente: { connect: { id: paciente.id } },
+      cita: { connect: { id: cita.id } },
       tipo: "CITA_SOLICITADA",
       titulo: "Nueva solicitud de cita",
       mensaje: `${paciente.nombre} ${paciente.apellidos} te ha solicitado cita para ${formatFechaHora(fechaHora)}`,
@@ -476,9 +476,9 @@ export async function aceptarContrapropuestaPaciente(citaId: string): Promise<vo
   // Notificar al nutri
   await prisma.notificacion.create({
     data: {
-      dietistaId: cita.dietistaId,
-      pacienteId: cita.pacienteId,
-      citaId,
+      dietista: { connect: { id: cita.dietistaId } },
+      paciente: { connect: { id: cita.pacienteId } },
+      cita: { connect: { id: citaId } },
       tipo: "CITA_CONFIRMADA",
       titulo: "Cita confirmada",
       mensaje: `${cita.paciente.nombre} ${cita.paciente.apellidos} ha aceptado tu propuesta para ${formatFechaHora(cita.fechaHora)}`,
@@ -510,9 +510,9 @@ export async function rechazarContrapropuestaPaciente(citaId: string): Promise<v
 
   await prisma.notificacion.create({
     data: {
-      dietistaId: cita.dietistaId,
-      pacienteId: cita.pacienteId,
-      citaId,
+      dietista: { connect: { id: cita.dietistaId } },
+      paciente: { connect: { id: cita.pacienteId } },
+      cita: { connect: { id: citaId } },
       tipo: "CITA_CANCELADA_POR_PACIENTE",
       titulo: "Contrapropuesta rechazada",
       mensaje: `${cita.paciente.nombre} ${cita.paciente.apellidos} ha rechazado tu propuesta para ${formatFechaHora(cita.fechaHora)}`,
@@ -546,9 +546,9 @@ export async function cancelarCitaPaciente(citaId: string): Promise<void> {
 
   await prisma.notificacion.create({
     data: {
-      dietistaId: cita.dietistaId,
-      pacienteId: cita.pacienteId,
-      citaId,
+      dietista: { connect: { id: cita.dietistaId } },
+      paciente: { connect: { id: cita.pacienteId } },
+      cita: { connect: { id: citaId } },
       tipo: "CITA_CANCELADA_POR_PACIENTE",
       titulo: "Cita cancelada por el paciente",
       mensaje: `${cita.paciente.nombre} ${cita.paciente.apellidos} ha cancelado su cita del ${formatFechaHora(cita.fechaHora)}`,
@@ -587,9 +587,9 @@ export async function aceptarPropuestaDietista(citaId: string): Promise<void> {
 
   await prisma.notificacion.create({
     data: {
-      dietistaId: cita.dietistaId,
-      pacienteId: cita.pacienteId,
-      citaId,
+      dietista: { connect: { id: cita.dietistaId } },
+      paciente: { connect: { id: cita.pacienteId } },
+      cita: { connect: { id: citaId } },
       tipo: "CITA_CONFIRMADA",
       titulo: "Cita confirmada",
       mensaje: `${cita.paciente.nombre} ${cita.paciente.apellidos} ha aceptado la cita del ${formatFechaHora(cita.fechaHora)}`,
@@ -629,9 +629,9 @@ export async function rechazarPropuestaDietista(citaId: string, motivoRechazo?: 
 
   await prisma.notificacion.create({
     data: {
-      dietistaId: cita.dietistaId,
-      pacienteId: cita.pacienteId,
-      citaId,
+      dietista: { connect: { id: cita.dietistaId } },
+      paciente: { connect: { id: cita.pacienteId } },
+      cita: { connect: { id: citaId } },
       tipo: "CITA_RECHAZADA",
       titulo: "El paciente ha rechazado la cita",
       mensaje:
@@ -707,8 +707,8 @@ export async function contraproponerPorPaciente(
     prisma.cita.delete({ where: { id: citaOriginalId } }),
     prisma.cita.create({
       data: {
-        pacienteId: original.pacienteId,
-        dietistaId: original.dietistaId,
+        paciente: { connect: { id: original.pacienteId } },
+        dietista: { connect: { id: original.dietistaId } },
         fechaHora: nuevaFechaHora,
         duracion: original.duracion,
         motivo: motivo?.trim().slice(0, 500) || original.motivo,
@@ -723,9 +723,9 @@ export async function contraproponerPorPaciente(
 
   await prisma.notificacion.create({
     data: {
-      dietistaId: original.dietistaId,
-      pacienteId: original.pacienteId,
-      citaId: contrapropuesta.id,
+      dietista: { connect: { id: original.dietistaId } },
+      paciente: { connect: { id: original.pacienteId } },
+      cita: { connect: { id: contrapropuesta.id } },
       tipo: "CITA_CONTRAPROPUESTA",
       titulo: "El paciente propone otra fecha",
       mensaje: `${original.paciente.nombre} ${original.paciente.apellidos} propone el ${formatFechaHora(nuevaFechaHora)} en vez del ${formatFechaHora(original.fechaHora)}`,
@@ -905,8 +905,8 @@ export async function contraproponerCita(
     prisma.cita.delete({ where: { id: citaOriginalId } }),
     prisma.cita.create({
       data: {
-        pacienteId: original.pacienteId,
-        dietistaId: dietista.id,
+        paciente: { connect: { id: original.pacienteId } },
+        dietista: { connect: { id: dietista.id } },
         fechaHora: nuevaFechaHora,
         duracion: dur,
         motivo: original.motivo,

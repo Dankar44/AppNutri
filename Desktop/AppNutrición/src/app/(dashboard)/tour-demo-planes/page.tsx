@@ -1,28 +1,5 @@
-import { Plus, BookCopy, Search, CalendarDays, Flame } from "lucide-react";
-
-const PACIENTES = [
-  {
-    nombre: "Laura Martínez", iniciales: "LM",
-    planes: [
-      { nombre: "Plan Mantenimiento Marzo", fecha: "21/03/2026", kcal: 1800 },
-      { nombre: "Plan Deportivo", fecha: "15/03/2026", kcal: 2100 },
-    ],
-  },
-  {
-    nombre: "Carlos García", iniciales: "CG",
-    planes: [
-      { nombre: "Déficit calórico", fecha: "18/03/2026", kcal: 1400 },
-      { nombre: "Plan inicial", fecha: "10/03/2026", kcal: 2000 },
-      { nombre: "Plan prueba", fecha: "05/03/2026", kcal: 1700 },
-    ],
-  },
-  {
-    nombre: "Ana López", iniciales: "AL",
-    planes: [
-      { nombre: "Volumen muscular", fecha: "20/03/2026", kcal: 2800 },
-    ],
-  },
-];
+import { Plus, BookCopy, Search, Flame } from "lucide-react";
+import { DEMO_PATIENT, DEMO_PLANS, AVATAR_DEMO } from "@/lib/tour-demo-data";
 
 export default function TourDemoPlanesPage() {
   return (
@@ -36,7 +13,7 @@ export default function TourDemoPlanesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold">Planes alimenticios</h1>
-          <p className="text-muted-foreground mt-1">6 planes · 3 pacientes</p>
+          <p className="text-muted-foreground mt-1">{DEMO_PLANS.length} planes · 1 paciente</p>
         </div>
         <div className="flex gap-2">
           <span data-tour="plantillas-btn" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm font-medium">
@@ -57,31 +34,38 @@ export default function TourDemoPlanesPage() {
       </div>
 
       <div data-tour="planes-lista" className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {PACIENTES.map((pac) => (
-          <section key={pac.nombre} className="bg-card rounded-xl border border-border overflow-hidden">
-            <div className="flex items-center gap-3 px-5 py-4 border-b border-border bg-muted/30">
-              <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">{pac.iniciales}</div>
-              <div>
-                <h2 className="font-semibold">{pac.nombre}</h2>
-                <p className="text-xs text-muted-foreground">{pac.planes.length} plan{pac.planes.length !== 1 ? "es" : ""}</p>
-              </div>
+        <section className="bg-card rounded-xl border border-border overflow-hidden">
+          <div className="flex items-center gap-3 px-5 py-4 border-b border-border bg-muted/30">
+            <img src={AVATAR_DEMO} alt="" className="w-11 h-11 rounded-full" />
+            <div>
+              <h2 className="font-semibold">{DEMO_PATIENT.nombre} {DEMO_PATIENT.apellidos}</h2>
+              <p className="text-xs text-muted-foreground">{DEMO_PLANS.length} planes</p>
             </div>
-            <div data-tour="plan-card" className="divide-y divide-border">
-              {pac.planes.map((plan) => (
-                <div key={plan.nombre} className="flex items-center justify-between gap-3 px-5 py-3.5 hover:bg-muted/40 transition-colors group cursor-pointer">
-                  <div>
+          </div>
+          <div className="divide-y divide-border">
+            {DEMO_PLANS.map((plan, i) => (
+              <div
+                key={plan.nombre}
+                data-tour={i === 0 ? "plan-card" : undefined}
+                className="flex items-center justify-between gap-3 px-5 py-3.5 hover:bg-muted/40 transition-colors group cursor-pointer"
+              >
+                <div>
+                  <div className="flex items-center gap-2">
                     <h3 className="font-medium group-hover:text-primary transition-colors">{plan.nombre}</h3>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1"><CalendarDays className="w-3 h-3" />{plan.fecha}</span>
-                      <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400"><Flame className="w-3 h-3" />{plan.kcal} kcal</span>
-                    </div>
+                    {plan.activo && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 font-medium">Activo</span>
+                    )}
                   </div>
-                  <span className="text-muted-foreground group-hover:text-primary transition-colors text-sm">&rsaquo;</span>
+                  <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400"><Flame className="w-3 h-3" />{plan.kcal} kcal</span>
+                    <span>{plan.prot}P · {plan.carb}C · {plan.grasa}G</span>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </section>
-        ))}
+                <span className="text-muted-foreground group-hover:text-primary transition-colors text-sm">&rsaquo;</span>
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
     </div>
   );

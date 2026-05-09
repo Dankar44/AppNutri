@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Mail, Calendar, Pencil, X } from "lucide-react";
 import type { FichaInformacionData } from "@/lib/ficha-informacion-types";
 import { AvatarPaciente } from "@/components/avatar-paciente";
@@ -156,6 +157,7 @@ export function PacienteFichaClient({
   notifsPorTipo?: Record<string, number>;
   notifsDetalle?: NotifDetalle[];
 }) {
+  const router = useRouter();
   const nombre = capitalizarNombre(paciente.nombre);
   const apellidos = capitalizarNombre(paciente.apellidos);
   const edad = paciente.fechaNacimiento
@@ -230,7 +232,29 @@ export function PacienteFichaClient({
         </div>
       </div>
 
-      <nav className="flex gap-1 overflow-x-auto pb-px mb-5 sm:mb-6 -mx-1 px-1 scrollbar-thin touch-scroll-x [scroll-snap-type:x_proximity]">
+      {/* Móvil: dropdown */}
+      <div className="sm:hidden mb-5 relative">
+        <select
+          value={pestana}
+          onChange={(e) => router.push(`/pacientes/${paciente.id}?pestana=${e.target.value}`, { scroll: false })}
+          className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-sm font-medium text-foreground appearance-none pr-8"
+        >
+          {FICHA_TABS.map((t) => {
+            const n = notifsPorTipoPestana(t.id, notifsPorTipo);
+            return (
+              <option key={t.id} value={t.id}>
+                {t.label}{n > 0 ? ` (${n})` : ""}
+              </option>
+            );
+          })}
+        </select>
+        <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </div>
+      </div>
+
+      {/* Desktop: tabs */}
+      <nav className="hidden sm:flex gap-1 overflow-x-auto pb-px mb-6 -mx-1 px-1 scrollbar-thin">
         {FICHA_TABS.map((t) => {
           const notifCount = notifsPorTipoPestana(t.id, notifsPorTipo);
           return (
@@ -239,7 +263,7 @@ export function PacienteFichaClient({
               href={`/pacientes/${paciente.id}?pestana=${t.id}`}
               scroll={false}
               className={cn(
-                "whitespace-nowrap px-3 py-2.5 sm:py-2 text-sm font-medium rounded-t-lg border-b-2 transition-colors [scroll-snap-align:start] min-h-11 sm:min-h-0 flex items-center gap-2",
+                "whitespace-nowrap px-3 py-2 text-sm font-medium rounded-t-lg border-b-2 transition-colors flex items-center gap-2",
                 pestana === t.id
                   ? "border-primary text-primary bg-primary/5"
                   : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/60"
@@ -312,13 +336,21 @@ export function PacienteFichaClient({
       )}
 
       {pestana === "planificacion" && (
-        <PlanificacionPorDefectoTab
-          paciente={paciente}
-          medidas={medidas}
-          ficha={ficha}
-          planificaciones={planificaciones}
-          pacienteId={paciente.id}
-        />
+        <>
+          <div className="sm:hidden rounded-xl border border-border bg-muted/30 p-6 text-center">
+            <p className="text-sm font-medium text-foreground mb-1">Sección disponible en ordenador</p>
+            <p className="text-xs text-muted-foreground">La planificación nutricional requiere tablas amplias que no se visualizan correctamente en pantallas pequeñas. Ábrela desde un ordenador o tablet en horizontal.</p>
+          </div>
+          <div className="hidden sm:block">
+            <PlanificacionPorDefectoTab
+              paciente={paciente}
+              medidas={medidas}
+              ficha={ficha}
+              planificaciones={planificaciones}
+              pacienteId={paciente.id}
+            />
+          </div>
+        </>
       )}
 
       {pestana === "plan-alimentacion" && (

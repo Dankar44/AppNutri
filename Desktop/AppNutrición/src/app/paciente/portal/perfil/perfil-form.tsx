@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Camera, Loader2, Check, Lock, UserRound } from "lucide-react";
 import { actualizarPerfilPaciente, actualizarFotoPaciente, cambiarPasswordPaciente } from "@/app/actions/paciente-auth";
 import { toast } from "sonner";
+import { compressImage, IMAGE_PRESETS } from "@/lib/image-compress";
 
 interface Props {
   nombre: string;
@@ -52,9 +53,10 @@ export function PerfilPacienteForm({ nombre, apellidos, email, telefono, fotoUrl
     }
     const reader = new FileReader();
     reader.onload = async () => {
-      const dataUrl = reader.result as string;
-      setFoto(dataUrl);
+      const raw = reader.result as string;
       try {
+        const dataUrl = await compressImage(raw, IMAGE_PRESETS.PROFILE_PHOTO);
+        setFoto(dataUrl);
         await actualizarFotoPaciente(dataUrl);
         toast.success("Foto actualizada");
       } catch {

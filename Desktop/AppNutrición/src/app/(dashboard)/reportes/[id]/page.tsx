@@ -51,6 +51,7 @@ export default async function ReportesPacientePage({ params }: Props) {
               cantidad: a.cantidad,
               unidad: a.unidad ?? "GRAMOS",
               enlaceProducto: a.alimento?.enlaceProducto ?? null,
+              imagenUrl: a.alimento?.imagenUrl ?? null,
             })),
           })),
         })),

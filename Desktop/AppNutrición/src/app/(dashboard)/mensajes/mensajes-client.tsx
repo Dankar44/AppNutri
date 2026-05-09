@@ -20,7 +20,6 @@ import { getSupabaseBrowser } from "@/lib/supabase-browser";
 
 interface Props {
   conversaciones: ConversacionConPaciente[];
-  conversacionActivaId: string | null;
   mensajesIniciales: Mensaje[];
   archivadas: boolean;
   dietistaId: string;
@@ -31,7 +30,6 @@ interface Props {
 
 export function MensajesClient({
   conversaciones,
-  conversacionActivaId,
   mensajesIniciales,
   archivadas,
   dietistaId,
@@ -46,10 +44,12 @@ export function MensajesClient({
   const mensajesRef = useRef<Mensaje[]>(mensajesIniciales);
   mensajesRef.current = mensajes;
 
-  const esSoporte = conversacionActivaId === "soporte";
+  const paramC = searchParams.get("c");
+  const activeId = paramC === "soporte" ? "soporte" : paramC ? (conversaciones.find((c) => c.id === paramC)?.id ?? null) : null;
+  const esSoporte = activeId === "soporte";
   const conversacionActiva = esSoporte
     ? null
-    : conversaciones.find((c) => c.id === conversacionActivaId) ?? null;
+    : conversaciones.find((c) => c.id === activeId) ?? null;
 
   // State para mensajes de soporte
   const [mensajesSoporte, setMensajesSoporte] = useState<MensajeSoporteData[]>(soporteMensajesIniciales);
@@ -57,27 +57,27 @@ export function MensajesClient({
 
   // Cambiar de conversación: actualizar mensajes
   useEffect(() => {
-    if (!conversacionActivaId) {
+    if (!activeId) {
       setMensajes([]);
       return;
     }
     setCargandoMensajes(true);
-    getMensajes(conversacionActivaId)
+    getMensajes(activeId)
       .then((m) => setMensajes(m))
       .finally(() => setCargandoMensajes(false));
 
     // Marcar como leída al abrir
-    marcarConversacionLeida(conversacionActivaId).then(() => router.refresh());
-  }, [conversacionActivaId, router]);
+    marcarConversacionLeida(activeId).then(() => router.refresh());
+  }, [activeId, router]);
 
   // Realtime: suscripción al canal de la conversación activa
   useEffect(() => {
-    if (!conversacionActivaId) return;
+    if (!activeId) return;
     const supabase = getSupabaseBrowser();
     if (!supabase) return;
 
     const canal = supabase
-      .channel(`conv:${conversacionActivaId}`, {
+      .channel(`conv:${activeId}`, {
         config: { broadcast: { self: false } },
       })
       .on("broadcast", { event: "nuevo_mensaje" }, (payload) => {
@@ -89,7 +89,7 @@ export function MensajesClient({
         });
         // Marcar como leído si nos llega un mensaje del paciente
         if (nuevo.autor === "PACIENTE") {
-          marcarConversacionLeida(conversacionActivaId).then(() =>
+          marcarConversacionLeida(activeId).then(() =>
             router.refresh(),
           );
         }
@@ -110,7 +110,7 @@ export function MensajesClient({
     return () => {
       supabase.removeChannel(canal).catch(() => {});
     };
-  }, [conversacionActivaId, router]);
+  }, [activeId, router]);
 
   // Realtime: suscripción al inbox del dietista (badge sidebar / lista)
   useEffect(() => {
@@ -133,9 +133,9 @@ export function MensajesClient({
 
   // Polling fallback cada 60s (por si Realtime cae)
   useEffect(() => {
-    if (!conversacionActivaId || esSoporte) return;
+    if (!activeId || esSoporte) return;
     const interval = setInterval(() => {
-      getMensajes(conversacionActivaId).then((m) => {
+      getMensajes(activeId).then((m) => {
         setMensajes((prev) => {
           if (
             prev.length === m.length &&
@@ -148,7 +148,7 @@ export function MensajesClient({
       });
     }, 60_000);
     return () => clearInterval(interval);
-  }, [conversacionActivaId, esSoporte]);
+  }, [activeId, esSoporte]);
 
   // Soporte: cargar mensajes y marcar leído al entrar
   useEffect(() => {
@@ -238,17 +238,22 @@ export function MensajesClient({
   }, [router]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[320px_1fr] lg:grid-cols-[360px_1fr] gap-4 h-[calc(100vh-200px)] min-h-[500px]">
+    <div className={cn(
+      "grid grid-cols-1 md:grid-cols-[320px_1fr] lg:grid-cols-[360px_1fr] md:gap-4 md:h-[calc(100vh-200px)] md:min-h-[500px] md:mx-0 md:mb-0 md:static",
+      activeId
+        ? "mensajes-chat-fullscreen"
+        : "-mx-4 -mb-5 h-[calc(100dvh-130px)] min-h-[400px]",
+    )}>
       {/* Lista de conversaciones (izq) */}
       <div
         className={cn(
-          "bg-card rounded-2xl border border-border overflow-hidden flex flex-col",
-          conversacionActivaId ? "hidden md:flex" : "flex",
+          "overflow-hidden flex flex-col md:bg-card md:rounded-2xl md:border md:border-border",
+          activeId ? "hidden md:flex" : "flex",
         )}
       >
         <ConversacionesList
           conversaciones={conversaciones}
-          conversacionActivaId={conversacionActivaId}
+          conversacionActivaId={activeId}
           onSeleccionar={seleccionarConversacion}
           archivadas={archivadas}
           soporteNoLeidos={soporteNoLeidos}
@@ -259,21 +264,14 @@ export function MensajesClient({
       {/* Chat (der) */}
       <div
         className={cn(
-          "bg-card rounded-2xl border border-border overflow-hidden flex flex-col",
-          conversacionActivaId ? "flex" : "hidden md:flex",
+          "overflow-hidden flex flex-col md:bg-card md:rounded-2xl md:border md:border-border",
+          activeId ? "flex" : "hidden md:flex",
         )}
       >
         {esSoporte ? (
           <>
-            <button
-              type="button"
-              onClick={volverAlListado}
-              className="md:hidden flex items-center gap-2 px-4 py-3 border-b border-border text-sm font-medium hover:bg-muted/40 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Volver
-            </button>
             <SoporteChatView
+              onVolver={volverAlListado}
               mensajes={mensajesSoporte}
               cargando={cargandoSoporte}
               onMensajeEnviado={(m) => setMensajesSoporte((prev) => {
@@ -284,19 +282,12 @@ export function MensajesClient({
           </>
         ) : conversacionActiva ? (
           <>
-            <button
-              type="button"
-              onClick={volverAlListado}
-              className="md:hidden flex items-center gap-2 px-4 py-3 border-b border-border text-sm font-medium hover:bg-muted/40 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Volver
-            </button>
             <ChatView
               conversacion={conversacionActiva}
               mensajes={mensajes}
               cargando={cargandoMensajes}
               onMensajeEnviado={onMensajeEnviado}
+              onVolver={volverAlListado}
             />
           </>
         ) : (
@@ -311,10 +302,12 @@ function SoporteChatView({
   mensajes,
   cargando,
   onMensajeEnviado,
+  onVolver,
 }: {
   mensajes: MensajeSoporteData[];
   cargando: boolean;
   onMensajeEnviado: (m: MensajeSoporteData) => void;
+  onVolver?: () => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [texto, setTexto] = useState("");
@@ -356,6 +349,16 @@ function SoporteChatView({
     <div className="flex-1 flex flex-col min-h-0">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-border shrink-0 bg-card">
+        {onVolver && (
+          <button
+            type="button"
+            onClick={onVolver}
+            className="md:hidden p-1 -ml-1 rounded-lg hover:bg-muted transition-colors shrink-0"
+            aria-label="Volver"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+        )}
         <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
           <Leaf className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
         </div>
@@ -417,7 +420,7 @@ function SoporteChatView({
       )}
 
       {/* Input */}
-      <form onSubmit={handleEnviar} className="border-t border-border bg-card p-3 shrink-0">
+      <form onSubmit={handleEnviar} className="border-t border-border bg-card p-3 pb-safe shrink-0 md:pb-3">
         <div className="flex items-end gap-2">
           <textarea
             ref={textareaRef}

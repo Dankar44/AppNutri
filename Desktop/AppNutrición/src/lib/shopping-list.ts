@@ -11,7 +11,7 @@ const CATEGORIA_LABELS: Record<string, string> = {
 interface AlimentoEnPlan {
   cantidad: number;
   unidad?: string;
-  alimento: { id: string; nombre: string; categoria: string; porcion: number; enlaceProducto?: string | null } | null;
+  alimento: { id: string; nombre: string; categoria: string; porcion: number; enlaceProducto?: string | null; imagenUrl?: string | null } | null;
   receta: { id: string; nombre: string } | null;
 }
 
@@ -31,6 +31,7 @@ export interface ItemCompra {
   unidad: string;
   categoria: string;
   enlaceProducto?: string | null;
+  imagenUrl?: string | null;
 }
 
 export interface CategoriaCompra {
@@ -66,6 +67,7 @@ export function generarListaCompra(dias: DiaEnPlan[], overrides?: DisplayOverrid
               unidad: displayUnit,
               categoria: a.alimento.categoria,
               enlaceProducto: a.alimento.enlaceProducto || null,
+              imagenUrl: a.alimento.imagenUrl || null,
             });
           }
         } else if (a.receta) {

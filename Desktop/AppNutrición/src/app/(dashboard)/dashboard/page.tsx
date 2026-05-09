@@ -134,7 +134,7 @@ export default async function DashboardPage() {
             </div>
           </div>
           <div className="p-4 sm:p-5 pb-2 sm:pb-3 flex-1">
-            <DashboardCharts data={actividad} height={440} />
+            <DashboardCharts data={actividad} />
           </div>
         </section>
 

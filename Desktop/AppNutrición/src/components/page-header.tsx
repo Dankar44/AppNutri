@@ -9,7 +9,7 @@ interface Props {
 
 export function PageHeader({ icon: Icon, title, subtitle, action }: Props) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-5 sm:mb-6">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-4 mb-1 sm:mb-6">
       <div className="flex items-start gap-3 min-w-0">
         <Icon
           className="w-7 h-7 sm:w-9 sm:h-9 text-foreground shrink-0 mt-0.5 sm:mt-1"
@@ -26,7 +26,7 @@ export function PageHeader({ icon: Icon, title, subtitle, action }: Props) {
           )}
         </div>
       </div>
-      {action && <div className="shrink-0 w-full sm:w-auto">{action}</div>}
+      {action && <div className="shrink-0">{action}</div>}
     </div>
   );
 }

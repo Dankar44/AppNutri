@@ -4,16 +4,12 @@ import { useState, useTransition, useEffect, useRef, useCallback } from "react";
 import {
   Mail,
   Palette,
-  Plus,
-  Info,
   ChevronDown,
   ChevronUp,
   ChevronLeft,
   ChevronRight,
   Loader2,
   FileText,
-  FlaskConical,
-  Settings2,
   Download,
   Eye,
   Sparkles,
@@ -42,64 +38,6 @@ interface EntregablesTabProps {
   pacienteNombre: string;
   planActivo?: { id: string; nombre: string } | null;
 }
-
-type PreferenciasPortal = {
-  accesoApp: boolean;
-  mensajes: boolean;
-  registroPeso: boolean;
-  confirmacionConsultas: boolean;
-  diarioAlimentario: boolean;
-  infoNutricional: boolean;
-};
-
-const PREFERENCIAS_DEFAULT: PreferenciasPortal = {
-  accesoApp: true,
-  mensajes: false,
-  registroPeso: true,
-  confirmacionConsultas: false,
-  diarioAlimentario: true,
-  infoNutricional: true,
-};
-
-const PREFERENCIAS_LABELS: {
-  key: keyof PreferenciasPortal;
-  label: string;
-  description: string;
-}[] = [
-  {
-    key: "accesoApp",
-    label: "Acceso a la aplicacion movil",
-    description:
-      "Permite al paciente acceder al portal desde cualquier dispositivo",
-  },
-  {
-    key: "mensajes",
-    label: "Funcionalidad de mensajes",
-    description: "Permite al paciente enviar y recibir mensajes",
-  },
-  {
-    key: "registroPeso",
-    label: "Funcionalidad de registro de peso",
-    description: "Permite al paciente registrar su peso desde el portal",
-  },
-  {
-    key: "confirmacionConsultas",
-    label: "Confirmacion de consultas",
-    description:
-      "El paciente puede confirmar o cancelar consultas programadas",
-  },
-  {
-    key: "diarioAlimentario",
-    label: "Diario alimentario",
-    description: "Permite al paciente llevar un registro diario de comidas",
-  },
-  {
-    key: "infoNutricional",
-    label: "Informacion nutricional",
-    description:
-      "Muestra informacion nutricional detallada en el plan alimentario",
-  },
-];
 
 // ─── PDF Options ───
 
@@ -349,84 +287,6 @@ function QuantityEditor({
   );
 }
 
-// ─── Toggle Dropdown ───
-
-function ToggleDropdown({
-  value,
-  onChange,
-}: {
-  value: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className={cn(
-          "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors",
-          value
-            ? "border-green-200 dark:border-green-500/30 bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 dark:border-green-800 dark:bg-green-950 dark:text-green-400"
-            : "border-border bg-muted/50 text-muted-foreground"
-        )}
-      >
-        {value ? "Activada" : "Desactivada"}
-        <ChevronDown className="w-3.5 h-3.5" />
-      </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full z-20 mt-1 w-36 rounded-lg border border-border bg-card shadow-lg">
-            <button
-              type="button"
-              className="w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors rounded-t-lg"
-              onClick={() => {
-                onChange(true);
-                setOpen(false);
-              }}
-            >
-              Activada
-            </button>
-            <button
-              type="button"
-              className="w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors rounded-b-lg"
-              onClick={() => {
-                onChange(false);
-                setOpen(false);
-              }}
-            >
-              Desactivada
-            </button>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-// ─── Tooltip Icon ───
-
-function InfoTooltip({ text }: { text: string }) {
-  const [show, setShow] = useState(false);
-
-  return (
-    <span
-      className="relative inline-flex"
-      onMouseEnter={() => setShow(true)}
-      onMouseLeave={() => setShow(false)}
-    >
-      <Info className="w-4 h-4 text-muted-foreground cursor-help" />
-      {show && (
-        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 rounded-lg border border-border bg-popover px-3 py-2 text-xs text-popover-foreground shadow-md z-30">
-          {text}
-        </span>
-      )}
-    </span>
-  );
-}
-
 // ─── Main Component ───
 
 export function EntregablesTab({
@@ -435,8 +295,6 @@ export function EntregablesTab({
   pacienteNombre,
   planActivo,
 }: EntregablesTabProps) {
-  const [preferencias, setPreferencias] =
-    useState<PreferenciasPortal>(PREFERENCIAS_DEFAULT);
   const [sendingPlan, startSendingPlan] = useTransition();
 
   // PDF configurator state
@@ -562,11 +420,6 @@ export function EntregablesTab({
     });
   }
 
-
-  function handlePreferenceChange(key: keyof PreferenciasPortal, value: boolean) {
-    setPreferencias((prev) => ({ ...prev, [key]: value }));
-    toast.success("Preferencia guardada");
-  }
 
   return (
     <div className="space-y-6">
@@ -835,66 +688,6 @@ export function EntregablesTab({
             </div>
           </div>
         )}
-      </div>
-
-      {/* Section 3: Examenes de laboratorio */}
-      <div className="rounded-xl border border-border bg-card p-5">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-purple-50 dark:bg-purple-500/10 p-2.5 text-purple-600 dark:text-purple-400 dark:bg-purple-950 dark:text-purple-400 shrink-0">
-              <FlaskConical className="w-5 h-5" />
-            </div>
-            <h2 className="text-base font-semibold text-foreground">
-              Examenes de laboratorio
-            </h2>
-          </div>
-          <button
-            type="button"
-            disabled
-            className="rounded-lg border border-dashed border-border p-2 text-muted-foreground hover:bg-muted transition-colors cursor-not-allowed opacity-50"
-            title="Proximamente"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
-        </div>
-        <div className="rounded-lg border border-dashed border-border bg-muted/20 p-8 text-center">
-          <FlaskConical className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">
-            Aun no ha solicitado examenes de laboratorio
-          </p>
-        </div>
-      </div>
-
-      {/* Section 4: Preferencias de la aplicacion del cliente */}
-      <div className="rounded-xl border border-border bg-card p-5">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="rounded-lg bg-amber-50 dark:bg-amber-500/10 p-2.5 text-amber-600 dark:text-amber-400 dark:bg-amber-950 dark:text-amber-400 shrink-0">
-            <Settings2 className="w-5 h-5" />
-          </div>
-          <h2 className="text-base font-semibold text-foreground">
-            Preferencias de la aplicacion del cliente
-          </h2>
-        </div>
-
-        <div className="divide-y divide-border">
-          {PREFERENCIAS_LABELS.map((pref) => (
-            <div
-              key={pref.key}
-              className="flex items-center justify-between py-3.5 first:pt-0 last:pb-0"
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="text-sm font-medium text-foreground">
-                  {pref.label}
-                </span>
-                <InfoTooltip text={pref.description} />
-              </div>
-              <ToggleDropdown
-                value={preferencias[pref.key]}
-                onChange={(v) => handlePreferenceChange(pref.key, v)}
-              />
-            </div>
-          ))}
-        </div>
       </div>
 
     </div>

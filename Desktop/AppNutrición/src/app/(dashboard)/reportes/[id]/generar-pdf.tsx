@@ -11,7 +11,7 @@ interface DietaDia {
   dia: string;
   comidas: {
     tipo: string;
-    alimentos: { nombre: string; cantidad: number; unidad?: string; enlaceProducto?: string | null }[];
+    alimentos: { nombre: string; cantidad: number; unidad?: string; enlaceProducto?: string | null; imagenUrl?: string | null }[];
   }[];
 }
 
@@ -198,9 +198,10 @@ export function GenerarPDFButtons({ paciente, medidas, consultas, dieta, brandin
         html += `<p style="margin-bottom:2px;"><strong>${TIPO_COMIDA_LABELS[comida.tipo] || comida.tipo}</strong></p>`;
         html += `<table><tr><th>Alimento</th><th>Cantidad</th></tr>`;
         for (const a of comida.alimentos) {
+          const imgLink = a.imagenUrl ? ` <a href="${escapeHtml(a.imagenUrl)}" target="_blank" style="color:#7c3aed;font-size:9px;text-decoration:underline;">(ver imagen)</a>` : "";
           const nombreHtml = a.enlaceProducto
-            ? `<a href="${escapeHtml(a.enlaceProducto)}" target="_blank" style="color:${linkCol};text-decoration:underline;">${escapeHtml(a.nombre)}</a>`
-            : escapeHtml(a.nombre);
+            ? `<a href="${escapeHtml(a.enlaceProducto)}" target="_blank" style="color:${linkCol};text-decoration:underline;">${escapeHtml(a.nombre)}</a>${imgLink}`
+            : `${escapeHtml(a.nombre)}${imgLink}`;
           html += `<tr><td>${nombreHtml}</td><td>${formatQuantity(a.cantidad, a.unidad || "GRAMOS")}</td></tr>`;
         }
         html += `</table>`;

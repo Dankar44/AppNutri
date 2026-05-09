@@ -61,6 +61,7 @@ export default async function PlantillaDetallePage({ params }: Props) {
                       porcion: alimento.porcion ?? 100,
                       categoria: alimento.categoria ?? undefined,
                       enlaceProducto: alimento.enlaceProducto ?? null,
+                      imagenUrl: alimento.imagenUrl ?? null,
                       ...(Object.fromEntries(
                         (["vitaminaA","vitaminaB6","vitaminaB12","vitaminaC","vitaminaD","vitaminaE","vitaminaK","tiamina","riboflavina","niacina","folato","acidoPantotenico","colina","calcio","hierro","magnesio","fosforo","potasio","sodio","cinc","cobre","manganeso","selenio","fluor"] as const).map(
                           (k) => [k, (alimento as Record<string, unknown>)[k] ?? 0]

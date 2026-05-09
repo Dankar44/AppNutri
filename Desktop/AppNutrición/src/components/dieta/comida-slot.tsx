@@ -43,6 +43,7 @@ interface AlimentoEnSlot {
   esReceta?: boolean;
   esPropio?: boolean;
   enlaceProducto?: string | null;
+  imagenUrl?: string | null;
   recetaIngredientes?: { nombre: string; cantidad: number; unidad: string }[];
   recetaDescripcion?: string | null;
   recetaPorciones?: number;
@@ -197,6 +198,7 @@ export function ComidaSlot({
                     esReceta={a.esReceta}
                     esPropio={a.esPropio}
                     enlaceProducto={a.enlaceProducto}
+                    imagenUrl={a.imagenUrl}
                     recetaIngredientes={a.recetaIngredientes}
                     recetaDescripcion={a.recetaDescripcion}
                     recetaPorciones={a.recetaPorciones}
@@ -274,22 +276,22 @@ export function ComidaSlot({
           )}
 
           {/* Macro pills */}
-          <div className="px-4 py-3 border-t border-border/50 bg-muted/10">
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <span className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 text-sm font-medium">
-                Energía {Math.round(mealTotals.calorias)} kcal
+          <div className="px-2 sm:px-4 py-2 sm:py-3 border-t border-border/50 bg-muted/10">
+            <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-2">
+              <span className="inline-flex items-center gap-0.5 sm:gap-1 px-2 sm:px-3.5 py-0.5 sm:py-1.5 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[10px] sm:text-sm font-medium">
+                {Math.round(mealTotals.calorias)} kcal
               </span>
-              <span className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 text-sm font-medium">
-                Grasa {mealTotals.grasas.toFixed(1)} g
+              <span className="inline-flex items-center gap-0.5 sm:gap-1 px-2 sm:px-3.5 py-0.5 sm:py-1.5 rounded-full bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 text-[10px] sm:text-sm font-medium">
+                G {mealTotals.grasas.toFixed(1)}g
               </span>
-              <span className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 text-sm font-medium">
-                H. Carbono {mealTotals.carbohidratos.toFixed(1)} g
+              <span className="inline-flex items-center gap-0.5 sm:gap-1 px-2 sm:px-3.5 py-0.5 sm:py-1.5 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 text-[10px] sm:text-sm font-medium">
+                C {mealTotals.carbohidratos.toFixed(1)}g
               </span>
-              <span className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-sm font-medium">
-                Proteína {mealTotals.proteinas.toFixed(1)} g
+              <span className="inline-flex items-center gap-0.5 sm:gap-1 px-2 sm:px-3.5 py-0.5 sm:py-1.5 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] sm:text-sm font-medium">
+                P {mealTotals.proteinas.toFixed(1)}g
               </span>
-              <span className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-sm font-medium">
-                Fibra {mealTotals.fibra.toFixed(1)} g
+              <span className="inline-flex items-center gap-0.5 sm:gap-1 px-2 sm:px-3.5 py-0.5 sm:py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] sm:text-sm font-medium">
+                F {mealTotals.fibra.toFixed(1)}g
               </span>
             </div>
           </div>

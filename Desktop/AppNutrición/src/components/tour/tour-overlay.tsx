@@ -86,7 +86,7 @@ function TourOverlayContent() {
         let lastTop = target.getBoundingClientRect().top;
         let stableCount = 0;
         let scrollChecks = 0;
-        const maxScrollChecks = 30;
+        const maxScrollChecks = 40;
 
         function waitForScrollEnd() {
           scrollChecks++;
@@ -98,14 +98,14 @@ function TourOverlayContent() {
             return;
           }
           const rect = target.getBoundingClientRect();
-          if (Math.abs(rect.top - lastTop) < 2) {
+          if (Math.abs(rect.top - lastTop) < 3) {
             stableCount++;
           } else {
             stableCount = 0;
           }
           lastTop = rect.top;
 
-          if (stableCount >= 3 || scrollChecks >= maxScrollChecks) {
+          if (stableCount >= 4 || scrollChecks >= maxScrollChecks) {
             setTargetRect({ top: rect.top, left: rect.left, width: rect.width, height: rect.height });
             setSearching(false);
             setSettled(true);
@@ -158,15 +158,30 @@ function TourOverlayContent() {
   useEffect(() => {
     window.addEventListener("resize", scheduleUpdate);
     window.addEventListener("orientationchange", scheduleUpdate);
+    window.addEventListener("scroll", scheduleUpdate, true);
     const mainEl = document.querySelector("main");
     mainEl?.addEventListener("scroll", scheduleUpdate);
     return () => {
       window.removeEventListener("resize", scheduleUpdate);
       window.removeEventListener("orientationchange", scheduleUpdate);
+      window.removeEventListener("scroll", scheduleUpdate, true);
       mainEl?.removeEventListener("scroll", scheduleUpdate);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, [scheduleUpdate]);
+
+  // Re-read rect 300ms after settle to absorb late layout shifts (Safari address bar)
+  useEffect(() => {
+    if (!settled || !elRef.current) return;
+    const id = setTimeout(() => {
+      const el = elRef.current;
+      if (el && el.isConnected) {
+        const rect = el.getBoundingClientRect();
+        setTargetRect({ top: rect.top, left: rect.left, width: rect.width, height: rect.height });
+      }
+    }, 300);
+    return () => clearTimeout(id);
+  }, [settled]);
 
   useLayoutEffect(() => {
     if (tooltipRef.current) {
@@ -188,7 +203,7 @@ function TourOverlayContent() {
   const tooltipWidth = typeof window !== "undefined" ? Math.min(340, window.innerWidth - 32) : 340;
   const tooltipStyle: React.CSSProperties = { position: "fixed", zIndex: 61, maxWidth: tooltipWidth, width: "calc(100vw - 2rem)" };
   const targetTooBig = targetRect && typeof window !== "undefined" &&
-    targetRect.width > window.innerWidth * 0.9;
+    targetRect.width > window.innerWidth * 0.95;
 
   if (targetRect && !busy && !targetTooBig) {
     const preferred = isMobile ? "bottom" : (currentStep.position || "bottom");
@@ -239,8 +254,14 @@ function TourOverlayContent() {
       />
       {showHighlight && (
         <div
-          className="fixed z-[60] border-2 border-primary rounded-lg pointer-events-none transition-all duration-300"
+          className="fixed z-[60] border-2 border-primary rounded-lg pointer-events-none transition-all duration-300 will-change-transform"
           style={{ top: targetRect!.top - pad, left: targetRect!.left - pad, width: targetRect!.width + pad * 2, height: targetRect!.height + pad * 2 }}
+        />
+      )}
+      {targetRect && !isIntro && targetTooBig && !busy && (
+        <div
+          className="fixed z-[60] h-0.5 bg-primary pointer-events-none animate-pulse"
+          style={{ top: targetRect.top - 2, left: 0, width: "100%" }}
         />
       )}
       <div

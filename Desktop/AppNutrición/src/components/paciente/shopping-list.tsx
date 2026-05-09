@@ -32,6 +32,7 @@ import {
   Wine,
   X,
   ExternalLink,
+  Image as ImageLinkIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -304,6 +305,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
           cantidadTotal: item.cantidadTotal,
           unidad: item.unidad || "GRAMOS",
           enlaceProducto: item.enlaceProducto || null,
+          imagenUrl: item.imagenUrl || null,
         });
       }
     }
@@ -709,6 +711,12 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
                             <ExternalLink className="w-4 h-4 shrink-0 text-muted-foreground/60" />
                           </a>
                         ) : it.nombre}
+                        {it.imagenUrl && (
+                          <a href={it.imagenUrl} target="_blank" rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()} className="inline-flex items-center ml-1.5 align-middle">
+                            <ImageLinkIcon className="w-4 h-4 shrink-0 text-violet-400 hover:text-violet-600" />
+                          </a>
+                        )}
                       </p>
                       <p className="text-sm text-muted-foreground">{meta.label}</p>
                     </div>
@@ -1287,6 +1295,12 @@ function ItemRow({
             </a>
           ) : (
             item.nombre
+          )}
+          {item.imagenUrl && (
+            <a href={item.imagenUrl} target="_blank" rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()} className="inline-flex items-center ml-1 align-middle">
+              <ImageLinkIcon className="w-3 h-3 shrink-0 text-violet-400 hover:text-violet-600" />
+            </a>
           )}
           {item.custom && (
             <span className="ml-2 text-[10px] uppercase tracking-wider text-primary font-semibold">

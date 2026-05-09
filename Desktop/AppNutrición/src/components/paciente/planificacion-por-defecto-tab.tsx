@@ -1065,8 +1065,10 @@ export function PlanificacionPorDefectoTab({
   }
 
   /* ─── Table header style (reused) ─── */
-  const thClass = "text-left font-medium text-primary text-xs py-3 px-4";
+  const thClass = "text-left font-medium text-primary text-xs py-3 px-2 sm:px-4";
   const thBg = "bg-primary/10";
+  const stickyCol = "sticky left-0 bg-card z-10 after:absolute after:right-0 after:top-0 after:bottom-0 after:w-px after:bg-border sm:static sm:after:hidden";
+  const stickyColHead = "sticky left-0 bg-primary/10 z-10 sm:static";
 
   /* ─── Render ─── */
 
@@ -1074,7 +1076,7 @@ export function PlanificacionPorDefectoTab({
     <div className="space-y-6">
       {/* ====== Section 1: Informaciones del cliente ====== */}
       <section className="bg-card rounded-xl border border-border overflow-hidden">
-        <div className="px-5 pt-5 pb-3">
+        <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-3">
           <SectionTitle icon={Scale}>Informaciones del cliente</SectionTitle>
           <p className="text-xs text-muted-foreground mt-1">
             {paciente.nombre} {paciente.apellidos}
@@ -1082,22 +1084,22 @@ export function PlanificacionPorDefectoTab({
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-[720px] w-full text-sm">
+          <table className="min-w-[580px] sm:min-w-[720px] w-full text-sm">
             <thead>
               <tr className={thBg}>
-                <th className={`${thClass} w-[220px]`}></th>
+                <th className={`${thClass} w-[130px] sm:w-[220px] ${stickyColHead}`}></th>
                 <th className={thClass}>Fórmula</th>
                 <th className={thClass}>Actual</th>
                 <th className={thClass}>Objetivo</th>
-                <th className={thClass}>Valor de referencia</th>
+                <th className={thClass}>Referencia</th>
               </tr>
             </thead>
             <tbody>
               {/* Peso */}
               <tr className="border-b border-border">
-                <td className="py-3 px-4">
-                  <div className="font-medium flex items-center gap-2">
-                    <Scale className="w-4 h-4 text-primary/70" />
+                <td className={`py-3 px-2 sm:px-4 ${stickyCol}`}>
+                  <div className="font-medium flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                    <Scale className="w-4 h-4 text-primary/70 shrink-0" />
                     Peso
                   </div>
                 </td>
@@ -1134,10 +1136,11 @@ export function PlanificacionPorDefectoTab({
 
               {/* Porcentaje de masa grasa */}
               <tr className="border-b border-border">
-                <td className="py-3 px-4">
-                  <div className="font-medium flex items-center gap-2">
-                    <Percent className="w-4 h-4 text-primary/70" />
-                    Porcentaje de masa grasa
+                <td className={`py-3 px-2 sm:px-4 ${stickyCol}`}>
+                  <div className="font-medium flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                    <Percent className="w-4 h-4 text-primary/70 shrink-0" />
+                    <span className="sm:hidden">% Masa grasa</span>
+                    <span className="hidden sm:inline">Porcentaje de masa grasa</span>
                   </div>
                 </td>
                 <td className="py-3 px-4">
@@ -1163,10 +1166,10 @@ export function PlanificacionPorDefectoTab({
                 const imcObj = imcObjetivoInput ? parseFloat(imcObjetivoInput) || null : valores?.imcObjetivo ?? null;
                 return (
                   <tr className="border-b border-border">
-                    <td className="py-3 px-4">
-                      <div className="font-medium flex items-center gap-2">
-                        <Activity className="w-4 h-4 text-primary/70" />
-                        Índice de masa corporal
+                    <td className={`py-3 px-2 sm:px-4 ${stickyCol}`}>
+                      <div className="font-medium flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                        <Activity className="w-4 h-4 text-primary/70 shrink-0" />
+                        IMC
                       </div>
                     </td>
                     <td className="py-3 px-4 text-muted-foreground">—</td>
@@ -1290,7 +1293,8 @@ export function PlanificacionPorDefectoTab({
           className="shrink-0 inline-flex items-center gap-1 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/5 rounded-t-lg border-b-2 border-transparent transition-colors"
         >
           <Plus className="w-4 h-4" />
-          Crear planificación
+          <span className="sm:hidden">Crear</span>
+          <span className="hidden sm:inline">Crear planificación</span>
         </button>
       </div>
 
@@ -1450,28 +1454,29 @@ export function PlanificacionPorDefectoTab({
 
       {/* ====== Section 2: Cálculos ====== */}
       <section className="bg-card rounded-xl border border-border overflow-hidden">
-        <div className="px-5 pt-5 pb-3">
+        <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-3">
           <SectionTitle icon={Brain}>Cálculos</SectionTitle>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-[900px] w-full text-sm">
+          <table className="min-w-[580px] sm:min-w-[900px] w-full text-sm">
             <thead>
               <tr className={thBg}>
-                <th className={`${thClass} w-[240px]`}></th>
-                <th className={`${thClass} w-[220px]`}>Fórmula</th>
-                <th className={`${thClass} w-[220px]`}>Actual</th>
-                <th className={`${thClass} w-[220px]`}>Objetivo</th>
-                <th className={`${thClass} w-[220px]`}>Valor de referencia</th>
+                <th className={`${thClass} w-[130px] sm:w-[240px] ${stickyColHead}`}></th>
+                <th className={thClass}>Fórmula</th>
+                <th className={thClass}>Actual</th>
+                <th className={thClass}>Objetivo</th>
+                <th className={thClass}>Referencia</th>
               </tr>
             </thead>
             <tbody>
               {/* Actividad física */}
               <tr className="border-b border-border">
-                <td className="py-3 px-4">
-                  <div className="flex items-center gap-2 font-medium">
-                    <Dumbbell className="w-4 h-4 text-primary/70" />
-                    Nivel de actividad física
+                <td className={`py-3 px-2 sm:px-4 ${stickyCol}`}>
+                  <div className="flex items-center gap-1.5 sm:gap-2 font-medium text-xs sm:text-sm">
+                    <Dumbbell className="w-4 h-4 text-primary/70 shrink-0" />
+                    <span className="sm:hidden">Actividad</span>
+                    <span className="hidden sm:inline">Nivel de actividad física</span>
                   </div>
                 </td>
                 <td className="py-3 px-4 text-muted-foreground">—</td>
@@ -1506,10 +1511,11 @@ export function PlanificacionPorDefectoTab({
 
               {/* Metabolismo basal */}
               <tr className="border-b border-border">
-                <td className="py-3 px-4">
-                  <div className="flex items-center gap-2 font-medium">
-                    <Flame className="w-4 h-4 text-primary/70" />
-                    Metabolismo basal
+                <td className={`py-3 px-2 sm:px-4 ${stickyCol}`}>
+                  <div className="flex items-center gap-1.5 sm:gap-2 font-medium text-xs sm:text-sm">
+                    <Flame className="w-4 h-4 text-primary/70 shrink-0" />
+                    <span className="sm:hidden">Met. basal</span>
+                    <span className="hidden sm:inline">Metabolismo basal</span>
                   </div>
                 </td>
                 <td className="py-3 px-4">
@@ -1534,10 +1540,11 @@ export function PlanificacionPorDefectoTab({
 
               {/* Necesidades energéticas */}
               <tr className="border-b border-border">
-                <td className="py-3 px-4">
-                  <div className="flex items-center gap-2 font-medium">
-                    <Zap className="w-4 h-4 text-primary/70" />
-                    Necesidades energéticas diarias
+                <td className={`py-3 px-2 sm:px-4 ${stickyCol}`}>
+                  <div className="flex items-center gap-1.5 sm:gap-2 font-medium text-xs sm:text-sm">
+                    <Zap className="w-4 h-4 text-primary/70 shrink-0" />
+                    <span className="sm:hidden">Nec. energéticas</span>
+                    <span className="hidden sm:inline">Necesidades energéticas diarias</span>
                   </div>
                 </td>
                 <td className="py-3 px-4">
@@ -1580,7 +1587,7 @@ export function PlanificacionPorDefectoTab({
 
       {/* ====== Section 3: Distribución de macronutrientes ====== */}
       <section className="bg-card rounded-xl border border-border overflow-hidden">
-        <div className="px-5 pt-5 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <SectionTitle icon={Wheat}>Distribución de los macronutrientes</SectionTitle>
           <select
             value={macroRefIdx}
@@ -1596,22 +1603,22 @@ export function PlanificacionPorDefectoTab({
         </div>
 
         <div className="overflow-x-auto">
-            <table className="min-w-[780px] w-full text-sm">
+            <table className="min-w-[560px] sm:min-w-[780px] w-full text-sm">
               <thead>
                 <tr className={thBg}>
-                  <th className={`${thClass} w-[180px]`}></th>
-                  <th className={thClass}>Porcentaje</th>
-                  <th className={thClass}>Cantidad total</th>
-                  <th className={thClass}>Cantidad en g/kg de peso</th>
-                  <th className={thClass}>Valor de referencia</th>
+                  <th className={`${thClass} w-[100px] sm:w-[180px] ${stickyColHead}`}></th>
+                  <th className={thClass}>%</th>
+                  <th className={thClass}>Total</th>
+                  <th className={thClass}>g/kg</th>
+                  <th className={thClass}>Referencia</th>
                 </tr>
               </thead>
               <tbody>
                 {/* Lípidos */}
                 <tr className="border-b border-border">
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-2 font-medium">
-                      <Droplets className="w-4 h-4 text-yellow-500" />
+                  <td className={`py-3 px-2 sm:px-4 ${stickyCol}`}>
+                    <div className="flex items-center gap-1.5 sm:gap-2 font-medium text-xs sm:text-sm">
+                      <Droplets className="w-4 h-4 text-yellow-500 shrink-0" />
                       Lípidos
                     </div>
                   </td>
@@ -1644,10 +1651,11 @@ export function PlanificacionPorDefectoTab({
 
                 {/* Carbohidratos */}
                 <tr className="border-b border-border">
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-2 font-medium">
-                      <Wheat className="w-4 h-4 text-orange-500" />
-                      Hidratos de carbono
+                  <td className={`py-3 px-2 sm:px-4 ${stickyCol}`}>
+                    <div className="flex items-center gap-1.5 sm:gap-2 font-medium text-xs sm:text-sm">
+                      <Wheat className="w-4 h-4 text-orange-500 shrink-0" />
+                      <span className="sm:hidden">Carbos</span>
+                      <span className="hidden sm:inline">Hidratos de carbono</span>
                     </div>
                   </td>
                   <td className="py-3 px-4">
@@ -1679,9 +1687,9 @@ export function PlanificacionPorDefectoTab({
 
                 {/* Proteínas */}
                 <tr className="border-b border-border">
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-2 font-medium">
-                      <Beef className="w-4 h-4 text-blue-500" />
+                  <td className={`py-3 px-2 sm:px-4 ${stickyCol}`}>
+                    <div className="flex items-center gap-1.5 sm:gap-2 font-medium text-xs sm:text-sm">
+                      <Beef className="w-4 h-4 text-blue-500 shrink-0" />
                       Proteínas
                     </div>
                   </td>
@@ -1725,26 +1733,26 @@ export function PlanificacionPorDefectoTab({
 
       {/* ====== Section 4: Cuantificación de nutrientes ====== */}
       <section className="bg-card rounded-xl border border-border overflow-hidden">
-        <div className="px-5 pt-5 pb-3">
+        <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-3">
           <SectionTitle icon={Droplets}>Cuantificación de nutrientes</SectionTitle>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-[640px] w-full text-sm">
+          <table className="min-w-[480px] sm:min-w-[640px] w-full text-sm">
             <thead>
               <tr className={thBg}>
-                <th className={`${thClass} w-[200px]`}></th>
+                <th className={`${thClass} w-[120px] sm:w-[200px] ${stickyColHead}`}></th>
                 <th className={thClass}>Fuente</th>
                 <th className={thClass}>Cantidad</th>
-                <th className={thClass}>Valor de referencia</th>
+                <th className={thClass}>Referencia</th>
               </tr>
             </thead>
             <tbody>
               <tr className="border-b border-border">
-                <td className="py-3 px-4">
-                  <div className="font-medium flex items-center gap-2">
-                    <Wheat className="w-4 h-4 text-primary/70" />
-                    Fibra alimentaria
+                <td className={`py-3 px-2 sm:px-4 ${stickyCol}`}>
+                  <div className="font-medium flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                    <Wheat className="w-4 h-4 text-primary/70 shrink-0" />
+                    Fibra
                   </div>
                 </td>
                 <td className="py-3 px-4">
@@ -1784,26 +1792,27 @@ export function PlanificacionPorDefectoTab({
 
       {/* ====== Section 5: Duración ====== */}
       <section className="bg-card rounded-xl border border-border overflow-hidden">
-        <div className="px-5 pt-5 pb-3">
+        <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-3">
           <SectionTitle icon={Calendar}>Duración</SectionTitle>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-[640px] w-full text-sm">
+          <table className="min-w-[480px] sm:min-w-[640px] w-full text-sm">
             <thead>
               <tr className={thBg}>
-                <th className={thClass}>Duración</th>
+                <th className={`${thClass} w-[120px] sm:w-auto ${stickyColHead}`}>Duración</th>
                 <th className={thClass}>Inicio</th>
-                <th className={thClass}>Último cambio</th>
-                <th className={thClass}>Previsión del fin</th>
+                <th className={thClass}>Últ. cambio</th>
+                <th className={thClass}>Fin previsto</th>
               </tr>
             </thead>
             <tbody>
               <tr className="border-b border-border">
-                <td className="py-3 px-4">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Clock className="w-4 h-4" />
-                    Planificación actual
+                <td className={`py-3 px-2 sm:px-4 ${stickyCol}`}>
+                  <div className="flex items-center gap-1.5 sm:gap-2 text-muted-foreground text-xs sm:text-sm">
+                    <Clock className="w-4 h-4 shrink-0" />
+                    <span className="sm:hidden">Actual</span>
+                    <span className="hidden sm:inline">Planificación actual</span>
                   </div>
                 </td>
                 <td className="py-3 px-4">

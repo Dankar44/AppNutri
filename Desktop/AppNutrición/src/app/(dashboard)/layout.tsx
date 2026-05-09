@@ -56,8 +56,8 @@ export default async function DashboardLayout({
           isAdmin={isAdminEmail(dietista.email)}
         />
         <main className="flex-1 overflow-y-auto min-w-0 bg-background">
-          <div className="w-full max-w-none pt-14 lg:pt-6 px-3 sm:px-4 md:px-5 pb-3 sm:pb-4 lg:pb-6 pb-safe">
-            <div className="bg-card rounded-2xl border border-border shadow-sm p-5 sm:p-7 lg:p-8">
+          <div className="w-full max-w-none pt-14 lg:pt-6 lg:px-5 pb-safe lg:pb-6">
+            <div className="main-content-card">
               {children}
             </div>
           </div>

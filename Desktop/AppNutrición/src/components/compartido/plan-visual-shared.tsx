@@ -10,6 +10,7 @@ import {
   ChevronRight,
   CookingPot,
   ExternalLink,
+  Image as ImageLinkIcon,
   LayoutGrid,
   ClipboardList,
   BarChart3,
@@ -50,6 +51,7 @@ interface AlimentoData {
     grasas: number;
     porcion?: number;
     enlaceProducto?: string | null;
+    imagenUrl?: string | null;
   } | null;
   receta: RecetaDetalle | null;
 }
@@ -226,6 +228,11 @@ function ComidaSlotShared({ tipo, descripcion, alimentos }: {
                     {a.alimento?.enlaceProducto && (
                       <a href={a.alimento.enlaceProducto} target="_blank" rel="noopener noreferrer" className="shrink-0">
                         <ExternalLink className="w-3.5 h-3.5 text-primary/60 hover:text-primary" />
+                      </a>
+                    )}
+                    {a.alimento?.imagenUrl && (
+                      <a href={a.alimento.imagenUrl} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                        <ImageLinkIcon className="w-3.5 h-3.5 text-violet-400 hover:text-violet-600" />
                       </a>
                     )}
                   </div>

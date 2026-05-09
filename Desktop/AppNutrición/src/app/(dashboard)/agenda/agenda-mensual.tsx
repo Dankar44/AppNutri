@@ -81,57 +81,62 @@ export function AgendaMensual({ citas, anio, mes, diaSeleccionado, onSelectDia }
 
   return (
     <>
-    {/* Vista móvil: lista compacta de días con citas */}
+    {/* Vista móvil: calendario cuadrícula compacto */}
     <div className="sm:hidden bg-card rounded-xl border border-border overflow-hidden">
-      {diasConCitas.length === 0 ? (
-        <div className="p-6 text-center text-sm text-muted-foreground">
-          No hay citas este mes
-        </div>
-      ) : (
-        <div className="divide-y divide-border">
-          {diasConCitas.map((d) => {
-            const key = formatLocalDate(d.date);
-            const citasDia = citasPorDia.get(key) || [];
-            const isHoy = key === hoyStr;
-            const isSeleccionado = key === diaSeleccionado;
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => onSelectDia(isSeleccionado ? null : key)}
-                className={`w-full flex items-start gap-3 p-3 text-left transition-colors ${
-                  isSeleccionado ? "bg-primary/10" : "hover:bg-muted/50"
+      <div className="grid grid-cols-7">
+        {DIA_LABELS_CORTO.map((label) => (
+          <div
+            key={label}
+            className="text-center text-[11px] font-semibold text-muted-foreground py-2"
+          >
+            {label}
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7">
+        {todosLosDias.map(({ date, currentMonth }, i) => {
+          const diaStr = formatLocalDate(date);
+          const isHoy = diaStr === hoyStr;
+          const isSeleccionado = diaStr === diaSeleccionado;
+          const citasDia = citasPorDia.get(diaStr) || [];
+          const tieneCitas = citasDia.length > 0;
+
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={() => currentMonth ? onSelectDia(isSeleccionado ? null : diaStr) : undefined}
+              className={`flex flex-col items-center justify-center py-2.5 border-b border-r border-border/50 transition-colors ${
+                !currentMonth
+                  ? "text-muted-foreground/30"
+                  : isSeleccionado
+                    ? "bg-primary/10"
+                    : "active:bg-muted/60"
+              }`}
+            >
+              <span
+                className={`flex items-center justify-center w-8 h-8 text-sm tabular-nums rounded-full ${
+                  isHoy
+                    ? "bg-primary text-primary-foreground font-bold"
+                    : currentMonth
+                      ? "font-medium"
+                      : ""
                 }`}
               >
-                <div className={`flex flex-col items-center justify-center rounded-lg w-12 h-12 shrink-0 ${
-                  isHoy ? "bg-primary text-primary-foreground" : "bg-muted"
-                }`}>
-                  <span className="text-[10px] uppercase font-medium opacity-80">
-                    {d.date.toLocaleDateString("es-ES", { weekday: "short" }).slice(0, 3)}
-                  </span>
-                  <span className="text-base font-bold leading-none">{d.date.getDate()}</span>
-                </div>
-                <div className="flex-1 min-w-0 space-y-1">
-                  {citasDia.slice(0, 3).map((cita) => (
-                    <div key={cita.id} className="flex items-center gap-2 text-xs">
-                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${ESTADO_DOT[cita.estado] || ESTADO_DOT.PENDIENTE}`} />
-                      <span className="tabular-nums text-muted-foreground">
-                        {new Date(cita.fechaHora).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
-                      </span>
-                      <span className="truncate font-medium">{cita.paciente.nombre}</span>
-                    </div>
-                  ))}
-                  {citasDia.length > 3 && (
-                    <p className="text-[11px] text-muted-foreground font-medium">
-                      +{citasDia.length - 3} cita{citasDia.length - 3 !== 1 ? "s" : ""} más
-                    </p>
-                  )}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      )}
+                {date.getDate()}
+              </span>
+              <div className="flex items-center gap-0.5 mt-1 h-2">
+                {tieneCitas && currentMonth && citasDia.slice(0, 3).map((cita) => (
+                  <span
+                    key={cita.id}
+                    className={`w-1.5 h-1.5 rounded-full ${ESTADO_DOT[cita.estado] || ESTADO_DOT.PENDIENTE}`}
+                  />
+                ))}
+              </div>
+            </button>
+          );
+        })}
+      </div>
     </div>
 
     {/* Vista desktop/tablet: calendario tradicional */}

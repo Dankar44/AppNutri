@@ -1,16 +1,29 @@
-import { ChevronLeft, ChevronRight, CalendarDays, Calendar, Plus, Clock, User, Check, X, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, CalendarDays, Calendar, CalendarRange, Plus, Clock, User, Check, X, Trash2 } from "lucide-react";
+import { DEMO_CITAS_SEMANA } from "@/lib/tour-demo-data";
 
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
-const FECHAS = ["17 mar", "18 mar", "19 mar", "20 mar", "21 mar", "22 mar", "23 mar"];
 
-const CITAS_SEMANA = [
-  { dia: 1, hora: "10:00", duracion: 30, paciente: "Laura Martínez", estado: "CONFIRMADA", motivo: "Revisión mensual" },
-  { dia: 1, hora: "11:30", duracion: 45, paciente: "Carlos García", estado: "PENDIENTE", motivo: "Primera consulta" },
-  { dia: 2, hora: "09:00", duracion: 30, paciente: "Ana López", estado: "COMPLETADA", motivo: "Seguimiento dieta" },
-  { dia: 3, hora: "16:00", duracion: 60, paciente: "Laura Martínez", estado: "CONFIRMADA", motivo: "Revisión medidas" },
-  { dia: 4, hora: "10:00", duracion: 30, paciente: "Pedro Ruiz", estado: "PENDIENTE", motivo: "Nuevo plan" },
-  { dia: 4, hora: "12:00", duracion: 45, paciente: "Ana López", estado: "CONFIRMADA", motivo: "Control peso" },
-];
+function getFechasSemana(): string[] {
+  const hoy = new Date();
+  const diaSemana = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1;
+  const lunes = new Date(hoy);
+  lunes.setDate(hoy.getDate() - diaSemana);
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(lunes);
+    d.setDate(lunes.getDate() + i);
+    return `${d.getDate()} ${d.toLocaleDateString("es-ES", { month: "short" })}`;
+  });
+}
+
+function getDetalleDia(): string {
+  const hoy = new Date();
+  const diaSemana = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1;
+  const miercoles = new Date(hoy);
+  miercoles.setDate(hoy.getDate() - diaSemana + 2);
+  return miercoles.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+}
+
+const HOY_INDEX = 2;
 
 const ESTADO_STYLES: Record<string, string> = {
   PENDIENTE: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30",
@@ -24,6 +37,9 @@ const ESTADO_LABELS: Record<string, string> = {
 };
 
 export default function TourDemoAgendaPage() {
+  const fechas = getFechasSemana();
+  const detalleFecha = getDetalleDia();
+
   return (
     <div>
       <div className="mb-4">
@@ -45,10 +61,13 @@ export default function TourDemoAgendaPage() {
           <span className="p-1.5 rounded-lg border border-border"><ChevronLeft className="w-4 h-4" /></span>
           <span className="px-3 py-1.5 rounded-lg border border-border text-sm font-medium">Hoy</span>
           <span className="p-1.5 rounded-lg border border-border"><ChevronRight className="w-4 h-4" /></span>
-          <span className="text-sm font-medium ml-2">17 mar - 23 mar</span>
+          <span className="text-sm font-medium ml-2">{fechas[0]} - {fechas[6]}</span>
         </div>
 
         <div data-tour="agenda-vistas" className="flex rounded-lg border border-border overflow-hidden">
+          <span className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium hover:bg-muted">
+            <CalendarRange className="w-4 h-4" /> Día
+          </span>
           <span className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-primary text-primary-foreground">
             <CalendarDays className="w-4 h-4" /> Semana
           </span>
@@ -61,14 +80,14 @@ export default function TourDemoAgendaPage() {
       {/* Vista semanal */}
       <div data-tour="agenda-semana" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3">
         {DIAS.map((dia, i) => {
-          const isHoy = i === 4; // Viernes como "hoy"
-          const citasDia = CITAS_SEMANA.filter((c) => c.dia === i);
+          const isHoy = i === HOY_INDEX;
+          const citasDia = DEMO_CITAS_SEMANA.filter((c) => c.dia === i);
 
           return (
             <div key={dia} className="min-w-0">
               <div className={`w-full text-center text-sm font-semibold py-2 rounded-t-lg border-b border-border ${isHoy ? "bg-primary text-primary-foreground" : "bg-muted/50"}`}>
                 <p>{dia}</p>
-                <p className={`text-xs font-normal ${isHoy ? "text-primary-foreground/70" : "text-muted-foreground"}`}>{FECHAS[i]}</p>
+                <p className={`text-xs font-normal ${isHoy ? "text-primary-foreground/70" : "text-muted-foreground"}`}>{fechas[i]}</p>
               </div>
               <div className="border-x border-b border-border rounded-b-lg p-2 min-h-[120px] space-y-2">
                 {citasDia.length === 0 ? (
@@ -94,15 +113,15 @@ export default function TourDemoAgendaPage() {
         })}
       </div>
 
-      {/* Detalle del día seleccionado */}
+      {/* Detalle del día seleccionado (miércoles = hoy) */}
       <div data-tour="agenda-detalle-dia" className="bg-card rounded-xl border border-border p-5 mt-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold">Viernes, 21 De Marzo De 2026</h3>
+          <h3 className="font-semibold capitalize">{detalleFecha}</h3>
           <span className="p-1 rounded hover:bg-muted"><X className="w-4 h-4 text-muted-foreground" /></span>
         </div>
 
         <div className="space-y-3">
-          {CITAS_SEMANA.filter((c) => c.dia === 4).map((cita, i) => (
+          {DEMO_CITAS_SEMANA.filter((c) => c.dia === HOY_INDEX).map((cita, i) => (
             <div key={i} className={`rounded-xl border p-4 ${ESTADO_STYLES[cita.estado]}`}>
               <div className="flex items-start justify-between">
                 <div>

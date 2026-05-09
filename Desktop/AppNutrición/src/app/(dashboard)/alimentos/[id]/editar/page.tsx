@@ -40,6 +40,7 @@ export default async function EditarAlimentoPage({ params }: Props) {
           porcion: alimento.porcion,
           unidad: alimento.unidad,
           enlaceProducto: alimento.enlaceProducto ?? "",
+          imagenUrl: alimento.imagenUrl ?? "",
           micronutrientes: Object.fromEntries(
             MICRO_KEYS.map((key) => [key, (alimento as Record<string, unknown>)[key] as number | null ?? null])
           ),

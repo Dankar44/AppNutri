@@ -78,6 +78,7 @@ export type PlanVisualItem = {
     porcion?: number;
     categoria?: string;
     enlaceProducto?: string | null;
+    imagenUrl?: string | null;
     esPropio?: boolean;
   } & MicronutrientesOpcionales) | null;
   receta: {
@@ -400,56 +401,109 @@ export function PlanVisual({
   return (
     <section className="space-y-4">
 
-      <div className="flex items-center gap-2 flex-wrap">
-        <div className="flex-1 min-w-0 flex items-stretch rounded-xl border border-border bg-card p-1 overflow-x-auto scrollbar-thin touch-scroll-x">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+        {/* Vista tabs — en móvil va primero */}
+        <div className="order-first sm:order-last inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card p-1 shrink-0 w-full sm:w-auto">
           <button
             type="button"
-            onClick={() => {
-              if (vista === "resumen") {
-                setSelectedDayKey("TODOS");
-                setVista("plan");
-              } else {
-                setSelectedDayKey("TODOS");
-              }
-            }}
+            onClick={() => setVista("resumen")}
             className={cn(
-              "flex-1 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors",
-              isTodos && vista !== "resumen"
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+              "flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+              vista === "resumen"
+                ? "bg-primary/10 text-primary border border-primary/20"
+                : "text-muted-foreground hover:bg-muted/60"
             )}
           >
-            Todas
+            <LayoutGrid className="w-4 h-4" />
+            Resumen
           </button>
-          {DIA_KEYS.map((key) => {
-            const exists = diasDisponibles.some((d) => d.dia === key);
-            const isActive = !isTodos && selectedDayKey === key && vista !== "resumen";
-            return (
-              <button
-                key={key}
-                type="button"
-                disabled={!exists}
-                onClick={() => {
-                  if (!exists) return;
-                  setSelectedDayKey(key);
-                  if (vista === "resumen") setVista("plan");
-                }}
-                className={cn(
-                  "flex-1 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors",
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
-                  !exists && "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-muted-foreground"
-                )}
-              >
-                {DIA_LABELS[key]}
-              </button>
-            );
-          })}
+          <button
+            type="button"
+            onClick={() => setVista("plan")}
+            className={cn(
+              "flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+              vista === "plan"
+                ? "bg-primary/10 text-primary border border-primary/20"
+                : "text-muted-foreground hover:bg-muted/60"
+            )}
+          >
+            <ClipboardList className="w-4 h-4" />
+            Plan
+          </button>
+          <button
+            type="button"
+            onClick={() => setVista("analisis")}
+            className={cn(
+              "flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+              vista === "analisis"
+                ? "bg-primary/10 text-primary border border-primary/20"
+                : "text-muted-foreground hover:bg-muted/60"
+            )}
+          >
+            <PieChartIcon className="w-4 h-4" />
+            Análisis
+          </button>
+        </div>
+
+        {/* Day selector — en móvil va segundo y se oculta en resumen */}
+        <div
+          className={cn(
+            "order-2 sm:order-first flex-1 min-w-0 overflow-hidden transition-all duration-300 ease-in-out",
+            vista === "resumen" ? "max-h-0 opacity-0 sm:max-h-none sm:opacity-100" : "max-h-20 opacity-100"
+          )}
+        >
+          <div className="flex items-stretch rounded-xl border border-border bg-card p-1 overflow-x-auto scrollbar-thin touch-scroll-x">
+            <button
+              type="button"
+              onClick={(e) => {
+                if (vista === "resumen") {
+                  setSelectedDayKey("TODOS");
+                  setVista("plan");
+                } else {
+                  setSelectedDayKey("TODOS");
+                }
+                e.currentTarget.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
+              }}
+              className={cn(
+                "flex-1 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors",
+                isTodos && vista !== "resumen"
+                  ? "bg-primary/10 text-primary border border-primary/20"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+              )}
+            >
+              Todas
+            </button>
+            {DIA_KEYS.map((key) => {
+              const exists = diasDisponibles.some((d) => d.dia === key);
+              const isActive = !isTodos && selectedDayKey === key && vista !== "resumen";
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  disabled={!exists}
+                  onClick={(e) => {
+                    if (!exists) return;
+                    setSelectedDayKey(key);
+                    if (vista === "resumen") setVista("plan");
+                    e.currentTarget.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
+                  }}
+                  className={cn(
+                    "flex-1 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors",
+                    isActive
+                      ? "bg-primary/10 text-primary border border-primary/20"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
+                    !exists && "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-muted-foreground"
+                  )}
+                >
+                  {DIA_LABELS[key]}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {anyTopButton && (
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 order-3 sm:order-none">
             {showNuevaDietaButton && (
               <Link
                 href={`/dietas/nuevo?pacienteId=${pacienteId}`}
@@ -495,56 +549,15 @@ export function PlanVisual({
           </div>
         )}
 
-        <div className="inline-flex items-center gap-2 rounded-xl border border-border bg-card p-1 shrink-0">
-          <button
-            type="button"
-            onClick={() => setVista("resumen")}
-            className={cn(
-              "flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-              vista === "resumen"
-                ? "bg-primary/10 text-primary border border-primary/20"
-                : "text-muted-foreground hover:bg-muted/60"
-            )}
-          >
-            <LayoutGrid className="w-4 h-4" />
-            Resumen
-          </button>
-          <button
-            type="button"
-            onClick={() => setVista("plan")}
-            className={cn(
-              "flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-              vista === "plan"
-                ? "bg-primary/10 text-primary border border-primary/20"
-                : "text-muted-foreground hover:bg-muted/60"
-            )}
-          >
-            <ClipboardList className="w-4 h-4" />
-            Plan
-          </button>
-          <button
-            type="button"
-            onClick={() => setVista("analisis")}
-            className={cn(
-              "flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-              vista === "analisis"
-                ? "bg-primary/10 text-primary border border-primary/20"
-                : "text-muted-foreground hover:bg-muted/60"
-            )}
-          >
-            <PieChartIcon className="w-4 h-4" />
-            Análisis
-          </button>
-        </div>
       </div>
 
-      {/* Objetivos de macros */}
+      {/* Objetivos de macros — oculto en móvil, la media semanal ya los muestra */}
       {selectedPlan && (() => {
         const { caloriasObjetivo: co, proteinasObjetivo: po, carbohidratosObjetivo: cho, grasasObjetivo: go } = selectedPlan;
         const hayObjetivos = co != null || po != null || cho != null || go != null;
         if (!hayObjetivos) return null;
         return (
-          <div className="flex items-center gap-3 flex-wrap text-xs">
+          <div className="hidden sm:flex items-center gap-3 flex-wrap text-xs">
             <span className="font-semibold text-muted-foreground uppercase tracking-wide">Objetivos</span>
             {co != null && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 font-medium">
@@ -980,7 +993,7 @@ export function PlanVisual({
               </div>
             </div>
             {isTodos && (
-              <p className="text-xs italic text-muted-foreground text-center">
+              <p className="hidden sm:block text-xs italic text-muted-foreground text-center">
                 Mostrando media diaria
               </p>
             )}
@@ -1038,6 +1051,7 @@ export function PlanVisual({
               esReceta?: boolean; esPropio?: boolean; href?: string;
               recetaIngredientes?: { nombre: string; cantidad: number; unidad: string }[];
               recetaDescripcion?: string | null; recetaPorciones?: number;
+              imagenUrl?: string | null;
             };
             const allFoods: FoodRow[] = [];
             if (diaVista) {
@@ -1050,6 +1064,7 @@ export function PlanVisual({
                       itemCalorias: item.alimento.calorias, itemProteinas: item.alimento.proteinas, itemCarbohidratos: item.alimento.carbohidratos, itemGrasas: item.alimento.grasas, itemFibra: item.alimento.fibra,
                       cantidad: item.cantidad, unidad: item.unidad, porcion: item.alimento.porcion,
                       esPropio: item.alimento.esPropio,
+                      imagenUrl: item.alimento.imagenUrl,
                       href: interactionMode === "dashboard" ? `/alimentos/${item.alimento.id}?cantidad=${Math.round(convertirAGramos(item.cantidad, item.unidad, item.alimento.porcion || 100))}` : undefined,
                     });
                   } else if (item.receta) {
@@ -1103,7 +1118,7 @@ export function PlanVisual({
             return (
           <div className="space-y-4">
             {isTodos && (
-              <p className="text-xs italic text-muted-foreground text-right">
+              <p className="hidden sm:block text-xs italic text-muted-foreground text-right">
                 Mostrando media diaria
               </p>
             )}
@@ -1506,7 +1521,7 @@ export function PlanVisual({
                               cantidad={food.cantidad} unidad={food.unidad} porcion={food.porcion}
                               esReceta={food.esReceta} esPropio={food.esPropio}
                               recetaIngredientes={food.recetaIngredientes} recetaDescripcion={food.recetaDescripcion} recetaPorciones={food.recetaPorciones}
-                              href={food.href} interactionMode={interactionMode}
+                              imagenUrl={food.imagenUrl} href={food.href} interactionMode={interactionMode}
                             >
                               <span className={cn(
                                 interactionMode === "dashboard" && "hover:underline",
@@ -1547,7 +1562,7 @@ export function PlanVisual({
 
 const TIPO_LABELS: Record<string, string> = {
   DESAYUNO: "Desayuno",
-  MEDIA_MANANA: "Media mañana",
+  MEDIA_MANANA: "M. mañana",
   ALMUERZO: "Almuerzo",
   MERIENDA: "Merienda",
   CENA: "Cena",
@@ -1605,32 +1620,28 @@ function ResumenSemanal({
 
   return (
     <div className="space-y-5">
-      {/* Banner de objetivos semanales */}
-      <div className="rounded-2xl border border-border bg-gradient-to-br from-primary/5 via-card to-card p-5">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-              Media diaria de la semana
-            </p>
-            <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-bold tabular-nums">{semanal.calorias}</span>
-              <span className="text-sm text-muted-foreground">kcal / día</span>
-              {plan.caloriasObjetivo != null && (
-                <span className="text-xs text-muted-foreground ml-2">
-                  objetivo {plan.caloriasObjetivo}
-                </span>
-              )}
-            </div>
+      {/* Banner de media semanal */}
+      <div className="rounded-2xl border border-border bg-gradient-to-br from-primary/5 via-card to-card p-3 sm:p-5">
+        <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+          Media diaria de la semana
+        </p>
+        <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+          <div className="flex items-baseline gap-1">
+            <span className="text-2xl sm:text-3xl font-bold tabular-nums">{semanal.calorias}</span>
+            <span className="text-xs sm:text-sm text-muted-foreground">kcal</span>
+            {plan.caloriasObjetivo != null && (
+              <span className="text-[10px] sm:text-xs text-muted-foreground">/ {plan.caloriasObjetivo}</span>
+            )}
           </div>
-          <div className="flex flex-wrap gap-2">
-            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 text-sm font-medium">
-              Grasa {semanal.grasas} g
+          <div className="flex gap-1.5 sm:gap-2">
+            <span className="inline-flex items-center px-1.5 sm:px-3 py-0.5 sm:py-1.5 rounded-full bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 text-[10px] sm:text-sm font-medium">
+              G {semanal.grasas}g
             </span>
-            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 text-sm font-medium">
-              H. Carbono {semanal.carbohidratos} g
+            <span className="inline-flex items-center px-1.5 sm:px-3 py-0.5 sm:py-1.5 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 text-[10px] sm:text-sm font-medium">
+              C {semanal.carbohidratos}g
             </span>
-            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-sm font-medium">
-              Proteína {semanal.proteinas} g
+            <span className="inline-flex items-center px-1.5 sm:px-3 py-0.5 sm:py-1.5 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] sm:text-sm font-medium">
+              P {semanal.proteinas}g
             </span>
           </div>
         </div>
@@ -1708,7 +1719,7 @@ function ResumenSemanal({
                 </div>
 
                 <div className="pt-1 space-y-1.5">
-                  {dia.comidas.filter((c) => c.alimentos.length > 0).slice(0, 4).map((comida) => {
+                  {dia.comidas.filter((c) => c.alimentos.length > 0).map((comida) => {
                     const previews = comida.alimentos
                       .map((a) => a.alimento?.nombre || a.receta?.nombre || "")
                       .filter(Boolean)

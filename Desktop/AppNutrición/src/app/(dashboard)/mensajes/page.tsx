@@ -3,6 +3,7 @@ import { getCurrentDietista } from "@/app/actions/auth";
 import { getConversaciones, getMensajes } from "@/app/actions/mensajes";
 import { getSoporteResumen, getMensajesSoporte, getNoLeidosSoporteCount } from "@/app/actions/soporte";
 import { redirect } from "next/navigation";
+import { cn } from "@/lib/utils";
 import { MensajesClient } from "./mensajes-client";
 
 export default async function MensajesPage({
@@ -28,15 +29,20 @@ export default async function MensajesPage({
     ? null
     : params.c
       ? conversaciones.find((c) => c.id === params.c) ?? null
-      : conversaciones[0] ?? null;
+      : null;
 
   const mensajesIniciales = conversacionActiva
     ? await getMensajes(conversacionActiva.id)
     : [];
 
+  const tieneConvActiva = !!(esSoporte || conversacionActiva);
+
   return (
     <div>
-      <div className="flex items-start gap-3 mb-5 sm:mb-6">
+      <div className={cn(
+        "flex items-start gap-3 mb-5 sm:mb-6",
+        tieneConvActiva && "hidden md:flex",
+      )}>
         <MessageSquare
           strokeWidth={1.75}
           className="w-7 h-7 sm:w-9 sm:h-9 text-foreground shrink-0 mt-1 sm:mt-1.5"
@@ -51,7 +57,6 @@ export default async function MensajesPage({
 
       <MensajesClient
         conversaciones={conversaciones}
-        conversacionActivaId={esSoporte ? "soporte" : conversacionActiva?.id ?? null}
         mensajesIniciales={mensajesIniciales}
         archivadas={archivadas}
         dietistaId={dietista.id}

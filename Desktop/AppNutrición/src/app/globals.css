@@ -216,6 +216,41 @@ body {
   color: var(--fg);
 }
 
+.main-content-card {
+  padding: 1.25rem 1rem;
+}
+@media (min-width: 640px) {
+  .main-content-card {
+    padding: 1.5rem 1.25rem;
+  }
+}
+@media (min-width: 1024px) {
+  .main-content-card {
+    background-color: var(--card);
+    border-radius: 1rem;
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    padding: 2rem;
+  }
+}
+
+.mensajes-chat-fullscreen {
+  position: fixed;
+  top: 3.5rem;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  background-color: var(--bg);
+}
+@media (min-width: 768px) {
+  .mensajes-chat-fullscreen {
+    position: static;
+    z-index: auto;
+    background-color: transparent;
+  }
+}
+
 /* Scrollbar más sutil y adaptado al tema (WebKit + Firefox) */
 * {
   scrollbar-width: thin;

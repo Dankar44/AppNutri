@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ExternalLink, Pencil } from "lucide-react";
+import { ArrowLeft, ExternalLink, ImageIcon, Pencil } from "lucide-react";
 import { getAlimento } from "@/app/actions/alimentos";
 import { prisma } from "@/lib/prisma";
 import { AlimentoActions } from "./alimento-actions";
+import { AlimentoImage } from "@/components/alimento/alimento-image";
 import { MacroAnalysisCard } from "@/components/alimento/macro-analysis-card";
 import { PorcionCalculator } from "@/components/alimento/porcion-calculator";
 import { MicronutrientesCard } from "@/components/alimento/micronutrientes-card";
@@ -82,6 +83,17 @@ export default async function AlimentoDetailPage({ params }: Props) {
                   Ver producto
                 </a>
               )}
+              {alimento.imagenUrl && (
+                <a
+                  href={alimento.imagenUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-500/20 transition-colors"
+                >
+                  <ImageIcon className="w-3 h-3" />
+                  Ver imagen
+                </a>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -100,6 +112,16 @@ export default async function AlimentoDetailPage({ params }: Props) {
           </div>
         </div>
       </div>
+
+      {alimento.imagenUrl && (
+        <div className="mb-6">
+          <AlimentoImage
+            src={alimento.imagenUrl}
+            alt={alimento.nombre}
+            className="rounded-xl overflow-hidden border border-border bg-muted/10 p-4"
+          />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
         <div className="lg:col-span-2 flex">

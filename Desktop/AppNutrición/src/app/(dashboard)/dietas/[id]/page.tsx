@@ -9,6 +9,7 @@ import { PlanVisual } from "@/components/paciente/plan-visual";
 import { PlanActions } from "./plan-actions";
 import { PlantillaButton } from "./plantilla-button";
 import { PlanSelector } from "./plan-selector";
+import { ActionBarMobile } from "./action-bar-mobile";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -78,10 +79,16 @@ export default async function PlanDetailPage({ params }: Props) {
             </div>
           </div>
 
-          <div className="inline-flex items-center gap-1 rounded-xl border border-border bg-card p-1 flex-wrap w-full sm:w-auto sm:ml-auto">
+          {/* Mobile: tap-to-expand action bar */}
+          <div className="sm:hidden w-full">
+            <ActionBarMobile planId={plan.id} />
+          </div>
+
+          {/* Desktop: full action bar */}
+          <div className="hidden sm:inline-flex items-center gap-1 rounded-xl border border-border bg-card p-1 w-auto ml-auto">
             <Link
               href={`/dietas/${plan.id}/generar-ia`}
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg border border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/15 transition-colors text-xs sm:text-sm font-medium flex-1 sm:flex-none min-h-10 sm:min-h-0"
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/15 transition-colors text-sm font-medium"
               aria-label="Generar con IA"
             >
               <Sparkles className="w-3.5 h-3.5" />
@@ -90,19 +97,19 @@ export default async function PlanDetailPage({ params }: Props) {
             <PlantillaButton planId={plan.id} />
             <Link
               href={`/dietas/${plan.id}/compartir`}
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg hover:bg-muted transition-colors text-xs sm:text-sm font-medium flex-1 sm:flex-none min-h-10 sm:min-h-0"
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-muted transition-colors text-sm font-medium"
               aria-label="Compartir plan"
             >
               <Share2 className="w-3.5 h-3.5" />
-              <span className="hidden xs:inline sm:inline">Compartir</span>
+              Compartir
             </Link>
             <Link
               href={`/dietas/${plan.id}/editar`}
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg hover:bg-muted transition-colors text-xs sm:text-sm font-medium flex-1 sm:flex-none min-h-10 sm:min-h-0"
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-muted transition-colors text-sm font-medium"
               aria-label="Editar plan"
             >
               <Pencil className="w-3.5 h-3.5" />
-              <span className="hidden xs:inline sm:inline">Editar</span>
+              Editar
             </Link>
             <PlanActions planId={plan.id} />
           </div>

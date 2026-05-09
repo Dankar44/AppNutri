@@ -104,7 +104,7 @@ function LoginContent() {
       </div>
 
       {/* Panel derecho con formulario */}
-      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-8 pb-safe">
+      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-4 sm:py-8 pt-safe pb-safe">
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-2 mb-6 sm:mb-8">
             <Leaf className="w-8 h-8 text-primary" />

@@ -54,6 +54,7 @@ interface AlimentoEnComida {
     id: string; nombre: string; categoria: string;
     calorias: number; proteinas: number; carbohidratos: number; grasas: number; fibra: number; porcion: number;
     enlaceProducto?: string | null;
+    imagenUrl?: string | null;
   } | null;
   receta: {
     id: string; nombre: string; descripcion?: string | null; instrucciones?: string | null;
@@ -188,10 +189,16 @@ function escapeHtml(s: string): string {
 
 function getItemNameHtml(a: AlimentoEnComida): string {
   const name = a.alimento?.nombre || a.receta?.nombre || "?";
+  const imgHtml = a.alimento?.imagenUrl
+    ? `<img src="${escapeHtml(a.alimento.imagenUrl)}" style="width:24px;height:24px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:4px;" onerror="this.style.display='none'" />`
+    : "";
+  const imgLinkHtml = a.alimento?.imagenUrl
+    ? ` <a href="${escapeHtml(a.alimento.imagenUrl)}" target="_blank" style="color:#7c3aed;font-size:9px;text-decoration:underline;">(ver imagen)</a>`
+    : "";
   if (a.alimento?.enlaceProducto) {
-    return `<a href="${escapeHtml(a.alimento.enlaceProducto)}" target="_blank" class="food-link">${escapeHtml(name)}</a>`;
+    return `${imgHtml}<a href="${escapeHtml(a.alimento.enlaceProducto)}" target="_blank" class="food-link">${escapeHtml(name)}</a>${imgLinkHtml}`;
   }
-  return escapeHtml(name);
+  return `${imgHtml}${escapeHtml(name)}${imgLinkHtml}`;
 }
 
 function getMacrosForItem(a: AlimentoEnComida) {
@@ -339,7 +346,10 @@ export function generatePlanPDF(data: PlanPDFData): string {
         const linkHtml = item.enlaceProducto
           ? ` <a href="${escapeHtml(item.enlaceProducto)}" target="_blank" class="food-link" style="font-size:9px;">(ver)</a>`
           : "";
-        html += `<div class="shop-item"><div class="shop-check"></div>${formatQuantity(item.cantidadTotal, item.unidad)} ${escapeHtml(item.nombre)}${linkHtml}</div>`;
+        const imgLink = (item as { imagenUrl?: string | null }).imagenUrl
+          ? ` <a href="${escapeHtml((item as { imagenUrl?: string | null }).imagenUrl!)}" target="_blank" style="color:#7c3aed;font-size:9px;text-decoration:underline;">(ver imagen)</a>`
+          : "";
+        html += `<div class="shop-item"><div class="shop-check"></div>${formatQuantity(item.cantidadTotal, item.unidad)} ${escapeHtml(item.nombre)}${linkHtml}${imgLink}</div>`;
       }
       html += `</div>`;
     }

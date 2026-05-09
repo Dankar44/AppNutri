@@ -338,7 +338,7 @@ export function IAGenerationForm({ planId, pacienteId, pacienteNombre, pacienteI
         {loading ? (
           <>
             <Loader2 className="w-5 h-5 animate-spin" />
-            Generando plan con IA... (10-20 seg)
+            Generando plan con IA... (1-2 min)
           </>
         ) : (
           <>

@@ -88,8 +88,8 @@ export async function crearPlan(data: PlanFormData) {
 
   const plan = await prisma.planAlimenticio.create({
     data: {
-      dietistaId: dietista.id,
-      pacienteId: data.pacienteId,
+      dietista: { connect: { id: dietista.id } },
+      paciente: { connect: { id: data.pacienteId } },
       nombre,
       caloriasObjetivo,
       proteinasObjetivo,
@@ -552,6 +552,7 @@ export async function getPlanesDetallePaciente(pacienteId: string) {
                   porcion: a.alimento.porcion ?? 100,
                   categoria: a.alimento.categoria ?? "OTROS",
                   enlaceProducto: a.alimento.enlaceProducto ?? null,
+                  imagenUrl: a.alimento.imagenUrl ?? null,
                   esPropio: !!a.alimento.dietistaId && a.alimento.dietistaId === dietista.id,
                   ...micros,
                 }
@@ -635,7 +636,7 @@ export async function guardarComoPlantilla(planId: string, nombre: string) {
 
   const plantilla = await prisma.plantilla.create({
     data: {
-      dietistaId: dietista.id,
+      dietista: { connect: { id: dietista.id } },
       nombre,
       datos: JSON.parse(JSON.stringify(datos)),
     },
@@ -688,6 +689,7 @@ export async function getPlanPDFData(planId: string): Promise<PlanPDFData | null
                 fibra: a.alimento.fibra ?? 0,
                 porcion: a.alimento.porcion ?? 100,
                 enlaceProducto: a.alimento.enlaceProducto ?? null,
+                imagenUrl: a.alimento.imagenUrl ?? null,
               }
             : null,
           receta: a.receta

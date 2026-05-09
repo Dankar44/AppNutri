@@ -3,7 +3,7 @@
 import { MacroBadges } from "@/components/macro-badge";
 import { calcularMacrosPorcion, sumarMacros, convertirAGramos } from "@/lib/macros";
 import { formatQuantity } from "@/lib/pdf/generate-plan-pdf";
-import { Printer, CookingPot, ExternalLink, Leaf } from "lucide-react";
+import { Printer, CookingPot, ExternalLink, Image as ImageLinkIcon, Leaf } from "lucide-react";
 
 const DIA_LABELS: Record<string, string> = {
   LUNES: "Lunes", MARTES: "Martes", MIERCOLES: "Miércoles",
@@ -30,7 +30,7 @@ interface RecetaDetalle {
 interface AlimentoData {
   cantidad: number;
   unidad?: string;
-  alimento: { nombre: string; calorias: number; proteinas: number; carbohidratos: number; grasas: number; porcion?: number; enlaceProducto?: string | null } | null;
+  alimento: { nombre: string; calorias: number; proteinas: number; carbohidratos: number; grasas: number; porcion?: number; enlaceProducto?: string | null; imagenUrl?: string | null } | null;
   receta: RecetaDetalle | null;
 }
 
@@ -176,6 +176,11 @@ export function PlanReadOnly({ nombre, pacienteNombre, dias, showPrint = true, b
                                 {a.alimento?.enlaceProducto && (
                                   <a href={a.alimento.enlaceProducto} target="_blank" rel="noopener noreferrer">
                                     <ExternalLink className="w-3 h-3 text-primary/60 hover:text-primary" />
+                                  </a>
+                                )}
+                                {a.alimento?.imagenUrl && (
+                                  <a href={a.alimento.imagenUrl} target="_blank" rel="noopener noreferrer">
+                                    <ImageLinkIcon className="w-3 h-3 text-violet-400 hover:text-violet-600" />
                                   </a>
                                 )}
                               </span>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Leaf, Eye, EyeOff, Camera } from "lucide-react";
 import { completarPerfilPaciente } from "@/app/actions/paciente-auth";
 import { toast } from "sonner";
+import { compressImage, IMAGE_PRESETS } from "@/lib/image-compress";
 
 export default function CompletarPerfilPage() {
   const [loading, setLoading] = useState(false);
@@ -18,9 +19,15 @@ export default function CompletarPerfilPage() {
       return;
     }
 
-    // Convertir a base64 data URL para guardar como fotoUrl
     const reader = new FileReader();
-    reader.onload = () => setFotoPreview(reader.result as string);
+    reader.onload = async () => {
+      try {
+        const compressed = await compressImage(reader.result as string, IMAGE_PRESETS.PROFILE_PHOTO);
+        setFotoPreview(compressed);
+      } catch {
+        setFotoPreview(reader.result as string);
+      }
+    };
     reader.readAsDataURL(file);
   }
 

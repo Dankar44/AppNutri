@@ -226,7 +226,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
 
     return (
       <div className="px-3 pb-3 pt-2 border-t border-border/50 bg-muted/30 rounded-b-lg" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center justify-center gap-2 mb-2">
           <button
             type="button"
             onClick={() => adjustQty(-step)}
@@ -234,7 +234,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
           >
             <Minus className="w-3.5 h-3.5" />
           </button>
-          <div className="flex-1 relative max-w-[120px]">
+          <div className="relative w-[120px]">
             <input
               type="number"
               inputMode="decimal"
@@ -259,7 +259,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
             <Plus className="w-3.5 h-3.5" />
           </button>
         </div>
-        <div className="mb-2">
+        <div className="mb-2 flex justify-center">
           <MacroBadges calorias={macros.calorias} proteinas={macros.proteinas} carbohidratos={macros.carbohidratos} grasas={macros.grasas} />
         </div>
         <button

@@ -1,19 +1,22 @@
 import { ArrowLeft, Sparkles, User, AlertTriangle } from "lucide-react";
+import { DEMO_PATIENT, DEMO_PLANS } from "@/lib/tour-demo-data";
 
 export default function TourDemoIAPage() {
+  const plan = DEMO_PLANS[0];
+
   return (
     <div>
       <div className="mb-4">
         <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-3 py-1.5 rounded-lg inline-flex items-center gap-1 mb-3 font-medium">
           Generación IA de demostración — Solo para el tour guiado
         </p>
-        <span className="inline-flex items-center gap-1 text-sm text-muted-foreground mb-3">
+        <span className="inline-flex items-center gap-1 text-sm text-muted-foreground mb-3 cursor-default">
           <ArrowLeft className="w-4 h-4" /> Volver al plan
         </span>
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Sparkles className="w-6 h-6 text-amber-500" /> Generar dieta con IA
         </h1>
-        <p className="text-muted-foreground mt-1">Para Laura Martínez García</p>
+        <p className="text-muted-foreground mt-1">Para {DEMO_PATIENT.nombre} {DEMO_PATIENT.apellidos}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -27,7 +30,7 @@ export default function TourDemoIAPage() {
           {/* Fase */}
           <div data-tour="ia-fase">
             <label className="block text-sm font-medium mb-1.5">Fase nutricional</label>
-            <select defaultValue="mantenimiento" className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-sm">
+            <select defaultValue="deficit" className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-sm">
               <option value="">Personalizado</option>
               <option value="deficit">Déficit calórico (perder grasa)</option>
               <option value="mantenimiento">Mantenimiento</option>
@@ -48,13 +51,14 @@ export default function TourDemoIAPage() {
               <option value="vegana">Vegana</option>
               <option value="cetogenica">Cetogénica (keto)</option>
               <option value="sin_gluten">Sin gluten</option>
+              <option value="antiinflamatoria">Antiinflamatoria</option>
             </select>
           </div>
 
           {/* Comidas */}
           <div>
             <label className="block text-sm font-medium mb-1.5">Comidas al día</label>
-            <select defaultValue="6" className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-sm">
+            <select defaultValue="5" className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-sm">
               <option value="3">3 comidas</option>
               <option value="4">4 comidas</option>
               <option value="5">5 comidas</option>
@@ -66,24 +70,24 @@ export default function TourDemoIAPage() {
           <div data-tour="ia-macros">
             <div className="flex items-center justify-between mb-2">
               <label className="text-sm font-medium">Macros diarios</label>
-              <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">Ajustados a mantenimiento</span>
+              <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">Ajustados a déficit</span>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <span className="text-xs text-muted-foreground">Calorías (kcal) *</span>
-                <input type="number" defaultValue={1800} readOnly className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-medium mt-1" />
+                <input type="number" defaultValue={plan.kcal} readOnly className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-medium mt-1" />
               </div>
               <div>
                 <span className="text-xs text-muted-foreground">Proteínas (g)</span>
-                <input type="number" defaultValue={120} readOnly className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-medium mt-1" />
+                <input type="number" defaultValue={plan.prot} readOnly className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-medium mt-1" />
               </div>
               <div>
                 <span className="text-xs text-muted-foreground">Carbohidratos (g)</span>
-                <input type="number" defaultValue={200} readOnly className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-medium mt-1" />
+                <input type="number" defaultValue={plan.carb} readOnly className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-medium mt-1" />
               </div>
               <div>
                 <span className="text-xs text-muted-foreground">Grasas (g)</span>
-                <input type="number" defaultValue={65} readOnly className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-medium mt-1" />
+                <input type="number" defaultValue={plan.grasa} readOnly className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-medium mt-1" />
               </div>
             </div>
           </div>
@@ -110,24 +114,24 @@ export default function TourDemoIAPage() {
               <User className="w-4 h-4 text-primary" /> Datos del paciente
             </h2>
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-              <div><span className="text-xs text-muted-foreground">Nombre</span><p className="font-medium">Laura Martínez García</p></div>
-              <div><span className="text-xs text-muted-foreground">Objetivo</span><p className="font-medium">Mantenimiento</p></div>
-              <div><span className="text-xs text-muted-foreground">Peso</span><p className="font-medium">65.2 kg</p></div>
-              <div><span className="text-xs text-muted-foreground">Altura</span><p className="font-medium">168 cm</p></div>
+              <div><span className="text-xs text-muted-foreground">Nombre</span><p className="font-medium">{DEMO_PATIENT.nombre} {DEMO_PATIENT.apellidos}</p></div>
+              <div><span className="text-xs text-muted-foreground">Objetivo</span><p className="font-medium">{DEMO_PATIENT.objetivo}</p></div>
+              <div><span className="text-xs text-muted-foreground">Peso</span><p className="font-medium">{DEMO_PATIENT.peso} kg</p></div>
+              <div><span className="text-xs text-muted-foreground">Altura</span><p className="font-medium">{DEMO_PATIENT.altura} cm</p></div>
             </div>
             <div className="mt-3 pt-3 border-t border-border">
               <div className="flex items-start gap-1.5 mb-1">
                 <AlertTriangle className="w-3.5 h-3.5 text-red-500 mt-0.5 shrink-0" />
-                <p className="text-xs"><span className="font-medium text-red-600 dark:text-red-400">Alergias:</span> Frutos secos, Marisco</p>
+                <p className="text-xs"><span className="font-medium text-red-600 dark:text-red-400">Alergias:</span> {DEMO_PATIENT.alergias.join(", ")}</p>
               </div>
               <div className="flex items-start gap-1.5">
                 <AlertTriangle className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
-                <p className="text-xs"><span className="font-medium text-amber-600 dark:text-amber-400">Intolerancias:</span> Lactosa</p>
+                <p className="text-xs"><span className="font-medium text-amber-600 dark:text-amber-400">Intolerancias:</span> {DEMO_PATIENT.intolerancias.join(", ")}</p>
               </div>
             </div>
             <div className="mt-2 flex flex-wrap gap-1">
-              {["Mediterránea", "Sin gluten"].map((p) => (
-                <span key={p} className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">{p}</span>
+              {DEMO_PATIENT.preferencias.map((pref) => (
+                <span key={pref} className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">{pref}</span>
               ))}
             </div>
           </section>
@@ -137,7 +141,7 @@ export default function TourDemoIAPage() {
             <h2 className="text-lg font-semibold mb-2">Instrucciones adicionales</h2>
             <p className="text-sm text-muted-foreground mb-4">La IA seguirá estas instrucciones con prioridad máxima.</p>
             <textarea
-              defaultValue="Que sea rico en pescado y verduras. Desayuno siempre con avena. Evitar lácteos por la intolerancia."
+              defaultValue="Rico en pescado azul y verduras de temporada. Sin frutos secos por la alergia. Minimizar lácteos por la intolerancia parcial a lactosa. Priorizar alimentos mediterráneos."
               readOnly
               className="w-full px-4 py-3 rounded-lg border border-border bg-background text-sm resize-y flex-1 min-h-[120px]"
             />

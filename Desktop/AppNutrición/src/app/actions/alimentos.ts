@@ -11,7 +11,7 @@ import {
 } from "@/generated/prisma/client";
 import { buscarAlimentosOFF, type AlimentoAPIResult } from "@/lib/openfoodfacts";
 import { normalizarNombreAlimento, redondearMacros } from "@/lib/alimento-utils";
-import { sanitizeString, validateNumber, validateEnum, validateUrl, sanitizeSearch, LIMITS } from "@/lib/validation";
+import { sanitizeString, validateNumber, validateEnum, validateUrl, validateImageUrl, sanitizeSearch, LIMITS } from "@/lib/validation";
 import { type MicroKey, MICRO_KEYS } from "@/lib/micronutrientes";
 
 export interface AlimentoFormData {
@@ -25,6 +25,7 @@ export interface AlimentoFormData {
   porcion: number;
   unidad: UnidadMedida;
   enlaceProducto?: string | null;
+  imagenUrl?: string | null;
   micronutrientes?: Partial<Record<MicroKey, number | null>>;
 }
 
@@ -64,6 +65,9 @@ export async function crearAlimento(data: AlimentoFormData) {
   const enlaceValidado = validateUrl(data.enlaceProducto);
   if (data.enlaceProducto && data.enlaceProducto.trim() && !enlaceValidado)
     throw new Error("El enlace no es una URL válida");
+  const imagenUrlValidada = validateUrl(data.imagenUrl);
+  if (data.imagenUrl && data.imagenUrl.trim() && !imagenUrlValidada)
+    throw new Error("La URL de imagen no es válida");
   const micros = validarMicros(data.micronutrientes);
 
   const nombreNorm = normalizarNombreAlimento(nombreSanitizado);
@@ -79,7 +83,7 @@ export async function crearAlimento(data: AlimentoFormData) {
 
   const alimento = await prisma.alimento.create({
     data: {
-      dietistaId: dietista.id,
+      dietista: { connect: { id: dietista.id } },
       nombre: nombreNorm,
       categoria: data.categoria,
       calorias: redondearMacros(data.calorias),
@@ -90,6 +94,7 @@ export async function crearAlimento(data: AlimentoFormData) {
       porcion: data.porcion,
       unidad: data.unidad,
       enlaceProducto: enlaceValidado,
+      imagenUrl: imagenUrlValidada,
       origen: "PERSONALIZADO",
       ...micros,
     },
@@ -121,6 +126,9 @@ export async function actualizarAlimento(id: string, data: AlimentoFormData) {
   const enlaceValidado = validateUrl(data.enlaceProducto);
   if (data.enlaceProducto && data.enlaceProducto.trim() && !enlaceValidado)
     throw new Error("El enlace no es una URL válida");
+  const imagenUrlValidada = validateUrl(data.imagenUrl);
+  if (data.imagenUrl && data.imagenUrl.trim() && !imagenUrlValidada)
+    throw new Error("La URL de imagen no es válida");
   const micros = validarMicros(data.micronutrientes);
 
   await prisma.alimento.update({
@@ -136,6 +144,7 @@ export async function actualizarAlimento(id: string, data: AlimentoFormData) {
       porcion: data.porcion,
       unidad: data.unidad,
       enlaceProducto: enlaceValidado,
+      imagenUrl: imagenUrlValidada,
       ...micros,
     },
   });
@@ -181,6 +190,7 @@ const PAGE_SIZE = 100;
 
 interface MacroFilters {
   origen?: string;
+  propios?: boolean;
   calMin?: number;
   calMax?: number;
   protMin?: number;
@@ -231,8 +241,12 @@ export async function getAlimentosPaginados(
     }
   }
 
+  const ownerFilter = f.propios
+    ? { dietistaId: dietista.id }
+    : { OR: [{ dietistaId: dietista.id }, { dietistaId: null }] };
+
   const where = {
-    OR: [{ dietistaId: dietista.id }, { dietistaId: null }],
+    ...ownerFilter,
     ...(categoria ? { categoria } : {}),
     ...(f.origen && (f.origen === "PERSONALIZADO" || f.origen === "API") ? { origen: f.origen as "PERSONALIZADO" | "API" } : {}),
     ...(busquedaSanitizada
@@ -268,10 +282,22 @@ export async function getAlimentosPaginados(
 export async function cargarMasAlimentos(
   cursor: string,
   busqueda?: string,
-  categoria?: string
+  categoria?: string,
+  propios?: boolean,
 ) {
   const busquedaSanitizada = busqueda ? sanitizeSearch(busqueda) : undefined;
-  return getAlimentosPaginados(busquedaSanitizada, categoria as CategoriaAlimento | undefined, cursor);
+  return getAlimentosPaginados(
+    busquedaSanitizada,
+    categoria as CategoriaAlimento | undefined,
+    cursor,
+    propios ? { propios: true } : undefined,
+  );
+}
+
+export async function contarMisAlimentos(): Promise<number> {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return 0;
+  return prisma.alimento.count({ where: { dietistaId: dietista.id } });
 }
 
 export async function getAlimento(id: string) {
@@ -323,7 +349,7 @@ export async function importarAlimentoAPI(data: AlimentoAPIResult) {
 
   const alimento = await prisma.alimento.create({
     data: {
-      dietistaId: dietista.id,
+      dietista: { connect: { id: dietista.id } },
       nombre: nombreNorm,
       categoria: "OTROS",
       calorias: redondearMacros(data.calorias),
@@ -335,6 +361,7 @@ export async function importarAlimentoAPI(data: AlimentoAPIResult) {
       unidad: "GRAMOS",
       origen: "API",
       codigoBarras: data.codigoBarras,
+      imagenUrl: validateUrl(data.imagen) || null,
     },
   });
 

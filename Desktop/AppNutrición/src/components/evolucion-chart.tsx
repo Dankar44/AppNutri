@@ -110,6 +110,7 @@ export function EvolucionChart({
           tickLine={false}
           className="text-muted-foreground"
           domain={["auto", "auto"]}
+          allowDecimals={false}
           width={42}
         />
 

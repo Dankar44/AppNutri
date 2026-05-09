@@ -6,6 +6,7 @@ import type { HorarioEntry } from "@/app/actions/pacientes";
 import { toast } from "sonner";
 
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+const DIAS_CORTO = ["L", "M", "X", "J", "V", "S", "D"];
 const HORAS = [
   "06:00", "07:00", "08:00", "09:00", "10:00", "11:00", "12:00",
   "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00",
@@ -40,6 +41,7 @@ export function HorarioSemanal({ initialEntries, readOnly, onSave }: Props) {
   const [inputActividad, setInputActividad] = useState("");
   const [inputColor, setInputColor] = useState("otro");
   const [inputNota, setInputNota] = useState("");
+  const [mobileDia, setMobileDia] = useState(DIAS[0]);
 
   const horasVisibles = expanded ? HORAS : HORAS.slice(0, PREVIEW_ROWS);
 
@@ -48,6 +50,16 @@ export function HorarioSemanal({ initialEntries, readOnly, onSave }: Props) {
     for (const e of entries) m.set(`${e.dia}-${e.hora}`, e);
     return m;
   }, [entries]);
+
+  const entriesPorDia = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const dia of DIAS) {
+      let count = 0;
+      for (const h of HORAS) if (entryMap.has(`${dia}-${h}`)) count++;
+      m.set(dia, count);
+    }
+    return m;
+  }, [entryMap]);
 
   function getEntry(dia: string, hora: string) {
     return entryMap.get(`${dia}-${hora}`);
@@ -98,9 +110,50 @@ export function HorarioSemanal({ initialEntries, readOnly, onSave }: Props) {
     }
   }
 
+  function renderEditForm(dia: string, hora: string) {
+    return (
+      <div className="p-2 space-y-1.5">
+        <div className="flex gap-1">
+          {COLORES.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setInputColor(c.id); }}
+              className={`w-5 h-5 sm:w-4 sm:h-4 rounded-full border-2 transition-all ${inputColor === c.id ? "border-foreground scale-110" : "border-transparent"} ${c.class}`}
+              title={c.label}
+            />
+          ))}
+        </div>
+        <input
+          type="text"
+          value={inputActividad}
+          onChange={(e) => setInputActividad(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && saveCell()}
+          placeholder="Actividad..."
+          autoFocus
+          className="w-full px-2 py-1 text-sm sm:text-[11px] rounded border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+          onClick={(e) => e.stopPropagation()}
+        />
+        <input
+          type="text"
+          value={inputNota}
+          onChange={(e) => setInputNota(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && saveCell()}
+          placeholder="Nota (opcional)..."
+          className="w-full px-2 py-1 text-xs sm:text-[10px] rounded border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary text-muted-foreground"
+          onClick={(e) => e.stopPropagation()}
+        />
+        <div className="flex gap-1.5">
+          <button onClick={(e) => { e.stopPropagation(); saveCell(); }} className="text-xs px-2 py-1 rounded bg-primary text-white">OK</button>
+          <button onClick={(e) => { e.stopPropagation(); setEditingCell(null); }} className="text-xs px-2 py-1 rounded border border-border">Cancelar</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
-      {/* Acciones */}
+      {/* Leyenda + guardar */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex flex-wrap gap-1.5">
           {COLORES.map((c) => (
@@ -121,10 +174,68 @@ export function HorarioSemanal({ initialEntries, readOnly, onSave }: Props) {
         )}
       </div>
 
-      {/* Grid — con scroll horizontal fluido en móvil */}
-      <div className="overflow-x-auto touch-scroll-x border border-border rounded-lg relative">
-        <div className="sm:hidden absolute top-1 right-1 text-[10px] text-muted-foreground/70 bg-card/80 px-1.5 py-0.5 rounded pointer-events-none">← →</div>
-        <table className="w-full border-collapse min-w-[480px] sm:min-w-[600px]">
+      {/* === MÓVIL: vista por día === */}
+      <div className="sm:hidden">
+        <div className="flex rounded-lg border border-border overflow-hidden mb-3">
+          {DIAS.map((dia, i) => {
+            const count = entriesPorDia.get(dia) || 0;
+            return (
+              <button
+                key={dia}
+                type="button"
+                onClick={() => setMobileDia(dia)}
+                className={`flex-1 flex flex-col items-center justify-center py-2 text-[13px] font-medium transition-colors ${
+                  mobileDia === dia ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+                }`}
+              >
+                {DIAS_CORTO[i]}
+                {count > 0 && (
+                  <span className={`w-1.5 h-1.5 rounded-full mt-0.5 ${mobileDia === dia ? "bg-primary-foreground/60" : "bg-primary/50"}`} />
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="border border-border rounded-lg overflow-hidden">
+          {horasVisibles.map((hora) => {
+            const entry = getEntry(mobileDia, hora);
+            const isEditing = editingCell?.dia === mobileDia && editingCell?.hora === hora;
+
+            return (
+              <div
+                key={hora}
+                className={`flex border-b last:border-b-0 border-border ${!readOnly && !isEditing ? "active:bg-muted/30" : ""}`}
+                onClick={() => !isEditing && startEdit(mobileDia, hora)}
+              >
+                <div className="w-14 shrink-0 py-3 text-xs text-muted-foreground font-mono border-r border-border bg-muted/20 flex items-start justify-center">
+                  {hora}
+                </div>
+                <div className="flex-1 min-h-[44px] relative group">
+                  {isEditing ? renderEditForm(mobileDia, hora) : entry ? (
+                    <div className={`m-1 px-2 py-1.5 rounded border text-sm leading-tight ${getColorClass(entry.color)}`}>
+                      <span className="font-medium">{entry.actividad}</span>
+                      {entry.nota && <p className="text-xs opacity-70 mt-0.5">{entry.nota}</p>}
+                      {!readOnly && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); removeEntry(mobileDia, hora); }}
+                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 active:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* === DESKTOP: tabla completa === */}
+      <div className="hidden sm:block overflow-x-auto border border-border rounded-lg">
+        <table className="w-full border-collapse min-w-[600px]">
           <thead>
             <tr>
               <th className="bg-muted/50 p-2 text-xs font-medium text-muted-foreground text-center w-[60px] border-b border-r border-border">Hora</th>

@@ -133,8 +133,8 @@ export async function generarPlanIA(
 
     const generacion = await prisma.generacionIA.create({
       data: {
-        dietistaId: dietista.id,
-        pacienteId,
+        dietista: { connect: { id: dietista.id } },
+        paciente: { connect: { id: pacienteId } },
         prompt: promptUsado,
         respuesta: JSON.parse(JSON.stringify(plan)),
       },

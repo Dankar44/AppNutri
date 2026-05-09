@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useRef, useLayoutEffect, useEffect, useCallback, useId, type ReactNode } from "react";
+import { useState, useRef, useLayoutEffect, useEffect, useCallback, useId, useMemo, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { CookingPot, User } from "lucide-react";
+import { CookingPot, User, ExternalLink, Image as ImageLinkIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { calcularMacrosPorcion, convertirAGramos } from "@/lib/macros";
 import { formatQuantity } from "@/lib/units";
@@ -33,6 +33,7 @@ interface FoodHoverCardProps {
   recetaDescripcion?: string | null;
   recetaPorciones?: number;
   enlaceProducto?: string | null;
+  imagenUrl?: string | null;
   href?: string | null;
   interactionMode: InteractionMode;
 }
@@ -55,11 +56,14 @@ export function FoodHoverCard({
   recetaIngredientes,
   recetaDescripcion,
   recetaPorciones,
+  enlaceProducto,
+  imagenUrl,
   href,
   interactionMode,
 }: FoodHoverCardProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
   const [mounted, setMounted] = useState(false);
   const triggerRef = useRef<HTMLSpanElement>(null);
@@ -68,6 +72,7 @@ export function FoodHoverCard({
   const id = useId();
 
   useEffect(() => setMounted(true), []);
+  useEffect(() => setImgError(false), [imagenUrl]);
 
   useEffect(() => {
     return () => { if (timer.current) clearTimeout(timer.current); };
@@ -171,6 +176,17 @@ export function FoodHoverCard({
             className="pointer-events-auto fixed z-[100] w-72 rounded-lg bg-card border border-border shadow-xl text-sm cursor-default print:hidden"
           >
             <div className="p-3 space-y-2.5">
+              {imagenUrl && !imgError && (
+                <div className="w-full h-28 rounded-md overflow-hidden bg-muted/20 -mt-0.5 mb-1">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={imagenUrl}
+                    alt={nombre}
+                    className="w-full h-full object-cover"
+                    onError={() => setImgError(true)}
+                  />
+                </div>
+              )}
               <div className="flex items-center gap-1.5">
                 {esReceta && <CookingPot className="w-3.5 h-3.5 text-purple-500 shrink-0" />}
                 {!esReceta && esPropio && <User className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
@@ -229,6 +245,23 @@ export function FoodHoverCard({
                 <p className="text-xs text-muted-foreground line-clamp-2 border-t border-border/50 pt-2">
                   {recetaDescripcion}
                 </p>
+              )}
+
+              {(enlaceProducto || imagenUrl) && (
+                <div className="flex items-center gap-3 border-t border-border/50 pt-2">
+                  {enlaceProducto && (
+                    <a href={enlaceProducto} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1 text-xs text-primary/70 hover:text-primary font-medium">
+                      <ExternalLink className="w-3 h-3" />
+                      Ver producto
+                    </a>
+                  )}
+                  {imagenUrl && (
+                    <a href={imagenUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1 text-xs text-violet-500 hover:text-violet-700 font-medium">
+                      <ImageLinkIcon className="w-3 h-3" />
+                      Ver imagen
+                    </a>
+                  )}
+                </div>
               )}
 
               {clickable && (

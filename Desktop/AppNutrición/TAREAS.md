@@ -1,12 +1,12 @@
 # Tareas — AppNutri (Annonia)
 
-Registro consolidado de tareas pendientes. Actualizado el 5 de mayo de 2026.
+Registro consolidado de tareas pendientes. Actualizado el 8 de mayo de 2026.
 
 ---
 
 ## Tareas pendientes
 
-### 5. Micronutrientes — funcionalidades pendientes
+### 1. Micronutrientes — funcionalidades pendientes
 
 La fase 1 (micronutrientes opcionales), parte de la fase 2 (Open Food Facts + equivalentes), y la edición de micros en el formulario de alimentos ya están hechas. Queda:
 
@@ -14,11 +14,11 @@ La fase 1 (micronutrientes opcionales), parte de la fase 2 (Open Food Facts + eq
 - **Estimación por IA** — Pasar nombre del alimento a un LLM para estimar los 24 micronutrientes cuando no haya datos. Marcar como "estimado por IA".
 - **Importación CSV** (opcional) — Botón "Importar CSV" con plantilla descargable para nutricionistas con muchos alimentos propios.
 
-### 6. Responsividad móvil
+### 2. Responsividad móvil
 
 Existe un plan detallado de 50 pasos en `PLAN-MOVIL.md` (34-47 horas estimadas) y un checklist de QA en `CHECKLIST-QA-MOVIL.md`. Cubre: cimientos globales, sistema de diseño, navegación, listings, ficha paciente, editores de dietas, formularios, portal paciente y testing en dispositivos reales. Ningún paso se ha ejecutado todavía.
 
-### 7. SEO — Monitorización semanal
+### 3. SEO — Monitorización semanal
 
 **Cada lunes (5 min):**
 1. Search Console → "Rendimiento" → ver impresiones, clicks, CTR, posición media
@@ -27,11 +27,11 @@ Existe un plan detallado de 50 pasos en `PLAN-MOVIL.md` (34-47 horas estimadas) 
 4. Google Analytics → "Adquisición" → ¿de dónde viene el tráfico?
 5. Buscar "Annonia" en Google → ¿aparece el favicon? ¿sitelinks? ¿qué posición?
 
-### 14. Lista de la compra — PREGUNTAR A CLAUDIA
+### 4. Lista de la compra — PREGUNTAR A CLAUDIA
 
 Las unidades ya se muestran correctamente gracias al sistema de unidades end-to-end. Preguntar a Claudia si con la lista automática con unidades correctas le vale o si realmente necesita poder editar cantidades/unidades manualmente antes de exportar.
 
-### 18. Probar todas las opciones de Google en producción
+### 5. Probar todas las opciones de Google en producción
 
 Una vez las inscripciones estén abiertas, probar todos los flujos de Google de principio a fin:
 
@@ -42,18 +42,9 @@ Una vez las inscripciones estén abiertas, probar todos los flujos de Google de 
 - **Cancelar flujo OAuth:** empezar a conectar y cancelar a medias → debe volver sin error roto.
 - **Verificar en móvil** (Safari iOS, Chrome Android).
 
-### 19. Preferencias del portal del paciente — PREGUNTAR A DANIEL
+### 6. Comprobar guías interactivas en modo móvil
 
-Los toggles de "Preferencias de la aplicación del cliente" en la pestaña de entregables (acceso móvil, mensajes, registro de peso, confirmación de consultas, diario alimentario, información nutricional) son puramente visuales: no se persisten ni afectan a nada. Preguntar a Daniel: **¿merece la pena darle funcionalidad real a estos toggles (que controlen qué ve el paciente en su portal) o los quitamos directamente?**
-
-Si se mantienen, habría que:
-- Persistir las preferencias en BD (campo JSON por paciente).
-- Que cada toggle oculte/muestre la sección correspondiente en el portal del paciente.
-- "Acceso a la app móvil" no aplica (el portal ya es responsive) → marcar como "Próximamente" o eliminar.
-
-### 21. Comprobar guías interactivas en modo móvil
-
-Las guías interactivas (#2) ya están revisadas y funcionan en desktop. Falta **probarlas en dispositivos móviles reales** (o DevTools → device toolbar):
+Las guías interactivas ya están revisadas y funcionan en desktop. Falta **probarlas en dispositivos móviles reales** (o DevTools → device toolbar):
 
 - Verificar que el tooltip no desborda en iPhone SE (375px), iPhone 15 (393px) y Android típicos.
 - Verificar que los botones tienen suficiente área táctil (min 44px).
@@ -62,7 +53,7 @@ Las guías interactivas (#2) ya están revisadas y funcionan en desktop. Falta *
 - Probar en landscape: tooltip con scroll si el contenido es alto.
 - Verificar resize/rotación: tooltip se reposiciona correctamente.
 
-### 23. Revisar lista de la compra — opciones de compartir y link compartido
+### 8. Revisar lista de la compra — opciones de compartir y link compartido
 
 Las opciones del menú "···" de la lista de la compra (Copiar al portapapeles, Enviar por WhatsApp, Enviar por email, Imprimir) y el link compartido público necesitan revisión:
 
@@ -70,7 +61,37 @@ Las opciones del menú "···" de la lista de la compra (Copiar al portapapeles
 - Comprobar que el enlace compartido público muestra la lista correctamente para quien lo reciba.
 - Revisar formato y presentación del contenido compartido.
 
-### 22. Rediseñar visualización de objetivos de macros en dietas
+### 9. Cambiar contraseña en Ajustes
+
+Añadir en la página de Ajustes la opción de cambiar la contraseña de la cuenta del dietista. Usar la API de Supabase Auth (`updateUser({ password })`) con confirmación de la contraseña actual.
+
+### 10. Botón de ayuda solapa el botón de formularios
+
+El botón flotante de ayuda (icono `?` verde, esquina inferior derecha) se superpone con los botones de acción de formularios como "Crear alimento". Investigar opciones: mover el botón de ayuda a otra posición, ocultarlo en páginas con formularios, o ajustar el z-index/posición de los botones de acción para que no colisionen.
+
+### 11. Investigar funcionalidad "Ver historial" en Planes alimenticios
+
+En la vista de Planes alimenticios, cada paciente muestra un enlace "Ver historial" junto al número de planes. Investigar qué hace exactamente y si funciona correctamente.
+
+### 12. Hacer guías interactivas más realistas
+
+Las guías interactivas ya usan datos del paciente demo real ("Paciente Prueba"). Falta que las páginas tour-demo sean más fieles a la app real (más detalle visual, interacciones simuladas más creíbles). Revisar cada una de las 5 guías y mejorar la fidelidad de los datos y el aspecto.
+
+### 14. Migrar fotos base64 a Supabase Storage (1 GB gratis) — DANIEL
+
+Actualmente las fotos de perfil (nutricionista y paciente) y el logo del PDF se guardan como base64 directamente en la base de datos PostgreSQL (500 MB gratis). Supabase incluye 1 GB de Storage gratuito que no estamos usando. Migrar las fotos ahí liberaría espacio en la BD y multiplicaría la capacidad x3-5.
+
+**Pasos:**
+1. Activar Supabase Storage en el dashboard del proyecto (Storage → Create bucket).
+2. Crear buckets: `profile-photos` (público) y `pdf-logos` (público).
+3. Configurar políticas RLS: solo el propietario puede subir/borrar, lectura pública.
+4. Modificar los formularios de subida de foto/logo para subir el archivo a Storage en vez de convertir a base64.
+5. Guardar en BD solo la URL pública del archivo (ej: `https://xxxx.supabase.co/storage/v1/object/public/profile-photos/abc.webp`).
+6. Migrar las fotos existentes: script que lea base64 de la BD, suba a Storage y actualice la URL.
+7. Verificar que las fotos se ven correctamente en: ajustes, ficha paciente, PDF, portal paciente.
+
+**Prioridad:** baja (ahora estamos usando <10 MB de 500 MB). Hacer cuando haya más nutricionistas registrados.
+
+### 15. Rediseñar visualización de objetivos de macros en dietas
 
 La fila de objetivos (calorías, proteínas, carbos, grasas) que aparece debajo de los tabs Resumen/Plan/Análisis usa los mismos badges de colores que la sección "Media diaria de la semana" del resumen. Queda repetitivo y visualmente confuso al verlos juntos. Rediseñar los objetivos para que se diferencien claramente: usar barras de progreso que se vayan rellenando (actual vs objetivo), o un formato distinto que no repita la misma paleta de pastillas de colores.
-

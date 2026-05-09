@@ -29,7 +29,7 @@ export function AgendaSidebar({
   googleIntegracion: { email: string; sincronizar: boolean } | null;
 }) {
   return (
-    <aside className="w-full xl:w-[min(100%,20rem)] shrink-0 space-y-4 xl:sticky xl:top-6 self-start">
+    <aside className="w-full xl:w-[min(100%,20rem)] shrink-0 space-y-4 xl:sticky xl:top-6 self-start order-2 mb-6 xl:mb-0">
       <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
         <div className="flex items-start justify-between gap-2 mb-4">
           <h2 className="text-base font-semibold">Próxima consulta</h2>

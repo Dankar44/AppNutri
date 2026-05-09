@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, SlidersHorizontal, X, Sparkles, ChevronDown } from "lucide-react";
+import { Search, SlidersHorizontal, X, Sparkles, ChevronDown, Download, Plus } from "lucide-react";
+import Link from "next/link";
 import { useRef, useState } from "react";
 
 const CATEGORIAS = [
@@ -58,12 +59,13 @@ const MINERALES_FILTER = [
 ];
 const ALL_MICRO_FILTERS = [...VITAMINAS_FILTER, ...MINERALES_FILTER];
 
-export function AlimentosFilter() {
+export function AlimentosFilter({ misAlimentosCount }: { misAlimentosCount: number }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const propios = searchParams.get("propios") === "true";
   const searchDebounce = useRef<NodeJS.Timeout>(null);
   const macroDebounce = useRef<NodeJS.Timeout>(null);
-  const [showAdvanced, setShowAdvanced] = useState(true);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [showMicros, setShowMicros] = useState(false);
 
   function updateParams(updates: Record<string, string>) {
@@ -85,8 +87,15 @@ export function AlimentosFilter() {
     macroDebounce.current = setTimeout(() => updateParams({ [key]: value }), 500);
   }
 
+  function togglePropios(value: boolean) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) params.set("propios", "true");
+    else params.delete("propios");
+    router.push(`/alimentos?${params.toString()}`);
+  }
+
   function clearFilters() {
-    router.push("/alimentos");
+    router.push(propios ? "/alimentos?propios=true" : "/alimentos");
   }
 
   const hasFilters = searchParams.has("categoria") || searchParams.has("origen") ||
@@ -104,43 +113,97 @@ export function AlimentosFilter() {
   }
 
   return (
-    <div className="mb-6 space-y-3">
+    <div className="space-y-2 sm:space-y-3">
       {/* Barra principal */}
-      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Buscar alimento..."
-            defaultValue={searchParams.get("busqueda") || ""}
-            onChange={(e) => handleSearch(e.target.value)}
-            maxLength={100}
-            className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
-          />
-        </div>
-        <div className="flex gap-2 sm:gap-3">
-          <select
-            defaultValue={searchParams.get("categoria") || ""}
-            onChange={(e) => updateParams({ categoria: e.target.value })}
-            className="flex-1 sm:flex-none px-3 py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
-          >
-            {CATEGORIAS.map((c) => (
-              <option key={c.value} value={c.value}>{c.label}</option>
-            ))}
-          </select>
+      <div className="space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-3">
+        {/* Búsqueda + botones móviles */}
+        <div className="flex gap-1.5 sm:gap-2 sm:flex-1">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder={propios ? "Buscar en mis alimentos..." : "Buscar alimento..."}
+              defaultValue={searchParams.get("busqueda") || ""}
+              onChange={(e) => handleSearch(e.target.value)}
+              maxLength={100}
+              className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
+            />
+          </div>
           <button
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className={`inline-flex items-center gap-1.5 px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors shrink-0 ${
-              showAdvanced || hasFilters
+            className={`sm:hidden relative inline-flex items-center justify-center w-10 h-10 rounded-lg border text-sm shrink-0 transition-colors ${
+              showAdvanced || hasFilters || hasMicroFilters
                 ? "border-primary bg-primary/5 text-primary"
-                : "border-border hover:bg-muted"
+                : "border-border hover:bg-muted text-muted-foreground"
             }`}
           >
             <SlidersHorizontal className="w-4 h-4" />
-            <span className="hidden xs:inline">Filtros</span>
-            {hasFilters && <span className="w-2 h-2 rounded-full bg-primary" />}
+            {(hasFilters || hasMicroFilters) && (
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary" />
+            )}
+          </button>
+          <Link
+            href="/alimentos/importar"
+            data-tour="import-btn"
+            className="sm:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-border hover:bg-muted transition-colors shrink-0"
+            aria-label="Importar"
+          >
+            <Download className="w-4 h-4" />
+          </Link>
+          <Link
+            href="/alimentos/nuevo"
+            className="sm:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
+            aria-label="Nuevo alimento"
+          >
+            <Plus className="w-4 h-4" />
+          </Link>
+        </div>
+
+        {/* Toggle Todos / Míos */}
+        <div className="flex rounded-lg border border-border overflow-hidden sm:shrink-0">
+          <button
+            onClick={() => togglePropios(false)}
+            aria-pressed={!propios}
+            className={`flex-1 sm:flex-none px-3 py-2 text-sm font-medium transition-colors ${!propios ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+          >
+            Todos
+          </button>
+          <button
+            onClick={() => togglePropios(true)}
+            aria-pressed={propios}
+            title="Ver solo alimentos creados o importados por ti"
+            className={`flex-1 sm:flex-none px-3 py-2 text-sm font-medium transition-colors ${propios ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+          >
+            <span className="hidden sm:inline">Mis alimentos</span>
+            <span className="sm:hidden">Míos</span>
+            {misAlimentosCount > 0 && (
+              <span className="ml-1 text-xs opacity-80">({misAlimentosCount})</span>
+            )}
           </button>
         </div>
+
+        {/* Desktop: Categoría + botón filtros */}
+        <select
+          defaultValue={searchParams.get("categoria") || ""}
+          onChange={(e) => updateParams({ categoria: e.target.value })}
+          className="hidden sm:block sm:flex-none px-3 py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
+        >
+          {CATEGORIAS.map((c) => (
+            <option key={c.value} value={c.value}>{c.label}</option>
+          ))}
+        </select>
+        <button
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className={`hidden sm:inline-flex items-center gap-1.5 px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors shrink-0 ${
+            showAdvanced || hasFilters
+              ? "border-primary bg-primary/5 text-primary"
+              : "border-border hover:bg-muted"
+          }`}
+        >
+          <SlidersHorizontal className="w-4 h-4" />
+          Filtros
+          {hasFilters && <span className="w-2 h-2 rounded-full bg-primary" />}
+        </button>
       </div>
 
       {/* Filtros avanzados */}
@@ -155,20 +218,35 @@ export function AlimentosFilter() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-            {/* Origen */}
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Origen</label>
+          <div className={`grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 ${propios ? "lg:grid-cols-4" : "lg:grid-cols-5"} gap-3 sm:gap-4`}>
+            <div className="sm:hidden">
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Categoría</label>
               <select
-                defaultValue={searchParams.get("origen") || ""}
-                onChange={(e) => updateParams({ origen: e.target.value })}
+                defaultValue={searchParams.get("categoria") || ""}
+                onChange={(e) => updateParams({ categoria: e.target.value })}
                 className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
               >
-                {ORIGENES.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
+                <option value="">Todas</option>
+                {CATEGORIAS.filter((c) => c.value).map((c) => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
                 ))}
               </select>
             </div>
+            {!propios && (
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Origen</label>
+                <select
+                  defaultValue={searchParams.get("origen") || ""}
+                  onChange={(e) => updateParams({ origen: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
+                >
+                  <option value="">Todos</option>
+                  {ORIGENES.filter((o) => o.value).map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Calorías */}
             <div>
@@ -261,12 +339,12 @@ export function AlimentosFilter() {
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           <button
             onClick={() => setShowMicros(!showMicros)}
-            className="w-full flex items-center justify-between px-5 py-4 hover:bg-muted/40 transition-colors"
+            className="w-full flex items-center justify-between px-3 sm:px-5 py-3 sm:py-4 hover:bg-muted/40 transition-colors"
           >
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-primary" />
               <h3 className="text-sm font-semibold">Filtros avanzados</h3>
-              <span className="text-xs text-muted-foreground">· Mínimos de vitaminas y minerales por 100g</span>
+              <span className="text-xs text-muted-foreground hidden sm:inline">· Mínimos de vitaminas y minerales por 100g</span>
               {hasMicroFilters && <span className="w-2 h-2 rounded-full bg-primary ml-1" />}
             </div>
             <div className="flex items-center gap-3">
@@ -286,7 +364,7 @@ export function AlimentosFilter() {
           </button>
 
           {showMicros && (
-            <div className="px-5 pb-5 space-y-5 border-t border-border/60 pt-5">
+            <div className="px-3 sm:px-5 pb-3 sm:pb-5 space-y-4 sm:space-y-5 border-t border-border/60 pt-3 sm:pt-5">
               <div>
                 <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Vitaminas</h4>
                 <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">

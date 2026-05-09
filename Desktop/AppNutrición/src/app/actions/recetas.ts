@@ -173,7 +173,7 @@ export async function crearReceta(
 
   const receta = await prisma.receta.create({
     data: {
-      dietistaId: dietista.id,
+      dietista: { connect: { id: dietista.id } },
       nombre: nombreSanitizado,
       descripcion: descripcionSanitizada,
       instrucciones: instruccionesSanitizadas,

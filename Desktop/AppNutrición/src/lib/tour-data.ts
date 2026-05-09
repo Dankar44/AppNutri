@@ -101,12 +101,12 @@ const DIETISTA_TOURS: Tour[] = [
     steps: [
       { id: "dia-1", title: "Panel de generación IA", description: "Aquí configuras todos los parámetros antes de que la IA genere un plan semanal completo. Vamos a ver cada sección.", route: "/tour-demo-ia", target: "ia-config", position: "right" },
       { id: "dia-2", title: "Fase nutricional", description: "Selecciona la fase del paciente: déficit (perder grasa), mantenimiento, volumen (ganar masa), definición o reverse diet. Los macros se ajustan automáticamente.", target: "ia-fase", position: "bottom" },
-      { id: "dia-3", title: "Tipo de dieta", description: "Elige el estilo: mediterránea, baja en carbohidratos, alta en proteínas, vegetariana, vegana, cetogénica o sin gluten.", target: "ia-tipo-dieta", position: "bottom" },
+      { id: "dia-3", title: "Tipo de dieta", description: "Elige el estilo: mediterránea, baja en carbohidratos, alta en proteínas, vegetariana, vegana, cetogénica, sin gluten o antiinflamatoria.", target: "ia-tipo-dieta", position: "bottom" },
       { id: "dia-4", title: "Macros diarios", description: "Los objetivos de calorías, proteínas, carbohidratos y grasas. Se ajustan automáticamente al seleccionar una fase, pero puedes modificarlos manualmente.", target: "ia-macros", position: "bottom" },
       { id: "dia-5", title: "Preferencias rápidas", description: "Marca checkboxes para indicar si quieres recetas fáciles, aptas para batch cooking, económicas o muy variadas.", target: "ia-preferencias", position: "bottom" },
       { id: "dia-6", title: "Datos del paciente", description: "La IA usa los datos del paciente automáticamente: alergias, intolerancias, preferencias y objetivo. Por eso es importante tener la ficha completa.", target: "ia-paciente-info", position: "left" },
       { id: "dia-7", title: "Instrucciones adicionales", description: "Escribe instrucciones libres: 'rico en pescado', 'evitar lácteos en la cena', 'desayuno siempre con avena'... La IA las seguirá con prioridad máxima.", target: "ia-instrucciones", position: "left" },
-      { id: "dia-8", title: "Generar", description: "Pulsa este botón y la IA generará un plan semanal completo en 10-20 segundos. Podrás revisar el resultado y aceptarlo o descartarlo.", target: "ia-generar-btn", position: "top" },
+      { id: "dia-8", title: "Generar", description: "Pulsa este botón y la IA generará un plan semanal completo en 1-2 minutos. Podrás revisar el resultado y aceptarlo o descartarlo.", target: "ia-generar-btn", position: "top" },
     ],
   },
   {

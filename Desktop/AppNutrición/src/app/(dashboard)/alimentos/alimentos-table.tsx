@@ -42,9 +42,10 @@ interface Props {
   initialCursor: string | null;
   busqueda?: string;
   categoria?: string;
+  propios?: boolean;
 }
 
-export function AlimentosTable({ initial, initialCursor, busqueda, categoria }: Props) {
+export function AlimentosTable({ initial, initialCursor, busqueda, categoria, propios }: Props) {
   const [alimentos, setAlimentos] = useState(initial);
   const [cursor, setCursor] = useState(initialCursor);
   const [isPending, startTransition] = useTransition();
@@ -59,11 +60,11 @@ export function AlimentosTable({ initial, initialCursor, busqueda, categoria }: 
   const loadMore = useCallback(() => {
     if (!cursor || isPending) return;
     startTransition(async () => {
-      const res = await cargarMasAlimentos(cursor, busqueda, categoria);
+      const res = await cargarMasAlimentos(cursor, busqueda, categoria, propios);
       setAlimentos((prev) => [...prev, ...res.alimentos]);
       setCursor(res.nextCursor);
     });
-  }, [cursor, isPending, busqueda, categoria]);
+  }, [cursor, isPending, busqueda, categoria, propios]);
 
   useEffect(() => {
     const el = sentinelRef.current;
@@ -81,11 +82,40 @@ export function AlimentosTable({ initial, initialCursor, busqueda, categoria }: 
 
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
-      <table className="w-full">
+      {/* Mobile: cards */}
+      <div className="sm:hidden divide-y divide-border">
+        {alimentos.map((alimento) => (
+          <Link
+            key={alimento.id}
+            href={`/alimentos/${alimento.id}`}
+            className="flex items-center justify-between gap-3 px-3 py-3 hover:bg-muted/50 transition-colors"
+          >
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium truncate">{alimento.nombre}</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted font-medium shrink-0">
+                  {CATEGORIA_LABELS[alimento.categoria] || alimento.categoria}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                <MacroBadges
+                  calorias={alimento.calorias}
+                  proteinas={alimento.proteinas}
+                  carbohidratos={alimento.carbohidratos}
+                  grasas={alimento.grasas}
+                />
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {/* Desktop: table */}
+      <table className="w-full hidden sm:table">
         <thead>
           <tr className="border-b border-border text-left text-sm text-muted-foreground">
             <th className="px-4 py-3 font-medium">Nombre</th>
-            <th className="px-4 py-3 font-medium hidden sm:table-cell">Categoría</th>
+            <th className="px-4 py-3 font-medium">Categoría</th>
             <th className="px-4 py-3 font-medium hidden md:table-cell">Porción</th>
             <th className="px-4 py-3 font-medium">Macros / 100g</th>
             <th className="px-4 py-3 font-medium hidden lg:table-cell">Origen</th>
@@ -105,7 +135,7 @@ export function AlimentosTable({ initial, initialCursor, busqueda, categoria }: 
                   {alimento.nombre}
                 </Link>
               </td>
-              <td className="px-4 py-3 hidden sm:table-cell">
+              <td className="px-4 py-3">
                 <span className="text-xs px-2 py-0.5 rounded-full bg-muted font-medium">
                   {CATEGORIA_LABELS[alimento.categoria] || alimento.categoria}
                 </span>

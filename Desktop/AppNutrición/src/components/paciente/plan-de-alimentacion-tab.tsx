@@ -193,16 +193,16 @@ export function PlanDeAlimentacionTab({
   return (
     <div className="space-y-4">
       {/* Selector de dieta + botón "Marcar como actual" */}
-      <div className="flex flex-col xs:flex-row xs:items-center gap-2 w-full">
+      <div className="flex items-center gap-2 w-full">
         <div ref={wrapRef} className="relative flex-1 min-w-0">
           <button
             type="button"
             onClick={() => setAbierto((v) => !v)}
-            className="w-full flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border bg-card hover:bg-muted/40 transition-colors"
+            className="w-full flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg border border-border bg-card hover:bg-muted/40 transition-colors"
             title={totalPlanes > 1 ? `Ver las ${totalPlanes} dietas` : "Dietas del paciente"}
           >
-            <div className="flex items-center gap-2.5 min-w-0 flex-1">
-              <span className="text-base font-semibold truncate">{selectedPlan.nombre}</span>
+            <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
+              <span className="text-sm sm:text-base font-semibold truncate">{selectedPlan.nombre}</span>
               {esActivo && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-medium shrink-0">
                   <CheckCircle2 className="w-3 h-3" />
@@ -269,33 +269,32 @@ export function PlanDeAlimentacionTab({
           )}
         </div>
 
-        <Link
-          href={`/dietas/nuevo?pacienteId=${pacienteId}`}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors shrink-0 border border-primary/30 text-primary hover:bg-primary/5"
-          title="Crear nuevo plan para este paciente"
-        >
-          <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">Nuevo plan</span>
-        </Link>
+        <div className="flex items-center gap-2 shrink-0">
+          <Link
+            href={`/dietas/nuevo?pacienteId=${pacienteId}`}
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors shrink-0 border border-primary/30 text-primary hover:bg-primary/5"
+            title="Crear nuevo plan para este paciente"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Nuevo plan</span>
+          </Link>
 
-        <button
-          type="button"
-          onClick={handleAsignarActual}
-          disabled={esActivo || isPendingAssign}
-          className={cn(
-            "inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors shrink-0 border",
-            esActivo
-              ? "bg-muted text-muted-foreground border-border cursor-not-allowed"
-              : "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30 hover:bg-emerald-100 dark:hover:bg-emerald-500/20",
-          )}
-          title={esActivo ? "Esta dieta ya está marcada como actual" : "Marcar esta dieta como la actual"}
-        >
-          {isPendingAssign ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-          <span className="hidden sm:inline">
-            {esActivo ? "Marcada como actual" : "Marcar como dieta actual"}
-          </span>
-          <span className="sm:hidden">{esActivo ? "Marcada" : "Marcar"}</span>
-        </button>
+          <button
+            type="button"
+            onClick={handleAsignarActual}
+            disabled={esActivo || isPendingAssign}
+            className={cn(
+              "inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors shrink-0 border",
+              esActivo
+                ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30 cursor-default"
+                : "bg-muted text-muted-foreground border-border hover:bg-muted/80",
+            )}
+            title={esActivo ? "Esta dieta ya está marcada como actual" : "Marcar esta dieta como la actual"}
+          >
+            {isPendingAssign ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+            <span className="hidden sm:inline">{esActivo ? "Marcada" : "Marcar actual"}</span>
+          </button>
+        </div>
       </div>
 
       {/* Vista completa del plan (mismo layout que /dietas/[id]) */}

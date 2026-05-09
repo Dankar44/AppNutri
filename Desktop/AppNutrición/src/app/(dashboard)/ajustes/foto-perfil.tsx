@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Camera } from "lucide-react";
 import { actualizarFotoDietista } from "@/app/actions/perfil";
 import { toast } from "sonner";
+import { compressImage, IMAGE_PRESETS } from "@/lib/image-compress";
 
 interface Props {
   nombre: string;
@@ -27,10 +28,11 @@ export function FotoPerfil({ nombre, apellidos, fotoUrl }: Props) {
 
     const reader = new FileReader();
     reader.onload = async () => {
-      const dataUrl = reader.result as string;
-      setPreview(dataUrl);
+      const raw = reader.result as string;
       setLoading(true);
       try {
+        const dataUrl = await compressImage(raw, IMAGE_PRESETS.PROFILE_PHOTO);
+        setPreview(dataUrl);
         await actualizarFotoDietista(dataUrl);
         toast.success("Foto actualizada");
         router.refresh();

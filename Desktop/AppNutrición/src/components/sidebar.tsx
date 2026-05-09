@@ -85,8 +85,11 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [mensajesCount, setMensajesCount] = useState(mensajesCountInit);
   const [badges, setBadges] = useState<Record<string, number>>(badgesInit);
+
+  useEffect(() => { setMounted(true); }, []);
 
   // Sincronizar estado local cuando cambie el SSR (al navegar el server devuelve nuevos counts)
   useEffect(() => {
@@ -270,40 +273,46 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
   return (
     <>
       {/* Barra superior móvil */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 h-14 pt-safe bg-card border-b border-border flex items-center px-3 gap-3">
-        <button
-          onClick={() => setMobileOpen(true)}
-          aria-label="Abrir menú"
-          className="p-2.5 -ml-1 rounded-lg hover:bg-muted transition-colors min-h-11 min-w-11 flex items-center justify-center"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
-        <Leaf className="w-5 h-5 text-primary shrink-0" />
-        <span className="font-bold text-sm truncate">Annonia</span>
-        <div className="ml-auto flex items-center gap-1">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 h-14 pt-safe bg-card border-b border-border flex items-center px-3">
+        <div className="min-w-20 shrink-0">
+          <button
+            onClick={() => setMobileOpen(true)}
+            aria-label="Abrir menú"
+            className="p-2.5 -ml-1 rounded-lg hover:bg-muted transition-colors min-h-11 min-w-11 flex items-center justify-center"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="flex-1 flex items-center justify-center gap-2">
+          <Leaf className="w-7 h-7 text-primary shrink-0" />
+          <span className="text-xl font-bold">Annonia</span>
+        </div>
+        <div className="min-w-20 shrink-0 flex items-center justify-end gap-1">
           <ThemeToggle />
           <NotificationBell initialCount={notifCount} />
         </div>
       </div>
 
-      {/* Overlay móvil */}
-      {mobileOpen && (
-        <div
-          className="lg:hidden fixed inset-0 z-40 bg-black/50"
-          onClick={() => setMobileOpen(false)}
-          aria-hidden="true"
-        />
+      {/* Overlay + drawer móvil: solo se monta en cliente para evitar hydration mismatch */}
+      {mounted && (
+        <>
+          {mobileOpen && (
+            <div
+              className="lg:hidden fixed inset-0 z-40 bg-black/50"
+              onClick={() => setMobileOpen(false)}
+              aria-hidden="true"
+            />
+          )}
+          <aside
+            className={cn(
+              "lg:hidden fixed top-0 left-0 z-50 h-full w-full pt-safe pb-safe bg-sidebar flex flex-col transition-transform duration-300",
+              mobileOpen ? "translate-x-0" : "-translate-x-full"
+            )}
+          >
+            {sidebarContent}
+          </aside>
+        </>
       )}
-
-      {/* Sidebar drawer móvil */}
-      <aside
-        className={cn(
-          "lg:hidden fixed top-0 left-0 z-50 h-full w-64 xs:w-72 max-w-[85vw] pt-safe pb-safe bg-sidebar border-r border-border flex flex-col transition-transform duration-300",
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
-        {sidebarContent}
-      </aside>
 
       {/* Sidebar desktop */}
       <aside
