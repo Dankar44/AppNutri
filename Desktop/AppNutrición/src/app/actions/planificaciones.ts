@@ -125,7 +125,9 @@ export async function crearPlanificacion(
   );
 
   revalidatePath(`/pacientes/${pacienteId}`);
-  return rows[0].id;
+  const id = rows[0]?.id;
+  if (!id) throw new Error("Error al crear la planificación");
+  return id;
 }
 
 /* ─── Update datos + fechaUltimoCambio ─── */

@@ -369,10 +369,7 @@ export function EntregablesTab({
   useEffect(() => {
     if (!pdfData) { setPdfHtml(null); return; }
     const html = generatePlanPDF({ ...pdfData, sections: toSections(appliedOptions), displayOverrides: appliedOverrides });
-    const previewHtml = html.replace(
-      /<script>window\.onload=function\(\)\{window\.print\(\);\}<\/script>/,
-      ""
-    );
+    const previewHtml = html.replace(/<script[\s\S]*?<\/script>/gi, "");
     setPdfHtml(previewHtml);
     const count = (previewHtml.match(/class="page/g) || []).length;
     setTotalPages(Math.max(1, count));

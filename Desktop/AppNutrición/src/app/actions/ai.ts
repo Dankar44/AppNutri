@@ -260,7 +260,11 @@ export async function aceptarPlanIA(
         }[];
       }[];
     }[];
-  };
+  } | null;
+
+  if (!planIA?.dias || !Array.isArray(planIA.dias)) {
+    throw new Error("La respuesta de la IA no tiene el formato esperado");
+  }
 
   // Resolver todos los alimentos (buscar el más parecido, NUNCA crear nuevos)
   const alimentoCache = new Map<string, string | null>();

@@ -55,7 +55,8 @@ export default async function ExportarPDFPage() {
       session.pacienteId
     );
     recomendaciones = (rows[0]?.recomendaciones as string) || "";
-    horario = (rows[0]?.horario as unknown[]) || [];
+    const raw = rows[0]?.horario;
+    horario = Array.isArray(raw) ? raw : [];
   } catch { /* ignore */ }
 
   const pacienteNombre = `${capitalizarNombre(paciente.nombre)} ${capitalizarNombre(paciente.apellidos)}`;

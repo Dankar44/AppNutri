@@ -386,7 +386,8 @@ export async function calcularMacrosDia(pacienteId: string, fecha: string) {
     `SELECT "comidasData" FROM seguimiento_diario WHERE "pacienteId" = $1 AND fecha = $2::date`,
     pacienteId, fecha
   );
-  const comidasData = rows[0]?.comidasData as Array<{ tipo: string; alimentos?: Array<{ nombre: string; cantidad: number; unidad?: string; cumplido: boolean }> }> | null;
+  const rawComidas = rows[0]?.comidasData;
+  const comidasData = (Array.isArray(rawComidas) ? rawComidas : null) as Array<{ tipo: string; alimentos?: Array<{ nombre: string; cantidad: number; unidad?: string; cumplido: boolean }> }> | null;
   if (!comidasData) return { macros: { calorias: 0, proteinas: 0, carbohidratos: 0, grasas: 0, fibra: 0 }, micro: {} as Record<string, number> };
 
   // Collect all food names that are cumplido

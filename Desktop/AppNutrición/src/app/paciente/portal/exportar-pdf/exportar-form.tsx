@@ -139,16 +139,17 @@ export function ExportarPDFPaciente({
   logoDataUrl,
   clinica,
 }: Props) {
+  const safeHorario = Array.isArray(horario) ? horario : [];
   const [options, setOptions] = useState<PDFOptions>(() => ({
     ...DEFAULT_OPTIONS,
-    horarioPaciente: horario.length > 0,
+    horarioPaciente: safeHorario.length > 0,
     recomendaciones: recomendaciones.length > 0,
   }));
   const [applied, setApplied] = useState<PDFOptions>(options);
 
   const horarioHtml = useMemo(
-    () => generateHorarioHTML(horario, pacienteNombre, brandName || "Annonia"),
-    [horario, pacienteNombre, brandName]
+    () => generateHorarioHTML(safeHorario, pacienteNombre, brandName || "Annonia"),
+    [safeHorario, pacienteNombre, brandName]
   );
 
   const previewHtml = useMemo(() => {
@@ -166,10 +167,7 @@ export function ExportarPDFPaciente({
       sections: toSections(applied),
     });
     const withHorario = applyHorario(html, applied, horarioHtml);
-    return withHorario.replace(
-      /<script>window\.onload=function\(\)\{window\.print\(\);\}<\/script>/,
-      ""
-    );
+    return withHorario.replace(/<script[\s\S]*?<\/script>/gi, "");
   }, [plan, pacienteNombre, dietistaNombre, recomendaciones, tema, brandName, logoDataUrl, clinica, applied, horarioHtml]);
 
   const totalPages = Math.max(1, (previewHtml.match(/class="page/g) || []).length);
@@ -234,7 +232,7 @@ export function ExportarPDFPaciente({
         <div className="space-y-1">
           {OPTION_LABELS.map((opt) => {
             const noData =
-              (opt.key === "horarioPaciente" && horario.length === 0) ||
+              (opt.key === "horarioPaciente" && safeHorario.length === 0) ||
               (opt.key === "recomendaciones" && !recomendaciones);
             const disabled = opt.disabled || noData;
             return (

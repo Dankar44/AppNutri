@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
-import Script from "next/script";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeAwareToaster } from "@/components/theme-aware-toaster";
 import { CookieBanner } from "@/components/cookie-banner";
@@ -101,11 +100,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className={inter.variable} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("annonia-theme");var d=document.documentElement;if(t==="dark"){d.classList.add("dark");d.style.colorScheme="dark"}else{d.style.colorScheme="light"}var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t==="dark"?"#17181e":"#ffffff")}catch(e){}})()`,
+          }}
+        />
+      </head>
       <body className={`${inter.className} antialiased bg-background text-foreground`}>
-        <Script
-          id="theme-init"
-          strategy="beforeInteractive"
-        >{`(function(){try{var t=localStorage.getItem("annonia-theme");var d=document.documentElement;if(t==="dark"){d.classList.add("dark");d.style.colorScheme="dark"}else{d.style.colorScheme="light"}var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t==="dark"?"#17181e":"#ffffff")}catch(e){}})()`}</Script>
         <ThemeProvider>
           {children}
           <ThemeAwareToaster />

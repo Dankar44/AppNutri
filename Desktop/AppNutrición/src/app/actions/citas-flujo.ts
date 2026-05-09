@@ -70,7 +70,7 @@ async function getHorarioLaboralDietista(dietistaId: string): Promise<HorarioLab
     dietistaId,
   );
   const row = rows[0];
-  if (!row || !row.horarioLaboral) return null;
+  if (!row || !row.horarioLaboral || typeof row.horarioLaboral !== "object") return null;
   return {
     ...(row.horarioLaboral as Record<string, unknown>),
     duracionCitaDefault: row.duracionCitaDefault ?? 30,

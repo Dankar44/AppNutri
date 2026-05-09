@@ -703,7 +703,7 @@ export async function getPlanPDFData(planId: string): Promise<PlanPDFData | null
                 proteinas: a.receta.proteinas ?? 0,
                 carbohidratos: a.receta.carbohidratos ?? 0,
                 grasas: a.receta.grasas ?? 0,
-                ingredientes: a.receta.ingredientes.map((i) => ({
+                ingredientes: (a.receta.ingredientes ?? []).map((i) => ({
                   alimento: { nombre: i.alimento.nombre },
                   cantidad: i.cantidad,
                   unidad: i.unidad,

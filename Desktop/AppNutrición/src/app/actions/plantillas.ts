@@ -153,7 +153,7 @@ export async function crearPlanDesdePlantilla(
   });
   if (!plantilla) throw new Error("Plantilla no encontrada");
 
-  const datos = plantilla.datos as unknown as PlantillaDia[];
+  const datos = (plantilla.datos as unknown as PlantillaDia[]) || [];
 
   // Recoger todos los IDs referenciados y verificar cuáles existen
   const alimentoIds = new Set<string>();
