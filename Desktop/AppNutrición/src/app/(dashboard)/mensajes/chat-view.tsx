@@ -348,7 +348,7 @@ function MensajeInput({
   return (
     <form
       onSubmit={handleEnviar}
-      className="border-t border-border bg-card p-3 pb-safe shrink-0 md:pb-3"
+      className="border-t border-border bg-card p-3 shrink-0 pb-[calc(env(safe-area-inset-bottom)+12px)] md:pb-3"
     >
       {adjunto && (
         <div className="mb-2 flex items-center gap-2 rounded-lg border border-border bg-muted/40 p-2">

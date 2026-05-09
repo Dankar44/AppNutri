@@ -31,6 +31,8 @@ function applyTheme(t: Theme) {
   const root = document.documentElement;
   root.classList.toggle("dark", t === "dark");
   root.style.colorScheme = t;
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute("content", t === "dark" ? "#17181e" : "#ffffff");
 }
 
 function readStoredTheme(): Theme {

@@ -105,7 +105,7 @@ export default function RootLayout({
         <Script
           id="theme-init"
           strategy="beforeInteractive"
-        >{`(function(){try{var t=localStorage.getItem("annonia-theme");var d=document.documentElement;if(t==="dark"){d.classList.add("dark");d.style.colorScheme="dark"}else{d.style.colorScheme="light"}}catch(e){}})()`}</Script>
+        >{`(function(){try{var t=localStorage.getItem("annonia-theme");var d=document.documentElement;if(t==="dark"){d.classList.add("dark");d.style.colorScheme="dark"}else{d.style.colorScheme="light"}var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t==="dark"?"#17181e":"#ffffff")}catch(e){}})()`}</Script>
         <ThemeProvider>
           {children}
           <ThemeAwareToaster />
