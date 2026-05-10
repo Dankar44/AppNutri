@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -31,8 +32,14 @@ function applyTheme(t: Theme) {
   const root = document.documentElement;
   root.classList.toggle("dark", t === "dark");
   root.style.colorScheme = t;
-  const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute("content", t === "dark" ? "#101117" : "#fafafa");
+  const color = t === "dark" ? "#101117" : "#fafafa";
+  let meta = document.querySelector('meta[name="theme-color"]');
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.setAttribute("name", "theme-color");
+    document.head.appendChild(meta);
+  }
+  meta.setAttribute("content", color);
 }
 
 function readStoredTheme(): Theme {
@@ -49,11 +56,23 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // El script inline en <head> aplicó la clase antes de la hidratación.
   // Aquí sincronizamos el estado de React con el DOM real.
   const [theme, setThemeState] = useState<Theme>("light");
+  const themeRef = useRef<Theme>("light");
 
   useEffect(() => {
     const initial = readStoredTheme();
     setThemeState(initial);
+    themeRef.current = initial;
     applyTheme(initial);
+
+    const observer = new MutationObserver(() => {
+      const expected = themeRef.current === "dark" ? "#101117" : "#fafafa";
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta && meta.getAttribute("content") !== expected) {
+        meta.setAttribute("content", expected);
+      }
+    });
+    observer.observe(document.head, { childList: true, subtree: true, attributes: true, attributeFilter: ["content"] });
+    return () => observer.disconnect();
   }, []);
 
   // Cross-tab sync
@@ -62,6 +81,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       if (e.key !== STORAGE_KEY || !e.newValue) return;
       const next: Theme = e.newValue === "dark" ? "dark" : "light";
       setThemeState(next);
+      themeRef.current = next;
       applyTheme(next);
     }
     window.addEventListener("storage", onStorage);
@@ -71,6 +91,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const setTheme = useCallback((t: Theme, opts?: SetThemeOptions) => {
     const apply = () => {
       setThemeState(t);
+      themeRef.current = t;
       try {
         window.localStorage.setItem(STORAGE_KEY, t);
       } catch {

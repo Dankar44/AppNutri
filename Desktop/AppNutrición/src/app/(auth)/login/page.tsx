@@ -50,8 +50,7 @@ function LoginContent() {
     }
 
     toast.success("¡Bienvenido de nuevo!");
-    router.push("/dashboard");
-    router.refresh();
+    window.location.href = "/dashboard";
   }
 
   async function handleGoogleLogin() {
