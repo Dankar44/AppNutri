@@ -89,7 +89,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
-  themeColor: "#ffffff",
+  themeColor: "#fafafa",
   viewportFit: "cover",
 };
 
@@ -103,7 +103,7 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("annonia-theme");var d=document.documentElement;if(t==="dark"){d.classList.add("dark");d.style.colorScheme="dark"}else{d.style.colorScheme="light"}var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t==="dark"?"#17181e":"#ffffff")}catch(e){}})()`,
+            __html: `(function(){try{var t=localStorage.getItem("annonia-theme");var d=document.documentElement;if(t==="dark"){d.classList.add("dark");d.style.colorScheme="dark"}else{d.style.colorScheme="light"}var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t==="dark"?"#101117":"#fafafa")}catch(e){}})()`,
           }}
         />
       </head>

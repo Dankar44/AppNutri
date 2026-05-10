@@ -32,7 +32,7 @@ function applyTheme(t: Theme) {
   root.classList.toggle("dark", t === "dark");
   root.style.colorScheme = t;
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute("content", t === "dark" ? "#17181e" : "#ffffff");
+  if (meta) meta.setAttribute("content", t === "dark" ? "#101117" : "#fafafa");
 }
 
 function readStoredTheme(): Theme {

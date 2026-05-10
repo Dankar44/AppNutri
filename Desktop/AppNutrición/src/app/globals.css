@@ -210,6 +210,10 @@ html.theme-transitioning *::after {
   }
 }
 
+html {
+  background-color: var(--bg);
+}
+
 body {
   font-family: var(--font-sans);
   background-color: var(--bg);

@@ -14,9 +14,9 @@ La fase 1 (micronutrientes opcionales), parte de la fase 2 (Open Food Facts + eq
 - **Estimación por IA** — Pasar nombre del alimento a un LLM para estimar los 24 micronutrientes cuando no haya datos. Marcar como "estimado por IA".
 - **Importación CSV** (opcional) — Botón "Importar CSV" con plantilla descargable para nutricionistas con muchos alimentos propios.
 
-### 2. Responsividad móvil
+### ~~2. Responsividad móvil~~ ✅ COMPLETADO (mayo 2026)
 
-Existe un plan detallado de 50 pasos en `PLAN-MOVIL.md` (34-47 horas estimadas) y un checklist de QA en `CHECKLIST-QA-MOVIL.md`. Cubre: cimientos globales, sistema de diseño, navegación, listings, ficha paciente, editores de dietas, formularios, portal paciente y testing en dispositivos reales. Ningún paso se ha ejecutado todavía.
+Rediseño mobile-first del portal paciente completo: tarjetas en todas las secciones, nav móvil con drawer, lista de la compra (controles 2 filas, bottom sheet, filtros multiselect), horario compacto (36px/hora, scrollable), chat fullscreen, seguimiento, evolución, citas, exportar PDF, perfil, recomendaciones. PageHeader con line-clamp-1. Safe-area padding en inputs.
 
 ### 3. SEO — Monitorización semanal
 
