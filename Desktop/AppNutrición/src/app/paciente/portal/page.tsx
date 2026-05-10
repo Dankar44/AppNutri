@@ -171,12 +171,13 @@ export default async function PatientPortalPage() {
     hoyIso
   );
   const seguHoy = seguimientoHoyRows[0] ?? null;
-  const comidasDataHoy = (seguHoy?.comidasData ?? []) as Array<{
-    alimentos: Array<{ cumplido: boolean }>;
+  const rawComidas = seguHoy?.comidasData;
+  const comidasDataHoy = (Array.isArray(rawComidas) ? rawComidas : []) as Array<{
+    alimentos?: Array<{ cumplido: boolean }>;
   }>;
-  const comidasTotal = comidasDataHoy.reduce((s, c) => s + c.alimentos.length, 0);
+  const comidasTotal = comidasDataHoy.reduce((s, c) => s + (c.alimentos?.length ?? 0), 0);
   const comidasCumplidas = comidasDataHoy.reduce(
-    (s, c) => s + c.alimentos.filter((a) => a.cumplido).length,
+    (s, c) => s + (c.alimentos?.filter((a) => a.cumplido).length ?? 0),
     0
   );
   const haRegistrado =

@@ -323,7 +323,9 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
     dense: false,
   });
   const [query, setQuery] = useState("");
-  const [filterCat, setFilterCat] = useState<string | null>(null);
+  const [filterCats, setFilterCats] = useState<Set<string>>(new Set());
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterRef = useRef<HTMLDivElement | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [shoppingMode, setShoppingMode] = useState(false);
@@ -383,7 +385,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
   const visibleItems = useMemo(() => {
     const q = normalizar(query);
     let list = allItems.filter((i) => {
-      if (filterCat && i.categoria !== filterCat) return false;
+      if (filterCats.size > 0 && !filterCats.has(i.categoria)) return false;
       if (q && !normalizar(i.nombre).includes(q)) return false;
       return true;
     });
@@ -401,7 +403,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
       });
     }
     return list;
-  }, [allItems, query, filterCat, prefs.sort]);
+  }, [allItems, query, filterCats, prefs.sort]);
 
   // Group by category for rendering
   const grouped = useMemo(() => {
@@ -643,6 +645,18 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
     return () => document.removeEventListener("mousedown", onDown);
   }, [moreMenuOpen]);
 
+  // Close filter dropdown on outside click
+  useEffect(() => {
+    if (!filterOpen) return;
+    function onDown(e: MouseEvent) {
+      if (filterRef.current && e.target instanceof Node && !filterRef.current.contains(e.target)) {
+        setFilterOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [filterOpen]);
+
   // ─── Shopping mode (fullscreen) ───
   if (shoppingMode) {
     const pendientes = allItems.filter((i) => !checkedIds.has(i.id));
@@ -681,7 +695,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
           </div>
 
           {pendientes.length === 0 ? (
-            <div className="rounded-2xl border border-border bg-card p-10 text-center">
+            <div className="lg:rounded-2xl lg:border lg:border-border lg:bg-card p-10 text-center">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
                 <Check className="w-8 h-8 text-primary" />
               </div>
@@ -774,7 +788,9 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
                   <MoreHorizontal className="w-4 h-4" />
                 </button>
                 {moreMenuOpen && (
-                  <div className="absolute right-0 mt-1 w-56 rounded-lg border border-border bg-card shadow-lg z-30 py-1">
+                  <>
+                  <div className="fixed inset-0 z-40 bg-black/40 lg:bg-transparent" onClick={() => setMoreMenuOpen(false)} aria-hidden="true" />
+                  <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl border-t border-border bg-card shadow-xl py-2 pb-safe lg:absolute lg:bottom-auto lg:left-auto lg:right-0 lg:mt-1 lg:w-56 lg:rounded-lg lg:border lg:pb-1">
                     <MenuItem
                       icon={Copy}
                       label="Copiar al portapapeles"
@@ -858,13 +874,14 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
                       }}
                     />
                   </div>
+                  </>
                 )}
               </div>
             </div>
           </div>
 
           {/* KPIs + progreso */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4">
+          <div className="grid grid-cols-4 gap-2 sm:gap-3 mb-4">
             <Kpi label="Artículos" value={String(totalItems)} />
             <Kpi label="Comprados" value={`${totalChecked}/${totalItems}`} />
             <Kpi label="Categorías" value={String(categoriasActivas.size)} />
@@ -885,88 +902,122 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
         </div>
       </div>
 
-      {/* Controles */}
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        <div className="relative flex-1 min-w-[180px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input
-            ref={searchRef}
-            type="text"
-            placeholder="Buscar… (atajo: /)"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-          />
-          {query && (
-            <button
-              onClick={() => setQuery("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-muted-foreground hover:text-foreground"
-              aria-label="Limpiar"
-            >
-              <X className="w-4 h-4" />
-            </button>
+      {/* Controles: fila 1 = buscar + añadir, fila 2 = ordenar + filtrar */}
+      <div className="space-y-2 mb-4">
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              ref={searchRef}
+              type="text"
+              placeholder="Buscar… (atajo: /)"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-muted-foreground hover:text-foreground"
+                aria-label="Limpiar"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="inline-flex items-center justify-center gap-1.5 py-2 rounded-lg border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-sm font-medium shrink-0 w-24"
+            title="Añadir artículo (atajo: A)"
+          >
+            <Plus className="w-4 h-4" />
+            Añadir
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 rounded-lg border border-border bg-card p-1 flex-1 h-[38px]">
+            {(["categoria", "alfabetico", "cantidad"] as const).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setPrefs((p) => ({ ...p, sort: mode }))}
+                className={cn(
+                  "flex-1 px-2.5 py-1.5 text-xs font-medium rounded transition-colors h-full",
+                  prefs.sort === mode
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {mode === "categoria" ? "Categoría" : mode === "alfabetico" ? "A-Z" : "Cantidad"}
+              </button>
+            ))}
+          </div>
+
+          {allItems.length > 0 && (
+            <div className="relative" ref={filterRef}>
+              <button
+                onClick={() => setFilterOpen((v) => !v)}
+                className={cn(
+                  "inline-flex items-center justify-center gap-1.5 py-2 rounded-lg border text-sm font-medium transition-colors shrink-0 w-24",
+                  filterCats.size > 0
+                    ? "border-primary/30 bg-primary/5 text-primary"
+                    : "border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+                )}
+              >
+                <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", filterOpen && "rotate-180")} />
+                {filterCats.size === 0
+                  ? "Filtrar"
+                  : `${filterCats.size} filtro${filterCats.size > 1 ? "s" : ""}`}
+                {filterCats.size > 0 && (
+                  <span
+                    role="button"
+                    onClick={(e) => { e.stopPropagation(); setFilterCats(new Set()); }}
+                    className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary/20 hover:bg-primary/30"
+                  >
+                    <X className="w-3 h-3" />
+                  </span>
+                )}
+              </button>
+              {filterOpen && (
+                <div className="absolute right-0 mt-1 w-64 max-h-72 overflow-y-auto rounded-lg border border-border bg-card shadow-lg z-50 py-1">
+                  {[...categoriasActivas]
+                    .sort((a, b) => metaFor(a).order - metaFor(b).order)
+                    .map((cat) => {
+                      const meta = metaFor(cat);
+                      const count = allItems.filter((i) => i.categoria === cat).length;
+                      const Icon = meta.icon;
+                      const checked = filterCats.has(cat);
+                      return (
+                        <button
+                          key={cat}
+                          onClick={() => {
+                            setFilterCats((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(cat)) next.delete(cat);
+                              else next.add(cat);
+                              return next;
+                            });
+                          }}
+                          className="flex items-center gap-3 w-full px-3 py-2.5 text-sm hover:bg-muted transition-colors"
+                        >
+                          <span className={cn(
+                            "inline-flex items-center justify-center w-5 h-5 rounded border transition-colors",
+                            checked ? "bg-primary border-primary text-primary-foreground" : "border-border"
+                          )}>
+                            {checked && <Check className="w-3.5 h-3.5" />}
+                          </span>
+                          <Icon className={cn("w-4 h-4", meta.color)} />
+                          <span className="flex-1 text-left">{meta.label}</span>
+                          <span className="text-xs text-muted-foreground">{count}</span>
+                        </button>
+                      );
+                    })}
+                </div>
+              )}
+            </div>
           )}
         </div>
-
-        <div className="flex items-center gap-1 rounded-lg border border-border bg-card p-1">
-          {(["categoria", "alfabetico", "cantidad"] as const).map((mode) => (
-            <button
-              key={mode}
-              onClick={() => setPrefs((p) => ({ ...p, sort: mode }))}
-              className={cn(
-                "px-2.5 py-1 text-xs font-medium rounded transition-colors",
-                prefs.sort === mode
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {mode === "categoria" ? "Categoría" : mode === "alfabetico" ? "A-Z" : "Cantidad"}
-            </button>
-          ))}
-        </div>
-
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
-          title="Añadir artículo (atajo: A)"
-        >
-          <Plus className="w-4 h-4" />
-          Añadir
-        </button>
       </div>
-
-      {/* Chips de categoría */}
-      {allItems.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-4">
-          <CategoryChip
-            active={filterCat === null}
-            onClick={() => setFilterCat(null)}
-            label={`Todas (${totalItems})`}
-          />
-          {[...categoriasActivas]
-            .sort((a, b) => metaFor(a).order - metaFor(b).order)
-            .map((cat) => {
-              const meta = metaFor(cat);
-              const count = allItems.filter((i) => i.categoria === cat).length;
-              const Icon = meta.icon;
-              return (
-                <button
-                  key={cat}
-                  onClick={() => setFilterCat(filterCat === cat ? null : cat)}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors",
-                    filterCat === cat
-                      ? cn(meta.bg, meta.ring, meta.color)
-                      : "border-border text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  {meta.label} ({count})
-                </button>
-              );
-            })}
-        </div>
-      )}
 
       {/* Lista / Empty state */}
       {allItems.length === 0 ? (
@@ -1057,7 +1108,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
         </div>
       ) : (
         // Flat list (alfabetico / cantidad)
-        <div className="rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border/40">
+        <div className="lg:rounded-2xl lg:border lg:border-border lg:bg-card overflow-hidden divide-y divide-border/40">
           {visibleItems.map((it) => {
             const meta = metaFor(it.categoria);
             return (
@@ -1086,7 +1137,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
 
       {/* Footer resumen */}
       {totalItems > 0 && (
-        <div className="mt-6 rounded-xl border border-border bg-card p-4 flex flex-wrap items-center justify-between gap-3 print:hidden">
+        <div className="mt-6 lg:rounded-xl lg:border lg:border-border lg:bg-card p-4 flex flex-wrap items-center justify-between gap-3 print:hidden">
           <div className="text-sm">
             <span className="font-semibold">{totalChecked}</span> comprados ·{" "}
             <span className="font-semibold">{totalItems - totalChecked}</span> pendientes
@@ -1140,14 +1191,6 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
         />
       )}
 
-      {/* FAB móvil */}
-      <button
-        onClick={() => setShowAddModal(true)}
-        className="sm:hidden fixed right-5 bottom-20 z-30 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center print:hidden"
-        aria-label="Añadir artículo"
-      >
-        <Plus className="w-6 h-6" />
-      </button>
     </div>
   );
 }
@@ -1156,38 +1199,15 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
 
 function Kpi({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-background/60 backdrop-blur px-3 py-2 border border-border/50">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+    <div className="rounded-lg bg-background/60 backdrop-blur px-2 py-2 border border-border/50">
+      <p className="text-[8px] sm:text-[10px] font-semibold uppercase tracking-wider text-muted-foreground truncate">
         {label}
       </p>
-      <p className="text-lg font-bold tabular-nums">{value}</p>
+      <p className="text-sm sm:text-lg font-bold tabular-nums truncate">{value}</p>
     </div>
   );
 }
 
-function CategoryChip({
-  active,
-  onClick,
-  label,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors",
-        active
-          ? "bg-primary/10 text-primary border-primary/30"
-          : "border-border text-muted-foreground hover:text-foreground hover:bg-muted"
-      )}
-    >
-      {label}
-    </button>
-  );
-}
 
 function MenuItem({
   icon: Icon,

@@ -17,12 +17,12 @@ function Section({
   return (
     <section id={id} className="scroll-mt-24">
       <div className="flex items-start gap-3 mb-4">
-        <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center shrink-0 mt-0.5">
-          <Icon className="w-4.5 h-4.5 text-green-600" />
+        <div className="w-9 h-9 rounded-xl bg-green-50 dark:bg-green-900/30 flex items-center justify-center shrink-0 mt-0.5">
+          <Icon className="w-4.5 h-4.5 text-green-600 dark:text-green-400" />
         </div>
-        <h2 className="text-xl font-semibold text-gray-900 pt-1">{title}</h2>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 pt-1">{title}</h2>
       </div>
-      <div className="pl-12 space-y-3 text-gray-600 text-[15px] leading-relaxed">
+      <div className="pl-12 space-y-3 text-gray-600 dark:text-gray-400 text-[15px] leading-relaxed">
         {children}
       </div>
     </section>
@@ -35,14 +35,14 @@ function CookieCard({
   name: string; purpose: string; duration: string; type: "necesaria" | "preferencia" | "tercero";
 }) {
   const colors = {
-    necesaria: "border-green-200 bg-green-50",
-    preferencia: "border-blue-200 bg-blue-50",
-    tercero: "border-gray-200 bg-gray-50",
+    necesaria: "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20",
+    preferencia: "border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20",
+    tercero: "border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50",
   };
   const badges = {
-    necesaria: "bg-green-100 text-green-700",
-    preferencia: "bg-blue-100 text-blue-700",
-    tercero: "bg-gray-200 text-gray-600",
+    necesaria: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400",
+    preferencia: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400",
+    tercero: "bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400",
   };
   const labels = {
     necesaria: "Necesaria",
@@ -53,12 +53,12 @@ function CookieCard({
   return (
     <div className={`rounded-xl border p-4 ${colors[type]}`}>
       <div className="flex items-center justify-between mb-2">
-        <code className="text-sm font-semibold text-gray-900">{name}</code>
+        <code className="text-sm font-semibold text-gray-900 dark:text-gray-100">{name}</code>
         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badges[type]}`}>
           {labels[type]}
         </span>
       </div>
-      <p className="text-sm text-gray-600 mb-1">{purpose}</p>
+      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{purpose}</p>
       <p className="text-xs text-gray-400">Duración: {duration}</p>
     </div>
   );
@@ -79,11 +79,11 @@ export default function CookiesPage() {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
       {/* Hero */}
       <div className="text-center mb-12">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-50 border border-green-200 text-green-700 text-sm font-medium mb-4">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 text-sm font-medium mb-4">
           <Cookie className="w-4 h-4" />
           Cookies
         </div>
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">Política de cookies</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">Política de cookies</h1>
         <p className="text-gray-400 text-sm">Última actualización: 24 de abril de 2026</p>
       </div>
 
@@ -97,7 +97,7 @@ export default function CookiesPage() {
                 <a
                   key={item.id}
                   href={`#${item.id}`}
-                  className="block text-sm text-gray-500 hover:text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg transition-colors"
+                  className="block text-sm text-gray-500 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 px-3 py-1.5 rounded-lg transition-colors"
                 >
                   {item.label}
                 </a>
@@ -105,9 +105,9 @@ export default function CookiesPage() {
             </nav>
 
             {/* Quick summary card */}
-            <div className="mt-6 bg-green-50 rounded-xl border border-green-200 p-4">
-              <p className="text-xs font-semibold text-green-800 mb-2">Resumen rápido</p>
-              <ul className="text-xs text-green-700 space-y-1.5">
+            <div className="mt-6 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 p-4">
+              <p className="text-xs font-semibold text-green-800 dark:text-green-300 mb-2">Resumen rápido</p>
+              <ul className="text-xs text-green-700 dark:text-green-400 space-y-1.5">
                 <li className="flex items-start gap-1.5">
                   <span className="mt-0.5">✓</span>
                   <span>Solo cookies necesarias y de preferencias</span>
@@ -131,16 +131,16 @@ export default function CookiesPage() {
 
         {/* Content */}
         <div className="flex-1 min-w-0 space-y-10">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8 text-[15px] text-gray-600 leading-relaxed">
+          <div className="bg-white dark:bg-[#17181e] rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 sm:p-8 text-[15px] text-gray-600 dark:text-gray-400 leading-relaxed">
             <p>
-              Esta Política de Cookies explica qué cookies utiliza <strong className="text-gray-900">Annonia</strong> y cómo puede el usuario
-              gestionarlas. Cumple con la <strong className="text-gray-900">Ley 34/2002 (LSSI-CE)</strong> y las directrices de la Agencia
+              Esta Política de Cookies explica qué cookies utiliza <strong className="text-gray-900 dark:text-gray-100">Annonia</strong> y cómo puede el usuario
+              gestionarlas. Cumple con la <strong className="text-gray-900 dark:text-gray-100">Ley 34/2002 (LSSI-CE)</strong> y las directrices de la Agencia
               Española de Protección de Datos (AEPD).
             </p>
           </div>
 
           <Section icon={HelpCircle} title="1. ¿Qué son las cookies?" id="que-son">
-            <div className="bg-gray-50 rounded-xl border border-gray-200 p-5">
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
               <p className="text-sm">
                 Las cookies son pequeños archivos de texto que se almacenan en tu dispositivo cuando visitas un sitio web. Permiten
                 recordar preferencias como el idioma, inicio de sesión y configuraciones, facilitando tu experiencia en futuras visitas.
@@ -151,7 +151,7 @@ export default function CookiesPage() {
           <Section icon={ShieldCheck} title="2. Cookies estrictamente necesarias" id="necesarias">
             <p>
               Imprescindibles para el funcionamiento de la Plataforma. Sin ellas, no podríamos prestar el servicio.{" "}
-              <strong className="text-gray-900">No requieren consentimiento</strong> (art. 22.2 LSSI-CE).
+              <strong className="text-gray-900 dark:text-gray-100">No requieren consentimiento</strong> (art. 22.2 LSSI-CE).
             </p>
             <div className="space-y-3">
               <CookieCard
@@ -177,7 +177,7 @@ export default function CookiesPage() {
 
           <Section icon={Settings} title="3. Cookies de preferencias" id="preferencias">
             <p>
-              Recuerdan tus preferencias para personalizar la experiencia. Se almacenan en el <code className="bg-gray-100 px-1.5 py-0.5 rounded text-sm">localStorage</code> del navegador.
+              Recuerdan tus preferencias para personalizar la experiencia. Se almacenan en el <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-sm">localStorage</code> del navegador.
             </p>
             <div className="space-y-3">
               <CookieCard
@@ -208,11 +208,11 @@ export default function CookiesPage() {
           </Section>
 
           <Section icon={Globe} title="4. Cookies de terceros" id="terceros">
-            <div className="bg-green-50 rounded-xl border border-green-200 p-5 mb-4">
-              <p className="text-sm text-green-800 font-medium mb-1">
+            <div className="bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 p-5 mb-4">
+              <p className="text-sm text-green-800 dark:text-green-300 font-medium mb-1">
                 Annonia utiliza Google Analytics 4 para mejorar la experiencia del usuario.
               </p>
-              <p className="text-sm text-green-700">
+              <p className="text-sm text-green-700 dark:text-green-400">
                 Solo se activa si aceptas las cookies. No usamos Facebook Pixel ni ningún servicio de tracking publicitario.
               </p>
             </div>
@@ -247,17 +247,17 @@ export default function CookiesPage() {
 
           <Section icon={Monitor} title="5. Gestión de cookies" id="gestion">
             <div className="space-y-4">
-              <div className="bg-white rounded-xl border border-gray-200 p-5">
-                <p className="font-semibold text-gray-900 text-sm mb-2">Banner de consentimiento</p>
-                <p className="text-sm text-gray-500">
+              <div className="bg-white dark:bg-[#17181e] rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+                <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm mb-2">Banner de consentimiento</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Al visitar Annonia por primera vez, verás un banner donde puedes aceptar o rechazar cookies no esenciales.
                   Puedes cambiar tu elección en cualquier momento desde &quot;Cookies&quot; en el pie de página.
                 </p>
               </div>
 
-              <div className="bg-white rounded-xl border border-gray-200 p-5">
-                <p className="font-semibold text-gray-900 text-sm mb-3">Configuración del navegador</p>
-                <p className="text-sm text-gray-500 mb-3">
+              <div className="bg-white dark:bg-[#17181e] rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+                <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm mb-3">Configuración del navegador</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
                   También puedes bloquear o eliminar cookies desde tu navegador:
                 </p>
                 <div className="grid grid-cols-2 gap-2">
@@ -272,7 +272,7 @@ export default function CookiesPage() {
                       href={browser.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 p-3 rounded-lg bg-gray-50 hover:bg-green-50 border border-gray-200 hover:border-green-200 transition-all text-sm font-medium text-gray-700 hover:text-green-700"
+                      className="flex items-center gap-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 hover:bg-green-50 dark:hover:bg-green-900/20 border border-gray-200 dark:border-gray-700 hover:border-green-200 dark:hover:border-green-800 transition-all text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-green-700 dark:hover:text-green-400"
                     >
                       <Globe className="w-4 h-4" />
                       {browser.name}
@@ -281,7 +281,7 @@ export default function CookiesPage() {
                 </div>
               </div>
 
-              <div className="bg-amber-50 rounded-xl border border-amber-200 p-4 text-sm text-amber-800">
+              <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800 p-4 text-sm text-amber-800 dark:text-amber-400">
                 Desactivar cookies estrictamente necesarias puede impedir el funcionamiento correcto de la Plataforma (por ejemplo, no
                 podrás iniciar sesión).
               </div>
@@ -296,8 +296,8 @@ export default function CookiesPage() {
           </Section>
 
           <Section icon={Mail} title="7. Contacto" id="contacto">
-            <div className="bg-green-50 rounded-xl border border-green-200 p-5 text-center">
-              <p className="text-sm text-green-800">
+            <div className="bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 p-5 text-center">
+              <p className="text-sm text-green-800 dark:text-green-300">
                 Para cualquier consulta sobre cookies: <strong>privacidad@annonia.com</strong>
               </p>
             </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight, TrendingUp, TrendingDown, Minus, LineChart as LineChartIcon } from "lucide-react";
 import {
@@ -35,6 +36,8 @@ interface Props {
 
 export function ProgresoCard({ peso, imc, grasa, sparkData, className = "" }: Props) {
   const chartData = sparkData.filter((p) => p.peso !== null).map((p) => ({ peso: p.peso }));
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   return (
     <section data-tour="portal-progreso-card" className={`rounded-2xl border border-border bg-card overflow-hidden flex flex-col ${className}`}>
@@ -58,7 +61,7 @@ export function ProgresoCard({ peso, imc, grasa, sparkData, className = "" }: Pr
       </header>
 
       <div className="px-5 pb-2 flex-1 flex flex-col justify-end">
-        {chartData.length >= 2 ? (
+        {chartData.length >= 2 && mounted ? (
           <div className="h-20 -mx-2">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData} margin={{ top: 4, right: 8, left: 8, bottom: 0 }}>

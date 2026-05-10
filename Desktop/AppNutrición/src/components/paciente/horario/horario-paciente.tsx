@@ -19,6 +19,7 @@ import {
   DIAS,
   DIAS_CORTOS,
   END_HOUR,
+  MOBILE_PX_PER_HOUR,
   PLANTILLAS,
   PX_PER_HOUR,
   START_HOUR,
@@ -63,6 +64,10 @@ export function HorarioPaciente({ initialEntries, onSave }: Props) {
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<DraftBloque | null>(null);
   const [showPlantillas, setShowPlantillas] = useState(false);
+  const [mobileDia, setMobileDia] = useState(() => {
+    const dayIdx = new Date().getDay();
+    return DIAS[dayIdx === 0 ? 6 : dayIdx - 1];
+  });
 
   useEffect(() => {
     setBloques(entriesToBloques(initialEntries));
@@ -218,7 +223,7 @@ export function HorarioPaciente({ initialEntries, onSave }: Props) {
   return (
     <div>
       {/* KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4">
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-4">
         {CATEGORIAS.map((c) => {
           const h = horasCat[c.id] ?? 0;
           const pct = totalHoras > 0 ? Math.round((h / totalHoras) * 100) : 0;
@@ -226,25 +231,38 @@ export function HorarioPaciente({ initialEntries, onSave }: Props) {
           return (
             <div
               key={c.id}
-              className={`rounded-xl border p-3 flex items-center gap-2.5 ${c.kpiBg}`}
+              className={`rounded-xl border p-2.5 sm:p-3 flex items-center gap-2 sm:gap-2.5 ${c.kpiBg}`}
             >
-              <span className={`inline-flex items-center justify-center w-9 h-9 rounded-lg bg-card border border-border ${c.accent}`}>
-                <Icon className="w-4 h-4" strokeWidth={1.75} />
+              <span className={`inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-card border border-border ${c.accent} shrink-0`}>
+                <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={1.75} />
               </span>
               <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium leading-none">
+                <p className="text-[9px] sm:text-[10px] uppercase tracking-wide text-muted-foreground font-medium leading-none truncate">
                   {c.label}
                 </p>
-                <p className="text-lg font-bold tabular-nums leading-tight">
+                <p className="text-base sm:text-lg font-bold tabular-nums leading-tight">
                   {h}h
                 </p>
-                <p className="text-[10px] text-muted-foreground leading-none">
-                  {pct}% semana
+                <p className="text-[9px] sm:text-[10px] text-muted-foreground leading-none">
+                  {pct}%
                 </p>
               </div>
             </div>
           );
         })}
+        <button
+          type="button"
+          onClick={() => setShowPlantillas(true)}
+          className="lg:hidden rounded-xl border border-dashed border-border p-2.5 flex items-center gap-2 hover:bg-muted/50 transition-colors animate-soft-pulse"
+        >
+          <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-card border border-border text-muted-foreground shrink-0">
+            <Sparkles className="w-3.5 h-3.5" strokeWidth={1.75} />
+          </span>
+          <div className="min-w-0">
+            <p className="text-[9px] uppercase tracking-wide text-muted-foreground font-medium leading-none">Plantilla</p>
+            <p className="text-base font-bold leading-tight">Aplicar</p>
+          </div>
+        </button>
       </div>
 
       {/* Barra de acciones */}
@@ -253,7 +271,7 @@ export function HorarioPaciente({ initialEntries, onSave }: Props) {
           <button
             type="button"
             onClick={() => setShowPlantillas(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card hover:bg-muted/50 px-3 h-9 text-xs font-medium transition-colors"
+            className="hidden lg:inline-flex items-center gap-1.5 rounded-lg border border-border bg-card hover:bg-muted/50 px-3 h-9 text-xs font-medium transition-colors"
           >
             <Sparkles className="w-3.5 h-3.5" />
             Aplicar plantilla
@@ -287,11 +305,86 @@ export function HorarioPaciente({ initialEntries, onSave }: Props) {
         )}
       </div>
 
-      {/* Grid semanal */}
-      <div className="rounded-xl border border-border overflow-hidden bg-card">
+      {/* Grid semanal — móvil: 1 día con tabs, desktop: tabla completa */}
+
+      {/* Selector de día — solo móvil */}
+      <div className="flex gap-1 mb-3 lg:hidden">
+        {DIAS.map((dia, i) => (
+          <button
+            key={dia}
+            type="button"
+            onClick={() => setMobileDia(dia)}
+            className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-colors ${
+              mobileDia === dia
+                ? "bg-primary text-primary-foreground"
+                : "bg-card border border-border text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {DIAS_CORTOS[i]}
+          </button>
+        ))}
+      </div>
+
+      {/* Vista móvil — 1 día */}
+      <div className="lg:hidden rounded-xl border border-border overflow-hidden bg-card">
+        <div className="flex items-center justify-between bg-muted/30 border-b border-border px-3 py-1.5">
+          <div>
+            <div className="text-sm font-semibold">{mobileDia}</div>
+            <div className="text-[10px] text-muted-foreground">
+              {(bloquesPorDia.get(mobileDia) ?? []).length === 0
+                ? "Sin actividades"
+                : `${(bloquesPorDia.get(mobileDia) ?? []).length} actividad${(bloquesPorDia.get(mobileDia) ?? []).length > 1 ? "es" : ""}`}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => duplicarDia(mobileDia)}
+            className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            title={`Copiar ${mobileDia} a toda la semana`}
+          >
+            <Copy className="w-3 h-3" />
+            Copiar
+          </button>
+        </div>
+        <div className="max-h-[40vh] overflow-y-auto">
+          <div
+            className="relative grid"
+            style={{
+              gridTemplateColumns: "42px 1fr",
+              height: `${gridHeightPx(MOBILE_PX_PER_HOUR)}px`,
+            }}
+          >
+            <div className="border-r border-border bg-muted/20">
+              {rangoHoras().map((hora) => (
+                <div
+                  key={hora}
+                  className="text-[10px] text-muted-foreground font-mono text-center border-b border-border/60 last:border-b-0 flex items-start justify-center pt-0.5"
+                  style={{ height: `${MOBILE_PX_PER_HOUR}px` }}
+                >
+                  {hora}
+                </div>
+              ))}
+            </div>
+            <DiaColumna
+              dia={mobileDia}
+              bloques={bloquesPorDia.get(mobileDia) ?? []}
+              onCellClick={onCellClick}
+              onBloqueClick={onBloqueClick}
+              pxPerHour={MOBILE_PX_PER_HOUR}
+            />
+          </div>
+        </div>
+        {bloques.length === 0 && (
+          <div className="px-5 py-2.5 text-center text-xs text-muted-foreground border-t border-border bg-muted/20">
+            Toca cualquier casilla para añadir una actividad, o aplica una plantilla.
+          </div>
+        )}
+      </div>
+
+      {/* Vista desktop — tabla 7 días */}
+      <div className="hidden lg:block rounded-xl border border-border overflow-hidden bg-card">
         <div className="overflow-x-auto touch-scroll-x">
           <div className="min-w-[760px]">
-            {/* Header de días */}
             <div
               className="grid bg-muted/30 border-b border-border"
               style={{ gridTemplateColumns: "56px repeat(7, minmax(0, 1fr))" }}
@@ -321,7 +414,6 @@ export function HorarioPaciente({ initialEntries, onSave }: Props) {
               ))}
             </div>
 
-            {/* Cuerpo del grid */}
             <div
               className="relative grid"
               style={{
@@ -329,7 +421,6 @@ export function HorarioPaciente({ initialEntries, onSave }: Props) {
                 height: `${gridHeightPx()}px`,
               }}
             >
-              {/* Columna de horas */}
               <div className="border-r border-border bg-muted/20">
                 {rangoHoras().map((hora) => (
                   <div
@@ -342,7 +433,6 @@ export function HorarioPaciente({ initialEntries, onSave }: Props) {
                 ))}
               </div>
 
-              {/* 7 columnas de días */}
               {DIAS.map((dia) => (
                 <DiaColumna
                   key={dia}
@@ -390,11 +480,13 @@ function DiaColumna({
   bloques,
   onCellClick,
   onBloqueClick,
+  pxPerHour = PX_PER_HOUR,
 }: {
   dia: string;
   bloques: Bloque[];
   onCellClick: (dia: string, hora: string) => void;
   onBloqueClick: (b: Bloque) => void;
+  pxPerHour?: number;
 }) {
   return (
     <div className="relative border-r border-border last:border-r-0">
@@ -406,8 +498,8 @@ function DiaColumna({
           onClick={() => onCellClick(dia, hora)}
           className="absolute left-0 right-0 border-b border-border/40 hover:bg-muted/40 transition-colors group/cell"
           style={{
-            top: `${(parseInt(hora.split(":")[0], 10) - START_HOUR) * PX_PER_HOUR}px`,
-            height: `${PX_PER_HOUR}px`,
+            top: `${(parseInt(hora.split(":")[0], 10) - START_HOUR) * pxPerHour}px`,
+            height: `${pxPerHour}px`,
           }}
           aria-label={`Añadir actividad ${dia} ${hora}`}
         >
@@ -418,7 +510,7 @@ function DiaColumna({
       {/* Bloques */}
       {bloques.map((b) => {
         const cat = getCategoria(b.color);
-        const { top, height } = bloqueLayout(b);
+        const { top, height } = bloqueLayout(b, pxPerHour);
         const Icon = cat.Icon;
         const horas = parseInt(b.horaFin.split(":")[0], 10) - parseInt(b.horaInicio.split(":")[0], 10);
         return (
@@ -429,10 +521,10 @@ function DiaColumna({
             className={`absolute left-0.5 right-0.5 rounded-md border text-left transition-all overflow-hidden cursor-pointer ${cat.block}`}
             style={{ top: `${top + 2}px`, height: `${height - 4}px` }}
           >
-            <div className="px-2 py-1 flex flex-col gap-0.5 h-full">
+            <div className="px-1.5 py-0.5 flex flex-col gap-0 h-full">
               <div className="flex items-center gap-1 min-w-0">
                 <Icon className="w-3 h-3 shrink-0" strokeWidth={2} />
-                <span className="text-[11px] font-semibold truncate leading-tight">
+                <span className="text-[10px] font-semibold truncate leading-tight">
                   {b.actividad}
                 </span>
               </div>

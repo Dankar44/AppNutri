@@ -123,7 +123,7 @@ export function PacienteMensajesClient({
   }, []);
 
   return (
-    <div className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col h-[calc(100vh-220px)] min-h-[500px]">
+    <div className="mensajes-chat-fullscreen overflow-hidden flex flex-col md:bg-card md:rounded-2xl md:border md:border-border md:h-[calc(100vh-220px)] md:min-h-[500px]">
       <ChatHeader dietista={dietista} />
       <MensajesListPaciente mensajes={mensajes} />
       <MensajeInputPaciente onEnviado={onEnviado} />
@@ -329,7 +329,7 @@ function MensajeInputPaciente({ onEnviado }: { onEnviado: (m: Mensaje) => void }
   }
 
   return (
-    <form onSubmit={handleEnviar} className="border-t border-border bg-card p-3 shrink-0">
+    <form onSubmit={handleEnviar} className="border-t border-border bg-card p-3 pb-[calc(env(safe-area-inset-bottom)+12px)] md:pb-3 shrink-0">
       {adjunto && (
         <div className="mb-2 flex items-center gap-2 rounded-lg border border-border bg-muted/40 p-2">
           {adjunto.tipo.startsWith("image/") ? (

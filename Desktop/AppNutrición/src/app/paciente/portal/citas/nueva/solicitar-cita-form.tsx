@@ -156,7 +156,7 @@ export function SolicitarCitaForm() {
   return (
     <div className="space-y-4">
       {/* Barra de navegación semanal + leyenda */}
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-card px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 lg:rounded-xl lg:border lg:border-border lg:bg-card px-4 py-3">
         <div className="flex items-center gap-1.5">
           <button
             type="button"
@@ -209,7 +209,7 @@ export function SolicitarCitaForm() {
       </div>
 
       {/* Grid */}
-      <div className="rounded-xl border border-border overflow-hidden bg-card">
+      <div className="lg:rounded-xl lg:border lg:border-border overflow-hidden lg:bg-card">
         {loading ? (
           <div className="flex items-center justify-center py-16 text-muted-foreground">
             <Loader2 className="w-6 h-6 animate-spin" />
@@ -240,7 +240,7 @@ export function SolicitarCitaForm() {
       </div>
 
       {/* Panel de confirmación */}
-      <div className="rounded-xl border border-border bg-card p-4">
+      <div className="lg:rounded-xl lg:border lg:border-border lg:bg-card p-4">
         <div className="flex flex-col lg:flex-row lg:items-center gap-3">
           <div className="flex items-start gap-2.5 min-w-0 flex-1">
             {slotSeleccionado ? (

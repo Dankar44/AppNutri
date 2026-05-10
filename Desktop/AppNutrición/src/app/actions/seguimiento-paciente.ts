@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { getCurrentPaciente } from "@/lib/patient-auth";
 import { revalidatePath } from "next/cache";
@@ -8,6 +9,12 @@ import {
   validateNumber,
   validateNumberOptional,
 } from "@/lib/validation";
+
+function cuid(): string {
+  const ts = Date.now().toString(36);
+  const rand = randomUUID().replace(/-/g, "").slice(0, 16);
+  return `c${ts}${rand}`;
+}
 
 // ─── Types ───
 
@@ -206,21 +213,24 @@ export async function guardarSeguimientoPaciente(
   try {
     await prisma.$queryRawUnsafe(
       `INSERT INTO seguimiento_diario
-        ("pacienteId", fecha, cumplido, "aguaML", ejercicio, "ejercicioMinutos",
-         "ejercicioKcal", "ejercicioTipo", "ejercicioDistanciaKm", notas, "comidasData")
-       VALUES ($1, $2::date, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb)
+        (id, "pacienteId", fecha, cumplido, "aguaML", ejercicio, "ejercicioMinutos",
+         "ejercicioKcal", "ejercicioTipo", "ejercicioDistanciaKm", notas, "comidasData",
+         "createdAt", "updatedAt")
+       VALUES ($1, $2, $3::date, $4, $5, $6, $7, $8, $9, $10, $11, $12::jsonb,
+         CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
        ON CONFLICT ("pacienteId", fecha)
        DO UPDATE SET
-         cumplido = $3,
-         "aguaML" = $4,
-         ejercicio = $5,
-         "ejercicioMinutos" = $6,
-         "ejercicioKcal" = $7,
-         "ejercicioTipo" = $8,
-         "ejercicioDistanciaKm" = $9,
-         notas = $10,
-         "comidasData" = $11::jsonb,
+         cumplido = $4,
+         "aguaML" = $5,
+         ejercicio = $6,
+         "ejercicioMinutos" = $7,
+         "ejercicioKcal" = $8,
+         "ejercicioTipo" = $9,
+         "ejercicioDistanciaKm" = $10,
+         notas = $11,
+         "comidasData" = $12::jsonb,
          "updatedAt" = CURRENT_TIMESTAMP`,
+      cuid(),
       session.pacienteId,
       fecha,
       cumplido,
@@ -237,20 +247,23 @@ export async function guardarSeguimientoPaciente(
     // Fallback: comidasData column might not exist yet, save without it
     await prisma.$queryRawUnsafe(
       `INSERT INTO seguimiento_diario
-        ("pacienteId", fecha, cumplido, "aguaML", ejercicio, "ejercicioMinutos",
-         "ejercicioKcal", "ejercicioTipo", "ejercicioDistanciaKm", notas)
-       VALUES ($1, $2::date, $3, $4, $5, $6, $7, $8, $9, $10)
+        (id, "pacienteId", fecha, cumplido, "aguaML", ejercicio, "ejercicioMinutos",
+         "ejercicioKcal", "ejercicioTipo", "ejercicioDistanciaKm", notas,
+         "createdAt", "updatedAt")
+       VALUES ($1, $2, $3::date, $4, $5, $6, $7, $8, $9, $10, $11,
+         CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
        ON CONFLICT ("pacienteId", fecha)
        DO UPDATE SET
-         cumplido = $3,
-         "aguaML" = $4,
-         ejercicio = $5,
-         "ejercicioMinutos" = $6,
-         "ejercicioKcal" = $7,
-         "ejercicioTipo" = $8,
-         "ejercicioDistanciaKm" = $9,
-         notas = $10,
+         cumplido = $4,
+         "aguaML" = $5,
+         ejercicio = $6,
+         "ejercicioMinutos" = $7,
+         "ejercicioKcal" = $8,
+         "ejercicioTipo" = $9,
+         "ejercicioDistanciaKm" = $10,
+         notas = $11,
          "updatedAt" = CURRENT_TIMESTAMP`,
+      cuid(),
       session.pacienteId,
       fecha,
       cumplido,

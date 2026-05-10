@@ -16,7 +16,7 @@ export default async function HorarioPacientePage() {
       <PageHeader
         icon={Clock}
         title="Mi horario semanal"
-        subtitle="Configura tu horario y tu nutricionista lo verá reflejado. Los cambios que haga tu nutricionista también aparecerán aquí."
+        subtitle="Configura tu horario — tu nutricionista lo verá reflejado."
       />
 
       <HorarioPacienteWrapper initialEntries={horarioEntries} />

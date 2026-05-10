@@ -44,8 +44,8 @@ export default async function PatientPortalLayout({
           badges={badges}
         />
         <main className="flex-1 overflow-y-auto min-w-0 bg-background">
-          <div className="w-full max-w-none pt-14 lg:pt-0 px-3 sm:px-4 md:px-5 pb-3 sm:pb-4 lg:pb-6 pb-safe">
-            <div className="bg-card rounded-2xl border border-border shadow-sm px-5 sm:px-7 lg:px-8 pt-3 sm:pt-4 pb-5 sm:pb-7 lg:pb-8">
+          <div className="w-full max-w-none pt-14 lg:pt-6 lg:px-5 pb-safe lg:pb-6">
+            <div className="bg-transparent border-0 rounded-none shadow-none px-4 py-3 sm:px-5 sm:py-4 lg:bg-card lg:rounded-xl lg:border lg:border-border lg:shadow-sm lg:px-8 lg:py-8">
               {children}
             </div>
           </div>

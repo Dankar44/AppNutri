@@ -34,7 +34,7 @@ export function IntegracionesCardPaciente({ integracion, flash }: Props) {
   };
 
   return (
-    <section className="rounded-xl border border-border p-5">
+    <section className="rounded-xl border border-border bg-card p-5">
       <header className="flex items-start gap-3 mb-4">
         <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl border border-border text-foreground shrink-0">
           <CalendarCheck2 className="w-5 h-5" strokeWidth={1.75} />

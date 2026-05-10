@@ -18,12 +18,12 @@ function Section({
   return (
     <section id={id} className="scroll-mt-24">
       <div className="flex items-start gap-3 mb-4">
-        <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center shrink-0 mt-0.5">
-          <Icon className="w-4.5 h-4.5 text-green-600" />
+        <div className="w-9 h-9 rounded-xl bg-green-50 dark:bg-green-900/30 flex items-center justify-center shrink-0 mt-0.5">
+          <Icon className="w-4.5 h-4.5 text-green-600 dark:text-green-400" />
         </div>
-        <h2 className="text-xl font-semibold text-gray-900 pt-1">{title}</h2>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 pt-1">{title}</h2>
       </div>
-      <div className="pl-12 space-y-3 text-gray-600 text-[15px] leading-relaxed">
+      <div className="pl-12 space-y-3 text-gray-600 dark:text-gray-400 text-[15px] leading-relaxed">
         {children}
       </div>
     </section>
@@ -32,7 +32,7 @@ function Section({
 
 function InfoCard({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 text-sm space-y-1.5">
+    <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-4 text-sm space-y-1.5">
       {children}
     </div>
   );
@@ -59,11 +59,11 @@ export default function TerminosPage() {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
       {/* Hero */}
       <div className="text-center mb-12">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-50 border border-green-200 text-green-700 text-sm font-medium mb-4">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 text-sm font-medium mb-4">
           <FileText className="w-4 h-4" />
           Documento legal
         </div>
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">Términos y condiciones de uso</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">Términos y condiciones de uso</h1>
         <p className="text-gray-400 text-sm">Última actualización: 24 de abril de 2026</p>
       </div>
 
@@ -77,7 +77,7 @@ export default function TerminosPage() {
                 <a
                   key={item.id}
                   href={`#${item.id}`}
-                  className="block text-sm text-gray-500 hover:text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg transition-colors"
+                  className="block text-sm text-gray-500 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 px-3 py-1.5 rounded-lg transition-colors"
                 >
                   {item.label}
                 </a>
@@ -88,10 +88,10 @@ export default function TerminosPage() {
 
         {/* Content */}
         <div className="flex-1 min-w-0 space-y-10">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8 text-[15px] text-gray-600 leading-relaxed space-y-3">
+          <div className="bg-white dark:bg-[#17181e] rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 sm:p-8 text-[15px] text-gray-600 dark:text-gray-400 leading-relaxed space-y-3">
             <p>
-              Los presentes Términos y Condiciones regulan el acceso y uso de la plataforma web <strong className="text-gray-900">Annonia</strong>, accesible
-              desde <strong className="text-gray-900">annonia.com</strong>, titularidad de Annonia Software S.L.
+              Los presentes Términos y Condiciones regulan el acceso y uso de la plataforma web <strong className="text-gray-900 dark:text-gray-100">Annonia</strong>, accesible
+              desde <strong className="text-gray-900 dark:text-gray-100">annonia.com</strong>, titularidad de Annonia Software S.L.
             </p>
             <p>
               Al registrarse o utilizar la Plataforma, el usuario acepta íntegramente estos Términos. Si no está de acuerdo con alguno
@@ -101,11 +101,11 @@ export default function TerminosPage() {
 
           <Section icon={Building2} title="1. Identificación del prestador" id="identificacion">
             <InfoCard>
-              <p><strong className="text-gray-900">Denominación social:</strong> Annonia Software S.L.</p>
-              <p><strong className="text-gray-900">Domicilio social:</strong> [Pendiente de completar]</p>
-              <p><strong className="text-gray-900">CIF:</strong> [Pendiente de completar]</p>
-              <p><strong className="text-gray-900">Email:</strong> legal@annonia.com</p>
-              <p><strong className="text-gray-900">Registro Mercantil:</strong> [Pendiente de completar]</p>
+              <p><strong className="text-gray-900 dark:text-gray-100">Denominación social:</strong> Annonia Software S.L.</p>
+              <p><strong className="text-gray-900 dark:text-gray-100">Domicilio social:</strong> [Pendiente de completar]</p>
+              <p><strong className="text-gray-900 dark:text-gray-100">CIF:</strong> [Pendiente de completar]</p>
+              <p><strong className="text-gray-900 dark:text-gray-100">Email:</strong> legal@annonia.com</p>
+              <p><strong className="text-gray-900 dark:text-gray-100">Registro Mercantil:</strong> [Pendiente de completar]</p>
             </InfoCard>
             <p>
               De conformidad con la Ley 34/2002, de 11 de julio, de Servicios de la Sociedad de la Información y de Comercio
@@ -127,7 +127,7 @@ export default function TerminosPage() {
                 "Informes clínicos en formato PDF",
                 "Base de datos de +2.600 alimentos",
               ].map((item) => (
-                <div key={item} className="flex items-start gap-2 bg-gray-50 rounded-lg px-3 py-2 text-sm">
+                <div key={item} className="flex items-start gap-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2 text-sm">
                   <span className="text-green-500 mt-0.5">✓</span>
                   <span>{item}</span>
                 </div>
@@ -137,22 +137,22 @@ export default function TerminosPage() {
 
           <Section icon={UserCheck} title="3. Condiciones de acceso y registro" id="acceso">
             <div className="space-y-4">
-              <div className="bg-green-50 rounded-xl border border-green-200 p-4">
-                <p className="font-semibold text-green-800 text-sm mb-1">Dietistas-nutricionistas</p>
-                <p className="text-sm text-green-700">
+              <div className="bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 p-4">
+                <p className="font-semibold text-green-800 dark:text-green-300 text-sm mb-1">Dietistas-nutricionistas</p>
+                <p className="text-sm text-green-700 dark:text-green-400">
                   Deberán estar en posesión de la titulación habilitante y colegiados. Annonia se reserva el derecho de verificar el
                   número de colegiado y denegar el acceso en caso de datos incorrectos.
                 </p>
               </div>
-              <div className="bg-blue-50 rounded-xl border border-blue-200 p-4">
-                <p className="font-semibold text-blue-800 text-sm mb-1">Pacientes</p>
-                <p className="text-sm text-blue-700">
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 p-4">
+                <p className="font-semibold text-blue-800 dark:text-blue-300 text-sm mb-1">Pacientes</p>
+                <p className="text-sm text-blue-700 dark:text-blue-400">
                   Acceden al portal mediante credenciales proporcionadas por su dietista. No se requiere registro independiente.
                 </p>
               </div>
-              <div className="bg-amber-50 rounded-xl border border-amber-200 p-4">
-                <p className="font-semibold text-amber-800 text-sm mb-1">Edad mínima: 16 años</p>
-                <p className="text-sm text-amber-700">
+              <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800 p-4">
+                <p className="font-semibold text-amber-800 dark:text-amber-300 text-sm mb-1">Edad mínima: 16 años</p>
+                <p className="text-sm text-amber-700 dark:text-amber-400">
                   Conforme al artículo 7 de la LOPDGDD. Los menores de 16 años necesitarán consentimiento de padres o tutores legales.
                 </p>
               </div>
@@ -177,8 +177,8 @@ export default function TerminosPage() {
               Conforme al artículo 103 del Real Decreto Legislativo 1/2007, podrás ejercer tu derecho de desistimiento en los 14 días
               naturales siguientes a la contratación, salvo que hayas comenzado a utilizar el servicio con tu consentimiento expreso.
             </p>
-            <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 text-sm">
-              <p>Para ejercer este derecho: <strong className="text-gray-900">legal@annonia.com</strong></p>
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-4 text-sm">
+              <p>Para ejercer este derecho: <strong className="text-gray-900 dark:text-gray-100">legal@annonia.com</strong></p>
             </div>
           </Section>
 
@@ -191,7 +191,7 @@ export default function TerminosPage() {
               <li>No usar sistemas automatizados de extracción de datos.</li>
               <li>Cumplir la normativa de protección de datos al tratar información de pacientes.</li>
             </ul>
-            <div className="bg-red-50 rounded-xl border border-red-200 p-4 text-sm text-red-700">
+            <div className="bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800 p-4 text-sm text-red-700 dark:text-red-400">
               Annonia se reserva el derecho de suspender o cancelar cuentas que incumplan estos Términos, previo aviso cuando sea posible.
             </div>
           </Section>
@@ -201,16 +201,16 @@ export default function TerminosPage() {
               Todos los contenidos de la Plataforma (diseño, código, textos, gráficos, logos, marcas) son propiedad de Annonia o de
               sus licenciantes y están protegidos por la legislación española e internacional.
             </p>
-            <div className="bg-blue-50 rounded-xl border border-blue-200 p-4 text-sm text-blue-700">
-              <strong>Tus contenidos son tuyos:</strong> los datos clínicos, planes alimenticios y contenidos creados por los usuarios
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 p-4 text-sm text-blue-700 dark:text-blue-400">
+              <strong className="dark:text-blue-300">Tus contenidos son tuyos:</strong> los datos clínicos, planes alimenticios y contenidos creados por los usuarios
               dentro de la Plataforma son propiedad del usuario que los ha generado.
             </div>
           </Section>
 
           <Section icon={Stethoscope} title="8. Responsabilidad del profesional sanitario" id="responsabilidad-sanitaria">
-            <div className="bg-amber-50 rounded-xl border border-amber-200 p-4 text-sm text-amber-800 space-y-2">
+            <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800 p-4 text-sm text-amber-800 dark:text-amber-400 space-y-2">
               <p>
-                <strong>Annonia es una herramienta de gestión</strong> y no sustituye el criterio profesional del dietista-nutricionista.
+                <strong className="dark:text-amber-300">Annonia es una herramienta de gestión</strong> y no sustituye el criterio profesional del dietista-nutricionista.
               </p>
               <p>
                 Las recomendaciones de IA son orientativas y deben ser revisadas y validadas por el profesional antes de su aplicación.
@@ -235,7 +235,7 @@ export default function TerminosPage() {
           <Section icon={Lock} title="10. Protección de datos" id="datos">
             <p>
               El tratamiento de datos personales se rige por nuestra{" "}
-              <a href="/legal/privacidad" className="text-green-600 font-medium hover:underline">Política de Privacidad</a>, que forma
+              <a href="/legal/privacidad" className="text-green-600 dark:text-green-400 font-medium hover:underline">Política de Privacidad</a>, que forma
               parte integrante de estos Términos.
             </p>
           </Section>
@@ -252,10 +252,10 @@ export default function TerminosPage() {
               Estos Términos se rigen por la legislación española. Para la resolución de controversias, las partes se someten a los
               Juzgados y Tribunales del domicilio social de Annonia, sin perjuicio de fueros imperativos del consumidor.
             </p>
-            <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 text-sm">
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-4 text-sm">
               <p>
                 Plataforma de resolución de litigios en línea de la UE:{" "}
-                <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline">
+                <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" className="text-green-600 dark:text-green-400 hover:underline">
                   ec.europa.eu/consumers/odr
                 </a>
               </p>
@@ -263,8 +263,8 @@ export default function TerminosPage() {
           </Section>
 
           <Section icon={Mail} title="13. Contacto" id="contacto">
-            <div className="bg-green-50 rounded-xl border border-green-200 p-5 text-center">
-              <p className="text-sm text-green-800">
+            <div className="bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 p-5 text-center">
+              <p className="text-sm text-green-800 dark:text-green-300">
                 Para cualquier consulta: <strong>legal@annonia.com</strong>
               </p>
             </div>

@@ -35,7 +35,7 @@ export default async function PatientShoppingListPage() {
     return (
       <div>
         <PageHeader icon={ShoppingCart} title="Lista de la compra" />
-        <div className="rounded-xl border border-border bg-muted/30 p-12 text-center">
+        <div className="lg:rounded-xl lg:border lg:border-border sm:bg-muted/30 p-12 text-center">
           <ShoppingCart className="w-12 h-12 text-muted-foreground mx-auto mb-4" strokeWidth={1.5} />
           <h2 className="text-lg font-semibold mb-1">Sin plan activo</h2>
           <p className="text-muted-foreground">

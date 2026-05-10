@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const SHOWCASE_SECTIONS = [
   {
@@ -23,7 +24,7 @@ const SHOWCASE_SECTIONS = [
     imageSrc: "/images/landing/sw_gestion.png",
     imageAlt: "Software de gestión Annonia",
     imagePosition: "right" as const,
-    gradientClasses: "from-green-50 to-green-200/60 border-green-200/60",
+    gradientClasses: "from-green-50 to-green-200/60 border-green-200/60 dark:from-green-950/40 dark:to-green-900/30 dark:border-green-800/40",
     direction: "left" as const,
   },
   {
@@ -36,7 +37,7 @@ const SHOWCASE_SECTIONS = [
     imageSrc: "/images/landing/pacientes.png",
     imageAlt: "Portal del paciente Annonia",
     imagePosition: "left" as const,
-    gradientClasses: "from-emerald-50 to-green-100/70 border-emerald-200/60",
+    gradientClasses: "from-emerald-50 to-green-100/70 border-emerald-200/60 dark:from-emerald-950/40 dark:to-green-900/30 dark:border-emerald-800/40",
     direction: "right" as const,
   },
   {
@@ -49,7 +50,7 @@ const SHOWCASE_SECTIONS = [
     imageSrc: "/images/landing/planes_ai.png",
     imageAlt: "Generación de planes con IA Annonia",
     imagePosition: "right" as const,
-    gradientClasses: "from-green-100/80 to-emerald-200/50 border-green-200/60",
+    gradientClasses: "from-green-100/80 to-emerald-200/50 border-green-200/60 dark:from-green-950/40 dark:to-emerald-900/30 dark:border-green-800/40",
     direction: "left" as const,
   },
 ];
@@ -106,12 +107,12 @@ export function LandingPage() {
   const closeMenu = useCallback(() => setMenuOpen(false), []);
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 overflow-x-hidden">
+    <div className="min-h-screen bg-white dark:bg-[#101117] text-gray-900 dark:text-gray-100 overflow-x-hidden">
       {/* ─── NAVBAR ─── */}
       <header
         className={cn(
           "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
-          scrolled && "bg-white shadow-md"
+          scrolled && "bg-white dark:bg-[#101117] shadow-md dark:shadow-black/30"
         )}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -125,7 +126,7 @@ export function LandingPage() {
             <span
               className={cn(
                 "text-xl font-bold transition-colors duration-300",
-                scrolled ? "text-gray-900" : "text-white drop-shadow-md"
+                scrolled ? "text-gray-900 dark:text-gray-100" : "text-white drop-shadow-md"
               )}
             >
               Annonia
@@ -137,7 +138,7 @@ export function LandingPage() {
               href="#como-funciona"
               className={cn(
                 "transition-colors duration-300",
-                scrolled ? "text-gray-700 hover:text-green-600 drop-shadow-none" : "text-white hover:text-green-200"
+                scrolled ? "text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 drop-shadow-none" : "text-white hover:text-green-200"
               )}
             >
               Cómo funciona
@@ -146,7 +147,7 @@ export function LandingPage() {
               href="/precios"
               className={cn(
                 "transition-colors duration-300",
-                scrolled ? "text-gray-700 hover:text-green-600 drop-shadow-none" : "text-white hover:text-green-200"
+                scrolled ? "text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 drop-shadow-none" : "text-white hover:text-green-200"
               )}
             >
               Precios
@@ -155,7 +156,7 @@ export function LandingPage() {
               href="#faq"
               className={cn(
                 "transition-colors duration-300",
-                scrolled ? "text-gray-700 hover:text-green-600 drop-shadow-none" : "text-white hover:text-green-200"
+                scrolled ? "text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 drop-shadow-none" : "text-white hover:text-green-200"
               )}
             >
               FAQ
@@ -167,11 +168,15 @@ export function LandingPage() {
               href="/login"
               className={cn(
                 "px-4 py-2 text-base font-extrabold transition-colors duration-300",
-                scrolled ? "text-gray-700 hover:text-green-600 drop-shadow-none" : "text-white drop-shadow-md hover:text-green-200"
+                scrolled ? "text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 drop-shadow-none" : "text-white drop-shadow-md hover:text-green-200"
               )}
             >
               Iniciar sesión
             </Link>
+            <ThemeToggle className={cn(
+              "!w-9 !h-9 rounded-lg transition-colors",
+              scrolled ? "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300" : "hover:bg-white/15 text-white drop-shadow-md"
+            )} />
             <Link
               href="/registro"
               className="px-5 py-2.5 text-sm font-semibold rounded-xl bg-green-600 text-white hover:bg-green-700 transition-colors shadow-sm shadow-green-600/20"
@@ -189,21 +194,21 @@ export function LandingPage() {
             <span
               className={cn(
                 "block w-6 h-[2px] rounded-full transition-all duration-300",
-                scrolled ? "bg-gray-800" : "bg-white drop-shadow-md",
+                scrolled ? "bg-gray-800 dark:bg-gray-200" : "bg-white drop-shadow-md",
                 menuOpen && "translate-y-[7px] rotate-45"
               )}
             />
             <span
               className={cn(
                 "block w-6 h-[2px] rounded-full transition-all duration-300",
-                scrolled ? "bg-gray-800" : "bg-white drop-shadow-md",
+                scrolled ? "bg-gray-800 dark:bg-gray-200" : "bg-white drop-shadow-md",
                 menuOpen && "opacity-0"
               )}
             />
             <span
               className={cn(
                 "block w-6 h-[2px] rounded-full transition-all duration-300",
-                scrolled ? "bg-gray-800" : "bg-white drop-shadow-md",
+                scrolled ? "bg-gray-800 dark:bg-gray-200" : "bg-white drop-shadow-md",
                 menuOpen && "-translate-y-[7px] -rotate-45"
               )}
             />
@@ -222,7 +227,7 @@ export function LandingPage() {
 
       {/* Mobile slide-in menu */}
       <div
-        className="fixed top-0 right-0 w-full h-full bg-white z-[60] shadow-2xl md:hidden overflow-y-auto"
+        className="fixed top-0 right-0 w-full h-full bg-white dark:bg-[#17181e] z-[60] shadow-2xl md:hidden overflow-y-auto"
         style={{
           transform: menuOpen ? "translateX(0)" : "translateX(100%)",
           transition: "transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
@@ -230,28 +235,31 @@ export function LandingPage() {
       >
         <div className="flex items-center justify-between px-6 h-16">
           <Link href="/landing" className="flex items-center gap-2" onClick={closeMenu}>
-            <Leaf className="w-6 h-6 text-green-600" />
-            <span className="text-lg font-bold text-green-600">Annonia</span>
+            <Leaf className="w-6 h-6 text-green-600 dark:text-green-500" />
+            <span className="text-lg font-bold text-green-600 dark:text-green-500">Annonia</span>
           </Link>
           <button
             onClick={closeMenu}
-            className="w-10 h-10 flex items-center justify-center text-gray-800 hover:text-gray-900 transition-colors"
+            className="w-10 h-10 flex items-center justify-center text-gray-800 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white transition-colors"
             aria-label="Cerrar menú"
           >
             <X className="w-7 h-7" />
           </button>
         </div>
         <nav className="flex flex-col px-6 pt-6">
-          <a href="#como-funciona" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 border-b border-gray-200 hover:text-green-700 transition-colors">Cómo funciona</a>
-          <Link href="/precios" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 border-b border-gray-200 hover:text-green-700 transition-colors">Precios</Link>
-          <a href="#faq" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 border-b border-gray-200 hover:text-green-700 transition-colors">FAQ</a>
-          <Link href="/login" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 border-b border-gray-200 hover:text-green-700 transition-colors">Iniciar sesión</Link>
-          <Link href="/registro" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 border-b border-gray-200 hover:text-green-700 transition-colors">Empezar gratis</Link>
+          <a href="#como-funciona" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 hover:text-green-700 dark:hover:text-green-400 transition-colors">Cómo funciona</a>
+          <Link href="/precios" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 hover:text-green-700 dark:hover:text-green-400 transition-colors">Precios</Link>
+          <a href="#faq" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 hover:text-green-700 dark:hover:text-green-400 transition-colors">FAQ</a>
+          <Link href="/login" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 hover:text-green-700 dark:hover:text-green-400 transition-colors">Iniciar sesión</Link>
+          <Link href="/registro" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 hover:text-green-700 dark:hover:text-green-400 transition-colors">Empezar gratis</Link>
+          <div className="py-5">
+            <ThemeToggle variant="inline" className="!text-gray-900 dark:!text-gray-100 !text-xl !font-bold hover:!text-green-700 dark:hover:!text-green-400" />
+          </div>
         </nav>
       </div>
 
       {/* ─── HERO ─── */}
-      <section ref={heroRef} className="relative bg-green-50 overflow-hidden">
+      <section ref={heroRef} className="relative bg-green-50 dark:bg-green-950 overflow-hidden">
         <Image
           src="/images/landing/banner.png"
           alt="Banner Annonia"
@@ -298,13 +306,13 @@ export function LandingPage() {
 
         {/* Floating notification card */}
         <ScrollReveal direction="right" delay={600} className="hidden lg:block absolute top-[55%] right-[12%] z-20">
-          <div className="bg-white rounded-2xl shadow-xl shadow-black/10 px-5 py-4 flex items-start gap-3 max-w-xs">
-            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-              <Leaf className="w-5 h-5 text-green-600" />
+          <div className="bg-white dark:bg-[#17181e] rounded-2xl shadow-xl shadow-black/10 px-5 py-4 flex items-start gap-3 max-w-xs">
+            <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center shrink-0">
+              <Leaf className="w-5 h-5 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-900">Nutricionista Teresa</p>
-              <p className="text-xs text-gray-500 leading-relaxed mt-0.5">
+              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Nutricionista Teresa</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed mt-0.5">
                 ¡Muy bien Carmen, ya veo más colores en el plato! 👏
               </p>
             </div>
@@ -317,7 +325,7 @@ export function LandingPage() {
             <ScrollReveal direction="up" delay={100}>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black tracking-tight leading-[1.1] text-white drop-shadow-md max-w-3xl">
                 Nutrición{" "}
-                <span className="bg-[#bdd9c5] px-1.5 -mx-0.5 text-gray-900 drop-shadow-none">
+                <span className="bg-[#bdd9c5] dark:bg-[#2a5e3a] px-1.5 -mx-0.5 text-gray-900 dark:text-green-100 drop-shadow-none">
                   personalizada
                 </span>
                 <br />
@@ -331,40 +339,40 @@ export function LandingPage() {
       {/* ─── WAVE hero → spacer ─── */}
       <div className="relative -mt-[3vw] z-30">
         <svg viewBox="0 0 1440 80" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-[5vw] sm:h-[4vw] lg:h-[3.5vw] block">
-          <path d="M0 80V40C240 0 480 0 720 20C960 40 1200 60 1440 30V80H0Z" fill="#bdd9c5" />
+          <path d="M0 80V40C240 0 480 0 720 20C960 40 1200 60 1440 30V80H0Z" className="fill-[#bdd9c5] dark:fill-[#1a3a24]" />
         </svg>
-        <section className="bg-[#bdd9c5] -mt-px h-12 sm:h-16 lg:h-20" />
+        <section className="bg-[#bdd9c5] dark:bg-[#1a3a24] -mt-px h-12 sm:h-16 lg:h-20" />
       </div>
 
       {/* ─── FOOD ICONS + HEADLINE ─── */}
-      <section className="relative pt-20 pb-16 sm:pt-24 sm:pb-20 overflow-hidden bg-gradient-to-b from-green-50/40 to-white">
+      <section className="relative pt-20 pb-16 sm:pt-24 sm:pb-20 overflow-hidden bg-gradient-to-b from-green-50/40 to-white dark:from-green-950/20 dark:to-[#101117]">
         <div className="absolute inset-0 pointer-events-none select-none" aria-hidden="true">
-          <Utensils className="absolute top-[2%] left-[2%] w-8 h-8 text-green-300 opacity-[0.55]" style={{ transform: "rotate(-15deg)" }} />
-          <Fish className="absolute top-[3%] left-[11%] w-9 h-9 text-green-300 opacity-[0.50]" style={{ transform: "rotate(5deg)" }} />
-          <Croissant className="absolute top-[1%] left-[22%] w-8 h-8 text-green-300 opacity-[0.45]" style={{ transform: "rotate(8deg)" }} />
-          <Salad className="absolute top-[4%] left-[33%] w-8 h-8 text-green-300 opacity-[0.40]" style={{ transform: "rotate(-8deg)" }} />
-          <Wheat className="absolute top-[2%] left-[43%] w-7 h-7 text-green-200 opacity-[0.35]" style={{ transform: "rotate(12deg)" }} />
-          <Vegan className="absolute top-[5%] left-[52%] w-7 h-7 text-green-200 opacity-[0.30]" style={{ transform: "rotate(-5deg)" }} />
-          <Pizza className="absolute top-[1%] right-[33%] w-8 h-8 text-green-300 opacity-[0.40]" style={{ transform: "rotate(-12deg)" }} />
-          <Soup className="absolute top-[3%] right-[22%] w-9 h-9 text-green-300 opacity-[0.45]" style={{ transform: "rotate(-5deg)" }} />
-          <Beef className="absolute top-[4%] right-[11%] w-8 h-8 text-green-300 opacity-[0.50]" style={{ transform: "rotate(-10deg)" }} />
-          <CupSoda className="absolute top-[2%] right-[2%] w-8 h-8 text-green-300 opacity-[0.55]" style={{ transform: "rotate(15deg)" }} />
-          <Carrot className="absolute top-[13%] left-[5%] w-8 h-8 text-green-300 opacity-[0.40]" style={{ transform: "rotate(10deg)" }} />
-          <Egg className="absolute top-[16%] left-[16%] w-7 h-7 text-green-200 opacity-[0.35]" style={{ transform: "rotate(20deg)" }} />
-          <Nut className="absolute top-[12%] left-[27%] w-6 h-6 text-green-200 opacity-[0.30]" style={{ transform: "rotate(-8deg)" }} />
-          <Cherry className="absolute top-[19%] left-[37%] w-7 h-7 text-green-200 opacity-[0.25]" style={{ transform: "rotate(12deg)" }} />
-          <Banana className="absolute top-[14%] right-[37%] w-7 h-7 text-green-200 opacity-[0.25]" style={{ transform: "rotate(8deg)" }} />
-          <Bean className="absolute top-[17%] right-[27%] w-6 h-6 text-green-200 opacity-[0.30]" style={{ transform: "rotate(15deg)" }} />
-          <Sandwich className="absolute top-[12%] right-[16%] w-8 h-8 text-green-200 opacity-[0.35]" style={{ transform: "rotate(8deg)" }} />
-          <IceCreamCone className="absolute top-[15%] right-[5%] w-7 h-7 text-green-300 opacity-[0.40]" style={{ transform: "rotate(-20deg)" }} />
-          <Apple className="absolute top-[27%] left-[4%] w-7 h-7 text-green-200 opacity-[0.20]" style={{ transform: "rotate(-20deg)" }} />
-          <Grape className="absolute top-[32%] left-[18%] w-7 h-7 text-green-200 opacity-[0.16]" style={{ transform: "rotate(5deg)" }} />
-          <Citrus className="absolute top-[29%] right-[18%] w-7 h-7 text-green-200 opacity-[0.16]" style={{ transform: "rotate(10deg)" }} />
-          <Croissant className="absolute top-[34%] right-[4%] w-7 h-7 text-green-200 opacity-[0.20]" style={{ transform: "rotate(8deg)" }} />
+          <Utensils className="absolute top-[2%] left-[2%] w-8 h-8 text-green-300 dark:text-green-800 opacity-[0.55]" style={{ transform: "rotate(-15deg)" }} />
+          <Fish className="absolute top-[3%] left-[11%] w-9 h-9 text-green-300 dark:text-green-800 opacity-[0.50]" style={{ transform: "rotate(5deg)" }} />
+          <Croissant className="absolute top-[1%] left-[22%] w-8 h-8 text-green-300 dark:text-green-800 opacity-[0.45]" style={{ transform: "rotate(8deg)" }} />
+          <Salad className="absolute top-[4%] left-[33%] w-8 h-8 text-green-300 dark:text-green-800 opacity-[0.40]" style={{ transform: "rotate(-8deg)" }} />
+          <Wheat className="absolute top-[2%] left-[43%] w-7 h-7 text-green-200 dark:text-green-900 opacity-[0.35]" style={{ transform: "rotate(12deg)" }} />
+          <Vegan className="absolute top-[5%] left-[52%] w-7 h-7 text-green-200 dark:text-green-900 opacity-[0.30]" style={{ transform: "rotate(-5deg)" }} />
+          <Pizza className="absolute top-[1%] right-[33%] w-8 h-8 text-green-300 dark:text-green-800 opacity-[0.40]" style={{ transform: "rotate(-12deg)" }} />
+          <Soup className="absolute top-[3%] right-[22%] w-9 h-9 text-green-300 dark:text-green-800 opacity-[0.45]" style={{ transform: "rotate(-5deg)" }} />
+          <Beef className="absolute top-[4%] right-[11%] w-8 h-8 text-green-300 dark:text-green-800 opacity-[0.50]" style={{ transform: "rotate(-10deg)" }} />
+          <CupSoda className="absolute top-[2%] right-[2%] w-8 h-8 text-green-300 dark:text-green-800 opacity-[0.55]" style={{ transform: "rotate(15deg)" }} />
+          <Carrot className="absolute top-[13%] left-[5%] w-8 h-8 text-green-300 dark:text-green-800 opacity-[0.40]" style={{ transform: "rotate(10deg)" }} />
+          <Egg className="absolute top-[16%] left-[16%] w-7 h-7 text-green-200 dark:text-green-900 opacity-[0.35]" style={{ transform: "rotate(20deg)" }} />
+          <Nut className="absolute top-[12%] left-[27%] w-6 h-6 text-green-200 dark:text-green-900 opacity-[0.30]" style={{ transform: "rotate(-8deg)" }} />
+          <Cherry className="absolute top-[19%] left-[37%] w-7 h-7 text-green-200 dark:text-green-900 opacity-[0.25]" style={{ transform: "rotate(12deg)" }} />
+          <Banana className="absolute top-[14%] right-[37%] w-7 h-7 text-green-200 dark:text-green-900 opacity-[0.25]" style={{ transform: "rotate(8deg)" }} />
+          <Bean className="absolute top-[17%] right-[27%] w-6 h-6 text-green-200 dark:text-green-900 opacity-[0.30]" style={{ transform: "rotate(15deg)" }} />
+          <Sandwich className="absolute top-[12%] right-[16%] w-8 h-8 text-green-200 dark:text-green-900 opacity-[0.35]" style={{ transform: "rotate(8deg)" }} />
+          <IceCreamCone className="absolute top-[15%] right-[5%] w-7 h-7 text-green-300 dark:text-green-800 opacity-[0.40]" style={{ transform: "rotate(-20deg)" }} />
+          <Apple className="absolute top-[27%] left-[4%] w-7 h-7 text-green-200 dark:text-green-900 opacity-[0.20]" style={{ transform: "rotate(-20deg)" }} />
+          <Grape className="absolute top-[32%] left-[18%] w-7 h-7 text-green-200 dark:text-green-900 opacity-[0.16]" style={{ transform: "rotate(5deg)" }} />
+          <Citrus className="absolute top-[29%] right-[18%] w-7 h-7 text-green-200 dark:text-green-900 opacity-[0.16]" style={{ transform: "rotate(10deg)" }} />
+          <Croissant className="absolute top-[34%] right-[4%] w-7 h-7 text-green-200 dark:text-green-900 opacity-[0.20]" style={{ transform: "rotate(8deg)" }} />
         </div>
         <ScrollReveal>
           <div className="relative max-w-4xl mx-auto px-4 text-center">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 mb-3">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 dark:text-gray-100 mb-3">
               Software de nutrición personalizada.
             </h2>
             <p className="text-xl sm:text-2xl text-gray-400">
@@ -387,10 +395,10 @@ export function LandingPage() {
               >
                 <div className="flex-1">
                   <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-5 leading-[1.2]">
-                    <span className="bg-[#bdd9c5] px-1.5 -mx-0.5">{section.tag}</span>{" "}
+                    <span className="bg-[#bdd9c5] dark:bg-[#2a5e3a] px-1.5 -mx-0.5 dark:text-green-100">{section.tag}</span>{" "}
                     {section.title}
                   </h3>
-                  <p className="text-base sm:text-lg text-gray-500 leading-relaxed mb-7">
+                  <p className="text-base sm:text-lg text-gray-500 dark:text-gray-400 leading-relaxed mb-7">
                     {section.description}
                   </p>
                   <Link
@@ -428,19 +436,19 @@ export function LandingPage() {
 
       {/* ─── WAVE white → green (Trust) ─── */}
       <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto block -mb-px">
-        <path d="M0 80V50C240 20 480 40 720 60C960 80 1200 70 1440 40V80H0Z" fill="#bdd9c5" />
+        <path d="M0 80V50C240 20 480 40 720 60C960 80 1200 70 1440 40V80H0Z" className="fill-[#bdd9c5] dark:fill-[#1a3a24]" />
       </svg>
 
       {/* ─── TRUST ─── */}
-      <section className="relative bg-[#bdd9c5] overflow-hidden">
+      <section className="relative bg-[#bdd9c5] dark:bg-[#1a3a24] overflow-hidden">
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32">
           <ScrollReveal>
             <div className="max-w-5xl mx-auto text-center mb-14">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-5">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-5">
                 Software diseñado para{" "}
-                <span className="bg-[#9bc4a8] px-2 -mx-0.5 text-white">nutricionistas</span>
+                <span className="bg-[#9bc4a8] dark:bg-[#2a5e3a] px-2 -mx-0.5 text-white dark:text-green-200">nutricionistas</span>
               </h2>
-              <p className="text-green-900/70 text-lg leading-relaxed">
+              <p className="text-green-900/70 dark:text-green-200/70 text-lg leading-relaxed">
                 Cada funcionalidad ha sido pensada para ahorrar tiempo en tu consulta de nutrición y mejorar la experiencia de tus pacientes.
               </p>
             </div>
@@ -448,12 +456,12 @@ export function LandingPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
             {TRUST_CARDS.map((item, i) => (
               <ScrollReveal key={item.title} delay={i * 150} direction="up">
-                <div className="bg-white rounded-2xl p-8 text-center border border-white shadow-xl shadow-green-900/10 hover:shadow-2xl hover:shadow-green-900/15 hover:-translate-y-2 transition-all duration-300">
-                  <div className="w-14 h-14 rounded-2xl bg-green-50 flex items-center justify-center mx-auto mb-5 shadow-sm shadow-green-900/5">
-                    <item.icon className="w-7 h-7 text-green-700" />
+                <div className="bg-white dark:bg-[#17181e] rounded-2xl p-8 text-center border border-white dark:border-green-900/30 shadow-xl shadow-green-900/10 dark:shadow-black/20 hover:shadow-2xl hover:shadow-green-900/15 hover:-translate-y-2 transition-all duration-300">
+                  <div className="w-14 h-14 rounded-2xl bg-green-50 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-5 shadow-sm shadow-green-900/5">
+                    <item.icon className="w-7 h-7 text-green-700 dark:text-green-400" />
                   </div>
-                  <h3 className="font-bold text-green-900 text-lg mb-2">{item.title}</h3>
-                  <p className="text-green-900/60 text-sm leading-relaxed">{item.desc}</p>
+                  <h3 className="font-bold text-green-900 dark:text-green-300 text-lg mb-2">{item.title}</h3>
+                  <p className="text-green-900/60 dark:text-green-400/60 text-sm leading-relaxed">{item.desc}</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -463,7 +471,7 @@ export function LandingPage() {
 
       {/* ─── WAVE green → white ─── */}
       <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto block -mt-px">
-        <path d="M0 0V30C240 60 480 40 720 20C960 0 1200 10 1440 40V0H0Z" fill="#bdd9c5" />
+        <path d="M0 0V30C240 60 480 40 720 20C960 0 1200 10 1440 40V0H0Z" className="fill-[#bdd9c5] dark:fill-[#1a3a24]" />
       </svg>
 
       {/* ─── FAQ ─── */}
@@ -473,24 +481,24 @@ export function LandingPage() {
             <div className="max-w-3xl mx-auto text-center mb-14 sm:mb-16">
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-5">
                 Respuestas{" "}
-                <span className="bg-[#bdd9c5] px-2 -mx-0.5">más cerca</span>{" "}
+                <span className="bg-[#bdd9c5] dark:bg-[#2a5e3a] dark:text-green-100 px-2 -mx-0.5">más cerca</span>{" "}
                 que nunca
               </h2>
-              <p className="text-gray-500 text-base sm:text-lg leading-relaxed">
+              <p className="text-gray-500 dark:text-gray-400 text-base sm:text-lg leading-relaxed">
                 Resolvemos las preguntas más comunes sobre Annonia y cómo puede transformar tu consulta de nutrición.
               </p>
             </div>
           </ScrollReveal>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center max-w-6xl mx-auto">
             <ScrollReveal direction="left">
-              <div className="divide-y divide-gray-200 border-l-2 border-[#bdd9c5] pl-6 sm:pl-8">
+              <div className="divide-y divide-gray-200 dark:divide-gray-700 border-l-2 border-[#bdd9c5] dark:border-[#2a5e3a] pl-6 sm:pl-8">
                 {FAQS.map((faq, i) => (
                   <details key={i} className="group py-5 first:pt-0 last:pb-0">
-                    <summary className="flex items-center justify-between cursor-pointer text-lg sm:text-xl font-semibold text-gray-900 hover:text-green-700 transition-colors [&::-webkit-details-marker]:hidden list-none">
+                    <summary className="flex items-center justify-between cursor-pointer text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100 hover:text-green-700 dark:hover:text-green-400 transition-colors [&::-webkit-details-marker]:hidden list-none">
                       <span>{faq.q}</span>
                       <ChevronRight className="w-5 h-5 text-gray-400 shrink-0 ml-4 transition-transform duration-200 group-open:rotate-90" />
                     </summary>
-                    <div className="pt-3 text-gray-500 leading-relaxed">
+                    <div className="pt-3 text-gray-500 dark:text-gray-400 leading-relaxed">
                       {faq.a}
                     </div>
                   </details>
@@ -499,14 +507,14 @@ export function LandingPage() {
             </ScrollReveal>
             <ScrollReveal direction="right" className="flex justify-center">
               <div className="relative w-full max-w-[240px] sm:max-w-[280px]">
-                <div className="absolute -inset-6 bg-gradient-to-br from-green-100/60 to-[#bdd9c5]/40 rounded-[2rem] blur-2xl" />
+                <div className="absolute -inset-6 bg-gradient-to-br from-green-100/60 to-[#bdd9c5]/40 dark:from-green-900/30 dark:to-[#1a3a24]/40 rounded-[2rem] blur-2xl" />
                 <Image
                   src="/images/landing/pacientes.png"
                   alt="Annonia — portal del paciente"
                   width={560}
                   height={800}
                   sizes="280px"
-                  className="relative w-full h-auto rounded-2xl shadow-2xl shadow-green-900/15"
+                  className="relative w-full h-auto rounded-2xl shadow-2xl shadow-green-900/15 dark:shadow-black/30"
                 />
               </div>
             </ScrollReveal>
@@ -518,12 +526,12 @@ export function LandingPage() {
       <section className="py-24 sm:py-32">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal>
-            <div className="relative rounded-3xl bg-gradient-to-br from-[#bdd9c5] to-[#9bc4a8] overflow-hidden px-8 sm:px-16 py-16 sm:py-20 text-center">
+            <div className="relative rounded-3xl bg-gradient-to-br from-[#bdd9c5] to-[#9bc4a8] dark:from-[#1a3a24] dark:to-[#1e4a2e] overflow-hidden px-8 sm:px-16 py-16 sm:py-20 text-center">
               <div className="relative">
-                <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+                <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
                   Empieza a digitalizar tu consulta de nutrición
                 </h2>
-                <p className="text-green-900/70 text-lg mb-10 max-w-xl mx-auto leading-relaxed">
+                <p className="text-green-900/70 dark:text-green-200/70 text-lg mb-10 max-w-xl mx-auto leading-relaxed">
                   Únete a los dietistas-nutricionistas que confían en Annonia para ofrecer
                   dietas personalizadas y un seguimiento nutricional excepcional.
                 </p>
@@ -534,7 +542,7 @@ export function LandingPage() {
                   Crear cuenta gratis
                   <ArrowRight className="w-5 h-5" />
                 </Link>
-                <p className="mt-5 text-sm text-green-900/50">
+                <p className="mt-5 text-sm text-green-900/50 dark:text-green-200/50">
                   14 días gratis · Sin tarjeta · Cancela cuando quieras
                 </p>
               </div>
@@ -545,11 +553,11 @@ export function LandingPage() {
 
       {/* ─── WAVE white → dark (Footer) ─── */}
       <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto block -mb-px">
-        <path d="M0 80V50C240 20 480 40 720 60C960 80 1200 70 1440 40V80H0Z" fill="#2d3748" />
+        <path d="M0 80V50C240 20 480 40 720 60C960 80 1200 70 1440 40V80H0Z" className="fill-[#2d3748] dark:fill-[#0a0b0e]" />
       </svg>
 
       {/* ─── FOOTER ─── */}
-      <footer className="bg-[#2d3748]">
+      <footer className="bg-[#2d3748] dark:bg-[#0a0b0e]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 mb-12">
             <div>

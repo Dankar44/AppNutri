@@ -69,6 +69,7 @@ interface Props {
 export function PatientNav({ nombre, apellidos, fotoUrl, badges: badgesInit = {} }: Props) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [badges, setBadges] = useState<Record<string, number>>(badgesInit);
 
   const initials = `${nombre[0] || ""}${apellidos[0] || ""}`.toUpperCase();
@@ -113,6 +114,8 @@ export function PatientNav({ nombre, apellidos, fotoUrl, badges: badgesInit = {}
       cancelled = true;
     };
   }, [pathname]);
+
+  useEffect(() => setMounted(true), []);
 
   // Cerrar menú al navegar / resize
   useEffect(() => {
@@ -222,17 +225,21 @@ export function PatientNav({ nombre, apellidos, fotoUrl, badges: badgesInit = {}
   return (
     <>
       {/* Barra superior móvil */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 h-14 pt-safe bg-card border-b border-border flex items-center px-3 gap-3">
-        <button
-          onClick={() => setMobileOpen(true)}
-          aria-label="Abrir menú"
-          className="p-2.5 -ml-1 rounded-lg hover:bg-muted transition-colors min-h-11 min-w-11 flex items-center justify-center"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
-        <Leaf className="w-5 h-5 text-primary" />
-        <span className="font-bold text-sm">Annonia</span>
-        <div className="ml-auto flex items-center gap-2">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 h-14 pt-safe bg-card border-b border-border flex items-center px-3">
+        <div className="min-w-20 shrink-0">
+          <button
+            onClick={() => setMobileOpen(true)}
+            aria-label="Abrir menú"
+            className="p-2.5 -ml-1 rounded-lg hover:bg-muted transition-colors min-h-11 min-w-11 flex items-center justify-center"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="flex-1 flex items-center justify-center gap-2">
+          <Leaf className="w-7 h-7 text-primary shrink-0" />
+          <span className="text-xl font-bold">Annonia</span>
+        </div>
+        <div className="min-w-20 shrink-0 flex items-center justify-end gap-1">
           <ThemeToggle />
           {fotoUrl ? (
             <img src={fotoUrl} alt={nombre} className="w-7 h-7 rounded-full object-cover" />
@@ -244,18 +251,21 @@ export function PatientNav({ nombre, apellidos, fotoUrl, badges: badgesInit = {}
         </div>
       </div>
 
-      {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-40 bg-black/50" onClick={() => setMobileOpen(false)} aria-hidden="true" />
+      {mounted && (
+        <>
+          {mobileOpen && (
+            <div className="lg:hidden fixed inset-0 z-40 bg-black/50" onClick={() => setMobileOpen(false)} aria-hidden="true" />
+          )}
+          <aside
+            className={cn(
+              "lg:hidden fixed top-0 left-0 z-50 h-full w-full pt-safe pb-safe bg-sidebar flex flex-col transition-transform duration-300",
+              mobileOpen ? "translate-x-0" : "-translate-x-full",
+            )}
+          >
+            {sidebarContent}
+          </aside>
+        </>
       )}
-
-      <aside
-        className={cn(
-          "lg:hidden fixed top-0 left-0 z-50 h-full w-64 xs:w-72 max-w-[85vw] pt-safe pb-safe bg-sidebar border-r border-border flex flex-col transition-transform duration-300",
-          mobileOpen ? "translate-x-0" : "-translate-x-full",
-        )}
-      >
-        {sidebarContent}
-      </aside>
 
       <aside data-tour="sidebar" className="hidden lg:flex h-screen sticky top-0 bg-sidebar border-r border-border flex-col w-64">
         {sidebarContent}

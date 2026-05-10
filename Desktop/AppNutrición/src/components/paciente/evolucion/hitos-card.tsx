@@ -183,7 +183,7 @@ export function HitosCard({ data }: Props) {
   const conseguidos = hitos.filter((h) => h.conseguido).length;
 
   return (
-    <section className="rounded-2xl border border-border bg-card overflow-hidden">
+    <section className="lg:rounded-2xl lg:border lg:border-border lg:bg-card overflow-hidden">
       <header className="flex items-center justify-between gap-3 p-5 pb-4">
         <div className="flex items-center gap-3">
           <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl border border-border text-foreground shrink-0">

@@ -48,7 +48,7 @@ export default async function PatientDietPage() {
     return (
       <div>
         <PageHeader icon={UtensilsCrossed} title="Mi dieta" subtitle="Plan alimenticio activo" />
-        <div className="rounded-xl border border-border bg-muted/30 p-12 text-center">
+        <div className="lg:rounded-xl lg:border lg:border-border sm:bg-muted/30 p-12 text-center">
           <UtensilsCrossed className="w-12 h-12 text-muted-foreground mx-auto mb-4" strokeWidth={1.5} />
           <h2 className="text-lg font-semibold mb-1">Sin plan activo</h2>
           <p className="text-muted-foreground">
@@ -104,7 +104,7 @@ export default async function PatientDietPage() {
           <Link
             href="/paciente/portal/dieta/lista-compra"
             data-tour="shopping-list-link"
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
+            className="hidden lg:inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
           >
             <ShoppingCart className="w-4 h-4" />
             Lista de la compra

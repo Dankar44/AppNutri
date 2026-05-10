@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import Image from "next/image";
 import { Leaf, Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -71,8 +72,15 @@ function LoginContent() {
   return (
     <div className="min-h-dvh flex">
       {/* Panel izquierdo decorativo */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary to-green-700 relative overflow-hidden">
-        <div className="absolute inset-0 bg-black/10" />
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+        <Image
+          src="/images/landing/banner.png"
+          alt=""
+          fill
+          priority
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-green-600/90 to-green-700/90" />
         <div className="relative z-10 flex flex-col justify-center px-16 text-white">
           <Leaf className="w-16 h-16 mb-8" />
           <h1 className="text-5xl font-bold mb-4">Annonia</h1>

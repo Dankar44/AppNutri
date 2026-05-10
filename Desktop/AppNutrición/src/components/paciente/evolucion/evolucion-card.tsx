@@ -123,7 +123,7 @@ export function EvolucionCard({
   }, [data]);
 
   return (
-    <section className="rounded-2xl border border-border bg-card overflow-hidden">
+    <section className="lg:rounded-2xl lg:border lg:border-border lg:bg-card overflow-hidden">
       <header className="flex flex-wrap items-start justify-between gap-3 p-5 pb-2">
         <div className="flex items-start gap-3 min-w-0">
           <span

@@ -24,6 +24,7 @@ export const FINDE = ["Sábado", "Domingo"] as const;
 export const START_HOUR = 6;
 export const END_HOUR = 24;
 export const PX_PER_HOUR = 52;
+export const MOBILE_PX_PER_HOUR = 36;
 export const TOTAL_HOURS = END_HOUR - START_HOUR;
 
 export function rangoHoras(): string[] {
@@ -200,20 +201,20 @@ export function horasPorCategoria(entries: HorarioEntry[]): Record<string, numbe
 /**
  * Tamaño del grid (18 filas × altura por hora). Útil para layout.
  */
-export function gridHeightPx(): number {
-  return TOTAL_HOURS * PX_PER_HOUR;
+export function gridHeightPx(pxH = PX_PER_HOUR): number {
+  return TOTAL_HOURS * pxH;
 }
 
 /**
  * Posiciona un bloque en el grid CSS.
  * Devuelve top (px) y height (px).
  */
-export function bloqueLayout(bloque: Bloque): { top: number; height: number } {
+export function bloqueLayout(bloque: Bloque, pxH = PX_PER_HOUR): { top: number; height: number } {
   const ini = hourToInt(bloque.horaInicio);
   const fin = hourToInt(bloque.horaFin);
   return {
-    top: (ini - START_HOUR) * PX_PER_HOUR,
-    height: (fin - ini) * PX_PER_HOUR,
+    top: (ini - START_HOUR) * pxH,
+    height: (fin - ini) * pxH,
   };
 }
 

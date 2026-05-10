@@ -216,23 +216,6 @@ body {
   color: var(--fg);
 }
 
-.main-content-card {
-  padding: 1.25rem 1rem;
-}
-@media (min-width: 640px) {
-  .main-content-card {
-    padding: 1.5rem 1.25rem;
-  }
-}
-@media (min-width: 1024px) {
-  .main-content-card {
-    background-color: var(--card);
-    border-radius: 1rem;
-    border: 1px solid var(--border);
-    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    padding: 2rem;
-  }
-}
 
 .mensajes-chat-fullscreen {
   position: fixed;
@@ -344,4 +327,13 @@ input[type="range"].macro-slider::-moz-range-progress {
   height: 8px;
   border-radius: 999px;
   background: var(--slider-color);
+}
+
+@keyframes soft-pulse {
+  0%, 85%, 100% { opacity: 1; }
+  90% { opacity: 0.5; }
+  95% { opacity: 0.85; }
+}
+.animate-soft-pulse {
+  animation: soft-pulse 6s ease-in-out infinite;
 }
