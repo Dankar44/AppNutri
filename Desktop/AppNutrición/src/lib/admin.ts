@@ -10,18 +10,16 @@ function cleanEnv(val: string | undefined): string {
   return (val || "").replace(/\\n/g, "").replace(/\n/g, "").replace(/\r/g, "").trim();
 }
 
+function parseEmails(val: string | undefined): string[] {
+  return cleanEnv(val).split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
+}
+
 function getAdminEmails(): string[] {
-  return cleanEnv(process.env.ADMIN_EMAILS)
-    .split(",")
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean);
+  return [...parseEmails(process.env.ADMIN_EMAILS), ...parseEmails(process.env.ADMIN_EMAILS_2)];
 }
 
 function getCreatorEmails(): string[] {
-  return cleanEnv(process.env.ADMIN_CREATOR_EMAILS)
-    .split(",")
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean);
+  return parseEmails(process.env.ADMIN_CREATOR_EMAILS);
 }
 
 function getSecret() {
@@ -42,14 +40,20 @@ export function isAnyAdminEmail(email: string): boolean {
 }
 
 export function verifyAdminCredentials(email: string, password: string): { valid: true; role: AdminRole } | false {
-  const adminPassword = cleanEnv(process.env.ADMIN_PASSWORD);
-  const creatorPassword = cleanEnv(process.env.ADMIN_CREATOR_PASSWORD);
+  const e = email.toLowerCase();
 
-  if (adminPassword && isAdminEmail(email) && password === adminPassword) {
+  const pw1 = cleanEnv(process.env.ADMIN_PASSWORD);
+  if (pw1 && parseEmails(process.env.ADMIN_EMAILS).includes(e) && password === pw1) {
     return { valid: true, role: "admin" };
   }
 
-  if (creatorPassword && isCreatorEmail(email) && password === creatorPassword) {
+  const pw2 = cleanEnv(process.env.ADMIN_PASSWORD_2);
+  if (pw2 && parseEmails(process.env.ADMIN_EMAILS_2).includes(e) && password === pw2) {
+    return { valid: true, role: "admin" };
+  }
+
+  const creatorPassword = cleanEnv(process.env.ADMIN_CREATOR_PASSWORD);
+  if (creatorPassword && isCreatorEmail(e) && password === creatorPassword) {
     return { valid: true, role: "creator" };
   }
 
