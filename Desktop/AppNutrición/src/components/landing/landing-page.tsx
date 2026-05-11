@@ -526,26 +526,26 @@ export function LandingPage() {
       <section className="py-24 sm:py-32">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal>
-            <div className="relative rounded-3xl bg-gradient-to-br from-[#bdd9c5] to-[#9bc4a8] dark:from-[#1a3a24] dark:to-[#1e4a2e] overflow-hidden px-8 sm:px-16 py-16 sm:py-20 text-center">
-              <div className="relative">
-                <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-                  Empieza a digitalizar tu consulta de nutrición
-                </h2>
-                <p className="text-green-900/70 dark:text-green-200/70 text-lg mb-10 max-w-xl mx-auto leading-relaxed">
-                  Únete a los dietistas-nutricionistas que confían en Annonia para ofrecer
-                  dietas personalizadas y un seguimiento nutricional excepcional.
-                </p>
-                <Link
-                  href="/registro"
-                  className="inline-flex items-center gap-2 px-8 py-4 text-base font-semibold rounded-2xl bg-green-600 text-white hover:bg-green-700 transition-all shadow-lg shadow-green-600/25 hover:-translate-y-0.5"
-                >
-                  Crear cuenta gratis
-                  <ArrowRight className="w-5 h-5" />
-                </Link>
-                <p className="mt-5 text-sm text-green-900/50 dark:text-green-200/50">
-                  14 días gratis · Sin tarjeta · Cancela cuando quieras
-                </p>
-              </div>
+            <div className="max-w-3xl mx-auto text-center">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-5">
+                Empieza a{" "}
+                <span className="bg-[#bdd9c5] dark:bg-[#2a5e3a] dark:text-green-100 px-2 -mx-0.5">digitalizar</span>{" "}
+                tu consulta de nutrición
+              </h2>
+              <p className="text-gray-500 dark:text-gray-400 text-base sm:text-lg leading-relaxed mb-10 max-w-xl mx-auto">
+                Únete a los dietistas-nutricionistas que confían en Annonia para ofrecer
+                dietas personalizadas y un seguimiento nutricional excepcional.
+              </p>
+              <Link
+                href="/registro"
+                className="inline-flex items-center gap-2 px-8 py-4 text-base font-semibold rounded-2xl bg-green-600 text-white hover:bg-green-700 transition-all shadow-lg shadow-green-600/25 hover:-translate-y-0.5"
+              >
+                Crear cuenta gratis
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+              <p className="mt-5 text-sm text-gray-400 dark:text-gray-500">
+                14 días gratis · Sin tarjeta · Cancela cuando quieras
+              </p>
             </div>
           </ScrollReveal>
         </div>

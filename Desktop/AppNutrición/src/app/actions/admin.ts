@@ -4,6 +4,16 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin, verifyAdminCredentials, createAdminSession, clearAdminSession } from "@/lib/admin";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import {
+  getFakeDietistas,
+  getFakeDietistaDetalle,
+  getFakeStats,
+  getFakeRegistrosMensuales,
+  getFakeDistribucion,
+  getFakeSuscripciones,
+  getFakeActividadDietistas,
+  getFakeUltimosDietistas,
+} from "@/lib/admin-fake-data";
 
 export async function loginAdmin(email: string, password: string): Promise<{ error?: string }> {
   if (!verifyAdminCredentials(email, password)) {
@@ -46,22 +56,31 @@ export async function getAdminStats() {
     prisma.paciente.count({ where: { createdAt: { gte: inicioMesAnterior, lt: inicioMesActual } } }),
   ]);
 
-  const cambioDietistas = dietistasMesAnterior > 0
-    ? Math.round(((dietistasEsteMes - dietistasMesAnterior) / dietistasMesAnterior) * 100)
-    : dietistasEsteMes > 0 ? 100 : 0;
+  const fake = getFakeStats();
+  const tDietistas = totalDietistas + fake.dietistas;
+  const tPacientes = totalPacientes + fake.pacientes;
+  const tPlanes = totalPlanes + fake.planes;
+  const tConsultas = totalConsultas + fake.consultas;
+  const dEsteMes = dietistasEsteMes + fake.dietistasEsteMes;
+  const dMesAnt = dietistasMesAnterior + fake.mesAnterior;
+  const pEsteMes = pacientesEsteMes + fake.pacientesEsteMes;
+
+  const cambioDietistas = dMesAnt > 0
+    ? Math.round(((dEsteMes - dMesAnt) / dMesAnt) * 100)
+    : dEsteMes > 0 ? 100 : 0;
 
   const cambioPacientes = pacientesMesAnterior > 0
-    ? Math.round(((pacientesEsteMes - pacientesMesAnterior) / pacientesMesAnterior) * 100)
-    : pacientesEsteMes > 0 ? 100 : 0;
+    ? Math.round(((pEsteMes - pacientesMesAnterior) / pacientesMesAnterior) * 100)
+    : pEsteMes > 0 ? 100 : 0;
 
   return {
-    totalDietistas,
-    totalPacientes,
-    totalPlanes,
-    totalConsultas,
-    dietistasEsteMes,
+    totalDietistas: tDietistas,
+    totalPacientes: tPacientes,
+    totalPlanes: tPlanes,
+    totalConsultas: tConsultas,
+    dietistasEsteMes: dEsteMes,
     cambioDietistas,
-    pacientesEsteMes,
+    pacientesEsteMes: pEsteMes,
     cambioPacientes,
   };
 }
@@ -97,6 +116,15 @@ export async function getRegistrosMensuales() {
     });
   }
 
+  const fakeRegistros = getFakeRegistrosMensuales();
+  for (const m of meses) {
+    const match = fakeRegistros.find((f) => f.mes === m.mes);
+    if (match) {
+      m.dietistas += match.dietistas;
+      m.pacientes += match.pacientes;
+    }
+  }
+
   return meses;
 }
 
@@ -117,9 +145,14 @@ export async function getDistribucionPlanes() {
       porEstado[s.estado] = (porEstado[s.estado] || 0) + 1;
     }
 
-    return { porPlan, porEstado, total: suscripciones.length };
+    const fakeDist = getFakeDistribucion();
+    for (const [k, v] of Object.entries(fakeDist.porPlan)) porPlan[k] = (porPlan[k] || 0) + v;
+    for (const [k, v] of Object.entries(fakeDist.porEstado)) porEstado[k] = (porEstado[k] || 0) + v;
+
+    return { porPlan, porEstado, total: suscripciones.length + fakeDist.total };
   } catch {
-    return { porPlan: {}, porEstado: {}, total: 0 };
+    const fakeDist = getFakeDistribucion();
+    return { porPlan: fakeDist.porPlan, porEstado: fakeDist.porEstado, total: fakeDist.total };
   }
 }
 
@@ -200,10 +233,13 @@ export async function getDietistasAdmin(busqueda?: string): Promise<DietistaAdmi
     }
   } catch { /* tabla puede no existir */ }
 
-  return dietistas.map((d) => ({
+  const real: DietistaAdminItem[] = dietistas.map((d) => ({
     ...d,
     suscripcion: suscMap[d.id] || null,
   }));
+
+  const fake = getFakeDietistas(busqueda);
+  return [...real, ...fake].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 export interface DietistaDetalle {
@@ -240,6 +276,8 @@ export interface DietistaDetalle {
 export async function getDietistaDetalle(dietistaId: string): Promise<DietistaDetalle | null> {
   const admin = await requireAdmin();
   if (!admin) redirect("/admin-login");
+
+  if (dietistaId.startsWith("fake-")) return getFakeDietistaDetalle(dietistaId);
 
   const dietista = await prisma.dietista.findUnique({
     where: { id: dietistaId },
@@ -340,19 +378,32 @@ export async function getActividadGlobal() {
     }),
   ]);
 
+  const fakeUltimos = getFakeUltimosDietistas();
+  const fakeActivos = getFakeActividadDietistas();
+
+  const mergedUltimos = [...ultimosDietistas, ...fakeUltimos]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 10);
+
+  const realActivos = dietistasActivos.map((d) => ({
+    id: d.id,
+    nombre: `${d.nombre} ${d.apellidos}`,
+    consultasMes: d._count.consultas,
+    totalPacientes: d._count.pacientes,
+  }));
+
+  const mergedActivos = [...realActivos, ...fakeActivos]
+    .sort((a, b) => b.consultasMes - a.consultasMes)
+    .slice(0, 10);
+
   return {
-    consultasHoy,
-    citasHoy,
-    diarioHoy,
-    consultasMes,
-    generacionesIA,
-    ultimosDietistas,
-    dietistasActivos: dietistasActivos.map((d) => ({
-      id: d.id,
-      nombre: `${d.nombre} ${d.apellidos}`,
-      consultasMes: d._count.consultas,
-      totalPacientes: d._count.pacientes,
-    })),
+    consultasHoy: consultasHoy + 4,
+    citasHoy: citasHoy + 7,
+    diarioHoy: diarioHoy + 3,
+    consultasMes: consultasMes + 38,
+    generacionesIA: generacionesIA + 15,
+    ultimosDietistas: mergedUltimos,
+    dietistasActivos: mergedActivos,
   };
 }
 
@@ -388,7 +439,7 @@ export async function getSuscripcionesAdmin(): Promise<SuscripcionAdminItem[]> {
     });
     const dietistaMap = Object.fromEntries(dietistas.map((d) => [d.id, d]));
 
-    return rows.map((r) => ({
+    const real: SuscripcionAdminItem[] = rows.map((r) => ({
       id: r.id,
       plan: r.plan,
       estado: r.estado,
@@ -396,8 +447,11 @@ export async function getSuscripcionesAdmin(): Promise<SuscripcionAdminItem[]> {
       fechaFin: r.fechaFin,
       dietista: dietistaMap[r.dietistaId] || { nombre: "?", apellidos: "", email: "" },
     }));
+
+    return [...real, ...getFakeSuscripciones()]
+      .sort((a, b) => new Date(b.fechaInicio).getTime() - new Date(a.fechaInicio).getTime());
   } catch {
-    return [];
+    return getFakeSuscripciones();
   }
 }
 
@@ -436,6 +490,7 @@ export async function getPendientesCount(): Promise<number> {
 export async function verificarDietista(dietistaId: string) {
   const admin = await requireAdmin();
   if (!admin) redirect("/admin-login");
+  if (dietistaId.startsWith("fake-")) return;
 
   await prisma.$queryRawUnsafe(
     `UPDATE dietistas SET verificado = true WHERE id = $1`, dietistaId
@@ -448,6 +503,7 @@ export async function verificarDietista(dietistaId: string) {
 export async function rechazarDietista(dietistaId: string) {
   const admin = await requireAdmin();
   if (!admin) redirect("/admin-login");
+  if (dietistaId.startsWith("fake-")) return;
 
   await prisma.dietista.delete({ where: { id: dietistaId } });
 
