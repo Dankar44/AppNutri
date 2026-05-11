@@ -35,7 +35,7 @@ export default function ImportarAlimentoPage() {
     try {
       const imported = await importarAlimentoAPI(alimento);
       toast.success(`${alimento.nombre} importado correctamente`);
-      router.push(`/alimentos/${imported.id}`);
+      if (imported?.id) router.push(`/alimentos/${imported.id}`);
     } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
       toast.error("Error al importar el alimento");
       setImporting(null);

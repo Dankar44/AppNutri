@@ -38,7 +38,7 @@ export default function NuevaConsultaPage() {
             grasaCorporal,
             perimetroCintura: parseFloat(form.get("perimetroCintura") as string) || undefined,
           });
-          medidaId = medida.id;
+          medidaId = medida?.id;
         }
       }
 

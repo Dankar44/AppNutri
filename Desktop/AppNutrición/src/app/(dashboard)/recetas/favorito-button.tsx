@@ -25,8 +25,10 @@ export function FavoritoButton({ recetaId, inicial, size = "md" }: Props) {
     startTransition(async () => {
       try {
         const res = await toggleFavoritoReceta(recetaId);
-        setFavorito(res.favorito);
-        toast.success(res.favorito ? "Añadida a tus recetas" : "Quitada de favoritas");
+        if (res) {
+          setFavorito(res.favorito);
+          toast.success(res.favorito ? "Añadida a tus recetas" : "Quitada de favoritas");
+        }
       } catch {
         setFavorito(prev);
         toast.error("No se pudo actualizar el favorito");
