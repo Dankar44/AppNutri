@@ -510,3 +510,94 @@ export async function rechazarDietista(dietistaId: string) {
   revalidatePath("/admin/verificaciones");
   revalidatePath("/admin");
 }
+
+// ─── Crear cuenta nutricionista ───
+
+export async function crearCuentaNutricionista(data: {
+  email: string;
+  password: string;
+  nombre: string;
+  apellidos: string;
+}): Promise<{ ok: boolean; error?: string; dietistaId?: string }> {
+  const admin = await requireAdmin();
+  if (!admin) redirect("/admin-login");
+
+  const email = data.email.trim().toLowerCase();
+  const password = data.password;
+  const nombre = data.nombre.trim();
+  const apellidos = data.apellidos.trim();
+
+  if (!email || !email.includes("@")) return { ok: false, error: "Email no válido" };
+  if (password.length < 6) return { ok: false, error: "La contraseña debe tener al menos 6 caracteres" };
+  if (!nombre) return { ok: false, error: "El nombre es obligatorio" };
+
+  try {
+    const existingAuth = await prisma.$queryRawUnsafe<{ id: string }[]>(
+      `SELECT id FROM auth.users WHERE email = $1 LIMIT 1`, email
+    );
+    if (existingAuth.length > 0) return { ok: false, error: "Ya existe un usuario con ese email" };
+
+    const existingDietista = await prisma.dietista.findFirst({ where: { email } });
+    if (existingDietista) return { ok: false, error: "Ya existe un dietista con ese email" };
+
+    const authRows = await prisma.$queryRawUnsafe<{ id: string }[]>(
+      `INSERT INTO auth.users (
+         instance_id, id, aud, role, email, encrypted_password,
+         email_confirmed_at, created_at, updated_at,
+         raw_app_meta_data, raw_user_meta_data,
+         is_sso_user, is_anonymous,
+         confirmation_token, recovery_token,
+         email_change_token_new, email_change, email_change_token_current,
+         reauthentication_token, phone_change, phone_change_token
+       ) VALUES (
+         '00000000-0000-0000-0000-000000000000',
+         gen_random_uuid(),
+         'authenticated', 'authenticated',
+         $1, crypt($2, gen_salt('bf')),
+         NOW(), NOW(), NOW(),
+         '{"provider":"email","providers":["email"]}',
+         jsonb_build_object('nombre', $3::text, 'apellidos', $4::text, 'email_verified', true, 'phone_verified', false),
+         false, false,
+         '', '', '', '', '', '', '', ''
+       ) RETURNING id`,
+      email, password, nombre, apellidos
+    );
+
+    const authId = authRows[0].id;
+
+    try {
+      await prisma.$queryRawUnsafe(
+        `INSERT INTO auth.identities (
+           id, user_id, provider_id, provider, identity_data,
+           last_sign_in_at, created_at, updated_at
+         ) VALUES (
+           gen_random_uuid(), $1::uuid, $1::text, 'email',
+           jsonb_build_object('sub', $1::text, 'email', $2::text, 'email_verified', true, 'provider', 'email'),
+           NOW(), NOW(), NOW()
+         )`,
+        authId, email
+      );
+
+      const dietista = await prisma.dietista.create({
+        data: {
+          authId,
+          email,
+          nombre,
+          apellidos,
+          verificado: true,
+        },
+      });
+
+      revalidatePath("/admin/dietistas");
+      revalidatePath("/admin");
+      return { ok: true, dietistaId: dietista.id };
+    } catch (innerErr) {
+      await prisma.$queryRawUnsafe(`DELETE FROM auth.identities WHERE user_id = $1::uuid`, authId).catch(() => {});
+      await prisma.$queryRawUnsafe(`DELETE FROM auth.users WHERE id = $1::uuid`, authId).catch(() => {});
+      throw innerErr;
+    }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Error desconocido";
+    return { ok: false, error: msg };
+  }
+}
