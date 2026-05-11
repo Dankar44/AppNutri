@@ -16,11 +16,12 @@ import {
 } from "@/lib/admin-fake-data";
 
 export async function loginAdmin(email: string, password: string): Promise<{ error?: string }> {
-  if (!verifyAdminCredentials(email, password)) {
+  const result = verifyAdminCredentials(email, password);
+  if (!result) {
     return { error: "Email o contraseña incorrectos" };
   }
-  await createAdminSession(email);
-  redirect("/admin");
+  await createAdminSession(email, result.role);
+  redirect(result.role === "creator" ? "/admin/crear-cuenta" : "/admin");
 }
 
 export async function logoutAdmin() {

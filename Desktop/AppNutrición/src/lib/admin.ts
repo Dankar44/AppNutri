@@ -1,7 +1,9 @@
 import { cookies, headers } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 
-const ADMIN_COOKIE = "annonia-admin-session";
+export type AdminRole = "admin" | "creator";
+
+export const ADMIN_COOKIE = "annonia-admin-session";
 const ADMIN_SESSION_DAYS = 7;
 
 function cleanEnv(val: string | undefined): string {
@@ -10,6 +12,13 @@ function cleanEnv(val: string | undefined): string {
 
 function getAdminEmails(): string[] {
   return cleanEnv(process.env.ADMIN_EMAILS)
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function getCreatorEmails(): string[] {
+  return cleanEnv(process.env.ADMIN_CREATOR_EMAILS)
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
@@ -24,29 +33,31 @@ export function isAdminEmail(email: string): boolean {
   return getAdminEmails().includes(email.toLowerCase());
 }
 
-export function verifyAdminCredentials(email: string, password: string): boolean {
-  const adminPassword = cleanEnv(process.env.ADMIN_PASSWORD);
-  const adminEmails = getAdminEmails();
-  const emailMatch = isAdminEmail(email);
-  const passMatch = password === adminPassword;
-
-  console.log("[ADMIN-LOGIN-DEBUG]", {
-    inputEmail: email,
-    configuredEmails: adminEmails,
-    emailMatch,
-    passMatch,
-    inputPassLen: password.length,
-    storedPassLen: adminPassword.length,
-    rawEnvPass: JSON.stringify(process.env.ADMIN_PASSWORD),
-    rawEnvEmails: JSON.stringify(process.env.ADMIN_EMAILS),
-  });
-
-  if (!adminPassword) return false;
-  return emailMatch && passMatch;
+export function isCreatorEmail(email: string): boolean {
+  return getCreatorEmails().includes(email.toLowerCase());
 }
 
-export async function createAdminSession(email: string) {
-  const token = await new SignJWT({ email, role: "admin" })
+export function isAnyAdminEmail(email: string): boolean {
+  return isAdminEmail(email) || isCreatorEmail(email);
+}
+
+export function verifyAdminCredentials(email: string, password: string): { valid: true; role: AdminRole } | false {
+  const adminPassword = cleanEnv(process.env.ADMIN_PASSWORD);
+  const creatorPassword = cleanEnv(process.env.ADMIN_CREATOR_PASSWORD);
+
+  if (adminPassword && isAdminEmail(email) && password === adminPassword) {
+    return { valid: true, role: "admin" };
+  }
+
+  if (creatorPassword && isCreatorEmail(email) && password === creatorPassword) {
+    return { valid: true, role: "creator" };
+  }
+
+  return false;
+}
+
+export async function createAdminSession(email: string, role: AdminRole) {
+  const token = await new SignJWT({ email, role })
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime(`${ADMIN_SESSION_DAYS}d`)
     .sign(getSecret());
@@ -63,16 +74,21 @@ export async function createAdminSession(email: string) {
   });
 }
 
-export async function getAdminSession(): Promise<{ email: string } | null> {
+export async function getAdminSession(): Promise<{ email: string; role: AdminRole } | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(ADMIN_COOKIE)?.value;
   if (!token) return null;
+  return verifyAdminToken(token);
+}
 
+export async function verifyAdminToken(token: string): Promise<{ email: string; role: AdminRole } | null> {
   try {
     const { payload } = await jwtVerify(token, getSecret());
     const email = payload.email as string;
-    if (!email || !isAdminEmail(email)) return null;
-    return { email };
+    const role = payload.role as string;
+    if (!email || !isAnyAdminEmail(email)) return null;
+    if (role !== "admin" && role !== "creator") return null;
+    return { email, role };
   } catch {
     return null;
   }
@@ -83,7 +99,7 @@ export async function clearAdminSession() {
   cookieStore.delete(ADMIN_COOKIE);
 }
 
-export async function requireAdmin() {
+export async function requireAdmin(): Promise<{ email: string; role: AdminRole } | null> {
   const session = await getAdminSession();
   if (!session) return null;
   return session;

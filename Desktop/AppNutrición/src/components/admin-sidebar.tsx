@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
+import type { AdminRole } from "@/lib/admin";
 
 const navItems = [
   { href: "/admin", label: "Panel", icon: LayoutDashboard },
@@ -36,12 +37,17 @@ interface AdminSidebarProps {
   adminNombre: string;
   onSignOut: () => void;
   mensajesCount?: number;
+  role: AdminRole;
 }
 
-export function AdminSidebar({ adminNombre, onSignOut, mensajesCount = 0 }: AdminSidebarProps) {
+export function AdminSidebar({ adminNombre, onSignOut, mensajesCount = 0, role }: AdminSidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const visibleItems = role === "creator"
+    ? navItems.filter((item) => item.href === "/admin/crear-cuenta")
+    : navItems;
 
   useEffect(() => {
     setMobileOpen(false);
@@ -75,7 +81,7 @@ export function AdminSidebar({ adminNombre, onSignOut, mensajesCount = 0 }: Admi
 
       {/* Nav */}
       <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
-        {navItems.map((item) => {
+        {visibleItems.map((item) => {
           const isActive =
             item.href === "/admin"
               ? pathname === "/admin"
@@ -117,17 +123,21 @@ export function AdminSidebar({ adminNombre, onSignOut, mensajesCount = 0 }: Admi
           {(!collapsed || mobileOpen) && (
             <div className="min-w-0">
               <p className="text-sm font-medium truncate">{adminNombre}</p>
-              <p className="text-xs text-indigo-600 dark:text-indigo-400">Administrador</p>
+              <p className="text-xs text-indigo-600 dark:text-indigo-400">
+                {role === "creator" ? "Creador de cuentas" : "Administrador"}
+              </p>
             </div>
           )}
         </div>
-        <Link
-          href="/dashboard"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors w-full"
-        >
-          <ArrowLeft className="w-5 h-5 shrink-0" />
-          {(!collapsed || mobileOpen) && <span>Volver a la app</span>}
-        </Link>
+        {role === "admin" && (
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors w-full"
+          >
+            <ArrowLeft className="w-5 h-5 shrink-0" />
+            {(!collapsed || mobileOpen) && <span>Volver a la app</span>}
+          </Link>
+        )}
         <button
           onClick={onSignOut}
           className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors w-full"
