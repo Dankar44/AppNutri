@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   User,
+  Lock,
   Briefcase,
   FileText,
   Plug,
@@ -27,6 +28,7 @@ interface NavSection {
  */
 const SECTIONS: NavSection[] = [
   { id: "perfil", label: "Perfil", icon: User },
+  { id: "contrasena", label: "Contraseña", icon: Lock },
   { id: "profesional", label: "Profesional", icon: Briefcase },
   { id: "documentos", label: "Documentos", icon: FileText },
   { id: "integraciones", label: "Integraciones", icon: Plug },

@@ -8,6 +8,7 @@ import {
   Plug,
   Sparkles as SparklesIcon,
   GraduationCap,
+  Lock,
 } from "lucide-react";
 import { TourSettings } from "@/components/tour/tour-settings";
 import { getCurrentDietista, getGoogleIdentityLinked } from "@/app/actions/auth";
@@ -27,6 +28,7 @@ import { AjustesNav } from "./ajustes-nav";
 import { PacienteDemoCard } from "./paciente-demo-card";
 import { GoogleLoginCard } from "./google-login-card";
 import { DocumentosPdfSection } from "./documentos-pdf-section";
+import { CambiarPasswordForm } from "./cambiar-password-form";
 
 /** Encabezado común de cada bloque: icono + título + descripción. */
 function SectionHeader({
@@ -162,6 +164,19 @@ export default async function AjustesPage({
                   clinica: dietista.clinica || undefined,
                 }}
               />
+            </div>
+          </section>
+
+          {/* CONTRASEÑA */}
+          <section>
+            <SectionHeader
+              id="contrasena"
+              icon={Lock}
+              title="Contraseña"
+              description="Cambia la contraseña de acceso a tu cuenta."
+            />
+            <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
+              <CambiarPasswordForm />
             </div>
           </section>
 

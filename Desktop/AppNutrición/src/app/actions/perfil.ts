@@ -135,6 +135,36 @@ export async function eliminarLogoPdf() {
   revalidatePath("/ajustes");
 }
 
+export async function cambiarPassword(data: {
+  actual: string;
+  nueva: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return { ok: false, error: "No disponible en modo demo" };
+
+  const { actual, nueva } = data;
+  if (!actual || !nueva) return { ok: false, error: "Todos los campos son obligatorios" };
+  if (nueva.length < 6) return { ok: false, error: "La nueva contraseña debe tener al menos 6 caracteres" };
+  if (actual === nueva) return { ok: false, error: "La nueva contraseña debe ser diferente a la actual" };
+
+  const authId = dietista.authId;
+
+  const verify = await prisma.$queryRawUnsafe<{ valid: boolean }[]>(
+    `SELECT (encrypted_password = crypt($1, encrypted_password)) as valid FROM auth.users WHERE id = $2::uuid`,
+    actual, authId
+  );
+
+  if (!verify[0]?.valid) return { ok: false, error: "La contraseña actual no es correcta" };
+
+  await prisma.$queryRawUnsafe(
+    `UPDATE auth.users SET encrypted_password = crypt($1, gen_salt('bf')), updated_at = NOW() WHERE id = $2::uuid`,
+    nueva, authId
+  );
+
+  return { ok: true };
+}
+
 export async function actualizarMarcaPdf(marca: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
