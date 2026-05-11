@@ -46,6 +46,7 @@ function validarMicros(raw: Partial<Record<MicroKey, number | null>> | undefined
 export async function crearAlimento(data: AlimentoFormData) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   // Validación server-side
   const nombreSanitizado = sanitizeString(data.nombre, LIMITS.NOMBRE);
@@ -107,6 +108,7 @@ export async function crearAlimento(data: AlimentoFormData) {
 export async function actualizarAlimento(id: string, data: AlimentoFormData) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   // Validación server-side
   const nombreSanitizado = sanitizeString(data.nombre, LIMITS.NOMBRE);
@@ -157,6 +159,7 @@ export async function actualizarAlimento(id: string, data: AlimentoFormData) {
 export async function eliminarAlimento(id: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   await prisma.alimento.delete({
     where: { id, dietistaId: dietista.id },
@@ -321,6 +324,7 @@ export async function buscarAlimentosAPI(query: string) {
 export async function importarAlimentoAPI(data: AlimentoAPIResult) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   // Validación server-side
   data.nombre = sanitizeString(data.nombre, 200) || "Sin nombre";

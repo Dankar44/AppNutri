@@ -157,6 +157,7 @@ export async function crearReceta(
 ) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const nombreSanitizado = sanitizeString(data.nombre, LIMITS.NOMBRE);
   if (!nombreSanitizado) throw new Error("El nombre es obligatorio");
@@ -197,6 +198,7 @@ export async function actualizarReceta(
 ) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const nombreSanitizado = sanitizeString(data.nombre, LIMITS.NOMBRE);
   if (!nombreSanitizado) throw new Error("El nombre es obligatorio");
@@ -236,6 +238,7 @@ export async function actualizarReceta(
 export async function eliminarReceta(id: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   await prisma.recetaIngrediente.deleteMany({ where: { recetaId: id } });
   await prisma.receta.delete({ where: { id, dietistaId: dietista.id } });
@@ -436,6 +439,7 @@ export async function getReceta(id: string) {
 export async function toggleFavoritoReceta(recetaId: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const receta = await prisma.receta.findUnique({
     where: { id: recetaId },

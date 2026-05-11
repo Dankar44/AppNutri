@@ -72,6 +72,7 @@ export async function crearPago(data: {
 }) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   if (!data.concepto.trim()) throw new Error("El concepto es obligatorio");
   if (data.importe <= 0) throw new Error("El importe debe ser mayor que 0");
@@ -151,6 +152,7 @@ export async function crearPago(data: {
 export async function generarLinkPago(pagoId: string): Promise<{ url: string | null }> {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return { url: null };
 
   // Obtener datos del pago
   const pagoRows = await prisma.$queryRawUnsafe<{ id: string; concepto: string; importe: number; notas: string | null; estado: string }[]>(
@@ -217,6 +219,7 @@ export async function generarLinkPago(pagoId: string): Promise<{ url: string | n
 export async function marcarPagado(pagoId: string, metodoPago: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   await prisma.$queryRawUnsafe(
     `UPDATE pagos SET estado = 'PAGADO', "metodoPago" = $1, "fechaPago" = NOW(), "updatedAt" = NOW()
@@ -232,6 +235,7 @@ export async function marcarPagado(pagoId: string, metodoPago: string) {
 export async function eliminarPago(pagoId: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   await prisma.$queryRawUnsafe(
     `DELETE FROM pagos WHERE id = $1 AND "dietistaId" = $2`,

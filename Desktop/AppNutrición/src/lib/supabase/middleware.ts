@@ -42,12 +42,15 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/paciente") ||
     request.nextUrl.pathname.startsWith("/admin-login") ||
     request.nextUrl.pathname.startsWith("/admin") ||
+    request.nextUrl.pathname.startsWith("/demo") ||
     // Callbacks OAuth: el code lo procesa el handler, el usuario puede no
     // tener sesión aún (Sign in with Google) o ser paciente (JWT propio).
     request.nextUrl.pathname === "/auth/callback" ||
     request.nextUrl.pathname.startsWith("/api/google/");
 
-  if (!user && !isAuthPage && !isPublicRoute && request.nextUrl.pathname !== "/") {
+  const hasDemoSession = request.cookies.has("annonia-demo-session");
+
+  if (!user && !hasDemoSession && !isAuthPage && !isPublicRoute && request.nextUrl.pathname !== "/") {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

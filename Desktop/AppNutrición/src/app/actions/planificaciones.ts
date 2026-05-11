@@ -92,6 +92,11 @@ export async function ensurePlanificacionDefecto(pacienteId: string): Promise<Pl
     return all.find((p) => p.esDefecto)!;
   }
 
+  if (dietista.isDemo) {
+    // Demo: do not create, return a stub
+    return { id: "", pacienteId, nombre: "Planificación por defecto", estado: "activa", esDefecto: true, fechaInicio: new Date().toISOString(), fechaUltimoCambio: new Date().toISOString(), fechaFinPrevista: null, datos: {} };
+  }
+
   await prisma.$queryRawUnsafe(
     `INSERT INTO planificaciones ("pacienteId", "dietistaId", nombre, "esDefecto", datos)
      VALUES ($1, $2, 'Planificación por defecto', true, '{}'::jsonb)`,
@@ -112,6 +117,7 @@ export async function crearPlanificacion(
 ): Promise<string> {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return "";
 
   const datosJson = JSON.stringify(datosIniciales ?? {});
   const rows = await prisma.$queryRawUnsafe<{ id: string }[]>(
@@ -138,6 +144,7 @@ export async function guardarPlanificacion(
 ): Promise<void> {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   await prisma.$queryRawUnsafe(
     `UPDATE planificaciones
@@ -159,6 +166,7 @@ export async function actualizarFechasPlanificacion(
 ): Promise<void> {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const sets: string[] = [];
   const params: unknown[] = [];
@@ -203,6 +211,7 @@ export async function cambiarEstadoPlanificacion(
 ): Promise<void> {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   await prisma.$queryRawUnsafe(
     `UPDATE planificaciones SET estado = $1, "updatedAt" = CURRENT_TIMESTAMP
@@ -218,6 +227,7 @@ export async function cambiarEstadoPlanificacion(
 export async function renombrarPlanificacion(planId: string, nombre: string): Promise<void> {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   await prisma.$queryRawUnsafe(
     `UPDATE planificaciones SET nombre = $1, "updatedAt" = CURRENT_TIMESTAMP
@@ -233,6 +243,7 @@ export async function renombrarPlanificacion(planId: string, nombre: string): Pr
 export async function eliminarPlanificacion(planId: string, pacienteId: string): Promise<void> {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   await prisma.$queryRawUnsafe(
     `DELETE FROM planificaciones WHERE id = $1 AND "dietistaId" = $2 AND "esDefecto" = false`,

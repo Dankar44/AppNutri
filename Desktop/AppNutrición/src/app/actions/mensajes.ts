@@ -187,6 +187,21 @@ export async function getOrCrearConversacion(pacienteId: string): Promise<Conver
 
   if (existing.length > 0) return existing[0];
 
+  if (dietista.isDemo) {
+    const now = new Date();
+    return {
+      id: `demo-conv-${pacienteId}`,
+      dietistaId: dietista.id,
+      pacienteId,
+      ultimoMensajeAt: null,
+      archivadaDietista: false,
+      noLeidosDietista: 0,
+      noLeidosPaciente: 0,
+      createdAt: now,
+      updatedAt: now,
+    };
+  }
+
   const id = cuid();
   const rows = await prisma.$queryRawUnsafe<Conversacion[]>(
     `INSERT INTO conversaciones (id, "dietistaId", "pacienteId", "updatedAt")
@@ -238,6 +253,7 @@ export async function enviarMensaje(
 ): Promise<Mensaje> {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) throw new Error("No disponible en modo demo");
 
   // Rate limit: 20 mensajes/min por dietista
   const rl = checkRateLimit({
@@ -307,6 +323,7 @@ export async function enviarMensaje(
 export async function marcarConversacionLeida(conversacionId: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) return;
+  if (dietista.isDemo) return;
 
   const conv = await prisma.$queryRawUnsafe<{ dietistaId: string }[]>(
     `SELECT "dietistaId" FROM conversaciones WHERE id = $1`,
@@ -337,6 +354,7 @@ export async function marcarConversacionLeida(conversacionId: string) {
 export async function archivarConversacion(conversacionId: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) return;
+  if (dietista.isDemo) return;
 
   await prisma.$executeRawUnsafe(
     `UPDATE conversaciones SET "archivadaDietista" = true, "updatedAt" = NOW()
@@ -351,6 +369,7 @@ export async function archivarConversacion(conversacionId: string) {
 export async function desarchivarConversacion(conversacionId: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) return;
+  if (dietista.isDemo) return;
 
   await prisma.$executeRawUnsafe(
     `UPDATE conversaciones SET "archivadaDietista" = false, "updatedAt" = NOW()

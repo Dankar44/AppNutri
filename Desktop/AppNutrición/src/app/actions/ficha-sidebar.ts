@@ -25,6 +25,7 @@ export async function guardarFichaSidebar(
 ): Promise<void> {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   await prisma.$queryRawUnsafe(
     `UPDATE pacientes SET "fichaSidebar" = $1::jsonb WHERE id = $2 AND "dietistaId" = $3`,

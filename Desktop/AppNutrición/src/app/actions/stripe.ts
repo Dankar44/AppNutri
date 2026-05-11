@@ -36,8 +36,7 @@ export async function getStripeAccountStatus(): Promise<StripeAccountStatus> {
     const detailsSubmitted = account.details_submitted ?? false;
     const onboarded = chargesEnabled && detailsSubmitted;
 
-    // Actualizar estado en BD si cambió
-    if (onboarded !== row.stripeOnboarded) {
+    if (onboarded !== row.stripeOnboarded && !dietista.isDemo) {
       await prisma.$queryRawUnsafe(
         `UPDATE dietistas SET "stripeOnboarded" = $1 WHERE id = $2`,
         onboarded,
@@ -63,6 +62,7 @@ export async function getStripeAccountStatus(): Promise<StripeAccountStatus> {
 export async function createStripeConnectAccount(): Promise<{ url: string }> {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return { url: "" };
 
   // Comprobar si ya tiene cuenta
   const rows = await prisma.$queryRawUnsafe<{ stripeAccountId: string | null }[]>(
@@ -114,6 +114,7 @@ export async function createStripeConnectAccount(): Promise<{ url: string }> {
 export async function getStripeOnboardingLink(): Promise<{ url: string }> {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return { url: "" };
 
   const rows = await prisma.$queryRawUnsafe<{ stripeAccountId: string | null }[]>(
     `SELECT "stripeAccountId" FROM dietistas WHERE id = $1`,
@@ -139,6 +140,7 @@ export async function getStripeOnboardingLink(): Promise<{ url: string }> {
 export async function disconnectStripeAccount(): Promise<void> {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const rows = await prisma.$queryRawUnsafe<{ stripeAccountId: string | null }[]>(
     `SELECT "stripeAccountId" FROM dietistas WHERE id = $1`,
@@ -167,6 +169,7 @@ export async function disconnectStripeAccount(): Promise<void> {
 export async function getStripeDashboardLink(): Promise<{ url: string }> {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return { url: "" };
 
   const rows = await prisma.$queryRawUnsafe<{ stripeAccountId: string | null }[]>(
     `SELECT "stripeAccountId" FROM dietistas WHERE id = $1`,

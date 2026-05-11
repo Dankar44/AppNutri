@@ -10,6 +10,7 @@ const generacionEnCurso = new Map<string, number>();
 export async function generarNotificaciones() {
   const dietista = await getCurrentDietista();
   if (!dietista) return;
+  if (dietista.isDemo) return;
 
   const ahora = Date.now();
   const ultima = generacionEnCurso.get(dietista.id) ?? 0;
@@ -199,6 +200,7 @@ async function limpiarNotificacionesAntiguas(dietistaId: string) {
 export async function eliminarNotificacion(id: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) return;
+  if (dietista.isDemo) return;
 
   await prisma.notificacion.deleteMany({
     where: { id, dietistaId: dietista.id },
@@ -212,6 +214,7 @@ export async function eliminarNotificacion(id: string) {
 export async function eliminarTodasNotificaciones() {
   const dietista = await getCurrentDietista();
   if (!dietista) return;
+  if (dietista.isDemo) return;
 
   await prisma.notificacion.deleteMany({
     where: { dietistaId: dietista.id },
@@ -362,6 +365,7 @@ export async function getMapaNotificacionesCitas(
 export async function marcarLeidasDePaciente(pacienteId: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) return;
+  if (dietista.isDemo) return;
 
   const res = await prisma.notificacion.updateMany({
     where: { dietistaId: dietista.id, pacienteId, leida: false },
@@ -382,6 +386,7 @@ export async function marcarLeidasDePacientePorTipo(
 ) {
   const dietista = await getCurrentDietista();
   if (!dietista || tipos.length === 0) return;
+  if (dietista.isDemo) return;
 
   const res = await prisma.notificacion.updateMany({
     where: {
@@ -405,6 +410,7 @@ export async function marcarLeidasDePacientePorTipo(
 export async function marcarLeidasDeCita(citaId: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) return;
+  if (dietista.isDemo) return;
 
   const res = await prisma.notificacion.updateMany({
     where: { dietistaId: dietista.id, citaId, leida: false },
@@ -421,6 +427,7 @@ export async function marcarLeidasDeCita(citaId: string) {
 export async function marcarLeida(id: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) return;
+  if (dietista.isDemo) return;
 
   await prisma.notificacion.update({
     where: { id, dietistaId: dietista.id },
@@ -435,6 +442,7 @@ export async function marcarLeida(id: string) {
 export async function marcarTodasLeidas() {
   const dietista = await getCurrentDietista();
   if (!dietista) return;
+  if (dietista.isDemo) return;
 
   await prisma.notificacion.updateMany({
     where: { dietistaId: dietista.id, leida: false },
@@ -496,6 +504,7 @@ export async function getNotifPreferencias(): Promise<NotifPreferencias> {
 export async function setNotifPreferencias(prefs: NotifPreferencias) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   await prisma.$executeRawUnsafe(
     `UPDATE dietistas SET "notifPreferencias" = $1::jsonb, "updatedAt" = NOW() WHERE id = $2`,

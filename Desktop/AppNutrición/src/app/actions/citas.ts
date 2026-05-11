@@ -29,6 +29,7 @@ export interface CitaFormData {
 export async function crearCita(data: CitaFormData) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const fechaHora = validateDate(data.fechaHora);
   if (!fechaHora) throw new Error("Fecha y hora inválidas");
@@ -89,6 +90,7 @@ export async function crearCita(data: CitaFormData) {
 export async function actualizarEstadoCita(id: string, estado: EstadoCita) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   await prisma.cita.update({
     where: { id, dietistaId: dietista.id },
@@ -102,6 +104,7 @@ export async function actualizarEstadoCita(id: string, estado: EstadoCita) {
 export async function eliminarCita(id: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   await unsyncCitaAntesDeBorrar(id);
   await prisma.cita.delete({

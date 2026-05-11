@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 export async function crearEnlace(planId: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const enlace = await prisma.enlaceCompartido.create({
     data: { plan: { connect: { id: planId } }, dietista: { connect: { id: dietista.id } } },
@@ -19,6 +20,7 @@ export async function crearEnlace(planId: string) {
 export async function eliminarEnlace(id: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   await prisma.enlaceCompartido.delete({
     where: { id, dietistaId: dietista.id },

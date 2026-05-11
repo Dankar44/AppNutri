@@ -186,6 +186,7 @@ async function saveExtraFields(pacienteId: string, extra: ReturnType<typeof spli
 export async function crearPaciente(data: PacienteFormData) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const error = validatePacienteData(data);
   if (error) throw new Error(error);
@@ -220,6 +221,7 @@ export async function crearPaciente(data: PacienteFormData) {
 export async function actualizarPaciente(id: string, data: PacienteFormData) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const error = validatePacienteData(data);
   if (error) throw new Error(error);
@@ -253,6 +255,7 @@ export async function actualizarPaciente(id: string, data: PacienteFormData) {
 export async function eliminarPaciente(id: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   // Si borra el paciente demo, marcar la flag para que NO se re-cree al recargar
   const paciente = await prisma.paciente.findUnique({
@@ -293,6 +296,7 @@ export async function eliminarPaciente(id: string) {
 export async function restaurarPacienteDemo() {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   await prisma.$queryRawUnsafe(
     `UPDATE dietistas SET "demoEliminado" = false WHERE id = $1`,
@@ -320,6 +324,7 @@ export async function isDemoEliminado(): Promise<boolean> {
 export async function toggleActivoPaciente(id: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const paciente = await prisma.paciente.findUnique({
     where: { id, dietistaId: dietista.id },
@@ -400,6 +405,7 @@ export async function getHorarioPaciente(pacienteId: string): Promise<HorarioEnt
 export async function guardarHorarioPaciente(pacienteId: string, horario: HorarioEntry[]) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   await prisma.$queryRawUnsafe(
     `UPDATE pacientes SET horario = $1::jsonb WHERE id = $2 AND "dietistaId" = $3`,
@@ -438,6 +444,7 @@ export async function getRecomendaciones(pacienteId: string): Promise<string> {
 export async function guardarRecomendaciones(pacienteId: string, texto: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const sanitized = texto.slice(0, 5000);
 
@@ -488,6 +495,7 @@ export async function guardarFichaInformacionPaciente(
 ) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const cleaned = sanitizeFichaInformacionDeep(data) as FichaInformacionData;
 

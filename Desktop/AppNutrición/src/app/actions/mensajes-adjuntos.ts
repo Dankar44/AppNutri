@@ -50,6 +50,10 @@ async function getUsuarioId(): Promise<string | null> {
  *   - Rate limit 5 archivos/min por usuario
  */
 export async function subirAdjuntoMensaje(formData: FormData) {
+  // Demo guard: bloquear subida si el dietista es demo
+  const dietistaCheck = await getCurrentDietista();
+  if (dietistaCheck?.isDemo) throw new Error("No disponible en modo demo");
+
   const usuarioId = await getUsuarioId();
   if (!usuarioId) throw new Error("No autorizado");
 

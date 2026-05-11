@@ -9,6 +9,7 @@ import { isAdminEmail } from "@/lib/admin";
 import { SidebarWrapper } from "./sidebar-wrapper";
 import { HelpWidget } from "@/components/help/help-widget";
 import { TourWrapper } from "@/components/tour/tour-wrapper";
+import { DemoBanner } from "@/components/demo-banner";
 import { prisma } from "@/lib/prisma";
 
 export default async function DashboardLayout({
@@ -39,14 +40,17 @@ export default async function DashboardLayout({
     // No bloquear el dashboard si las notificaciones fallan
   }
 
-  prisma.dietista.update({
-    where: { id: dietista.id },
-    data: { lastAccessAt: new Date() },
-  }).catch(() => {});
+  if (!dietista.isDemo) {
+    prisma.dietista.update({
+      where: { id: dietista.id },
+      data: { lastAccessAt: new Date() },
+    }).catch(() => {});
+  }
 
   return (
     <TourWrapper audience="dietista">
-      <div className="flex min-h-dvh bg-background">
+      {dietista.isDemo && <DemoBanner />}
+      <div className={`flex min-h-dvh bg-background${dietista.isDemo ? " pt-8" : ""}`}>
         <SidebarWrapper
           dietistaNombre={`${dietista.nombre} ${dietista.apellidos}`}
           signOutAction={signOut}

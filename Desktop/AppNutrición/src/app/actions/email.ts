@@ -163,6 +163,7 @@ export async function enviarCuestionarioPaciente(
 ): Promise<{ ok: boolean; error?: string }> {
   const dietista = await getCurrentDietista();
   if (!dietista) return { ok: false, error: "No autorizado" };
+  if (dietista.isDemo) return { ok: true };
 
   const paciente = await getPaciente(pacienteId);
   if (!paciente) return { ok: false, error: "Paciente no encontrado" };
@@ -198,6 +199,7 @@ export async function enviarPlanPorEmail(
 ): Promise<{ ok: boolean; error?: string }> {
   const dietista = await getCurrentDietista();
   if (!dietista) return { ok: false, error: "No autorizado" };
+  if (dietista.isDemo) return { ok: true };
 
   const paciente = await getPaciente(pacienteId);
   if (!paciente) return { ok: false, error: "Paciente no encontrado" };
@@ -288,6 +290,7 @@ export async function enviarAccesoPortal(
 ): Promise<{ ok: boolean; error?: string }> {
   const dietista = await getCurrentDietista();
   if (!dietista) return { ok: false, error: "No autorizado" };
+  if (dietista.isDemo) return { ok: true };
 
   const paciente = await getPaciente(pacienteId);
   if (!paciente) return { ok: false, error: "Paciente no encontrado" };

@@ -96,6 +96,7 @@ export async function getPlantillaDetalle(id: string) {
 export async function actualizarDatosPlantilla(id: string, datos: PlantillaDia[]) {
   const dietista = await getCurrentDietista();
   if (!dietista) return { ok: false, error: "No autorizado" };
+  if (dietista.isDemo) return { ok: true };
 
   await prisma.plantilla.update({
     where: { id, dietistaId: dietista.id },
@@ -113,6 +114,7 @@ export async function renombrarPlantilla(id: string, nombre: string) {
 
   const dietista = await getCurrentDietista();
   if (!dietista) return { ok: false, error: "No autorizado" };
+  if (dietista.isDemo) return { ok: true };
 
   await prisma.plantilla.update({
     where: { id, dietistaId: dietista.id },
@@ -127,6 +129,7 @@ export async function renombrarPlantilla(id: string, nombre: string) {
 export async function eliminarPlantilla(id: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   await prisma.plantilla.delete({
     where: { id, dietistaId: dietista.id },
@@ -147,6 +150,7 @@ export async function crearPlanDesdePlantilla(
 
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const plantilla = await prisma.plantilla.findUnique({
     where: { id: plantillaId, dietistaId: dietista.id },

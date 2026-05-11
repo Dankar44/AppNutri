@@ -32,6 +32,7 @@ export async function generarPlanIA(
 
     const dietista = await getCurrentDietista();
     if (!dietista) return { error: "No autorizado" };
+    if (dietista.isDemo) return { error: "No disponible en modo demo" };
     if (!isAIConfigured()) return { error: "API keys de Groq no configuradas. Ve a Ajustes." };
 
     const paciente = await prisma.paciente.findFirst({
@@ -226,6 +227,7 @@ export async function aceptarPlanIA(
 ) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const generacion = await prisma.generacionIA.findFirst({
     where: { id: generacionId, dietistaId: dietista.id },

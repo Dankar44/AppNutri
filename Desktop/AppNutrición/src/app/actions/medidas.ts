@@ -40,6 +40,7 @@ function calcularIMC(peso?: number, altura?: number): number | null {
 export async function crearMedida(data: MedidaFormData) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const paciente = await prisma.paciente.findFirst({
     where: { id: data.pacienteId, dietistaId: dietista.id },
@@ -186,6 +187,7 @@ export async function getMedidasEvolucion(pacienteId: string) {
 export async function eliminarMedida(id: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const medida = await prisma.medidaAntropometrica.findFirst({
     where: { id },
@@ -206,6 +208,7 @@ export async function crearMedidaRapida(
 ) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const paciente = await prisma.paciente.findFirst({
     where: { id: pacienteId, dietistaId: dietista.id },

@@ -27,6 +27,14 @@ export async function getSuscripcion(): Promise<Suscripcion | null> {
 
     if (rows.length > 0) return rows[0];
 
+    if (dietista.isDemo) {
+      return {
+        id: "demo", dietistaId: dietista.id,
+        plan: "PROFESIONAL", estado: "ACTIVA",
+        fechaInicio: new Date(), fechaFin: null,
+      };
+    }
+
     // Crear suscripción de prueba de 14 días
     const fechaFin = new Date();
     fechaFin.setDate(fechaFin.getDate() + 14);
@@ -49,6 +57,7 @@ export async function getSuscripcion(): Promise<Suscripcion | null> {
 export async function cambiarPlan(nuevoPlan: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   if (nuevoPlan !== "BASICO" && nuevoPlan !== "PROFESIONAL") {
     throw new Error("Plan no válido");

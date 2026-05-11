@@ -27,6 +27,7 @@ export interface PerfilFormData {
 export async function actualizarPerfil(data: PerfilFormData) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const nombre = sanitizeString(data.nombre, LIMITS.NOMBRE_CORTO);
   if (!nombre) throw new Error("El nombre es obligatorio");
@@ -56,6 +57,7 @@ export async function actualizarPerfil(data: PerfilFormData) {
 export async function eliminarCuenta() {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   // Cascade borra pacientes, planes, recetas, etc.
   await prisma.dietista.delete({ where: { id: dietista.id } });
@@ -71,6 +73,7 @@ export async function eliminarCuenta() {
 export async function actualizarFotoDietista(fotoUrl: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const validatedUrl = validateImageDataUrl(fotoUrl);
   if (!validatedUrl) throw new Error("Imagen inválida");
@@ -87,6 +90,7 @@ export async function actualizarFotoDietista(fotoUrl: string) {
 export async function actualizarTemaPdf(tema: string, colorPrimario: string | null) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const temaValido = validateEnum(tema, TEMA_PDF_OPCIONES);
   if (!temaValido) throw new Error("Tema no válido");
@@ -105,6 +109,7 @@ export async function actualizarTemaPdf(tema: string, colorPrimario: string | nu
 export async function actualizarLogoPdf(logoDataUrl: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const validatedUrl = validateImageDataUrl(logoDataUrl);
   if (!validatedUrl) throw new Error("Imagen inválida");
@@ -120,6 +125,7 @@ export async function actualizarLogoPdf(logoDataUrl: string) {
 export async function eliminarLogoPdf() {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   await prisma.dietista.update({
     where: { id: dietista.id },
@@ -132,6 +138,7 @@ export async function eliminarLogoPdf() {
 export async function actualizarMarcaPdf(marca: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const cleaned = sanitizeStringOptional(marca, LIMITS.MARCA_PDF);
 

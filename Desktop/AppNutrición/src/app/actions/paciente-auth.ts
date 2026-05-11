@@ -28,6 +28,7 @@ export async function crearAccesoPaciente(
 
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const paciente = await prisma.paciente.findFirst({
     where: { id: pacienteId, dietistaId: dietista.id },

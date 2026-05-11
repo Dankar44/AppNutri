@@ -77,6 +77,7 @@ export async function guardarRecomendacionesEstructuradas(
 ) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   // Sanitize
   const sanitized: RecomendacionesData = {

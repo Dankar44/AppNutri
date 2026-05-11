@@ -143,6 +143,7 @@ function sanitizarHorario(input: HorarioLaboral): HorarioLaboral {
 export async function guardarHorarioLaboral(data: HorarioLaboral) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return sanitizarHorario(data);
 
   const limpio = sanitizarHorario(data);
 

@@ -17,6 +17,7 @@ export interface ConsultaFormData {
 export async function crearConsulta(data: ConsultaFormData) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const consulta = await prisma.consulta.create({
     data: {
@@ -37,6 +38,7 @@ export async function crearConsulta(data: ConsultaFormData) {
 export async function actualizarConsulta(id: string, data: Partial<ConsultaFormData>) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const consulta = await prisma.consulta.findFirst({
     where: { id, dietistaId: dietista.id },
@@ -58,6 +60,7 @@ export async function actualizarConsulta(id: string, data: Partial<ConsultaFormD
 export async function eliminarConsulta(id: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const consulta = await prisma.consulta.findFirst({
     where: { id, dietistaId: dietista.id },

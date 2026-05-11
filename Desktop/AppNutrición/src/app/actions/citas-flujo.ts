@@ -743,6 +743,7 @@ export async function contraproponerPorPaciente(
 export async function aceptarContrapropuestaDietista(citaId: string): Promise<void> {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const cita = await prisma.cita.findUnique({
     where: { id: citaId, dietistaId: dietista.id },
@@ -778,6 +779,7 @@ export async function aceptarContrapropuestaDietista(citaId: string): Promise<vo
 export async function rechazarContrapropuestaDietista(citaId: string): Promise<void> {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const cita = await prisma.cita.findUnique({
     where: { id: citaId, dietistaId: dietista.id },
@@ -815,6 +817,7 @@ export async function rechazarContrapropuestaDietista(citaId: string): Promise<v
 export async function aceptarSolicitudCita(citaId: string): Promise<void> {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const cita = await prisma.cita.findUnique({
     where: { id: citaId, dietistaId: dietista.id },
@@ -857,6 +860,7 @@ export async function contraproponerCita(
 ): Promise<{ id: string }> {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return { id: "" };
 
   const original = await prisma.cita.findUnique({
     where: { id: citaOriginalId, dietistaId: dietista.id },
@@ -942,6 +946,7 @@ export async function contraproponerCita(
 export async function rechazarSolicitudCita(citaId: string, motivoRechazo?: string): Promise<void> {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   const cita = await prisma.cita.findUnique({
     where: { id: citaId, dietistaId: dietista.id },

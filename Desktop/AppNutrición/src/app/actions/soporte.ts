@@ -49,6 +49,7 @@ export async function getMensajesSoporte(limit = 100): Promise<MensajeSoporteDat
 export async function enviarMensajeSoporte(texto: string): Promise<MensajeSoporteData> {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return { id: "", dietistaId: dietista.id, autor: "DIETISTA", texto: texto.trim().slice(0, 5000), leidoEn: null, createdAt: new Date() };
 
   const rl = checkRateLimit({
     key: `soporte:dietista:${dietista.id}`,
@@ -84,6 +85,7 @@ export async function enviarMensajeSoporte(texto: string): Promise<MensajeSoport
 export async function marcarSoporteLeido(): Promise<void> {
   const dietista = await getCurrentDietista();
   if (!dietista) return;
+  if (dietista.isDemo) return;
 
   await prisma.$executeRawUnsafe(
     `UPDATE dietistas SET "noLeidosSoporte" = 0 WHERE id = $1`,

@@ -40,6 +40,7 @@ export async function clearStateCookie(name: string) {
 export async function conectarGoogleNutri(): Promise<never> {
   const dietista = await getCurrentDietista();
   if (!dietista) redirect("/login");
+  if (dietista.isDemo) redirect("/ajustes");
   if (!isGoogleConfigured()) {
     redirect("/ajustes?google=error&reason=no_configurado");
   }
@@ -54,6 +55,7 @@ export async function desconectarGoogleNutri(options: {
 }) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autenticado");
+  if (dietista.isDemo) return;
 
   const integracion = await prisma.googleIntegracion.findUnique({
     where: { dietistaId: dietista.id },
@@ -97,6 +99,7 @@ export async function desconectarGoogleNutri(options: {
 export async function toggleSincronizarNutri(activar: boolean) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autenticado");
+  if (dietista.isDemo) return;
 
   await prisma.googleIntegracion.update({
     where: { dietistaId: dietista.id },
@@ -116,6 +119,7 @@ export async function toggleSincronizarNutri(activar: boolean) {
 export async function toggleCrearMeetNutri(activar: boolean) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autenticado");
+  if (dietista.isDemo) return;
 
   await prisma.googleIntegracion.update({
     where: { dietistaId: dietista.id },

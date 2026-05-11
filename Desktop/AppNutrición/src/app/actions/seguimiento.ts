@@ -125,6 +125,7 @@ export async function upsertSeguimientoDia(
 ) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error("No autorizado");
+  if (dietista.isDemo) return;
 
   await verificarPaciente(pacienteId, dietista.id);
 

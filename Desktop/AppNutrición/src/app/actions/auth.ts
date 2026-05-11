@@ -4,9 +4,23 @@ import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { crearPacienteDemoSiNoExiste } from "@/lib/paciente-demo";
+import { getDemoSession, clearDemoSession } from "@/lib/demo-auth";
 import { redirect } from "next/navigation";
 
 export const getCurrentDietista = cache(async function getCurrentDietista() {
+  const demoSession = await getDemoSession();
+  if (demoSession) {
+    const demoDietista = await prisma.dietista.findUnique({
+      where: { id: demoSession.dietistaId },
+    });
+    if (demoDietista) {
+      crearPacienteDemoSiNoExiste(prisma, demoDietista.id).catch(() => {});
+      return { ...demoDietista, verificado: true, isDemo: true as const };
+    }
+    await clearDemoSession();
+    return null;
+  }
+
   let user;
   try {
     const supabase = await createClient();
@@ -58,7 +72,7 @@ export const getCurrentDietista = cache(async function getCurrentDietista() {
     verificado = true;
   }
 
-  return { ...dietista, verificado };
+  return { ...dietista, verificado, isDemo: false as const };
 });
 
 export async function getGoogleIdentityLinked(): Promise<{ email: string } | null> {
@@ -77,6 +91,12 @@ export async function getGoogleIdentityLinked(): Promise<{ email: string } | nul
 }
 
 export async function signOut() {
+  const demoSession = await getDemoSession();
+  if (demoSession) {
+    await clearDemoSession();
+    redirect("/landing");
+  }
+
   try {
     const supabase = await createClient();
     await supabase.auth.signOut();
