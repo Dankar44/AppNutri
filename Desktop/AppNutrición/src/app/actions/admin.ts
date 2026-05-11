@@ -174,6 +174,8 @@ export interface DietistaAdminItem {
   especialidad: string | null;
   clinica: string | null;
   createdAt: Date;
+  lastAccessAt: Date | null;
+  lastSignIn: Date | null;
   suscripcion: { plan: string; estado: string } | null;
   _count: { pacientes: number; planes: number; consultas: number; recetas: number };
   pacientes: PacienteResumen[];
@@ -197,12 +199,14 @@ export async function getDietistasAdmin(busqueda?: string): Promise<DietistaAdmi
       : undefined,
     select: {
       id: true,
+      authId: true,
       email: true,
       nombre: true,
       apellidos: true,
       especialidad: true,
       clinica: true,
       createdAt: true,
+      lastAccessAt: true,
       _count: {
         select: { pacientes: true, planes: true, consultas: true, recetas: true },
       },
@@ -233,8 +237,23 @@ export async function getDietistasAdmin(busqueda?: string): Promise<DietistaAdmi
     }
   } catch { /* tabla puede no existir */ }
 
+  const authIds = dietistas.map((d) => d.authId).filter(Boolean);
+  const signInMap: Record<string, Date> = {};
+  if (authIds.length > 0) {
+    try {
+      const signInRows = await prisma.$queryRawUnsafe<{ id: string; last_sign_in_at: Date | null }[]>(
+        `SELECT id, last_sign_in_at FROM auth.users WHERE id = ANY($1::uuid[])`,
+        authIds
+      );
+      for (const r of signInRows) {
+        if (r.last_sign_in_at) signInMap[r.id] = r.last_sign_in_at;
+      }
+    } catch { /* auth schema might not be accessible */ }
+  }
+
   const real: DietistaAdminItem[] = dietistas.map((d) => ({
     ...d,
+    lastSignIn: (d.authId && signInMap[d.authId]) || null,
     suscripcion: suscMap[d.id] || null,
   }));
 

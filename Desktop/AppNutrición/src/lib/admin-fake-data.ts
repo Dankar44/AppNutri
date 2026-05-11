@@ -269,6 +269,8 @@ export function getFakeDietistas(busqueda?: string): DietistaAdminItem[] {
       objetivo: p.objetivo,
       createdAt: new Date(createdAt.getTime() + (j + 1) * 86400000 * 5),
     }));
+    const diasAtras = d.mesesAtras === 0 ? 0 : Math.max(1, d.mesesAtras * 2);
+    const lastAccess = d.consultas > 0 ? new Date(Date.now() - diasAtras * 86400000) : null;
     return {
       id: dId,
       email: d.email,
@@ -277,6 +279,8 @@ export function getFakeDietistas(busqueda?: string): DietistaAdminItem[] {
       especialidad: d.especialidad,
       clinica: d.clinica,
       createdAt,
+      lastAccessAt: lastAccess,
+      lastSignIn: lastAccess,
       suscripcion: { plan: d.plan, estado: d.estado },
       _count: {
         pacientes: d.pacientes.length,
