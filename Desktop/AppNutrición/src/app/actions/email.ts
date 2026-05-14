@@ -6,7 +6,7 @@ import { getPaciente } from "./pacientes";
 import { getPlan } from "./planes";
 import { generatePlanPDF, type PlanPDFData } from "@/lib/pdf/generate-plan-pdf";
 import { getRecomendaciones } from "./pacientes";
-import type { FichaInformacionData } from "@/lib/ficha-informacion-types";
+import type { FichaInformacionData, CampoPersonalizadoDefinicion } from "@/lib/ficha-informacion-types";
 import {
   OPCION_VACIA,
   SELECT_FUNCION_INTESTINAL,
@@ -28,7 +28,7 @@ function labelFor(
 
 function row(label: string, value: string | undefined | null): string {
   if (!value || value === OPCION_VACIA) return "";
-  return `<tr><td style="padding:8px 12px;font-weight:600;vertical-align:top;white-space:nowrap;color:#374151">${label}</td><td style="padding:8px 12px;color:#4b5563">${escapeHtml(value)}</td></tr>`;
+  return `<tr><td style="padding:8px 12px;font-weight:600;vertical-align:top;white-space:nowrap;color:#374151">${escapeHtml(label)}</td><td style="padding:8px 12px;color:#4b5563">${escapeHtml(value)}</td></tr>`;
 }
 
 function escapeHtml(s: string): string {
@@ -55,7 +55,8 @@ function sectionHtml(title: string, rows: string): string {
 function buildCuestionarioHtml(
   ficha: FichaInformacionData,
   pacienteNombre: string,
-  dietistaNombre: string
+  dietistaNombre: string,
+  camposCustom: CampoPersonalizadoDefinicion[] = []
 ): string {
   const c = ficha.consulta ?? {};
   const ps = ficha.personalSocial ?? {};
@@ -140,6 +141,13 @@ function buildCuestionarioHtml(
       ${secPersonal}
       ${secClinica}
       ${secAlimentaria}
+      ${(() => {
+        const cp = ficha.camposPersonalizados ?? {};
+        const rows = camposCustom
+          .map((c) => row(c.label, cp[c.id]))
+          .join("");
+        return sectionHtml("Campos personalizados", rows);
+      })()}
 
       <div style="margin-top:32px;padding:16px;background:#fef3c7;border-radius:8px;text-align:center">
         <p style="margin:0;font-size:14px;color:#92400e">
@@ -175,7 +183,10 @@ export async function enviarCuestionarioPaciente(
   const pacienteNombre = `${paciente.nombre} ${paciente.apellidos}`.trim();
   const dietistaNombre = `${dietista.nombre} ${dietista.apellidos}`.trim();
 
-  const html = buildCuestionarioHtml(ficha, pacienteNombre, dietistaNombre);
+  const { getCamposAnamnesis } = await import("./perfil");
+  const camposCustom = await getCamposAnamnesis();
+
+  const html = buildCuestionarioHtml(ficha, pacienteNombre, dietistaNombre, camposCustom);
 
   try {
     await sendEmail({

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, Calendar, Pencil, X } from "lucide-react";
-import type { FichaInformacionData } from "@/lib/ficha-informacion-types";
+import type { FichaInformacionData, CampoPersonalizadoDefinicion } from "@/lib/ficha-informacion-types";
 import { AvatarPaciente } from "@/components/avatar-paciente";
 import {
   cn,
@@ -142,6 +142,7 @@ export function PacienteFichaClient({
   recomendaciones = "",
   planesResumen = [],
   sidebarData = {},
+  camposAnamnesis = [],
   notifsPorTipo = {},
   notifsDetalle = [],
 }: {
@@ -154,6 +155,7 @@ export function PacienteFichaClient({
   recomendaciones?: string;
   planesResumen?: PlanResumen[];
   sidebarData?: FichaSidebarData;
+  camposAnamnesis?: CampoPersonalizadoDefinicion[];
   notifsPorTipo?: Record<string, number>;
   notifsDetalle?: NotifDetalle[];
 }) {
@@ -313,8 +315,10 @@ export function PacienteFichaClient({
       {pestana === "informacion" && (
         <PacienteFichaInformacionTab
           pacienteId={paciente.id}
+          pacienteNombre={`${nombre} ${apellidos}`.trim()}
           pacienteEmail={paciente.email}
           initialFicha={ficha}
+          camposAnamnesis={camposAnamnesis}
           resumen={{
             patologias: paciente.patologias,
             medicamentos: paciente.medicamentos,

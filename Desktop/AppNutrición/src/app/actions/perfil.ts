@@ -14,6 +14,7 @@ import {
   LIMITS,
   TEMA_PDF_OPCIONES,
 } from "@/lib/validation";
+import type { CampoPersonalizadoDefinicion, TipoCampoAnamnesis, SeccionAnamnesis } from "@/lib/ficha-informacion-types";
 
 export interface PerfilFormData {
   nombre: string;
@@ -178,4 +179,115 @@ export async function actualizarMarcaPdf(marca: string) {
   });
 
   revalidatePath("/ajustes");
+}
+
+const MAX_CAMPOS_ANAMNESIS = 20;
+const MAX_LABEL_LENGTH = 100;
+const MAX_OPCIONES = 20;
+const MAX_OPCION_LENGTH = 100;
+const TIPOS_VALIDOS: TipoCampoAnamnesis[] = ["texto", "textarea", "selector"];
+const SECCIONES_VALIDAS: SeccionAnamnesis[] = [
+  "consulta",
+  "personalSocial",
+  "clinica",
+  "alimentaria",
+  "personalizado",
+];
+
+function sanitizeCamposAnamnesis(
+  raw: unknown
+): CampoPersonalizadoDefinicion[] {
+  if (!Array.isArray(raw)) return [];
+  const result: CampoPersonalizadoDefinicion[] = [];
+
+  for (const item of raw.slice(0, MAX_CAMPOS_ANAMNESIS)) {
+    if (!item || typeof item !== "object") continue;
+    const id = typeof item.id === "string" ? item.id.trim().slice(0, 50) : "";
+    const label =
+      typeof item.label === "string"
+        ? item.label.trim().slice(0, MAX_LABEL_LENGTH)
+        : "";
+    if (!id || !label) continue;
+
+    const tipo = TIPOS_VALIDOS.includes(item.tipo) ? item.tipo : "texto";
+    const seccion = SECCIONES_VALIDAS.includes(item.seccion)
+      ? item.seccion
+      : "personalizado";
+
+    let opciones: string[] | undefined;
+    if (tipo === "selector" && Array.isArray(item.opciones)) {
+      const filtered = item.opciones
+        .filter((o: unknown) => typeof o === "string" && o.trim())
+        .map((o: string) => o.trim().slice(0, MAX_OPCION_LENGTH))
+        .slice(0, MAX_OPCIONES);
+      if (filtered.length > 0) opciones = filtered;
+    }
+
+    result.push({ id, label, tipo, seccion, ...(opciones ? { opciones } : {}) });
+  }
+
+  return result;
+}
+
+export async function getBrandingDietista(): Promise<{
+  nombre: string;
+  clinica: string | null;
+  temaPdf: string | null;
+  colorPrimarioPdf: string | null;
+  pdfLogoUrl: string | null;
+  marcaPdf: string | null;
+} | null> {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return null;
+  const row = await prisma.dietista.findUnique({
+    where: { id: dietista.id },
+    select: {
+      nombre: true,
+      apellidos: true,
+      clinica: true,
+      temaPdf: true,
+      colorPrimarioPdf: true,
+      pdfLogoUrl: true,
+      marcaPdf: true,
+    },
+  });
+  if (!row) return null;
+  return {
+    nombre: `${row.nombre} ${row.apellidos}`.trim(),
+    clinica: row.clinica,
+    temaPdf: row.temaPdf,
+    colorPrimarioPdf: row.colorPrimarioPdf,
+    pdfLogoUrl: row.pdfLogoUrl,
+    marcaPdf: row.marcaPdf,
+  };
+}
+
+export async function getCamposAnamnesis(): Promise<
+  CampoPersonalizadoDefinicion[]
+> {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return [];
+  const row = await prisma.dietista.findUnique({
+    where: { id: dietista.id },
+    select: { camposAnamnesis: true },
+  });
+  return sanitizeCamposAnamnesis(row?.camposAnamnesis);
+}
+
+export async function guardarCamposAnamnesis(
+  campos: CampoPersonalizadoDefinicion[]
+): Promise<{ ok: boolean; error?: string }> {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return { ok: false, error: "No autorizado" };
+  if (dietista.isDemo) return { ok: false, error: "No disponible en modo demo" };
+
+  const sanitized = sanitizeCamposAnamnesis(campos);
+
+  await prisma.dietista.update({
+    where: { id: dietista.id },
+    data: { camposAnamnesis: sanitized as unknown as Parameters<typeof prisma.dietista.update>[0]["data"]["camposAnamnesis"] },
+  });
+
+  revalidatePath("/ajustes");
+  return { ok: true };
 }

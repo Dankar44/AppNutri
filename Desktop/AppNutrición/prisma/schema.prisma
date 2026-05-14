@@ -30,6 +30,7 @@ model Dietista {
   marcaPdf        String?
   temaPdf         String?
   colorPrimarioPdf String?
+  camposAnamnesis Json?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 

@@ -1,5 +1,22 @@
 /** Datos de la pestaña Información (JSON en pacientes.fichaInformacion) */
 
+export type TipoCampoAnamnesis = "texto" | "textarea" | "selector";
+
+export type SeccionAnamnesis =
+  | "consulta"
+  | "personalSocial"
+  | "clinica"
+  | "alimentaria"
+  | "personalizado";
+
+export type CampoPersonalizadoDefinicion = {
+  id: string;
+  label: string;
+  tipo: TipoCampoAnamnesis;
+  opciones?: string[];
+  seccion: SeccionAnamnesis;
+};
+
 export type FichaInformacionData = {
   consulta?: {
     motivo?: string;
@@ -47,6 +64,7 @@ export type FichaInformacionData = {
     ingestaAgua?: string;
     otrasAlimentaria?: string;
   };
+  camposPersonalizados?: Record<string, string>;
 };
 
 export const OPCION_VACIA = "__ninguno__";

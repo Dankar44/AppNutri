@@ -10,6 +10,7 @@ import { getHorarioPaciente, getRecomendaciones } from "@/app/actions/pacientes"
 import { getFichaSidebar } from "@/app/actions/ficha-sidebar";
 import { ensurePlanificacionDefecto, getPlanificaciones } from "@/app/actions/planificaciones";
 import { getMapaNotificacionesPacientes } from "@/app/actions/notificaciones";
+import { getCamposAnamnesis } from "@/app/actions/perfil";
 import { AutoMarkLeidas } from "./auto-mark-leidas";
 
 interface Props {
@@ -30,7 +31,7 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
   const needsMedidas = ["mediciones", "planificacion", "plan-alimentacion"].includes(pestana);
 
   // Paralelizar todas las queries secundarias en un solo Promise.all
-  const [horario, recomendaciones, planesResumen, sidebarData, medidas, planes, planificaciones, mapaNotifs] = await Promise.all([
+  const [horario, recomendaciones, planesResumen, sidebarData, medidas, planes, planificaciones, mapaNotifs, camposAnamnesis] = await Promise.all([
     getHorarioPaciente(id),
     getRecomendaciones(id),
     getPlanesPaciente(id),
@@ -45,6 +46,7 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
       ? ensurePlanificacionDefecto(id).then(() => getPlanificaciones(id))
       : [],
     getMapaNotificacionesPacientes(),
+    pestana === "informacion" ? getCamposAnamnesis() : Promise.resolve([]),
   ]);
   const notifsPaciente = mapaNotifs[id] || [];
 
@@ -69,6 +71,7 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
         recomendaciones={recomendaciones}
         planesResumen={JSON.parse(JSON.stringify(planesResumen))}
         sidebarData={sidebarData}
+        camposAnamnesis={camposAnamnesis}
         notifsPorTipo={notifsPaciente.reduce<Record<string, number>>((acc, n) => {
           acc[n.tipo] = (acc[n.tipo] ?? 0) + 1;
           return acc;

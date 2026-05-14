@@ -3,18 +3,20 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Calendar,
+  ClipboardList,
   User,
   Link2,
   UtensilsCrossed,
   Save,
-  Printer,
-  ClipboardList,
+  Settings,
   Check,
   Loader2,
   AlertCircle,
+  FileDown,
 } from "lucide-react";
+import Link from "next/link";
 import { toast } from "sonner";
-import type { FichaInformacionData } from "@/lib/ficha-informacion-types";
+import type { FichaInformacionData, CampoPersonalizadoDefinicion, SeccionAnamnesis } from "@/lib/ficha-informacion-types";
 import {
   SELECT_SI_NO_OCASION,
   SELECT_ESTADO_CIVIL,
@@ -27,6 +29,9 @@ import {
 } from "@/lib/ficha-informacion-types";
 import { guardarFichaInformacionPaciente } from "@/app/actions/pacientes";
 import { enviarCuestionarioPaciente } from "@/app/actions/email";
+import { getBrandingDietista } from "@/app/actions/perfil";
+import { generateAnamnesisPDF } from "@/lib/pdf/generate-anamnesis-pdf";
+import { getTheme } from "@/lib/pdf/pdf-themes";
 import { FichaAccordion } from "./ficha-accordion";
 import {
   FichaLabel,
@@ -58,6 +63,7 @@ function emptyFicha(): FichaInformacionData {
     personalSocial: {},
     clinica: {},
     alimentaria: {},
+    camposPersonalizados: {},
   };
 }
 
@@ -73,6 +79,7 @@ function mergeInitial(
         personalSocial: { ...e.personalSocial, ...raw.personalSocial },
         clinica: { ...e.clinica, ...raw.clinica },
         alimentaria: { ...e.alimentaria, ...raw.alimentaria },
+        camposPersonalizados: { ...e.camposPersonalizados, ...raw.camposPersonalizados },
       };
 
   // Auto-rellenar campos vacíos con datos del paciente
@@ -122,13 +129,17 @@ type SaveStatus = "saved" | "unsaved" | "saving";
 
 export function PacienteFichaInformacionTab({
   pacienteId,
+  pacienteNombre,
   pacienteEmail,
   initialFicha,
+  camposAnamnesis = [],
   resumen,
 }: {
   pacienteId: string;
+  pacienteNombre: string;
   pacienteEmail: string | null;
   initialFicha: FichaInformacionData | null | undefined;
+  camposAnamnesis?: CampoPersonalizadoDefinicion[];
   resumen: PacienteResumen;
 }) {
   const [data, setData] = useState(() => mergeInitial(initialFicha, resumen));
@@ -217,6 +228,25 @@ export function PacienteFichaInformacionTab({
     setData((d) => patch(d, section, key, value));
   }
 
+  function setCustomField(id: string, value: string) {
+    setData((d) => ({
+      ...d,
+      camposPersonalizados: { ...d.camposPersonalizados, [id]: value },
+    }));
+  }
+
+  const camposPorSeccion = camposAnamnesis.reduce<
+    Record<SeccionAnamnesis, CampoPersonalizadoDefinicion[]>
+  >(
+    (acc, c) => {
+      acc[c.seccion].push(c);
+      return acc;
+    },
+    { consulta: [], personalSocial: [], clinica: [], alimentaria: [], personalizado: [] }
+  );
+
+  const cp = data.camposPersonalizados ?? {};
+
   function guardarManual() {
     clearTimeout(timerRef.current);
     doSave(data);
@@ -249,6 +279,39 @@ export function PacienteFichaInformacionTab({
     }
   }
 
+  async function handleExportarPDF() {
+    if (saveStatus === "unsaved") {
+      await doSave(data);
+    }
+    const branding = await getBrandingDietista();
+    if (!branding) {
+      toast.error("No se pudo obtener el branding");
+      return;
+    }
+    const theme = getTheme(branding.temaPdf, branding.colorPrimarioPdf);
+    const html = generateAnamnesisPDF({
+      pacienteNombre,
+      dietistaNombre: branding.nombre,
+      clinica: branding.clinica,
+      ficha: data,
+      camposCustom: camposAnamnesis,
+      patologias: resumen.patologias,
+      medicamentos: resumen.medicamentos,
+      alergias: resumen.alergias,
+      intolerancias: resumen.intolerancias,
+      theme,
+      logoUrl: branding.pdfLogoUrl,
+      brandName: branding.marcaPdf,
+    });
+    const ventana = window.open("", "_blank");
+    if (!ventana) {
+      toast.error("Permite las ventanas emergentes para exportar el PDF");
+      return;
+    }
+    ventana.document.write(html);
+    ventana.document.close();
+  }
+
   const c = data.consulta ?? {};
   const ps = data.personalSocial ?? {};
   const cl = data.clinica ?? {};
@@ -257,20 +320,30 @@ export function PacienteFichaInformacionTab({
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 mb-2 border-b border-border">
-        <button
-          type="button"
-          onClick={() => {
-            if (!pacienteEmail) {
-              toast.error("Registra un email para este paciente antes de enviar");
-              return;
-            }
-            setShowEnviarModal(true);
-          }}
-          className="inline-flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors w-fit"
-        >
-          <ClipboardList className="w-4 h-4" />
-          Enviar cuestionario
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (!pacienteEmail) {
+                toast.error("Registra un email para este paciente antes de enviar");
+                return;
+              }
+              setShowEnviarModal(true);
+            }}
+            className="inline-flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors w-fit"
+          >
+            <ClipboardList className="w-4 h-4" />
+            Enviar cuestionario
+          </button>
+          <button
+            type="button"
+            onClick={handleExportarPDF}
+            className="inline-flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors w-fit"
+          >
+            <FileDown className="w-4 h-4" />
+            Exportar PDF
+          </button>
+        </div>
         <div className="flex items-center gap-3">
           <SaveStatusBadge status={saveStatus} />
           <button
@@ -281,14 +354,6 @@ export function PacienteFichaInformacionTab({
             title="Guardar ahora"
           >
             <Save className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="p-2 rounded-lg border border-border hover:bg-muted transition-colors"
-            title="Imprimir"
-          >
-            <Printer className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -340,6 +405,7 @@ export function PacienteFichaInformacionTab({
               rows={2}
             />
           </div>
+          <CamposCustomRender campos={camposPorSeccion.consulta} valores={cp} onChange={setCustomField} />
         </FichaAccordion>
 
         {/* ── Historia personal y social ── */}
@@ -484,6 +550,7 @@ export function PacienteFichaInformacionTab({
               rows={2}
             />
           </div>
+          <CamposCustomRender campos={camposPorSeccion.personalSocial} valores={cp} onChange={setCustomField} />
         </FichaAccordion>
 
         {/* ── Historia clínica ── */}
@@ -550,6 +617,7 @@ export function PacienteFichaInformacionTab({
               rows={2}
             />
           </div>
+          <CamposCustomRender campos={camposPorSeccion.clinica} valores={cp} onChange={setCustomField} />
         </FichaAccordion>
 
         {/* ── Historia alimentaria ── */}
@@ -699,9 +767,24 @@ export function PacienteFichaInformacionTab({
               rows={2}
             />
           </div>
+          <CamposCustomRender campos={camposPorSeccion.alimentaria} valores={cp} onChange={setCustomField} />
         </FichaAccordion>
 
+        {camposPorSeccion.personalizado.length > 0 && (
+          <FichaAccordion title="Campos personalizados" icon={ClipboardList}>
+            <CamposCustomRender campos={camposPorSeccion.personalizado} valores={cp} onChange={setCustomField} />
+          </FichaAccordion>
+        )}
+
       </div>
+
+      <Link
+        href="/ajustes#anamnesis"
+        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors px-1 py-2"
+      >
+        <Settings className="w-4 h-4" />
+        Personalizar campos de la anamnesis
+      </Link>
 
 
       {showEnviarModal && (
@@ -741,6 +824,48 @@ export function PacienteFichaInformacionTab({
         </div>
       )}
     </div>
+  );
+}
+
+function CamposCustomRender({
+  campos,
+  valores,
+  onChange,
+}: {
+  campos: CampoPersonalizadoDefinicion[];
+  valores: Record<string, string>;
+  onChange: (id: string, value: string) => void;
+}) {
+  if (campos.length === 0) return null;
+  return (
+    <>
+      {campos.map((campo) => (
+        <div key={campo.id}>
+          <FichaLabel>{campo.label}</FichaLabel>
+          {campo.tipo === "textarea" ? (
+            <FichaTextarea
+              value={valores[campo.id] ?? ""}
+              onChange={(v) => onChange(campo.id, v)}
+              rows={2}
+            />
+          ) : campo.tipo === "selector" && campo.opciones ? (
+            <FichaSelect
+              value={valores[campo.id] || OPCION_VACIA}
+              onChange={(v) => onChange(campo.id, v)}
+              options={[
+                { value: OPCION_VACIA, label: "Selecciona una opción" },
+                ...campo.opciones.map((o) => ({ value: o, label: o })),
+              ]}
+            />
+          ) : (
+            <FichaInput
+              value={valores[campo.id] ?? ""}
+              onChange={(v) => onChange(campo.id, v)}
+            />
+          )}
+        </div>
+      ))}
+    </>
   );
 }
 

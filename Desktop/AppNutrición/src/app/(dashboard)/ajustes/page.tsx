@@ -1,5 +1,6 @@
 import {
   AlertTriangle,
+  ClipboardList,
   CreditCard,
   User,
   Wallet,
@@ -29,6 +30,8 @@ import { PacienteDemoCard } from "./paciente-demo-card";
 import { GoogleLoginCard } from "./google-login-card";
 import { DocumentosPdfSection } from "./documentos-pdf-section";
 import { CambiarPasswordForm } from "./cambiar-password-form";
+import { CamposAnamnesisForm } from "./campos-anamnesis-form";
+import { getCamposAnamnesis } from "@/app/actions/perfil";
 
 /** Encabezado común de cada bloque: icono + título + descripción. */
 function SectionHeader({
@@ -86,12 +89,13 @@ export default async function AjustesPage({
   const dietista = await getCurrentDietista();
   if (!dietista) redirect("/login");
 
-  const [suscripcion, stripeStatus, googleIntegracion, googleLinked, demoEliminado, sp] = await Promise.all([
+  const [suscripcion, stripeStatus, googleIntegracion, googleLinked, demoEliminado, camposAnamnesis, sp] = await Promise.all([
     getSuscripcion(),
     getStripeAccountStatus(),
     getIntegracionNutri(),
     getGoogleIdentityLinked(),
     isDemoEliminado(),
+    getCamposAnamnesis(),
     searchParams,
   ]);
 
@@ -210,6 +214,19 @@ export default async function AjustesPage({
                 pdfLogoUrl={dietista.pdfLogoUrl}
                 marcaPdf={dietista.marcaPdf}
               />
+            </div>
+          </section>
+
+          {/* CAMPOS ANAMNESIS */}
+          <section>
+            <SectionHeader
+              id="anamnesis"
+              icon={ClipboardList}
+              title="Campos de la anamnesis"
+              description="Añade campos personalizados que aparecerán en la ficha de información de todos tus pacientes."
+            />
+            <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
+              <CamposAnamnesisForm initialCampos={camposAnamnesis} />
             </div>
           </section>
 
