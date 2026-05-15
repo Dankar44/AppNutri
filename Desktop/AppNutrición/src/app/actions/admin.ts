@@ -4,13 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin, verifyAdminCredentials, createAdminSession, clearAdminSession } from "@/lib/admin";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { getTranslations } from "next-intl/server";
-
 export async function loginAdmin(email: string, password: string): Promise<{ error?: string }> {
-  const t = await getTranslations("validation");
   const result = verifyAdminCredentials(email, password);
   if (!result) {
-    return { error: t("admin.emailOContrasenaIncorrectos") };
+    return { error: "Email o contraseña incorrectos" };
   }
   await createAdminSession(email, result.role);
   redirect(result.role === "creator" ? "/admin/crear-cuenta" : "/admin");
@@ -495,19 +492,18 @@ export async function crearCuentaNutricionista(data: {
   const nombre = data.nombre.trim();
   const apellidos = data.apellidos.trim();
 
-  const t = await getTranslations("validation");
-  if (!email || !email.includes("@")) return { ok: false, error: t("admin.emailNoValido") };
-  if (password.length < 6) return { ok: false, error: t("admin.contrasenaMinima") };
-  if (!nombre) return { ok: false, error: t("admin.nombreObligatorio") };
+  if (!email || !email.includes("@")) return { ok: false, error: "Email no válido" };
+  if (password.length < 6) return { ok: false, error: "La contraseña debe tener al menos 6 caracteres" };
+  if (!nombre) return { ok: false, error: "El nombre es obligatorio" };
 
   try {
     const existingAuth = await prisma.$queryRawUnsafe<{ id: string }[]>(
       `SELECT id FROM auth.users WHERE email = $1 LIMIT 1`, email
     );
-    if (existingAuth.length > 0) return { ok: false, error: t("admin.yaExisteUsuarioEmail") };
+    if (existingAuth.length > 0) return { ok: false, error: "Ya existe un usuario con ese email" };
 
     const existingDietista = await prisma.dietista.findFirst({ where: { email } });
-    if (existingDietista) return { ok: false, error: t("admin.yaExisteDietistaEmail") };
+    if (existingDietista) return { ok: false, error: "Ya existe un dietista con ese email" };
 
     const authRows = await prisma.$queryRawUnsafe<{ id: string }[]>(
       `INSERT INTO auth.users (
@@ -566,7 +562,7 @@ export async function crearCuentaNutricionista(data: {
       throw innerErr;
     }
   } catch (e) {
-    const msg = e instanceof Error ? e.message : t("general.errorDesconocido");
+    const msg = e instanceof Error ? e.message : "Error desconocido";
     return { ok: false, error: msg };
   }
 }
