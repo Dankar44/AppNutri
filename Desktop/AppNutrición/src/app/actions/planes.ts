@@ -222,7 +222,11 @@ export async function getPlanes(busqueda?: string) {
           }
         : {}),
     },
-    include: { paciente: { select: { nombre: true, apellidos: true, fotoUrl: true } } },
+    select: {
+      id: true, nombre: true, activo: true, createdAt: true, pacienteId: true,
+      caloriasObjetivo: true, proteinasObjetivo: true, carbohidratosObjetivo: true, grasasObjetivo: true,
+      paciente: { select: { nombre: true, apellidos: true, fotoUrl: true } },
+    },
     orderBy: { createdAt: "desc" },
   });
 }

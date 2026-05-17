@@ -335,6 +335,7 @@ export async function toggleActivoPaciente(id: string) {
 
   const paciente = await prisma.paciente.findUnique({
     where: { id, dietistaId: dietista.id },
+    select: { activo: true },
   });
 
   if (!paciente) throw new Error(t("paciente.pacienteNoEncontrado"));
@@ -371,6 +372,11 @@ export async function getPacientes(
             ],
           }
         : {}),
+    },
+    select: {
+      id: true, nombre: true, apellidos: true, email: true, telefono: true,
+      fotoUrl: true, objetivo: true, activo: true, createdAt: true,
+      peso: true, altura: true,
     },
     orderBy: { createdAt: "desc" },
   });

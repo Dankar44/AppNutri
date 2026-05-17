@@ -266,9 +266,16 @@ export async function getAlimentosPaginados(
     ...(microIdFilter || {}),
   };
 
+  const selectListado = {
+    id: true, nombre: true, categoria: true,
+    calorias: true, proteinas: true, carbohidratos: true, grasas: true, fibra: true,
+    porcion: true, unidad: true, origen: true, imagenUrl: true, dietistaId: true,
+  } as const;
+
   const [alimentos, total] = await Promise.all([
     prisma.alimento.findMany({
       where,
+      select: selectListado,
       orderBy: { nombre: "asc" },
       take: PAGE_SIZE + 1,
       ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
