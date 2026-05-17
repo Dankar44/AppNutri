@@ -7,6 +7,7 @@ import { CookingPot, User, ExternalLink, Image as ImageLinkIcon } from "lucide-r
 import { cn } from "@/lib/utils";
 import { calcularMacrosPorcion, convertirAGramos } from "@/lib/macros";
 import { formatQuantity } from "@/lib/units";
+import { useTranslations } from "next-intl";
 
 export type InteractionMode = "dashboard" | "patient" | "shared";
 
@@ -62,6 +63,7 @@ export function FoodHoverCard({
   interactionMode,
 }: FoodHoverCardProps) {
   const router = useRouter();
+  const t = useTranslations("foods.hoverCard");
   const [open, setOpen] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
@@ -194,31 +196,31 @@ export function FoodHoverCard({
                   "font-semibold text-sm leading-tight line-clamp-2",
                   esReceta ? "text-purple-600 dark:text-purple-400" : esPropio ? "text-emerald-600 dark:text-emerald-400" : "text-foreground",
                 )}>
-                  {nombre || "Sin nombre"}
+                  {nombre || t("sinNombre")}
                 </span>
               </div>
 
               <div className="border-t border-border/50 pt-2">
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Energía</span>
+                    <span className="text-muted-foreground">{t("energia")}</span>
                     <span className="font-semibold tabular-nums text-purple-500">{Math.round(macros.calorias)} kcal</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Proteínas</span>
+                    <span className="text-muted-foreground">{t("proteinas")}</span>
                     <span className="font-semibold tabular-nums text-blue-500">{macros.proteinas.toFixed(1)}g</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">H. Carbono</span>
+                    <span className="text-muted-foreground">{t("hCarbono")}</span>
                     <span className="font-semibold tabular-nums text-orange-500">{macros.carbohidratos.toFixed(1)}g</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Grasas</span>
+                    <span className="text-muted-foreground">{t("grasas")}</span>
                     <span className="font-semibold tabular-nums text-yellow-500">{macros.grasas.toFixed(1)}g</span>
                   </div>
                   {macros.fibra > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Fibra</span>
+                      <span className="text-muted-foreground">{t("fibra")}</span>
                       <span className="font-semibold tabular-nums text-emerald-500">{macros.fibra.toFixed(1)}g</span>
                     </div>
                   )}
@@ -227,7 +229,7 @@ export function FoodHoverCard({
 
               {esReceta && ingredientesVisibles && ingredientesVisibles.length > 0 && (
                 <div className="border-t border-border/50 pt-2">
-                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Ingredientes</p>
+                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">{t("ingredientes")}</p>
                   <ul className="space-y-0.5 text-xs text-muted-foreground">
                     {ingredientesVisibles.map((ing, i) => (
                       <li key={i} className="truncate">
@@ -235,7 +237,7 @@ export function FoodHoverCard({
                       </li>
                     ))}
                     {ingredientesRestantes > 0 && (
-                      <li className="text-muted-foreground/60 italic">+{ingredientesRestantes} más</li>
+                      <li className="text-muted-foreground/60 italic">{t("masIngredientes", { count: ingredientesRestantes })}</li>
                     )}
                   </ul>
                 </div>

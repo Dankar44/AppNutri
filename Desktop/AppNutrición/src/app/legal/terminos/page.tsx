@@ -3,12 +3,16 @@ import {
   FileText, Building2, ShoppingCart, Scale, UserCheck, ShieldAlert,
   Copyright, Stethoscope, AlertTriangle, Lock, RefreshCcw, Gavel, Mail,
 } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
-export const metadata: Metadata = {
-  title: "Términos y condiciones — Annonia",
-  description: "Términos y condiciones de uso de la plataforma Annonia.",
-  alternates: { canonical: "/legal/terminos" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("legal");
+  return {
+    title: t("terminos.metadata.title"),
+    description: t("terminos.metadata.description"),
+    alternates: { canonical: "/legal/terminos" },
+  };
+}
 
 function Section({
   icon: Icon, title, id, children,
@@ -38,40 +42,51 @@ function InfoCard({ children }: { children: React.ReactNode }) {
   );
 }
 
-const TOC = [
-  { id: "identificacion", label: "Identificación del prestador" },
-  { id: "objeto", label: "Objeto del servicio" },
-  { id: "acceso", label: "Condiciones de acceso" },
-  { id: "pagos", label: "Planes y pagos" },
-  { id: "desistimiento", label: "Derecho de desistimiento" },
-  { id: "uso", label: "Uso aceptable" },
-  { id: "propiedad", label: "Propiedad intelectual" },
-  { id: "responsabilidad-sanitaria", label: "Responsabilidad sanitaria" },
-  { id: "limitacion", label: "Limitación de responsabilidad" },
-  { id: "datos", label: "Protección de datos" },
-  { id: "modificaciones", label: "Modificaciones" },
-  { id: "jurisdiccion", label: "Legislación y jurisdicción" },
-  { id: "contacto", label: "Contacto" },
-];
+export default async function TerminosPage() {
+  const t = await getTranslations("legal");
 
-export default function TerminosPage() {
+  const TOC = [
+    { id: "identificacion", label: t("terminos.toc.identificacion") },
+    { id: "objeto", label: t("terminos.toc.objeto") },
+    { id: "acceso", label: t("terminos.toc.acceso") },
+    { id: "pagos", label: t("terminos.toc.pagos") },
+    { id: "desistimiento", label: t("terminos.toc.desistimiento") },
+    { id: "uso", label: t("terminos.toc.uso") },
+    { id: "propiedad", label: t("terminos.toc.propiedad") },
+    { id: "responsabilidad-sanitaria", label: t("terminos.toc.responsabilidadSanitaria") },
+    { id: "limitacion", label: t("terminos.toc.limitacion") },
+    { id: "datos", label: t("terminos.toc.datos") },
+    { id: "modificaciones", label: t("terminos.toc.modificaciones") },
+    { id: "jurisdiccion", label: t("terminos.toc.jurisdiccion") },
+    { id: "contacto", label: t("terminos.toc.contacto") },
+  ];
+
+  const funcionalidades = [
+    t("terminos.objeto.funcionalidades.0"),
+    t("terminos.objeto.funcionalidades.1"),
+    t("terminos.objeto.funcionalidades.2"),
+    t("terminos.objeto.funcionalidades.3"),
+    t("terminos.objeto.funcionalidades.4"),
+    t("terminos.objeto.funcionalidades.5"),
+  ];
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
       {/* Hero */}
       <div className="text-center mb-12">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 text-sm font-medium mb-4">
           <FileText className="w-4 h-4" />
-          Documento legal
+          {t("terminos.badge")}
         </div>
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">Términos y condiciones de uso</h1>
-        <p className="text-gray-400 text-sm">Última actualización: 24 de abril de 2026</p>
+        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">{t("terminos.titulo")}</h1>
+        <p className="text-gray-400 text-sm">{t("terminos.ultimaActualizacion")}</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-10">
         {/* TOC sidebar */}
         <aside className="lg:w-64 shrink-0">
           <div className="lg:sticky lg:top-24">
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">Contenido</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">{t("layout.tocLabel")}</p>
             <nav className="space-y-0.5">
               {TOC.map((item) => (
                 <a
@@ -90,182 +105,172 @@ export default function TerminosPage() {
         <div className="flex-1 min-w-0 space-y-10">
           <div className="bg-white dark:bg-[#17181e] rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 sm:p-8 text-[15px] text-gray-600 dark:text-gray-400 leading-relaxed space-y-3">
             <p>
-              Los presentes Términos y Condiciones regulan el acceso y uso de la plataforma web <strong className="text-gray-900 dark:text-gray-100">Annonia</strong>, accesible
-              desde <strong className="text-gray-900 dark:text-gray-100">annonia.com</strong>, titularidad de Annonia Software S.L.
+              {t.rich("terminos.intro.parrafo1", {
+                strong: (chunks) => <strong className="text-gray-900 dark:text-gray-100">{chunks}</strong>,
+              })}
             </p>
             <p>
-              Al registrarse o utilizar la Plataforma, el usuario acepta íntegramente estos Términos. Si no está de acuerdo con alguno
-              de ellos, le rogamos que no utilice el servicio.
+              {t("terminos.intro.parrafo2")}
             </p>
           </div>
 
-          <Section icon={Building2} title="1. Identificación del prestador" id="identificacion">
+          <Section icon={Building2} title={t("terminos.identificacion.titulo")} id="identificacion">
             <InfoCard>
-              <p><strong className="text-gray-900 dark:text-gray-100">Denominación social:</strong> Annonia Software S.L.</p>
-              <p><strong className="text-gray-900 dark:text-gray-100">Domicilio social:</strong> [Pendiente de completar]</p>
-              <p><strong className="text-gray-900 dark:text-gray-100">CIF:</strong> [Pendiente de completar]</p>
-              <p><strong className="text-gray-900 dark:text-gray-100">Email:</strong> legal@annonia.com</p>
-              <p><strong className="text-gray-900 dark:text-gray-100">Registro Mercantil:</strong> [Pendiente de completar]</p>
+              <p><strong className="text-gray-900 dark:text-gray-100">{t("terminos.identificacion.denominacion")}</strong> {t("terminos.identificacion.denominacionValor")}</p>
+              <p><strong className="text-gray-900 dark:text-gray-100">{t("terminos.identificacion.domicilio")}</strong> {t("terminos.identificacion.domicilioValor")}</p>
+              <p><strong className="text-gray-900 dark:text-gray-100">{t("terminos.identificacion.cif")}</strong> {t("terminos.identificacion.cifValor")}</p>
+              <p><strong className="text-gray-900 dark:text-gray-100">{t("terminos.identificacion.email")}</strong> {t("terminos.identificacion.emailValor")}</p>
+              <p><strong className="text-gray-900 dark:text-gray-100">{t("terminos.identificacion.registro")}</strong> {t("terminos.identificacion.registroValor")}</p>
             </InfoCard>
             <p>
-              De conformidad con la Ley 34/2002, de 11 de julio, de Servicios de la Sociedad de la Información y de Comercio
-              Electrónico (LSSI-CE).
+              {t("terminos.identificacion.lssice")}
             </p>
           </Section>
 
-          <Section icon={ShoppingCart} title="2. Objeto del servicio" id="objeto">
+          <Section icon={ShoppingCart} title={t("terminos.objeto.titulo")} id="objeto">
             <p>
-              Annonia es una plataforma de gestión de consultas de nutrición y dietética dirigida a profesionales colegiados y a sus
-              pacientes. Permite, entre otras funcionalidades:
+              {t("terminos.objeto.descripcion")}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {[
-                "Fichas de pacientes con datos clínicos y antropométricos",
-                "Planes alimenticios personalizados con o sin IA",
-                "Gestión de citas, mensajería y notificaciones",
-                "Portal de acceso para pacientes",
-                "Informes clínicos en formato PDF",
-                "Base de datos de +2.600 alimentos",
-              ].map((item) => (
+              {funcionalidades.map((item) => (
                 <div key={item} className="flex items-start gap-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2 text-sm">
-                  <span className="text-green-500 mt-0.5">✓</span>
+                  <span className="text-green-500 mt-0.5">&#10003;</span>
                   <span>{item}</span>
                 </div>
               ))}
             </div>
           </Section>
 
-          <Section icon={UserCheck} title="3. Condiciones de acceso y registro" id="acceso">
+          <Section icon={UserCheck} title={t("terminos.acceso.titulo")} id="acceso">
             <div className="space-y-4">
               <div className="bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 p-4">
-                <p className="font-semibold text-green-800 dark:text-green-300 text-sm mb-1">Dietistas-nutricionistas</p>
+                <p className="font-semibold text-green-800 dark:text-green-300 text-sm mb-1">{t("terminos.acceso.dietistas.subtitulo")}</p>
                 <p className="text-sm text-green-700 dark:text-green-400">
-                  Deberán estar en posesión de la titulación habilitante y colegiados. Annonia se reserva el derecho de verificar el
-                  número de colegiado y denegar el acceso en caso de datos incorrectos.
+                  {t("terminos.acceso.dietistas.contenido")}
                 </p>
               </div>
               <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 p-4">
-                <p className="font-semibold text-blue-800 dark:text-blue-300 text-sm mb-1">Pacientes</p>
+                <p className="font-semibold text-blue-800 dark:text-blue-300 text-sm mb-1">{t("terminos.acceso.pacientes.subtitulo")}</p>
                 <p className="text-sm text-blue-700 dark:text-blue-400">
-                  Acceden al portal mediante credenciales proporcionadas por su dietista. No se requiere registro independiente.
+                  {t("terminos.acceso.pacientes.contenido")}
                 </p>
               </div>
               <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800 p-4">
-                <p className="font-semibold text-amber-800 dark:text-amber-300 text-sm mb-1">Edad mínima: 16 años</p>
+                <p className="font-semibold text-amber-800 dark:text-amber-300 text-sm mb-1">{t("terminos.acceso.edadMinima.subtitulo")}</p>
                 <p className="text-sm text-amber-700 dark:text-amber-400">
-                  Conforme al artículo 7 de la LOPDGDD. Los menores de 16 años necesitarán consentimiento de padres o tutores legales.
+                  {t("terminos.acceso.edadMinima.contenido")}
                 </p>
               </div>
             </div>
           </Section>
 
-          <Section icon={Scale} title="4. Planes de suscripción y pagos" id="pagos">
+          <Section icon={Scale} title={t("terminos.pagos.titulo")} id="pagos">
             <p>
-              Annonia ofrece planes de suscripción mensual. Los precios se muestran en euros (€) e incluyen IVA cuando sea aplicable.
-              El pago se realiza a través de Stripe.
+              {t("terminos.pagos.descripcion")}
             </p>
             <ul className="list-disc list-inside space-y-1.5 marker:text-green-400">
-              <li>Los planes se renuevan automáticamente al final de cada periodo.</li>
-              <li>Puedes cancelar en cualquier momento desde Ajustes. Seguirás con acceso hasta el final del periodo pagado.</li>
-              <li>14 días de prueba gratuita sin tarjeta de crédito.</li>
-              <li>Los precios pueden modificarse con preaviso mínimo de 30 días.</li>
+              <li>{t("terminos.pagos.puntos.0")}</li>
+              <li>{t("terminos.pagos.puntos.1")}</li>
+              <li>{t("terminos.pagos.puntos.2")}</li>
+              <li>{t("terminos.pagos.puntos.3")}</li>
             </ul>
           </Section>
 
-          <Section icon={RefreshCcw} title="5. Derecho de desistimiento" id="desistimiento">
+          <Section icon={RefreshCcw} title={t("terminos.desistimiento.titulo")} id="desistimiento">
             <p>
-              Conforme al artículo 103 del Real Decreto Legislativo 1/2007, podrás ejercer tu derecho de desistimiento en los 14 días
-              naturales siguientes a la contratación, salvo que hayas comenzado a utilizar el servicio con tu consentimiento expreso.
+              {t("terminos.desistimiento.contenido")}
             </p>
             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-4 text-sm">
-              <p>Para ejercer este derecho: <strong className="text-gray-900 dark:text-gray-100">legal@annonia.com</strong></p>
+              <p>{t.rich("terminos.desistimiento.contacto", {
+                strong: (chunks) => <strong className="text-gray-900 dark:text-gray-100">{chunks}</strong>,
+              })}</p>
             </div>
           </Section>
 
-          <Section icon={ShieldAlert} title="6. Uso aceptable" id="uso">
-            <p>El usuario se compromete a:</p>
+          <Section icon={ShieldAlert} title={t("terminos.uso.titulo")} id="uso">
+            <p>{t("terminos.uso.descripcion")}</p>
             <ul className="list-disc list-inside space-y-1.5 marker:text-green-400">
-              <li>Proporcionar información veraz y mantenerla actualizada.</li>
-              <li>No utilizar la Plataforma para fines ilícitos.</li>
-              <li>No intentar acceder a cuentas o datos de otros usuarios.</li>
-              <li>No usar sistemas automatizados de extracción de datos.</li>
-              <li>Cumplir la normativa de protección de datos al tratar información de pacientes.</li>
+              <li>{t("terminos.uso.puntos.0")}</li>
+              <li>{t("terminos.uso.puntos.1")}</li>
+              <li>{t("terminos.uso.puntos.2")}</li>
+              <li>{t("terminos.uso.puntos.3")}</li>
+              <li>{t("terminos.uso.puntos.4")}</li>
             </ul>
             <div className="bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800 p-4 text-sm text-red-700 dark:text-red-400">
-              Annonia se reserva el derecho de suspender o cancelar cuentas que incumplan estos Términos, previo aviso cuando sea posible.
+              {t("terminos.uso.aviso")}
             </div>
           </Section>
 
-          <Section icon={Copyright} title="7. Propiedad intelectual e industrial" id="propiedad">
+          <Section icon={Copyright} title={t("terminos.propiedad.titulo")} id="propiedad">
             <p>
-              Todos los contenidos de la Plataforma (diseño, código, textos, gráficos, logos, marcas) son propiedad de Annonia o de
-              sus licenciantes y están protegidos por la legislación española e internacional.
+              {t("terminos.propiedad.contenido")}
             </p>
             <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 p-4 text-sm text-blue-700 dark:text-blue-400">
-              <strong className="dark:text-blue-300">Tus contenidos son tuyos:</strong> los datos clínicos, planes alimenticios y contenidos creados por los usuarios
-              dentro de la Plataforma son propiedad del usuario que los ha generado.
+              {t.rich("terminos.propiedad.tuContenido", {
+                strong: (chunks) => <strong className="dark:text-blue-300">{chunks}</strong>,
+              })}
             </div>
           </Section>
 
-          <Section icon={Stethoscope} title="8. Responsabilidad del profesional sanitario" id="responsabilidad-sanitaria">
+          <Section icon={Stethoscope} title={t("terminos.responsabilidadSanitaria.titulo")} id="responsabilidad-sanitaria">
             <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800 p-4 text-sm text-amber-800 dark:text-amber-400 space-y-2">
               <p>
-                <strong className="dark:text-amber-300">Annonia es una herramienta de gestión</strong> y no sustituye el criterio profesional del dietista-nutricionista.
+                {t.rich("terminos.responsabilidadSanitaria.puntos.0", {
+                  strong: (chunks) => <strong className="dark:text-amber-300">{chunks}</strong>,
+                })}
               </p>
               <p>
-                Las recomendaciones de IA son orientativas y deben ser revisadas y validadas por el profesional antes de su aplicación.
+                {t("terminos.responsabilidadSanitaria.puntos.1")}
               </p>
               <p>
-                El dietista es el único responsable de las decisiones clínicas tomadas con respecto a sus pacientes.
+                {t("terminos.responsabilidadSanitaria.puntos.2")}
               </p>
             </div>
           </Section>
 
-          <Section icon={AlertTriangle} title="9. Limitación de responsabilidad" id="limitacion">
+          <Section icon={AlertTriangle} title={t("terminos.limitacion.titulo")} id="limitacion">
             <p>
-              Annonia se esfuerza por mantener la Plataforma disponible y actualizada, pero no garantiza la ausencia de interrupciones
-              o errores. En la medida permitida por la ley:
+              {t("terminos.limitacion.descripcion")}
             </p>
             <ul className="list-disc list-inside space-y-1.5 marker:text-gray-400">
-              <li>No seremos responsables de daños indirectos, incidentales o consecuentes.</li>
-              <li>La responsabilidad total estará limitada al importe pagado en los 12 meses anteriores al evento.</li>
+              <li>{t("terminos.limitacion.puntos.0")}</li>
+              <li>{t("terminos.limitacion.puntos.1")}</li>
             </ul>
           </Section>
 
-          <Section icon={Lock} title="10. Protección de datos" id="datos">
+          <Section icon={Lock} title={t("terminos.datos.titulo")} id="datos">
             <p>
-              El tratamiento de datos personales se rige por nuestra{" "}
-              <a href="/legal/privacidad" className="text-green-600 dark:text-green-400 font-medium hover:underline">Política de Privacidad</a>, que forma
-              parte integrante de estos Términos.
+              {t.rich("terminos.datos.contenido", {
+                a: (chunks) => <a href="/legal/privacidad" className="text-green-600 dark:text-green-400 font-medium hover:underline">{chunks}</a>,
+              })}
             </p>
           </Section>
 
-          <Section icon={RefreshCcw} title="11. Modificaciones" id="modificaciones">
+          <Section icon={RefreshCcw} title={t("terminos.modificaciones.titulo")} id="modificaciones">
             <p>
-              Annonia se reserva el derecho de modificar estos Términos. Los cambios sustanciales se notificarán con al menos 30 días
-              de antelación por email. El uso continuado del servicio tras la notificación implica aceptación.
+              {t("terminos.modificaciones.contenido")}
             </p>
           </Section>
 
-          <Section icon={Gavel} title="12. Legislación aplicable y jurisdicción" id="jurisdiccion">
+          <Section icon={Gavel} title={t("terminos.jurisdiccion.titulo")} id="jurisdiccion">
             <p>
-              Estos Términos se rigen por la legislación española. Para la resolución de controversias, las partes se someten a los
-              Juzgados y Tribunales del domicilio social de Annonia, sin perjuicio de fueros imperativos del consumidor.
+              {t("terminos.jurisdiccion.contenido")}
             </p>
             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-4 text-sm">
               <p>
-                Plataforma de resolución de litigios en línea de la UE:{" "}
-                <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" className="text-green-600 dark:text-green-400 hover:underline">
-                  ec.europa.eu/consumers/odr
-                </a>
+                {t.rich("terminos.jurisdiccion.odr", {
+                  a: (chunks) => <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" className="text-green-600 dark:text-green-400 hover:underline">{chunks}</a>,
+                })}
               </p>
             </div>
           </Section>
 
-          <Section icon={Mail} title="13. Contacto" id="contacto">
+          <Section icon={Mail} title={t("terminos.contacto.titulo")} id="contacto">
             <div className="bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 p-5 text-center">
               <p className="text-sm text-green-800 dark:text-green-300">
-                Para cualquier consulta: <strong>legal@annonia.com</strong>
+                {t.rich("terminos.contacto.contenido", {
+                  strong: (chunks) => <strong>{chunks}</strong>,
+                })}
               </p>
             </div>
           </Section>

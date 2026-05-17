@@ -3,21 +3,23 @@
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { eliminarConsulta } from "@/app/actions/consultas";
 import { toast } from "sonner";
 
 export function ConsultaActions({ consultaId }: { consultaId: string }) {
   const router = useRouter();
+  const t = useTranslations("patients");
   const [confirmando, setConfirmando] = useState(false);
 
   async function handleDelete() {
     try {
       await eliminarConsulta(consultaId);
-      toast.success("Consulta eliminada");
+      toast.success(t("consultas.consultaEliminada"));
       router.refresh();
     } catch (error) {
       if (error && typeof error === "object" && "digest" in error) throw error;
-      toast.error("Error al eliminar");
+      toast.error(t("consultas.errorEliminar"));
     }
   }
 
@@ -28,13 +30,13 @@ export function ConsultaActions({ consultaId }: { consultaId: string }) {
           onClick={handleDelete}
           className="px-2 py-1 rounded bg-red-600 text-white text-xs font-medium"
         >
-          Sí
+          {t("consultas.si")}
         </button>
         <button
           onClick={() => setConfirmando(false)}
           className="px-2 py-1 rounded border border-border text-xs font-medium"
         >
-          No
+          {t("consultas.no")}
         </button>
       </div>
     );

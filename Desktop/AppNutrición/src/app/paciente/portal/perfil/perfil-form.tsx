@@ -5,6 +5,7 @@ import { Camera, Loader2, Check, Lock, UserRound } from "lucide-react";
 import { actualizarPerfilPaciente, actualizarFotoPaciente, cambiarPasswordPaciente } from "@/app/actions/paciente-auth";
 import { toast } from "sonner";
 import { compressImage, IMAGE_PRESETS } from "@/lib/image-compress";
+import { useTranslations } from "next-intl";
 
 interface Props {
   nombre: string;
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export function PerfilPacienteForm({ nombre, apellidos, email, telefono, fotoUrl }: Props) {
+  const t = useTranslations("patient-portal");
   const [form, setForm] = useState({ nombre, apellidos, telefono });
   const [saving, setSaving] = useState(false);
   const [foto, setFoto] = useState(fotoUrl);
@@ -29,16 +31,16 @@ export function PerfilPacienteForm({ nombre, apellidos, email, telefono, fotoUrl
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (!form.nombre.trim() || !form.apellidos.trim()) {
-      toast.error("Nombre y apellidos son obligatorios");
+      toast.error(t("perfil.toast.nombreObligatorio"));
       return;
     }
     setSaving(true);
     try {
       await actualizarPerfilPaciente(form);
-      toast.success("Perfil actualizado");
+      toast.success(t("perfil.toast.perfilActualizado"));
     } catch (err) {
       if (err && typeof err === "object" && "digest" in err) throw err;
-      toast.error("Error al guardar");
+      toast.error(t("perfil.toast.errorGuardar"));
     } finally {
       setSaving(false);
     }
@@ -48,7 +50,7 @@ export function PerfilPacienteForm({ nombre, apellidos, email, telefono, fotoUrl
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
-      toast.error("Máximo 2MB");
+      toast.error(t("perfil.toast.maxFoto"));
       return;
     }
     const reader = new FileReader();
@@ -58,9 +60,9 @@ export function PerfilPacienteForm({ nombre, apellidos, email, telefono, fotoUrl
         const dataUrl = await compressImage(raw, IMAGE_PRESETS.PROFILE_PHOTO);
         setFoto(dataUrl);
         await actualizarFotoPaciente(dataUrl);
-        toast.success("Foto actualizada");
+        toast.success(t("perfil.toast.fotoActualizada"));
       } catch {
-        toast.error("Error al subir la foto");
+        toast.error(t("perfil.toast.errorFoto"));
       }
     };
     reader.readAsDataURL(file);
@@ -69,21 +71,21 @@ export function PerfilPacienteForm({ nombre, apellidos, email, telefono, fotoUrl
   async function handlePassword(e: React.FormEvent) {
     e.preventDefault();
     if (passForm.nueva.length < 6) {
-      toast.error("Mínimo 6 caracteres");
+      toast.error(t("perfil.toast.passwordCorta"));
       return;
     }
     if (passForm.nueva !== passForm.confirmar) {
-      toast.error("Las contraseñas no coinciden");
+      toast.error(t("perfil.toast.passwordNoCoincide"));
       return;
     }
     setSavingPass(true);
     try {
       await cambiarPasswordPaciente(passForm.actual, passForm.nueva);
-      toast.success("Contraseña cambiada");
+      toast.success(t("perfil.toast.passwordCambiada"));
       setPassForm({ actual: "", nueva: "", confirmar: "" });
     } catch (err) {
       if (err && typeof err === "object" && "digest" in err) throw err;
-      const msg = err instanceof Error ? err.message : "Error al cambiar contraseña";
+      const msg = err instanceof Error ? err.message : t("perfil.toast.errorPassword");
       toast.error(msg);
     } finally {
       setSavingPass(false);
@@ -120,12 +122,12 @@ export function PerfilPacienteForm({ nombre, apellidos, email, telefono, fotoUrl
       <section className="bg-card rounded-xl border border-border p-6 flex flex-col">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <UserRound className="w-5 h-5 text-muted-foreground" />
-          Datos personales
+          {t("perfil.datosPersonales")}
         </h2>
         <form onSubmit={handleSave} className="flex-1 flex flex-col space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1.5">Nombre</label>
+              <label className="block text-sm font-medium mb-1.5">{t("perfil.nombre")}</label>
               <input
                 type="text"
                 value={form.nombre}
@@ -136,7 +138,7 @@ export function PerfilPacienteForm({ nombre, apellidos, email, telefono, fotoUrl
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">Apellidos</label>
+              <label className="block text-sm font-medium mb-1.5">{t("perfil.apellidos")}</label>
               <input
                 type="text"
                 value={form.apellidos}
@@ -147,7 +149,7 @@ export function PerfilPacienteForm({ nombre, apellidos, email, telefono, fotoUrl
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">Teléfono</label>
+              <label className="block text-sm font-medium mb-1.5">{t("perfil.telefono")}</label>
               <input
                 type="tel"
                 value={form.telefono}
@@ -157,14 +159,14 @@ export function PerfilPacienteForm({ nombre, apellidos, email, telefono, fotoUrl
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">Email</label>
+              <label className="block text-sm font-medium mb-1.5">{t("perfil.email")}</label>
               <input
                 type="email"
                 value={email}
                 disabled
                 className="w-full px-4 py-2.5 rounded-lg border border-border bg-muted text-sm text-muted-foreground cursor-not-allowed"
               />
-              <p className="text-xs text-muted-foreground mt-1">El email no se puede cambiar</p>
+              <p className="text-xs text-muted-foreground mt-1">{t("perfil.emailNoEditable")}</p>
             </div>
           </div>
           <div className="flex justify-end mt-auto pt-2">
@@ -174,7 +176,7 @@ export function PerfilPacienteForm({ nombre, apellidos, email, telefono, fotoUrl
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-              Guardar cambios
+              {t("perfil.guardarCambios")}
             </button>
           </div>
         </form>
@@ -184,11 +186,11 @@ export function PerfilPacienteForm({ nombre, apellidos, email, telefono, fotoUrl
       <section className="bg-card rounded-xl border border-border p-6 flex flex-col">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Lock className="w-5 h-5 text-muted-foreground" />
-          Cambiar contraseña
+          {t("perfil.cambiarPassword.title")}
         </h2>
         <form onSubmit={handlePassword} className="flex-1 flex flex-col space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1.5">Contraseña actual</label>
+            <label className="block text-sm font-medium mb-1.5">{t("perfil.cambiarPassword.actual")}</label>
             <input
               type="password"
               value={passForm.actual}
@@ -199,7 +201,7 @@ export function PerfilPacienteForm({ nombre, apellidos, email, telefono, fotoUrl
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1.5">Nueva contraseña</label>
+              <label className="block text-sm font-medium mb-1.5">{t("perfil.cambiarPassword.nueva")}</label>
               <input
                 type="password"
                 value={passForm.nueva}
@@ -210,7 +212,7 @@ export function PerfilPacienteForm({ nombre, apellidos, email, telefono, fotoUrl
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">Confirmar contraseña</label>
+              <label className="block text-sm font-medium mb-1.5">{t("perfil.cambiarPassword.confirmar")}</label>
               <input
                 type="password"
                 value={passForm.confirmar}
@@ -228,7 +230,7 @@ export function PerfilPacienteForm({ nombre, apellidos, email, telefono, fotoUrl
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-border text-sm font-medium hover:bg-muted disabled:opacity-50 transition-colors"
             >
               {savingPass ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
-              Cambiar contraseña
+              {t("perfil.cambiarPassword.submit")}
             </button>
           </div>
         </form>

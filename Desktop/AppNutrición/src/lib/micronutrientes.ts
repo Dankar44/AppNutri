@@ -12,36 +12,66 @@ export interface MicroDef {
   unit: string;
 }
 
-export const VITAMINAS: readonly MicroDef[] = [
-  { key: "vitaminaA", label: "Vitamina A", ddr: 700, unit: "ug" },
-  { key: "vitaminaB6", label: "Vitamina B6", ddr: 1.3, unit: "mg" },
-  { key: "vitaminaB12", label: "Vitamina B12", ddr: 2.4, unit: "ug" },
-  { key: "vitaminaC", label: "Vitamina C", ddr: 75, unit: "mg" },
-  { key: "vitaminaD", label: "Vitamina D", ddr: 15, unit: "ug" },
-  { key: "vitaminaE", label: "Vitamina E", ddr: 15, unit: "mg" },
-  { key: "vitaminaK", label: "Vitamina K", ddr: 90, unit: "ug" },
-  { key: "tiamina", label: "Tiamina (B1)", ddr: 1.1, unit: "mg" },
-  { key: "riboflavina", label: "Riboflavina (B2)", ddr: 1.1, unit: "mg" },
-  { key: "niacina", label: "Niacina (B3)", ddr: 14, unit: "mg" },
-  { key: "folato", label: "Folato (B9)", ddr: 400, unit: "ug" },
-  { key: "acidoPantotenico", label: "Ác. Pantoténico", ddr: 5, unit: "mg" },
-  { key: "colina", label: "Colina", ddr: 425, unit: "mg" },
+type TFunc = (key: string) => string;
+
+interface MicroRaw {
+  key: MicroKey;
+  ddr: number;
+  unit: string;
+}
+
+const VITAMINAS_RAW: readonly MicroRaw[] = [
+  { key: "vitaminaA", ddr: 700, unit: "ug" },
+  { key: "vitaminaB6", ddr: 1.3, unit: "mg" },
+  { key: "vitaminaB12", ddr: 2.4, unit: "ug" },
+  { key: "vitaminaC", ddr: 75, unit: "mg" },
+  { key: "vitaminaD", ddr: 15, unit: "ug" },
+  { key: "vitaminaE", ddr: 15, unit: "mg" },
+  { key: "vitaminaK", ddr: 90, unit: "ug" },
+  { key: "tiamina", ddr: 1.1, unit: "mg" },
+  { key: "riboflavina", ddr: 1.1, unit: "mg" },
+  { key: "niacina", ddr: 14, unit: "mg" },
+  { key: "folato", ddr: 400, unit: "ug" },
+  { key: "acidoPantotenico", ddr: 5, unit: "mg" },
+  { key: "colina", ddr: 425, unit: "mg" },
 ];
 
-export const MINERALES: readonly MicroDef[] = [
-  { key: "calcio", label: "Calcio", ddr: 1000, unit: "mg" },
-  { key: "hierro", label: "Hierro", ddr: 18, unit: "mg" },
-  { key: "magnesio", label: "Magnesio", ddr: 320, unit: "mg" },
-  { key: "fosforo", label: "Fósforo", ddr: 700, unit: "mg" },
-  { key: "potasio", label: "Potasio", ddr: 4700, unit: "mg" },
-  { key: "sodio", label: "Sodio", ddr: 1500, unit: "mg" },
-  { key: "cinc", label: "Cinc", ddr: 8, unit: "mg" },
-  { key: "cobre", label: "Cobre", ddr: 0.9, unit: "mg" },
-  { key: "manganeso", label: "Manganeso", ddr: 1.8, unit: "mg" },
-  { key: "selenio", label: "Selenio", ddr: 55, unit: "ug" },
-  { key: "fluor", label: "Flúor", ddr: 3000, unit: "ug" },
+const MINERALES_RAW: readonly MicroRaw[] = [
+  { key: "calcio", ddr: 1000, unit: "mg" },
+  { key: "hierro", ddr: 18, unit: "mg" },
+  { key: "magnesio", ddr: 320, unit: "mg" },
+  { key: "fosforo", ddr: 700, unit: "mg" },
+  { key: "potasio", ddr: 4700, unit: "mg" },
+  { key: "sodio", ddr: 1500, unit: "mg" },
+  { key: "cinc", ddr: 8, unit: "mg" },
+  { key: "cobre", ddr: 0.9, unit: "mg" },
+  { key: "manganeso", ddr: 1.8, unit: "mg" },
+  { key: "selenio", ddr: 55, unit: "ug" },
+  { key: "fluor", ddr: 3000, unit: "ug" },
 ];
 
+function withLabels(raw: readonly MicroRaw[], t?: TFunc): readonly MicroDef[] {
+  return raw.map((m) => ({
+    ...m,
+    label: t ? t(m.key) : m.key,
+  }));
+}
+
+export function getVitaminas(t?: TFunc): readonly MicroDef[] {
+  return withLabels(VITAMINAS_RAW, t);
+}
+
+export function getMinerales(t?: TFunc): readonly MicroDef[] {
+  return withLabels(MINERALES_RAW, t);
+}
+
+export function getAllMicros(t?: TFunc): readonly MicroDef[] {
+  return [...getVitaminas(t), ...getMinerales(t)];
+}
+
+/** Default instances (no translation — keys as labels) for backward compat */
+export const VITAMINAS: readonly MicroDef[] = getVitaminas();
+export const MINERALES: readonly MicroDef[] = getMinerales();
 export const ALL_MICROS: readonly MicroDef[] = [...VITAMINAS, ...MINERALES];
 
 export const MICRO_KEYS: readonly MicroKey[] = ALL_MICROS.map((m) => m.key);

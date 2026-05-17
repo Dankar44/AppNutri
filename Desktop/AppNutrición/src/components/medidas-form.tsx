@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { crearMedida, type MedidaFormData } from "@/app/actions/medidas";
 import { DatePicker } from "@/components/date-picker";
+import { useTranslations } from "next-intl";
 
 interface MedidasFormProps {
   pacienteId: string;
@@ -64,6 +65,7 @@ export function MedidasForm({
 }: MedidasFormProps) {
   const [loading, setLoading] = useState(false);
   const [fecha, setFecha] = useState(new Date().toISOString().split("T")[0]);
+  const t = useTranslations("patients.medidasForm");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -100,12 +102,12 @@ export function MedidasForm({
 
     try {
       await crearMedida(data);
-      toast.success("Medidas registradas");
+      toast.success(t("medidasRegistradas"));
       e.currentTarget.reset();
       onSuccess?.();
     } catch (error) {
       if (error && typeof error === "object" && "digest" in error) throw error;
-      toast.error("Error al registrar medidas");
+      toast.error(t("errorRegistrarMedidas"));
     } finally {
       setLoading(false);
     }
@@ -114,44 +116,44 @@ export function MedidasForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-2">
       <div>
-        <label className="block text-sm font-semibold mb-1.5">Fecha de las mediciones</label>
+        <label className="block text-sm font-semibold mb-1.5">{t("fechaMediciones")}</label>
         <DatePicker value={fecha} onChange={setFecha} />
       </div>
 
-      <SectionTitle>Mediciones básicas</SectionTitle>
+      <SectionTitle>{t("medicionesBasicas")}</SectionTitle>
       <div className="grid grid-cols-2 gap-4">
-        <NumField name="peso" label="Peso" unit="kg" min={0.1} max={500} defaultValue={defaultPeso} />
-        <NumField name="altura" label="Altura" unit="cm" min={30} max={300} defaultValue={defaultAltura} />
-        <NumField name="perimetroCadera" label="Perímetro de la cadera" unit="cm" min={0} max={300} />
-        <NumField name="perimetroCintura" label="Perímetro de la cintura" unit="cm" min={0} max={300} />
+        <NumField name="peso" label={t("peso")} unit="kg" min={0.1} max={500} defaultValue={defaultPeso} />
+        <NumField name="altura" label={t("altura")} unit="cm" min={30} max={300} defaultValue={defaultAltura} />
+        <NumField name="perimetroCadera" label={t("perimetroCadera")} unit="cm" min={0} max={300} />
+        <NumField name="perimetroCintura" label={t("perimetroCintura")} unit="cm" min={0} max={300} />
       </div>
 
-      <SectionTitle>Composición corporal</SectionTitle>
+      <SectionTitle>{t("composicionCorporal")}</SectionTitle>
       <div className="grid grid-cols-2 gap-4">
-        <NumField name="grasaCorporal" label="Porcentaje de masa grasa" unit="%" min={0} max={100} />
-        <NumField name="masaMuscular" label="Masa muscular" unit="kg" min={0} max={200} />
-        <NumField name="perimetroBrazo" label="Perímetro del brazo" unit="cm" min={0} max={100} />
+        <NumField name="grasaCorporal" label={t("grasaCorporal")} unit="%" min={0} max={100} />
+        <NumField name="masaMuscular" label={t("masaMuscular")} unit="kg" min={0} max={200} />
+        <NumField name="perimetroBrazo" label={t("perimetroBrazo")} unit="cm" min={0} max={100} />
       </div>
 
-      <SectionTitle>Pliegues cutáneos</SectionTitle>
+      <SectionTitle>{t("plieguesCutaneos")}</SectionTitle>
       <div className="grid grid-cols-2 gap-4">
-        <NumField name="pliegueAbdominal" label="Pliegue cutáneo abdominal" unit="mm" min={0} max={100} />
-        <NumField name="pliegueAxilar" label="Pliegue cutáneo axilar medio" unit="mm" min={0} max={100} />
-        <NumField name="plieguePectoral" label="Pliegue cutáneo pectoral" unit="mm" min={0} max={100} />
-        <NumField name="pliegueSubescapular" label="Pliegue cutáneo subescapular" unit="mm" min={0} max={100} />
-        <NumField name="pliegueSuprailiaco" label="Pliegue cutáneo suprailíaco" unit="mm" min={0} max={100} />
-        <NumField name="pliegueTricipital" label="Pliegue cutáneo tricipital" unit="mm" min={0} max={100} />
-        <NumField name="pliegueMuslo" label="Pliegue del muslo anterior" unit="mm" min={0} max={100} />
+        <NumField name="pliegueAbdominal" label={t("pliegueAbdominal")} unit="mm" min={0} max={100} />
+        <NumField name="pliegueAxilar" label={t("pliegueAxilar")} unit="mm" min={0} max={100} />
+        <NumField name="plieguePectoral" label={t("plieguePectoral")} unit="mm" min={0} max={100} />
+        <NumField name="pliegueSubescapular" label={t("pliegueSubescapular")} unit="mm" min={0} max={100} />
+        <NumField name="pliegueSuprailiaco" label={t("pliegueSuprailiaco")} unit="mm" min={0} max={100} />
+        <NumField name="pliegueTricipital" label={t("pliegueTricipital")} unit="mm" min={0} max={100} />
+        <NumField name="pliegueMuslo" label={t("pliegueMuslo")} unit="mm" min={0} max={100} />
       </div>
 
-      <SectionTitle>Datos analíticos</SectionTitle>
+      <SectionTitle>{t("datosAnaliticos")}</SectionTitle>
       <div className="grid grid-cols-2 gap-4">
-        <NumField name="colesterolHDL" label="Colesterol HDL" unit="mg/dL" min={0} max={500} />
-        <NumField name="colesterolLDL" label="Colesterol LDL" unit="mg/dL" min={0} max={500} />
-        <NumField name="colesterolTotal" label="Colesterol total" unit="mg/dL" min={0} max={500} />
-        <NumField name="presionDiastolica" label="Presión arterial diastólica" unit="mmHg" min={0} max={300} />
-        <NumField name="presionSistolica" label="Presión arterial sistólica" unit="mmHg" min={0} max={300} />
-        <NumField name="trigliceridos" label="Triglicéridos" unit="mg/dL" min={0} max={1000} />
+        <NumField name="colesterolHDL" label={t("colesterolHDL")} unit="mg/dL" min={0} max={500} />
+        <NumField name="colesterolLDL" label={t("colesterolLDL")} unit="mg/dL" min={0} max={500} />
+        <NumField name="colesterolTotal" label={t("colesterolTotal")} unit="mg/dL" min={0} max={500} />
+        <NumField name="presionDiastolica" label={t("presionDiastolica")} unit="mmHg" min={0} max={300} />
+        <NumField name="presionSistolica" label={t("presionSistolica")} unit="mmHg" min={0} max={300} />
+        <NumField name="trigliceridos" label={t("trigliceridos")} unit="mg/dL" min={0} max={1000} />
       </div>
 
       <div className="pt-4 flex justify-end gap-3">
@@ -161,7 +163,7 @@ export function MedidasForm({
           className="px-6 py-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium disabled:opacity-50 inline-flex items-center gap-2"
         >
           {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-          {loading ? "Guardando..." : "Registrar"}
+          {loading ? t("guardando") : t("registrar")}
         </button>
       </div>
     </form>

@@ -1,0 +1,236 @@
+{
+  "nav": {
+    "gestion": "Gestão",
+    "dietas": "Dietas",
+    "acompanamiento": "Acompanhamento",
+    "centroDeControl": "Centro de controle"
+  },
+  "navItems": {
+    "dashboard": "Dashboard",
+    "pacientes": "Pacientes",
+    "agenda": "Agenda",
+    "pagos": "Pagamentos",
+    "dietas": "Dietas",
+    "alimentos": "Alimentos",
+    "recetas": "Receitas",
+    "mensajes": "Mensagens",
+    "reportes": "Relatórios",
+    "ajustes": "Configurações",
+    "admin": "Admin"
+  },
+  "sidebar": {
+    "dietista": "Nutricionista",
+    "cerrarSesion": "Sair",
+    "cerrarSesionTitle": "Sair",
+    "abrirMenu": "Abrir menu"
+  },
+  "patientNav": {
+    "miPlan": "Meu plano",
+    "miSeguimiento": "Meu acompanhamento",
+    "conMiNutri": "Com meu nutri",
+    "cuenta": "Conta"
+  },
+  "patientNavItems": {
+    "dashboard": "Dashboard",
+    "miDieta": "Minha dieta",
+    "listaDeLaCompra": "Lista de compras",
+    "recomendaciones": "Recomendações",
+    "diario": "Diário",
+    "miHorario": "Meu horário",
+    "evolucion": "Evolução",
+    "misCitas": "Minhas consultas",
+    "mensajes": "Mensagens",
+    "generarPdf": "Gerar PDF",
+    "miPerfil": "Meu perfil"
+  },
+  "patientSidebar": {
+    "paciente": "Paciente",
+    "cerrarSesion": "Sair",
+    "cerrarSesionTitle": "Sair",
+    "abrirMenu": "Abrir menu"
+  },
+  "adminNav": {
+    "panel": "Painel",
+    "dietistas": "Nutricionistas",
+    "verificaciones": "Verificações",
+    "seguimiento": "Acompanhamento",
+    "mensajes": "Mensagens",
+    "actividad": "Atividade",
+    "suscripciones": "Assinaturas",
+    "crearCuenta": "Criar conta"
+  },
+  "adminSidebar": {
+    "creadorDeCuentas": "Criador de contas",
+    "administrador": "Administrador",
+    "volverALaApp": "Voltar ao app",
+    "cerrarSesion": "Sair",
+    "cerrarSesionTitle": "Sair"
+  },
+  "buttons": {
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "confirm": "Confirmar",
+    "next": "Próximo",
+    "back": "Voltar",
+    "close": "Fechar"
+  },
+  "confirm": {
+    "confirmLabel": "Confirmar",
+    "cancelLabel": "Cancelar",
+    "deleting": "Excluindo..."
+  },
+  "cookie": {
+    "title": "Sua privacidade é importante para nós",
+    "closeAriaLabel": "Fechar",
+    "descriptionPart1": "Usamos cookies",
+    "descriptionStrict": "estritamente necessários",
+    "descriptionPart2": "para que o app funcione e cookies de",
+    "descriptionPrefs": "preferências",
+    "descriptionPart3": "para lembrar suas configurações (tema, tours). Usamos cookies de análise (Google Analytics) somente se você aceitar. Não usamos cookies de publicidade.",
+    "analyticsNote": "Analytics somente com consentimento · Sem publicidade · LGPD",
+    "acceptAll": "Aceitar todos",
+    "onlyNecessary": "Somente necessários",
+    "cookiePolicy": "Política de cookies"
+  },
+  "theme": {
+    "switchToLight": "Mudar para modo claro",
+    "switchToDark": "Mudar para modo escuro",
+    "lightMode": "Modo claro",
+    "darkMode": "Modo escuro"
+  },
+  "days": {
+    "mondayShort": "S",
+    "tuesdayShort": "T",
+    "wednesdayShort": "Q",
+    "thursdayShort": "Q",
+    "fridayShort": "S",
+    "saturdayShort": "S",
+    "sundayShort": "D"
+  },
+  "months": {
+    "january": "Janeiro",
+    "february": "Fevereiro",
+    "march": "Março",
+    "april": "Abril",
+    "may": "Maio",
+    "june": "Junho",
+    "july": "Julho",
+    "august": "Agosto",
+    "september": "Setembro",
+    "october": "Outubro",
+    "november": "Novembro",
+    "december": "Dezembro"
+  },
+  "monthsShort": {
+    "january": "Jan",
+    "february": "Fev",
+    "march": "Mar",
+    "april": "Abr",
+    "may": "Mai",
+    "june": "Jun",
+    "july": "Jul",
+    "august": "Ago",
+    "september": "Set",
+    "october": "Out",
+    "november": "Nov",
+    "december": "Dez"
+  },
+  "monthsLong": {
+    "january": "janeiro",
+    "february": "fevereiro",
+    "march": "março",
+    "april": "abril",
+    "may": "maio",
+    "june": "junho",
+    "july": "julho",
+    "august": "agosto",
+    "september": "setembro",
+    "october": "outubro",
+    "november": "novembro",
+    "december": "dezembro"
+  },
+  "datePicker": {
+    "placeholder": "dd/mm/aaaa",
+    "clear": "Limpar",
+    "today": "Hoje"
+  },
+  "monthPicker": {
+    "placeholder": "Selecionar mês",
+    "displayFormat": "{month} de {year}",
+    "clear": "Limpar",
+    "thisMonth": "Este mês"
+  },
+  "objetivos": {
+    "PERDER_PESO": "Perder peso",
+    "GANAR_MASA": "Ganhar massa muscular",
+    "MANTENIMIENTO": "Manutenção",
+    "PATOLOGIA": "Patologia",
+    "DEPORTIVO": "Rendimento esportivo",
+    "OTRO": "Outro"
+  },
+  "notifications": {
+    "title": "Notificações",
+    "ariaLabel": "Notificações",
+    "ariaLabelWithCount": "Notificações ({count} não lidas)"
+  },
+  "beta": {
+    "message": "Annonia está em versão beta.",
+    "feedback": "Se encontrar algum erro ou tiver sugestões de melhoria, escreva para nós através de",
+    "supportLink": "Mensagens → Suporte Annonia",
+    "encouragement": "Seu feedback nos ajuda a melhorar!",
+    "closeAriaLabel": "Fechar aviso"
+  },
+  "demo": {
+    "banner": "Modo demo — as alterações não são salvas"
+  },
+  "generic": {
+    "loading": "Carregando...",
+    "noResults": "Sem resultados",
+    "error": "Erro",
+    "ninePlus": "9+",
+    "deleted": "Excluído"
+  },
+  "loading": {
+    "agenda": "Carregando agenda",
+    "ajustes": "Carregando configurações",
+    "alimentos": "Carregando alimentos",
+    "dashboard": "Carregando painel",
+    "dietas": "Carregando dietas",
+    "mensajes": "Carregando mensagens",
+    "notificaciones": "Carregando notificações",
+    "pacientes": "Carregando pacientes",
+    "pagos": "Carregando pagamentos",
+    "recetas": "Carregando receitas",
+    "reportes": "Carregando relatórios",
+    "citas": "Carregando consultas",
+    "dieta": "Carregando dieta",
+    "evolucion": "Carregando evolução",
+    "perfil": "Carregando perfil",
+    "recomendaciones": "Carregando recomendações",
+    "seguimiento": "Carregando acompanhamento"
+  },
+  "macros": {
+    "proteinas": "Proteínas",
+    "carbohidratos": "Carboidratos",
+    "grasas": "Gorduras",
+    "fibra": "Fibra",
+    "cal": "Cal",
+    "prot": "Prot",
+    "carb": "Carb",
+    "gras": "Gord"
+  },
+  "dialog": {
+    "cerrar": "Fechar"
+  },
+  "metadata": {
+    "title": "Annonia — Software para Nutricionistas",
+    "titleTemplate": "%s | Annonia",
+    "description": "Software de nutrição para nutricionistas: crie dietas personalizadas, gerencie pacientes, agende consultas e gere planos alimentares com inteligência artificial. Teste grátis por 14 dias.",
+    "ogTitle": "Annonia — Software para Nutricionistas",
+    "ogDescription": "Software de nutrição profissional: dietas personalizadas, gestão de pacientes e agenda com IA. A partir de 9,99€/mês.",
+    "ogImageAlt": "Annonia - Plataforma profissional para nutricionistas",
+    "twitterTitle": "Annonia — Software para Nutricionistas",
+    "twitterDescription": "Software de nutrição profissional: dietas personalizadas, gestão de pacientes e agenda com IA. Teste grátis por 14 dias."
+  }
+}

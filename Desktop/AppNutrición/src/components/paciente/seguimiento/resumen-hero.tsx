@@ -1,6 +1,7 @@
 "use client";
 
 import { UtensilsCrossed, Droplets, Dumbbell, Flame } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { formatMlCorto } from "@/lib/seguimiento";
 
 interface Props {
@@ -24,6 +25,7 @@ export function ResumenHero({
   ejercicioKcal,
   racha,
 }: Props) {
+  const t = useTranslations("patient-portal.seguimiento.resumenHero");
   const comidasPct = comidasTotal > 0 ? Math.round((comidasCumplidas / comidasTotal) * 100) : 0;
   const aguaPct = Math.min(100, Math.round((aguaML / aguaObjetivo) * 100));
   const objetivoMin = 30;
@@ -34,7 +36,7 @@ export function ResumenHero({
 
   return (
     <section
-      aria-label="Resumen del día"
+      aria-label={t("total")}
       className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-primary/5 via-card to-card p-5 sm:p-6"
     >
       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
@@ -43,17 +45,17 @@ export function ResumenHero({
             size={140}
             stroke={12}
             segments={[
-              { pct: comidasPct, color: "#16a34a", label: "Comidas" },
-              { pct: aguaPct, color: "#2563eb", label: "Agua" },
-              { pct: ejercicioPct, color: "#f59e0b", label: "Ejercicio" },
+              { pct: comidasPct, color: "#16a34a", label: t("comidas") },
+              { pct: aguaPct, color: "#2563eb", label: t("agua") },
+              { pct: ejercicioPct, color: "#f59e0b", label: t("ejercicio") },
             ]}
-            centerTop="Total"
+            centerTop={t("total")}
             centerValue={`${globalPct}%`}
           />
           {typeof racha === "number" && racha > 0 && (
             <div className="inline-flex items-center gap-1 rounded-full bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400 px-2.5 py-0.5 text-xs font-semibold">
               <Flame className="w-3 h-3" />
-              {racha} {racha === 1 ? "día" : "días"}
+              {t("racha", { count: racha })}
             </div>
           )}
         </div>
@@ -62,23 +64,23 @@ export function ResumenHero({
           <MetricCard
             icon={<UtensilsCrossed className="w-4 h-4" />}
             tint="green"
-            label="Comidas"
+            label={t("comidas")}
             value={`${comidasCumplidas}/${comidasTotal}`}
             sub={`${comidasPct}%`}
           />
           <MetricCard
             icon={<Droplets className="w-4 h-4" />}
             tint="blue"
-            label="Agua"
+            label={t("agua")}
             value={formatMlCorto(aguaML)}
             sub={`${aguaPct}%`}
           />
           <MetricCard
             icon={<Dumbbell className="w-4 h-4" />}
             tint="amber"
-            label="Ejercicio"
+            label={t("ejercicio")}
             value={ejercicio ? `${ejercicioMinutos}'` : "—"}
-            sub={ejercicio && ejercicioKcal > 0 ? `${ejercicioKcal} kcal` : "sin actividad"}
+            sub={ejercicio && ejercicioKcal > 0 ? `${ejercicioKcal} kcal` : t("sinActividad")}
           />
         </div>
       </div>

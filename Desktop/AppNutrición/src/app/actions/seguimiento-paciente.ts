@@ -9,6 +9,7 @@ import {
   validateNumber,
   validateNumberOptional,
 } from "@/lib/validation";
+import { getTranslations } from "next-intl/server";
 
 function cuid(): string {
   const ts = Date.now().toString(36);
@@ -162,8 +163,9 @@ export async function guardarSeguimientoPaciente(
   fecha: string,
   data: GuardarSeguimientoData
 ) {
+  const t = await getTranslations("validation");
   const session = await getCurrentPaciente();
-  if (!session) throw new Error("No autorizado");
+  if (!session) throw new Error(t("auth.noAutorizado"));
 
   // Validate
   const aguaML = validateNumber(data.aguaML ?? 0, 0, 10000);

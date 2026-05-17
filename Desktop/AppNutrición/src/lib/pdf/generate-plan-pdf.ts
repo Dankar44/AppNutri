@@ -5,22 +5,20 @@ import { type PdfColorTheme, TEMAS_PDF } from "./pdf-themes";
 import { UNIDAD_LABELS, UNIDAD_LABELS_FULL, formatQuantity } from "@/lib/units";
 export { UNIDAD_LABELS, UNIDAD_LABELS_FULL, formatQuantity };
 
-const DIA_LABELS: Record<string, string> = {
-  LUNES: "Lunes", MARTES: "Martes", MIERCOLES: "Miércoles",
-  JUEVES: "Jueves", VIERNES: "Viernes", SABADO: "Sábado", DOMINGO: "Domingo",
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type TFunc = (key: string, values?: Record<string, any>) => string;
+
+const DIA_KEY_MAP: Record<string, string> = {
+  LUNES: "lunes", MARTES: "martes", MIERCOLES: "miercoles",
+  JUEVES: "jueves", VIERNES: "viernes", SABADO: "sabado", DOMINGO: "domingo",
 };
 const DIAS_ORDEN = ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"];
 
-const TIPO_LABELS: Record<string, string> = {
-  DESAYUNO: "Desayuno", MEDIA_MANANA: "Media mañana", ALMUERZO: "Almuerzo",
-  MERIENDA: "Merienda", CENA: "Cena", RECENA: "Recena",
+const TIPO_KEY_MAP: Record<string, string> = {
+  DESAYUNO: "desayuno", MEDIA_MANANA: "mediaManana", ALMUERZO: "almuerzo",
+  MERIENDA: "merienda", CENA: "cena", RECENA: "recena",
 };
 const TIPOS_ORDEN = ["DESAYUNO", "MEDIA_MANANA", "ALMUERZO", "MERIENDA", "CENA", "RECENA"];
-
-const HORA_DEFAULT: Record<string, string> = {
-  DESAYUNO: "09:00", MEDIA_MANANA: "11:00", ALMUERZO: "14:00",
-  MERIENDA: "17:00", CENA: "21:00", RECENA: "23:00",
-};
 
 export interface QuantityOverride {
   cantidad?: number | null;
@@ -34,9 +32,10 @@ export type DisplayOverrides = Record<string, QuantityOverride>;
 function resolveDisplay(
   original: { cantidad: number; unidad: string },
   override: QuantityOverride | undefined,
+  t: TFunc,
 ): string {
   if (!override) return formatQuantity(original.cantidad, original.unidad);
-  if (override.libre) return "libre";
+  if (override.libre) return t("planDietetico.libre");
   const qty = override.cantidad ?? original.cantidad;
   const unit = override.unidad ?? original.unidad;
   return formatQuantity(qty, unit);
@@ -96,6 +95,7 @@ export interface PlanPDFData {
   clinica?: string;
   sections?: PDFSectionOptions;
   displayOverrides?: DisplayOverrides;
+  locale?: string;
 }
 
 function generateCSS(t: PdfColorTheme): string {
@@ -226,13 +226,15 @@ function getDayMacros(dia: Dia) {
   return sumarMacros(all);
 }
 
-export function generatePlanPDF(data: PlanPDFData): string {
+export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
+  const tt = t ?? ((key: string) => key);
   const theme = data.tema ?? TEMAS_PDF.verde;
   const sec = { portada: true, planSemanal: true, detalleDiario: true, recomendaciones: true, listaCompra: true, valoresNutricionales: true, ...data.sections };
   const brandName = escapeHtml(data.brandName || "Annonia");
   const ov = data.displayOverrides ?? {};
   const sortedDias = DIAS_ORDEN.map((d) => data.dias.find((dia) => dia.dia === d)).filter(Boolean) as Dia[];
-  const fecha = new Date().toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
+  const fechaLocale = data.locale === "pt" ? "pt-BR" : "es-ES";
+  const fecha = new Date().toLocaleDateString(fechaLocale, { day: "numeric", month: "long", year: "numeric" });
   const listaCompra = generarListaCompra(sortedDias as unknown as Parameters<typeof generarListaCompra>[0], ov);
 
   const logoHeaderHtml = data.logoDataUrl
@@ -244,24 +246,24 @@ export function generatePlanPDF(data: PlanPDFData): string {
 
   const footer = `<div class="footer">${brandName} &mdash; ${fecha}<div class="footer-platform">annonia.com</div></div>`;
   const pacNombre = escapeHtml(data.pacienteNombre).toUpperCase();
-  const header = `<div class="header"><div><span class="header-name">${pacNombre}</span><br><span class="header-sub">PLAN DIETÉTICO SEMANAL DE ${pacNombre}</span></div><div class="header-logo">${logoHeaderHtml}</div></div>`;
+  const header = `<div class="header"><div><span class="header-name">${pacNombre}</span><br><span class="header-sub">${tt("planDietetico.header.subtitulo", { pacienteNombre: pacNombre })}</span></div><div class="header-logo">${logoHeaderHtml}</div></div>`;
 
   let html = "";
 
   // === PORTADA ===
   if (sec.portada) {
-    html += `<div class="page cover"><div class="cover-box"><div class="cover-title">PLAN DIETÉTICO<br><strong>PERSONALIZADO</strong></div><div class="cover-name">${pacNombre}</div></div><div class="cover-logo">${logoCoverHtml}</div><p class="cover-platform">Annonia</p></div>`;
+    html += `<div class="page cover"><div class="cover-box"><div class="cover-title">${tt("planDietetico.portada.titulo")}<br><strong>${tt("planDietetico.portada.subtitulo")}</strong></div><div class="cover-name">${pacNombre}</div></div><div class="cover-logo">${logoCoverHtml}</div><p class="cover-platform">Annonia</p></div>`;
   }
 
   // === RESUMEN SEMANAL ===
   if (sec.planSemanal) {
-    html += `<div class="page">${header}<div class="section-title">PLAN DIETÉTICO SEMANAL</div>`;
+    html += `<div class="page">${header}<div class="section-title">${tt("planDietetico.secciones.planSemanal")}</div>`;
     html += `<table class="summary-table"><thead><tr><th></th>`;
-    for (const d of DIAS_ORDEN) html += `<th>${DIA_LABELS[d]}</th>`;
+    for (const d of DIAS_ORDEN) html += `<th>${tt("planDietetico.diaLabels." + DIA_KEY_MAP[d])}</th>`;
     html += `</tr></thead><tbody>`;
 
     for (const tipo of TIPOS_ORDEN) {
-      html += `<tr><td class="meal-label">${TIPO_LABELS[tipo]}</td>`;
+      html += `<tr><td class="meal-label">${tt("planDietetico.tipoLabels." + TIPO_KEY_MAP[tipo])}</td>`;
       for (const dia of sortedDias) {
         const comida = dia.comidas.find((c) => c.tipo === tipo);
         const items = comida?.alimentos.map((a) => escapeHtml(getItemName(a))).join("<br>") || "-";
@@ -277,8 +279,8 @@ export function generatePlanPDF(data: PlanPDFData): string {
   if (sec.detalleDiario) {
     for (const dia of sortedDias) {
       const macros = getDayMacros(dia);
-      html += `<div class="page">${header}<div class="day-title">${DIA_LABELS[dia.dia]}</div>`;
-      html += `<table class="detail-table"><thead><tr><th style="width:90px">Comida</th><th style="width:160px">Platos</th><th>Ingredientes y cantidades</th></tr></thead><tbody>`;
+      html += `<div class="page">${header}<div class="day-title">${tt("planDietetico.diaLabels." + DIA_KEY_MAP[dia.dia])}</div>`;
+      html += `<table class="detail-table"><thead><tr><th style="width:90px">${tt("planDietetico.tabla.comida")}</th><th style="width:160px">${tt("planDietetico.tabla.platos")}</th><th>${tt("planDietetico.tabla.ingredientesYCantidades")}</th></tr></thead><tbody>`;
 
       for (const tipo of TIPOS_ORDEN) {
         const comida = dia.comidas.find((c) => c.tipo === tipo);
@@ -288,13 +290,13 @@ export function generatePlanPDF(data: PlanPDFData): string {
           const name = getItemName(a);
           const nameHtml = getItemNameHtml(a);
           const key = overrideKey(dia.dia, tipo, aIdx);
-          const qty = resolveDisplay({ cantidad: a.cantidad, unidad: a.unidad }, ov[key]);
+          const qty = resolveDisplay({ cantidad: a.cantidad, unidad: a.unidad }, ov[key], tt);
           let detail = `${nameHtml}: ${qty}`;
           if (a.receta?.ingredientes && a.receta.ingredientes.length > 0) {
             const ingList = a.receta.ingredientes.map((i) => `${escapeHtml(i.alimento.nombre)}: ${formatQuantity(i.cantidad, i.unidad)}`).join(", ");
-            detail = `<strong>INGREDIENTES:</strong> ${ingList}`;
+            detail = `<strong>${tt("planDietetico.receta.ingredientes")}</strong> ${ingList}`;
             if (a.receta.instrucciones) {
-              detail += `<br><strong>RECETA:</strong> ${escapeHtml(a.receta.instrucciones).replace(/\n/g, "<br>")}`;
+              detail += `<br><strong>${tt("planDietetico.receta.receta")}</strong> ${escapeHtml(a.receta.instrucciones).replace(/\n/g, "<br>")}`;
             }
           }
           return { name, nameHtml, qty, detail };
@@ -304,7 +306,7 @@ export function generatePlanPDF(data: PlanPDFData): string {
         const totalRows = hasDesc ? rows.length + 1 : rows.length;
 
         html += `<tr>`;
-        html += `<td class="meal-cell" rowspan="${totalRows}"><strong>${TIPO_LABELS[tipo]}</strong><br><span class="hora">${HORA_DEFAULT[tipo]}</span></td>`;
+        html += `<td class="meal-cell" rowspan="${totalRows}"><strong>${tt("planDietetico.tipoLabels." + TIPO_KEY_MAP[tipo])}</strong><br><span class="hora">${tt("planDietetico.horaDefault." + TIPO_KEY_MAP[tipo])}</span></td>`;
 
         if (hasDesc) {
           html += `<td class="plato-cell" colspan="2"><strong>${escapeHtml(comida.descripcion!)}</strong></td></tr>`;
@@ -322,10 +324,10 @@ export function generatePlanPDF(data: PlanPDFData): string {
       html += `</tbody></table>`;
       if (sec.valoresNutricionales) {
         html += `<div class="macros-row">
-          <div class="macro-item"><div class="macro-value macro-cal">${macros.calorias}</div><div class="macro-label">kcal</div></div>
-          <div class="macro-item"><div class="macro-value macro-prot">${macros.proteinas}g</div><div class="macro-label">Proteínas</div></div>
-          <div class="macro-item"><div class="macro-value macro-carb">${macros.carbohidratos}g</div><div class="macro-label">Carbohidratos</div></div>
-          <div class="macro-item"><div class="macro-value macro-fat">${macros.grasas}g</div><div class="macro-label">Grasas</div></div>
+          <div class="macro-item"><div class="macro-value macro-cal">${macros.calorias}</div><div class="macro-label">${tt("planDietetico.macros.kcal")}</div></div>
+          <div class="macro-item"><div class="macro-value macro-prot">${macros.proteinas}g</div><div class="macro-label">${tt("planDietetico.macros.proteinas")}</div></div>
+          <div class="macro-item"><div class="macro-value macro-carb">${macros.carbohidratos}g</div><div class="macro-label">${tt("planDietetico.macros.carbohidratos")}</div></div>
+          <div class="macro-item"><div class="macro-value macro-fat">${macros.grasas}g</div><div class="macro-label">${tt("planDietetico.macros.grasas")}</div></div>
         </div>`;
       }
       html += `${footer}</div>`;
@@ -334,20 +336,20 @@ export function generatePlanPDF(data: PlanPDFData): string {
 
   // === RECOMENDACIONES ===
   if (sec.recomendaciones && data.recomendaciones.trim()) {
-    html += `<div class="page">${header}<div class="section-title">RECOMENDACIONES</div><div class="reco-text">${escapeHtml(data.recomendaciones)}</div>${footer}</div>`;
+    html += `<div class="page">${header}<div class="section-title">${tt("planDietetico.secciones.recomendaciones")}</div><div class="reco-text">${escapeHtml(data.recomendaciones)}</div>${footer}</div>`;
   }
 
   // === LISTA DE LA COMPRA ===
   if (sec.listaCompra && listaCompra.length > 0) {
-    html += `<div class="page">${header}<div class="section-title">LISTA DE LA COMPRA</div><div class="shop-grid">`;
+    html += `<div class="page">${header}<div class="section-title">${tt("planDietetico.secciones.listaCompra")}</div><div class="shop-grid">`;
     for (const cat of listaCompra) {
       html += `<div class="shop-cat"><div class="shop-cat-title">${cat.label}</div>`;
       for (const item of cat.items) {
         const linkHtml = item.enlaceProducto
-          ? ` <a href="${escapeHtml(item.enlaceProducto)}" target="_blank" class="food-link" style="font-size:9px;">(ver)</a>`
+          ? ` <a href="${escapeHtml(item.enlaceProducto)}" target="_blank" class="food-link" style="font-size:9px;">${tt("planDietetico.enlaceProducto.ver")}</a>`
           : "";
         const imgLink = (item as { imagenUrl?: string | null }).imagenUrl
-          ? ` <a href="${escapeHtml((item as { imagenUrl?: string | null }).imagenUrl!)}" target="_blank" style="color:#7c3aed;font-size:9px;text-decoration:underline;">(ver imagen)</a>`
+          ? ` <a href="${escapeHtml((item as { imagenUrl?: string | null }).imagenUrl!)}" target="_blank" style="color:#7c3aed;font-size:9px;text-decoration:underline;">${tt("planDietetico.enlaceProducto.verImagen")}</a>`
           : "";
         html += `<div class="shop-item"><div class="shop-check"></div>${formatQuantity(item.cantidadTotal, item.unidad)} ${escapeHtml(item.nombre)}${linkHtml}${imgLink}</div>`;
       }
@@ -358,7 +360,7 @@ export function generatePlanPDF(data: PlanPDFData): string {
 
   // === CONTRAPORTADA ===
   const clinicaLine = data.clinica ? ` &mdash; ${escapeHtml(data.clinica)}` : "";
-  html += `<div class="page cover"><div class="cover-logo" style="font-size:32px;">${logoCoverHtml}</div><p style="color:#666; margin-top:12px; font-size:12px;">Generado por ${escapeHtml(data.dietistaNombre)}${clinicaLine}</p><p style="color:#b0b8b3; margin-top:24px; font-size:10px;">annonia.com</p></div>`;
+  html += `<div class="page cover"><div class="cover-logo" style="font-size:32px;">${logoCoverHtml}</div><p style="color:#666; margin-top:12px; font-size:12px;">${tt("planDietetico.contraportada.generadoPor", { dietistaNombre: escapeHtml(data.dietistaNombre) })}${clinicaLine}</p><p style="color:#b0b8b3; margin-top:24px; font-size:10px;">${tt("planDietetico.contraportada.plataforma")}</p></div>`;
 
   return `<!DOCTYPE html><html><head><title>Plan Dietético - ${data.pacienteNombre}</title><style>${generateCSS(theme)}</style></head><body>${html}<script>window.onload=function(){window.print();}</script></body></html>`;
 }

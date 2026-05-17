@@ -2,24 +2,28 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Leaf, Lock, ArrowRight } from "lucide-react";
 import RegistroForm from "./registro-form";
+import { getTranslations } from "next-intl/server";
 
-export const metadata: Metadata = {
-  title: "Crear cuenta — Prueba gratis el software de nutrición",
-  description:
-    "Regístrate en Annonia y empieza tu prueba gratuita de 14 días. Software para dietistas: crea dietas personalizadas, gestiona pacientes y agenda citas online.",
-  alternates: { canonical: "/registro" },
-  openGraph: {
-    title: "Prueba Annonia gratis — Software para dietistas",
-    description: "14 días de prueba gratuita del software de nutrición. Sin tarjeta de crédito.",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Prueba Annonia gratis — Software para dietistas",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("auth");
+  return {
+    title: t("registro.metaTitle"),
+    description: t("registro.metaDescription"),
+    alternates: { canonical: "/registro" },
+    openGraph: {
+      title: t("registro.ogTitle"),
+      description: t("registro.ogDescription"),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: t("registro.twitterTitle"),
+    },
+  };
+}
 
-export default function RegistroPage() {
+export default async function RegistroPage() {
   const abierto = process.env.REGISTRATION_OPEN === "true";
+  const t = await getTranslations("auth");
 
   if (abierto) return <RegistroForm />;
 
@@ -36,23 +40,22 @@ export default function RegistroPage() {
         </div>
 
         <h1 className="text-2xl sm:text-3xl font-bold mb-3">
-          Registros cerrados
+          {t("registro.cerrado.title")}
         </h1>
         <p className="text-muted-foreground mb-8 leading-relaxed">
-          Annonia se encuentra actualmente en fase privada. De momento no
-          aceptamos nuevos registros. Si ya tienes cuenta, inicia sesión.
+          {t("registro.cerrado.description")}
         </p>
 
         <Link
           href="/login"
           className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-lg font-medium hover:bg-green-700 transition-colors"
         >
-          Ir al login
+          {t("registro.cerrado.goToLogin")}
           <ArrowRight className="w-4 h-4" />
         </Link>
 
         <p className="text-xs text-muted-foreground mt-10">
-          ¿Eres nutricionista interesado en probar Annonia? Escríbenos a{" "}
+          {t("registro.cerrado.contactPrompt")}{" "}
           <a
             href="mailto:hola@annonia.com"
             className="underline hover:text-foreground"

@@ -8,18 +8,21 @@ import {
 } from "lucide-react";
 import type { HorarioEntry } from "@/app/actions/paciente-auth";
 
-export const DIAS = [
-  "Lunes",
-  "Martes",
-  "Miércoles",
-  "Jueves",
-  "Viernes",
-  "Sábado",
-  "Domingo",
+/** Función de traducción genérica para pasar a utilidades */
+export type TFunc = (key: string, values?: Record<string, string | number>) => string;
+
+export const DIAS_KEYS = [
+  "lunes",
+  "martes",
+  "miercoles",
+  "jueves",
+  "viernes",
+  "sabado",
+  "domingo",
 ] as const;
-export const DIAS_CORTOS = ["L", "M", "X", "J", "V", "S", "D"] as const;
-export const DIAS_LABORABLES = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"] as const;
-export const FINDE = ["Sábado", "Domingo"] as const;
+export const DIAS_CORTOS_KEYS = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"] as const;
+export const DIAS_LABORABLES_KEYS = ["lunes", "martes", "miercoles", "jueves", "viernes"] as const;
+export const FINDE_KEYS = ["sabado", "domingo"] as const;
 
 export const START_HOUR = 6;
 export const END_HOUR = 24;
@@ -37,7 +40,7 @@ export function rangoHoras(): string[] {
 
 export interface Categoria {
   id: string;
-  label: string;
+  labelKey: string;
   Icon: LucideIcon;
   /** Clases para chips de leyenda */
   chip: string;
@@ -52,7 +55,7 @@ export interface Categoria {
 export const CATEGORIAS: Categoria[] = [
   {
     id: "trabajo",
-    label: "Trabajo",
+    labelKey: "actividades.trabajo",
     Icon: Briefcase,
     chip: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-400 dark:border-blue-500/30",
     block:
@@ -62,7 +65,7 @@ export const CATEGORIAS: Categoria[] = [
   },
   {
     id: "ejercicio",
-    label: "Ejercicio",
+    labelKey: "actividades.ejercicio",
     Icon: Dumbbell,
     chip: "bg-green-100 text-green-700 border-green-200 dark:bg-green-500/15 dark:text-green-400 dark:border-green-500/30",
     block:
@@ -72,7 +75,7 @@ export const CATEGORIAS: Categoria[] = [
   },
   {
     id: "comida",
-    label: "Comida",
+    labelKey: "actividades.comida",
     Icon: UtensilsCrossed,
     chip: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30",
     block:
@@ -82,7 +85,7 @@ export const CATEGORIAS: Categoria[] = [
   },
   {
     id: "descanso",
-    label: "Descanso",
+    labelKey: "actividades.descanso",
     Icon: Moon,
     chip: "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-500/15 dark:text-purple-400 dark:border-purple-500/30",
     block:
@@ -92,7 +95,7 @@ export const CATEGORIAS: Categoria[] = [
   },
   {
     id: "otro",
-    label: "Otro",
+    labelKey: "actividades.otro",
     Icon: Sparkles,
     chip: "bg-muted text-foreground border-border",
     block:
@@ -129,7 +132,7 @@ function intToHour(n: number): string {
  */
 export function entriesToBloques(entries: HorarioEntry[]): Bloque[] {
   const bloques: Bloque[] = [];
-  for (const dia of DIAS) {
+  for (const dia of DIAS_KEYS) {
     const entriesDia = entries
       .filter((e) => e.dia === dia)
       .sort((a, b) => a.hora.localeCompare(b.hora));
@@ -220,12 +223,14 @@ export function bloqueLayout(bloque: Bloque, pxH = PX_PER_HOUR): { top: number; 
 
 /**
  * Plantillas rapidas.
+ * labelKey y descripcionKey son claves de traducción (patients.horario.plantillas.*).
+ * Las actividades generadas usan actividadKey (clave i18n) como nombre.
  */
 export interface Plantilla {
   id: string;
-  label: string;
-  descripcion: string;
-  apply: () => HorarioEntry[];
+  labelKey: string;
+  descripcionKey: string;
+  apply: (t: TFunc) => HorarioEntry[];
 }
 
 function mkEntry(dia: string, horaInt: number, actividad: string, color: string, nota?: string): HorarioEntry {
@@ -235,60 +240,60 @@ function mkEntry(dia: string, horaInt: number, actividad: string, color: string,
 export const PLANTILLAS: Plantilla[] = [
   {
     id: "semana-laboral",
-    label: "Semana laboral típica",
-    descripcion: "Trabajo 9–18, comidas y ejercicio regulares",
-    apply: () => {
+    labelKey: "plantillas.semanaLaboral",
+    descripcionKey: "plantillas.semanaLaboralDesc",
+    apply: (t) => {
       const out: HorarioEntry[] = [];
-      for (const dia of DIAS_LABORABLES) {
-        out.push(mkEntry(dia, 8, "Desayuno", "comida"));
-        for (let h = 9; h < 13; h++) out.push(mkEntry(dia, h, "Trabajo", "trabajo"));
-        out.push(mkEntry(dia, 14, "Comida", "comida"));
-        for (let h = 15; h < 18; h++) out.push(mkEntry(dia, h, "Trabajo", "trabajo"));
-        out.push(mkEntry(dia, 19, "Ejercicio", "ejercicio"));
-        out.push(mkEntry(dia, 21, "Cena", "comida"));
-        out.push(mkEntry(dia, 23, "Dormir", "descanso"));
+      for (const dia of DIAS_LABORABLES_KEYS) {
+        out.push(mkEntry(dia, 8, t("plantillas.desayuno"), "comida"));
+        for (let h = 9; h < 13; h++) out.push(mkEntry(dia, h, t("actividades.trabajo"), "trabajo"));
+        out.push(mkEntry(dia, 14, t("plantillas.comida"), "comida"));
+        for (let h = 15; h < 18; h++) out.push(mkEntry(dia, h, t("actividades.trabajo"), "trabajo"));
+        out.push(mkEntry(dia, 19, t("actividades.ejercicio"), "ejercicio"));
+        out.push(mkEntry(dia, 21, t("plantillas.cena"), "comida"));
+        out.push(mkEntry(dia, 23, t("plantillas.dormir"), "descanso"));
       }
-      for (const dia of FINDE) {
-        out.push(mkEntry(dia, 10, "Desayuno", "comida"));
-        out.push(mkEntry(dia, 14, "Comida", "comida"));
-        out.push(mkEntry(dia, 21, "Cena", "comida"));
-        out.push(mkEntry(dia, 23, "Dormir", "descanso"));
+      for (const dia of FINDE_KEYS) {
+        out.push(mkEntry(dia, 10, t("plantillas.desayuno"), "comida"));
+        out.push(mkEntry(dia, 14, t("plantillas.comida"), "comida"));
+        out.push(mkEntry(dia, 21, t("plantillas.cena"), "comida"));
+        out.push(mkEntry(dia, 23, t("plantillas.dormir"), "descanso"));
       }
       return out;
     },
   },
   {
     id: "deportista",
-    label: "Rutina de deportista",
-    descripcion: "Entrenamiento AM y PM, 5 comidas al día",
-    apply: () => {
+    labelKey: "plantillas.deportista",
+    descripcionKey: "plantillas.deportistaDesc",
+    apply: (t) => {
       const out: HorarioEntry[] = [];
-      for (const dia of DIAS_LABORABLES) {
-        out.push(mkEntry(dia, 7, "Ejercicio (fuerza)", "ejercicio"));
-        out.push(mkEntry(dia, 8, "Desayuno", "comida"));
-        out.push(mkEntry(dia, 11, "Media mañana", "comida"));
-        out.push(mkEntry(dia, 14, "Comida", "comida"));
-        out.push(mkEntry(dia, 17, "Merienda", "comida"));
-        out.push(mkEntry(dia, 19, "Ejercicio (cardio)", "ejercicio"));
-        out.push(mkEntry(dia, 21, "Cena", "comida"));
-        out.push(mkEntry(dia, 23, "Dormir", "descanso"));
+      for (const dia of DIAS_LABORABLES_KEYS) {
+        out.push(mkEntry(dia, 7, t("plantillas.ejercicioFuerza"), "ejercicio"));
+        out.push(mkEntry(dia, 8, t("plantillas.desayuno"), "comida"));
+        out.push(mkEntry(dia, 11, t("plantillas.mediaManana"), "comida"));
+        out.push(mkEntry(dia, 14, t("plantillas.comida"), "comida"));
+        out.push(mkEntry(dia, 17, t("plantillas.merienda"), "comida"));
+        out.push(mkEntry(dia, 19, t("plantillas.ejercicioCardio"), "ejercicio"));
+        out.push(mkEntry(dia, 21, t("plantillas.cena"), "comida"));
+        out.push(mkEntry(dia, 23, t("plantillas.dormir"), "descanso"));
       }
       return out;
     },
   },
   {
     id: "flexible",
-    label: "Día flexible (teletrabajo)",
-    descripcion: "Horario libre con bloques de enfoque",
-    apply: () => {
+    labelKey: "plantillas.flexible",
+    descripcionKey: "plantillas.flexibleDesc",
+    apply: (t) => {
       const out: HorarioEntry[] = [];
-      for (const dia of DIAS_LABORABLES) {
-        out.push(mkEntry(dia, 9, "Desayuno", "comida"));
-        for (let h = 10; h < 13; h++) out.push(mkEntry(dia, h, "Enfoque mañana", "trabajo"));
-        out.push(mkEntry(dia, 14, "Comida", "comida"));
-        out.push(mkEntry(dia, 15, "Descanso / siesta", "descanso"));
-        for (let h = 16; h < 19; h++) out.push(mkEntry(dia, h, "Enfoque tarde", "trabajo"));
-        out.push(mkEntry(dia, 20, "Cena", "comida"));
+      for (const dia of DIAS_LABORABLES_KEYS) {
+        out.push(mkEntry(dia, 9, t("plantillas.desayuno"), "comida"));
+        for (let h = 10; h < 13; h++) out.push(mkEntry(dia, h, t("plantillas.enfoqueManana"), "trabajo"));
+        out.push(mkEntry(dia, 14, t("plantillas.comida"), "comida"));
+        out.push(mkEntry(dia, 15, t("plantillas.descansoSiesta"), "descanso"));
+        for (let h = 16; h < 19; h++) out.push(mkEntry(dia, h, t("plantillas.enfoqueTarde"), "trabajo"));
+        out.push(mkEntry(dia, 20, t("plantillas.cena"), "comida"));
       }
       return out;
     },

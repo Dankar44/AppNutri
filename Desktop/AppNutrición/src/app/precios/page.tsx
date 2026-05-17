@@ -2,77 +2,74 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Leaf, Check, Star, Zap, Users, Brain, Share2, BarChart3, Shield } from "lucide-react";
 import { JsonLd } from "@/components/json-ld";
-import { ORGANIZATION_JSONLD, SOFTWARE_APPLICATION_JSONLD, PRECIOS_FAQ_JSONLD } from "@/lib/structured-data";
+import { getOrganizationJsonLd, getSoftwareApplicationJsonLd, getPreciosFaqJsonLd } from "@/lib/structured-data";
+import { getTranslations } from "next-intl/server";
 
-export const metadata: Metadata = {
-  title: "Precios — Software para Dietistas desde 9,99€/mes",
-  description:
-    "Planes de Annonia, software de nutrición para dietistas: Plan Básico (25 pacientes, 9,99€/mes) o Profesional (ilimitados + IA, 11,99€/mes). Prueba gratis 14 días sin tarjeta.",
-  alternates: { canonical: "/precios" },
-  openGraph: {
-    title: "Precios de Annonia — Software para Dietistas desde 9,99€/mes",
-    description: "Software de nutrición profesional. Plan Básico o Profesional con IA. 14 días gratis sin tarjeta.",
-    url: "/precios",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Precios de Annonia — Software para Dietistas desde 9,99€/mes",
-  },
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("pricing");
+  return {
+    title: t("metadata.title"),
+    description: t("metadata.description"),
+    alternates: { canonical: "/precios" },
+    openGraph: {
+      title: t("metadata.ogTitle"),
+      description: t("metadata.ogDescription"),
+      url: "/precios",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: t("metadata.twitterTitle"),
+    },
+  };
+}
+
+const PLAN_ICONS: Record<string, React.ElementType> = {
+  pacientesActivos: Users,
+  pacientesIlimitados: Users,
+  planesIlimitados: Zap,
+  baseAlimentos: BarChart3,
+  recetas: Star,
+  portalPaciente: Share2,
+  seguimientoMedidas: BarChart3,
+  soporteEmail: Shield,
+  dietasIA: Brain,
+  informesPdf: BarChart3,
+  plantillas: Star,
+  soportePrioritario: Shield,
 };
 
-const PLANES = [
-  {
-    id: "basico",
-    nombre: "Básico",
-    precio: "9,99",
-    periodo: "mes",
-    descripcion: "Ideal para nutricionistas que empiezan o tienen una consulta pequeña.",
-    destacado: false,
-    features: [
-      { texto: "Hasta 25 pacientes activos", icon: Users },
-      { texto: "Planes alimenticios ilimitados", icon: Zap },
-      { texto: "Base de datos de 2.600+ alimentos", icon: BarChart3 },
-      { texto: "Recetas personalizadas", icon: Star },
-      { texto: "Portal del paciente", icon: Share2 },
-      { texto: "Seguimiento de medidas", icon: BarChart3 },
-      { texto: "Soporte por email", icon: Shield },
-    ],
-    noIncluye: [
-      "Generación de dietas con IA",
-      "Pacientes ilimitados",
-      "Exportación de informes PDF",
-      "Soporte prioritario",
-    ],
-  },
-  {
-    id: "profesional",
-    nombre: "Profesional",
-    precio: "11,99",
-    periodo: "mes",
-    descripcion: "Para dietistas-nutricionistas con consultas establecidas que quieren escalar.",
-    destacado: true,
-    features: [
-      { texto: "Pacientes ilimitados", icon: Users },
-      { texto: "Planes alimenticios ilimitados", icon: Zap },
-      { texto: "Base de datos de 2.600+ alimentos", icon: BarChart3 },
-      { texto: "Recetas personalizadas", icon: Star },
-      { texto: "Portal del paciente", icon: Share2 },
-      { texto: "Seguimiento de medidas", icon: BarChart3 },
-      { texto: "Generación de dietas con IA", icon: Brain },
-      { texto: "Exportación de informes PDF", icon: BarChart3 },
-      { texto: "Plantillas de planes", icon: Star },
-      { texto: "Soporte prioritario 24/7", icon: Shield },
-    ],
-    noIncluye: [],
-  },
-];
+export default async function PreciosPage() {
+  const t = await getTranslations("pricing");
 
-export default function PreciosPage() {
+  const PLANES = [
+    {
+      id: "basico",
+      nombre: t("planes.basico.nombre"),
+      precio: t("planes.basico.precio"),
+      periodo: t("planes.periodo"),
+      descripcion: t("planes.basico.descripcion"),
+      destacado: false,
+      featureKeys: ["pacientesActivos", "planesIlimitados", "baseAlimentos", "recetas", "portalPaciente", "seguimientoMedidas", "soporteEmail"] as const,
+      noIncluyeKeys: ["dietasIA", "pacientesIlimitados", "informesPdf", "soportePrioritario"] as const,
+    },
+    {
+      id: "profesional",
+      nombre: t("planes.profesional.nombre"),
+      precio: t("planes.profesional.precio"),
+      periodo: t("planes.periodo"),
+      descripcion: t("planes.profesional.descripcion"),
+      destacado: true,
+      featureKeys: ["pacientesIlimitados", "planesIlimitados", "baseAlimentos", "recetas", "portalPaciente", "seguimientoMedidas", "dietasIA", "informesPdf", "plantillas", "soportePrioritario"] as const,
+      noIncluyeKeys: [] as const,
+    },
+  ];
+
+  const tSeo = await getTranslations("landing.structuredData");
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-green-50/30">
-      <JsonLd data={ORGANIZATION_JSONLD} />
-      <JsonLd data={SOFTWARE_APPLICATION_JSONLD} />
-      <JsonLd data={PRECIOS_FAQ_JSONLD} />
+      <JsonLd data={getOrganizationJsonLd(tSeo)} />
+      <JsonLd data={getSoftwareApplicationJsonLd(tSeo)} />
+      <JsonLd data={getPreciosFaqJsonLd(tSeo)} />
       {/* Header */}
       <header className="border-b border-border/50 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
@@ -85,13 +82,13 @@ export default function PreciosPage() {
               href="/login"
               className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
-              Iniciar sesión
+              {t("header.iniciarSesion")}
             </Link>
             <Link
               href="/registro?plan=basico"
               className="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
             >
-              Empezar gratis
+              {t("header.empezarGratis")}
             </Link>
           </div>
         </div>
@@ -101,14 +98,13 @@ export default function PreciosPage() {
       <section className="max-w-4xl mx-auto px-4 sm:px-6 pt-16 pb-12 text-center">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
           <Zap className="w-4 h-4" />
-          14 días de prueba gratuita
+          {t("hero.badge")}
         </div>
         <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
-          El plan perfecto para tu consulta de nutrición
+          {t("hero.titulo")}
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Elige el software de nutrición que mejor se adapte a tu práctica como dietista.
-          Sin compromisos, cancela cuando quieras.
+          {t("hero.descripcion")}
         </p>
       </section>
 
@@ -128,7 +124,7 @@ export default function PreciosPage() {
                 <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
                   <span className="inline-flex items-center gap-1 px-4 py-1 rounded-full bg-primary text-primary-foreground text-xs font-bold uppercase tracking-wide">
                     <Star className="w-3 h-3" />
-                    Más popular
+                    {t("planes.masPopular")}
                   </span>
                 </div>
               )}
@@ -139,7 +135,7 @@ export default function PreciosPage() {
               </div>
 
               <div className="flex items-baseline gap-1 mb-8">
-                <span className="text-5xl font-bold">{plan.precio}€</span>
+                <span className="text-5xl font-bold">{plan.precio}&euro;</span>
                 <span className="text-muted-foreground">/{plan.periodo}</span>
               </div>
 
@@ -151,30 +147,33 @@ export default function PreciosPage() {
                     : "bg-muted text-foreground hover:bg-muted/80"
                 }`}
               >
-                Empezar 14 días gratis
+                {t("planes.empezarPrueba")}
               </Link>
 
               <div className="space-y-3 flex-1">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                  Incluye:
+                  {t("planes.incluye")}
                 </p>
-                {plan.features.map((feature) => (
-                  <div key={feature.texto} className="flex items-start gap-2.5">
-                    <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{feature.texto}</span>
-                  </div>
-                ))}
+                {plan.featureKeys.map((key) => {
+                  const Icon = PLAN_ICONS[key] ?? Check;
+                  return (
+                    <div key={key} className="flex items-start gap-2.5">
+                      <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">{t(`planes.${plan.id}.features.${key}` as never)}</span>
+                    </div>
+                  );
+                })}
 
-                {plan.noIncluye.length > 0 && (
+                {plan.noIncluyeKeys.length > 0 && (
                   <>
                     <div className="border-t border-border my-4" />
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                      No incluido:
+                      {t("planes.noIncluido")}
                     </p>
-                    {plan.noIncluye.map((item) => (
-                      <div key={item} className="flex items-start gap-2.5 opacity-50">
-                        <span className="w-4 h-4 flex-shrink-0 mt-0.5 text-center text-xs">—</span>
-                        <span className="text-sm">{item}</span>
+                    {plan.noIncluyeKeys.map((key) => (
+                      <div key={key} className="flex items-start gap-2.5 opacity-50">
+                        <span className="w-4 h-4 flex-shrink-0 mt-0.5 text-center text-xs">&mdash;</span>
+                        <span className="text-sm">{t(`planes.basico.noIncluye.${key}` as never)}</span>
                       </div>
                     ))}
                   </>
@@ -184,46 +183,21 @@ export default function PreciosPage() {
           ))}
         </div>
 
-        {/* FAQ rápido */}
+        {/* FAQ */}
         <div className="mt-16 max-w-2xl mx-auto text-center">
-          <h3 className="text-xl font-bold mb-6">Preguntas frecuentes</h3>
+          <h3 className="text-xl font-bold mb-6">{t("faq.titulo")}</h3>
           <div className="space-y-4 text-left">
-            <details className="group bg-card rounded-xl border border-border p-4">
-              <summary className="font-medium cursor-pointer list-none flex items-center justify-between">
-                ¿Puedo cambiar de plan en cualquier momento?
-                <span className="text-muted-foreground group-open:rotate-180 transition-transform">▾</span>
-              </summary>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Sí, puedes subir o bajar de plan cuando quieras. El cambio se aplica en el siguiente ciclo de facturación.
-              </p>
-            </details>
-            <details className="group bg-card rounded-xl border border-border p-4">
-              <summary className="font-medium cursor-pointer list-none flex items-center justify-between">
-                ¿Qué pasa después de los 14 días de prueba?
-                <span className="text-muted-foreground group-open:rotate-180 transition-transform">▾</span>
-              </summary>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Al finalizar la prueba, se activará tu plan seleccionado. Si no has añadido un método de pago, tu cuenta pasará a modo lectura.
-              </p>
-            </details>
-            <details className="group bg-card rounded-xl border border-border p-4">
-              <summary className="font-medium cursor-pointer list-none flex items-center justify-between">
-                ¿Puedo cancelar en cualquier momento?
-                <span className="text-muted-foreground group-open:rotate-180 transition-transform">▾</span>
-              </summary>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Sí, sin preguntas. Puedes cancelar desde Ajustes y seguirás teniendo acceso hasta el final de tu periodo pagado.
-              </p>
-            </details>
-            <details className="group bg-card rounded-xl border border-border p-4">
-              <summary className="font-medium cursor-pointer list-none flex items-center justify-between">
-                ¿Mis datos están seguros?
-                <span className="text-muted-foreground group-open:rotate-180 transition-transform">▾</span>
-              </summary>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Absolutamente. Usamos encriptación de extremo a extremo, servidores en la UE y cumplimos con el RGPD. Tus datos y los de tus pacientes están protegidos.
-              </p>
-            </details>
+            {(["cambiarPlan", "despuesPrueba", "cancelar", "datosSeguridad"] as const).map((key) => (
+              <details key={key} className="group bg-card rounded-xl border border-border p-4">
+                <summary className="font-medium cursor-pointer list-none flex items-center justify-between">
+                  {t(`faq.${key}.pregunta`)}
+                  <span className="text-muted-foreground group-open:rotate-180 transition-transform">&#9662;</span>
+                </summary>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {t(`faq.${key}.respuesta`)}
+                </p>
+              </details>
+            ))}
           </div>
         </div>
       </section>
@@ -233,14 +207,14 @@ export default function PreciosPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Leaf className="w-4 h-4 text-primary" />
-            <span>Annonia © {new Date().getFullYear()}</span>
+            <span>Annonia &copy; {new Date().getFullYear()}</span>
           </div>
           <div className="flex gap-6 text-sm text-muted-foreground">
             <Link href="/login" className="hover:text-foreground transition-colors">
-              Iniciar sesión
+              {t("footer.iniciarSesion")}
             </Link>
             <Link href="/paciente/login" className="hover:text-foreground transition-colors">
-              Portal pacientes
+              {t("footer.portalPacientes")}
             </Link>
           </div>
         </div>

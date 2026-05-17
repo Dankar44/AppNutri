@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 
 interface Suscripcion {
   id: string;
@@ -55,12 +56,13 @@ export async function getSuscripcion(): Promise<Suscripcion | null> {
 }
 
 export async function cambiarPlan(nuevoPlan: string) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   if (nuevoPlan !== "BASICO" && nuevoPlan !== "PROFESIONAL") {
-    throw new Error("Plan no válido");
+    throw new Error(t("plan.planNoValido"));
   }
 
   try {
@@ -73,6 +75,6 @@ export async function cambiarPlan(nuevoPlan: string) {
 
     revalidatePath("/ajustes");
   } catch {
-    throw new Error("Error al cambiar de plan");
+    throw new Error(t("pago.errorCambiarPlan"));
   }
 }

@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
 import { cambiarPassword } from "@/app/actions/perfil";
 
 export function CambiarPasswordForm() {
+  const t = useTranslations("settings");
   const [loading, setLoading] = useState(false);
   const [showActual, setShowActual] = useState(false);
   const [showNueva, setShowNueva] = useState(false);
@@ -18,7 +20,7 @@ export function CambiarPasswordForm() {
     const confirmar = form.get("confirmar") as string;
 
     if (nueva !== confirmar) {
-      toast.error("Las contraseñas no coinciden");
+      toast.error(t("cambiarPassword.toastErrorNoCoinciden"));
       return;
     }
 
@@ -26,13 +28,13 @@ export function CambiarPasswordForm() {
     try {
       const res = await cambiarPassword({ actual, nueva });
       if (res.ok) {
-        toast.success("Contraseña actualizada");
+        toast.success(t("cambiarPassword.toastSuccess"));
         (e.target as HTMLFormElement).reset();
       } else {
-        toast.error(res.error || "Error al cambiar la contraseña");
+        toast.error(res.error || t("cambiarPassword.toastErrorGenerico"));
       }
     } catch {
-      toast.error("Error al cambiar la contraseña");
+      toast.error(t("cambiarPassword.toastErrorGenerico"));
     } finally {
       setLoading(false);
     }
@@ -41,7 +43,7 @@ export function CambiarPasswordForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium mb-1">Contraseña actual</label>
+        <label className="block text-sm font-medium mb-1">{t("cambiarPassword.actualLabel")}</label>
         <div className="relative">
           <input
             name="actual"
@@ -62,7 +64,7 @@ export function CambiarPasswordForm() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Nueva contraseña</label>
+          <label className="block text-sm font-medium mb-1">{t("cambiarPassword.nuevaLabel")}</label>
           <div className="relative">
             <input
               name="nueva"
@@ -82,7 +84,7 @@ export function CambiarPasswordForm() {
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Confirmar contraseña</label>
+          <label className="block text-sm font-medium mb-1">{t("cambiarPassword.confirmarLabel")}</label>
           <input
             name="confirmar"
             type={showNueva ? "text" : "password"}
@@ -99,7 +101,7 @@ export function CambiarPasswordForm() {
         disabled={loading}
         className="px-6 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium disabled:opacity-50"
       >
-        {loading ? "Cambiando..." : "Cambiar contraseña"}
+        {loading ? t("cambiarPassword.cambiando") : t("cambiarPassword.cambiarContrasena")}
       </button>
     </form>
   );

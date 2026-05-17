@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { FileDown } from "lucide-react";
 import { generatePlanPDF, type PlanPDFData } from "@/lib/pdf/generate-plan-pdf";
 
@@ -8,6 +9,8 @@ interface Props {
 }
 
 export function ExportarPDFButton({ data }: Props) {
+  const t = useTranslations("diets");
+
   function handleExport() {
     const html = generatePlanPDF(data);
     const ventana = window.open("", "_blank");
@@ -22,7 +25,7 @@ export function ExportarPDFButton({ data }: Props) {
       className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
     >
       <FileDown className="w-4 h-4" />
-      PDF
+      {t("exportarPdf.button")}
     </button>
   );
 }

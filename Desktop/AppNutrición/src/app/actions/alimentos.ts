@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import {
   CategoriaAlimento,
   UnidadMedida,
@@ -44,13 +45,14 @@ function validarMicros(raw: Partial<Record<MicroKey, number | null>> | undefined
 }
 
 export async function crearAlimento(data: AlimentoFormData) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   // Validación server-side
   const nombreSanitizado = sanitizeString(data.nombre, LIMITS.NOMBRE);
-  if (!nombreSanitizado) throw new Error("El nombre es obligatorio");
+  if (!nombreSanitizado) throw new Error(t("alimento.nombreObligatorio"));
   data.calorias = validateNumber(data.calorias, 0, LIMITS.CALORIAS_MAX);
   data.proteinas = validateNumber(data.proteinas, 0, LIMITS.MACROS_MAX);
   data.carbohidratos = validateNumber(data.carbohidratos, 0, LIMITS.MACROS_MAX);
@@ -58,17 +60,17 @@ export async function crearAlimento(data: AlimentoFormData) {
   data.fibra = validateNumber(data.fibra, 0, LIMITS.MACROS_MAX);
   data.porcion = validateNumber(data.porcion, 0.1, LIMITS.PORCION_MAX);
   const categoriaValida = validateEnum(data.categoria, Object.values(CategoriaAlimento));
-  if (!categoriaValida) throw new Error("Categoría no válida");
+  if (!categoriaValida) throw new Error(t("alimento.categoriaNoValida"));
   data.categoria = categoriaValida;
   const unidadValida = validateEnum(data.unidad, Object.values(UnidadMedida));
-  if (!unidadValida) throw new Error("Unidad no válida");
+  if (!unidadValida) throw new Error(t("alimento.unidadNoValida"));
   data.unidad = unidadValida;
   const enlaceValidado = validateUrl(data.enlaceProducto);
   if (data.enlaceProducto && data.enlaceProducto.trim() && !enlaceValidado)
-    throw new Error("El enlace no es una URL válida");
+    throw new Error(t("alimento.enlaceNoValido"));
   const imagenUrlValidada = validateUrl(data.imagenUrl);
   if (data.imagenUrl && data.imagenUrl.trim() && !imagenUrlValidada)
-    throw new Error("La URL de imagen no es válida");
+    throw new Error(t("alimento.urlImagenNoValida"));
   const micros = validarMicros(data.micronutrientes);
 
   const nombreNorm = normalizarNombreAlimento(nombreSanitizado);
@@ -80,7 +82,7 @@ export async function crearAlimento(data: AlimentoFormData) {
       nombre: { equals: nombreNorm, mode: "insensitive" },
     },
   });
-  if (existente) throw new Error("Ya existe un alimento con ese nombre");
+  if (existente) throw new Error(t("alimento.yaExisteNombre"));
 
   const alimento = await prisma.alimento.create({
     data: {
@@ -106,13 +108,14 @@ export async function crearAlimento(data: AlimentoFormData) {
 }
 
 export async function actualizarAlimento(id: string, data: AlimentoFormData) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   // Validación server-side
   const nombreSanitizado = sanitizeString(data.nombre, LIMITS.NOMBRE);
-  if (!nombreSanitizado) throw new Error("El nombre es obligatorio");
+  if (!nombreSanitizado) throw new Error(t("alimento.nombreObligatorio"));
   data.calorias = validateNumber(data.calorias, 0, LIMITS.CALORIAS_MAX);
   data.proteinas = validateNumber(data.proteinas, 0, LIMITS.MACROS_MAX);
   data.carbohidratos = validateNumber(data.carbohidratos, 0, LIMITS.MACROS_MAX);
@@ -120,17 +123,17 @@ export async function actualizarAlimento(id: string, data: AlimentoFormData) {
   data.fibra = validateNumber(data.fibra, 0, LIMITS.MACROS_MAX);
   data.porcion = validateNumber(data.porcion, 0.1, LIMITS.PORCION_MAX);
   const categoriaValida = validateEnum(data.categoria, Object.values(CategoriaAlimento));
-  if (!categoriaValida) throw new Error("Categoría no válida");
+  if (!categoriaValida) throw new Error(t("alimento.categoriaNoValida"));
   data.categoria = categoriaValida;
   const unidadValida = validateEnum(data.unidad, Object.values(UnidadMedida));
-  if (!unidadValida) throw new Error("Unidad no válida");
+  if (!unidadValida) throw new Error(t("alimento.unidadNoValida"));
   data.unidad = unidadValida;
   const enlaceValidado = validateUrl(data.enlaceProducto);
   if (data.enlaceProducto && data.enlaceProducto.trim() && !enlaceValidado)
-    throw new Error("El enlace no es una URL válida");
+    throw new Error(t("alimento.enlaceNoValido"));
   const imagenUrlValidada = validateUrl(data.imagenUrl);
   if (data.imagenUrl && data.imagenUrl.trim() && !imagenUrlValidada)
-    throw new Error("La URL de imagen no es válida");
+    throw new Error(t("alimento.urlImagenNoValida"));
   const micros = validarMicros(data.micronutrientes);
 
   await prisma.alimento.update({
@@ -157,8 +160,9 @@ export async function actualizarAlimento(id: string, data: AlimentoFormData) {
 }
 
 export async function eliminarAlimento(id: string) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   await prisma.alimento.delete({
@@ -322,12 +326,13 @@ export async function buscarAlimentosAPI(query: string) {
 }
 
 export async function importarAlimentoAPI(data: AlimentoAPIResult) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   // Validación server-side
-  data.nombre = sanitizeString(data.nombre, 200) || "Sin nombre";
+  data.nombre = sanitizeString(data.nombre, 200) || t("auth.sinNombre");
   data.calorias = validateNumber(data.calorias, 0, LIMITS.CALORIAS_MAX);
   data.proteinas = validateNumber(data.proteinas, 0, LIMITS.MACROS_MAX);
   data.carbohidratos = validateNumber(data.carbohidratos, 0, LIMITS.MACROS_MAX);

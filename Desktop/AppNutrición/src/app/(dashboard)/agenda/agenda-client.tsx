@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations, useLocale } from "next-intl";
+import { intlTag, type Locale } from "@/i18n/config";
 import { ChevronLeft, ChevronRight, CalendarDays, Calendar, Plus } from "lucide-react";
 import { AgendaSemanal } from "./agenda-semanal";
 import { AgendaMensual } from "./agenda-mensual";
@@ -39,6 +41,8 @@ function getLunesDeSemana(d: Date): Date {
 
 export function AgendaClient({ vista, fechaInicio, citas, diaResaltado }: Props) {
   const router = useRouter();
+  const t = useTranslations("agenda");
+  const tag = intlTag(useLocale() as Locale);
   const [diaSeleccionado, setDiaSeleccionado] = useState<string | null>(() => {
     if (diaResaltado) return diaResaltado; // viene de ?cita=xxx
     if (vista === "semana") return formatLocalDate(new Date());
@@ -92,7 +96,7 @@ export function AgendaClient({ vista, fechaInicio, citas, diaResaltado }: Props)
 
   let titulo: string;
   if (vista === "dia") {
-    titulo = fecha.toLocaleDateString("es-ES", {
+    titulo = fecha.toLocaleDateString(tag, {
       weekday: "long",
       day: "numeric",
       month: "long",
@@ -104,10 +108,10 @@ export function AgendaClient({ vista, fechaInicio, citas, diaResaltado }: Props)
     const domingo = new Date(lunes);
     domingo.setDate(domingo.getDate() + 6);
     const fmt = (d: Date) =>
-      d.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+      d.toLocaleDateString(tag, { day: "numeric", month: "short" });
     titulo = `${fmt(lunes)} – ${fmt(domingo)}`;
   } else {
-    titulo = fecha.toLocaleDateString("es-ES", {
+    titulo = fecha.toLocaleDateString(tag, {
       month: "long",
       year: "numeric",
     });
@@ -144,7 +148,7 @@ export function AgendaClient({ vista, fechaInicio, citas, diaResaltado }: Props)
             href="/agenda/nueva"
             data-tour="agenda-nueva-cita"
             className="w-9 h-9 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center justify-center shrink-0"
-            aria-label="Nueva cita"
+            aria-label={t("page.newAppointment")}
           >
             <Plus className="w-5 h-5" strokeWidth={2.5} />
           </Link>
@@ -153,7 +157,7 @@ export function AgendaClient({ vista, fechaInicio, citas, diaResaltado }: Props)
               type="button"
               onClick={() => navegar("anterior")}
               className="px-2 py-2 hover:bg-muted transition-colors text-muted-foreground shrink-0"
-              aria-label="Anterior"
+              aria-label={t("client.previous")}
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -164,7 +168,7 @@ export function AgendaClient({ vista, fechaInicio, citas, diaResaltado }: Props)
               type="button"
               onClick={() => navegar("siguiente")}
               className="px-2 py-2 hover:bg-muted transition-colors text-muted-foreground shrink-0"
-              aria-label="Siguiente"
+              aria-label={t("client.next")}
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -175,7 +179,7 @@ export function AgendaClient({ vista, fechaInicio, citas, diaResaltado }: Props)
               onClick={() => navegar("hoy")}
               className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors shrink-0 px-1"
             >
-              Hoy
+              {t("client.today")}
             </button>
           )}
         </div>
@@ -189,7 +193,7 @@ export function AgendaClient({ vista, fechaInicio, citas, diaResaltado }: Props)
                 vista === v ? "bg-primary text-primary-foreground" : "hover:bg-muted"
               }`}
             >
-              {v === "dia" ? "Día" : v === "semana" ? "Semana" : "Mes"}
+              {v === "dia" ? t("client.dayView") : v === "semana" ? t("client.weekView") : t("client.monthView")}
             </button>
           ))}
         </div>
@@ -206,7 +210,7 @@ export function AgendaClient({ vista, fechaInicio, citas, diaResaltado }: Props)
               type="button"
               onClick={() => navegar("anterior")}
               className="p-1.5 rounded-lg border border-border hover:bg-muted transition-colors flex items-center justify-center"
-              aria-label="Anterior"
+              aria-label={t("client.previous")}
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -221,14 +225,14 @@ export function AgendaClient({ vista, fechaInicio, citas, diaResaltado }: Props)
               }`}
             >
               {mostrandoHoy
-                ? vista === "dia" ? "Hoy" : vista === "semana" ? "Esta semana" : "Este mes"
-                : vista === "dia" ? "Ir a este día" : vista === "semana" ? "Ir a esta semana" : "Ir a este mes"}
+                ? vista === "dia" ? t("client.today") : vista === "semana" ? t("client.thisWeek") : t("client.thisMonth")
+                : vista === "dia" ? t("client.goToDay") : vista === "semana" ? t("client.goToWeek") : t("client.goToMonth")}
             </button>
             <button
               type="button"
               onClick={() => navegar("siguiente")}
               className="p-1.5 rounded-lg border border-border hover:bg-muted transition-colors flex items-center justify-center"
-              aria-label="Siguiente"
+              aria-label={t("client.next")}
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -242,7 +246,7 @@ export function AgendaClient({ vista, fechaInicio, citas, diaResaltado }: Props)
               vista === "dia" ? "bg-primary text-primary-foreground" : "hover:bg-muted"
             }`}
           >
-            Día
+            {t("client.dayView")}
           </button>
           <button
             type="button"
@@ -252,7 +256,7 @@ export function AgendaClient({ vista, fechaInicio, citas, diaResaltado }: Props)
             }`}
           >
             <CalendarDays className="w-4 h-4" />
-            Semana
+            {t("client.weekView")}
           </button>
           <button
             type="button"
@@ -262,7 +266,7 @@ export function AgendaClient({ vista, fechaInicio, citas, diaResaltado }: Props)
             }`}
           >
             <Calendar className="w-4 h-4" />
-            Mes
+            {t("client.monthView")}
           </button>
         </div>
       </div>

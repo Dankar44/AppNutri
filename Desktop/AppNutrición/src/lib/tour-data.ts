@@ -16,185 +16,180 @@ export interface Tour {
   steps: TourStep[];
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type TFunc = (key: string, values?: Record<string, any>) => string;
+
+/** Tour structural data — only ids, targets, routes, positions, and icons */
+interface TourDef {
+  id: string;
+  /** JSON key under settings.tours.data.* */
+  dataKey: string;
+  icon: string;
+  audience: "dietista" | "paciente";
+  steps: {
+    id: string;
+    target?: string;
+    route?: string;
+    position?: "top" | "bottom" | "left" | "right";
+  }[];
+}
+
 // ─── TOURS DIETISTA ───
 
-const DIETISTA_TOURS: Tour[] = [
+const DIETISTA_TOUR_DEFS: TourDef[] = [
   {
-    id: "dietista-dashboard",
-    name: "Bienvenida al Dashboard",
-    description: "Conoce tu panel principal y las métricas de tu consulta",
-    icon: "LayoutDashboard",
-    audience: "dietista",
+    id: "dietista-dashboard", dataKey: "dietistaDashboard", icon: "LayoutDashboard", audience: "dietista",
     steps: [
-      { id: "d1-1", title: "Tu menú de navegación", description: "Desde el sidebar accedes a todas las secciones de Annonia: pacientes, dietas, alimentos, agenda y más.", target: "sidebar", route: "/dashboard", position: "right" },
-      { id: "d1-2", title: "Próxima consulta", description: "Tu próxima cita aparece aquí con el nombre del paciente, fecha, hora y motivo. Pulsa para ir a su ficha.", target: "dashboard-proxima-cita", position: "bottom" },
-      { id: "d1-3", title: "Notificaciones", description: "Tu última notificación aparece aquí. Las notificaciones te avisan de pacientes sin consulta reciente, planes caducados y más.", target: "dashboard-notificacion", position: "left" },
-      { id: "d1-4", title: "Gráfico de actividad", description: "Visualiza tu actividad de los últimos 6 meses: consultas realizadas y pacientes nuevos.", target: "activity-chart", position: "top" },
-      { id: "d1-5", title: "Accesos rápidos", description: "Crea un nuevo paciente, plan dietético, cita o receta con un solo clic desde estas tarjetas.", target: "dashboard-quick-access", position: "left" },
+      { id: "d1-1", target: "sidebar", route: "/dashboard", position: "right" },
+      { id: "d1-2", target: "dashboard-proxima-cita", position: "bottom" },
+      { id: "d1-3", target: "dashboard-notificacion", position: "left" },
+      { id: "d1-4", target: "activity-chart", position: "top" },
+      { id: "d1-5", target: "dashboard-quick-access", position: "left" },
     ],
   },
   {
-    id: "dietista-pacientes",
-    name: "Gestionar Pacientes",
-    description: "Aprende a crear y gestionar la ficha de tus pacientes",
-    icon: "Users",
-    audience: "dietista",
+    id: "dietista-pacientes", dataKey: "dietistaPacientes", icon: "Users", audience: "dietista",
     steps: [
-      { id: "d2-1", title: "Lista de pacientes", description: "Aquí están todos tus pacientes. Puedes ver sus datos, estado y objetivo nutricional.", route: "/pacientes", target: "patient-list", position: "top" },
-      { id: "d2-2", title: "Crear nuevo paciente", description: "Pulsa este botón para registrar un nuevo paciente con todos sus datos: personales, médicos, alergias, suplementos, actividad física y más.", target: "new-patient-btn", position: "bottom" },
-      { id: "d2-3", title: "Buscar y filtrar", description: "Usa el buscador para encontrar pacientes por nombre. Filtra entre activos e inactivos.", target: "patient-search", position: "bottom" },
+      { id: "d2-1", route: "/pacientes", target: "patient-list", position: "top" },
+      { id: "d2-2", target: "new-patient-btn", position: "bottom" },
+      { id: "d2-3", target: "patient-search", position: "bottom" },
     ],
   },
   {
-    id: "dietista-ficha-paciente",
-    name: "Ficha del Paciente",
-    description: "Descubre todo lo que puedes ver y hacer dentro de la ficha de un paciente",
-    icon: "User",
-    audience: "dietista",
+    id: "dietista-ficha-paciente", dataKey: "dietistaFichaPaciente", icon: "User", audience: "dietista",
     steps: [
-      { id: "d2b-1", title: "Paciente de demostración", description: "Te mostramos una ficha de ejemplo con datos ficticios para que veas todas las secciones disponibles.", route: "/tour-demo" },
-      { id: "d2b-2", title: "Datos personales", description: "Aquí verás email, teléfono, fecha de nacimiento y sexo del paciente. Se rellena al crear el paciente.", target: "patient-personal-data", position: "bottom" },
-      { id: "d2b-3", title: "Historial médico", description: "Alergias, intolerancias, patologías, medicamentos y suplementos. Todo con etiquetas de colores para verlo de un vistazo.", target: "patient-medical", position: "bottom" },
-      { id: "d2b-4", title: "Actividad y estilo de vida", description: "Ocupación, nivel de actividad, tipo de ejercicio, horarios de trabajo, ejercicio y descanso. Información clave para personalizar la dieta.", target: "patient-lifestyle", position: "bottom" },
-      { id: "d2b-5", title: "Horario semanal", description: "Calendario compartido entre dietista y paciente. Ambos podéis añadir actividades (trabajo, ejercicio, comidas, descanso) y se sincroniza automáticamente.", target: "patient-schedule", position: "bottom" },
-      { id: "d2b-6", title: "Medidas y registro rápido", description: "Peso, altura e IMC actuales. El botón 'Registro rápido' te permite apuntar nuevas medidas directamente durante la consulta.", target: "patient-measures", position: "left" },
-      { id: "d2b-7", title: "Recomendaciones", description: "Escribe recomendaciones personalizadas. El paciente las verá desde su portal. Se guardan automáticamente cada 5 segundos.", target: "patient-recommendations", position: "left" },
-      { id: "d2b-8", title: "Planes alimenticios", description: "Los planes dietéticos del paciente. Máximo 3 visibles, con enlace a 'Ver todos'. Desde aquí creas nuevos planes o accedes a los existentes.", target: "patient-plans", position: "top" },
+      { id: "d2b-1", route: "/tour-demo" },
+      { id: "d2b-2", target: "patient-personal-data", position: "bottom" },
+      { id: "d2b-3", target: "patient-medical", position: "bottom" },
+      { id: "d2b-4", target: "patient-lifestyle", position: "bottom" },
+      { id: "d2b-5", target: "patient-schedule", position: "bottom" },
+      { id: "d2b-6", target: "patient-measures", position: "left" },
+      { id: "d2b-7", target: "patient-recommendations", position: "left" },
+      { id: "d2b-8", target: "patient-plans", position: "top" },
     ],
   },
   {
-    id: "dietista-planes-lista",
-    name: "Planes Alimenticios",
-    description: "Aprende a navegar y gestionar tus planes dietéticos",
-    icon: "UtensilsCrossed",
-    audience: "dietista",
+    id: "dietista-planes-lista", dataKey: "dietistaPlanes", icon: "UtensilsCrossed", audience: "dietista",
     steps: [
-      { id: "dpl-1", title: "Tu lista de planes", description: "Aquí ves todos tus planes organizados por paciente. Cada tarjeta muestra el avatar, nombre del paciente y cuántos planes tiene.", route: "/tour-demo-planes", target: "planes-lista", position: "top" },
-      { id: "dpl-2", title: "Buscar planes", description: "Usa el buscador para encontrar planes por nombre de dieta o nombre de paciente.", target: "planes-buscador", position: "bottom" },
-      { id: "dpl-3", title: "Cada plan", description: "Cada plan muestra su nombre, fecha de creación y calorías objetivo. Haz clic para abrir el editor completo.", target: "plan-card", position: "bottom" },
-      { id: "dpl-4", title: "Plantillas", description: "Las plantillas son planes guardados como modelo. Puedes crear un plan nuevo a partir de una plantilla para ahorrar tiempo.", target: "plantillas-btn", position: "bottom" },
-      { id: "dpl-5", title: "Nuevo plan", description: "Pulsa aquí para crear un plan nuevo: selecciona paciente, pon nombre y opcionalmente configura macros objetivo.", target: "nuevo-plan-btn", position: "bottom" },
+      { id: "dpl-1", route: "/tour-demo-planes", target: "planes-lista", position: "top" },
+      { id: "dpl-2", target: "planes-buscador", position: "bottom" },
+      { id: "dpl-3", target: "plan-card", position: "bottom" },
+      { id: "dpl-4", target: "plantillas-btn", position: "bottom" },
+      { id: "dpl-5", target: "nuevo-plan-btn", position: "bottom" },
     ],
   },
   {
-    id: "dietista-dietas",
-    name: "Editor de Plan Dietético",
-    description: "Crea planes alimenticios semanales con IA o manualmente",
-    icon: "UtensilsCrossed",
-    audience: "dietista",
+    id: "dietista-dietas", dataKey: "dietistaDietas", icon: "UtensilsCrossed", audience: "dietista",
     steps: [
-      { id: "d3-1", title: "Plan de demostración", description: "Te mostramos un plan de ejemplo con datos ficticios para que veas cómo funciona el editor de dietas.", route: "/tour-demo-dieta" },
-      { id: "d3-2", title: "Barra de acciones", description: "Desde aquí puedes generar con IA, guardar como plantilla, compartir, editar, exportar PDF o eliminar el plan.", target: "plan-actions", position: "bottom" },
-      { id: "d3-3", title: "Macros objetivo", description: "Los objetivos diarios del plan: calorías, proteínas, carbohidratos y grasas. Se configuran al crear o editar el plan.", target: "plan-macros", position: "bottom" },
-      { id: "d3-4", title: "Editor semanal", description: "Cada día tiene 6 comidas con hora, descripción del plato y alimentos con cantidades. Se muestran 3 días a la vez y puedes deslizar horizontalmente.", target: "plan-editor", position: "top" },
-      { id: "d3-5", title: "Generación con IA", description: "El botón 'IA' genera un menú semanal completo. Configura fase nutricional (déficit, volumen, definición...), tipo de dieta y preferencias.", target: "ia-btn", position: "bottom" },
-      { id: "d3-6", title: "Exportar PDF", description: "Genera un PDF profesional con portada, resumen semanal, detalle por día con ingredientes, recomendaciones y lista de la compra.", target: "pdf-btn", position: "bottom" },
-      { id: "d3-7", title: "Compartir", description: "Genera un enlace único para que tu paciente vea su plan sin necesidad de cuenta. Perfecto para enviar por WhatsApp o email.", target: "share-btn", position: "bottom" },
+      { id: "d3-1", route: "/tour-demo-dieta" },
+      { id: "d3-2", target: "plan-actions", position: "bottom" },
+      { id: "d3-3", target: "plan-macros", position: "bottom" },
+      { id: "d3-4", target: "plan-editor", position: "top" },
+      { id: "d3-5", target: "ia-btn", position: "bottom" },
+      { id: "d3-6", target: "pdf-btn", position: "bottom" },
+      { id: "d3-7", target: "share-btn", position: "bottom" },
     ],
   },
   {
-    id: "dietista-ia",
-    name: "Generar Dieta con IA",
-    description: "Aprende a usar la inteligencia artificial para crear planes automáticos",
-    icon: "Sparkles",
-    audience: "dietista",
+    id: "dietista-ia", dataKey: "dietistaIA", icon: "Sparkles", audience: "dietista",
     steps: [
-      { id: "dia-1", title: "Panel de generación IA", description: "Aquí configuras todos los parámetros antes de que la IA genere un plan semanal completo. Vamos a ver cada sección.", route: "/tour-demo-ia", target: "ia-config", position: "right" },
-      { id: "dia-2", title: "Fase nutricional", description: "Selecciona la fase del paciente: déficit (perder grasa), mantenimiento, volumen (ganar masa), definición o reverse diet. Los macros se ajustan automáticamente.", target: "ia-fase", position: "bottom" },
-      { id: "dia-3", title: "Tipo de dieta", description: "Elige el estilo: mediterránea, baja en carbohidratos, alta en proteínas, vegetariana, vegana, cetogénica, sin gluten o antiinflamatoria.", target: "ia-tipo-dieta", position: "bottom" },
-      { id: "dia-4", title: "Macros diarios", description: "Los objetivos de calorías, proteínas, carbohidratos y grasas. Se ajustan automáticamente al seleccionar una fase, pero puedes modificarlos manualmente.", target: "ia-macros", position: "bottom" },
-      { id: "dia-5", title: "Preferencias rápidas", description: "Marca checkboxes para indicar si quieres recetas fáciles, aptas para batch cooking, económicas o muy variadas.", target: "ia-preferencias", position: "bottom" },
-      { id: "dia-6", title: "Datos del paciente", description: "La IA usa los datos del paciente automáticamente: alergias, intolerancias, preferencias y objetivo. Por eso es importante tener la ficha completa.", target: "ia-paciente-info", position: "left" },
-      { id: "dia-7", title: "Instrucciones adicionales", description: "Escribe instrucciones libres: 'rico en pescado', 'evitar lácteos en la cena', 'desayuno siempre con avena'... La IA las seguirá con prioridad máxima.", target: "ia-instrucciones", position: "left" },
-      { id: "dia-8", title: "Generar", description: "Pulsa este botón y la IA generará un plan semanal completo en 1-2 minutos. Podrás revisar el resultado y aceptarlo o descartarlo.", target: "ia-generar-btn", position: "top" },
+      { id: "dia-1", route: "/tour-demo-ia", target: "ia-config", position: "right" },
+      { id: "dia-2", target: "ia-fase", position: "bottom" },
+      { id: "dia-3", target: "ia-tipo-dieta", position: "bottom" },
+      { id: "dia-4", target: "ia-macros", position: "bottom" },
+      { id: "dia-5", target: "ia-preferencias", position: "bottom" },
+      { id: "dia-6", target: "ia-paciente-info", position: "left" },
+      { id: "dia-7", target: "ia-instrucciones", position: "left" },
+      { id: "dia-8", target: "ia-generar-btn", position: "top" },
     ],
   },
   {
-    id: "dietista-alimentos",
-    name: "Base de Alimentos",
-    description: "Gestiona tu base de datos nutricional con filtros avanzados",
-    icon: "Apple",
-    audience: "dietista",
+    id: "dietista-alimentos", dataKey: "dietistaAlimentos", icon: "Apple", audience: "dietista",
     steps: [
-      { id: "d4-1", title: "Tu base de datos", description: "Más de 2600 alimentos con información nutricional detallada. Filtra por categoría, macros y origen.", route: "/alimentos", target: "food-list", position: "bottom" },
-      { id: "d4-2", title: "Filtros avanzados", description: "Busca alimentos por rango de calorías, proteínas, carbohidratos y grasas. Ideal para encontrar el ingrediente perfecto.", target: "food-filters", position: "bottom" },
-      { id: "d4-3", title: "Importar alimentos", description: "Importa desde Open Food Facts: busca cualquier producto y añádelo a tu base de datos con un clic.", target: "import-btn", position: "bottom" },
+      { id: "d4-1", route: "/alimentos", target: "food-list", position: "bottom" },
+      { id: "d4-2", target: "food-filters", position: "bottom" },
+      { id: "d4-3", target: "import-btn", position: "bottom" },
     ],
   },
   {
-    id: "dietista-agenda",
-    name: "Agenda y Citas",
-    description: "Gestiona tu calendario de consultas con todas sus funcionalidades",
-    icon: "CalendarDays",
-    audience: "dietista",
+    id: "dietista-agenda", dataKey: "dietistaAgenda", icon: "CalendarDays", audience: "dietista",
     steps: [
-      { id: "d5-1", title: "Tu agenda", description: "Aquí gestionas todas tus citas. Vamos a ver cada parte del calendario.", route: "/tour-demo-agenda" },
-      { id: "d5-2", title: "Nueva cita", description: "Pulsa aquí para programar una nueva cita: selecciona paciente, fecha, hora, duración (15-90 min) y motivo.", target: "agenda-nueva-cita", position: "bottom" },
-      { id: "d5-3", title: "Controles de navegación", description: "Navega entre semanas o meses con las flechas. El botón 'Hoy' te lleva al día actual. También ves el rango de fechas.", target: "agenda-controles", position: "bottom" },
-      { id: "d5-4", title: "Vista Semana / Mes", description: "Alterna entre vista semanal (detallada, ve cada cita) y mensual (calendario con puntos). La vista semanal es la más usada.", target: "agenda-vistas", position: "bottom" },
-      { id: "d5-5", title: "Vista semanal", description: "Cada columna es un día. El día actual se resalta en verde. Las citas muestran hora, paciente, duración y motivo con colores según su estado.", target: "agenda-semana", position: "top" },
-      { id: "d5-6", title: "Detalle del día", description: "Al hacer clic en un día se abre el detalle con todas las citas expandidas. El día actual se abre automáticamente al entrar a la agenda.", target: "agenda-detalle-dia", position: "top" },
-      { id: "d5-7", title: "Estado de la cita", description: "Cada cita tiene un estado con color: Azul = Confirmada, Ámbar = Pendiente, Verde = Completada, Gris = Cancelada.", target: "agenda-estado-cita", position: "left" },
-      { id: "d5-8", title: "Acciones de la cita", description: "Desde aquí puedes: marcar como completada, exportar a Google Calendar para sincronizarla, o eliminar la cita.", target: "agenda-acciones-cita", position: "top" },
+      { id: "d5-1", route: "/tour-demo-agenda" },
+      { id: "d5-2", target: "agenda-nueva-cita", position: "bottom" },
+      { id: "d5-3", target: "agenda-controles", position: "bottom" },
+      { id: "d5-4", target: "agenda-vistas", position: "bottom" },
+      { id: "d5-5", target: "agenda-semana", position: "top" },
+      { id: "d5-6", target: "agenda-detalle-dia", position: "top" },
+      { id: "d5-7", target: "agenda-estado-cita", position: "left" },
+      { id: "d5-8", target: "agenda-acciones-cita", position: "top" },
     ],
   },
   {
-    id: "dietista-reportes",
-    name: "Reportes y PDF",
-    description: "Estadísticas de tu consulta y exportación de informes",
-    icon: "FileBarChart",
-    audience: "dietista",
+    id: "dietista-reportes", dataKey: "dietistaReportes", icon: "FileBarChart", audience: "dietista",
     steps: [
-      { id: "d6-1", title: "Estadísticas", description: "Métricas de tu consulta: tasa de retención, media de consultas por paciente, planes creados y pacientes con portal.", route: "/reportes", target: "reports-kpis", position: "bottom" },
-      { id: "d6-2", title: "Informes por paciente", description: "Selecciona un paciente para generar informes PDF con su ficha, evolución, consultas y plan dietético.", target: "patient-reports", position: "top" },
+      { id: "d6-1", route: "/reportes", target: "reports-kpis", position: "bottom" },
+      { id: "d6-2", target: "patient-reports", position: "top" },
     ],
   },
 ];
 
 // ─── TOURS PACIENTE ───
 
-const PACIENTE_TOURS: Tour[] = [
+const PACIENTE_TOUR_DEFS: TourDef[] = [
   {
-    id: "paciente-dashboard",
-    name: "Bienvenida al Portal",
-    description: "Conoce tu portal de nutrición personalizado",
-    icon: "LayoutDashboard",
-    audience: "paciente",
+    id: "paciente-dashboard", dataKey: "pacienteDashboard", icon: "LayoutDashboard", audience: "paciente",
     steps: [
-      { id: "p1-1", title: "Tu menú", description: "Desde el sidebar accedes a todas las secciones: dieta, diario, evolución, recomendaciones y más.", target: "sidebar", route: "/paciente/portal", position: "right" },
-      { id: "p1-2", title: "Tu día de hoy", description: "Aquí ves tu progreso del día: comidas registradas, agua y ejercicio. Pulsa para registrar tu seguimiento diario.", target: "portal-hoy-card", position: "bottom" },
-      { id: "p1-3", title: "Tu progreso", description: "Peso, IMC y porcentaje de grasa con la variación respecto a la semana anterior.", target: "portal-progreso-card", position: "top" },
+      { id: "p1-1", target: "sidebar", route: "/paciente/portal", position: "right" },
+      { id: "p1-2", target: "portal-hoy-card", position: "bottom" },
+      { id: "p1-3", target: "portal-progreso-card", position: "top" },
     ],
   },
   {
-    id: "paciente-dieta",
-    name: "Tu Dieta",
-    description: "Aprende a consultar tu plan alimenticio semanal",
-    icon: "UtensilsCrossed",
-    audience: "paciente",
+    id: "paciente-dieta", dataKey: "pacienteDieta", icon: "UtensilsCrossed", audience: "paciente",
     steps: [
-      { id: "p2-1", title: "Tu plan semanal", description: "Aquí ves tu dieta completa: 7 días con todas las comidas, ingredientes y cantidades.", route: "/paciente/portal/dieta", target: "diet-plan", position: "bottom" },
-      { id: "p2-2", title: "Lista de la compra", description: "Genera automáticamente tu lista de la compra a partir de los ingredientes de tu plan semanal.", target: "shopping-list-link", position: "bottom" },
+      { id: "p2-1", route: "/paciente/portal/dieta", target: "diet-plan", position: "bottom" },
+      { id: "p2-2", target: "shopping-list-link", position: "bottom" },
     ],
   },
   {
-    id: "paciente-evolucion",
-    name: "Tu Evolución",
-    description: "Visualiza tu progreso con gráficas",
-    icon: "TrendingUp",
-    audience: "paciente",
+    id: "paciente-evolucion", dataKey: "pacienteEvolucion", icon: "TrendingUp", audience: "paciente",
     steps: [
-      { id: "p4-1", title: "Gráficas de progreso", description: "Aquí ves tu evolución: peso, IMC, porcentaje de grasa y perímetros a lo largo del tiempo.", route: "/paciente/portal/evolucion", target: "evolution-charts", position: "bottom" },
+      { id: "p4-1", route: "/paciente/portal/evolucion", target: "evolution-charts", position: "bottom" },
     ],
   },
 ];
 
-// ─── Funciones de acceso ───
+// ─── Resolve tours using translations ───
 
-export function getToursByAudience(audience: "dietista" | "paciente"): Tour[] {
-  return audience === "dietista" ? DIETISTA_TOURS : PACIENTE_TOURS;
+function resolveTour(def: TourDef, t?: TFunc): Tour {
+  const prefix = `settings.tours.data.${def.dataKey}`;
+  const tt = t ?? ((key: string) => key.split(".").pop() ?? key);
+  return {
+    id: def.id,
+    name: tt(`${prefix}.name`),
+    description: tt(`${prefix}.description`),
+    icon: def.icon,
+    audience: def.audience,
+    steps: def.steps.map((s) => ({
+      id: s.id,
+      title: tt(`${prefix}.steps.${s.id}.title`),
+      description: tt(`${prefix}.steps.${s.id}.description`),
+      target: s.target,
+      route: s.route,
+      position: s.position,
+    })),
+  };
 }
 
-export function getTourById(id: string): Tour | undefined {
-  return [...DIETISTA_TOURS, ...PACIENTE_TOURS].find((t) => t.id === id);
+// ─── Funciones de acceso ───
+
+export function getToursByAudience(audience: "dietista" | "paciente", t?: TFunc): Tour[] {
+  const defs = audience === "dietista" ? DIETISTA_TOUR_DEFS : PACIENTE_TOUR_DEFS;
+  return defs.map((d) => resolveTour(d, t));
+}
+
+export function getTourById(id: string, t?: TFunc): Tour | undefined {
+  const all = [...DIETISTA_TOUR_DEFS, ...PACIENTE_TOUR_DEFS];
+  const def = all.find((d) => d.id === id);
+  return def ? resolveTour(def, t) : undefined;
 }

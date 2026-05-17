@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Droplets, Circle, Diamond, Flame, Carrot, ListChecks } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { calcularMacrosPorcion, convertirAGramos } from "@/lib/macros";
@@ -43,6 +44,7 @@ function parseInstrucciones(text: string): string[] {
 }
 
 export function IngredientesLista({ ingredientes, porciones, instrucciones }: Props) {
+  const t = useTranslations("recipes.ingredientes");
   const searchParams = useSearchParams();
   const urlPorcionesRaw = searchParams.get("porciones");
   const urlPorcionesNum = urlPorcionesRaw ? Number(urlPorcionesRaw) : NaN;
@@ -59,20 +61,20 @@ export function IngredientesLista({ ingredientes, porciones, instrucciones }: Pr
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-xl font-semibold flex items-center gap-2">
               <Carrot className="w-5 h-5 text-primary" />
-              Ingredientes
+              {t("titulo")}
               <span className="text-muted-foreground font-normal text-sm">
                 ({ingredientes.length})
               </span>
             </h2>
             <span className="text-xs text-muted-foreground">
-              {Math.round(totalPeso)} g totales
-              {displayPorciones > 1 ? ` · ${Math.round(totalPeso / displayPorciones)} g / porción` : ""}
+              {t("gTotales", { peso: Math.round(totalPeso) })}
+              {displayPorciones > 1 ? ` · ${t("gPorPorcion", { peso: Math.round(totalPeso / displayPorciones) })}` : ""}
             </span>
           </div>
 
           {ingredientes.length === 0 ? (
             <p className="text-sm text-muted-foreground italic">
-              Esta receta no tiene ingredientes.
+              {t("sinIngredientes")}
             </p>
           ) : (
             <div className="divide-y divide-border/50">
@@ -96,7 +98,7 @@ export function IngredientesLista({ ingredientes, porciones, instrucciones }: Pr
                       <p className="text-xs text-muted-foreground">
                         {formatQuantity(scaledCantidad, ing.unidad || "GRAMOS")}
                         {displayPorciones > 1
-                          ? ` · ${Math.round(gramos / displayPorciones)} g / porción`
+                          ? ` · ${t("gPorPorcion", { peso: Math.round(gramos / displayPorciones) })}`
                           : ""}
                       </p>
                     </div>
@@ -144,17 +146,17 @@ export function IngredientesLista({ ingredientes, porciones, instrucciones }: Pr
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-xl font-semibold flex items-center gap-2">
               <ListChecks className="w-5 h-5 text-primary" />
-              Instrucciones
+              {t("instrucciones")}
             </h2>
             {pasos.length > 0 && (
               <span className="text-xs text-muted-foreground">
-                {pasos.length} paso{pasos.length !== 1 ? "s" : ""}
+                {pasos.length !== 1 ? t("pasoCountPlural", { count: pasos.length }) : t("pasoCount", { count: pasos.length })}
               </span>
             )}
           </div>
           {pasos.length === 0 ? (
             <p className="text-sm text-muted-foreground italic">
-              Esta receta todavía no tiene instrucciones.
+              {t("sinInstrucciones")}
             </p>
           ) : (
             <ol className="space-y-3">

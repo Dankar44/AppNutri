@@ -2,6 +2,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
+import { getLocale } from "@/i18n/locale";
+import { intlTag } from "@/i18n/config";
 
 export async function getMetricasDashboard() {
   const dietista = await getCurrentDietista();
@@ -60,6 +62,9 @@ export async function getActividadMensual() {
   const dietista = await getCurrentDietista();
   if (!dietista) return [];
 
+  const locale = await getLocale();
+  const tag = intlTag(locale);
+
   // Calcular rango de 6 meses
   const ahora = new Date();
   const inicio6Meses = new Date(ahora.getFullYear(), ahora.getMonth() - 5, 1);
@@ -87,7 +92,7 @@ export async function getActividadMensual() {
   for (let i = 5; i >= 0; i--) {
     const d = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
     const fin = new Date(d.getFullYear(), d.getMonth() + 1, 1);
-    const label = d.toLocaleDateString("es-ES", { month: "short", year: "2-digit" });
+    const label = d.toLocaleDateString(tag, { month: "short", year: "2-digit" });
 
     const consultasMes = consultas.filter((c) => {
       const f = new Date(c.fecha);

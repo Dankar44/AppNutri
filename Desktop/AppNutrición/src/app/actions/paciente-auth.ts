@@ -12,28 +12,30 @@ import {
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { validateEmail, sanitizeString } from "@/lib/validation";
+import { getTranslations } from "next-intl/server";
 
 export async function crearAccesoPaciente(
   pacienteId: string,
   email: string,
   pin: string
 ) {
+  const t = await getTranslations("validation");
   // Validar y sanitizar inputs
   const emailValidado = validateEmail(email);
-  if (!emailValidado) throw new Error("Email no válido");
+  if (!emailValidado) throw new Error(t("auth.emailNoValido"));
   email = emailValidado;
 
   pin = sanitizeString(pin, 8);
-  if (!/^\d{4,8}$/.test(pin)) throw new Error("El PIN debe tener entre 4 y 8 dígitos");
+  if (!/^\d{4,8}$/.test(pin)) throw new Error(t("pacienteAuth.pinFormatoInvalido"));
 
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const paciente = await prisma.paciente.findFirst({
     where: { id: pacienteId, dietistaId: dietista.id },
   });
-  if (!paciente) throw new Error("Paciente no encontrado");
+  if (!paciente) throw new Error(t("paciente.pacienteNoEncontrado"));
 
   const pinHashVal = await hashPin(pin);
 
@@ -47,8 +49,9 @@ export async function crearAccesoPaciente(
 }
 
 export async function loginPaciente(email: string, credencial: string): Promise<{ error?: string }> {
+  const t = await getTranslations("validation");
   const emailValidado = validateEmail(email);
-  if (!emailValidado) return { error: "Email no válido" };
+  if (!emailValidado) return { error: t("auth.emailNoValido") };
   email = emailValidado;
   credencial = sanitizeString(credencial, 128);
 
@@ -56,7 +59,7 @@ export async function loginPaciente(email: string, credencial: string): Promise<
     where: { email, activo: true },
   });
 
-  if (!acceso) return { error: "Email no encontrado o cuenta inactiva" };
+  if (!acceso) return { error: t("auth.emailNoEncontrado") };
 
   // Intentar con contraseña primero, luego con PIN
   let valid = false;
@@ -66,7 +69,7 @@ export async function loginPaciente(email: string, credencial: string): Promise<
   if (!valid) {
     valid = await verifyPin(credencial, acceso.pinHash);
   }
-  if (!valid) return { error: "Contraseña o PIN incorrectos" };
+  if (!valid) return { error: t("auth.contrasenaOPinIncorrectos") };
 
   await createPatientSession(acceso.pacienteId, email);
 
@@ -84,10 +87,11 @@ export async function loginPaciente(email: string, credencial: string): Promise<
 }
 
 export async function completarPerfilPaciente(password: string, fotoUrl?: string) {
+  const t = await getTranslations("validation");
   const session = await getCurrentPaciente();
-  if (!session) throw new Error("No autorizado");
+  if (!session) throw new Error(t("auth.noAutorizado"));
 
-  if (password.length < 6) throw new Error("La contraseña debe tener al menos 6 caracteres");
+  if (password.length < 6) throw new Error(t("pacienteAuth.contrasenaMinima"));
 
   const passwordHash = await hashPin(password);
 
@@ -107,8 +111,9 @@ export async function completarPerfilPaciente(password: string, fotoUrl?: string
 }
 
 export async function actualizarFotoPaciente(fotoUrl: string) {
+  const t = await getTranslations("validation");
   const session = await getCurrentPaciente();
-  if (!session) throw new Error("No autorizado");
+  if (!session) throw new Error(t("auth.noAutorizado"));
 
   await prisma.paciente.update({
     where: { id: session.pacienteId },
@@ -131,8 +136,9 @@ export async function getPerfilCompleto() {
 }
 
 export async function actualizarPerfilPaciente(data: { nombre?: string; apellidos?: string; telefono?: string }) {
+  const t = await getTranslations("validation");
   const session = await getCurrentPaciente();
-  if (!session) throw new Error("No autorizado");
+  if (!session) throw new Error(t("auth.noAutorizado"));
 
   const updateData: Record<string, string | null> = {};
   if (data.nombre?.trim()) updateData.nombre = data.nombre.trim().slice(0, 100);
@@ -151,19 +157,20 @@ export async function actualizarPerfilPaciente(data: { nombre?: string; apellido
 }
 
 export async function cambiarPasswordPaciente(passwordActual: string, passwordNueva: string) {
+  const t = await getTranslations("validation");
   const session = await getCurrentPaciente();
-  if (!session) throw new Error("No autorizado");
+  if (!session) throw new Error(t("auth.noAutorizado"));
 
-  if (passwordNueva.length < 6) throw new Error("La nueva contraseña debe tener al menos 6 caracteres");
+  if (passwordNueva.length < 6) throw new Error(t("pacienteAuth.nuevaContrasenaMinima"));
 
   const acceso = await prisma.accesoPaciente.findUnique({
     where: { pacienteId: session.pacienteId },
   });
-  if (!acceso) throw new Error("Acceso no encontrado");
+  if (!acceso) throw new Error(t("pacienteAuth.accesoNoEncontrado"));
 
   // Verificar contraseña actual
   const valid = await verifyPin(passwordActual, acceso.passwordHash || acceso.pinHash);
-  if (!valid) throw new Error("La contraseña actual es incorrecta");
+  if (!valid) throw new Error(t("pacienteAuth.contrasenaActualIncorrecta"));
 
   const newHash = await hashPin(passwordNueva);
   await prisma.accesoPaciente.update({
@@ -202,8 +209,9 @@ export async function getHorarioPacientePortal(): Promise<HorarioEntry[]> {
 }
 
 export async function guardarHorarioPacientePortal(horario: HorarioEntry[]) {
+  const t = await getTranslations("validation");
   const session = await getCurrentPaciente();
-  if (!session) throw new Error("No autorizado");
+  if (!session) throw new Error(t("auth.noAutorizado"));
 
   await prisma.$queryRawUnsafe(
     `UPDATE pacientes SET horario = $1::jsonb WHERE id = $2`,

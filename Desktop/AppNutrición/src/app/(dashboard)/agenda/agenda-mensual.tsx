@@ -1,5 +1,8 @@
 "use client";
 
+import { useLocale } from "next-intl";
+import { intlTag, type Locale } from "@/i18n/config";
+
 const DIA_LABELS_CORTO = ["L", "M", "X", "J", "V", "S", "D"];
 
 interface Cita {
@@ -32,6 +35,7 @@ const ESTADO_DOT: Record<string, string> = {
 };
 
 export function AgendaMensual({ citas, anio, mes, diaSeleccionado, onSelectDia }: Props) {
+  const tag = intlTag(useLocale() as Locale);
   const hoyStr = formatLocalDate(new Date());
 
   // Generar grid del calendario
@@ -193,7 +197,7 @@ export function AgendaMensual({ citas, anio, mes, diaSeleccionado, onSelectDia }
                   >
                     <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${ESTADO_DOT[cita.estado] || ESTADO_DOT.PENDIENTE}`} />
                     <span className="truncate">
-                      {new Date(cita.fechaHora).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}{" "}
+                      {new Date(cita.fechaHora).toLocaleTimeString(tag, { hour: "2-digit", minute: "2-digit" })}{" "}
                       {cita.paciente.nombre}
                     </span>
                   </div>

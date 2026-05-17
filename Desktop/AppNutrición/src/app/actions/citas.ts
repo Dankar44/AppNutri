@@ -11,6 +11,7 @@ import {
   LIMITS,
 } from "@/lib/validation";
 import { syncCitaAmbos, unsyncCitaAntesDeBorrar } from "@/lib/google-sync";
+import { getTranslations } from "next-intl/server";
 
 export interface CitaFormData {
   pacienteId: string;
@@ -27,12 +28,13 @@ export interface CitaFormData {
 }
 
 export async function crearCita(data: CitaFormData) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const fechaHora = validateDate(data.fechaHora);
-  if (!fechaHora) throw new Error("Fecha y hora inválidas");
+  if (!fechaHora) throw new Error(t("cita.fechaHoraInvalidas"));
   const duracion = validateNumber(data.duracion || 30, LIMITS.DURACION_MIN, LIMITS.DURACION_MAX);
   const motivo = sanitizeStringOptional(data.motivo, LIMITS.MOTIVO);
   const notas = sanitizeStringOptional(data.notas, LIMITS.NOTAS);
@@ -43,7 +45,7 @@ export async function crearCita(data: CitaFormData) {
     where: { id: data.pacienteId, dietistaId: dietista.id },
     select: { id: true, nombre: true, apellidos: true },
   });
-  if (!paciente) throw new Error("Paciente no encontrado");
+  if (!paciente) throw new Error(t("paciente.pacienteNoEncontrado"));
 
   const cita = await prisma.cita.create({
     data: {
@@ -66,17 +68,17 @@ export async function crearCita(data: CitaFormData) {
 
   // Si es una propuesta al paciente, notificar
   if (modo === "proponer") {
-    const dias = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
-    const meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
-    const d = fechaHora;
-    const textoFecha = `${dias[d.getDay()]} ${d.getDate()} de ${meses[d.getMonth()]} a las ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+    const textoFecha = await formatFechaHoraIntl(fechaHora);
     await prisma.notificacion.create({
       data: {
         pacienteId: paciente.id,
         citaId: cita.id,
         tipo: "CITA_SOLICITADA",
-        titulo: "Tu nutricionista te ha propuesto una cita",
-        mensaje: `${dietista.nombre} ${dietista.apellidos} propone una cita para el ${textoFecha}`,
+        titulo: t("notificaciones.titulos.nutricionistaPropone"),
+        mensaje: t("notificaciones.mensajes.proponeCita", { nombreDietista: `${dietista.nombre} ${dietista.apellidos}`, fecha: textoFecha }),
+        tituloKey: "notificaciones.titulos.nutricionistaPropone",
+        mensajeKey: "notificaciones.mensajes.proponeCita",
+        params: { nombreDietista: `${dietista.nombre} ${dietista.apellidos}`, fecha: textoFecha },
         enlace: "/paciente/portal/citas",
       },
     });
@@ -88,8 +90,9 @@ export async function crearCita(data: CitaFormData) {
 }
 
 export async function actualizarEstadoCita(id: string, estado: EstadoCita) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   await prisma.cita.update({
@@ -102,8 +105,9 @@ export async function actualizarEstadoCita(id: string, estado: EstadoCita) {
 }
 
 export async function eliminarCita(id: string) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   await unsyncCitaAntesDeBorrar(id);
@@ -285,4 +289,16 @@ export async function getPacienteContextoCita(pacienteId: string) {
   ]);
 
   return { paciente, proximaCita, ultimaCita, planActivo, ultimaMedida };
+}
+
+async function formatFechaHoraIntl(d: Date): Promise<string> {
+  const locale = await import("@/i18n/locale").then((m) => m.getLocale());
+  const tag = locale === "pt" ? "pt-BR" : "es-ES";
+  return d.toLocaleString(tag, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }

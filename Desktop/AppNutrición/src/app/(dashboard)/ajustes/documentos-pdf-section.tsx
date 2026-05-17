@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { TemaPdfForm } from "./tema-pdf-form";
 import { LogoPdfForm } from "./logo-pdf-form";
 import { PdfPreview } from "./pdf-preview";
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export function DocumentosPdfSection({ temaPdf, colorPrimarioPdf, pdfLogoUrl, marcaPdf }: Props) {
+  const t = useTranslations("settings");
   const [theme, setTheme] = useState<PdfColorTheme>(() => getTheme(temaPdf, colorPrimarioPdf));
   const [brandName, setBrandName] = useState(marcaPdf || "Annonia");
   const [logoUrl, setLogoUrl] = useState<string | null>(pdfLogoUrl);
@@ -41,7 +43,7 @@ export function DocumentosPdfSection({ temaPdf, colorPrimarioPdf, pdfLogoUrl, ma
       </div>
 
       <div className="flex flex-col items-center gap-2">
-        <p className="text-xs text-muted-foreground font-medium">Vista previa</p>
+        <p className="text-xs text-muted-foreground font-medium">{t("documentosPdf.vistaPrevia")}</p>
         <PdfPreview theme={theme} brandName={brandName} logoUrl={logoUrl} />
       </div>
     </div>

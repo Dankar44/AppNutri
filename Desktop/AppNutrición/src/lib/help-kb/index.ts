@@ -1,5 +1,5 @@
-import type { HelpEntry } from "./types";
-export type { HelpEntry } from "./types";
+import type { HelpEntry, HelpEntrySkeleton } from "./types";
+export type { HelpEntry, HelpEntrySkeleton } from "./types";
 
 import { GENERAL_ENTRIES } from "./sections/general";
 import { DASHBOARD_ENTRIES } from "./sections/dashboard";
@@ -45,7 +45,8 @@ import { PORTAL_SEGUIMIENTO_ENTRIES } from "./sections/portal-seguimiento";
 import { PORTAL_PERFIL_ENTRIES } from "./sections/portal-perfil";
 import { PORTAL_ENTREGABLES_ENTRIES } from "./sections/portal-entregables";
 
-export const HELP_ENTRIES: HelpEntry[] = [
+/** Todos los esqueletos (sin textos traducibles). */
+const ALL_SKELETONS: HelpEntrySkeleton[] = [
   ...GENERAL_ENTRIES,
   ...DASHBOARD_ENTRIES,
   ...PACIENTES_ENTRIES,
@@ -92,11 +93,39 @@ export const HELP_ENTRIES: HelpEntry[] = [
 ];
 
 /**
- * Devuelve la clave de sección a partir de la URL actual.
- * Las rutas más específicas deben estar ANTES que las más generales.
+ * Tipo del traductor que espera `buildHelpEntries`.
+ * Compatible con `useTranslations("help")` de next-intl.
+ */
+export type HelpTranslator = (key: string) => string;
+
+/**
+ * Construye las entradas completas inyectando question, answer y keywords
+ * desde las traducciones (namespace "help").
+ *
+ * Cada ID (p.ej. "gen-1") se busca en el JSON de traducción como:
+ *   help["gen-1"].question / .answer / .keywords
+ */
+export function buildHelpEntries(t: HelpTranslator): HelpEntry[] {
+  return ALL_SKELETONS.map((sk) => {
+    const question = t(`${sk.id}.question`);
+    const answer = t(`${sk.id}.answer`);
+    const kw = t(`${sk.id}.keywords`);
+    const keywords = kw ? kw.split(",").map((k) => k.trim()).filter(Boolean) : [];
+    return {
+      ...sk,
+      question,
+      answer,
+      keywords,
+    };
+  });
+}
+
+/**
+ * Devuelve la clave de seccion a partir de la URL actual.
+ * Las rutas mas especificas deben estar ANTES que las mas generales.
  */
 export function getSection(pathname: string): string {
-  // ─── Paciente portal ───
+  // --- Paciente portal ---
   if (pathname.startsWith("/paciente/portal/citas")) return "portal-citas";
   if (pathname.startsWith("/paciente/portal/seguimiento/horario")) return "portal-horario";
   if (pathname.startsWith("/paciente/portal/seguimiento")) return "portal-seguimiento";
@@ -105,7 +134,7 @@ export function getSection(pathname: string): string {
   if (pathname === "/paciente/portal" || pathname === "/paciente/portal/") return "portal-dashboard";
   if (pathname.startsWith("/paciente/portal")) return "portal-general";
 
-  // ─── Nutricionista ───
+  // --- Nutricionista ---
   if (pathname === "/dashboard" || pathname === "/dashboard/") return "dashboard";
 
   if (pathname === "/pacientes" || pathname === "/pacientes/nuevo") return "pacientes";
@@ -114,7 +143,6 @@ export function getSection(pathname: string): string {
   if (/^\/pacientes\/[^/]+\/portal/.test(pathname)) return "paciente-portal-config";
   if (/^\/pacientes\/[^/]+\/seguimiento/.test(pathname)) return "paciente-seguimiento";
   if (/^\/pacientes\/[^/]+(\?|$)/.test(pathname)) {
-    // la pestaña viaja en query, pero por defecto va a paciente-detalle
     return "paciente-detalle";
   }
   if (/^\/pacientes\/[^/]+/.test(pathname)) return "paciente-detalle";
@@ -145,21 +173,21 @@ export function getSection(pathname: string): string {
   return "general";
 }
 
-export function getEntriesForSection(section: string): HelpEntry[] {
-  const sectionEntries = HELP_ENTRIES.filter((e) => e.section === section);
+export function getEntriesForSection(entries: HelpEntry[], section: string): HelpEntry[] {
+  const sectionEntries = entries.filter((e) => e.section === section);
   const fallbackSection = section.startsWith("portal-") ? "portal-general" : "general";
-  const fallbackEntries = HELP_ENTRIES.filter((e) => e.section === fallbackSection);
+  const fallbackEntries = entries.filter((e) => e.section === fallbackSection);
   const ids = new Set(sectionEntries.map((e) => e.id));
   return [...sectionEntries, ...fallbackEntries.filter((e) => !ids.has(e.id))];
 }
 
-export function getEntryById(id: string): HelpEntry | undefined {
-  return HELP_ENTRIES.find((e) => e.id === id);
+export function getEntryById(entries: HelpEntry[], id: string): HelpEntry | undefined {
+  return entries.find((e) => e.id === id);
 }
 
-export function getRelatedEntries(entry: HelpEntry): HelpEntry[] {
+export function getRelatedEntries(entries: HelpEntry[], entry: HelpEntry): HelpEntry[] {
   return entry.related
-    .map((id) => HELP_ENTRIES.find((e) => e.id === id))
+    .map((id) => entries.find((e) => e.id === id))
     .filter(Boolean) as HelpEntry[];
 }
 
@@ -167,16 +195,16 @@ function normalize(text: string): string {
   return text
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+    .replace(/[̀-ͯ]/g, "");
 }
 
-export function searchHelp(query: string): HelpEntry[] {
+export function searchHelp(entries: HelpEntry[], query: string): HelpEntry[] {
   const q = normalize(query.trim());
   if (!q || q.length < 2) return [];
 
   const words = q.split(/\s+/);
 
-  return HELP_ENTRIES.map((entry) => {
+  return entries.map((entry) => {
     const questionNorm = normalize(entry.question);
     const answerNorm = normalize(entry.answer);
     const keywordsNorm = entry.keywords.map(normalize);

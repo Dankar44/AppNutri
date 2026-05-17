@@ -2,6 +2,7 @@
 
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "./theme-provider";
+import { useTranslations } from "next-intl";
 
 type Props = {
   /** "icon" = solo botón redondo. "inline" = botón con texto (para mobile menú). */
@@ -10,9 +11,10 @@ type Props = {
 };
 
 export function ThemeToggle({ variant = "icon", className }: Props) {
+  const t = useTranslations("common");
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === "dark";
-  const label = isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro";
+  const label = isDark ? t("theme.switchToLight") : t("theme.switchToDark");
 
   function handleClick(e: React.MouseEvent<HTMLButtonElement>) {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -56,7 +58,7 @@ export function ThemeToggle({ variant = "icon", className }: Props) {
             strokeWidth={1.75}
           />
         </span>
-        <span>{isDark ? "Modo claro" : "Modo oscuro"}</span>
+        <span>{isDark ? t("theme.lightMode") : t("theme.darkMode")}</span>
       </button>
     );
   }

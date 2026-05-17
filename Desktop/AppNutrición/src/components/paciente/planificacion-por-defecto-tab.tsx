@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
+import { useTranslations, useLocale } from "next-intl";
 import {
   Activity,
   Calendar,
@@ -90,11 +91,75 @@ function calcularIMC(pesoKg: number, alturaCm: number): number {
   return pesoKg / (hM * hM);
 }
 
-function categoriaIMC(imc: number): { label: string; color: string } {
-  if (imc < 18.5) return { label: "Delgadez", color: "bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400" };
-  if (imc < 25) return { label: "Eutrofia", color: "bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-400" };
-  if (imc < 30) return { label: "Sobrepeso", color: "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400" };
-  return { label: "Obesidad", color: "bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-400" };
+function categoriaIMC(imc: number): { labelKey: string; color: string } {
+  if (imc < 18.5) return { labelKey: "imcDelgadez", color: "bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400" };
+  if (imc < 25) return { labelKey: "imcEutrofia", color: "bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-400" };
+  if (imc < 30) return { labelKey: "imcSobrepeso", color: "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400" };
+  return { labelKey: "imcObesidad", color: "bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-400" };
+}
+
+/* ─── Formula ID constants ─── */
+
+const BMR_IDS = {
+  OMS: "oms",
+  HENRY: "henry",
+  HARRIS_BENEDICT: "harris_benedict",
+  HARRIS_BENEDICT_REV: "harris_benedict_rev",
+  MIFFLIN_ST_JEOR: "mifflin_st_jeor",
+  KATCH_MCARDLE: "katch_mcardle",
+  CUNNINGHAM: "cunningham",
+  BLACK: "black",
+  TEN_HAAF_PESO: "ten_haaf_peso",
+  TEN_HAAF_LBM: "ten_haaf_lbm",
+} as const;
+
+const EER_IDS = {
+  IOM_2005: "eer_iom_2005",
+  TMB_PAL: "tmb_pal",
+} as const;
+
+const GRASA_IDS = {
+  PETERSON: "peterson",
+  DURNIN_WOMERSLEY: "durnin_womersley",
+  JACKSON_3: "jackson_3",
+  JACKSON_7: "jackson_7",
+} as const;
+
+/** Map from legacy hardcoded Spanish names to stable formula IDs (for DB migration compat) */
+const LEGACY_BMR_MAP: Record<string, string> = {
+  "Ecuación de la OMS": BMR_IDS.OMS,
+  "Ecuación de Henry": BMR_IDS.HENRY,
+  "Ecuación de Harris Benedict": BMR_IDS.HARRIS_BENEDICT,
+  "Ecuación revisada de Harris Benedict": BMR_IDS.HARRIS_BENEDICT_REV,
+  "Ecuación de Mifflin St Jeor": BMR_IDS.MIFFLIN_ST_JEOR,
+  "Ecuación de Katch-McArdle": BMR_IDS.KATCH_MCARDLE,
+  "Ecuación de Cunningham": BMR_IDS.CUNNINGHAM,
+  "Ecuación de Black": BMR_IDS.BLACK,
+  "Ecuación de Ten Haaf (peso)": BMR_IDS.TEN_HAAF_PESO,
+  "Ecuación de Ten Haaf (masa magra)": BMR_IDS.TEN_HAAF_LBM,
+};
+
+const LEGACY_EER_MAP: Record<string, string> = {
+  "EER, IOM 2005": EER_IDS.IOM_2005,
+  "TMB x PAL": EER_IDS.TMB_PAL,
+};
+
+const LEGACY_GRASA_MAP: Record<string, string> = {
+  "Ecuación de Peterson": GRASA_IDS.PETERSON,
+  "Ecuación de Durnin y Womersley": GRASA_IDS.DURNIN_WOMERSLEY,
+  "Ecuación de Jackson et al (3 Pliegues)": GRASA_IDS.JACKSON_3,
+  "Ecuación de Jackson et al (7 Pliegues)": GRASA_IDS.JACKSON_7,
+};
+
+/** Normalize a formula value: if it's a legacy Spanish name, convert to ID; otherwise keep as-is */
+function normalizeBmrId(raw: string): string {
+  return LEGACY_BMR_MAP[raw] ?? raw;
+}
+function normalizeEerId(raw: string): string {
+  return LEGACY_EER_MAP[raw] ?? raw;
+}
+function normalizeGrasaId(raw: string): string {
+  return LEGACY_GRASA_MAP[raw] ?? raw;
 }
 
 /* ─── BMR formulas ─── */
@@ -186,22 +251,23 @@ function calcularBMR_TenHaafLBM(pesoKg: number, grasaPct: number | null): number
   return kJ / 4.184;
 }
 
-// Dispatcher — elige la fórmula según el nombre
+// Dispatcher — elige la fórmula según el ID
 function calcularBMR(
-  formula: string, pesoKg: number, alturaCm: number, edad: number, sexo: string | null, grasaPct: number | null
+  formulaId: string, pesoKg: number, alturaCm: number, edad: number, sexo: string | null, grasaPct: number | null
 ): number | null {
-  switch (formula) {
-    case "Ecuación de la OMS":               return calcularBMR_OMS(pesoKg, edad, sexo);
-    case "Ecuación de Henry":                return calcularBMR_Henry(pesoKg, alturaCm, edad, sexo);
-    case "Ecuación de Harris Benedict":      return calcularBMR_HarrisBenedict(pesoKg, alturaCm, edad, sexo);
-    case "Ecuación revisada de Harris Benedict": return calcularBMR_HarrisBenedictRev(pesoKg, alturaCm, edad, sexo);
-    case "Ecuación de Mifflin St Jeor":      return calcularBMR_MifflinStJeor(pesoKg, alturaCm, edad, sexo);
-    case "Ecuación de Katch-McArdle":        return calcularBMR_KatchMcArdle(pesoKg, grasaPct);
-    case "Ecuación de Cunningham":           return calcularBMR_Cunningham(pesoKg, grasaPct);
-    case "Ecuación de Black":                return calcularBMR_Black(pesoKg, alturaCm, edad, sexo);
-    case "Ecuación de Ten Haaf (peso)":      return calcularBMR_TenHaafPeso(pesoKg, alturaCm, edad, sexo);
-    case "Ecuación de Ten Haaf (masa magra)": return calcularBMR_TenHaafLBM(pesoKg, grasaPct);
-    default:                                  return calcularBMR_OMS(pesoKg, edad, sexo);
+  const id = normalizeBmrId(formulaId);
+  switch (id) {
+    case BMR_IDS.OMS:                return calcularBMR_OMS(pesoKg, edad, sexo);
+    case BMR_IDS.HENRY:              return calcularBMR_Henry(pesoKg, alturaCm, edad, sexo);
+    case BMR_IDS.HARRIS_BENEDICT:    return calcularBMR_HarrisBenedict(pesoKg, alturaCm, edad, sexo);
+    case BMR_IDS.HARRIS_BENEDICT_REV: return calcularBMR_HarrisBenedictRev(pesoKg, alturaCm, edad, sexo);
+    case BMR_IDS.MIFFLIN_ST_JEOR:    return calcularBMR_MifflinStJeor(pesoKg, alturaCm, edad, sexo);
+    case BMR_IDS.KATCH_MCARDLE:      return calcularBMR_KatchMcArdle(pesoKg, grasaPct);
+    case BMR_IDS.CUNNINGHAM:         return calcularBMR_Cunningham(pesoKg, grasaPct);
+    case BMR_IDS.BLACK:              return calcularBMR_Black(pesoKg, alturaCm, edad, sexo);
+    case BMR_IDS.TEN_HAAF_PESO:      return calcularBMR_TenHaafPeso(pesoKg, alturaCm, edad, sexo);
+    case BMR_IDS.TEN_HAAF_LBM:       return calcularBMR_TenHaafLBM(pesoKg, grasaPct);
+    default:                          return calcularBMR_OMS(pesoKg, edad, sexo);
   }
 }
 
@@ -221,12 +287,13 @@ function calcularEER_IOM2005(
     : 354 - 6.91 * edad + pa * (9.36 * pesoKg + 726 * hM);
 }
 
-// Dispatcher — elige EER según nombre
+// Dispatcher — elige EER según ID
 function calcularEER(
-  formula: string, bmr: number | null, pal: number,
+  formulaId: string, bmr: number | null, pal: number,
   pesoKg: number, alturaCm: number, edad: number, sexo: string | null, paIom: number
 ): number | null {
-  if (formula === "TMB x PAL") return bmr != null ? bmr * pal : null;
+  const id = normalizeEerId(formulaId);
+  if (id === EER_IDS.TMB_PAL) return bmr != null ? bmr * pal : null;
   return calcularEER_IOM2005(pesoKg, alturaCm, edad, sexo, paIom);
 }
 
@@ -240,11 +307,12 @@ function fmt3(n: number): string {
   return (Math.round(n * 1000) / 1000).toFixed(3);
 }
 
-function formatMonthYearEs(dateStr: string | null | undefined): string {
+function formatMonthYear(dateStr: string | null | undefined, locale: string): string {
   if (!dateStr) return "—";
   const d = new Date(dateStr);
   if (Number.isNaN(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("es-ES", { month: "long", year: "numeric" }).format(d);
+  const localeMap: Record<string, string> = { es: "es-ES", pt: "pt-BR" };
+  return new Intl.DateTimeFormat(localeMap[locale] ?? locale, { month: "long", year: "numeric" }).format(d);
 }
 
 /* ─── Reference data for macro sources ─── */
@@ -256,54 +324,36 @@ type MacroRefSource = {
   proteinas: string;
 };
 
-const MACRO_REF_SOURCES: MacroRefSource[] = [
-  {
-    label: "Food and Nutrition Board / IOM",
-    lipidos: "20 - 35%",
-    carbohidratos: "45 - 65%",
-    proteinas: "10 - 35%",
-  },
-  {
-    label: "ANSES, 2016",
-    lipidos: "35 - 40%",
-    carbohidratos: "40 - 55%",
-    proteinas: "10 - 20%",
-  },
-  {
-    label: "SACN",
-    lipidos: "35%",
-    carbohidratos: "50%",
-    proteinas: "45 g/día",
-  },
-  {
-    label: "SINU, 2014",
-    lipidos: "20 - 35%",
-    carbohidratos: "45 - 65%",
-    proteinas: "54 g/día",
-  },
-  {
-    label: "NHMRC 2006",
-    lipidos: "20 - 35%",
-    carbohidratos: "45 - 65%",
-    proteinas: "46 g/día",
-  },
-];
-
 /* ─── Sub-components ─── */
+
+type FormulaItem = { id: string; label: string };
+type FormulaGroup = { title: string; items: FormulaItem[] };
 
 function FormulaSelect({
   value,
   groups,
   onChange,
+  searchPlaceholder,
+  noResults,
 }: {
   value: string;
-  groups: { title: string; items: string[] }[];
+  groups: FormulaGroup[];
   onChange: (next: string) => void;
+  searchPlaceholder?: string;
+  noResults?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const anchorRef = useRef<HTMLButtonElement | null>(null);
   const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
+
+  const selectedLabel = useMemo(() => {
+    for (const g of groups) {
+      const found = g.items.find((it) => it.id === value);
+      if (found) return found.label;
+    }
+    return value;
+  }, [groups, value]);
 
   useEffect(() => {
     if (!open) return;
@@ -346,7 +396,7 @@ function FormulaSelect({
     const q = query.trim().toLowerCase();
     if (!q) return groups;
     return groups
-      .map((g) => ({ ...g, items: g.items.filter((o) => o.toLowerCase().includes(q)) }))
+      .map((g) => ({ ...g, items: g.items.filter((it) => it.label.toLowerCase().includes(q)) }))
       .filter((g) => g.items.length > 0);
   }, [groups, query]);
 
@@ -358,7 +408,7 @@ function FormulaSelect({
         onClick={() => setOpen((o) => !o)}
         className="w-full inline-flex items-center justify-between gap-2 px-3 py-2 rounded-lg border border-border bg-background text-sm hover:bg-muted/60 transition-colors"
       >
-        <span className="truncate text-left">{value}</span>
+        <span className="truncate text-left">{selectedLabel}</span>
         <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
       </button>
 
@@ -375,14 +425,14 @@ function FormulaSelect({
                   <input
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Buscar fórmula..."
+                    placeholder={searchPlaceholder ?? ""}
                     className="w-full bg-transparent outline-none text-sm"
                   />
                 </div>
               </div>
               <div className="max-h-56 overflow-y-auto p-1">
                 {filtered.length === 0 ? (
-                  <div className="p-2 text-xs text-muted-foreground">Sin resultados</div>
+                  <div className="p-2 text-xs text-muted-foreground">{noResults ?? ""}</div>
                 ) : (
                   filtered.map((g) => (
                     <div key={g.title}>
@@ -393,17 +443,17 @@ function FormulaSelect({
                       )}
                       {g.items.map((opt) => (
                         <button
-                          key={opt}
+                          key={opt.id}
                           type="button"
                           onClick={() => {
-                            onChange(opt);
+                            onChange(opt.id);
                             setOpen(false);
                             setQuery("");
                           }}
                           className="w-full text-left px-3 py-2 rounded-lg hover:bg-muted/60 transition-colors flex items-center justify-between gap-2"
                         >
-                          <span className="text-sm">{opt}</span>
-                          {opt === value && <Check className="w-4 h-4 text-primary shrink-0" />}
+                          <span className="text-sm">{opt.label}</span>
+                          {opt.id === value && <Check className="w-4 h-4 text-primary shrink-0" />}
                         </button>
                       ))}
                     </div>
@@ -554,6 +604,9 @@ export function PlanificacionPorDefectoTab({
   planificaciones?: Planificacion[];
   pacienteId: string;
 }) {
+  const t = useTranslations("patients.planificacion");
+  const locale = useLocale();
+
   /* ─── Planificaciones state ─── */
   const [planificaciones, setPlanificaciones] = useState<Planificacion[]>(initialPlanificaciones);
   const [selectedPlanId, setSelectedPlanId] = useState<string>(
@@ -684,36 +737,36 @@ export function PlanificacionPorDefectoTab({
       setDeleteConfirmId(null);
     });
   }
-  /* --- Constants (unchanged) --- */
-  const FORMULAS_MASA_GRASA_GROUPS = [
+  /* --- Constants (using IDs + translated labels) --- */
+  const FORMULAS_MASA_GRASA_GROUPS: FormulaGroup[] = [
     {
-      title: "Cálculo Directo",
-      items: ["Ecuación de Peterson"],
+      title: t("formulaGrupoDirecto"),
+      items: [{ id: GRASA_IDS.PETERSON, label: t("ecuacionPeterson") }],
     },
     {
-      title: "Cálculo Indirecto mediante la Fórmula de Brozek",
+      title: t("formulaGrupoBrozek"),
       items: [
-        "Ecuación de Durnin y Womersley",
-        "Ecuación de Jackson et al (3 Pliegues)",
-        "Ecuación de Jackson et al (7 Pliegues)",
+        { id: GRASA_IDS.DURNIN_WOMERSLEY, label: t("ecuacionDurninWomersley") },
+        { id: GRASA_IDS.JACKSON_3, label: t("ecuacionJackson3") },
+        { id: GRASA_IDS.JACKSON_7, label: t("ecuacionJackson7") },
       ],
     },
     {
-      title: "Cálculo Indirecto mediante la Fórmula de Siri",
+      title: t("formulaGrupoSiri"),
       items: [
-        "Ecuación de Durnin y Womersley",
-        "Ecuación de Jackson et al (3 Pliegues)",
-        "Ecuación de Jackson et al (7 Pliegues)",
+        { id: GRASA_IDS.DURNIN_WOMERSLEY, label: t("ecuacionDurninWomersley") },
+        { id: GRASA_IDS.JACKSON_3, label: t("ecuacionJackson3") },
+        { id: GRASA_IDS.JACKSON_7, label: t("ecuacionJackson7") },
       ],
     },
   ];
 
   const ACTIVIDAD_OPTS: ActivityOption[] = [
-    { label: "Sedentario", pal: 1.195, paIom: 1.16 },
-    { label: "Poco activo", pal: 1.495, paIom: 1.26 },
-    { label: "Activo", pal: 1.745, paIom: 1.38 },
-    { label: "Muy activo", pal: 2.2, paIom: 1.55 },
-    { label: "Personalizado", pal: 1.5, paIom: 1.3 },
+    { label: t("actividadSedentario"), pal: 1.195, paIom: 1.16 },
+    { label: t("actividadPocoActivo"), pal: 1.495, paIom: 1.26 },
+    { label: t("actividadActivo"), pal: 1.745, paIom: 1.38 },
+    { label: t("actividadMuyActivo"), pal: 2.2, paIom: 1.55 },
+    { label: t("actividadPersonalizado"), pal: 1.5, paIom: 1.3 },
   ];
 
   function mapActividad(raw: string) {
@@ -722,21 +775,21 @@ export function PlanificacionPorDefectoTab({
     for (const opt of ACTIVIDAD_OPTS) {
       if (s === opt.label.toLowerCase()) return opt.label;
     }
-    if (s.includes("sedent")) return "Sedentario";
-    if (s.includes("poco")) return "Poco activo";
-    if (s.includes("muy activo")) return "Muy activo";
-    if (s.includes("activo")) return "Activo";
+    if (s.includes("sedent")) return t("actividadSedentario");
+    if (s.includes("poco")) return t("actividadPocoActivo");
+    if (s.includes("muy activo")) return t("actividadMuyActivo");
+    if (s.includes("activo")) return t("actividadActivo");
     return null;
   }
 
   const actividadRegistradaRaw = ficha?.personalSocial?.actividadFisica?.trim() || "";
-  const actividadInicial = mapActividad(actividadRegistradaRaw) ?? "Sedentario";
+  const actividadInicial = mapActividad(actividadRegistradaRaw) ?? t("actividadSedentario");
 
   const [actividadActualLabel, setActividadActualLabel] = useState<string>(
     datos.actividadActual ?? actividadInicial
   );
   const [actividadObjetivoLabel, setActividadObjetivoLabel] = useState<string>(
-    datos.actividadObjetivo ?? "Activo"
+    datos.actividadObjetivo ?? t("actividadActivo")
   );
   const [palCustomActual, setPalCustomActual] = useState(
     datos.palCustomActual != null ? String(datos.palCustomActual) : "1.5"
@@ -747,7 +800,7 @@ export function PlanificacionPorDefectoTab({
 
   const actividadActualOpt = useMemo(() => {
     const opt = ACTIVIDAD_OPTS.find((o) => o.label === actividadActualLabel) ?? ACTIVIDAD_OPTS[0];
-    if (opt.label === "Personalizado") {
+    if (opt.label === t("actividadPersonalizado")) {
       const p = parseFloat(palCustomActual) || 1.5;
       return { ...opt, pal: p, paIom: p / 1.3 };
     }
@@ -756,7 +809,7 @@ export function PlanificacionPorDefectoTab({
 
   const actividadObjetivoOpt = useMemo(() => {
     const opt = ACTIVIDAD_OPTS.find((o) => o.label === actividadObjetivoLabel) ?? ACTIVIDAD_OPTS[2];
-    if (opt.label === "Personalizado") {
+    if (opt.label === t("actividadPersonalizado")) {
       const p = parseFloat(palCustomObjetivo) || 1.5;
       return { ...opt, pal: p, paIom: p / 1.3 };
     }
@@ -764,39 +817,75 @@ export function PlanificacionPorDefectoTab({
   }, [ACTIVIDAD_OPTS, actividadObjetivoLabel, palCustomObjetivo]);
 
   const [formulaMasaGrasa, setFormulaMasaGrasa] = useState(
-    datos.formulaMasaGrasa ?? FORMULAS_MASA_GRASA_GROUPS[0].items[0]
+    normalizeGrasaId(datos.formulaMasaGrasa ?? GRASA_IDS.PETERSON)
   );
 
-  const BMR_FORMULA_GROUPS = [
+  const BMR_FORMULA_GROUPS: FormulaGroup[] = [
     {
       title: "",
       items: [
-        "Ecuación de la OMS",
-        "Ecuación de Henry",
-        "Ecuación de Black",
-        "Ecuación de Cunningham",
-        "Ecuación de Harris Benedict",
-        "Ecuación revisada de Harris Benedict",
-        "Ecuación de Mifflin St Jeor",
-        "Ecuación de Katch-McArdle",
-        "Ecuación de Ten Haaf (peso)",
-        "Ecuación de Ten Haaf (masa magra)",
+        { id: BMR_IDS.OMS, label: t("ecuacionOms") },
+        { id: BMR_IDS.HENRY, label: t("ecuacionHenry") },
+        { id: BMR_IDS.BLACK, label: t("ecuacionBlack") },
+        { id: BMR_IDS.CUNNINGHAM, label: t("ecuacionCunningham") },
+        { id: BMR_IDS.HARRIS_BENEDICT, label: t("ecuacionHarrisBenedict") },
+        { id: BMR_IDS.HARRIS_BENEDICT_REV, label: t("ecuacionRevisadaHarrisBenedict") },
+        { id: BMR_IDS.MIFFLIN_ST_JEOR, label: t("ecuacionMifflinStJeor") },
+        { id: BMR_IDS.KATCH_MCARDLE, label: t("ecuacionKatchMcArdle") },
+        { id: BMR_IDS.TEN_HAAF_PESO, label: t("ecuacionTenHaafPeso") },
+        { id: BMR_IDS.TEN_HAAF_LBM, label: t("ecuacionTenHaafMasaMagra") },
       ],
     },
   ];
 
-  const EER_FORMULA_GROUPS = [
+  const EER_FORMULA_GROUPS: FormulaGroup[] = [
     {
       title: "",
-      items: ["EER, IOM 2005", "TMB x PAL"],
+      items: [
+        { id: EER_IDS.IOM_2005, label: t("eerIom2005") },
+        { id: EER_IDS.TMB_PAL, label: t("tmbXPal") },
+      ],
     },
   ];
 
-  const [bmrFormula, setBmrFormula] = useState<string>(datos.formulaBmr ?? "Ecuación de la OMS");
-  const [eerFormula, setEerFormula] = useState<string>(datos.formulaEer ?? "EER, IOM 2005");
+  const [bmrFormula, setBmrFormula] = useState<string>(normalizeBmrId(datos.formulaBmr ?? BMR_IDS.OMS));
+  const [eerFormula, setEerFormula] = useState<string>(normalizeEerId(datos.formulaEer ?? EER_IDS.IOM_2005));
   const [eerObjetivoInput, setEerObjetivoInput] = useState(datos.eerObjetivo ?? "");
 
   /* --- Macro reference source --- */
+  const gDia = t("unidadGDia");
+  const MACRO_REF_SOURCES: MacroRefSource[] = useMemo(() => [
+    {
+      label: "Food and Nutrition Board / IOM",
+      lipidos: "20 - 35%",
+      carbohidratos: "45 - 65%",
+      proteinas: "10 - 35%",
+    },
+    {
+      label: "ANSES, 2016",
+      lipidos: "35 - 40%",
+      carbohidratos: "40 - 55%",
+      proteinas: "10 - 20%",
+    },
+    {
+      label: "SACN",
+      lipidos: "35%",
+      carbohidratos: "50%",
+      proteinas: `45 ${gDia}`,
+    },
+    {
+      label: "SINU, 2014",
+      lipidos: "20 - 35%",
+      carbohidratos: "45 - 65%",
+      proteinas: `54 ${gDia}`,
+    },
+    {
+      label: "NHMRC 2006",
+      lipidos: "20 - 35%",
+      carbohidratos: "45 - 65%",
+      proteinas: `46 ${gDia}`,
+    },
+  ], [gDia]);
   const [macroRefIdx, setMacroRefIdx] = useState(datos.macroRefIdx ?? 0);
   const macroRef = MACRO_REF_SOURCES[macroRefIdx];
 
@@ -896,14 +985,24 @@ export function PlanificacionPorDefectoTab({
   }, [eerObjetivoInput, pesoActual, grasaPct, carbPct, protPct]);
 
   /* --- Fibra alimentaria --- */
-  const FIBRA_REFS: Record<string, string> = {
-    "Food and Nutrition Board / IOM": "25.3 g",
-    "ANSES, 2016": "30 g",
-    "SACN": "30 g",
-    "SINU, 2014": "26.5 g",
-    "NHMRC 2006, (actualizado el 2017)": "25 g",
+  const FIBRA_SOURCES = [
+    { id: "fnb_iom", label: "Food and Nutrition Board / IOM", ref: "25.3 g" },
+    { id: "anses_2016", label: "ANSES, 2016", ref: "30 g" },
+    { id: "sacn", label: "SACN", ref: "30 g" },
+    { id: "sinu_2014", label: "SINU, 2014", ref: "26.5 g" },
+    { id: "nhmrc_2006", label: t("fibraNhmrc2006"), ref: "25 g" },
+  ] as const;
+  const LEGACY_FIBRA_MAP: Record<string, string> = {
+    "Food and Nutrition Board / IOM": "fnb_iom",
+    "ANSES, 2016": "anses_2016",
+    "SACN": "sacn",
+    "SINU, 2014": "sinu_2014",
+    "NHMRC 2006, (actualizado el 2017)": "nhmrc_2006",
   };
-  const [fibraFuente, setFibraFuente] = useState(datos.fibraFuente ?? "Food and Nutrition Board / IOM");
+  function normalizeFibraId(raw: string): string {
+    return LEGACY_FIBRA_MAP[raw] ?? raw;
+  }
+  const [fibraFuente, setFibraFuente] = useState(normalizeFibraId(datos.fibraFuente ?? "fnb_iom"));
   const [fibraInput, setFibraInput] = useState(datos.fibraCantidad ?? "");
 
   /* ─── Date state for duración section ─── */
@@ -922,12 +1021,12 @@ export function PlanificacionPorDefectoTab({
     if (!selectedPlan) return;
     const d = selectedPlan.datos ?? {};
     setActividadActualLabel(d.actividadActual ?? actividadInicial);
-    setActividadObjetivoLabel(d.actividadObjetivo ?? "Activo");
+    setActividadObjetivoLabel(d.actividadObjetivo ?? t("actividadActivo"));
     setPalCustomActual(d.palCustomActual != null ? String(d.palCustomActual) : "1.5");
     setPalCustomObjetivo(d.palCustomObjetivo != null ? String(d.palCustomObjetivo) : "1.5");
-    setFormulaMasaGrasa(d.formulaMasaGrasa ?? FORMULAS_MASA_GRASA_GROUPS[0].items[0]);
-    setBmrFormula(d.formulaBmr ?? "Ecuación de la OMS");
-    setEerFormula(d.formulaEer ?? "EER, IOM 2005");
+    setFormulaMasaGrasa(normalizeGrasaId(d.formulaMasaGrasa ?? GRASA_IDS.PETERSON));
+    setBmrFormula(normalizeBmrId(d.formulaBmr ?? BMR_IDS.OMS));
+    setEerFormula(normalizeEerId(d.formulaEer ?? EER_IDS.IOM_2005));
     setEerObjetivoInput(d.eerObjetivo ?? "");
     setMacroRefIdx(d.macroRefIdx ?? 0);
     setGrasaPct(d.grasaPct ?? 30);
@@ -936,7 +1035,7 @@ export function PlanificacionPorDefectoTab({
     setPesoObjetivoInput(d.pesoObjetivo ?? (pesoInicialObjetivo != null ? String(pesoInicialObjetivo) : ""));
     setGrasaObjetivoInput(d.grasaObjetivo ?? "");
     setImcObjetivoInput(d.imcObjetivo ?? "");
-    setFibraFuente(d.fibraFuente ?? "Food and Nutrition Board / IOM");
+    setFibraFuente(normalizeFibraId(d.fibraFuente ?? "fnb_iom"));
     setFibraInput(d.fibraCantidad ?? "");
     setFechaInicioInput(selectedPlan.fechaInicio ? selectedPlan.fechaInicio.slice(0, 7) : "");
     setFechaFinPrevistaInput(selectedPlan.fechaFinPrevista ? selectedPlan.fechaFinPrevista.slice(0, 7) : "");
@@ -1077,7 +1176,7 @@ export function PlanificacionPorDefectoTab({
       {/* ====== Section 1: Informaciones del cliente ====== */}
       <section className="bg-card rounded-xl border border-border overflow-hidden">
         <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-3">
-          <SectionTitle icon={Scale}>Informaciones del cliente</SectionTitle>
+          <SectionTitle icon={Scale}>{t("seccionCliente")}</SectionTitle>
           <p className="text-xs text-muted-foreground mt-1">
             {paciente.nombre} {paciente.apellidos}
           </p>
@@ -1088,10 +1187,10 @@ export function PlanificacionPorDefectoTab({
             <thead>
               <tr className={thBg}>
                 <th className={`${thClass} w-[130px] sm:w-[220px] ${stickyColHead}`}></th>
-                <th className={thClass}>Fórmula</th>
-                <th className={thClass}>Actual</th>
-                <th className={thClass}>Objetivo</th>
-                <th className={thClass}>Referencia</th>
+                <th className={thClass}>{t("thFormula")}</th>
+                <th className={thClass}>{t("thActual")}</th>
+                <th className={thClass}>{t("thObjetivo")}</th>
+                <th className={thClass}>{t("thReferencia")}</th>
               </tr>
             </thead>
             <tbody>
@@ -1100,7 +1199,7 @@ export function PlanificacionPorDefectoTab({
                 <td className={`py-3 px-2 sm:px-4 ${stickyCol}`}>
                   <div className="font-medium flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
                     <Scale className="w-4 h-4 text-primary/70 shrink-0" />
-                    Peso
+                    {t("peso")}
                   </div>
                 </td>
                 <td className="py-3 px-4 text-muted-foreground">—</td>
@@ -1127,8 +1226,8 @@ export function PlanificacionPorDefectoTab({
                         : "bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400"
                     }`}>
                       {pesoActual > pesoObjetivo
-                        ? `Reducción de ${fmt1(pesoActual - pesoObjetivo)} kg`
-                        : `Ganancia de ${fmt1(pesoObjetivo - pesoActual)} kg`}
+                        ? t("pesoReduccion", { kg: fmt1(pesoActual - pesoObjetivo) })
+                        : t("pesoGanancia", { kg: fmt1(pesoObjetivo - pesoActual) })}
                     </span>
                   )}
                 </td>
@@ -1139,12 +1238,12 @@ export function PlanificacionPorDefectoTab({
                 <td className={`py-3 px-2 sm:px-4 ${stickyCol}`}>
                   <div className="font-medium flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
                     <Percent className="w-4 h-4 text-primary/70 shrink-0" />
-                    <span className="sm:hidden">% Masa grasa</span>
-                    <span className="hidden sm:inline">Porcentaje de masa grasa</span>
+                    <span className="sm:hidden">{t("masaGrasaCorta")}</span>
+                    <span className="hidden sm:inline">{t("masaGrasaLarga")}</span>
                   </div>
                 </td>
                 <td className="py-3 px-4">
-                  <FormulaSelect value={formulaMasaGrasa} groups={FORMULAS_MASA_GRASA_GROUPS} onChange={setFormulaMasaGrasa} />
+                  <FormulaSelect value={formulaMasaGrasa} groups={FORMULAS_MASA_GRASA_GROUPS} onChange={setFormulaMasaGrasa} searchPlaceholder={t("buscarFormula")} noResults={t("sinResultados")} />
                 </td>
                 <td className="py-3 px-4">
                   <div className="relative w-32">
@@ -1154,7 +1253,7 @@ export function PlanificacionPorDefectoTab({
                 </td>
                 <td className="py-3 px-4">
                   <div className="relative w-32">
-                    <input type="number" inputMode="decimal" step="0.1" min="0" max="100" value={grasaObjetivoInput} onChange={(e) => setGrasaObjetivoInput(e.target.value)} placeholder="No definido" className="w-full h-9 rounded-lg border border-border bg-background px-3 pr-8 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-rose-400 placeholder:text-xs" />
+                    <input type="number" inputMode="decimal" step="0.1" min="0" max="100" value={grasaObjetivoInput} onChange={(e) => setGrasaObjetivoInput(e.target.value)} placeholder={t("noDefinido")} className="w-full h-9 rounded-lg border border-border bg-background px-3 pr-8 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-rose-400 placeholder:text-xs" />
                     <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>
                   </div>
                 </td>
@@ -1179,14 +1278,14 @@ export function PlanificacionPorDefectoTab({
                           <span className="font-medium">{fmt1(valores.imcActual)} kg/m²</span>
                           <div className="mt-1">
                             <span className={`inline-flex text-[11px] font-medium px-2 py-0.5 rounded-full ${categoriaIMC(valores.imcActual).color}`}>
-                              {categoriaIMC(valores.imcActual).label}
+                              {t(categoriaIMC(valores.imcActual).labelKey)}
                             </span>
                           </div>
                         </div>
                       ) : (
                         <div>
                           <span className="text-muted-foreground">—</span>
-                          <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">Añade peso y altura en General para calcular</p>
+                          <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">{t("imcAvisoPesoAltura")}</p>
                         </div>
                       )}
                     </td>
@@ -1198,7 +1297,7 @@ export function PlanificacionPorDefectoTab({
                       {imcObj != null && (
                         <div className="mt-1">
                           <span className={`inline-flex text-[11px] font-medium px-2 py-0.5 rounded-full ${categoriaIMC(imcObj).color}`}>
-                            {categoriaIMC(imcObj).label}
+                            {t(categoriaIMC(imcObj).labelKey)}
                           </span>
                         </div>
                       )}
@@ -1210,7 +1309,7 @@ export function PlanificacionPorDefectoTab({
                       {imcObj != null && (
                         <div className="mt-1">
                           <span className={`inline-flex text-[11px] font-medium px-2 py-0.5 rounded-full ${categoriaIMC(imcObj).color}`}>
-                            {categoriaIMC(imcObj).label}
+                            {t(categoriaIMC(imcObj).labelKey)}
                           </span>
                         </div>
                       )}
@@ -1293,8 +1392,8 @@ export function PlanificacionPorDefectoTab({
           className="shrink-0 inline-flex items-center gap-1 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/5 rounded-t-lg border-b-2 border-transparent transition-colors"
         >
           <Plus className="w-4 h-4" />
-          <span className="sm:hidden">Crear</span>
-          <span className="hidden sm:inline">Crear planificación</span>
+          <span className="sm:hidden">{t("crearCorta")}</span>
+          <span className="hidden sm:inline">{t("crearPlanificacion")}</span>
         </button>
       </div>
 
@@ -1318,7 +1417,7 @@ export function PlanificacionPorDefectoTab({
               className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-lg hover:bg-muted/60 transition-colors"
             >
               <Pencil className="w-4 h-4 text-muted-foreground" />
-              Editar
+              {t("editar")}
             </button>
             {!plan.esDefecto && (
               <button
@@ -1327,7 +1426,7 @@ export function PlanificacionPorDefectoTab({
                 className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-lg hover:bg-red-50 dark:hover:bg-red-500/15 text-red-600 dark:text-red-400 transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
-                Eliminar
+                {t("eliminar")}
               </button>
             )}
           </div>,
@@ -1340,23 +1439,23 @@ export function PlanificacionPorDefectoTab({
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={() => setShowCrearModal(false)}>
           <div className="bg-card rounded-2xl shadow-2xl border border-border w-full max-w-lg mx-4 p-6" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold">Crear nueva planificación</h3>
+              <h3 className="text-lg font-bold">{t("crearNuevaPlanificacion")}</h3>
               <button type="button" onClick={() => setShowCrearModal(false)} className="p-1 rounded-lg hover:bg-muted transition-colors">
                 <X className="w-5 h-5 text-muted-foreground" />
               </button>
             </div>
 
-            <label className="block text-sm font-medium text-muted-foreground mb-2">Nombre de la planificación</label>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">{t("nombrePlanificacion")}</label>
             <input
               autoFocus
               value={crearNombre}
               onChange={(e) => setCrearNombre(e.target.value)}
-              placeholder="Ej: Plan de definición"
+              placeholder={t("crearPlaceholder")}
               className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 mb-5"
               onKeyDown={(e) => { if (e.key === "Enter") handleCrearConfirm(); }}
             />
 
-            <label className="block text-sm font-medium text-muted-foreground mb-2">Copiar la planificación:</label>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">{t("copiarPlanificacion")}</label>
             <select
               value={copiarDeId}
               onChange={(e) => setCopiarDeId(e.target.value)}
@@ -1365,7 +1464,7 @@ export function PlanificacionPorDefectoTab({
               {planificaciones.map((p) => (
                 <option key={p.id} value={p.id}>{p.nombre}</option>
               ))}
-              <option value="">Sin copiar (vacía)</option>
+              <option value="">{t("sinCopiar")}</option>
             </select>
 
             <div className="flex items-center justify-between">
@@ -1374,7 +1473,7 @@ export function PlanificacionPorDefectoTab({
                 onClick={() => setShowCrearModal(false)}
                 className="px-4 py-2.5 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors"
               >
-                Cancelar
+                {t("cancelar")}
               </button>
               <button
                 type="button"
@@ -1382,7 +1481,7 @@ export function PlanificacionPorDefectoTab({
                 disabled={!crearNombre.trim() || isPending}
                 className="px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
               >
-                Crear planificación
+                {t("crearPlanificacion")}
               </button>
             </div>
           </div>
@@ -1397,14 +1496,14 @@ export function PlanificacionPorDefectoTab({
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2.5">
                 <AlertTriangle className="w-5 h-5 text-amber-500" />
-                <h3 className="text-lg font-bold">¿Deseas eliminar esta planificación?</h3>
+                <h3 className="text-lg font-bold">{t("confirmarEliminar")}</h3>
               </div>
               <button type="button" onClick={() => setDeleteConfirmId(null)} className="p-1 rounded-lg hover:bg-muted transition-colors">
                 <X className="w-5 h-5 text-muted-foreground" />
               </button>
             </div>
             <p className="text-sm text-muted-foreground mb-6">
-              Los planes de alimentación asociados a esta planificación se asociarán a otra planificación existente.
+              {t("confirmarEliminarDesc")}
             </p>
             <div className="flex items-center justify-between">
               <button
@@ -1412,7 +1511,7 @@ export function PlanificacionPorDefectoTab({
                 onClick={() => setDeleteConfirmId(null)}
                 className="px-4 py-2.5 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors"
               >
-                Cancelar
+                {t("cancelar")}
               </button>
               <button
                 type="button"
@@ -1420,7 +1519,7 @@ export function PlanificacionPorDefectoTab({
                 disabled={isPending}
                 className="px-5 py-2.5 rounded-lg bg-amber-400 text-white text-sm font-semibold hover:bg-amber-500 transition-colors disabled:opacity-50"
               >
-                Borrar
+                {t("borrar")}
               </button>
             </div>
           </div>
@@ -1440,12 +1539,12 @@ export function PlanificacionPorDefectoTab({
             {isSaving ? (
               <>
                 <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                Guardando...
+                {t("guardando")}
               </>
             ) : (
               <>
                 <Check className="w-4 h-4" />
-                Guardar cambios
+                {t("guardarCambios")}
               </>
             )}
           </button>
@@ -1455,7 +1554,7 @@ export function PlanificacionPorDefectoTab({
       {/* ====== Section 2: Cálculos ====== */}
       <section className="bg-card rounded-xl border border-border overflow-hidden">
         <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-3">
-          <SectionTitle icon={Brain}>Cálculos</SectionTitle>
+          <SectionTitle icon={Brain}>{t("seccionCalculos")}</SectionTitle>
         </div>
 
         <div className="overflow-x-auto">
@@ -1463,10 +1562,10 @@ export function PlanificacionPorDefectoTab({
             <thead>
               <tr className={thBg}>
                 <th className={`${thClass} w-[130px] sm:w-[240px] ${stickyColHead}`}></th>
-                <th className={thClass}>Fórmula</th>
-                <th className={thClass}>Actual</th>
-                <th className={thClass}>Objetivo</th>
-                <th className={thClass}>Referencia</th>
+                <th className={thClass}>{t("thFormula")}</th>
+                <th className={thClass}>{t("thActual")}</th>
+                <th className={thClass}>{t("thObjetivo")}</th>
+                <th className={thClass}>{t("thReferencia")}</th>
               </tr>
             </thead>
             <tbody>
@@ -1475,8 +1574,8 @@ export function PlanificacionPorDefectoTab({
                 <td className={`py-3 px-2 sm:px-4 ${stickyCol}`}>
                   <div className="flex items-center gap-1.5 sm:gap-2 font-medium text-xs sm:text-sm">
                     <Dumbbell className="w-4 h-4 text-primary/70 shrink-0" />
-                    <span className="sm:hidden">Actividad</span>
-                    <span className="hidden sm:inline">Nivel de actividad física</span>
+                    <span className="sm:hidden">{t("actividadCorta")}</span>
+                    <span className="hidden sm:inline">{t("actividadLarga")}</span>
                   </div>
                 </td>
                 <td className="py-3 px-4 text-muted-foreground">—</td>
@@ -1486,7 +1585,7 @@ export function PlanificacionPorDefectoTab({
                     options={ACTIVIDAD_OPTS}
                     onChange={setActividadActualLabel}
                   />
-                  {actividadActualLabel === "Personalizado" && (
+                  {actividadActualLabel === t("actividadPersonalizado") && (
                     <div className="mt-1.5 relative w-28">
                       <input type="number" inputMode="decimal" step="0.001" min="1" max="3" value={palCustomActual} onChange={(e) => setPalCustomActual(e.target.value)} className="w-full h-8 rounded-lg border border-border bg-background px-2 pr-12 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/30" />
                       <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">PAL</span>
@@ -1499,7 +1598,7 @@ export function PlanificacionPorDefectoTab({
                     options={ACTIVIDAD_OPTS}
                     onChange={setActividadObjetivoLabel}
                   />
-                  {actividadObjetivoLabel === "Personalizado" && (
+                  {actividadObjetivoLabel === t("actividadPersonalizado") && (
                     <div className="mt-1.5 relative w-28">
                       <input type="number" inputMode="decimal" step="0.001" min="1" max="3" value={palCustomObjetivo} onChange={(e) => setPalCustomObjetivo(e.target.value)} className="w-full h-8 rounded-lg border border-border bg-background px-2 pr-12 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/30" />
                       <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">PAL</span>
@@ -1514,8 +1613,8 @@ export function PlanificacionPorDefectoTab({
                 <td className={`py-3 px-2 sm:px-4 ${stickyCol}`}>
                   <div className="flex items-center gap-1.5 sm:gap-2 font-medium text-xs sm:text-sm">
                     <Flame className="w-4 h-4 text-primary/70 shrink-0" />
-                    <span className="sm:hidden">Met. basal</span>
-                    <span className="hidden sm:inline">Metabolismo basal</span>
+                    <span className="sm:hidden">{t("metabolismoCorta")}</span>
+                    <span className="hidden sm:inline">{t("metabolismoLarga")}</span>
                   </div>
                 </td>
                 <td className="py-3 px-4">
@@ -1523,17 +1622,19 @@ export function PlanificacionPorDefectoTab({
                     value={bmrFormula}
                     groups={BMR_FORMULA_GROUPS}
                     onChange={setBmrFormula}
+                    searchPlaceholder={t("buscarFormula")}
+                    noResults={t("sinResultados")}
                   />
                 </td>
                 <td className="py-3 px-4">
                   <span className="font-medium">
-                    {valores?.bmrActual != null ? `${Math.round(valores.bmrActual)} kcal/día` : "—"}
+                    {valores?.bmrActual != null ? t("kcalDia", { val: Math.round(valores.bmrActual) }) : "—"}
                   </span>
                 </td>
                 <td className="py-3 px-4 text-muted-foreground">—</td>
                 <td className="py-3 px-4">
                   <span className="font-medium">
-                    {valores?.bmrActual != null ? `${Math.round(valores.bmrActual)} kcal/día` : "—"}
+                    {valores?.bmrActual != null ? t("kcalDia", { val: Math.round(valores.bmrActual) }) : "—"}
                   </span>
                 </td>
               </tr>
@@ -1543,8 +1644,8 @@ export function PlanificacionPorDefectoTab({
                 <td className={`py-3 px-2 sm:px-4 ${stickyCol}`}>
                   <div className="flex items-center gap-1.5 sm:gap-2 font-medium text-xs sm:text-sm">
                     <Zap className="w-4 h-4 text-primary/70 shrink-0" />
-                    <span className="sm:hidden">Nec. energéticas</span>
-                    <span className="hidden sm:inline">Necesidades energéticas diarias</span>
+                    <span className="sm:hidden">{t("necesidadesCorta")}</span>
+                    <span className="hidden sm:inline">{t("necesidadesLarga")}</span>
                   </div>
                 </td>
                 <td className="py-3 px-4">
@@ -1552,11 +1653,13 @@ export function PlanificacionPorDefectoTab({
                     value={eerFormula}
                     groups={EER_FORMULA_GROUPS}
                     onChange={setEerFormula}
+                    searchPlaceholder={t("buscarFormula")}
+                    noResults={t("sinResultados")}
                   />
                 </td>
                 <td className="py-3 px-4">
                   <span className="font-medium">
-                    {valores?.eerActual != null ? `${Math.round(valores.eerActual)} kcal/día` : "—"}
+                    {valores?.eerActual != null ? t("kcalDia", { val: Math.round(valores.eerActual) }) : "—"}
                   </span>
                 </td>
                 <td className="py-3 px-4">
@@ -1568,15 +1671,15 @@ export function PlanificacionPorDefectoTab({
                       max="10000"
                       value={eerObjetivoInput}
                       onChange={(e) => setEerObjetivoInput(e.target.value)}
-                      placeholder="kcal/día"
+                      placeholder={t("unidadKcalDia")}
                       className="w-full h-9 rounded-lg border border-border bg-background px-3 pr-16 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
-                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">kcal/día</span>
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">{t("unidadKcalDia")}</span>
                   </div>
                 </td>
                 <td className="py-3 px-4">
                   <span className="font-medium">
-                    {valores?.eerReferencia != null ? `${Math.round(valores.eerReferencia)} kcal/día` : "—"}
+                    {valores?.eerReferencia != null ? t("kcalDia", { val: Math.round(valores.eerReferencia) }) : "—"}
                   </span>
                 </td>
               </tr>
@@ -1588,7 +1691,7 @@ export function PlanificacionPorDefectoTab({
       {/* ====== Section 3: Distribución de macronutrientes ====== */}
       <section className="bg-card rounded-xl border border-border overflow-hidden">
         <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <SectionTitle icon={Wheat}>Distribución de los macronutrientes</SectionTitle>
+          <SectionTitle icon={Wheat}>{t("seccionMacronutrientes")}</SectionTitle>
           <select
             value={macroRefIdx}
             onChange={(e) => setMacroRefIdx(Number(e.target.value))}
@@ -1608,9 +1711,9 @@ export function PlanificacionPorDefectoTab({
                 <tr className={thBg}>
                   <th className={`${thClass} w-[100px] sm:w-[180px] ${stickyColHead}`}></th>
                   <th className={thClass}>%</th>
-                  <th className={thClass}>Total</th>
+                  <th className={thClass}>{t("thTotal")}</th>
                   <th className={thClass}>g/kg</th>
-                  <th className={thClass}>Referencia</th>
+                  <th className={thClass}>{t("thReferencia")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1619,7 +1722,7 @@ export function PlanificacionPorDefectoTab({
                   <td className={`py-3 px-2 sm:px-4 ${stickyCol}`}>
                     <div className="flex items-center gap-1.5 sm:gap-2 font-medium text-xs sm:text-sm">
                       <Droplets className="w-4 h-4 text-yellow-500 shrink-0" />
-                      Lípidos
+                      {t("lipidos")}
                     </div>
                   </td>
                   <td className="py-3 px-4">
@@ -1654,8 +1757,8 @@ export function PlanificacionPorDefectoTab({
                   <td className={`py-3 px-2 sm:px-4 ${stickyCol}`}>
                     <div className="flex items-center gap-1.5 sm:gap-2 font-medium text-xs sm:text-sm">
                       <Wheat className="w-4 h-4 text-orange-500 shrink-0" />
-                      <span className="sm:hidden">Carbos</span>
-                      <span className="hidden sm:inline">Hidratos de carbono</span>
+                      <span className="sm:hidden">{t("carbosCorta")}</span>
+                      <span className="hidden sm:inline">{t("carbosLarga")}</span>
                     </div>
                   </td>
                   <td className="py-3 px-4">
@@ -1690,7 +1793,7 @@ export function PlanificacionPorDefectoTab({
                   <td className={`py-3 px-2 sm:px-4 ${stickyCol}`}>
                     <div className="flex items-center gap-1.5 sm:gap-2 font-medium text-xs sm:text-sm">
                       <Beef className="w-4 h-4 text-blue-500 shrink-0" />
-                      Proteínas
+                      {t("proteinas")}
                     </div>
                   </td>
                   <td className="py-3 px-4">
@@ -1725,7 +1828,7 @@ export function PlanificacionPorDefectoTab({
             {/* Total pct warning */}
             {grasaPct + carbPct + protPct !== 100 && (
               <div className="px-5 py-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border-t border-amber-200 dark:border-amber-500/30">
-                La suma de porcentajes es {grasaPct + carbPct + protPct}% (debe ser 100%).
+                {t("sumaPorcentajes", { pct: grasaPct + carbPct + protPct })}
               </div>
             )}
           </div>
@@ -1734,7 +1837,7 @@ export function PlanificacionPorDefectoTab({
       {/* ====== Section 4: Cuantificación de nutrientes ====== */}
       <section className="bg-card rounded-xl border border-border overflow-hidden">
         <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-3">
-          <SectionTitle icon={Droplets}>Cuantificación de nutrientes</SectionTitle>
+          <SectionTitle icon={Droplets}>{t("seccionNutrientes")}</SectionTitle>
         </div>
 
         <div className="overflow-x-auto">
@@ -1742,9 +1845,9 @@ export function PlanificacionPorDefectoTab({
             <thead>
               <tr className={thBg}>
                 <th className={`${thClass} w-[120px] sm:w-[200px] ${stickyColHead}`}></th>
-                <th className={thClass}>Fuente</th>
-                <th className={thClass}>Cantidad</th>
-                <th className={thClass}>Referencia</th>
+                <th className={thClass}>{t("thFuente")}</th>
+                <th className={thClass}>{t("thCantidad")}</th>
+                <th className={thClass}>{t("thReferencia")}</th>
               </tr>
             </thead>
             <tbody>
@@ -1752,7 +1855,7 @@ export function PlanificacionPorDefectoTab({
                 <td className={`py-3 px-2 sm:px-4 ${stickyCol}`}>
                   <div className="font-medium flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
                     <Wheat className="w-4 h-4 text-primary/70 shrink-0" />
-                    Fibra
+                    {t("fibra")}
                   </div>
                 </td>
                 <td className="py-3 px-4">
@@ -1761,8 +1864,8 @@ export function PlanificacionPorDefectoTab({
                     onChange={(e) => setFibraFuente(e.target.value)}
                     className="px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                   >
-                    {Object.keys(FIBRA_REFS).map((f) => (
-                      <option key={f}>{f}</option>
+                    {FIBRA_SOURCES.map((s) => (
+                      <option key={s.id} value={s.id}>{s.label}</option>
                     ))}
                   </select>
                 </td>
@@ -1782,7 +1885,7 @@ export function PlanificacionPorDefectoTab({
                   </div>
                 </td>
                 <td className="py-3 px-4 font-medium">
-                  {FIBRA_REFS[fibraFuente] ?? "—"}
+                  {FIBRA_SOURCES.find((s) => s.id === fibraFuente)?.ref ?? "—"}
                 </td>
               </tr>
             </tbody>
@@ -1793,17 +1896,17 @@ export function PlanificacionPorDefectoTab({
       {/* ====== Section 5: Duración ====== */}
       <section className="bg-card rounded-xl border border-border overflow-hidden">
         <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-3">
-          <SectionTitle icon={Calendar}>Duración</SectionTitle>
+          <SectionTitle icon={Calendar}>{t("seccionDuracion")}</SectionTitle>
         </div>
 
         <div className="overflow-x-auto">
           <table className="min-w-[480px] sm:min-w-[640px] w-full text-sm">
             <thead>
               <tr className={thBg}>
-                <th className={`${thClass} w-[120px] sm:w-auto ${stickyColHead}`}>Duración</th>
-                <th className={thClass}>Inicio</th>
-                <th className={thClass}>Últ. cambio</th>
-                <th className={thClass}>Fin previsto</th>
+                <th className={`${thClass} w-[120px] sm:w-auto ${stickyColHead}`}>{t("seccionDuracion")}</th>
+                <th className={thClass}>{t("duracionInicio")}</th>
+                <th className={thClass}>{t("duracionUltCambio")}</th>
+                <th className={thClass}>{t("duracionFinPrevisto")}</th>
               </tr>
             </thead>
             <tbody>
@@ -1811,8 +1914,8 @@ export function PlanificacionPorDefectoTab({
                 <td className={`py-3 px-2 sm:px-4 ${stickyCol}`}>
                   <div className="flex items-center gap-1.5 sm:gap-2 text-muted-foreground text-xs sm:text-sm">
                     <Clock className="w-4 h-4 shrink-0" />
-                    <span className="sm:hidden">Actual</span>
-                    <span className="hidden sm:inline">Planificación actual</span>
+                    <span className="sm:hidden">{t("thActual")}</span>
+                    <span className="hidden sm:inline">{t("planificacionActual")}</span>
                   </div>
                 </td>
                 <td className="py-3 px-4">
@@ -1823,15 +1926,15 @@ export function PlanificacionPorDefectoTab({
                 </td>
                 <td className="py-3 px-4">
                   <div className="font-medium">
-                    {formatMonthYearEs(selectedPlan?.fechaUltimoCambio)}
+                    {formatMonthYear(selectedPlan?.fechaUltimoCambio, locale)}
                   </div>
-                  <div className="text-[10px] text-muted-foreground mt-0.5">Se actualiza al guardar</div>
+                  <div className="text-[10px] text-muted-foreground mt-0.5">{t("seActualizaAlGuardar")}</div>
                 </td>
                 <td className="py-3 px-4">
                   <MonthPicker
                     value={fechaFinPrevistaInput}
                     onChange={handleFechaFinPrevistaChange}
-                    placeholder="Seleccionar fin"
+                    placeholder={t("seleccionarFin")}
                   />
                 </td>
               </tr>

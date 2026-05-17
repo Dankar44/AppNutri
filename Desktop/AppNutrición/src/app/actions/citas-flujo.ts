@@ -6,6 +6,7 @@ import { getCurrentPaciente } from "@/lib/patient-auth";
 import { revalidatePath } from "next/cache";
 import { fromMadrid, toMadridTimeStr, toMadridDateStr } from "@/lib/tz";
 import { syncCitaAmbos, unsyncCitaAntesDeBorrar } from "@/lib/google-sync";
+import { getTranslations } from "next-intl/server";
 
 // ─── Tipos auxiliares ─────────────────────────────────────────────
 
@@ -243,10 +244,11 @@ export async function getDisponibilidadSemanaPaciente(
   const horario = await getHorarioLaboralDietista(paciente.dietistaId);
   if (!horario?.dias) return null;
 
+  const t = await getTranslations("validation");
   const duracion = horario.duracionCitaDefault ?? 30;
   const dietistaNombre = paciente.dietista
     ? `${paciente.dietista.nombre} ${paciente.dietista.apellidos}`
-    : "Tu nutricionista";
+    : t("general.tuNutricionista");
 
   const [anyoLunes, mesLunes, diaLunes] = lunesISO.split("-").map(Number);
   // Lunes 00:00 Madrid
@@ -364,15 +366,16 @@ export async function getDisponibilidadSemanaPaciente(
  * Se genera una notificación al nutri.
  */
 export async function solicitarCitaPaciente(fechaHoraISO: string, motivo?: string): Promise<{ id: string }> {
+  const t = await getTranslations("validation");
   const session = await getCurrentPaciente();
-  if (!session) throw new Error("No autorizado");
+  if (!session) throw new Error(t("auth.noAutorizado"));
 
   const paciente = await getPacienteConDietista(session.pacienteId);
-  if (!paciente?.dietistaId) throw new Error("Paciente sin nutricionista asignado");
+  if (!paciente?.dietistaId) throw new Error(t("cita.sinNutricionistaAsignado"));
 
   const fechaHora = new Date(fechaHoraISO);
-  if (isNaN(fechaHora.getTime())) throw new Error("Fecha inválida");
-  if (fechaHora < new Date()) throw new Error("La fecha no puede ser pasada");
+  if (isNaN(fechaHora.getTime())) throw new Error(t("cita.fechaInvalida"));
+  if (fechaHora < new Date()) throw new Error(t("cita.fechaNoPuedePasada"));
 
   // Obtener duración del horario
   const horario = await getHorarioLaboralDietista(paciente.dietistaId);
@@ -391,7 +394,7 @@ export async function solicitarCitaPaciente(fechaHoraISO: string, motivo?: strin
   if (solapa) {
     const solapaFin = new Date(solapa.fechaHora.getTime() + solapa.duracion * 60 * 1000);
     if (fechaHora < solapaFin && fin > solapa.fechaHora) {
-      throw new Error("Ese horario ya está ocupado. Elige otro hueco.");
+      throw new Error(t("cita.horarioOcupado"));
     }
   }
 
@@ -416,8 +419,11 @@ export async function solicitarCitaPaciente(fechaHoraISO: string, motivo?: strin
       paciente: { connect: { id: paciente.id } },
       cita: { connect: { id: cita.id } },
       tipo: "CITA_SOLICITADA",
-      titulo: "Nueva solicitud de cita",
-      mensaje: `${paciente.nombre} ${paciente.apellidos} te ha solicitado cita para ${formatFechaHora(fechaHora)}`,
+      titulo: t("notificaciones.titulos.nuevaSolicitud"),
+      mensaje: t("notificaciones.mensajes.pacienteSolicitoCita", { nombrePaciente: `${paciente.nombre} ${paciente.apellidos}`, fecha: await formatFechaHora(fechaHora) }),
+      tituloKey: "notificaciones.titulos.nuevaSolicitud",
+      mensajeKey: "notificaciones.mensajes.pacienteSolicitoCita",
+      params: { nombrePaciente: `${paciente.nombre} ${paciente.apellidos}`, fecha: await formatFechaHora(fechaHora) },
       enlace: `/agenda?cita=${cita.id}`,
     },
   });
@@ -458,15 +464,16 @@ export async function getCitasPaciente(): Promise<CitaPortalPaciente[]> {
 
 /** Paciente acepta la contrapropuesta del nutri. Confirma la cita contrapropuesta. */
 export async function aceptarContrapropuestaPaciente(citaId: string): Promise<void> {
+  const t = await getTranslations("validation");
   const session = await getCurrentPaciente();
-  if (!session) throw new Error("No autorizado");
+  if (!session) throw new Error(t("auth.noAutorizado"));
 
   const cita = await prisma.cita.findUnique({
     where: { id: citaId },
     select: { pacienteId: true, dietistaId: true, estado: true, fechaHora: true, paciente: { select: { nombre: true, apellidos: true } } },
   });
-  if (!cita || cita.pacienteId !== session.pacienteId) throw new Error("No autorizado");
-  if (cita.estado !== "CONTRAPROPUESTA") throw new Error("Esta cita no es una contrapropuesta");
+  if (!cita || cita.pacienteId !== session.pacienteId) throw new Error(t("auth.noAutorizado"));
+  if (cita.estado !== "CONTRAPROPUESTA") throw new Error(t("cita.noEsContrapropuesta"));
 
   await prisma.cita.update({
     where: { id: citaId },
@@ -480,8 +487,11 @@ export async function aceptarContrapropuestaPaciente(citaId: string): Promise<vo
       paciente: { connect: { id: cita.pacienteId } },
       cita: { connect: { id: citaId } },
       tipo: "CITA_CONFIRMADA",
-      titulo: "Cita confirmada",
-      mensaje: `${cita.paciente.nombre} ${cita.paciente.apellidos} ha aceptado tu propuesta para ${formatFechaHora(cita.fechaHora)}`,
+      titulo: t("notificaciones.titulos.citaConfirmadaDietista"),
+      mensaje: t("notificaciones.mensajes.pacienteAceptoPropuesta", { nombrePaciente: `${cita.paciente.nombre} ${cita.paciente.apellidos}`, fecha: await formatFechaHora(cita.fechaHora) }),
+      tituloKey: "notificaciones.titulos.citaConfirmadaDietista",
+      mensajeKey: "notificaciones.mensajes.pacienteAceptoPropuesta",
+      params: { nombrePaciente: `${cita.paciente.nombre} ${cita.paciente.apellidos}`, fecha: await formatFechaHora(cita.fechaHora) },
       enlace: `/agenda?cita=${citaId}`,
     },
   });
@@ -493,15 +503,16 @@ export async function aceptarContrapropuestaPaciente(citaId: string): Promise<vo
 
 /** Paciente rechaza la contrapropuesta del nutri. */
 export async function rechazarContrapropuestaPaciente(citaId: string): Promise<void> {
+  const t = await getTranslations("validation");
   const session = await getCurrentPaciente();
-  if (!session) throw new Error("No autorizado");
+  if (!session) throw new Error(t("auth.noAutorizado"));
 
   const cita = await prisma.cita.findUnique({
     where: { id: citaId },
     select: { pacienteId: true, dietistaId: true, estado: true, fechaHora: true, paciente: { select: { nombre: true, apellidos: true } } },
   });
-  if (!cita || cita.pacienteId !== session.pacienteId) throw new Error("No autorizado");
-  if (cita.estado !== "CONTRAPROPUESTA") throw new Error("Esta cita no es una contrapropuesta");
+  if (!cita || cita.pacienteId !== session.pacienteId) throw new Error(t("auth.noAutorizado"));
+  if (cita.estado !== "CONTRAPROPUESTA") throw new Error(t("cita.noEsContrapropuesta"));
 
   await prisma.cita.update({
     where: { id: citaId },
@@ -514,8 +525,11 @@ export async function rechazarContrapropuestaPaciente(citaId: string): Promise<v
       paciente: { connect: { id: cita.pacienteId } },
       cita: { connect: { id: citaId } },
       tipo: "CITA_CANCELADA_POR_PACIENTE",
-      titulo: "Contrapropuesta rechazada",
-      mensaje: `${cita.paciente.nombre} ${cita.paciente.apellidos} ha rechazado tu propuesta para ${formatFechaHora(cita.fechaHora)}`,
+      titulo: t("notificaciones.titulos.contrapropuestaRechazada"),
+      mensaje: t("notificaciones.mensajes.pacienteRechazoPropuesta", { nombrePaciente: `${cita.paciente.nombre} ${cita.paciente.apellidos}`, fecha: await formatFechaHora(cita.fechaHora) }),
+      tituloKey: "notificaciones.titulos.contrapropuestaRechazada",
+      mensajeKey: "notificaciones.mensajes.pacienteRechazoPropuesta",
+      params: { nombrePaciente: `${cita.paciente.nombre} ${cita.paciente.apellidos}`, fecha: await formatFechaHora(cita.fechaHora) },
       enlace: `/agenda`,
     },
   });
@@ -527,16 +541,17 @@ export async function rechazarContrapropuestaPaciente(citaId: string): Promise<v
 
 /** Paciente cancela una cita suya (PENDIENTE o CONFIRMADA). */
 export async function cancelarCitaPaciente(citaId: string): Promise<void> {
+  const t = await getTranslations("validation");
   const session = await getCurrentPaciente();
-  if (!session) throw new Error("No autorizado");
+  if (!session) throw new Error(t("auth.noAutorizado"));
 
   const cita = await prisma.cita.findUnique({
     where: { id: citaId },
     select: { pacienteId: true, dietistaId: true, estado: true, fechaHora: true, paciente: { select: { nombre: true, apellidos: true } } },
   });
-  if (!cita || cita.pacienteId !== session.pacienteId) throw new Error("No autorizado");
+  if (!cita || cita.pacienteId !== session.pacienteId) throw new Error(t("auth.noAutorizado"));
   if (cita.estado === "CANCELADA" || cita.estado === "COMPLETADA") {
-    throw new Error("Esta cita ya no se puede cancelar");
+    throw new Error(t("cita.noPuedeCancelar"));
   }
 
   await prisma.cita.update({
@@ -550,8 +565,11 @@ export async function cancelarCitaPaciente(citaId: string): Promise<void> {
       paciente: { connect: { id: cita.pacienteId } },
       cita: { connect: { id: citaId } },
       tipo: "CITA_CANCELADA_POR_PACIENTE",
-      titulo: "Cita cancelada por el paciente",
-      mensaje: `${cita.paciente.nombre} ${cita.paciente.apellidos} ha cancelado su cita del ${formatFechaHora(cita.fechaHora)}`,
+      titulo: t("notificaciones.titulos.citaCanceladaPaciente"),
+      mensaje: t("notificaciones.mensajes.pacienteCanceloCita", { nombrePaciente: `${cita.paciente.nombre} ${cita.paciente.apellidos}`, fecha: await formatFechaHora(cita.fechaHora) }),
+      tituloKey: "notificaciones.titulos.citaCanceladaPaciente",
+      mensajeKey: "notificaciones.mensajes.pacienteCanceloCita",
+      params: { nombrePaciente: `${cita.paciente.nombre} ${cita.paciente.apellidos}`, fecha: await formatFechaHora(cita.fechaHora) },
       enlace: `/agenda`,
     },
   });
@@ -565,8 +583,9 @@ export async function cancelarCitaPaciente(citaId: string): Promise<void> {
 
 /** Paciente acepta una cita propuesta por el nutri → CONFIRMADA. */
 export async function aceptarPropuestaDietista(citaId: string): Promise<void> {
+  const t = await getTranslations("validation");
   const session = await getCurrentPaciente();
-  if (!session) throw new Error("No autorizado");
+  if (!session) throw new Error(t("auth.noAutorizado"));
 
   const cita = await prisma.cita.findUnique({
     where: { id: citaId },
@@ -575,9 +594,9 @@ export async function aceptarPropuestaDietista(citaId: string): Promise<void> {
       paciente: { select: { nombre: true, apellidos: true } },
     },
   });
-  if (!cita || cita.pacienteId !== session.pacienteId) throw new Error("No autorizado");
+  if (!cita || cita.pacienteId !== session.pacienteId) throw new Error(t("auth.noAutorizado"));
   if (cita.origen !== "DIETISTA" || cita.estado !== "PENDIENTE") {
-    throw new Error("Esta cita no es una propuesta del nutricionista");
+    throw new Error(t("cita.noEsPropuestaNutri"));
   }
 
   await prisma.cita.update({
@@ -591,8 +610,11 @@ export async function aceptarPropuestaDietista(citaId: string): Promise<void> {
       paciente: { connect: { id: cita.pacienteId } },
       cita: { connect: { id: citaId } },
       tipo: "CITA_CONFIRMADA",
-      titulo: "Cita confirmada",
-      mensaje: `${cita.paciente.nombre} ${cita.paciente.apellidos} ha aceptado la cita del ${formatFechaHora(cita.fechaHora)}`,
+      titulo: t("notificaciones.titulos.citaConfirmadaDietista"),
+      mensaje: t("notificaciones.mensajes.pacienteAceptoCita", { nombrePaciente: `${cita.paciente.nombre} ${cita.paciente.apellidos}`, fecha: await formatFechaHora(cita.fechaHora) }),
+      tituloKey: "notificaciones.titulos.citaConfirmadaDietista",
+      mensajeKey: "notificaciones.mensajes.pacienteAceptoCita",
+      params: { nombrePaciente: `${cita.paciente.nombre} ${cita.paciente.apellidos}`, fecha: await formatFechaHora(cita.fechaHora) },
       enlace: `/agenda?cita=${citaId}`,
     },
   });
@@ -604,8 +626,9 @@ export async function aceptarPropuestaDietista(citaId: string): Promise<void> {
 
 /** Paciente rechaza una cita propuesta por el nutri → CANCELADA. */
 export async function rechazarPropuestaDietista(citaId: string, motivoRechazo?: string): Promise<void> {
+  const t = await getTranslations("validation");
   const session = await getCurrentPaciente();
-  if (!session) throw new Error("No autorizado");
+  if (!session) throw new Error(t("auth.noAutorizado"));
 
   const cita = await prisma.cita.findUnique({
     where: { id: citaId },
@@ -614,9 +637,9 @@ export async function rechazarPropuestaDietista(citaId: string, motivoRechazo?: 
       paciente: { select: { nombre: true, apellidos: true } },
     },
   });
-  if (!cita || cita.pacienteId !== session.pacienteId) throw new Error("No autorizado");
+  if (!cita || cita.pacienteId !== session.pacienteId) throw new Error(t("auth.noAutorizado"));
   if (cita.origen !== "DIETISTA" || cita.estado !== "PENDIENTE") {
-    throw new Error("Esta cita no es una propuesta del nutricionista");
+    throw new Error(t("cita.noEsPropuestaNutri"));
   }
 
   await prisma.cita.update({
@@ -633,10 +656,13 @@ export async function rechazarPropuestaDietista(citaId: string, motivoRechazo?: 
       paciente: { connect: { id: cita.pacienteId } },
       cita: { connect: { id: citaId } },
       tipo: "CITA_RECHAZADA",
-      titulo: "El paciente ha rechazado la cita",
+      titulo: t("notificaciones.titulos.pacienteRechazoCita"),
       mensaje:
-        `${cita.paciente.nombre} ${cita.paciente.apellidos} ha rechazado la cita del ${formatFechaHora(cita.fechaHora)}` +
-        (motivoRechazo ? `. Motivo: ${motivoRechazo}` : "."),
+        t("notificaciones.mensajes.pacienteRechazoCita", { nombrePaciente: `${cita.paciente.nombre} ${cita.paciente.apellidos}`, fecha: await formatFechaHora(cita.fechaHora) }) +
+        (motivoRechazo ? `. ${t("notificaciones.mensajes.motivo", { motivo: motivoRechazo })}` : "."),
+      tituloKey: "notificaciones.titulos.pacienteRechazoCita",
+      mensajeKey: "notificaciones.mensajes.pacienteRechazoCita",
+      params: { nombrePaciente: `${cita.paciente.nombre} ${cita.paciente.apellidos}`, fecha: await formatFechaHora(cita.fechaHora), motivo: motivoRechazo },
       enlace: "/agenda",
     },
   });
@@ -655,8 +681,9 @@ export async function contraproponerPorPaciente(
   nuevaFechaHoraISO: string,
   motivo?: string,
 ): Promise<{ id: string }> {
+  const t = await getTranslations("validation");
   const session = await getCurrentPaciente();
-  if (!session) throw new Error("No autorizado");
+  if (!session) throw new Error(t("auth.noAutorizado"));
 
   const original = await prisma.cita.findUnique({
     where: { id: citaOriginalId },
@@ -665,19 +692,19 @@ export async function contraproponerPorPaciente(
       paciente: { select: { nombre: true, apellidos: true } },
     },
   });
-  if (!original || original.pacienteId !== session.pacienteId) throw new Error("No autorizado");
+  if (!original || original.pacienteId !== session.pacienteId) throw new Error(t("auth.noAutorizado"));
   // El paciente puede contraponer si:
   //  - La cita es PENDIENTE con origen DIETISTA (propuesta directa del nutri), O
   //  - La cita es CONTRAPROPUESTA con propuestoPor DIETISTA (el nutri contrapone algo que el paciente había pedido)
   const esPropuestaNutri = original.origen === "DIETISTA" && original.estado === "PENDIENTE";
   const esContrapropuestaNutri = original.estado === "CONTRAPROPUESTA" && original.propuestoPor === "DIETISTA";
   if (!esPropuestaNutri && !esContrapropuestaNutri) {
-    throw new Error("Esta cita no permite contrapropuesta del paciente");
+    throw new Error(t("cita.noPermiteContrapropuestaPaciente"));
   }
 
   const nuevaFechaHora = new Date(nuevaFechaHoraISO);
-  if (isNaN(nuevaFechaHora.getTime())) throw new Error("Fecha inválida");
-  if (nuevaFechaHora < new Date()) throw new Error("La fecha no puede ser pasada");
+  if (isNaN(nuevaFechaHora.getTime())) throw new Error(t("cita.fechaInvalida"));
+  if (nuevaFechaHora < new Date()) throw new Error(t("cita.fechaNoPuedePasada"));
 
   // Validar que el slot no está pisado
   const fin = new Date(nuevaFechaHora.getTime() + original.duracion * 60 * 1000);
@@ -693,7 +720,7 @@ export async function contraproponerPorPaciente(
   if (solapa) {
     const solapaFin = new Date(solapa.fechaHora.getTime() + solapa.duracion * 60 * 1000);
     if (nuevaFechaHora < solapaFin && fin > solapa.fechaHora) {
-      throw new Error("Ese horario ya está ocupado por otra cita");
+      throw new Error(t("cita.horarioOcupadoPorOtraCita"));
     }
   }
 
@@ -727,8 +754,11 @@ export async function contraproponerPorPaciente(
       paciente: { connect: { id: original.pacienteId } },
       cita: { connect: { id: contrapropuesta.id } },
       tipo: "CITA_CONTRAPROPUESTA",
-      titulo: "El paciente propone otra fecha",
-      mensaje: `${original.paciente.nombre} ${original.paciente.apellidos} propone el ${formatFechaHora(nuevaFechaHora)} en vez del ${formatFechaHora(original.fechaHora)}`,
+      titulo: t("notificaciones.titulos.pacienteProponeOtraFecha"),
+      mensaje: t("notificaciones.mensajes.pacienteProponeOtraFecha", { nombrePaciente: `${original.paciente.nombre} ${original.paciente.apellidos}`, fechaNueva: await formatFechaHora(nuevaFechaHora), fechaOriginal: await formatFechaHora(original.fechaHora) }),
+      tituloKey: "notificaciones.titulos.pacienteProponeOtraFecha",
+      mensajeKey: "notificaciones.mensajes.pacienteProponeOtraFecha",
+      params: { nombrePaciente: `${original.paciente.nombre} ${original.paciente.apellidos}`, fechaNueva: await formatFechaHora(nuevaFechaHora), fechaOriginal: await formatFechaHora(original.fechaHora) },
       enlace: `/agenda?cita=${contrapropuesta.id}`,
     },
   });
@@ -741,17 +771,18 @@ export async function contraproponerPorPaciente(
 
 /** Nutri acepta la contrapropuesta del paciente → confirma la contrapropuesta y cancela la original. */
 export async function aceptarContrapropuestaDietista(citaId: string): Promise<void> {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const cita = await prisma.cita.findUnique({
     where: { id: citaId, dietistaId: dietista.id },
     select: { estado: true, pacienteId: true, propuestoPor: true, fechaHora: true },
   });
-  if (!cita) throw new Error("Cita no encontrada");
+  if (!cita) throw new Error(t("cita.citaNoEncontrada"));
   if (cita.estado !== "CONTRAPROPUESTA" || cita.propuestoPor !== "PACIENTE") {
-    throw new Error("Esta cita no es una contrapropuesta del paciente");
+    throw new Error(t("cita.noEsContrapropuestaPaciente"));
   }
 
   await prisma.cita.update({
@@ -764,8 +795,11 @@ export async function aceptarContrapropuestaDietista(citaId: string): Promise<vo
       pacienteId: cita.pacienteId,
       citaId,
       tipo: "CITA_CONFIRMADA",
-      titulo: "Cita confirmada",
-      mensaje: `${dietista.nombre} ${dietista.apellidos} ha aceptado tu propuesta para ${formatFechaHora(cita.fechaHora)}`,
+      titulo: t("notificaciones.titulos.citaConfirmada"),
+      mensaje: t("notificaciones.mensajes.dietistaAceptoPropuesta", { nombreDietista: `${dietista.nombre} ${dietista.apellidos}`, fecha: await formatFechaHora(cita.fechaHora) }),
+      tituloKey: "notificaciones.titulos.citaConfirmada",
+      mensajeKey: "notificaciones.mensajes.dietistaAceptoPropuesta",
+      params: { nombreDietista: `${dietista.nombre} ${dietista.apellidos}`, fecha: await formatFechaHora(cita.fechaHora) },
       enlace: "/paciente/portal/citas",
     },
   });
@@ -777,17 +811,18 @@ export async function aceptarContrapropuestaDietista(citaId: string): Promise<vo
 
 /** Nutri rechaza la contrapropuesta del paciente. */
 export async function rechazarContrapropuestaDietista(citaId: string): Promise<void> {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const cita = await prisma.cita.findUnique({
     where: { id: citaId, dietistaId: dietista.id },
     select: { estado: true, pacienteId: true, propuestoPor: true, fechaHora: true },
   });
-  if (!cita) throw new Error("Cita no encontrada");
+  if (!cita) throw new Error(t("cita.citaNoEncontrada"));
   if (cita.estado !== "CONTRAPROPUESTA" || cita.propuestoPor !== "PACIENTE") {
-    throw new Error("Esta cita no es una contrapropuesta del paciente");
+    throw new Error(t("cita.noEsContrapropuestaPaciente"));
   }
 
   await prisma.cita.update({
@@ -800,8 +835,11 @@ export async function rechazarContrapropuestaDietista(citaId: string): Promise<v
       pacienteId: cita.pacienteId,
       citaId,
       tipo: "CITA_RECHAZADA",
-      titulo: "Tu nutricionista ha rechazado tu propuesta",
-      mensaje: `${dietista.nombre} ${dietista.apellidos} ha rechazado tu propuesta del ${formatFechaHora(cita.fechaHora)}`,
+      titulo: t("notificaciones.titulos.nutricionistaRechazoContrapropuesta"),
+      mensaje: t("notificaciones.mensajes.dietistaRechazoPropuesta", { nombreDietista: `${dietista.nombre} ${dietista.apellidos}`, fecha: await formatFechaHora(cita.fechaHora) }),
+      tituloKey: "notificaciones.titulos.nutricionistaRechazoContrapropuesta",
+      mensajeKey: "notificaciones.mensajes.dietistaRechazoPropuesta",
+      params: { nombreDietista: `${dietista.nombre} ${dietista.apellidos}`, fecha: await formatFechaHora(cita.fechaHora) },
       enlace: "/paciente/portal/citas",
     },
   });
@@ -815,16 +853,17 @@ export async function rechazarContrapropuestaDietista(citaId: string): Promise<v
 
 /** Nutri acepta una cita solicitada por el paciente → CONFIRMADA. */
 export async function aceptarSolicitudCita(citaId: string): Promise<void> {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const cita = await prisma.cita.findUnique({
     where: { id: citaId, dietistaId: dietista.id },
     select: { estado: true, pacienteId: true, fechaHora: true },
   });
-  if (!cita) throw new Error("Cita no encontrada");
-  if (cita.estado !== "PENDIENTE") throw new Error("Esta cita ya no está pendiente");
+  if (!cita) throw new Error(t("cita.citaNoEncontrada"));
+  if (cita.estado !== "PENDIENTE") throw new Error(t("cita.yaNoEstaPendiente"));
 
   await prisma.cita.update({
     where: { id: citaId },
@@ -837,8 +876,11 @@ export async function aceptarSolicitudCita(citaId: string): Promise<void> {
       pacienteId: cita.pacienteId,
       citaId,
       tipo: "CITA_CONFIRMADA",
-      titulo: "Tu cita ha sido confirmada",
-      mensaje: `${dietista.nombre} ${dietista.apellidos} ha confirmado tu cita para ${formatFechaHora(cita.fechaHora)}`,
+      titulo: t("notificaciones.titulos.citaConfirmada"),
+      mensaje: t("notificaciones.mensajes.dietistaConfirmoCita", { nombreDietista: `${dietista.nombre} ${dietista.apellidos}`, fecha: await formatFechaHora(cita.fechaHora) }),
+      tituloKey: "notificaciones.titulos.citaConfirmada",
+      mensajeKey: "notificaciones.mensajes.dietistaConfirmoCita",
+      params: { nombreDietista: `${dietista.nombre} ${dietista.apellidos}`, fecha: await formatFechaHora(cita.fechaHora) },
       enlace: `/paciente/portal/citas`,
     },
   });
@@ -858,27 +900,28 @@ export async function contraproponerCita(
   duracion?: number,
   nota?: string,
 ): Promise<{ id: string }> {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return { id: "" };
 
   const original = await prisma.cita.findUnique({
     where: { id: citaOriginalId, dietistaId: dietista.id },
     select: { estado: true, pacienteId: true, motivo: true, fechaHora: true, duracion: true, origen: true, propuestoPor: true },
   });
-  if (!original) throw new Error("Cita no encontrada");
+  if (!original) throw new Error(t("cita.citaNoEncontrada"));
   // El nutri puede contraponer si la pelota está en su tejado:
   //  - Solicitud nueva del paciente: PENDIENTE + origen PACIENTE.
   //  - Contrapropuesta del paciente en curso: CONTRAPROPUESTA + propuestoPor PACIENTE.
   const esSolicitud = original.estado === "PENDIENTE" && original.origen === "PACIENTE";
   const esContrapropuestaPaciente = original.estado === "CONTRAPROPUESTA" && original.propuestoPor === "PACIENTE";
   if (!esSolicitud && !esContrapropuestaPaciente) {
-    throw new Error("Esta cita no permite contrapropuesta del nutricionista");
+    throw new Error(t("cita.noPermiteContrapropuestaNutri"));
   }
 
   const nuevaFechaHora = new Date(nuevaFechaHoraISO);
-  if (isNaN(nuevaFechaHora.getTime())) throw new Error("Fecha inválida");
-  if (nuevaFechaHora < new Date()) throw new Error("La fecha no puede ser pasada");
+  if (isNaN(nuevaFechaHora.getTime())) throw new Error(t("cita.fechaInvalida"));
+  if (nuevaFechaHora < new Date()) throw new Error(t("cita.fechaNoPuedePasada"));
 
   // Validar que el slot no está pisado (excluyendo la original que está pendiente)
   const dur = duracion ?? original.duracion ?? 30;
@@ -895,7 +938,7 @@ export async function contraproponerCita(
   if (solapa) {
     const solapaFin = new Date(solapa.fechaHora.getTime() + solapa.duracion * 60 * 1000);
     if (nuevaFechaHora < solapaFin && fin > solapa.fechaHora) {
-      throw new Error("Ese horario está ocupado por otra cita");
+      throw new Error(t("cita.horarioOcupadoNutri"));
     }
   }
 
@@ -930,8 +973,11 @@ export async function contraproponerCita(
       pacienteId: original.pacienteId,
       citaId: contrapropuesta.id,
       tipo: "CITA_CONTRAPROPUESTA",
-      titulo: "Tu nutricionista ha propuesto otra fecha",
-      mensaje: `${dietista.nombre} ${dietista.apellidos} propone el ${formatFechaHora(nuevaFechaHora)} en vez del ${formatFechaHora(original.fechaHora)}`,
+      titulo: t("notificaciones.titulos.nutricionistaProponeOtraFecha"),
+      mensaje: t("notificaciones.mensajes.dietistaProponeOtraFecha", { nombreDietista: `${dietista.nombre} ${dietista.apellidos}`, fechaNueva: await formatFechaHora(nuevaFechaHora), fechaOriginal: await formatFechaHora(original.fechaHora) }),
+      tituloKey: "notificaciones.titulos.nutricionistaProponeOtraFecha",
+      mensajeKey: "notificaciones.mensajes.dietistaProponeOtraFecha",
+      params: { nombreDietista: `${dietista.nombre} ${dietista.apellidos}`, fechaNueva: await formatFechaHora(nuevaFechaHora), fechaOriginal: await formatFechaHora(original.fechaHora) },
       enlace: `/paciente/portal/citas`,
     },
   });
@@ -944,16 +990,17 @@ export async function contraproponerCita(
 
 /** Nutri rechaza una cita solicitada por el paciente. */
 export async function rechazarSolicitudCita(citaId: string, motivoRechazo?: string): Promise<void> {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const cita = await prisma.cita.findUnique({
     where: { id: citaId, dietistaId: dietista.id },
     select: { estado: true, pacienteId: true, fechaHora: true },
   });
-  if (!cita) throw new Error("Cita no encontrada");
-  if (cita.estado !== "PENDIENTE") throw new Error("Esta cita ya no está pendiente");
+  if (!cita) throw new Error(t("cita.citaNoEncontrada"));
+  if (cita.estado !== "PENDIENTE") throw new Error(t("cita.yaNoEstaPendiente"));
 
   await prisma.cita.update({
     where: { id: citaId },
@@ -968,10 +1015,13 @@ export async function rechazarSolicitudCita(citaId: string, motivoRechazo?: stri
       pacienteId: cita.pacienteId,
       citaId,
       tipo: "CITA_RECHAZADA",
-      titulo: "Tu solicitud de cita ha sido rechazada",
+      titulo: t("notificaciones.titulos.solicitudRechazada"),
       mensaje:
-        `${dietista.nombre} ${dietista.apellidos} ha rechazado tu solicitud para ${formatFechaHora(cita.fechaHora)}` +
-        (motivoRechazo ? `. Motivo: ${motivoRechazo}` : "."),
+        t("notificaciones.mensajes.dietistaRechazoSolicitud", { nombreDietista: `${dietista.nombre} ${dietista.apellidos}`, fecha: await formatFechaHora(cita.fechaHora) }) +
+        (motivoRechazo ? `. ${t("notificaciones.mensajes.motivo", { motivo: motivoRechazo })}` : "."),
+      tituloKey: "notificaciones.titulos.solicitudRechazada",
+      mensajeKey: "notificaciones.mensajes.dietistaRechazoSolicitud",
+      params: { nombreDietista: `${dietista.nombre} ${dietista.apellidos}`, fecha: await formatFechaHora(cita.fechaHora), motivo: motivoRechazo },
       enlace: `/paciente/portal/citas`,
     },
   });
@@ -1069,13 +1119,14 @@ export async function getSolicitudesPendientes() {
 
 // ─── Utilidades de formato ─────────────────────────────────────────
 
-function formatFechaHora(d: Date): string {
-  const dias = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
-  const meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
-  const dia = dias[d.getDay()];
-  const numDia = d.getDate();
-  const mes = meses[d.getMonth()];
-  const hora = String(d.getHours()).padStart(2, "0");
-  const min = String(d.getMinutes()).padStart(2, "0");
-  return `${dia} ${numDia} de ${mes} a las ${hora}:${min}`;
+async function formatFechaHora(d: Date): Promise<string> {
+  const locale = await import("@/i18n/locale").then((m) => m.getLocale());
+  const tag = locale === "pt" ? "pt-BR" : "es-ES";
+  return d.toLocaleString(tag, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }

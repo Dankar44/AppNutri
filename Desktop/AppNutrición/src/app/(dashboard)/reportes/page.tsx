@@ -8,8 +8,10 @@ import { prisma } from "@/lib/prisma";
 import { StatsCard } from "@/components/stats-card";
 import { DistribucionChart, ActividadAnualChart } from "./reportes-charts";
 import { PageHeader } from "@/components/page-header";
+import { getTranslations } from "next-intl/server";
 
 export default async function ReportesPage() {
+  const t = await getTranslations("reports");
   const dietista = await getCurrentDietista();
   if (!dietista) redirect("/login");
 
@@ -34,23 +36,23 @@ export default async function ReportesPage() {
   if (!stats || !metricas) redirect("/login");
 
   const kpisMes = [
-    { label: "Total pacientes", value: metricas.totalPacientes, icon: Users, href: "/pacientes" },
-    { label: "Consultas este mes", value: metricas.consultasMes, icon: UserCheck, href: "/agenda" },
-    { label: "Planes activos", value: metricas.planesActivos, icon: UtensilsCrossed, href: "/dietas" },
-    { label: "Citas esta semana", value: metricas.citasSemana, icon: CalendarDays, href: "/agenda" },
+    { label: t("resumenMes.totalPacientes"), value: metricas.totalPacientes, icon: Users, href: "/pacientes" },
+    { label: t("resumenMes.consultasEsteMes"), value: metricas.consultasMes, icon: UserCheck, href: "/agenda" },
+    { label: t("resumenMes.planesActivos"), value: metricas.planesActivos, icon: UtensilsCrossed, href: "/dietas" },
+    { label: t("resumenMes.citasEstaSemana"), value: metricas.citasSemana, icon: CalendarDays, href: "/agenda" },
   ];
 
   return (
     <div>
       <PageHeader
         icon={FileBarChart}
-        title="Reportes y Estadísticas"
-        subtitle="Métricas de tu consulta"
+        title={t("page.title")}
+        subtitle={t("page.subtitle")}
       />
 
       {/* Resumen del mes */}
       <section data-tour="reports-kpis" className="mb-8">
-        <h2 className="text-lg font-semibold mb-4">Resumen del mes</h2>
+        <h2 className="text-lg font-semibold mb-4">{t("resumenMes.titulo")}</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {kpisMes.map((kpi) => (
             <Link
@@ -80,31 +82,31 @@ export default async function ReportesPage() {
       </section>
 
       {/* Métricas avanzadas */}
-      <h2 className="text-lg font-semibold mb-4">Métricas de consulta</h2>
+      <h2 className="text-lg font-semibold mb-4">{t("metricas.titulo")}</h2>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatsCard icon={Users} label="Tasa de retención" value={`${stats.tasaRetencion}%`} color="text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10" />
-        <StatsCard icon={FileText} label="Media consultas/pac." value={stats.mediaConsultas} color="text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10" />
-        <StatsCard icon={Sparkles} label="Planes creados" value={stats.planesIA} color="text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10" />
-        <StatsCard icon={UserCheck} label="Pacientes con portal" value={stats.pacientesConPortal} color="text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10" />
+        <StatsCard icon={Users} label={t("metricas.tasaRetencion")} value={`${stats.tasaRetencion}%`} color="text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10" />
+        <StatsCard icon={FileText} label={t("metricas.mediaConsultasPac")} value={stats.mediaConsultas} color="text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10" />
+        <StatsCard icon={Sparkles} label={t("metricas.planesCreados")} value={stats.planesIA} color="text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10" />
+        <StatsCard icon={UserCheck} label={t("metricas.pacientesConPortal")} value={stats.pacientesConPortal} color="text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Distribución por objetivo */}
         <section className="bg-card rounded-xl border border-border p-6">
-          <h2 className="text-lg font-semibold mb-4">Pacientes por objetivo</h2>
+          <h2 className="text-lg font-semibold mb-4">{t("charts.pacientesPorObjetivo")}</h2>
           <DistribucionChart data={distribucion} />
         </section>
 
         {/* Actividad anual */}
         <section className="bg-card rounded-xl border border-border p-6">
-          <h2 className="text-lg font-semibold mb-4">Actividad (últimos 12 meses)</h2>
+          <h2 className="text-lg font-semibold mb-4">{t("charts.actividadUltimos12Meses")}</h2>
           <ActividadAnualChart data={consultasMes} />
         </section>
       </div>
 
       {/* Exportar PDF por paciente */}
       <section data-tour="patient-reports" className="bg-card rounded-xl border border-border p-6">
-        <h2 className="text-lg font-semibold mb-4">Exportar informes por paciente</h2>
+        <h2 className="text-lg font-semibold mb-4">{t("exportar.titulo")}</h2>
         <div className="space-y-2">
           {pacientesRecientes.map((p) => (
             <div
@@ -116,15 +118,15 @@ export default async function ReportesPage() {
                   {p.nombre} {p.apellidos}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {p._count.planes} planes, {p._count.consultas} consultas,{" "}
-                  {p._count.medidas} medidas
+                  {t("exportar.planesCount", { count: p._count.planes })}, {t("exportar.consultasCount", { count: p._count.consultas })},{" "}
+                  {t("exportar.medidasCount", { count: p._count.medidas })}
                 </p>
               </div>
               <Link
                 href={`/reportes/${p.id}`}
                 className="px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors text-xs font-medium"
               >
-                Ver informes
+                {t("exportar.verInformes")}
               </Link>
             </div>
           ))}

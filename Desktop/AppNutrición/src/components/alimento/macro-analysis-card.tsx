@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Droplets, Circle, Diamond, Triangle } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export function MacroAnalysisCard({ title, proteinas, carbohidratos, grasas, fibra }: Props) {
+  const t = useTranslations("foods.macros");
   const grasasKcal = grasas * 9;
   const carbKcal = carbohidratos * 4;
   const protKcal = proteinas * 4;
@@ -27,16 +29,16 @@ export function MacroAnalysisCard({ title, proteinas, carbohidratos, grasas, fib
   const energySinFibra = grasasKcal + carbKcal + protKcal || 1;
 
   const pieData = [
-    { name: "Grasa", value: grasasKcal, color: MACRO_COLORS.grasas },
-    { name: "Hidratos", value: carbKcal, color: MACRO_COLORS.carbohidratos },
-    { name: "Proteína", value: protKcal, color: MACRO_COLORS.proteinas },
+    { name: t("grasa"), value: grasasKcal, color: MACRO_COLORS.grasas },
+    { name: t("hidratos"), value: carbKcal, color: MACRO_COLORS.carbohidratos },
+    { name: t("proteina"), value: protKcal, color: MACRO_COLORS.proteinas },
   ].filter((s) => s.value > 0);
 
   const rows = [
-    { key: "grasas", label: "Grasa", value: grasas, kcal: grasasKcal, color: MACRO_COLORS.grasas, bgColor: "bg-yellow-50 dark:bg-yellow-500/10" },
-    { key: "carbohidratos", label: "Hidratos", value: carbohidratos, kcal: carbKcal, color: MACRO_COLORS.carbohidratos, bgColor: "bg-orange-50 dark:bg-orange-500/10" },
-    { key: "proteinas", label: "Proteína", value: proteinas, kcal: protKcal, color: MACRO_COLORS.proteinas, bgColor: "bg-blue-50 dark:bg-blue-500/10" },
-    { key: "fibra", label: "Fibra alimentaria", value: fibra, kcal: fibraKcal, color: MACRO_COLORS.fibra, bgColor: "bg-emerald-50 dark:bg-emerald-500/10" },
+    { key: "grasas", label: t("grasa"), value: grasas, kcal: grasasKcal, color: MACRO_COLORS.grasas, bgColor: "bg-yellow-50 dark:bg-yellow-500/10" },
+    { key: "carbohidratos", label: t("hidratos"), value: carbohidratos, kcal: carbKcal, color: MACRO_COLORS.carbohidratos, bgColor: "bg-orange-50 dark:bg-orange-500/10" },
+    { key: "proteinas", label: t("proteina"), value: proteinas, kcal: protKcal, color: MACRO_COLORS.proteinas, bgColor: "bg-blue-50 dark:bg-blue-500/10" },
+    { key: "fibra", label: t("fibraAlimentaria"), value: fibra, kcal: fibraKcal, color: MACRO_COLORS.fibra, bgColor: "bg-emerald-50 dark:bg-emerald-500/10" },
   ];
 
   void energySinFibra;

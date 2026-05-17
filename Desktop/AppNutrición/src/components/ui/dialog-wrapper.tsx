@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -44,6 +45,7 @@ export function DialogWrapper({
   children,
   footer,
 }: DialogWrapperProps) {
+  const t = useTranslations("common.dialog");
   useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent) {
@@ -93,7 +95,7 @@ export function DialogWrapper({
               <button
                 type="button"
                 onClick={onClose}
-                aria-label="Cerrar"
+                aria-label={t("cerrar")}
                 className="p-2 rounded-lg hover:bg-muted transition-colors min-h-11 min-w-11 flex items-center justify-center shrink-0 -mr-2"
               >
                 <X className="w-5 h-5" />

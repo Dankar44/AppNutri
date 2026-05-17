@@ -10,6 +10,7 @@ import {
 } from "@/lib/validation";
 import { convertirAGramos } from "@/lib/macros";
 import { formatQuantity } from "@/lib/units";
+import { getTranslations } from "next-intl/server";
 
 // ─── Types ───
 
@@ -57,10 +58,11 @@ export interface ActividadPaciente {
 // ─── Helpers ───
 
 async function verificarPaciente(pacienteId: string, dietistaId: string) {
+  const t = await getTranslations("validation");
   const paciente = await prisma.paciente.findFirst({
     where: { id: pacienteId, dietistaId },
   });
-  if (!paciente) throw new Error("Paciente no encontrado");
+  if (!paciente) throw new Error(t("paciente.pacienteNoEncontrado"));
   return paciente;
 }
 
@@ -123,8 +125,9 @@ export async function upsertSeguimientoDia(
   fecha: string,
   data: SeguimientoUpsertData
 ) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   await verificarPaciente(pacienteId, dietista.id);
@@ -179,6 +182,7 @@ export async function getActividadesPaciente(
 
   await verificarPaciente(pacienteId, dietista.id);
 
+  const t = await getTranslations("validation");
   const tipoFilter = tipo ? sanitizeString(tipo, 20) : null;
   const actividades: ActividadPaciente[] = [];
 
@@ -212,7 +216,7 @@ export async function getActividadesPaciente(
         id: e.id,
         fecha: e.fecha,
         tipo: "diario",
-        titulo: `Diario: ${e.tipoComida}`,
+        titulo: t("seguimiento.actividadTitulos.diarioTipoComida", { tipoComida: e.tipoComida }),
         descripcion: e.descripcion,
         detalles,
       });
@@ -245,7 +249,7 @@ export async function getActividadesPaciente(
         id: c.id,
         fecha: c.fecha,
         tipo: "consulta",
-        titulo: "Consulta",
+        titulo: t("seguimiento.actividadTitulos.consulta"),
         descripcion: c.motivo,
         detalles,
       });
@@ -286,8 +290,8 @@ export async function getActividadesPaciente(
         fecha: ej.fecha,
         tipo: "ejercicio",
         titulo: ej.ejercicioTipo
-          ? `Ejercicio: ${ej.ejercicioTipo}`
-          : "Ejercicio",
+          ? t("seguimiento.actividadTitulos.ejercicioConTipo", { tipo: ej.ejercicioTipo })
+          : t("seguimiento.actividadTitulos.ejercicioGenerico"),
         descripcion: null,
         detalles,
       });
@@ -308,8 +312,8 @@ export async function getActividadesPaciente(
     );
 
     const TIPO_LABELS: Record<string, string> = {
-      DESAYUNO: "desayuno", MEDIA_MANANA: "media mañana", ALMUERZO: "comida",
-      MERIENDA: "merienda", CENA: "cena", RECENA: "recena",
+      DESAYUNO: t("seguimiento.tipoLabels.desayuno"), MEDIA_MANANA: t("seguimiento.tipoLabels.mediaManana"), ALMUERZO: t("seguimiento.tipoLabels.almuerzo"),
+      MERIENDA: t("seguimiento.tipoLabels.merienda"), CENA: t("seguimiento.tipoLabels.cena"), RECENA: t("seguimiento.tipoLabels.recena"),
     };
     const HORAS: Record<string, string> = {
       DESAYUNO: "08:30", MEDIA_MANANA: "11:00", ALMUERZO: "14:00",
@@ -324,8 +328,9 @@ export async function getActividadesPaciente(
       }>;
       if (!Array.isArray(comidas)) continue;
 
+      const meses = t.raw("seguimiento.meses") as string[];
       const fechaStr = seg.fecha instanceof Date
-        ? `${String(seg.fecha.getUTCDate()).padStart(2, "0")} de ${["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"][seg.fecha.getUTCMonth()]} de ${seg.fecha.getUTCFullYear()}`
+        ? `${String(seg.fecha.getUTCDate()).padStart(2, "0")} de ${meses[seg.fecha.getUTCMonth()]} de ${seg.fecha.getUTCFullYear()}`
         : String(seg.fecha).slice(0, 10);
 
       for (const comida of comidas) {
@@ -343,7 +348,7 @@ export async function getActividadesPaciente(
             id: `${seg.id}-${comida.tipo}-done`,
             fecha: seg.fecha,
             tipo: "comida_cumplida",
-            titulo: `Cumplió la ${mealLabel} del día ${fechaStr} a las ${hora}.`,
+            titulo: t("seguimiento.cumplioComida", { mealLabel, fechaStr, hora }),
             descripcion: null,
             detalles: [],
           });
@@ -361,7 +366,7 @@ export async function getActividadesPaciente(
             id: `${seg.id}-${comida.tipo}-partial`,
             fecha: seg.fecha,
             tipo: "comida_cambios",
-            titulo: `Hizo cambios en la ${mealLabel} del día ${fechaStr} a las ${hora}.`,
+            titulo: t("seguimiento.hizoCambiosComida", { mealLabel, fechaStr, hora }),
             descripcion: null,
             detalles,
           });

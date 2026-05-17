@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight, TrendingUp, TrendingDown, Minus, LineChart as LineChartIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
   AreaChart,
   Area,
@@ -35,6 +36,7 @@ interface Props {
 }
 
 export function ProgresoCard({ peso, imc, grasa, sparkData, className = "" }: Props) {
+  const t = useTranslations("patient-portal.dashboard.progresoCard");
   const chartData = sparkData.filter((p) => p.peso !== null).map((p) => ({ peso: p.peso }));
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -47,15 +49,15 @@ export function ProgresoCard({ peso, imc, grasa, sparkData, className = "" }: Pr
             <TrendingUp className="w-5 h-5" strokeWidth={1.75} />
           </span>
           <div>
-            <h2 className="text-base font-semibold">Progreso</h2>
-            <p className="text-[11px] text-muted-foreground">Tendencia reciente</p>
+            <h2 className="text-base font-semibold">{t("title")}</h2>
+            <p className="text-[11px] text-muted-foreground">{t("subtitle")}</p>
           </div>
         </div>
         <Link
           href="/paciente/portal/evolucion"
           className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
         >
-          Ver todo
+          {t("verTodo")}
           <ArrowRight className="w-3 h-3" />
         </Link>
       </header>
@@ -89,7 +91,7 @@ export function ProgresoCard({ peso, imc, grasa, sparkData, className = "" }: Pr
         ) : (
           <div className="h-20 flex items-center justify-center text-xs text-muted-foreground border border-dashed border-border rounded-lg">
             <LineChartIcon className="w-4 h-4 mr-1.5" />
-            Aún sin datos suficientes
+            {t("sinDatos")}
           </div>
         )}
       </div>

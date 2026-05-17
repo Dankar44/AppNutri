@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/mailer";
+import { getTranslations } from "next-intl/server";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://annonia.com";
 
@@ -57,6 +58,8 @@ export async function notificarPacienteNuevoMensaje(
   pacienteId: string,
   textoMensaje: string,
 ) {
+  const te = await getTranslations("emails");
+
   const paciente = await prisma.paciente.findUnique({
     where: { id: pacienteId },
     select: {
@@ -74,25 +77,25 @@ export async function notificarPacienteNuevoMensaje(
 
   const nombreDietista = `${paciente.dietista.nombre} ${paciente.dietista.apellidos}`;
   const preview = truncar(textoMensaje);
-  const subject = `Tienes un mensaje de ${nombreDietista}`;
+  const subject = te("mensajesPaciente.subject", { nombreDietista });
   const link = `${APP_URL}/paciente/portal/mensajes`;
 
   const html = `<!DOCTYPE html>
-<html lang="es"><head><meta charset="utf-8">${BASE_STYLES}</head><body>
+<html><head><meta charset="utf-8">${BASE_STYLES}</head><body>
 <div class="container">
   <div class="header">
     <span class="logo">Annonia</span>
   </div>
   <div class="content">
-    <h1>Hola, ${escape(paciente.nombre)}</h1>
-    <p><strong>${escape(nombreDietista)}</strong> te ha enviado un mensaje:</p>
+    <h1>${escape(te("mensajesPaciente.saludo", { nombre: paciente.nombre }))}</h1>
+    <p><strong>${escape(nombreDietista)}</strong> ${escape(te("mensajesPaciente.cuerpo", { nombreDietista })).replace(escape(nombreDietista), "").trim()}</p>
     <div class="message-box">${escape(preview)}</div>
-    <a href="${link}" class="cta">Ver mensaje</a>
-    <p style="margin-top:18px; font-size:13px;">Responde desde la aplicación para mantener toda la conversación en un único sitio.</p>
+    <a href="${link}" class="cta">${escape(te("mensajesPaciente.cta"))}</a>
+    <p style="margin-top:18px; font-size:13px;">${escape(te("mensajesPaciente.instrucciones"))}</p>
   </div>
   <div class="footer">
-    Este correo es una notificación automática de Annonia.<br>
-    Si no quieres recibir estos avisos, desactívalos desde tu portal.
+    ${escape(te("mensajesPaciente.footer"))}<br>
+    ${escape(te("mensajesPaciente.footerDesactivar"))}
   </div>
 </div>
 </body></html>`;
@@ -106,6 +109,8 @@ export async function notificarDietistaNuevoMensaje(
   pacienteId: string,
   textoMensaje: string,
 ) {
+  const te = await getTranslations("emails");
+
   const [dietista, paciente] = await Promise.all([
     prisma.dietista.findUnique({
       where: { id: dietistaId },
@@ -124,24 +129,24 @@ export async function notificarDietistaNuevoMensaje(
 
   const nombrePaciente = `${paciente.nombre} ${paciente.apellidos}`;
   const preview = truncar(textoMensaje);
-  const subject = `Nuevo mensaje de ${nombrePaciente}`;
+  const subject = te("mensajesDietista.subject", { nombrePaciente });
   const link = `${APP_URL}/mensajes`;
 
   const html = `<!DOCTYPE html>
-<html lang="es"><head><meta charset="utf-8">${BASE_STYLES}</head><body>
+<html><head><meta charset="utf-8">${BASE_STYLES}</head><body>
 <div class="container">
   <div class="header">
     <span class="logo">Annonia</span>
   </div>
   <div class="content">
-    <h1>Hola, ${escape(dietista.nombre)}</h1>
-    <p>Tu paciente <strong>${escape(nombrePaciente)}</strong> te ha enviado un mensaje:</p>
+    <h1>${escape(te("mensajesDietista.saludo", { nombre: dietista.nombre }))}</h1>
+    <p>${escape(te("mensajesDietista.cuerpo", { nombrePaciente }))}</p>
     <div class="message-box">${escape(preview)}</div>
-    <a href="${link}" class="cta">Abrir mensajes</a>
+    <a href="${link}" class="cta">${escape(te("mensajesDietista.cta"))}</a>
   </div>
   <div class="footer">
-    Este correo es una notificación automática de Annonia.<br>
-    Puedes ajustar las preferencias desde tu panel.
+    ${escape(te("mensajesDietista.footer"))}<br>
+    ${escape(te("mensajesDietista.footerPreferencias"))}
   </div>
 </div>
 </body></html>`;

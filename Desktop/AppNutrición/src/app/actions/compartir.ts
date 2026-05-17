@@ -3,10 +3,12 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 
 export async function crearEnlace(planId: string) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const enlace = await prisma.enlaceCompartido.create({
@@ -18,8 +20,9 @@ export async function crearEnlace(planId: string) {
 }
 
 export async function eliminarEnlace(id: string) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   await prisma.enlaceCompartido.delete({

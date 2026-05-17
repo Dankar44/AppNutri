@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink, ImageIcon, Pencil } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { getAlimento } from "@/app/actions/alimentos";
 import { prisma } from "@/lib/prisma";
 import { AlimentoActions } from "./alimento-actions";
@@ -9,12 +10,12 @@ import { MacroAnalysisCard } from "@/components/alimento/macro-analysis-card";
 import { PorcionCalculator } from "@/components/alimento/porcion-calculator";
 import { MicronutrientesCard } from "@/components/alimento/micronutrientes-card";
 
-const CATEGORIA_LABELS: Record<string, string> = {
-  FRUTAS: "Frutas", VERDURAS: "Verduras", CEREALES: "Cereales",
-  LEGUMBRES: "Legumbres", CARNES: "Carnes", PESCADOS: "Pescados",
-  LACTEOS: "Lácteos", HUEVOS: "Huevos", FRUTOS_SECOS: "Frutos secos",
-  ACEITES: "Aceites", BEBIDAS: "Bebidas", CONDIMENTOS: "Condimentos",
-  DULCES: "Dulces", OTROS: "Otros",
+const CATEGORIA_KEY_MAP: Record<string, string> = {
+  FRUTAS: "frutas", VERDURAS: "verduras", CEREALES: "cereales",
+  LEGUMBRES: "legumbres", CARNES: "carnes", PESCADOS: "pescados",
+  LACTEOS: "lacteos", HUEVOS: "huevos", FRUTOS_SECOS: "frutosSecos",
+  ACEITES: "aceites", BEBIDAS: "bebidas", CONDIMENTOS: "condimentos",
+  DULCES: "dulces", OTROS: "otros",
 };
 
 interface Props {
@@ -45,6 +46,8 @@ export default async function AlimentoDetailPage({ params }: Props) {
     if (typeof v === "number") micros[col] = v;
   }
 
+  const t = await getTranslations("foods");
+
   return (
     <div>
       <div className="mb-6">
@@ -53,14 +56,14 @@ export default async function AlimentoDetailPage({ params }: Props) {
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3 py-2 sm:py-0 -my-2 sm:my-0"
         >
           <ArrowLeft className="w-4 h-4" />
-          Volver a alimentos
+          {t("detail.volverAAlimentos")}
         </Link>
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold">{alimento.nombre}</h1>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-xs px-2 py-0.5 rounded-full bg-muted font-medium">
-                {CATEGORIA_LABELS[alimento.categoria] || alimento.categoria}
+                {CATEGORIA_KEY_MAP[alimento.categoria] ? t(`categorias.${CATEGORIA_KEY_MAP[alimento.categoria]}`) : alimento.categoria}
               </span>
               <span
                 className={`text-xs px-2 py-0.5 rounded-full font-medium ${
@@ -69,7 +72,7 @@ export default async function AlimentoDetailPage({ params }: Props) {
                     : "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400"
                 }`}
               >
-                {alimento.origen === "API" ? "Importado" : "Personalizado"}
+                {alimento.origen === "API" ? t("table.importado") : t("table.personalizado")}
               </span>
               {alimento.enlaceProducto && (
                 <a
@@ -80,7 +83,7 @@ export default async function AlimentoDetailPage({ params }: Props) {
                   className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                 >
                   <ExternalLink className="w-3 h-3" />
-                  Ver producto
+                  {t("detail.verProducto")}
                 </a>
               )}
               {alimento.imagenUrl && (
@@ -91,7 +94,7 @@ export default async function AlimentoDetailPage({ params }: Props) {
                   className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-500/20 transition-colors"
                 >
                   <ImageIcon className="w-3 h-3" />
-                  Ver imagen
+                  {t("detail.verImagen")}
                 </a>
               )}
             </div>
@@ -104,7 +107,7 @@ export default async function AlimentoDetailPage({ params }: Props) {
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
                 >
                   <Pencil className="w-4 h-4" />
-                  Editar
+                  {t("detail.editar")}
                 </Link>
                 <AlimentoActions alimentoId={alimento.id} />
               </>
@@ -126,7 +129,7 @@ export default async function AlimentoDetailPage({ params }: Props) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
         <div className="lg:col-span-2 flex">
           <MacroAnalysisCard
-            title="Macros por 100g"
+            title={t("detail.macrosPor100g")}
             proteinas={alimento.proteinas}
             carbohidratos={alimento.carbohidratos}
             grasas={alimento.grasas}

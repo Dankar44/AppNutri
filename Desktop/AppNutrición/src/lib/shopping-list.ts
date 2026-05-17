@@ -1,12 +1,17 @@
 import type { DisplayOverrides } from "@/lib/pdf/generate-plan-pdf";
 
-const CATEGORIA_LABELS: Record<string, string> = {
-  FRUTAS: "Frutas", VERDURAS: "Verduras", CEREALES: "Cereales",
-  LEGUMBRES: "Legumbres", CARNES: "Carnes", PESCADOS: "Pescados",
-  LACTEOS: "Lácteos", HUEVOS: "Huevos", FRUTOS_SECOS: "Frutos secos",
-  ACEITES: "Aceites", BEBIDAS: "Bebidas", CONDIMENTOS: "Condimentos",
-  DULCES: "Dulces", OTROS: "Otros",
-};
+type TFunc = (key: string) => string;
+
+export const CATEGORIA_KEYS = [
+  "FRUTAS", "VERDURAS", "CEREALES", "LEGUMBRES", "CARNES", "PESCADOS",
+  "LACTEOS", "HUEVOS", "FRUTOS_SECOS", "ACEITES", "BEBIDAS", "CONDIMENTOS",
+  "DULCES", "OTROS",
+] as const;
+
+function getCategoriaLabel(cat: string, t?: TFunc): string {
+  if (t) return t(cat);
+  return cat;
+}
 
 interface AlimentoEnPlan {
   cantidad: number;
@@ -40,7 +45,7 @@ export interface CategoriaCompra {
   items: ItemCompra[];
 }
 
-export function generarListaCompra(dias: DiaEnPlan[], overrides?: DisplayOverrides): CategoriaCompra[] {
+export function generarListaCompra(dias: DiaEnPlan[], overrides?: DisplayOverrides, t?: TFunc): CategoriaCompra[] {
   const acumulado = new Map<string, ItemCompra>();
 
   for (const dia of dias) {
@@ -98,7 +103,7 @@ export function generarListaCompra(dias: DiaEnPlan[], overrides?: DisplayOverrid
   return Array.from(porCategoria.entries())
     .map(([cat, items]) => ({
       categoria: cat,
-      label: CATEGORIA_LABELS[cat] || cat,
+      label: getCategoriaLabel(cat, t),
       items: items.sort((a, b) => a.nombre.localeCompare(b.nombre)),
     }))
     .sort((a, b) => a.label.localeCompare(b.label));

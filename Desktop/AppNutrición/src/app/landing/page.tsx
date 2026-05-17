@@ -1,42 +1,46 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { JsonLd } from "@/components/json-ld";
 import {
-  ORGANIZATION_JSONLD,
-  WEBSITE_JSONLD,
-  SOFTWARE_APPLICATION_JSONLD,
-  LANDING_FAQ_JSONLD,
+  getOrganizationJsonLd,
+  getWebsiteJsonLd,
+  getSoftwareApplicationJsonLd,
+  getLandingFaqJsonLd,
 } from "@/lib/structured-data";
 import { LandingPage } from "@/components/landing/landing-page";
 
-export const metadata: Metadata = {
-  title: "Annonia — Software de Nutrición para Dietistas | Dietas Personalizadas con IA",
-  description:
-    "Software para nutricionistas y dietistas: crea dietas personalizadas, gestiona pacientes, agenda citas online y genera planes alimenticios con inteligencia artificial. Prueba gratis 14 días.",
-  alternates: { canonical: "/landing" },
-  openGraph: {
-    title: "Annonia — Software de Nutrición para Dietistas",
-    description: "Software para nutricionistas: dietas personalizadas con IA, gestión de pacientes, agenda y portal del paciente. Desde 9,99€/mes.",
-    type: "website",
-    locale: "es_ES",
-    siteName: "Annonia",
-    url: "/landing",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Annonia — Software de nutrición para dietistas y nutricionistas" }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Annonia — Software de Nutrición para Dietistas",
-    description: "Dietas personalizadas con IA, gestión de pacientes y agenda online. Prueba gratis 14 días.",
-    images: ["/og-image.png"],
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("landing");
+  return {
+    title: t("metadata.title"),
+    description: t("metadata.description"),
+    alternates: { canonical: "/landing" },
+    openGraph: {
+      title: t("metadata.ogTitle"),
+      description: t("metadata.ogDescription"),
+      type: "website",
+      locale: "es_ES",
+      siteName: "Annonia",
+      url: "/landing",
+      images: [{ url: "/og-image.png", width: 1200, height: 630, alt: t("metadata.ogImageAlt") }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: t("metadata.twitterTitle"),
+      description: t("metadata.twitterDescription"),
+      images: ["/og-image.png"],
+    },
+  };
+}
 
-export default function LandingPageRoute() {
+export default async function LandingPageRoute() {
+  const t = await getTranslations("landing.structuredData");
   return (
     <>
-      <JsonLd data={ORGANIZATION_JSONLD} />
-      <JsonLd data={WEBSITE_JSONLD} />
-      <JsonLd data={SOFTWARE_APPLICATION_JSONLD} />
-      <JsonLd data={LANDING_FAQ_JSONLD} />
+      <JsonLd data={getOrganizationJsonLd(t)} />
+      <JsonLd data={getWebsiteJsonLd(t)} />
+      <JsonLd data={getSoftwareApplicationJsonLd(t)} />
+      <JsonLd data={getLandingFaqJsonLd(t)} />
       <LandingPage />
     </>
   );

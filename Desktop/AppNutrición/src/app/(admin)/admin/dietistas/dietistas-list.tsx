@@ -3,6 +3,8 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronRight, Users, User, ArrowUpDown, Clock } from "lucide-react";
+import { useTranslations, useLocale } from "next-intl";
+import { intlTag, type Locale } from "@/i18n/config";
 import type { DietistaAdminItem } from "@/app/actions/admin";
 
 const PLAN_BADGE: Record<string, string> = {
@@ -18,45 +20,41 @@ const ESTADO_BADGE: Record<string, string> = {
   EXPIRADA: "bg-muted text-muted-foreground",
 };
 
-const OBJETIVO_LABEL: Record<string, string> = {
-  PERDER_PESO: "Perder peso",
-  GANAR_MASA: "Ganar masa",
-  MANTENIMIENTO: "Mantenimiento",
-  PATOLOGIA: "Patología",
-  DEPORTIVO: "Deportivo",
-  OTRO: "Otro",
+const OBJETIVO_KEYS: Record<string, string> = {
+  PERDER_PESO: "objetivoLabel.perderPeso",
+  GANAR_MASA: "objetivoLabel.ganarMasa",
+  MANTENIMIENTO: "objetivoLabel.mantenimiento",
+  PATOLOGIA: "objetivoLabel.patologia",
+  DEPORTIVO: "objetivoLabel.deportivo",
+  OTRO: "objetivoLabel.otro",
 };
 
 type SortKey = "reciente" | "pacientes" | "actividad" | "nombre";
 
-const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: "reciente", label: "Más recientes" },
-  { key: "pacientes", label: "Más pacientes" },
-  { key: "actividad", label: "Última actividad" },
-  { key: "nombre", label: "Nombre A-Z" },
+const SORT_OPTIONS: { key: SortKey; labelKey: string }[] = [
+  { key: "reciente", labelKey: "sort.masRecientes" },
+  { key: "pacientes", labelKey: "sort.masPacientes" },
+  { key: "actividad", labelKey: "sort.ultimaActividad" },
+  { key: "nombre", labelKey: "sort.nombreAZ" },
 ];
 
 function capitalizarNombre(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 }
 
-function formatDate(d: Date | string) {
-  return new Date(d).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" });
-}
-
-function tiempoRelativo(d: Date | string | null): string | null {
+function tiempoRelativo(d: Date | string | null, t: (key: string, values?: Record<string, string | number>) => string): string | null {
   if (!d) return null;
   const ms = Date.now() - new Date(d).getTime();
-  if (ms < 0) return "ahora";
+  if (ms < 0) return t("tiempoRelativo.ahora");
   const min = Math.floor(ms / 60000);
-  if (min < 1) return "ahora";
-  if (min < 60) return `hace ${min}min`;
+  if (min < 1) return t("tiempoRelativo.ahora");
+  if (min < 60) return t("tiempoRelativo.minutos", { count: min });
   const h = Math.floor(min / 60);
-  if (h < 24) return `hace ${h}h`;
+  if (h < 24) return t("tiempoRelativo.horas", { count: h });
   const dias = Math.floor(h / 24);
-  if (dias < 30) return `hace ${dias}d`;
+  if (dias < 30) return t("tiempoRelativo.dias", { count: dias });
   const meses = Math.floor(dias / 30);
-  return `hace ${meses}mes${meses > 1 ? "es" : ""}`;
+  return t("tiempoRelativo.meses", { count: meses });
 }
 
 function getLastActivity(d: DietistaAdminItem): Date | null {
@@ -90,8 +88,15 @@ interface Props {
 }
 
 export function DietistasList({ dietistas }: Props) {
+  const t = useTranslations("admin.dietistas");
+  const locale = useLocale() as Locale;
+  const tag = intlTag(locale);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("reciente");
+
+  function formatDate(d: Date | string) {
+    return new Date(d).toLocaleDateString(tag, { day: "numeric", month: "short", year: "numeric" });
+  }
 
   const sorted = useMemo(() => sortDietistas(dietistas, sortKey), [dietistas, sortKey]);
 
@@ -114,7 +119,7 @@ export function DietistasList({ dietistas }: Props) {
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             }`}
           >
-            {opt.label}
+            {t(opt.labelKey)}
           </button>
         ))}
       </div>
@@ -124,7 +129,7 @@ export function DietistasList({ dietistas }: Props) {
         {sorted.map((d) => {
           const isExpanded = expandedId === d.id;
           const lastActivity = getLastActivity(d);
-          const relativo = tiempoRelativo(lastActivity);
+          const relativo = tiempoRelativo(lastActivity, t);
 
           return (
             <div key={d.id} className="bg-card rounded-xl border border-border overflow-hidden">
@@ -143,12 +148,12 @@ export function DietistasList({ dietistas }: Props) {
                     </span>
                     {d.suscripcion && (
                       <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-medium shrink-0 ${PLAN_BADGE[d.suscripcion.plan] || ""}`}>
-                        {d.suscripcion.plan === "BASICO" ? "Básico" : "Pro"}
+                        {d.suscripcion.plan === "BASICO" ? t("planBadge.basico") : t("planBadge.pro")}
                       </span>
                     )}
                     {d.suscripcion && (
                       <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-medium shrink-0 ${ESTADO_BADGE[d.suscripcion.estado] || ""}`}>
-                        {d.suscripcion.estado === "TRIAL" ? "Prueba" : d.suscripcion.estado === "PRUEBA" ? "Prueba" : d.suscripcion.estado === "ACTIVA" ? "Activa" : d.suscripcion.estado === "CANCELADA" ? "Cancelada" : "Expirada"}
+                        {d.suscripcion.estado === "TRIAL" ? t("estadoBadge.prueba") : d.suscripcion.estado === "PRUEBA" ? t("estadoBadge.prueba") : d.suscripcion.estado === "ACTIVA" ? t("estadoBadge.activa") : d.suscripcion.estado === "CANCELADA" ? t("estadoBadge.cancelada") : t("estadoBadge.expirada")}
                       </span>
                     )}
                   </div>
@@ -167,15 +172,15 @@ export function DietistasList({ dietistas }: Props) {
                 <div className="flex items-center gap-6 shrink-0">
                   <div className="text-center hidden sm:block">
                     <p className="text-lg font-bold">{d._count.pacientes}</p>
-                    <p className="text-[10px] text-muted-foreground">pacientes</p>
+                    <p className="text-[10px] text-muted-foreground">{t("list.pacientes")}</p>
                   </div>
                   <div className="text-center hidden md:block">
                     <p className="text-lg font-bold">{d._count.planes}</p>
-                    <p className="text-[10px] text-muted-foreground">planes</p>
+                    <p className="text-[10px] text-muted-foreground">{t("list.planes")}</p>
                   </div>
                   <div className="text-center hidden lg:block">
                     <p className="text-lg font-bold">{d._count.consultas}</p>
-                    <p className="text-[10px] text-muted-foreground">consultas</p>
+                    <p className="text-[10px] text-muted-foreground">{t("list.consultas")}</p>
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Users className="w-4 h-4 sm:hidden" />
@@ -193,24 +198,24 @@ export function DietistasList({ dietistas }: Props) {
                 <div className="border-t border-border bg-muted/20">
                   {/* Info extra del dietista */}
                   <div className="px-5 py-3 bg-muted/30 flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
-                    <span>Registro: {formatDate(d.createdAt)}</span>
-                    {lastActivity && <span>Último acceso: {formatDate(lastActivity)}</span>}
-                    {d.clinica && <span>Clínica: {d.clinica}</span>}
-                    <span>{d._count.recetas} recetas</span>
+                    <span>{t("list.registro", { date: formatDate(d.createdAt) })}</span>
+                    {lastActivity && <span>{t("list.ultimoAcceso", { date: formatDate(lastActivity) })}</span>}
+                    {d.clinica && <span>{t("list.clinica", { name: d.clinica })}</span>}
+                    <span>{t("list.recetas", { count: d._count.recetas })}</span>
                   </div>
 
                   {d.pacientes.length === 0 ? (
                     <div className="px-5 py-6 text-center text-sm text-muted-foreground">
-                      Este dietista no tiene pacientes
+                      {t("list.sinPacientes")}
                     </div>
                   ) : (
                     <div className="divide-y divide-border">
                       <div className="px-5 py-2 bg-muted/40 flex items-center gap-4">
                         <div className="w-10" />
-                        <span className="flex-1 text-xs font-medium text-muted-foreground">Paciente</span>
-                        <span className="w-24 text-xs font-medium text-muted-foreground text-center hidden sm:block">Objetivo</span>
-                        <span className="w-20 text-xs font-medium text-muted-foreground text-center hidden md:block">Estado</span>
-                        <span className="w-24 text-xs font-medium text-muted-foreground text-right hidden lg:block">Fecha alta</span>
+                        <span className="flex-1 text-xs font-medium text-muted-foreground">{t("list.columnas.paciente")}</span>
+                        <span className="w-24 text-xs font-medium text-muted-foreground text-center hidden sm:block">{t("list.columnas.objetivo")}</span>
+                        <span className="w-20 text-xs font-medium text-muted-foreground text-center hidden md:block">{t("list.columnas.estado")}</span>
+                        <span className="w-24 text-xs font-medium text-muted-foreground text-right hidden lg:block">{t("list.columnas.fechaAlta")}</span>
                       </div>
                       {d.pacientes.map((p) => (
                         <div key={p.id} className="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 transition-colors">
@@ -228,11 +233,11 @@ export function DietistasList({ dietistas }: Props) {
                             )}
                           </div>
                           <span className="w-24 text-xs text-center text-muted-foreground hidden sm:block">
-                            {OBJETIVO_LABEL[p.objetivo] || p.objetivo}
+                            {OBJETIVO_KEYS[p.objetivo] ? t(OBJETIVO_KEYS[p.objetivo]) : p.objetivo}
                           </span>
                           <span className="w-20 text-center hidden md:block">
                             <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-medium ${p.activo ? "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400" : "bg-muted text-muted-foreground"}`}>
-                              {p.activo ? "Activo" : "Inactivo"}
+                              {p.activo ? t("pacienteEstado.activo") : t("pacienteEstado.inactivo")}
                             </span>
                           </span>
                           <span className="w-24 text-xs text-muted-foreground text-right hidden lg:block">
@@ -247,7 +252,7 @@ export function DietistasList({ dietistas }: Props) {
                       href={`/admin/dietistas/${d.id}`}
                       className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 font-medium transition-colors"
                     >
-                      Ver detalle completo &rarr;
+                      {t("list.verDetalle")} &rarr;
                     </Link>
                   </div>
                 </div>

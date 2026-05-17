@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { getPlantillaDetalle } from "@/app/actions/plantillas";
 import { PlantillaDetalleClient } from "./plantilla-detalle-client";
 
@@ -10,6 +11,7 @@ interface Props {
 
 export default async function PlantillaDetallePage({ params }: Props) {
   const { id } = await params;
+  const t = await getTranslations("common");
   const plantilla = await getPlantillaDetalle(id);
   if (!plantilla) notFound();
 
@@ -105,7 +107,7 @@ export default async function PlantillaDetallePage({ params }: Props) {
               recetaId: a.recetaId,
               cantidad: a.cantidad,
               unidad: a.unidad,
-              nombre: alimento?.nombre || receta?.nombre || "Eliminado",
+              nombre: alimento?.nombre || receta?.nombre || t("generic.deleted"),
               calorias: alimento?.calorias || receta?.calorias || 0,
               proteinas: alimento?.proteinas || receta?.proteinas || 0,
               carbohidratos: alimento?.carbohidratos || receta?.carbohidratos || 0,

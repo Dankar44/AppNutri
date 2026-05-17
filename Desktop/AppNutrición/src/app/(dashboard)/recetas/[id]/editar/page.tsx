@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { getReceta } from "@/app/actions/recetas";
 import { RecetaForm } from "@/components/receta-form";
 import type { IngredienteItem } from "@/components/ingrediente-list";
@@ -11,7 +12,7 @@ interface Props {
 
 export default async function EditarRecetaPage({ params }: Props) {
   const { id } = await params;
-  const receta = await getReceta(id);
+  const [receta, t] = await Promise.all([getReceta(id), getTranslations("recipes")]);
   if (!receta) notFound();
 
   const ingredientes: IngredienteItem[] = receta.ingredientes.map((ing) => ({
@@ -36,9 +37,9 @@ export default async function EditarRecetaPage({ params }: Props) {
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3 py-2 sm:py-0 -my-2 sm:my-0"
         >
           <ArrowLeft className="w-4 h-4" />
-          Volver a la receta
+          {t("editar.volverAReceta")}
         </Link>
-        <h1 className="text-2xl sm:text-3xl font-bold">Editar {receta.nombre}</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">{t("editar.titulo", { nombre: receta.nombre })}</h1>
       </div>
       <RecetaForm
         recetaId={receta.id}

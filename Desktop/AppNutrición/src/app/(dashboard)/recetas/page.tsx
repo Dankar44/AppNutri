@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Plus, CookingPot, Sparkles } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { getRecetas, type RecetaFilters } from "@/app/actions/recetas";
 import { RecetasFilter } from "./recetas-filter";
 import { RecetasGrid } from "./recetas-grid";
@@ -74,19 +75,24 @@ export default async function RecetasPage({ searchParams }: Props) {
     return `/recetas?${p.toString()}`;
   })();
 
+  const t = await getTranslations("recipes");
+  const subtitle = tab === "mias"
+    ? (recetas.length === 1 ? t("list.subtitleCount", { count: recetas.length }) : t("list.subtitleCountPlural", { count: recetas.length }))
+    : (recetas.length === 1 ? t("list.subtitleAppCount", { count: recetas.length }) : t("list.subtitleAppCountPlural", { count: recetas.length }));
+
   return (
     <div>
       <PageHeader
         icon={CookingPot}
-        title="Recetas"
-        subtitle={`${recetas.length} receta${recetas.length !== 1 ? "s" : ""}${tab === "mias" ? " en tu colección" : " en el catálogo de la app"}`}
+        title={t("list.title")}
+        subtitle={subtitle}
         action={
           <Link
             href="/recetas/nueva"
             className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium"
           >
             <Plus className="w-4 h-4" />
-            Nueva receta
+            {t("list.nuevaReceta")}
           </Link>
         }
       />
@@ -100,7 +106,7 @@ export default async function RecetasPage({ searchParams }: Props) {
               : "border-transparent text-muted-foreground hover:text-foreground"
           }`}
         >
-          Mis recetas
+          {t("list.misRecetas")}
         </Link>
         <Link
           href={appHref}
@@ -111,8 +117,8 @@ export default async function RecetasPage({ searchParams }: Props) {
           }`}
         >
           <Sparkles className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Recetas de la app</span>
-          <span className="sm:hidden">De la app</span>
+          <span className="hidden sm:inline">{t("list.recetasApp")}</span>
+          <span className="sm:hidden">{t("list.recetasAppCorto")}</span>
         </Link>
       </div>
 
@@ -124,14 +130,14 @@ export default async function RecetasPage({ searchParams }: Props) {
         <div className="bg-card rounded-xl border border-border p-12 text-center">
           <CookingPot className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="font-medium text-lg mb-1">
-            {tab === "app" ? "Sin recetas" : "Sin recetas propias"}
+            {tab === "app" ? t("list.sinRecetas") : t("list.sinRecetasPropias")}
           </h3>
           <p className="text-muted-foreground mb-4">
             {hayFiltros
-              ? "No se encontraron recetas con esos filtros"
+              ? t("list.sinResultadosFiltros")
               : tab === "app"
-                ? "El catálogo de la app estará disponible pronto"
-                : "Crea tu primera receta o añade favoritas desde el catálogo de la app"}
+                ? t("list.catalogoDisponiblePronto")
+                : t("list.creaPrimeraReceta")}
           </p>
           {!hayFiltros && tab === "mias" && (
             <div className="flex gap-2 justify-center">
@@ -140,14 +146,14 @@ export default async function RecetasPage({ searchParams }: Props) {
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium"
               >
                 <Plus className="w-4 h-4" />
-                Crear receta
+                {t("list.crearReceta")}
               </Link>
               <Link
                 href={appHref}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
               >
                 <Sparkles className="w-4 h-4" />
-                Ver catálogo de la app
+                {t("list.verCatalogoApp")}
               </Link>
             </div>
           )}

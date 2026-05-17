@@ -1,5 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, MessageSquare } from "lucide-react";
+import { useTranslations, useLocale } from "next-intl";
+import { intlTag, type Locale } from "@/i18n/config";
 
 interface MensajePreview {
   texto: string;
@@ -14,19 +18,27 @@ interface Props {
   className?: string;
 }
 
-function formatTimeAgo(date: Date): string {
-  const diff = Date.now() - new Date(date).getTime();
-  const min = Math.floor(diff / 60000);
-  if (min < 1) return "ahora";
-  if (min < 60) return `hace ${min} min`;
-  const h = Math.floor(min / 60);
-  if (h < 24) return `hace ${h} h`;
-  const d = Math.floor(h / 24);
-  if (d < 7) return `hace ${d} ${d === 1 ? "día" : "días"}`;
-  return new Date(date).toLocaleDateString("es-ES", { day: "2-digit", month: "short" });
+function useFormatTimeAgo() {
+  const t = useTranslations("patient-portal.dashboard.mensajesPreview");
+  const locale = useLocale() as Locale;
+  const tag = intlTag(locale);
+  return (date: Date): string => {
+    const diff = Date.now() - new Date(date).getTime();
+    const min = Math.floor(diff / 60000);
+    if (min < 1) return t("ahora");
+    if (min < 60) return t("haceMins", { min });
+    const h = Math.floor(min / 60);
+    if (h < 24) return t("haceHoras", { h });
+    const d = Math.floor(h / 24);
+    if (d < 7) return d === 1 ? t("haceDias", { d }) : t("haceDiasPlural", { d });
+    return new Date(date).toLocaleDateString(tag, { day: "2-digit", month: "short" });
+  };
 }
 
 export function MensajesPreviewCard({ noLeidos, ultimo, className = "" }: Props) {
+  const t = useTranslations("patient-portal.dashboard.mensajesCard");
+  const tp = useTranslations("patient-portal.dashboard.mensajesPreview");
+  const formatTimeAgo = useFormatTimeAgo();
   return (
     <Link
       href="/paciente/portal/mensajes"
@@ -43,11 +55,11 @@ export function MensajesPreviewCard({ noLeidos, ultimo, className = "" }: Props)
             )}
           </span>
           <div>
-            <h2 className="text-base font-semibold">Mensajes</h2>
+            <h2 className="text-base font-semibold">{t("title")}</h2>
             <p className="text-[11px] text-muted-foreground">
               {noLeidos > 0
-                ? `${noLeidos} sin leer`
-                : "Sin mensajes pendientes"}
+                ? t("sinLeer", { count: noLeidos })
+                : t("sinPendientes")}
             </p>
           </div>
         </div>
@@ -82,7 +94,7 @@ export function MensajesPreviewCard({ noLeidos, ultimo, className = "" }: Props)
         </div>
       ) : (
         <p className="text-sm text-muted-foreground">
-          Cuando tu nutricionista te escriba aparecerá aquí.
+          {tp("emptyState")}
         </p>
       )}
     </Link>

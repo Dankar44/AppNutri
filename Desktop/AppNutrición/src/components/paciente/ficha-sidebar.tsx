@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   FileText,
   BookOpen,
@@ -122,12 +123,13 @@ function Select({
 function ModalButtons({
   saving,
   onCancel,
-  label = "Guardar",
+  label,
 }: {
   saving: boolean;
   onCancel: () => void;
   label?: string;
 }) {
+  const t = useTranslations("patients.sidebar");
   return (
     <div className="flex justify-end gap-2 mt-5">
       <button
@@ -136,7 +138,7 @@ function ModalButtons({
         disabled={saving}
         className="px-4 py-2 text-sm rounded-lg border border-border hover:bg-muted"
       >
-        Cancelar
+        {t("cancelar")}
       </button>
       <button
         type="submit"
@@ -144,7 +146,7 @@ function ModalButtons({
         className="px-4 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 inline-flex items-center gap-2"
       >
         {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-        {label}
+        {label ?? t("guardar")}
       </button>
     </div>
   );
@@ -225,6 +227,7 @@ export function FichaSidebar({
   pacienteId: string;
   initialData: FichaSidebarData;
 }) {
+  const t = useTranslations("patients.sidebar");
   const [data, setData] = useState<FichaSidebarData>(initialData);
   const [saving, setSaving] = useState(false);
   const [modal, setModal] = useState<
@@ -238,7 +241,7 @@ export function FichaSidebar({
       setData(updated);
       setModal(null);
     } catch {
-      toast.error("No se pudo guardar");
+      toast.error(t("noSePudoGuardar"));
     } finally {
       setSaving(false);
     }
@@ -316,9 +319,9 @@ export function FichaSidebar({
     <aside className="space-y-4 xl:sticky xl:top-6 self-start">
       {/* Observaciones */}
       <SidebarSection
-        title="Observaciones"
+        title={t("observaciones")}
         icon={FileText}
-        empty="Todavía no has registrado observaciones"
+        empty={t("sinObservaciones")}
         onAdd={() => { setObsForm({ fecha: todayStr(), texto: "" }); setModal("observacion"); }}
       >
         {(data.observaciones || []).map((o) => (
@@ -333,9 +336,9 @@ export function FichaSidebar({
 
       {/* Diarios alimentarios */}
       <SidebarSection
-        title="Diarios alimentarios"
+        title={t("diariosAlimentarios")}
         icon={BookOpen}
-        empty="Todavía no has registrado ningún diario alimentario"
+        empty={t("sinDiarios")}
         onAdd={() => { setDiaForm({ fecha: todayStr(), comida: "desayuno", observaciones: "" }); setModal("diario"); }}
       >
         {(data.diarios || []).map((d) => (
@@ -350,9 +353,9 @@ export function FichaSidebar({
 
       {/* Comportamientos alimentarios */}
       <SidebarSection
-        title="Comportamientos alimentarios"
+        title={t("comportamientosAlimentarios")}
         icon={Brain}
-        empty="Todavía no has registrado ningún comportamiento alimentario"
+        empty={t("sinComportamientos")}
         onAdd={() => { setCompForm({ fecha: todayStr(), texto: "" }); setModal("comportamiento"); }}
       >
         {(data.comportamientos || []).map((c) => (
@@ -368,10 +371,10 @@ export function FichaSidebar({
       {/* Archivos (placeholder - necesita storage) */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-semibold text-foreground">Archivos</h3>
+          <h3 className="text-sm font-semibold text-foreground">{t("archivos")}</h3>
           <button
             type="button"
-            onClick={() => toast.message("Próximamente", { description: "Subida de archivos en desarrollo." })}
+            onClick={() => toast.message(t("proximamente"), { description: t("subidaArchivos") })}
             className="text-muted-foreground hover:text-primary text-lg leading-none px-1 transition-colors"
           >
             +
@@ -379,15 +382,15 @@ export function FichaSidebar({
         </div>
         <div className="rounded-xl border border-border bg-muted/30 p-4 text-center">
           <Folder className="w-8 h-8 text-muted-foreground/60 mx-auto mb-2" />
-          <p className="text-xs text-muted-foreground leading-snug">Próximamente</p>
+          <p className="text-xs text-muted-foreground leading-snug">{t("proximamente")}</p>
         </div>
       </div>
 
       {/* Objetivos */}
       <SidebarSection
-        title="Objetivos"
+        title={t("objetivos")}
         icon={Target}
-        empty="Aún no definiste ningún objetivo"
+        empty={t("sinObjetivos")}
         onAdd={() => {
           setObjForm({ tipo: "generico", descripcion: "", fechaLimite: "", tipoMedicion: "peso", valor: "", unidad: "kg" });
           setModal("objetivo");
@@ -405,15 +408,15 @@ export function FichaSidebar({
 
       {/* ── Modales ─────────────────────────── */}
 
-      <Modal open={modal === "observacion"} onClose={() => setModal(null)} title="Observaciones">
+      <Modal open={modal === "observacion"} onClose={() => setModal(null)} title={t("observaciones")}>
         <form onSubmit={handleAddObservacion}>
           <div className="space-y-3">
             <div>
-              <Label>Fecha de registro</Label>
+              <Label>{t("fechaRegistro")}</Label>
               <DatePicker value={obsForm.fecha} onChange={(v) => setObsForm({ ...obsForm, fecha: v })} />
             </div>
             <div>
-              <Label required>Observaciones</Label>
+              <Label required>{t("observaciones")}</Label>
               <Textarea rows={5} value={obsForm.texto} onChange={(e) => setObsForm({ ...obsForm, texto: e.target.value })} />
             </div>
           </div>
@@ -421,19 +424,19 @@ export function FichaSidebar({
         </form>
       </Modal>
 
-      <Modal open={modal === "diario"} onClose={() => setModal(null)} title="Diario alimentario">
+      <Modal open={modal === "diario"} onClose={() => setModal(null)} title={t("diariosAlimentarios")}>
         <form onSubmit={handleAddDiario}>
           <div className="space-y-3">
             <div>
-              <Label>Fecha de registro</Label>
+              <Label>{t("fechaRegistro")}</Label>
               <DatePicker value={diaForm.fecha} onChange={(v) => setDiaForm({ ...diaForm, fecha: v })} />
             </div>
             <div>
-              <Label>Añadir comida</Label>
+              <Label>{t("anadirComida")}</Label>
               <Select value={diaForm.comida} onChange={(v) => setDiaForm({ ...diaForm, comida: v })} options={COMIDAS} />
             </div>
             <div>
-              <Label>Observaciones</Label>
+              <Label>{t("observaciones")}</Label>
               <Textarea rows={4} value={diaForm.observaciones} onChange={(e) => setDiaForm({ ...diaForm, observaciones: e.target.value })} />
             </div>
           </div>
@@ -441,15 +444,15 @@ export function FichaSidebar({
         </form>
       </Modal>
 
-      <Modal open={modal === "comportamiento"} onClose={() => setModal(null)} title="Comportamiento alimentario">
+      <Modal open={modal === "comportamiento"} onClose={() => setModal(null)} title={t("comportamientosAlimentarios")}>
         <form onSubmit={handleAddComportamiento}>
           <div className="space-y-3">
             <div>
-              <Label>Fecha de registro</Label>
+              <Label>{t("fechaRegistro")}</Label>
               <DatePicker value={compForm.fecha} onChange={(v) => setCompForm({ ...compForm, fecha: v })} />
             </div>
             <div>
-              <Label required>Comportamientos alimentarios</Label>
+              <Label required>{t("comportamientosAlimentarios")}</Label>
               <Textarea rows={4} value={compForm.texto} onChange={(e) => setCompForm({ ...compForm, texto: e.target.value })} />
             </div>
           </div>
@@ -457,11 +460,11 @@ export function FichaSidebar({
         </form>
       </Modal>
 
-      <Modal open={modal === "objetivo"} onClose={() => setModal(null)} title="Define un nuevo objetivo">
+      <Modal open={modal === "objetivo"} onClose={() => setModal(null)} title={t("definirNuevoObjetivo")}>
         <form onSubmit={handleAddObjetivo}>
           <div className="space-y-3">
             <div>
-              <Label required>Tipo de objetivo</Label>
+              <Label required>{t("tipoObjetivo")}</Label>
               <Select
                 value={objForm.tipo}
                 onChange={(v) => {
@@ -473,7 +476,7 @@ export function FichaSidebar({
             {objForm.tipo === "medicion" && (
               <>
                 <div>
-                  <Label required>Tipo de medición</Label>
+                  <Label required>{t("tipoMedicion")}</Label>
                   <Select
                     value={objForm.tipoMedicion}
                     onChange={(v) =>
@@ -484,17 +487,17 @@ export function FichaSidebar({
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label required>Valor</Label>
+                    <Label required>{t("valor")}</Label>
                     <Input
                       type="number" inputMode="decimal"
                       step="0.1"
-                      placeholder="Introduzca un número"
+                      placeholder={t("introduzcaNumero")}
                       value={objForm.valor}
                       onChange={(e) => setObjForm({ ...objForm, valor: e.target.value })}
                     />
                   </div>
                   <div>
-                    <Label>Unidad</Label>
+                    <Label>{t("unidad")}</Label>
                     <Input
                       value={objForm.unidad}
                       onChange={(e) => setObjForm({ ...objForm, unidad: e.target.value })}
@@ -504,19 +507,19 @@ export function FichaSidebar({
               </>
             )}
             <div>
-              <Label required>Descripción</Label>
+              <Label required>{t("descripcion")}</Label>
               <Input
-                placeholder="ej: Beber más de 1 litro de agua al día"
+                placeholder={t("ejemploAgua")}
                 value={objForm.descripcion}
                 onChange={(e) => setObjForm({ ...objForm, descripcion: e.target.value })}
               />
             </div>
             <div>
-              <Label required>Fecha límite</Label>
+              <Label required>{t("fechaLimite")}</Label>
               <DatePicker value={objForm.fechaLimite} onChange={(v) => setObjForm({ ...objForm, fechaLimite: v })} />
             </div>
           </div>
-          <ModalButtons saving={saving} onCancel={() => setModal(null)} label="Definir objetivo" />
+          <ModalButtons saving={saving} onCancel={() => setModal(null)} label={t("definirObjetivo")} />
         </form>
       </Modal>
     </aside>

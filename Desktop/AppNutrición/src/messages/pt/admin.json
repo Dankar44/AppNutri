@@ -1,0 +1,348 @@
+{
+  "login": {
+    "title": "Painel de administração",
+    "subtitle": "Acesso restrito",
+    "emailLabel": "Email",
+    "emailPlaceholder": "admin@exemplo.com",
+    "passwordLabel": "Senha",
+    "submitButton": "Acessar",
+    "verifying": "Verificando…",
+    "errorLogin": "Erro ao iniciar sessão",
+    "backToHome": "Voltar ao início"
+  },
+  "layout": {
+    "title": "Annonia Admin"
+  },
+  "sidebar": {
+    "brandName": "Annonia",
+    "nav": {
+      "panel": "Painel",
+      "dietistas": "Nutricionistas",
+      "verificaciones": "Verificações",
+      "seguimiento": "Acompanhamento",
+      "mensajes": "Mensagens",
+      "actividad": "Atividade",
+      "suscripciones": "Assinaturas",
+      "crearCuenta": "Criar conta"
+    },
+    "roles": {
+      "creator": "Criador de contas",
+      "admin": "Administrador(a)"
+    },
+    "volverApp": "Voltar ao app",
+    "cerrarSesion": "Sair"
+  },
+  "dashboard": {
+    "title": "Painel de administração",
+    "subtitle": "Visão geral da plataforma",
+    "stats": {
+      "totalDietistas": "Total de nutricionistas",
+      "totalPacientes": "Total de pacientes",
+      "planesActivos": "Planos ativos",
+      "consultasEsteMes": "Consultas este mês",
+      "nuevos": "{count} novos"
+    },
+    "charts": {
+      "registrosMensuales": "Registros mensais",
+      "chartLegendDietistas": "Nutricionistas",
+      "chartLegendPacientes": "Pacientes"
+    },
+    "resumenRapido": {
+      "title": "Resumo rápido",
+      "dietistasRegistrados": "Nutricionistas registrados",
+      "mediaPacientesDietista": "Média pacientes/nutricionista",
+      "planesPorDietista": "Planos por nutricionista"
+    },
+    "topDietistas": {
+      "title": "Nutricionistas com mais pacientes",
+      "columns": {
+        "dietista": "Nutricionista",
+        "email": "Email",
+        "pacientes": "Pacientes",
+        "planes": "Planos",
+        "consultas": "Consultas",
+        "registro": "Cadastro"
+      },
+      "empty": "Não há nutricionistas registrados"
+    }
+  },
+  "dietistas": {
+    "title": "Nutricionistas registrados",
+    "subtitle": "{count} nutricionista{countPlural} · {totalPacientes} paciente{pacientesPlural} no total",
+    "searchPlaceholder": "Buscar por nome ou email...",
+    "empty": {
+      "sinResultados": "Sem resultados",
+      "sinDietistas": "Sem nutricionistas",
+      "noEncontrados": "Não foram encontrados nutricionistas para \"{query}\"",
+      "noRegistrados": "Não há nutricionistas registrados na plataforma"
+    },
+    "sort": {
+      "masRecientes": "Mais recentes",
+      "masPacientes": "Mais pacientes",
+      "ultimaActividad": "Última atividade",
+      "nombreAZ": "Nome A-Z"
+    },
+    "list": {
+      "pacientes": "pacientes",
+      "planes": "planos",
+      "consultas": "consultas",
+      "recetas": "{count} receitas",
+      "registro": "Cadastro: {date}",
+      "ultimoAcceso": "Último acesso: {date}",
+      "clinica": "Clínica/Consultório: {name}",
+      "sinPacientes": "Este nutricionista não tem pacientes",
+      "verDetalle": "Ver detalhe completo",
+      "columnas": {
+        "paciente": "Paciente",
+        "objetivo": "Objetivo",
+        "estado": "Status",
+        "fechaAlta": "Data de cadastro"
+      }
+    },
+    "planBadge": {
+      "basico": "Básico",
+      "pro": "Pro"
+    },
+    "estadoBadge": {
+      "prueba": "Teste",
+      "activa": "Ativa",
+      "cancelada": "Cancelada",
+      "expirada": "Expirada"
+    },
+    "objetivoLabel": {
+      "perderPeso": "Emagrecer",
+      "ganarMasa": "Ganhar massa",
+      "mantenimiento": "Manutenção",
+      "patologia": "Patologia",
+      "deportivo": "Esportivo",
+      "otro": "Outro"
+    },
+    "pacienteEstado": {
+      "activo": "Ativo",
+      "inactivo": "Inativo"
+    },
+    "tiempoRelativo": {
+      "ahora": "agora",
+      "minutos": "há {count}min",
+      "horas": "há {count}h",
+      "dias": "há {count}d",
+      "meses": "há {count} mês{plural}"
+    }
+  },
+  "dietistaDetalle": {
+    "volverDietistas": "Voltar a nutricionistas",
+    "registradoEl": "Registrado em {date}",
+    "numColegiado": "Reg. Prof.: {number}",
+    "suscripcion": {
+      "title": "Assinatura",
+      "plan": "Plano",
+      "estado": "Status",
+      "inicio": "Início",
+      "fin": "Fim",
+      "sinSuscripcion": "Sem assinatura",
+      "planLabel": {
+        "basico": "Básico",
+        "profesional": "Profissional"
+      },
+      "estadoLabel": {
+        "activa": "Ativa",
+        "prueba": "Período de teste",
+        "cancelada": "Cancelada",
+        "expirada": "Expirada"
+      }
+    },
+    "stats": {
+      "pacientes": "Pacientes",
+      "planes": "Planos",
+      "consultas": "Consultas",
+      "recetas": "Receitas",
+      "alimentos": "Alimentos",
+      "citas": "Agendamentos"
+    },
+    "pacientesSection": {
+      "title": "Pacientes ({count})",
+      "empty": "Este nutricionista não tem pacientes",
+      "empty": "Este nutricionista não tem pacientes",
+      "columns": {
+        "paciente": "Paciente",
+        "email": "Email",
+        "objetivo": "Objetivo",
+        "planes": "Planos",
+        "consultas": "Consultas",
+        "estado": "Status",
+        "fechaAlta": "Data de cadastro"
+      }
+    },
+    "ultimasConsultas": "Últimas consultas"
+  },
+  "crearCuenta": {
+    "title": "Criar conta de nutricionista",
+    "subtitle": "A conta é criada verificada e pronta para usar",
+    "form": {
+      "nombre": "Nome *",
+      "nombrePlaceholder": "Ex: Maria",
+      "apellidos": "Sobrenome",
+      "apellidosPlaceholder": "Ex: Silva Santos",
+      "email": "Email *",
+      "emailPlaceholder": "nutricionista@exemplo.com",
+      "password": "Senha *",
+      "passwordPlaceholder": "Mínimo de 6 caracteres",
+      "submit": "Criar conta",
+      "submitting": "Criando..."
+    },
+    "success": {
+      "title": "Conta criada",
+      "emailLabel": "Email:",
+      "passwordLabel": "Senha:",
+      "loginLabel": "Login:",
+      "copiado": "Copiado!",
+      "copiarCredenciales": "Copiar credenciais",
+      "crearOtra": "Criar outra conta"
+    },
+    "toast": {
+      "cuentaCreada": "Conta criada com sucesso",
+      "errorCrear": "Erro ao criar a conta",
+      "credencialesCopiadas": "Credenciais copiadas"
+    }
+  },
+  "verificaciones": {
+    "title": "Verificações pendentes",
+    "subtitle": "{count} solicitação{countPlural} pendente{countPlural}",
+    "todoVerificado": {
+      "title": "Tudo verificado",
+      "description": "Não há solicitações pendentes de verificação"
+    },
+    "numColegiado": "Registro profissional: {number}",
+    "registradoEl": "Registrado em {date}",
+    "actions": {
+      "verificar": "Verificar",
+      "rechazar": "Rejeitar",
+      "confirmarRechazo": "Excluir conta?",
+      "si": "Sim",
+      "no": "Não"
+    },
+    "toast": {
+      "verificado": "{nombre} foi verificado",
+      "rechazado": "Solicitação de {nombre} rejeitada",
+      "errorVerificar": "Erro ao verificar",
+      "errorRechazar": "Erro ao rejeitar"
+    }
+  },
+  "suscripciones": {
+    "title": "Assinaturas",
+    "subtitle": "{total} assinaturas no total",
+    "planLabel": "Plano {plan}",
+    "empty": {
+      "title": "Sem assinaturas",
+      "description": "Não há assinaturas registradas"
+    },
+    "columns": {
+      "dietista": "Nutricionista",
+      "email": "Email",
+      "plan": "Plano",
+      "estado": "Status",
+      "inicio": "Início",
+      "fin": "Fim"
+    },
+    "planLabels": {
+      "basico": "Básico",
+      "profesional": "Profissional"
+    },
+    "estadoLabels": {
+      "activa": "Ativa",
+      "prueba": "Teste",
+      "cancelada": "Cancelada",
+      "expirada": "Expirada"
+    }
+  },
+  "seguimiento": {
+    "title": "Acompanhamento de acessos",
+    "subtitle": "Último acesso de nutricionistas e pacientes à plataforma",
+    "stats": {
+      "dietistasActivosHoy": "Nutricionistas ativos hoje",
+      "pacientesActivosHoy": "Pacientes ativos hoje",
+      "dietistasSinAcceso": "Nutricionistas sem acesso",
+      "pacientesSinAcceso": "Pacientes sem acesso",
+      "deTotales": "de {total} no total"
+    },
+    "tablaDietistas": {
+      "title": "Nutricionistas ({count})",
+      "columns": {
+        "dietista": "Nutricionista",
+        "email": "Email",
+        "pacientes": "Pacientes",
+        "ultimoAcceso": "Último acesso",
+        "fechaExacta": "Data exata",
+        "estado": "Status"
+      },
+      "noVerificado": "Não verificado"
+    },
+    "tablaPacientes": {
+      "title": "Pacientes ({count})",
+      "columns": {
+        "paciente": "Paciente",
+        "email": "Email",
+        "dietista": "Nutricionista",
+        "ultimoAcceso": "Último acesso",
+        "fechaExacta": "Data exata",
+        "estado": "Status"
+      },
+      "empty": "Não há pacientes registrados"
+    },
+    "timeAgo": {
+      "nunca": "Nunca acessou",
+      "ahoraMismo": "Agora mesmo",
+      "minutos": "Há {count} min",
+      "horas": "Há {count}h",
+      "dias": "Há {count}d",
+      "semanas": "Há {count} sem",
+      "meses": "Há {count} mês{plural}"
+    },
+    "statusBadge": {
+      "sinAcceso": "Sem acesso",
+      "activoHoy": "Ativo hoje",
+      "estaSemana": "Nesta semana",
+      "esteMes": "Este mês",
+      "inactivo": "Inativo"
+    }
+  },
+  "actividad": {
+    "title": "Atividade da plataforma",
+    "subtitle": "Métricas de uso em tempo real",
+    "stats": {
+      "consultasHoy": "Consultas hoje",
+      "citasHoy": "Agendamentos hoje",
+      "entradasDiarioHoy": "Entradas no diário hoje",
+      "consultasEsteMes": "Consultas este mês",
+      "generacionesIAMes": "Gerações IA mês"
+    },
+    "dietistasActivos": {
+      "title": "Nutricionistas mais ativos este mês",
+      "empty": "Sem atividade este mês",
+      "columns": {
+        "dietista": "Nutricionista",
+        "consultasMes": "Consultas mês",
+        "pacientes": "Pacientes"
+      }
+    },
+    "ultimosRegistros": {
+      "title": "Últimos nutricionistas registrados",
+      "empty": "Sem registros"
+    }
+  },
+  "mensajes": {
+    "title": "Mensagens Suporte",
+    "subtitle": "Conversas com nutricionistas",
+    "buscarPlaceholder": "Buscar nutricionista...",
+    "sinResultados": "Sem resultados",
+    "sinConversaciones": "Não há conversas de suporte",
+    "seleccionaConversacion": "Selecione uma conversa",
+    "seleccionaSubtitle": "Escolha um nutricionista da lista para ver suas mensagens",
+    "volver": "Voltar",
+    "sinMensajes": "Sem mensagens ainda",
+    "responderPlaceholder": "Responder para {nombre}...",
+    "enviarAriaLabel": "Enviar mensagem",
+    "errorEnviar": "Não foi possível enviar",
+    "tuPrefix": "Você: "
+  }
+}

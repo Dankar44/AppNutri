@@ -4,6 +4,7 @@ import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 
 // ─── Estado de la cuenta Stripe del dietista ───────────────────────────
 
@@ -60,8 +61,9 @@ export async function getStripeAccountStatus(): Promise<StripeAccountStatus> {
 // ─── Crear cuenta Connect Express y generar link de onboarding ─────────
 
 export async function createStripeConnectAccount(): Promise<{ url: string }> {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return { url: "" };
 
   // Comprobar si ya tiene cuenta
@@ -112,8 +114,9 @@ export async function createStripeConnectAccount(): Promise<{ url: string }> {
 // ─── Generar link de onboarding para cuenta existente ──────────────────
 
 export async function getStripeOnboardingLink(): Promise<{ url: string }> {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return { url: "" };
 
   const rows = await prisma.$queryRawUnsafe<{ stripeAccountId: string | null }[]>(
@@ -122,7 +125,7 @@ export async function getStripeOnboardingLink(): Promise<{ url: string }> {
   );
 
   const accountId = rows[0]?.stripeAccountId;
-  if (!accountId) throw new Error("No tienes cuenta de Stripe conectada");
+  if (!accountId) throw new Error(t("stripe.sinCuentaStripe"));
 
   const origin = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const accountLink = await stripe.accountLinks.create({
@@ -138,8 +141,9 @@ export async function getStripeOnboardingLink(): Promise<{ url: string }> {
 // ─── Desconectar cuenta Stripe ─────────────────────────────────────────
 
 export async function disconnectStripeAccount(): Promise<void> {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const rows = await prisma.$queryRawUnsafe<{ stripeAccountId: string | null }[]>(
@@ -167,8 +171,9 @@ export async function disconnectStripeAccount(): Promise<void> {
 // ─── Acceso al dashboard de Stripe Express ─────────────────────────────
 
 export async function getStripeDashboardLink(): Promise<{ url: string }> {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return { url: "" };
 
   const rows = await prisma.$queryRawUnsafe<{ stripeAccountId: string | null }[]>(
@@ -177,7 +182,7 @@ export async function getStripeDashboardLink(): Promise<{ url: string }> {
   );
 
   const accountId = rows[0]?.stripeAccountId;
-  if (!accountId) throw new Error("No tienes cuenta de Stripe conectada");
+  if (!accountId) throw new Error(t("stripe.sinCuentaStripe"));
 
   const loginLink = await stripe.accounts.createLoginLink(accountId);
   return { url: loginLink.url };

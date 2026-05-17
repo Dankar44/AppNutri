@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef, useLayoutEffect } from "react";
 import { ChevronLeft, ChevronRight, X, Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useTour } from "./tour-provider";
 
 interface Rect { top: number; left: number; width: number; height: number; }
@@ -14,6 +15,7 @@ export function TourOverlay() {
 
 function TourOverlayContent() {
   const ctx = useTour()!;
+  const t = useTranslations("settings.tours.overlay");
   const { activeTour, currentStep, currentStepIndex, nextStep, prevStep, skipTour, transitioning, pathname, settleStep } = ctx;
   const [targetRect, setTargetRect] = useState<Rect | null>(null);
   const [searching, setSearching] = useState(false);
@@ -281,14 +283,14 @@ function TourOverlayContent() {
           </div>
           <p className="text-sm text-muted-foreground mb-4 leading-relaxed">{currentStep.description}</p>
           {settled && !targetRect && currentStep.target && (
-            <p className="text-xs text-muted-foreground/60 mb-3 italic">No se ha encontrado el elemento</p>
+            <p className="text-xs text-muted-foreground/60 mb-3 italic">{t("elementNotFound")}</p>
           )}
         </div>
         <div className="flex items-center justify-between flex-wrap gap-2">
           <span className="text-xs text-muted-foreground flex items-center gap-1.5">
             {busy && <Loader2 className="w-3 h-3 animate-spin" />}
-            <span className="sm:hidden">{currentStepIndex + 1}/{totalSteps}</span>
-            <span className="hidden sm:inline">Paso {currentStepIndex + 1} de {totalSteps}</span>
+            <span className="sm:hidden">{t("stepShort", { current: currentStepIndex + 1, total: totalSteps })}</span>
+            <span className="hidden sm:inline">{t("stepOf", { current: currentStepIndex + 1, total: totalSteps })}</span>
           </span>
           <div className="flex items-center gap-2">
             {!isFirst && (
@@ -297,7 +299,7 @@ function TourOverlayContent() {
                 disabled={busy}
                 className="inline-flex items-center gap-1 px-2.5 py-1.5 sm:px-3 rounded-lg border border-border text-xs font-medium hover:bg-muted min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <ChevronLeft className="w-3 h-3" /> Anterior
+                <ChevronLeft className="w-3 h-3" /> {t("previous")}
               </button>
             )}
             <button
@@ -305,7 +307,7 @@ function TourOverlayContent() {
               disabled={busy}
               className="inline-flex items-center gap-1 px-2.5 py-1.5 sm:px-3 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLast ? "Finalizar" : "Siguiente"}{!isLast && <ChevronRight className="w-3 h-3" />}
+              {isLast ? t("finish") : t("next")}{!isLast && <ChevronRight className="w-3 h-3" />}
             </button>
           </div>
         </div>

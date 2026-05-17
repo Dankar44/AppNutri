@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { getTranslations } from "next-intl/server";
+import { getLocale } from "@/i18n/locale";
+import { intlTag } from "@/i18n/config";
 import { getPaciente } from "@/app/actions/pacientes";
 import { getPlanesPaciente, getPlan } from "@/app/actions/planes";
 import { getMedidasEvolucion } from "@/app/actions/medidas";
@@ -19,12 +22,16 @@ export default async function ReportesPacientePage({ params }: Props) {
   const paciente = await getPaciente(id);
   if (!paciente) notFound();
 
-  const [planes, medidas, consultas, dietista] = await Promise.all([
+  const [planes, medidas, consultas, dietista, t, locale] = await Promise.all([
     getPlanesPaciente(id),
     getMedidasEvolucion(id),
     getConsultas(id),
     getCurrentDietista(),
+    getTranslations("reports.paciente"),
+    getLocale(),
   ]);
+
+  const tag = intlTag(locale);
 
   const tema = dietista ? getTheme(dietista.temaPdf, dietista.colorPrimarioPdf) : undefined;
   const reportBranding = dietista ? { brandName: dietista.marcaPdf || undefined, linkColor: tema?.linkColor } : undefined;
@@ -47,7 +54,7 @@ export default async function ReportesPacientePage({ params }: Props) {
           comidas: d.comidas.map((c) => ({
             tipo: c.tipo,
             alimentos: c.alimentos.map((a) => ({
-              nombre: a.alimento?.nombre || a.receta?.nombre || "Sin nombre",
+              nombre: a.alimento?.nombre || a.receta?.nombre || t("sinNombre"),
               cantidad: a.cantidad,
               unidad: a.unidad ?? "GRAMOS",
               enlaceProducto: a.alimento?.enlaceProducto ?? null,
@@ -66,24 +73,24 @@ export default async function ReportesPacientePage({ params }: Props) {
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3 py-2 sm:py-0 -my-2 sm:my-0"
         >
           <ArrowLeft className="w-4 h-4" />
-          Volver a reportes
+          {t("volverAReportes")}
         </Link>
         <h1 className="text-2xl sm:text-3xl font-bold">
-          Informes de {paciente.nombre} {paciente.apellidos}
+          {t("informesDe", { nombre: paciente.nombre, apellidos: paciente.apellidos })}
         </h1>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div className="bg-card rounded-xl border border-border p-5">
-          <p className="text-sm text-muted-foreground">Planes</p>
+          <p className="text-sm text-muted-foreground">{t("planes")}</p>
           <p className="text-2xl sm:text-3xl font-bold">{planes.length}</p>
         </div>
         <div className="bg-card rounded-xl border border-border p-5">
-          <p className="text-sm text-muted-foreground">Consultas</p>
+          <p className="text-sm text-muted-foreground">{t("consultas")}</p>
           <p className="text-2xl sm:text-3xl font-bold">{consultas.length}</p>
         </div>
         <div className="bg-card rounded-xl border border-border p-5">
-          <p className="text-sm text-muted-foreground">Evolución peso</p>
+          <p className="text-sm text-muted-foreground">{t("evolucionPeso")}</p>
           <p className="text-2xl sm:text-3xl font-bold">
             {cambiosPeso !== null ? (
               <span className={cambiosPeso < 0 ? "text-green-600 dark:text-green-400" : cambiosPeso > 0 ? "text-red-600 dark:text-red-400" : ""}>
@@ -97,7 +104,7 @@ export default async function ReportesPacientePage({ params }: Props) {
       </div>
 
       <section className="bg-card rounded-xl border border-border p-6 mb-6">
-        <h2 className="text-lg font-semibold mb-4">Generar informes PDF</h2>
+        <h2 className="text-lg font-semibold mb-4">{t("generarInformesPdf")}</h2>
         <GenerarPDFButtons
           branding={reportBranding}
           paciente={{
@@ -110,13 +117,13 @@ export default async function ReportesPacientePage({ params }: Props) {
             objetivo: paciente.objetivo,
           }}
           medidas={medidas.map((m) => ({
-            fecha: new Date(m.fecha).toLocaleDateString("es-ES"),
+            fecha: new Date(m.fecha).toLocaleDateString(tag),
             peso: m.peso,
             imc: m.imc,
             grasa: m.grasaCorporal,
           }))}
           consultas={consultas.map((c) => ({
-            fecha: new Date(c.fecha).toLocaleDateString("es-ES"),
+            fecha: new Date(c.fecha).toLocaleDateString(tag),
             motivo: c.motivo,
             notas: c.notas,
           }))}
@@ -127,7 +134,7 @@ export default async function ReportesPacientePage({ params }: Props) {
       {consultas.length > 0 && (
         <section className="bg-card rounded-xl border border-border p-6">
           <h2 className="text-lg font-semibold mb-4">
-            Últimas consultas
+            {t("ultimasConsultas")}
           </h2>
           <div className="space-y-3">
             {consultas.slice(0, 5).map((c) => (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { Flame, Droplets, Circle, Diamond, Triangle, Minus, Plus } from "lucide-react";
 
@@ -14,16 +15,17 @@ interface Props {
 }
 
 const ROWS = [
-  { key: "calorias", label: "Energía", unit: "kcal", icon: Flame, color: "#a78bfa", bg: "bg-purple-50 dark:bg-purple-500/10" },
-  { key: "grasas", label: "Grasa", unit: "g", icon: Droplets, color: "#f0b845", bg: "bg-yellow-50 dark:bg-yellow-500/10" },
-  { key: "carbohidratos", label: "Hidratos", unit: "g", icon: Circle, color: "#d9956a", bg: "bg-orange-50 dark:bg-orange-500/10" },
-  { key: "proteinas", label: "Proteína", unit: "g", icon: Diamond, color: "#7eaadf", bg: "bg-blue-50 dark:bg-blue-500/10" },
-  { key: "fibra", label: "Fibra", unit: "g", icon: Triangle, color: "#4ec4a0", bg: "bg-emerald-50 dark:bg-emerald-500/10" },
+  { key: "calorias", labelKey: "energia" as const, unit: "kcal", icon: Flame, color: "#a78bfa", bg: "bg-purple-50 dark:bg-purple-500/10" },
+  { key: "grasas", labelKey: "grasa" as const, unit: "g", icon: Droplets, color: "#f0b845", bg: "bg-yellow-50 dark:bg-yellow-500/10" },
+  { key: "carbohidratos", labelKey: "hidratos" as const, unit: "g", icon: Circle, color: "#d9956a", bg: "bg-orange-50 dark:bg-orange-500/10" },
+  { key: "proteinas", labelKey: "proteina" as const, unit: "g", icon: Diamond, color: "#7eaadf", bg: "bg-blue-50 dark:bg-blue-500/10" },
+  { key: "fibra", labelKey: "fibra" as const, unit: "g", icon: Triangle, color: "#4ec4a0", bg: "bg-emerald-50 dark:bg-emerald-500/10" },
 ] as const;
 
 const PRESETS = [50, 100, 150, 200];
 
 export function PorcionCalculator({ calorias, proteinas, carbohidratos, grasas, fibra, porcionDefault }: Props) {
+  const t = useTranslations("foods");
   const searchParams = useSearchParams();
   const cantidadUrl = searchParams.get("cantidad");
   const [gramos, setGramos] = useState<number>(() =>
@@ -48,14 +50,14 @@ export function PorcionCalculator({ calorias, proteinas, carbohidratos, grasas, 
   return (
     <section className="bg-card rounded-xl border border-border p-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold">Calculadora de porción</h2>
+        <h2 className="text-lg font-semibold">{t("calculadora.calculadoraPorcion")}</h2>
       </div>
 
       <div className="flex items-center gap-2 mb-3">
         <button
           onClick={() => setGramos((g) => clamp(g - 10))}
           className="w-9 h-9 shrink-0 rounded-lg border border-border hover:bg-muted transition-colors flex items-center justify-center"
-          aria-label="Restar 10g"
+          aria-label={t("calculadora.restar10g")}
         >
           <Minus className="w-4 h-4" />
         </button>
@@ -73,7 +75,7 @@ export function PorcionCalculator({ calorias, proteinas, carbohidratos, grasas, 
         <button
           onClick={() => setGramos((g) => clamp(g + 10))}
           className="w-9 h-9 shrink-0 rounded-lg border border-border hover:bg-muted transition-colors flex items-center justify-center"
-          aria-label="Sumar 10g"
+          aria-label={t("calculadora.sumar10g")}
         >
           <Plus className="w-4 h-4" />
         </button>
@@ -106,7 +108,7 @@ export function PorcionCalculator({ calorias, proteinas, carbohidratos, grasas, 
             >
               <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                 <Icon className="w-3.5 h-3.5" style={{ color: row.color }} />
-                {row.label}
+                {t(`macros.${row.labelKey}`)}
               </div>
               <div className="tabular-nums">
                 <span className="text-base font-bold" style={{ color: row.color }}>

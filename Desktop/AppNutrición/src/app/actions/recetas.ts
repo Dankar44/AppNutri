@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { UnidadMedida } from "@/generated/prisma/client";
 import { convertirAGramos } from "@/lib/macros";
 import {
@@ -155,12 +156,13 @@ export async function crearReceta(
   data: RecetaFormData,
   ingredientes: IngredienteData[]
 ) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const nombreSanitizado = sanitizeString(data.nombre, LIMITS.NOMBRE);
-  if (!nombreSanitizado) throw new Error("El nombre es obligatorio");
+  if (!nombreSanitizado) throw new Error(t("receta.nombreObligatorio"));
   const descripcionSanitizada = sanitizeStringOptional(data.descripcion, LIMITS.DESCRIPCION);
   const instruccionesSanitizadas = sanitizeStringOptional(data.instrucciones, LIMITS.INSTRUCCIONES);
   const porcionesValidadas = validateNumber(data.porciones, 1, LIMITS.PORCIONES_MAX);
@@ -196,12 +198,13 @@ export async function actualizarReceta(
   data: RecetaFormData,
   ingredientes: IngredienteData[]
 ) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const nombreSanitizado = sanitizeString(data.nombre, LIMITS.NOMBRE);
-  if (!nombreSanitizado) throw new Error("El nombre es obligatorio");
+  if (!nombreSanitizado) throw new Error(t("receta.nombreObligatorio"));
   const descripcionSanitizada = sanitizeStringOptional(data.descripcion, LIMITS.DESCRIPCION);
   const instruccionesSanitizadas = sanitizeStringOptional(data.instrucciones, LIMITS.INSTRUCCIONES);
   const porcionesValidadas = validateNumber(data.porciones, 1, LIMITS.PORCIONES_MAX);
@@ -236,8 +239,9 @@ export async function actualizarReceta(
 }
 
 export async function eliminarReceta(id: string) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   await prisma.recetaIngrediente.deleteMany({ where: { recetaId: id } });
@@ -437,17 +441,18 @@ export async function getReceta(id: string) {
 }
 
 export async function toggleFavoritoReceta(recetaId: string) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const receta = await prisma.receta.findUnique({
     where: { id: recetaId },
     select: { id: true, dietistaId: true },
   });
-  if (!receta) throw new Error("Receta no encontrada");
+  if (!receta) throw new Error(t("receta.recetaNoEncontrada"));
   if (receta.dietistaId !== null) {
-    throw new Error("Solo puedes marcar como favoritas las recetas de la app");
+    throw new Error(t("receta.soloFavoritasApp"));
   }
 
   const existentes = await prisma.$queryRawUnsafe<Array<{ id: string }>>(

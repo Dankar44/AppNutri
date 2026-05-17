@@ -12,12 +12,13 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import type { HorarioEntry } from "@/app/actions/paciente-auth";
 import {
   type Bloque,
   CATEGORIAS,
-  DIAS,
-  DIAS_CORTOS,
+  DIAS_KEYS,
+  DIAS_CORTOS_KEYS,
   END_HOUR,
   MOBILE_PX_PER_HOUR,
   PLANTILLAS,
@@ -59,6 +60,7 @@ function bloquesOverlap(a: Bloque, b: Bloque): boolean {
 }
 
 export function HorarioPaciente({ initialEntries, onSave }: Props) {
+  const t = useTranslations("patients.horario");
   const [bloques, setBloques] = useState<Bloque[]>(() => entriesToBloques(initialEntries));
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -66,7 +68,7 @@ export function HorarioPaciente({ initialEntries, onSave }: Props) {
   const [showPlantillas, setShowPlantillas] = useState(false);
   const [mobileDia, setMobileDia] = useState(() => {
     const dayIdx = new Date().getDay();
-    return DIAS[dayIdx === 0 ? 6 : dayIdx - 1];
+    return DIAS_KEYS[dayIdx === 0 ? 6 : dayIdx - 1];
   });
 
   useEffect(() => {
@@ -80,7 +82,7 @@ export function HorarioPaciente({ initialEntries, onSave }: Props) {
 
   const bloquesPorDia = useMemo(() => {
     const m = new Map<string, Bloque[]>();
-    for (const dia of DIAS) m.set(dia, []);
+    for (const dia of DIAS_KEYS) m.set(dia, []);
     for (const b of bloques) m.get(b.dia)?.push(b);
     return m;
   }, [bloques]);
@@ -119,11 +121,11 @@ export function HorarioPaciente({ initialEntries, onSave }: Props) {
     if (!draft) return;
     const { dia, horaInicio, horaFin, actividad, color, nota, repetirEn, id } = draft;
     if (!actividad.trim()) {
-      toast.error("Añade un nombre a la actividad");
+      toast.error(t("anadirNombreActividad"));
       return;
     }
     if (horaFin <= horaInicio) {
-      toast.error("La hora de fin debe ser posterior a la de inicio");
+      toast.error(t("horaFinPosterior"));
       return;
     }
 
@@ -174,13 +176,13 @@ export function HorarioPaciente({ initialEntries, onSave }: Props) {
   function duplicarDia(origen: string) {
     const src = bloquesPorDia.get(origen) ?? [];
     if (src.length === 0) {
-      toast.error(`No hay actividades en ${origen} para duplicar`);
+      toast.error(t("noHayActividadesEnDia", { dia: t(`dias.${origen}`) }));
       return;
     }
     setBloques((prev) => {
       // Quitar todo lo demás (lo reemplazamos con la copia del día origen)
       const resto = prev.filter((b) => b.dia === origen);
-      const otrosDias = DIAS.filter((d) => d !== origen);
+      const otrosDias = DIAS_KEYS.filter((d) => d !== origen);
       const copias: Bloque[] = [];
       for (const d of otrosDias) {
         for (const b of src) copias.push({ ...b, dia: d });
@@ -188,21 +190,21 @@ export function HorarioPaciente({ initialEntries, onSave }: Props) {
       return [...resto, ...copias];
     });
     setDirty(true);
-    toast.success(`Copiado de ${origen} a toda la semana`);
+    toast.success(t("copiadoASemana", { dia: t(`dias.${origen}`) }));
   }
 
   function aplicarPlantilla(id: string) {
     const p = PLANTILLAS.find((x) => x.id === id);
     if (!p) return;
-    setBloques(entriesToBloques(p.apply()));
+    setBloques(entriesToBloques(p.apply(t)));
     setDirty(true);
     setShowPlantillas(false);
-    toast.success(`Plantilla aplicada: ${p.label}`);
+    toast.success(t("plantillaAplicada", { label: t(p.labelKey) }));
   }
 
   function limpiarSemana() {
     if (bloques.length === 0) return;
-    if (!confirm("¿Quieres vaciar toda la semana? Esto borrará todas las actividades.")) return;
+    if (!confirm(t("vaciarSemanaConfirm"))) return;
     setBloques([]);
     setDirty(true);
   }
@@ -211,10 +213,10 @@ export function HorarioPaciente({ initialEntries, onSave }: Props) {
     setSaving(true);
     try {
       await onSave(entries);
-      toast.success("Horario guardado");
+      toast.success(t("horarioGuardado"));
       setDirty(false);
     } catch {
-      toast.error("Error al guardar");
+      toast.error(t("errorAlGuardar"));
     } finally {
       setSaving(false);
     }
@@ -238,7 +240,7 @@ export function HorarioPaciente({ initialEntries, onSave }: Props) {
               </span>
               <div className="min-w-0">
                 <p className="text-[9px] sm:text-[10px] uppercase tracking-wide text-muted-foreground font-medium leading-none truncate">
-                  {c.label}
+                  {t(c.labelKey)}
                 </p>
                 <p className="text-base sm:text-lg font-bold tabular-nums leading-tight">
                   {h}h
@@ -259,8 +261,8 @@ export function HorarioPaciente({ initialEntries, onSave }: Props) {
             <Sparkles className="w-3.5 h-3.5" strokeWidth={1.75} />
           </span>
           <div className="min-w-0">
-            <p className="text-[9px] uppercase tracking-wide text-muted-foreground font-medium leading-none">Plantilla</p>
-            <p className="text-base font-bold leading-tight">Aplicar</p>
+            <p className="text-[9px] uppercase tracking-wide text-muted-foreground font-medium leading-none">{t("plantilla")}</p>
+            <p className="text-base font-bold leading-tight">{t("aplicar")}</p>
           </div>
         </button>
       </div>
@@ -274,7 +276,7 @@ export function HorarioPaciente({ initialEntries, onSave }: Props) {
             className="hidden lg:inline-flex items-center gap-1.5 rounded-lg border border-border bg-card hover:bg-muted/50 px-3 h-9 text-xs font-medium transition-colors"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            Aplicar plantilla
+            {t("aplicarPlantilla")}
           </button>
           {bloques.length > 0 && (
             <button
@@ -283,7 +285,7 @@ export function HorarioPaciente({ initialEntries, onSave }: Props) {
               className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-950/20 dark:hover:text-red-400 dark:hover:border-red-500/40 px-3 h-9 text-xs font-medium transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              Vaciar semana
+              {t("vaciarSemana")}
             </button>
           )}
         </div>
@@ -300,7 +302,7 @@ export function HorarioPaciente({ initialEntries, onSave }: Props) {
             ) : (
               <Save className="w-3.5 h-3.5" />
             )}
-            Guardar cambios
+            {t("guardarCambios")}
           </button>
         )}
       </div>
@@ -309,18 +311,18 @@ export function HorarioPaciente({ initialEntries, onSave }: Props) {
 
       {/* Selector de día — solo móvil */}
       <div className="flex gap-1 mb-3 lg:hidden">
-        {DIAS.map((dia, i) => (
+        {DIAS_KEYS.map((diaKey) => (
           <button
-            key={dia}
+            key={diaKey}
             type="button"
-            onClick={() => setMobileDia(dia)}
+            onClick={() => setMobileDia(diaKey)}
             className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-colors ${
-              mobileDia === dia
+              mobileDia === diaKey
                 ? "bg-primary text-primary-foreground"
                 : "bg-card border border-border text-muted-foreground hover:text-foreground"
             }`}
           >
-            {DIAS_CORTOS[i]}
+            {t(`diasCortos.${diaKey}`)}
           </button>
         ))}
       </div>
@@ -329,21 +331,21 @@ export function HorarioPaciente({ initialEntries, onSave }: Props) {
       <div className="lg:hidden rounded-xl border border-border overflow-hidden bg-card">
         <div className="flex items-center justify-between bg-muted/30 border-b border-border px-3 py-1.5">
           <div>
-            <div className="text-sm font-semibold">{mobileDia}</div>
+            <div className="text-sm font-semibold">{t(`dias.${mobileDia}`)}</div>
             <div className="text-[10px] text-muted-foreground">
               {(bloquesPorDia.get(mobileDia) ?? []).length === 0
-                ? "Sin actividades"
-                : `${(bloquesPorDia.get(mobileDia) ?? []).length} actividad${(bloquesPorDia.get(mobileDia) ?? []).length > 1 ? "es" : ""}`}
+                ? t("sinActividades")
+                : `${(bloquesPorDia.get(mobileDia) ?? []).length} ${(bloquesPorDia.get(mobileDia) ?? []).length > 1 ? t("actividades") : t("actividad")}`}
             </div>
           </div>
           <button
             type="button"
             onClick={() => duplicarDia(mobileDia)}
             className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            title={`Copiar ${mobileDia} a toda la semana`}
+            title={t("copiarDiaASemana", { dia: t(`dias.${mobileDia}`) })}
           >
             <Copy className="w-3 h-3" />
-            Copiar
+            {t("copiar")}
           </button>
         </div>
         <div className="max-h-[40vh] overflow-y-auto">
@@ -371,12 +373,13 @@ export function HorarioPaciente({ initialEntries, onSave }: Props) {
               onCellClick={onCellClick}
               onBloqueClick={onBloqueClick}
               pxPerHour={MOBILE_PX_PER_HOUR}
+              t={t}
             />
           </div>
         </div>
         {bloques.length === 0 && (
           <div className="px-5 py-2.5 text-center text-xs text-muted-foreground border-t border-border bg-muted/20">
-            Toca cualquier casilla para añadir una actividad, o aplica una plantilla.
+            {t("tocaParaAnadir")}
           </div>
         )}
       </div>
@@ -390,23 +393,23 @@ export function HorarioPaciente({ initialEntries, onSave }: Props) {
               style={{ gridTemplateColumns: "56px repeat(7, minmax(0, 1fr))" }}
             >
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium text-center py-2 border-r border-border">
-                Hora
+                {t("hora")}
               </div>
-              {DIAS.map((dia, i) => (
+              {DIAS_KEYS.map((diaKey) => (
                 <div
-                  key={dia}
+                  key={diaKey}
                   className="relative py-2 text-center border-r border-border last:border-r-0 group/dia"
                 >
-                  <div className="text-xs font-semibold">{dia}</div>
+                  <div className="text-xs font-semibold">{t(`dias.${diaKey}`)}</div>
                   <div className="text-[10px] text-muted-foreground">
-                    {DIAS_CORTOS[i]}
+                    {t(`diasCortos.${diaKey}`)}
                   </div>
                   <button
                     type="button"
-                    onClick={() => duplicarDia(dia)}
-                    aria-label={`Copiar ${dia} a toda la semana`}
+                    onClick={() => duplicarDia(diaKey)}
+                    aria-label={t("copiarDiaASemana", { dia: t(`dias.${diaKey}`) })}
                     className="absolute top-1 right-1 p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground opacity-0 group-hover/dia:opacity-100 transition-opacity"
-                    title={`Copiar ${dia} a toda la semana`}
+                    title={t("copiarDiaASemana", { dia: t(`dias.${diaKey}`) })}
                   >
                     <Copy className="w-3 h-3" />
                   </button>
@@ -433,13 +436,14 @@ export function HorarioPaciente({ initialEntries, onSave }: Props) {
                 ))}
               </div>
 
-              {DIAS.map((dia) => (
+              {DIAS_KEYS.map((diaKey) => (
                 <DiaColumna
-                  key={dia}
-                  dia={dia}
-                  bloques={bloquesPorDia.get(dia) ?? []}
+                  key={diaKey}
+                  dia={diaKey}
+                  bloques={bloquesPorDia.get(diaKey) ?? []}
                   onCellClick={onCellClick}
                   onBloqueClick={onBloqueClick}
+                  t={t}
                 />
               ))}
             </div>
@@ -447,7 +451,7 @@ export function HorarioPaciente({ initialEntries, onSave }: Props) {
         </div>
         {bloques.length === 0 && (
           <div className="px-5 py-3 text-center text-xs text-muted-foreground border-t border-border bg-muted/20">
-            Haz click en cualquier casilla para añadir una actividad, o aplica una plantilla.
+            {t("clickParaAnadir")}
           </div>
         )}
       </div>
@@ -457,6 +461,7 @@ export function HorarioPaciente({ initialEntries, onSave }: Props) {
         <PlantillasModal
           onClose={() => setShowPlantillas(false)}
           onApply={aplicarPlantilla}
+          t={t}
         />
       )}
 
@@ -468,6 +473,7 @@ export function HorarioPaciente({ initialEntries, onSave }: Props) {
           onSave={saveDraft}
           onDelete={deleteDraft}
           onClose={closeDraft}
+          t={t}
         />
       )}
     </div>
@@ -481,12 +487,14 @@ function DiaColumna({
   onCellClick,
   onBloqueClick,
   pxPerHour = PX_PER_HOUR,
+  t,
 }: {
   dia: string;
   bloques: Bloque[];
   onCellClick: (dia: string, hora: string) => void;
   onBloqueClick: (b: Bloque) => void;
   pxPerHour?: number;
+  t: (key: string, values?: Record<string, string | number>) => string;
 }) {
   return (
     <div className="relative border-r border-border last:border-r-0">
@@ -501,7 +509,7 @@ function DiaColumna({
             top: `${(parseInt(hora.split(":")[0], 10) - START_HOUR) * pxPerHour}px`,
             height: `${pxPerHour}px`,
           }}
-          aria-label={`Añadir actividad ${dia} ${hora}`}
+          aria-label={t("anadirActividadAria", { dia: t(`dias.${dia}`), hora })}
         >
           <Plus className="w-3.5 h-3.5 text-muted-foreground/40 opacity-0 group-hover/cell:opacity-100 transition-opacity mx-auto" />
         </button>
@@ -556,12 +564,14 @@ function EditorModal({
   onSave,
   onDelete,
   onClose,
+  t,
 }: {
   draft: DraftBloque;
   onChange: (d: DraftBloque) => void;
   onSave: () => void;
   onDelete: () => void;
   onClose: () => void;
+  t: (key: string, values?: Record<string, string | number>) => string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -590,10 +600,10 @@ function EditorModal({
         <div className="flex items-start justify-between mb-4">
           <div>
             <h3 className="text-base font-semibold">
-              {isEditing ? "Editar actividad" : "Nueva actividad"}
+              {isEditing ? t("editarActividad") : t("nuevaActividad")}
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {draft.dia}
+              {t(`dias.${draft.dia}`)}
             </p>
           </div>
           <button
@@ -608,7 +618,7 @@ function EditorModal({
         {/* Nombre */}
         <div className="mb-3">
           <label className="block text-[11px] font-medium text-muted-foreground mb-1">
-            Nombre
+            {t("nombre")}
           </label>
           <input
             ref={inputRef}
@@ -618,7 +628,7 @@ function EditorModal({
             onKeyDown={(e) => {
               if (e.key === "Enter" && draft.actividad.trim()) onSave();
             }}
-            placeholder="Ej: Reunión de equipo"
+            placeholder={t("nombrePlaceholder")}
             maxLength={80}
             className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
@@ -627,7 +637,7 @@ function EditorModal({
         {/* Categoría */}
         <div className="mb-3">
           <label className="block text-[11px] font-medium text-muted-foreground mb-1.5">
-            Categoría
+            {t("categoria")}
           </label>
           <div className="grid grid-cols-5 gap-1.5">
             {CATEGORIAS.map((c) => {
@@ -645,7 +655,7 @@ function EditorModal({
                   }`}
                 >
                   <Icon className="w-4 h-4" strokeWidth={1.75} />
-                  <span className="text-[10px] font-medium leading-none">{c.label}</span>
+                  <span className="text-[10px] font-medium leading-none">{t(c.labelKey)}</span>
                 </button>
               );
             })}
@@ -656,7 +666,7 @@ function EditorModal({
         <div className="mb-3 grid grid-cols-2 gap-2">
           <div>
             <label className="block text-[11px] font-medium text-muted-foreground mb-1">
-              Desde
+              {t("desde")}
             </label>
             <select
               value={draft.horaInicio}
@@ -679,7 +689,7 @@ function EditorModal({
           </div>
           <div>
             <label className="block text-[11px] font-medium text-muted-foreground mb-1">
-              Hasta
+              {t("hasta")}
             </label>
             <select
               value={draft.horaFin}
@@ -699,10 +709,10 @@ function EditorModal({
         {!isEditing && (
           <div className="mb-3">
             <label className="block text-[11px] font-medium text-muted-foreground mb-1.5">
-              Repetir también en
+              {t("repetirTambienEn")}
             </label>
             <div className="flex flex-wrap gap-1.5">
-              {DIAS.filter((d) => d !== draft.dia).map((d) => {
+              {DIAS_KEYS.filter((d) => d !== draft.dia).map((d) => {
                 const active = draft.repetirEn.includes(d);
                 return (
                   <button
@@ -715,7 +725,7 @@ function EditorModal({
                         : "bg-card hover:bg-muted/50 border-border text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    {d.slice(0, 3)}
+                    {t(`dias.${d}`).slice(0, 3)}
                   </button>
                 );
               })}
@@ -726,7 +736,7 @@ function EditorModal({
         {/* Nota */}
         <div className="mb-4">
           <label className="block text-[11px] font-medium text-muted-foreground mb-1">
-            Nota (opcional)
+            {t("notaOpcional")}
           </label>
           <input
             type="text"
@@ -735,7 +745,7 @@ function EditorModal({
             onKeyDown={(e) => {
               if (e.key === "Enter" && draft.actividad.trim()) onSave();
             }}
-            placeholder="Detalles, ubicación…"
+            placeholder={t("notaPlaceholder")}
             maxLength={200}
             className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
@@ -750,7 +760,7 @@ function EditorModal({
               className="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 dark:border-red-500/40 dark:text-red-400 dark:hover:bg-red-950/30 text-xs font-medium transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              Eliminar
+              {t("eliminar")}
             </button>
           ) : (
             <span />
@@ -761,7 +771,7 @@ function EditorModal({
               onClick={onClose}
               className="px-3 h-9 rounded-lg border border-border hover:bg-muted text-xs font-medium transition-colors"
             >
-              Cancelar
+              {t("cancelar")}
             </button>
             <button
               type="button"
@@ -769,7 +779,7 @@ function EditorModal({
               className="inline-flex items-center gap-1.5 px-4 h-9 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold transition-colors"
             >
               <Check className="w-3.5 h-3.5" />
-              {isEditing ? "Guardar" : "Añadir"}
+              {isEditing ? t("guardar") : t("anadir")}
             </button>
           </div>
         </div>
@@ -782,18 +792,20 @@ function EditorModal({
 function PlantillasModal({
   onClose,
   onApply,
+  t,
 }: {
   onClose: () => void;
   onApply: (id: string) => void;
+  t: (key: string, values?: Record<string, string | number>) => string;
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-150">
       <div className="bg-card rounded-2xl border border-border shadow-xl max-w-md w-full p-5 animate-in zoom-in-95 slide-in-from-bottom-4 duration-200">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h3 className="text-base font-semibold">Aplicar plantilla</h3>
+            <h3 className="text-base font-semibold">{t("aplicarPlantillaTitulo")}</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Reemplaza tu horario actual con una base que puedes editar después.
+              {t("reemplazaHorario")}
             </p>
           </div>
           <button
@@ -813,9 +825,9 @@ function PlantillasModal({
               onClick={() => onApply(p.id)}
               className="w-full text-left rounded-xl border border-border hover:border-primary hover:bg-primary/5 px-4 py-3 transition-colors"
             >
-              <p className="text-sm font-semibold">{p.label}</p>
+              <p className="text-sm font-semibold">{t(p.labelKey)}</p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {p.descripcion}
+                {t(p.descripcionKey)}
               </p>
             </button>
           ))}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { OPCION_VACIA } from "@/lib/ficha-informacion-types";
 
 export function FichaLabel({ children }: { children: React.ReactNode }) {
@@ -13,7 +14,7 @@ export function FichaLabel({ children }: { children: React.ReactNode }) {
 export function FichaTextarea({
   value,
   onChange,
-  placeholder = "Escriba aquí...",
+  placeholder,
   rows = 3,
 }: {
   value: string;
@@ -21,11 +22,13 @@ export function FichaTextarea({
   placeholder?: string;
   rows?: number;
 }) {
+  const t = useTranslations("patients.fichaFormFields");
+  const resolvedPlaceholder = placeholder ?? t("escribaAqui");
   return (
     <textarea
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
+      placeholder={resolvedPlaceholder}
       rows={rows}
       className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
     />
@@ -35,7 +38,7 @@ export function FichaTextarea({
 export function FichaInput({
   value,
   onChange,
-  placeholder = "Escriba aquí...",
+  placeholder,
   type = "text",
 }: {
   value: string;
@@ -43,12 +46,14 @@ export function FichaInput({
   placeholder?: string;
   type?: string;
 }) {
+  const t = useTranslations("patients.fichaFormFields");
+  const resolvedPlaceholder = placeholder ?? t("escribaAqui");
   return (
     <input
       type={type}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
+      placeholder={resolvedPlaceholder}
       className="w-full h-10 rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
     />
   );

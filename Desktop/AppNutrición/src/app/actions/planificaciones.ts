@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
+import { getTranslations } from "next-intl/server";
 
 /* ─── Types ─── */
 
@@ -78,8 +79,9 @@ export async function getPlanificaciones(pacienteId: string): Promise<Planificac
 /* ─── Ensure default exists ─── */
 
 export async function ensurePlanificacionDefecto(pacienteId: string): Promise<Planificacion> {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
 
   const existing = await prisma.$queryRawUnsafe<{ id: string }[]>(
     `SELECT id FROM planificaciones WHERE "pacienteId" = $1 AND "dietistaId" = $2 AND "esDefecto" = true LIMIT 1`,
@@ -94,14 +96,15 @@ export async function ensurePlanificacionDefecto(pacienteId: string): Promise<Pl
 
   if (dietista.isDemo) {
     // Demo: do not create, return a stub
-    return { id: "", pacienteId, nombre: "Planificación por defecto", estado: "activa", esDefecto: true, fechaInicio: new Date().toISOString(), fechaUltimoCambio: new Date().toISOString(), fechaFinPrevista: null, datos: {} };
+    return { id: "", pacienteId, nombre: t("planificacion.porDefecto"), estado: "activa", esDefecto: true, fechaInicio: new Date().toISOString(), fechaUltimoCambio: new Date().toISOString(), fechaFinPrevista: null, datos: {} };
   }
 
   await prisma.$queryRawUnsafe(
     `INSERT INTO planificaciones ("pacienteId", "dietistaId", nombre, "esDefecto", datos)
-     VALUES ($1, $2, 'Planificación por defecto', true, '{}'::jsonb)`,
+     VALUES ($1, $2, $3, true, '{}'::jsonb)`,
     pacienteId,
-    dietista.id
+    dietista.id,
+    t("planificacion.porDefecto")
   );
 
   const all = await getPlanificaciones(pacienteId);
@@ -112,27 +115,29 @@ export async function ensurePlanificacionDefecto(pacienteId: string): Promise<Pl
 
 export async function crearPlanificacion(
   pacienteId: string,
-  nombre: string = "Nueva planificación",
+  nombre?: string,
   datosIniciales?: PlanificacionDatos
 ): Promise<string> {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return "";
 
   const datosJson = JSON.stringify(datosIniciales ?? {});
+  const nombreFinal = nombre || t("planificacion.nueva");
   const rows = await prisma.$queryRawUnsafe<{ id: string }[]>(
     `INSERT INTO planificaciones ("pacienteId", "dietistaId", nombre, "esDefecto", datos)
      VALUES ($1, $2, $3, false, $4::jsonb)
      RETURNING id`,
     pacienteId,
     dietista.id,
-    nombre.slice(0, 100),
+    nombreFinal.slice(0, 100),
     datosJson
   );
 
   revalidatePath(`/pacientes/${pacienteId}`);
   const id = rows[0]?.id;
-  if (!id) throw new Error("Error al crear la planificación");
+  if (!id) throw new Error(t("planificacion.errorCrear"));
   return id;
 }
 
@@ -142,8 +147,9 @@ export async function guardarPlanificacion(
   planId: string,
   datos: PlanificacionDatos
 ): Promise<void> {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   await prisma.$queryRawUnsafe(
@@ -164,8 +170,9 @@ export async function actualizarFechasPlanificacion(
   planId: string,
   fechas: { fechaInicio?: string; fechaUltimoCambio?: string; fechaFinPrevista?: string | null }
 ): Promise<void> {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const sets: string[] = [];
@@ -209,8 +216,9 @@ export async function cambiarEstadoPlanificacion(
   planId: string,
   estado: "activa" | "terminada" | "guardada"
 ): Promise<void> {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   await prisma.$queryRawUnsafe(
@@ -225,8 +233,9 @@ export async function cambiarEstadoPlanificacion(
 /* ─── Rename ─── */
 
 export async function renombrarPlanificacion(planId: string, nombre: string): Promise<void> {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   await prisma.$queryRawUnsafe(
@@ -241,8 +250,9 @@ export async function renombrarPlanificacion(planId: string, nombre: string): Pr
 /* ─── Delete (no se puede borrar la por defecto) ─── */
 
 export async function eliminarPlanificacion(planId: string, pacienteId: string): Promise<void> {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   await prisma.$queryRawUnsafe(

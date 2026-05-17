@@ -4,9 +4,11 @@ import { useTransition } from "react";
 import { Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { restaurarPacienteDemo } from "@/app/actions/pacientes";
 
 export function RestaurarDemoBanner() {
+  const t = useTranslations("patients");
   const [pending, startTransition] = useTransition();
   const router = useRouter();
 
@@ -14,10 +16,10 @@ export function RestaurarDemoBanner() {
     startTransition(async () => {
       try {
         await restaurarPacienteDemo();
-        toast.success("Paciente de ejemplo restaurado");
+        toast.success(t("demoBanner.pacienteRestaurado"));
         router.refresh();
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Error al restaurar");
+        toast.error(e instanceof Error ? e.message : t("demoBanner.errorRestaurar"));
       }
     });
   }
@@ -29,11 +31,10 @@ export function RestaurarDemoBanner() {
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
-          Eliminaste el paciente de ejemplo
+          {t("demoBanner.eliminastePacienteEjemplo")}
         </p>
         <p className="text-xs text-amber-800/90">
-          Si quieres volver a tenerlo para explorar todas las funciones con datos precargados,
-          puedes restaurarlo cuando quieras.
+          {t("demoBanner.restaurarMensaje")}
         </p>
       </div>
       <button
@@ -43,7 +44,7 @@ export function RestaurarDemoBanner() {
         className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 transition-colors disabled:opacity-60"
       >
         {pending && <Loader2 className="w-4 h-4 animate-spin" />}
-        Restaurar
+        {t("demoBanner.restaurar")}
       </button>
     </div>
   );

@@ -4,9 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Eye, EyeOff, UserPlus, Copy, Check } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { crearCuentaNutricionista } from "@/app/actions/admin";
 
 export function CrearCuentaForm() {
+  const t = useTranslations("admin.crearCuenta");
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -26,10 +28,10 @@ export function CrearCuentaForm() {
     const res = await crearCuentaNutricionista({ email, password, nombre, apellidos });
 
     if (res.ok) {
-      toast.success("Cuenta creada correctamente");
+      toast.success(t("toast.cuentaCreada"));
       setCreada({ email, password });
     } else {
-      toast.error(res.error || "Error al crear la cuenta");
+      toast.error(res.error || t("toast.errorCrear"));
     }
 
     setLoading(false);
@@ -39,7 +41,7 @@ export function CrearCuentaForm() {
     if (!creada) return;
     navigator.clipboard.writeText(`Email: ${creada.email}\nContraseña: ${creada.password}\nLogin: https://annonia.com/login`);
     setCopied(true);
-    toast.success("Credenciales copiadas");
+    toast.success(t("toast.credencialesCopiadas"));
     setTimeout(() => setCopied(false), 2000);
   }
 
@@ -54,19 +56,19 @@ export function CrearCuentaForm() {
         <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl p-6 space-y-4">
           <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
             <Check className="w-5 h-5" />
-            <p className="font-semibold">Cuenta creada</p>
+            <p className="font-semibold">{t("success.title")}</p>
           </div>
           <div className="space-y-2 text-sm">
             <div>
-              <span className="text-muted-foreground">Email:</span>{" "}
+              <span className="text-muted-foreground">{t("success.emailLabel")}</span>{" "}
               <span className="font-medium">{creada.email}</span>
             </div>
             <div>
-              <span className="text-muted-foreground">Contraseña:</span>{" "}
+              <span className="text-muted-foreground">{t("success.passwordLabel")}</span>{" "}
               <span className="font-mono font-medium">{creada.password}</span>
             </div>
             <div>
-              <span className="text-muted-foreground">Login:</span>{" "}
+              <span className="text-muted-foreground">{t("success.loginLabel")}</span>{" "}
               <span className="font-medium">https://annonia.com/login</span>
             </div>
           </div>
@@ -76,13 +78,13 @@ export function CrearCuentaForm() {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors text-sm font-medium"
             >
               {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              {copied ? "Copiado" : "Copiar credenciales"}
+              {copied ? t("success.copiado") : t("success.copiarCredenciales")}
             </button>
             <button
               onClick={handleReset}
               className="px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
             >
-              Crear otra cuenta
+              {t("success.crearOtra")}
             </button>
           </div>
         </div>
@@ -95,40 +97,40 @@ export function CrearCuentaForm() {
       <div className="bg-card rounded-xl border border-border p-6 space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Nombre *</label>
+            <label className="block text-sm font-medium mb-1">{t("form.nombre")}</label>
             <input
               name="nombre"
               required
               maxLength={100}
-              placeholder="Ej: María"
+              placeholder={t("form.nombrePlaceholder")}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-indigo-500/30 text-sm"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Apellidos</label>
+            <label className="block text-sm font-medium mb-1">{t("form.apellidos")}</label>
             <input
               name="apellidos"
               maxLength={100}
-              placeholder="Ej: García López"
+              placeholder={t("form.apellidosPlaceholder")}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-indigo-500/30 text-sm"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Email *</label>
+          <label className="block text-sm font-medium mb-1">{t("form.email")}</label>
           <input
             name="email"
             type="email"
             required
             maxLength={200}
-            placeholder="nutricionista@ejemplo.com"
+            placeholder={t("form.emailPlaceholder")}
             className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-indigo-500/30 text-sm"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Contraseña *</label>
+          <label className="block text-sm font-medium mb-1">{t("form.password")}</label>
           <div className="relative">
             <input
               name="password"
@@ -136,7 +138,7 @@ export function CrearCuentaForm() {
               required
               minLength={6}
               maxLength={100}
-              placeholder="Mínimo 6 caracteres"
+              placeholder={t("form.passwordPlaceholder")}
               className="w-full px-3 py-2 pr-10 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-indigo-500/30 text-sm"
             />
             <button
@@ -156,7 +158,7 @@ export function CrearCuentaForm() {
         className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors text-sm font-medium disabled:opacity-50"
       >
         <UserPlus className="w-4 h-4" />
-        {loading ? "Creando..." : "Crear cuenta"}
+        {loading ? t("form.submitting") : t("form.submit")}
       </button>
     </form>
   );

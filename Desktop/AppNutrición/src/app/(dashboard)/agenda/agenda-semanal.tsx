@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { CitaDetalleModal, type CitaDetalle } from "./cita-detalle-modal";
 import { toMadridDateStr, toMadridTimeStr } from "@/lib/tz";
@@ -9,7 +10,7 @@ import { toMadridDateStr, toMadridTimeStr } from "@/lib/tz";
 const START_HOUR = 6;
 const END_HOUR = 22;
 
-const DIA_LABELS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+const DIA_KEYS = ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"] as const;
 
 function useIsMobile(bp = 640) {
   const [m, setM] = useState(false);
@@ -136,6 +137,7 @@ function layoutCitasDia(citas: Cita[], pxPerHour: number): CitaLayout[] {
 }
 
 export function AgendaSemanal({ citas, lunes, onSelectDia }: Props) {
+  const t = useTranslations("agenda.weekly");
   const router = useRouter();
   const isMobile = useIsMobile();
   const pxPerHour = isMobile ? 48 : 52;
@@ -217,7 +219,7 @@ export function AgendaSemanal({ citas, lunes, onSelectDia }: Props) {
                   type="button"
                   onClick={() => irAVistaDia(diaStr)}
                   className="group flex flex-col items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-3 text-center hover:bg-muted/30 transition-colors"
-                  title="Ir a vista día"
+                  title={t("goToDayView")}
                 >
                   <span
                     className={cn(
@@ -225,7 +227,7 @@ export function AgendaSemanal({ citas, lunes, onSelectDia }: Props) {
                       isHoy ? "text-primary" : "text-muted-foreground",
                     )}
                   >
-                    {DIA_LABELS[i]}
+                    {t(`dayLabels.${DIA_KEYS[i]}`)}
                   </span>
                   <span
                     className={cn(

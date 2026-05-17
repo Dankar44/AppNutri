@@ -1,5 +1,6 @@
 import { Sparkles, Share2, Pencil, FileDown, Trash2, ArrowLeft, ChevronDown } from "lucide-react";
-import { DEMO_PATIENT, DEMO_PLANS, DEMO_DIETA_DIAS, AVATAR_DEMO } from "@/lib/tour-demo-data";
+import { getDemoPatient, getDemoPlans, getDemoDietaDias, AVATAR_DEMO } from "@/lib/tour-demo-data";
+import { getTranslations } from "next-intl/server";
 
 const MACRO_COLORS: Record<string, string> = {
   cal: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30",
@@ -8,19 +9,24 @@ const MACRO_COLORS: Record<string, string> = {
   grasa: "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/30",
 };
 
-export default function TourDemoDietaPage() {
+export default async function TourDemoDietaPage() {
+  const t = await getTranslations("settings.tours");
+  const tDemo = await getTranslations("settings.tours.demoData");
+  const DEMO_PATIENT = getDemoPatient(tDemo);
+  const DEMO_PLANS = getDemoPlans(tDemo);
+  const DEMO_DIETA_DIAS = getDemoDietaDias(tDemo);
   const plan = DEMO_PLANS[0];
 
   return (
     <div>
       <div className="mb-4">
         <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-3 py-1.5 rounded-lg inline-flex items-center gap-1 mb-3 font-medium">
-          Plan de demostración — Solo para el tour guiado
+          {t("planDemoBanner")}
         </p>
 
         <div className="space-y-3">
           <span className="inline-flex items-center gap-1 text-sm text-muted-foreground cursor-default">
-            <ArrowLeft className="w-4 h-4" /> Volver a planes
+            <ArrowLeft className="w-4 h-4" /> {t("backToPlans")}
           </span>
 
           <div className="flex items-center gap-3">
@@ -32,18 +38,18 @@ export default function TourDemoDietaPage() {
             <span data-tour="ia-btn" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 text-sm font-medium">
               <Sparkles className="w-3.5 h-3.5" /> IA
             </span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm font-medium">Plantilla</span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm font-medium">{t("template")}</span>
             <span data-tour="share-btn" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm font-medium">
-              <Share2 className="w-3.5 h-3.5" /> Compartir
+              <Share2 className="w-3.5 h-3.5" /> {t("share")}
             </span>
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm font-medium">
-              <Pencil className="w-3.5 h-3.5" /> Editar
+              <Pencil className="w-3.5 h-3.5" /> {t("edit")}
             </span>
             <span data-tour="pdf-btn" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm font-medium">
               <FileDown className="w-3.5 h-3.5" /> PDF
             </span>
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 text-sm font-medium">
-              <Trash2 className="w-3.5 h-3.5" /> Eliminar
+              <Trash2 className="w-3.5 h-3.5" /> {t("delete")}
             </span>
           </div>
         </div>
@@ -53,13 +59,13 @@ export default function TourDemoDietaPage() {
       <div className="flex items-center gap-3 mb-4">
         <h2 className="text-xl font-bold">{plan.nombre}</h2>
         <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-border text-xs text-muted-foreground cursor-default">
-          {DEMO_PLANS.length} planes <ChevronDown className="w-3 h-3" />
+          {DEMO_PLANS.length} {t("plans")} <ChevronDown className="w-3 h-3" />
         </span>
       </div>
 
       {/* Macros objetivo */}
       <div data-tour="plan-macros" className="flex items-center gap-4 mb-4 p-3 bg-muted/50 rounded-lg flex-wrap">
-        <span className="text-xs text-muted-foreground">Objetivos diarios:</span>
+        <span className="text-xs text-muted-foreground">{t("dailyGoals")}</span>
         <span className={`text-xs px-2 py-0.5 rounded-full border ${MACRO_COLORS.cal}`}>{plan.kcal} kcal</span>
         <span className={`text-xs px-2 py-0.5 rounded-full border ${MACRO_COLORS.prot}`}>{plan.prot}g P</span>
         <span className={`text-xs px-2 py-0.5 rounded-full border ${MACRO_COLORS.carb}`}>{plan.carb}g C</span>
@@ -79,7 +85,7 @@ export default function TourDemoDietaPage() {
                   <div key={comida.tipo} className="space-y-1.5 p-1.5 rounded-lg min-h-[60px]">
                     <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{comida.tipo}</h4>
                     {comida.items.length === 0 ? (
-                      <p className="text-[11px] text-muted-foreground/50 italic">Sin alimentos</p>
+                      <p className="text-[11px] text-muted-foreground/50 italic">{t("noFoods")}</p>
                     ) : (
                       <div className="space-y-1">
                         {comida.items.map((item) => (

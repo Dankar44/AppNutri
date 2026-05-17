@@ -4,6 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
   LineChart, Line,
 } from "recharts";
+import { useTranslations } from "next-intl";
 
 interface DistribucionItem {
   objetivo: string;
@@ -17,8 +18,9 @@ interface MesItem {
 }
 
 export function DistribucionChart({ data }: { data: DistribucionItem[] }) {
+  const t = useTranslations("reports");
   if (data.length === 0) {
-    return <p className="text-sm text-muted-foreground text-center py-8">Sin datos</p>;
+    return <p className="text-sm text-muted-foreground text-center py-8">{t("charts.sinDatos")}</p>;
   }
 
   return (
@@ -35,15 +37,16 @@ export function DistribucionChart({ data }: { data: DistribucionItem[] }) {
             fontSize: "12px",
           }}
         />
-        <Bar dataKey="cantidad" name="Pacientes" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="cantidad" name={t("charts.legends.pacientes")} fill="#3b82f6" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );
 }
 
 export function ActividadAnualChart({ data }: { data: MesItem[] }) {
+  const t = useTranslations("reports");
   if (data.every((d) => d.consultas === 0 && d.pacientes === 0)) {
-    return <p className="text-sm text-muted-foreground text-center py-8">Sin datos</p>;
+    return <p className="text-sm text-muted-foreground text-center py-8">{t("charts.sinDatos")}</p>;
   }
 
   return (
@@ -61,8 +64,8 @@ export function ActividadAnualChart({ data }: { data: MesItem[] }) {
           }}
         />
         <Legend wrapperStyle={{ fontSize: "12px" }} />
-        <Line type="monotone" dataKey="consultas" name="Consultas" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
-        <Line type="monotone" dataKey="pacientes" name="Pacientes nuevos" stroke="#22c55e" strokeWidth={2} dot={{ r: 3 }} />
+        <Line type="monotone" dataKey="consultas" name={t("charts.legends.consultas")} stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
+        <Line type="monotone" dataKey="pacientes" name={t("charts.legends.pacientesNuevos")} stroke="#22c55e" strokeWidth={2} dot={{ r: 3 }} />
       </LineChart>
     </ResponsiveContainer>
   );

@@ -1,0 +1,139 @@
+{
+  "page": {
+    "title": "Notificaciones",
+    "unreadCount": "{count} sin leer",
+    "allRead": "Todas leídas",
+    "preferences": "Preferencias",
+    "emptyTitle": "Sin notificaciones",
+    "emptyMessage": "Cuando llegue una nueva aparecerá aquí",
+    "notificationCount": "{count} {count, plural, one {notificación} other {notificaciones}}"
+  },
+  "dateLabels": {
+    "today": "Hoy",
+    "yesterday": "Ayer"
+  },
+  "tipoLabels": {
+    "CITA_HOY": "Cita hoy",
+    "CITA_SOLICITADA": "Solicitud de cita",
+    "CITA_CONFIRMADA": "Cita confirmada",
+    "CITA_CONTRAPROPUESTA": "Contrapropuesta",
+    "CITA_RECHAZADA": "Cita rechazada",
+    "CITA_CANCELADA_POR_PACIENTE": "Cita cancelada",
+    "PACIENTE_SIN_CONSULTA": "Sin consulta",
+    "PACIENTE_SIN_MEDIDAS": "Sin medidas",
+    "PLAN_ANTIGUO": "Plan antiguo",
+    "DIARIO_NUEVO": "Diario",
+    "PAGO_RECIBIDO": "Pago recibido",
+    "PAGO_PENDIENTE": "Pago pendiente",
+    "PAGO_FALLIDO": "Pago fallido",
+    "default": "Notificación"
+  },
+  "dot": {
+    "andMore": "y {count} más",
+    "unreadCount": "{count} {count, plural, one {notificación} other {notificaciones}} sin leer"
+  },
+  "item": {
+    "markAsRead": "Marcar como leída",
+    "deleteNotification": "Eliminar notificación",
+    "delete": "Eliminar",
+    "unread": "Sin leer"
+  },
+  "actions": {
+    "markAllRead": "Marcar todas como leídas",
+    "markAllReadShort": "Marcar leídas",
+    "deleteAll": "Borrar todas",
+    "confirmDeleteTitle": "¿Borrar todas las notificaciones?",
+    "confirmDeleteMessage": "Esta acción eliminará todas tus notificaciones. No podrás recuperarlas.",
+    "cancel": "Cancelar",
+    "deleting": "Borrando…",
+    "confirmDelete": "Sí, borrar todas",
+    "toastAllRead": "Todas marcadas como leídas",
+    "toastAllDeleted": "Todas las notificaciones eliminadas"
+  },
+  "preferencias": {
+    "backToNotifications": "Volver a notificaciones",
+    "pageTitle": "Preferencias",
+    "subtitle": "Elige qué notificaciones quieres recibir",
+    "allNotifications": "Todas las notificaciones",
+    "toggleAllDescription": "Activa o desactiva todos los tipos a la vez",
+    "enableAll": "Activar todas",
+    "disableAll": "Desactivar todas",
+    "saving": "Guardando...",
+    "saveChanges": "Guardar cambios",
+    "noChanges": "Sin cambios",
+    "toastSaved": "Preferencias guardadas",
+    "toastSaveError": "Error al guardar",
+    "categories": {
+      "citas": {
+        "label": "Citas",
+        "description": "Notificaciones relacionadas con citas de pacientes"
+      },
+      "seguimiento": {
+        "label": "Seguimiento de pacientes",
+        "description": "Alertas sobre el seguimiento clínico"
+      },
+      "actividad": {
+        "label": "Actividad del paciente",
+        "description": "Interacciones del paciente con la app"
+      },
+      "pagos": {
+        "label": "Pagos",
+        "description": "Movimientos de cobros de tus pacientes"
+      }
+    },
+    "items": {
+      "CITA_HOY": {
+        "title": "Cita de hoy",
+        "description": "Recordatorio de las citas del día"
+      },
+      "CITA_SOLICITADA": {
+        "title": "Solicitud de cita",
+        "description": "Cuando un paciente solicita una nueva cita"
+      },
+      "CITA_CONFIRMADA": {
+        "title": "Cita confirmada",
+        "description": "El paciente acepta la cita que propusiste"
+      },
+      "CITA_CONTRAPROPUESTA": {
+        "title": "Contrapropuesta",
+        "description": "El paciente propone otra fecha u hora"
+      },
+      "CITA_RECHAZADA": {
+        "title": "Cita rechazada",
+        "description": "El paciente rechaza la cita propuesta"
+      },
+      "CITA_CANCELADA_POR_PACIENTE": {
+        "title": "Cita cancelada",
+        "description": "El paciente cancela una cita ya confirmada"
+      },
+      "PACIENTE_SIN_CONSULTA": {
+        "title": "Paciente sin consulta",
+        "description": "Pacientes sin citas en los últimos 30 días"
+      },
+      "PACIENTE_SIN_MEDIDAS": {
+        "title": "Paciente sin medidas",
+        "description": "Pacientes sin nuevas medidas antropométricas"
+      },
+      "PLAN_ANTIGUO": {
+        "title": "Plan antiguo",
+        "description": "Planes alimenticios con más de 60 días"
+      },
+      "DIARIO_NUEVO": {
+        "title": "Entrada en diario",
+        "description": "Cuando un paciente registra comida o síntomas"
+      },
+      "PAGO_RECIBIDO": {
+        "title": "Pago recibido",
+        "description": "Un paciente ha completado un pago"
+      },
+      "PAGO_PENDIENTE": {
+        "title": "Pago pendiente",
+        "description": "Factura o cobro a la espera de confirmación"
+      },
+      "PAGO_FALLIDO": {
+        "title": "Pago fallido",
+        "description": "Un cobro no se ha podido procesar"
+      }
+    }
+  }
+}

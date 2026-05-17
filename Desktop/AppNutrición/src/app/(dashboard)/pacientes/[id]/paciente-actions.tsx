@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Trash2, Power, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { eliminarPaciente, toggleActivoPaciente } from "@/app/actions/pacientes";
+import { useTranslations } from "next-intl";
 
 interface Props {
   pacienteId: string;
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export function PacienteActions({ pacienteId, activo }: Props) {
+  const t = useTranslations("patients");
   const router = useRouter();
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -21,11 +23,11 @@ export function PacienteActions({ pacienteId, activo }: Props) {
     try {
       await toggleActivoPaciente(pacienteId);
       toast.success(
-        activo ? "Paciente marcado como inactivo" : "Paciente marcado como activo"
+        activo ? t("actions.marcadoInactivo") : t("actions.marcadoActivo")
       );
     } catch (error) {
       if (error && typeof error === "object" && "digest" in error) throw error;
-      toast.error("Error al cambiar el estado");
+      toast.error(t("actions.errorCambiarEstado"));
     }
     setLoading(false);
   }
@@ -34,11 +36,11 @@ export function PacienteActions({ pacienteId, activo }: Props) {
     setLoading(true);
     try {
       await eliminarPaciente(pacienteId);
-      toast.success("Paciente eliminado correctamente");
+      toast.success(t("actions.eliminadoCorrectamente"));
       await new Promise((r) => setTimeout(r, 800)); window.location.href = "/pacientes";
     } catch (error) {
       if (error && typeof error === "object" && "digest" in error) throw error;
-      toast.error("Error al eliminar el paciente");
+      toast.error(t("actions.errorEliminar"));
       setLoading(false);
     }
   }
@@ -49,10 +51,10 @@ export function PacienteActions({ pacienteId, activo }: Props) {
         onClick={handleToggleActivo}
         disabled={loading}
         className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
-        title={activo ? "Desactivar paciente" : "Activar paciente"}
+        title={activo ? t("actions.desactivarPaciente") : t("actions.activarPaciente")}
       >
         <Power className="w-4 h-4" />
-        {activo ? "Desactivar" : "Activar"}
+        {activo ? t("actions.desactivar") : t("actions.activar")}
       </button>
       <button
         onClick={() => setShowConfirm(true)}
@@ -62,23 +64,21 @@ export function PacienteActions({ pacienteId, activo }: Props) {
         <Trash2 className="w-4 h-4" />
       </button>
 
-      {/* Confirm dialog */}
       {showConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-card rounded-xl border border-border p-6 max-w-sm w-full shadow-xl">
             <h3 className="text-lg font-semibold mb-2">
-              Eliminar paciente
+              {t("actions.eliminarPaciente")}
             </h3>
             <p className="text-muted-foreground text-sm mb-6">
-              Esta acción es irreversible. Se eliminarán todos los datos del
-              paciente, incluyendo sus dietas y medidas.
+              {t("actions.eliminarConfirmacion")}
             </p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowConfirm(false)}
                 className="px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
               >
-                Cancelar
+                {t("actions.cancelar")}
               </button>
               <button
                 onClick={handleDelete}
@@ -86,7 +86,7 @@ export function PacienteActions({ pacienteId, activo }: Props) {
                 className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors text-sm font-medium flex items-center gap-2"
               >
                 {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                Eliminar
+                {t("actions.eliminar")}
               </button>
             </div>
           </div>

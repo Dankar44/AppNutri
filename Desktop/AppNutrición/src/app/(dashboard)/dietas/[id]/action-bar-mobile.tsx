@@ -6,16 +6,18 @@ import { Sparkles, FileDown, Share2, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { guardarComoPlantilla, eliminarPlan } from "@/app/actions/planes";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
-const ACTIONS = [
-  { id: "ia", icon: Sparkles, label: "IA", style: "border border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-400" },
-  { id: "plantilla", icon: FileDown, label: "Plantilla", style: "" },
-  { id: "compartir", icon: Share2, label: "Compartir", style: "" },
-  { id: "editar", icon: Pencil, label: "Editar", style: "" },
-  { id: "eliminar", icon: Trash2, label: "Eliminar", style: "border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400" },
+const ACTION_DEFS = [
+  { id: "ia", icon: Sparkles, key: "ia" as const, style: "border border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-400" },
+  { id: "plantilla", icon: FileDown, key: "plantilla" as const, style: "" },
+  { id: "compartir", icon: Share2, key: "compartir" as const, style: "" },
+  { id: "editar", icon: Pencil, key: "editar" as const, style: "" },
+  { id: "eliminar", icon: Trash2, key: "eliminar" as const, style: "border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400" },
 ] as const;
 
 export function ActionBarMobile({ planId }: { planId: string }) {
+  const t = useTranslations("diets.actionBarMobile");
   const router = useRouter();
   const [expanded, setExpanded] = useState<string | null>(null);
   const barRef = useRef<HTMLDivElement>(null);
@@ -54,12 +56,12 @@ export function ActionBarMobile({ planId }: { planId: string }) {
     setPlantillaLoading(true);
     try {
       await guardarComoPlantilla(planId, plantillaNombre);
-      toast.success("Plantilla guardada");
+      toast.success(t("toastTemplateSaved"));
       setPlantillaOpen(false);
       setPlantillaNombre("");
     } catch (error) {
       if (error && typeof error === "object" && "digest" in error) throw error;
-      toast.error("Error al guardar plantilla");
+      toast.error(t("toastTemplateSaveError"));
     } finally {
       setPlantillaLoading(false);
     }
@@ -68,30 +70,30 @@ export function ActionBarMobile({ planId }: { planId: string }) {
   async function handleDelete() {
     try {
       await eliminarPlan(planId);
-      toast.success("Plan eliminado correctamente");
+      toast.success(t("toastDeleted"));
       await new Promise((r) => setTimeout(r, 800));
       window.location.href = "/dietas";
     } catch (error) {
       if (error && typeof error === "object" && "digest" in error) throw error;
-      toast.error("Error al eliminar el plan");
+      toast.error(t("toastDeleteError"));
     }
   }
 
   if (confirmDelete) {
     return (
       <div className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card p-2">
-        <span className="text-xs text-muted-foreground">¿Eliminar?</span>
+        <span className="text-xs text-muted-foreground">{t("confirmDelete")}</span>
         <button
           onClick={handleDelete}
           className="px-2.5 py-1.5 rounded-lg bg-red-600 text-white text-xs font-medium hover:bg-red-700 transition-colors"
         >
-          Sí
+          {t("yes")}
         </button>
         <button
           onClick={() => setConfirmDelete(false)}
           className="px-2.5 py-1.5 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-colors"
         >
-          No
+          {t("no")}
         </button>
       </div>
     );
@@ -103,8 +105,9 @@ export function ActionBarMobile({ planId }: { planId: string }) {
         ref={barRef}
         className="flex items-center gap-1 rounded-xl border border-border bg-card p-1"
       >
-        {ACTIONS.map(({ id, icon: Icon, label, style }) => {
+        {ACTION_DEFS.map(({ id, icon: Icon, key, style }) => {
           const isExpanded = expanded === id;
+          const label = t(key);
           return (
             <button
               key={id}
@@ -135,12 +138,12 @@ export function ActionBarMobile({ planId }: { planId: string }) {
       {plantillaOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-card rounded-xl border border-border shadow-xl p-6 w-full max-w-sm mx-4">
-            <h3 className="font-semibold mb-4">Guardar como plantilla</h3>
+            <h3 className="font-semibold mb-4">{t("saveAsTemplate")}</h3>
             <input
               type="text"
               value={plantillaNombre}
               onChange={(e) => setPlantillaNombre(e.target.value)}
-              placeholder="Nombre de la plantilla"
+              placeholder={t("templateName")}
               autoFocus
               maxLength={200}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm mb-4"
@@ -150,14 +153,14 @@ export function ActionBarMobile({ planId }: { planId: string }) {
                 onClick={() => setPlantillaOpen(false)}
                 className="px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
               >
-                Cancelar
+                {t("cancel")}
               </button>
               <button
                 onClick={handleGuardarPlantilla}
                 disabled={!plantillaNombre.trim() || plantillaLoading}
                 className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium disabled:opacity-50"
               >
-                {plantillaLoading ? "Guardando..." : "Guardar"}
+                {plantillaLoading ? t("saving") : t("save")}
               </button>
             </div>
           </div>

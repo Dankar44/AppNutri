@@ -24,6 +24,7 @@ export const IMAGE_PRESETS = { PROFILE_PHOTO, LOGO } as const;
 export function compressImage(
   dataUrl: string,
   opts: CompressOptions,
+  errorMsg = "Error processing image",
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -65,7 +66,7 @@ export function compressImage(
       const compressed = canvas.toDataURL(mime, opts.quality);
       resolve(compressed.length < dataUrl.length ? compressed : dataUrl);
     };
-    img.onerror = () => reject(new Error("Error al procesar la imagen"));
+    img.onerror = () => reject(new Error(errorMsg));
     img.src = dataUrl;
   });
 }

@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Send, MoreVertical, Archive, Loader2, User, Paperclip, X, FileText, Image as ImageIcon, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { AvatarPaciente } from "@/components/avatar-paciente";
 import { cn } from "@/lib/utils";
+import { useLocale } from "@/components/locale-provider";
 import {
   enviarMensaje,
   archivarConversacion,
@@ -25,19 +27,22 @@ interface Props {
 }
 
 export function ChatView({ conversacion, mensajes, cargando, onMensajeEnviado, onVolver }: Props) {
+  const t = useTranslations("chat");
+
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      <ChatHeader conversacion={conversacion} onVolver={onVolver} />
-      <MensajesList mensajes={mensajes} cargando={cargando} />
+      <ChatHeader conversacion={conversacion} onVolver={onVolver} t={t} />
+      <MensajesList mensajes={mensajes} cargando={cargando} t={t} />
       <MensajeInput
         conversacionId={conversacion.id}
         onEnviado={onMensajeEnviado}
+        t={t}
       />
     </div>
   );
 }
 
-function ChatHeader({ conversacion: c, onVolver }: { conversacion: ConversacionConPaciente; onVolver?: () => void }) {
+function ChatHeader({ conversacion: c, onVolver, t }: { conversacion: ConversacionConPaciente; onVolver?: () => void; t: ReturnType<typeof useTranslations<"chat">> }) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -47,15 +52,15 @@ function ChatHeader({ conversacion: c, onVolver }: { conversacion: ConversacionC
       try {
         if (c.archivadaDietista) {
           await desarchivarConversacion(c.id);
-          toast.success("Desarchivada");
+          toast.success(t("chatView.toastUnarchived"));
         } else {
           await archivarConversacion(c.id);
-          toast.success("Archivada");
+          toast.success(t("chatView.toastArchived"));
         }
         router.refresh();
         setMenuOpen(false);
       } catch {
-        toast.error("No se pudo actualizar");
+        toast.error(t("chatView.toastUpdateError"));
       }
     });
   }
@@ -67,7 +72,7 @@ function ChatHeader({ conversacion: c, onVolver }: { conversacion: ConversacionC
           type="button"
           onClick={onVolver}
           className="md:hidden p-1 -ml-1 rounded-lg hover:bg-muted transition-colors shrink-0"
-          aria-label="Volver"
+          aria-label={t("soporte.backLabel")}
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
@@ -83,7 +88,7 @@ function ChatHeader({ conversacion: c, onVolver }: { conversacion: ConversacionC
           {c.paciente.nombre} {c.paciente.apellidos}
         </p>
         <p className="text-[11px] text-muted-foreground">
-          Paciente
+          {t("chatView.patientLabel")}
         </p>
       </div>
 
@@ -92,7 +97,7 @@ function ChatHeader({ conversacion: c, onVolver }: { conversacion: ConversacionC
         className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors text-xs font-medium"
       >
         <User className="w-3.5 h-3.5" />
-        Ver ficha
+        {t("chatView.viewFile")}
       </Link>
 
       <div className="relative">
@@ -100,7 +105,7 @@ function ChatHeader({ conversacion: c, onVolver }: { conversacion: ConversacionC
           type="button"
           onClick={() => setMenuOpen((o) => !o)}
           className="p-2 rounded-lg hover:bg-muted transition-colors"
-          aria-label="Más opciones"
+          aria-label={t("chatView.moreOptions")}
         >
           <MoreVertical className="w-4 h-4" />
         </button>
@@ -118,14 +123,14 @@ function ChatHeader({ conversacion: c, onVolver }: { conversacion: ConversacionC
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors text-left disabled:opacity-50"
               >
                 <Archive className="w-4 h-4" />
-                {c.archivadaDietista ? "Desarchivar" : "Archivar"}
+                {c.archivadaDietista ? t("chatView.unarchive") : t("chatView.archive")}
               </button>
               <Link
                 href={`/pacientes/${c.paciente.id}`}
                 className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors sm:hidden"
               >
                 <User className="w-4 h-4" />
-                Ver ficha
+                {t("chatView.viewFile")}
               </Link>
             </div>
           </>
@@ -135,8 +140,9 @@ function ChatHeader({ conversacion: c, onVolver }: { conversacion: ConversacionC
   );
 }
 
-function MensajesList({ mensajes, cargando }: { mensajes: Mensaje[]; cargando: boolean }) {
+function MensajesList({ mensajes, cargando, t }: { mensajes: Mensaje[]; cargando: boolean; t: ReturnType<typeof useTranslations<"chat">> }) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { locale } = useLocale();
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -156,17 +162,17 @@ function MensajesList({ mensajes, cargando }: { mensajes: Mensaje[]; cargando: b
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
         <p className="text-sm text-muted-foreground">
-          Todavía no hay mensajes
+          {t("chatView.noMessages")}
         </p>
         <p className="text-xs text-muted-foreground mt-1">
-          Envía el primero para empezar la conversación
+          {t("chatView.sendFirst")}
         </p>
       </div>
     );
   }
 
   // Agrupar por día
-  const grupos = agruparPorDia(mensajes);
+  const grupos = agruparPorDia(mensajes, t, locale);
 
   return (
     <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/20">
@@ -178,7 +184,7 @@ function MensajesList({ mensajes, cargando }: { mensajes: Mensaje[]; cargando: b
             </span>
           </div>
           {g.mensajes.map((m) => (
-            <MensajeBubble key={m.id} mensaje={m} />
+            <MensajeBubble key={m.id} mensaje={m} t={t} locale={locale} />
           ))}
         </div>
       ))}
@@ -186,9 +192,10 @@ function MensajesList({ mensajes, cargando }: { mensajes: Mensaje[]; cargando: b
   );
 }
 
-function MensajeBubble({ mensaje }: { mensaje: Mensaje }) {
+function MensajeBubble({ mensaje, t, locale }: { mensaje: Mensaje; t: ReturnType<typeof useTranslations<"chat">>; locale: string }) {
   const esMio = mensaje.autor === "DIETISTA";
-  const hora = new Date(mensaje.createdAt).toLocaleTimeString("es-ES", {
+  const localeTag = locale === "pt" ? "pt-BR" : "es-ES";
+  const hora = new Date(mensaje.createdAt).toLocaleTimeString(localeTag, {
     hour: "2-digit",
     minute: "2-digit",
     timeZone: "Europe/Madrid",
@@ -205,7 +212,7 @@ function MensajeBubble({ mensaje }: { mensaje: Mensaje }) {
               : "bg-card border border-border rounded-bl-md",
           )}
         >
-          {mensaje.adjuntoUrl && <AdjuntoPreview mensaje={mensaje} esMio={esMio} />}
+          {mensaje.adjuntoUrl && <AdjuntoPreview mensaje={mensaje} esMio={esMio} t={t} />}
           {mensaje.texto && (
             <p className="whitespace-pre-wrap break-words leading-relaxed">
               {mensaje.texto}
@@ -225,7 +232,7 @@ function MensajeBubble({ mensaje }: { mensaje: Mensaje }) {
   );
 }
 
-function AdjuntoPreview({ mensaje, esMio }: { mensaje: Mensaje; esMio: boolean }) {
+function AdjuntoPreview({ mensaje, esMio, t }: { mensaje: Mensaje; esMio: boolean; t: ReturnType<typeof useTranslations<"chat">> }) {
   const esImagen = mensaje.adjuntoTipo?.startsWith("image/");
 
   if (esImagen) {
@@ -239,7 +246,7 @@ function AdjuntoPreview({ mensaje, esMio }: { mensaje: Mensaje; esMio: boolean }
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={mensaje.adjuntoUrl!}
-          alt={mensaje.adjuntoNombre || "adjunto"}
+          alt={mensaje.adjuntoNombre || t("chatView.attachmentAlt")}
           className="max-h-60 w-auto rounded-xl object-cover"
         />
       </a>
@@ -257,7 +264,7 @@ function AdjuntoPreview({ mensaje, esMio }: { mensaje: Mensaje; esMio: boolean }
       )}
     >
       <FileText className="w-4 h-4 shrink-0" />
-      <span className="text-xs truncate">{mensaje.adjuntoNombre || "Archivo"}</span>
+      <span className="text-xs truncate">{mensaje.adjuntoNombre || t("chatView.fileLabel")}</span>
     </a>
   );
 }
@@ -265,9 +272,11 @@ function AdjuntoPreview({ mensaje, esMio }: { mensaje: Mensaje; esMio: boolean }
 function MensajeInput({
   conversacionId,
   onEnviado,
+  t,
 }: {
   conversacionId: string;
   onEnviado: (m: Mensaje) => void;
+  t: ReturnType<typeof useTranslations<"chat">>;
 }) {
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -291,7 +300,7 @@ function MensajeInput({
     if (!file) return;
 
     if (file.size > 10 * 1024 * 1024) {
-      toast.error("El archivo no puede superar los 10 MB");
+      toast.error(t("chatView.toastFileTooLarge"));
       return;
     }
 
@@ -300,10 +309,10 @@ function MensajeInput({
       const formData = new FormData();
       formData.append("archivo", file);
       const res = await subirAdjuntoMensaje(formData);
-      if (!res?.url) throw new Error("No se pudo subir");
+      if (!res?.url) throw new Error(t("chatView.toastUploadError"));
       setAdjunto({ file, url: res.url, tipo: file.type });
     } catch {
-      toast.error("No se pudo subir el archivo");
+      toast.error(t("chatView.toastUploadError"));
     } finally {
       setSubiendo(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -331,7 +340,7 @@ function MensajeInput({
       setAdjunto(null);
       onEnviado(mensaje);
     } catch {
-      toast.error("No se pudo enviar");
+      toast.error(t("chatView.toastSendError"));
     } finally {
       enviandoRef.current = false;
       setEnviando(false);
@@ -381,7 +390,7 @@ function MensajeInput({
           onClick={() => fileInputRef.current?.click()}
           disabled={subiendo || enviando}
           className="p-2 rounded-lg hover:bg-muted transition-colors shrink-0 disabled:opacity-50"
-          aria-label="Adjuntar archivo"
+          aria-label={t("chatView.attachFile")}
         >
           {subiendo ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -394,7 +403,7 @@ function MensajeInput({
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Escribe un mensaje..."
+          placeholder={t("chatView.inputPlaceholder")}
           rows={1}
           disabled={enviando}
           className="flex-1 resize-none px-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 max-h-[120px]"
@@ -403,7 +412,7 @@ function MensajeInput({
           type="submit"
           disabled={enviando || subiendo || (!texto.trim() && !adjunto)}
           className="p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
-          aria-label="Enviar mensaje"
+          aria-label={t("chatView.sendMessage")}
         >
           {enviando ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -416,14 +425,14 @@ function MensajeInput({
   );
 }
 
-function agruparPorDia(mensajes: Mensaje[]) {
+function agruparPorDia(mensajes: Mensaje[], t: ReturnType<typeof useTranslations<"chat">>, locale: string) {
   const grupos: { key: string; label: string; mensajes: Mensaje[] }[] = [];
   for (const m of mensajes) {
     const d = new Date(m.createdAt);
     const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
     let grupo = grupos.find((g) => g.key === key);
     if (!grupo) {
-      grupo = { key, label: formatLabelDia(d), mensajes: [] };
+      grupo = { key, label: formatLabelDia(d, t, locale), mensajes: [] };
       grupos.push(grupo);
     }
     grupo.mensajes.push(m);
@@ -431,16 +440,17 @@ function agruparPorDia(mensajes: Mensaje[]) {
   return grupos;
 }
 
-function formatLabelDia(d: Date): string {
+function formatLabelDia(d: Date, t: ReturnType<typeof useTranslations<"chat">>, locale: string): string {
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
   const ayer = new Date(hoy);
   ayer.setDate(ayer.getDate() - 1);
   const fecha = new Date(d);
   fecha.setHours(0, 0, 0, 0);
-  if (fecha.getTime() === hoy.getTime()) return "Hoy";
-  if (fecha.getTime() === ayer.getTime()) return "Ayer";
-  const formato = fecha.toLocaleDateString("es-ES", {
+  if (fecha.getTime() === hoy.getTime()) return t("dateLabels.today");
+  if (fecha.getTime() === ayer.getTime()) return t("dateLabels.yesterday");
+  const localeTag = locale === "pt" ? "pt-BR" : "es-ES";
+  const formato = fecha.toLocaleDateString(localeTag, {
     weekday: "long",
     day: "numeric",
     month: "long",

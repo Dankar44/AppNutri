@@ -4,10 +4,14 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin, verifyAdminCredentials, createAdminSession, clearAdminSession } from "@/lib/admin";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { getLocale } from "@/i18n/locale";
+import { intlTag } from "@/i18n/config";
+import { getTranslations } from "next-intl/server";
 export async function loginAdmin(email: string, password: string): Promise<{ error?: string }> {
+  const t = await getTranslations("validation");
   const result = verifyAdminCredentials(email, password);
   if (!result) {
-    return { error: "Email o contraseña incorrectos" };
+    return { error: t("admin.emailOContrasenaIncorrectos") };
   }
   await createAdminSession(email, result.role);
   redirect(result.role === "creator" ? "/admin/crear-cuenta" : "/admin");
@@ -70,6 +74,8 @@ export async function getRegistrosMensuales() {
   const admin = await requireAdmin();
   if (!admin) redirect("/admin-login");
 
+  const locale = await getLocale();
+  const tag = intlTag(locale);
   const ahora = new Date();
   const inicio6Meses = new Date(ahora.getFullYear(), ahora.getMonth() - 5, 1);
 
@@ -88,7 +94,7 @@ export async function getRegistrosMensuales() {
   for (let i = 5; i >= 0; i--) {
     const d = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
     const fin = new Date(d.getFullYear(), d.getMonth() + 1, 1);
-    const label = d.toLocaleDateString("es-ES", { month: "short", year: "2-digit" });
+    const label = d.toLocaleDateString(tag, { month: "short", year: "2-digit" });
 
     meses.push({
       mes: label,
@@ -487,23 +493,25 @@ export async function crearCuentaNutricionista(data: {
   const admin = await requireAdmin();
   if (!admin) redirect("/admin-login");
 
+  const t = await getTranslations("validation");
+
   const email = data.email.trim().toLowerCase();
   const password = data.password;
   const nombre = data.nombre.trim();
   const apellidos = data.apellidos.trim();
 
-  if (!email || !email.includes("@")) return { ok: false, error: "Email no válido" };
-  if (password.length < 6) return { ok: false, error: "La contraseña debe tener al menos 6 caracteres" };
-  if (!nombre) return { ok: false, error: "El nombre es obligatorio" };
+  if (!email || !email.includes("@")) return { ok: false, error: t("admin.emailNoValido") };
+  if (password.length < 6) return { ok: false, error: t("admin.contrasenaMinima") };
+  if (!nombre) return { ok: false, error: t("admin.nombreObligatorio") };
 
   try {
     const existingAuth = await prisma.$queryRawUnsafe<{ id: string }[]>(
       `SELECT id FROM auth.users WHERE email = $1 LIMIT 1`, email
     );
-    if (existingAuth.length > 0) return { ok: false, error: "Ya existe un usuario con ese email" };
+    if (existingAuth.length > 0) return { ok: false, error: t("admin.yaExisteUsuarioEmail") };
 
     const existingDietista = await prisma.dietista.findFirst({ where: { email } });
-    if (existingDietista) return { ok: false, error: "Ya existe un dietista con ese email" };
+    if (existingDietista) return { ok: false, error: t("admin.yaExisteDietistaEmail") };
 
     const authRows = await prisma.$queryRawUnsafe<{ id: string }[]>(
       `INSERT INTO auth.users (
@@ -562,7 +570,7 @@ export async function crearCuentaNutricionista(data: {
       throw innerErr;
     }
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Error desconocido";
+    const msg = e instanceof Error ? e.message : t("general.errorDesconocido");
     return { ok: false, error: msg };
   }
 }

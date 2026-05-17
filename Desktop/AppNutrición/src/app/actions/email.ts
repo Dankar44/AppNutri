@@ -4,6 +4,7 @@ import { sendEmail } from "@/lib/mailer";
 import { getCurrentDietista } from "./auth";
 import { getPaciente } from "./pacientes";
 import { getPlan } from "./planes";
+import { getTranslations } from "next-intl/server";
 import { generatePlanPDF, type PlanPDFData } from "@/lib/pdf/generate-plan-pdf";
 import { getRecomendaciones } from "./pacientes";
 import type { FichaInformacionData, CampoPersonalizadoDefinicion } from "@/lib/ficha-informacion-types";
@@ -56,68 +57,70 @@ function buildCuestionarioHtml(
   ficha: FichaInformacionData,
   pacienteNombre: string,
   dietistaNombre: string,
-  camposCustom: CampoPersonalizadoDefinicion[] = []
+  camposCustom: CampoPersonalizadoDefinicion[] = [],
+  te: (key: string, values?: Record<string, string>) => string
 ): string {
   const c = ficha.consulta ?? {};
   const ps = ficha.personalSocial ?? {};
   const cl = ficha.clinica ?? {};
   const al = ficha.alimentaria ?? {};
+  const l = (key: string) => te(`cuestionario.labels.${key}`);
 
   const secConsulta = sectionHtml(
-    "Informaciones de consulta",
+    te("cuestionario.seccionConsulta"),
     [
-      row("Motivo de consulta", c.motivo),
-      row("Expectativas", c.expectativas),
-      row("Objetivos cl\u00ednicos", labelFor(SELECT_OBJETIVOS_CLINICOS, c.objetivosClinicos)),
-      row("Detalle objetivos", c.objetivosClinicosDetalle),
-      row("Otras informaciones", c.otras),
+      row(l("motivoConsulta"), c.motivo),
+      row(l("expectativas"), c.expectativas),
+      row(l("objetivosClinicos"), labelFor(SELECT_OBJETIVOS_CLINICOS, c.objetivosClinicos)),
+      row(l("detalleObjetivos"), c.objetivosClinicosDetalle),
+      row(l("otrasInformaciones"), c.otras),
     ].join("")
   );
 
   const secPersonal = sectionHtml(
-    "Historia personal y social",
+    te("cuestionario.seccionPersonal"),
     [
-      row("Funci\u00f3n intestinal", labelFor(SELECT_FUNCION_INTESTINAL, ps.funcionIntestinal)),
-      row("Detalle", ps.funcionIntestinalDetalle),
-      row("Calidad del sue\u00f1o", labelFor(SELECT_CALIDAD_SUENO, ps.calidadSueno)),
-      row("Detalle", ps.calidadSuenoDetalle),
-      row("Fumador", labelFor(SELECT_SI_NO_OCASION, ps.fumador)),
-      row("Detalle", ps.fumadorDetalle),
-      row("Bebe alcohol", labelFor(SELECT_SI_NO_OCASION, ps.alcohol)),
-      row("Detalle", ps.alcoholDetalle),
-      row("Estado civil", labelFor(SELECT_ESTADO_CIVIL, ps.estadoCivil)),
-      row("Detalle", ps.estadoCivilDetalle),
-      row("Actividad f\u00edsica", ps.actividadFisica),
-      row("Raza / etnia", ps.raza === "no_indica" ? "Prefiere no indicar" : ps.razaDetalle),
-      row("Otras informaciones", ps.otrasPersonal),
+      row(l("funcionIntestinal"), labelFor(SELECT_FUNCION_INTESTINAL, ps.funcionIntestinal)),
+      row(l("detalle"), ps.funcionIntestinalDetalle),
+      row(l("calidadSueno"), labelFor(SELECT_CALIDAD_SUENO, ps.calidadSueno)),
+      row(l("detalle"), ps.calidadSuenoDetalle),
+      row(l("fumador"), labelFor(SELECT_SI_NO_OCASION, ps.fumador)),
+      row(l("detalle"), ps.fumadorDetalle),
+      row(l("bebeAlcohol"), labelFor(SELECT_SI_NO_OCASION, ps.alcohol)),
+      row(l("detalle"), ps.alcoholDetalle),
+      row(l("estadoCivil"), labelFor(SELECT_ESTADO_CIVIL, ps.estadoCivil)),
+      row(l("detalle"), ps.estadoCivilDetalle),
+      row(l("actividadFisica"), ps.actividadFisica),
+      row(l("razaEtnia"), ps.raza === "no_indica" ? l("prefiereNoIndicar") : ps.razaDetalle),
+      row(l("otrasInformaciones"), ps.otrasPersonal),
     ].join("")
   );
 
   const secClinica = sectionHtml(
-    "Historia cl\u00ednica",
+    te("cuestionario.seccionClinica"),
     [
-      row("Detalle patolog\u00edas / evoluci\u00f3n", cl.patologiasDetalle),
-      row("Medicaci\u00f3n", cl.medicacion),
-      row("Antecedentes personales", cl.antecedentesPersonales),
-      row("Antecedentes familiares", cl.antecedentesFamiliares),
-      row("Otras informaciones", cl.otrasClinicas),
+      row(l("detallePatologias"), cl.patologiasDetalle),
+      row(l("medicacion"), cl.medicacion),
+      row(l("antecedentesPersonales"), cl.antecedentesPersonales),
+      row(l("antecedentesFamiliares"), cl.antecedentesFamiliares),
+      row(l("otrasInformaciones"), cl.otrasClinicas),
     ].join("")
   );
 
   const secAlimentaria = sectionHtml(
-    "Historia alimentaria",
+    te("cuestionario.seccionAlimentaria"),
     [
-      row("Hora habitual para levantarse", al.horaLevantarse),
-      row("Hora habitual para acostarse", al.horaAcostarse),
-      row("Tipo de dieta", labelFor(SELECT_TIPOS_DIETA, al.tiposDieta)),
-      row("Detalle dieta", al.tiposDietaDetalle),
-      row("Alimentos favoritos", al.alimentosFavoritos),
-      row("Alimentos rechazados", al.alimentosRechazados),
-      row("Alergias (detalle)", al.alergiasDetalle),
-      row("Intolerancias (detalle)", al.intoleranciasDetalle),
-      row("Deficiencias nutricionales", al.deficienciasDetalle),
-      row("Ingesta de agua", labelFor(SELECT_INGESTA_AGUA, al.ingestaAgua)),
-      row("Otras informaciones", al.otrasAlimentaria),
+      row(l("horaLevantarse"), al.horaLevantarse),
+      row(l("horaAcostarse"), al.horaAcostarse),
+      row(l("tipoDieta"), labelFor(SELECT_TIPOS_DIETA, al.tiposDieta)),
+      row(l("detalleDieta"), al.tiposDietaDetalle),
+      row(l("alimentosFavoritos"), al.alimentosFavoritos),
+      row(l("alimentosRechazados"), al.alimentosRechazados),
+      row(l("alergiasDetalle"), al.alergiasDetalle),
+      row(l("intoleranciasDetalle"), al.intoleranciasDetalle),
+      row(l("deficienciasNutricionales"), al.deficienciasDetalle),
+      row(l("ingestaAgua"), labelFor(SELECT_INGESTA_AGUA, al.ingestaAgua)),
+      row(l("otrasInformaciones"), al.otrasAlimentaria),
     ].join("")
   );
 
@@ -129,11 +132,9 @@ function buildCuestionarioHtml(
   <div style="max-width:600px;margin:0 auto;padding:32px 16px">
     <div style="background:#fff;border-radius:12px;border:1px solid #e5e7eb;padding:32px;box-shadow:0 1px 3px rgba(0,0,0,.06)">
       <div style="text-align:center;margin-bottom:32px">
-        <h1 style="margin:0 0 8px;font-size:22px;color:#111827">Resumen de tu cuestionario</h1>
+        <h1 style="margin:0 0 8px;font-size:22px;color:#111827">${escapeHtml(te("cuestionario.titulo"))}</h1>
         <p style="margin:0;color:#6b7280;font-size:14px">
-          Hola <strong>${escapeHtml(pacienteNombre)}</strong>, tu nutricionista
-          <strong>${escapeHtml(dietistaNombre)}</strong> ha registrado la siguiente informaci\u00f3n
-          de tu consulta.
+          ${escapeHtml(te("cuestionario.saludo", { pacienteNombre, dietistaNombre }))}
         </p>
       </div>
 
@@ -146,18 +147,17 @@ function buildCuestionarioHtml(
         const rows = camposCustom
           .map((c) => row(c.label, cp[c.id]))
           .join("");
-        return sectionHtml("Campos personalizados", rows);
+        return sectionHtml(te("cuestionario.seccionCamposPersonalizados"), rows);
       })()}
 
       <div style="margin-top:32px;padding:16px;background:#fef3c7;border-radius:8px;text-align:center">
         <p style="margin:0;font-size:14px;color:#92400e">
-          Si alguno de estos datos no es correcto, por favor responde a este correo
-          o contacta con tu nutricionista para actualizarlos.
+          ${escapeHtml(te("cuestionario.avisoIncorrecto"))}
         </p>
       </div>
 
       <div style="margin-top:24px;text-align:center;color:#9ca3af;font-size:12px">
-        <p style="margin:0">Enviado desde Annonia</p>
+        <p style="margin:0">${escapeHtml(te("cuestionario.footer"))}</p>
       </div>
     </div>
   </div>
@@ -169,15 +169,17 @@ export async function enviarCuestionarioPaciente(
   pacienteId: string,
   ficha: FichaInformacionData
 ): Promise<{ ok: boolean; error?: string }> {
+  const t = await getTranslations("validation");
+  const te = await getTranslations("emails");
   const dietista = await getCurrentDietista();
-  if (!dietista) return { ok: false, error: "No autorizado" };
+  if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
   if (dietista.isDemo) return { ok: true };
 
   const paciente = await getPaciente(pacienteId);
-  if (!paciente) return { ok: false, error: "Paciente no encontrado" };
+  if (!paciente) return { ok: false, error: t("paciente.pacienteNoEncontrado") };
 
   if (!paciente.email) {
-    return { ok: false, error: "El paciente no tiene email registrado" };
+    return { ok: false, error: t("paciente.sinEmailRegistrado") };
   }
 
   const pacienteNombre = `${paciente.nombre} ${paciente.apellidos}`.trim();
@@ -186,18 +188,18 @@ export async function enviarCuestionarioPaciente(
   const { getCamposAnamnesis } = await import("./perfil");
   const camposCustom = await getCamposAnamnesis();
 
-  const html = buildCuestionarioHtml(ficha, pacienteNombre, dietistaNombre, camposCustom);
+  const html = buildCuestionarioHtml(ficha, pacienteNombre, dietistaNombre, camposCustom, te);
 
   try {
     await sendEmail({
       to: paciente.email,
-      subject: `Tu cuestionario nutricional \u2014 ${dietistaNombre}`,
+      subject: te("cuestionario.subject", { dietistaNombre }),
       html,
       replyTo: dietista.email,
     });
     return { ok: true };
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "Error desconocido";
+    const msg = err instanceof Error ? err.message : t("general.errorDesconocido");
     return { ok: false, error: msg };
   }
 }
@@ -208,16 +210,18 @@ export async function enviarPlanPorEmail(
   pacienteId: string,
   planId: string
 ): Promise<{ ok: boolean; error?: string }> {
+  const t = await getTranslations("validation");
+  const te = await getTranslations("emails");
   const dietista = await getCurrentDietista();
-  if (!dietista) return { ok: false, error: "No autorizado" };
+  if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
   if (dietista.isDemo) return { ok: true };
 
   const paciente = await getPaciente(pacienteId);
-  if (!paciente) return { ok: false, error: "Paciente no encontrado" };
-  if (!paciente.email) return { ok: false, error: "El paciente no tiene email registrado" };
+  if (!paciente) return { ok: false, error: t("paciente.pacienteNoEncontrado") };
+  if (!paciente.email) return { ok: false, error: t("paciente.sinEmailRegistrado") };
 
   const plan = await getPlan(planId);
-  if (!plan) return { ok: false, error: "Plan no encontrado" };
+  if (!plan) return { ok: false, error: t("plan.planNoEncontrado") };
 
   const pacienteNombre = `${paciente.nombre} ${paciente.apellidos}`.trim();
   const dietistaNombre = `${dietista.nombre} ${dietista.apellidos}`.trim();
@@ -283,13 +287,13 @@ export async function enviarPlanPorEmail(
   try {
     await sendEmail({
       to: paciente.email,
-      subject: `Tu plan de alimentación — ${plan.nombre}`,
+      subject: te("planAlimenticio.subject", { planNombre: plan.nombre }),
       html: htmlBody,
       replyTo: dietista.email,
     });
     return { ok: true };
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "Error desconocido";
+    const msg = err instanceof Error ? err.message : t("general.errorDesconocido");
     return { ok: false, error: msg };
   }
 }
@@ -299,13 +303,15 @@ export async function enviarPlanPorEmail(
 export async function enviarAccesoPortal(
   pacienteId: string
 ): Promise<{ ok: boolean; error?: string }> {
+  const t = await getTranslations("validation");
+  const te = await getTranslations("emails");
   const dietista = await getCurrentDietista();
-  if (!dietista) return { ok: false, error: "No autorizado" };
+  if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
   if (dietista.isDemo) return { ok: true };
 
   const paciente = await getPaciente(pacienteId);
-  if (!paciente) return { ok: false, error: "Paciente no encontrado" };
-  if (!paciente.email) return { ok: false, error: "El paciente no tiene email registrado" };
+  if (!paciente) return { ok: false, error: t("paciente.pacienteNoEncontrado") };
+  if (!paciente.email) return { ok: false, error: t("paciente.sinEmailRegistrado") };
 
   const pacienteNombre = `${paciente.nombre} ${paciente.apellidos}`.trim();
   const dietistaNombre = `${dietista.nombre} ${dietista.apellidos}`.trim();
@@ -320,34 +326,33 @@ export async function enviarAccesoPortal(
   <div style="max-width:600px;margin:0 auto;padding:32px 16px">
     <div style="background:#fff;border-radius:12px;border:1px solid #e5e7eb;padding:32px;box-shadow:0 1px 3px rgba(0,0,0,.06)">
       <div style="text-align:center;margin-bottom:24px">
-        <h1 style="margin:0 0 8px;font-size:22px;color:#111827">Acceso a tu portal de nutricion</h1>
+        <h1 style="margin:0 0 8px;font-size:22px;color:#111827">${escapeHtml(te("accesoPortal.titulo"))}</h1>
         <p style="margin:0;color:#6b7280;font-size:14px">
-          Hola <strong>${escapeHtml(pacienteNombre)}</strong>, tu nutricionista
-          <strong>${escapeHtml(dietistaNombre)}</strong> te ha dado acceso a tu portal personal.
+          ${escapeHtml(te("accesoPortal.saludo", { pacienteNombre, dietistaNombre }))}
         </p>
       </div>
 
       <div style="background:#f0fdf4;border-radius:8px;padding:20px;margin-bottom:24px;text-align:center">
         <p style="margin:0 0 12px;font-size:14px;color:#166534;font-weight:600">
-          Accede a tu portal aqui:
+          ${escapeHtml(te("accesoPortal.accedeTuPortal"))}
         </p>
         <a href="${portalUrl}" style="display:inline-block;background:#16a34a;color:white;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">
-          Ir a mi portal
+          ${escapeHtml(te("accesoPortal.boton"))}
         </a>
       </div>
 
       <div style="background:#f9fafb;border-radius:8px;padding:16px;margin-bottom:16px">
-        <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#374151">Instrucciones:</p>
+        <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#374151">${escapeHtml(te("accesoPortal.instruccionesLabel"))}</p>
         <ol style="margin:0;padding:0 0 0 20px;color:#4b5563;font-size:13px;line-height:1.8">
-          <li>Accede al enlace de arriba</li>
-          <li>Introduce tu email: <strong>${escapeHtml(paciente.email)}</strong></li>
-          <li>Introduce el PIN que te ha proporcionado tu nutricionista</li>
-          <li>Desde el portal podras consultar tu dieta, registrar tu peso y mas</li>
+          <li>${escapeHtml(te("accesoPortal.paso1"))}</li>
+          <li>${escapeHtml(te("accesoPortal.paso2", { email: paciente.email }))}</li>
+          <li>${escapeHtml(te("accesoPortal.paso3"))}</li>
+          <li>${escapeHtml(te("accesoPortal.paso4"))}</li>
         </ol>
       </div>
 
       <div style="margin-top:24px;text-align:center;color:#9ca3af;font-size:12px">
-        <p style="margin:0">Enviado desde Annonia</p>
+        <p style="margin:0">${escapeHtml(te("accesoPortal.footer"))}</p>
       </div>
     </div>
   </div>
@@ -357,13 +362,13 @@ export async function enviarAccesoPortal(
   try {
     await sendEmail({
       to: paciente.email,
-      subject: `Acceso a tu portal de nutricion — ${dietistaNombre}`,
+      subject: te("accesoPortal.subject", { dietistaNombre }),
       html,
       replyTo: dietista.email,
     });
     return { ok: true };
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "Error desconocido";
+    const msg = err instanceof Error ? err.message : t("general.errorDesconocido");
     return { ok: false, error: msg };
   }
 }

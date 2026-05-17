@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { DiaSemana, TipoComida, UnidadMedida } from "@/generated/prisma/client";
 import {
   sanitizeString,
@@ -20,26 +21,26 @@ import type { PlanPDFData } from "@/lib/pdf/generate-plan-pdf";
  * Helper: verifica que una comida pertenezca a un plan del dietista actual.
  * Devuelve el dietistaId del plan o null si no se encuentra la cadena.
  */
-async function verificarPropietarioComida(comidaId: string, dietistaId: string) {
+async function verificarPropietarioComida(comidaId: string, dietistaId: string, t: (key: string) => string) {
   const comida = await prisma.comidaDelDia.findUnique({
     where: { id: comidaId },
     include: { diaDelPlan: { include: { plan: { select: { dietistaId: true } } } } },
   });
   if (!comida || comida.diaDelPlan.plan.dietistaId !== dietistaId) {
-    throw new Error("No autorizado");
+    throw new Error(t("auth.noAutorizado"));
   }
 }
 
 /**
  * Helper: verifica que un alimentoEnComida pertenezca a un plan del dietista actual.
  */
-async function verificarPropietarioAlimentoEnComida(alimentoEnComidaId: string, dietistaId: string) {
+async function verificarPropietarioAlimentoEnComida(alimentoEnComidaId: string, dietistaId: string, t: (key: string) => string) {
   const item = await prisma.alimentoEnComida.findUnique({
     where: { id: alimentoEnComidaId },
     include: { comida: { include: { diaDelPlan: { include: { plan: { select: { dietistaId: true } } } } } } },
   });
   if (!item || item.comida.diaDelPlan.plan.dietistaId !== dietistaId) {
-    throw new Error("No autorizado");
+    throw new Error(t("auth.noAutorizado"));
   }
 }
 
@@ -61,12 +62,13 @@ const COMIDAS: TipoComida[] = [
 ];
 
 export async function crearPlan(data: PlanFormData) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const nombre = sanitizeString(data.nombre, LIMITS.NOMBRE);
-  if (!nombre) throw new Error("El nombre es obligatorio");
+  if (!nombre) throw new Error(t("plan.nombreObligatorio"));
   const caloriasObjetivo = data.caloriasObjetivo != null
     ? validateNumber(data.caloriasObjetivo, 0, LIMITS.CALORIAS_MAX)
     : null;
@@ -113,14 +115,15 @@ export async function crearPlan(data: PlanFormData) {
 }
 
 export async function actualizarPlan(id: string, data: Partial<PlanFormData>) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const updateData: Record<string, unknown> = {};
   if (data.nombre !== undefined) {
     const nombre = sanitizeString(data.nombre, LIMITS.NOMBRE);
-    if (!nombre) throw new Error("El nombre es obligatorio");
+    if (!nombre) throw new Error(t("plan.nombreObligatorio"));
     updateData.nombre = nombre;
   }
   if (data.caloriasObjetivo !== undefined) {
@@ -154,8 +157,9 @@ export async function actualizarPlan(id: string, data: Partial<PlanFormData>) {
 }
 
 export async function eliminarPlan(id: string) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   // Borrar manualmente en orden para evitar problemas de cascada con PrismaPg
@@ -173,7 +177,7 @@ export async function eliminarPlan(id: string) {
     },
   });
 
-  if (!plan) throw new Error("Plan no encontrado");
+  if (!plan) throw new Error(t("plan.planNoEncontrado"));
 
   // Borrar alimentos en comidas
   for (const dia of plan.dias) {
@@ -259,11 +263,12 @@ export async function addAlimentoAComida(
   cantidad: number,
   unidad: UnidadMedida = "GRAMOS"
 ) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
-  await verificarPropietarioComida(comidaId, dietista.id);
+  await verificarPropietarioComida(comidaId, dietista.id, t);
   cantidad = validateNumber(cantidad, 0.1, LIMITS.CANTIDAD_MAX);
 
   const count = await prisma.alimentoEnComida.count({ where: { comidaId } });
@@ -281,11 +286,12 @@ export async function addAlimentoAComida(
 }
 
 export async function removeAlimentoDeComida(alimentoEnComidaId: string) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
-  await verificarPropietarioAlimentoEnComida(alimentoEnComidaId, dietista.id);
+  await verificarPropietarioAlimentoEnComida(alimentoEnComidaId, dietista.id, t);
 
   await prisma.alimentoEnComida.delete({
     where: { id: alimentoEnComidaId },
@@ -296,11 +302,12 @@ export async function actualizarCantidadAlimento(
   alimentoEnComidaId: string,
   cantidad: number
 ) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
-  await verificarPropietarioAlimentoEnComida(alimentoEnComidaId, dietista.id);
+  await verificarPropietarioAlimentoEnComida(alimentoEnComidaId, dietista.id, t);
   cantidad = validateNumber(cantidad, 0.1, LIMITS.CANTIDAD_MAX);
 
   await prisma.alimentoEnComida.update({
@@ -313,11 +320,12 @@ export async function actualizarDescripcionComida(
   comidaId: string,
   descripcion: string
 ) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
-  await verificarPropietarioComida(comidaId, dietista.id);
+  await verificarPropietarioComida(comidaId, dietista.id, t);
 
   await prisma.comidaDelDia.update({
     where: { id: comidaId },
@@ -329,12 +337,13 @@ export async function moverAlimentoAComida(
   alimentoEnComidaId: string,
   nuevaComidaId: string
 ) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
-  await verificarPropietarioAlimentoEnComida(alimentoEnComidaId, dietista.id);
-  await verificarPropietarioComida(nuevaComidaId, dietista.id);
+  await verificarPropietarioAlimentoEnComida(alimentoEnComidaId, dietista.id, t);
+  await verificarPropietarioComida(nuevaComidaId, dietista.id, t);
 
   const item = await prisma.alimentoEnComida.findUnique({
     where: { id: alimentoEnComidaId },
@@ -594,8 +603,9 @@ export async function getPlanesDetallePaciente(pacienteId: string) {
  * desactivando el resto de planes del mismo paciente.
  */
 export async function asignarPlanComoActual(planId: string) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const plan = await prisma.planAlimenticio.findUnique({
@@ -603,7 +613,7 @@ export async function asignarPlanComoActual(planId: string) {
     select: { id: true, pacienteId: true, dietistaId: true },
   });
 
-  if (!plan || plan.dietistaId !== dietista.id) throw new Error("No autorizado");
+  if (!plan || plan.dietistaId !== dietista.id) throw new Error(t("auth.noAutorizado"));
 
   await prisma.$transaction([
     prisma.planAlimenticio.updateMany({
@@ -621,15 +631,16 @@ export async function asignarPlanComoActual(planId: string) {
 }
 
 export async function guardarComoPlantilla(planId: string, nombre: string) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   nombre = sanitizeString(nombre, LIMITS.NOMBRE);
-  if (!nombre) throw new Error("El nombre es obligatorio");
+  if (!nombre) throw new Error(t("plan.nombreObligatorio"));
 
   const plan = await getPlan(planId);
-  if (!plan) throw new Error("Plan no encontrado");
+  if (!plan) throw new Error(t("plan.planNoEncontrado"));
 
   const datos = plan.dias.map((dia) => ({
     dia: dia.dia,

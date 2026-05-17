@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { getPaciente } from "@/app/actions/pacientes";
 import { getMedidas } from "@/app/actions/medidas";
 import { parsePestanaFicha } from "@/lib/paciente-ficha-pestanas";
@@ -49,6 +50,7 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
     pestana === "informacion" ? getCamposAnamnesis() : Promise.resolve([]),
   ]);
   const notifsPaciente = mapaNotifs[id] || [];
+  const t = await getTranslations("patients");
 
   return (
     <div>
@@ -58,7 +60,7 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 py-2 sm:py-0 -my-2 sm:my-0"
       >
         <ArrowLeft className="w-4 h-4" />
-        Volver a pacientes
+        {t("nuevo.volverAPacientes")}
       </Link>
 
       <PacienteFichaClient

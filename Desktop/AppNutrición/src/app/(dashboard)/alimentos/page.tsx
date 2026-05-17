@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Plus, Download, Apple } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { getAlimentosPaginados, contarMisAlimentos } from "@/app/actions/alimentos";
 import { AlimentosFilter } from "./alimentos-filter";
 import { AlimentosTable } from "./alimentos-table";
@@ -30,6 +31,8 @@ export default async function AlimentosPage({ searchParams }: Props) {
     }
   }
 
+  const t = await getTranslations("foods");
+
   const [{ alimentos, total, nextCursor }, misAlimentosCount] = await Promise.all([
     getAlimentosPaginados(
       busqueda,
@@ -56,10 +59,10 @@ export default async function AlimentosPage({ searchParams }: Props) {
     <div>
       <PageHeader
         icon={Apple}
-        title="Alimentos"
+        title={t("list.title")}
         subtitle={propios
-          ? `${total} alimento${total !== 1 ? "s" : ""} tuyo${total !== 1 ? "s" : ""}`
-          : `${total} alimento${total !== 1 ? "s" : ""} en tu base de datos`
+          ? (total !== 1 ? t("list.subtitlePropiosCountPlural", { count: total }) : t("list.subtitlePropiosCount", { count: total }))
+          : (total !== 1 ? t("list.subtitleCountPlural", { count: total }) : t("list.subtitleCount", { count: total }))
         }
         action={
           <div className="hidden sm:flex gap-2">
@@ -67,18 +70,18 @@ export default async function AlimentosPage({ searchParams }: Props) {
               href="/alimentos/importar"
               data-tour="import-btn"
               className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
-              aria-label="Importar alimentos"
+              aria-label={t("list.importarAlimentos")}
             >
               <Download className="w-4 h-4" />
-              Importar
+              {t("list.importar")}
             </Link>
             <Link
               href="/alimentos/nuevo"
               className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium"
-              aria-label="Nuevo alimento"
+              aria-label={t("list.nuevoAlimento")}
             >
               <Plus className="w-4 h-4" />
-              Nuevo alimento
+              {t("list.nuevoAlimento")}
             </Link>
           </div>
         }
@@ -92,14 +95,14 @@ export default async function AlimentosPage({ searchParams }: Props) {
         <div data-tour="food-list" className="bg-card rounded-xl border border-border p-12 text-center">
           <Apple className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="font-medium text-lg mb-1">
-            {propios ? "Sin alimentos propios" : "Sin alimentos"}
+            {propios ? t("list.sinAlimentosPropios") : t("list.sinAlimentos")}
           </h3>
           <p className="text-muted-foreground mb-4">
             {busqueda || categoria
-              ? "No se encontraron alimentos con esos filtros"
+              ? t("list.sinResultadosFiltros")
               : propios
-                ? "Aún no tienes alimentos creados o importados"
-                : "Empieza añadiendo alimentos a tu base de datos"}
+                ? t("list.sinAlimentosPropiosCreados")
+                : t("list.empiezaAnadiendo")}
           </p>
           {!busqueda && !categoria && (
             <div className="flex gap-2 justify-center">
@@ -108,7 +111,7 @@ export default async function AlimentosPage({ searchParams }: Props) {
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium"
               >
                 <Plus className="w-4 h-4" />
-                Crear alimento
+                {t("list.crearAlimento")}
               </Link>
               {propios && (
                 <Link
@@ -116,7 +119,7 @@ export default async function AlimentosPage({ searchParams }: Props) {
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
                 >
                   <Download className="w-4 h-4" />
-                  Importar
+                  {t("list.importar")}
                 </Link>
               )}
             </div>

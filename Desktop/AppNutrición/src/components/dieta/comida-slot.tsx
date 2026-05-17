@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState, useRef } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useDroppable } from "@dnd-kit/core";
@@ -9,24 +10,6 @@ import { cn } from "@/lib/utils";
 import { actualizarDescripcionComida } from "@/app/actions/planes";
 import { calcularMacrosPorcion, convertirAGramos } from "@/lib/macros";
 import type { InteractionMode } from "@/components/food-hover-card";
-
-const TIPO_LABELS: Record<string, string> = {
-  DESAYUNO: "Desayuno",
-  MEDIA_MANANA: "Media mañana",
-  ALMUERZO: "Almuerzo",
-  MERIENDA: "Merienda",
-  CENA: "Cena",
-  RECENA: "Recena",
-};
-
-const HORA_DEFAULT: Record<string, string> = {
-  DESAYUNO: "08:30",
-  MEDIA_MANANA: "11:00",
-  ALMUERZO: "14:00",
-  MERIENDA: "17:30",
-  CENA: "21:00",
-  RECENA: "23:00",
-};
 
 interface AlimentoEnSlot {
   id: string;
@@ -75,13 +58,15 @@ export function ComidaSlot({
   readOnly = false,
   interactionMode = "dashboard",
 }: ComidaSlotProps) {
+  const t = useTranslations("diets");
+
   const { setNodeRef, isOver } = useDroppable({
     id: `comida-${comidaId}`,
     data: { comidaId },
   });
 
   const [desc, setDesc] = useState(descripcion || "");
-  const [hora, setHora] = useState(HORA_DEFAULT[tipo] || "");
+  const [hora, setHora] = useState(t(`comidaSlot.horaDefault.${tipo}` as any) || "");
   const [collapsed, setCollapsed] = useState(false);
   const [equivalenteOpen, setEquivalenteOpen] = useState<{
     alimentoEnComidaId: string;
@@ -157,7 +142,7 @@ export function ComidaSlot({
       <div className="flex items-center gap-3 sm:gap-4 px-3 sm:px-6 py-3 sm:py-4">
         <span className="text-sm sm:text-base text-muted-foreground tabular-nums shrink-0">{hora}</span>
         <h4 className="text-base sm:text-lg font-bold text-foreground flex-1 min-w-0 truncate">
-          {TIPO_LABELS[tipo] || tipo}
+          {t(`comidaSlot.tipoLabels.${tipo}` as any) || tipo}
         </h4>
         <button
           onClick={() => setCollapsed(!collapsed)}
@@ -178,7 +163,7 @@ export function ComidaSlot({
           <div className="divide-y divide-border/30">
             {alimentos.length === 0 ? (
               <div className="px-4 py-3 text-xs text-muted-foreground italic">
-                Sin alimentos
+                {t("comidaSlot.noFoods")}
               </div>
             ) : (
               alimentos.map((a) => (
@@ -249,7 +234,7 @@ export function ComidaSlot({
                   : "bg-primary/10 text-primary hover:bg-primary/15"
               )}
             >
-              Agregar nuevo alimento +
+              {t("comidaSlot.addFood")}
             </button>
           )}
 
@@ -257,17 +242,17 @@ export function ComidaSlot({
           {readOnly ? (
             desc.trim() ? (
               <div className="px-4 py-3 border-t border-border/50">
-                <div className="text-sm font-semibold text-foreground mb-1.5">Notas</div>
+                <div className="text-sm font-semibold text-foreground mb-1.5">{t("comidaSlot.notes")}</div>
                 <p className="text-xs text-muted-foreground whitespace-pre-wrap">{desc}</p>
               </div>
             ) : null
           ) : (
             <div className="px-4 py-3 border-t border-border/50">
-              <div className="text-sm font-semibold text-foreground mb-1.5">Notas</div>
+              <div className="text-sm font-semibold text-foreground mb-1.5">{t("comidaSlot.notes")}</div>
               <textarea
                 value={desc}
                 onChange={(e) => handleDescChange(e.target.value)}
-                placeholder="Notas sobre esta comida..."
+                placeholder={t("comidaSlot.notesPlaceholder")}
                 maxLength={500}
                 rows={2}
                 className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-border bg-muted/30 text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 focus:text-foreground placeholder:italic resize-none"

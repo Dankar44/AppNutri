@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Mail, Calendar, Pencil, X } from "lucide-react";
 import type { FichaInformacionData, CampoPersonalizadoDefinicion } from "@/lib/ficha-informacion-types";
 import { AvatarPaciente } from "@/components/avatar-paciente";
@@ -159,6 +160,7 @@ export function PacienteFichaClient({
   notifsPorTipo?: Record<string, number>;
   notifsDetalle?: NotifDetalle[];
 }) {
+  const t = useTranslations("patients.ficha");
   const router = useRouter();
   const nombre = capitalizarNombre(paciente.nombre);
   const apellidos = capitalizarNombre(paciente.apellidos);
@@ -188,10 +190,10 @@ export function PacienteFichaClient({
               </h1>
               {paciente.nombre === "Paciente" && paciente.apellidos === "Prueba" && (
                 <span
-                  title="Paciente de ejemplo precargado. Puedes eliminarlo o modificarlo libremente."
+                  title={t("pacienteEjemploHint")}
                   className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 text-[10px] sm:text-xs font-medium border border-amber-200 dark:border-amber-500/30 shrink-0"
                 >
-                  Paciente de ejemplo
+                  {t("pacienteEjemplo")}
                 </span>
               )}
             </div>
@@ -199,7 +201,7 @@ export function PacienteFichaClient({
               <span className="lg:hidden inline-flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
                 <Calendar className="w-3.5 h-3.5 shrink-0" />
                 {formatDate(paciente.fechaNacimiento)}
-                {edad != null && ` (${edad} años)`}
+                {edad != null && ` (${edad} ${t("edadAnios")})`}
               </span>
             )}
           </div>
@@ -209,7 +211,7 @@ export function PacienteFichaClient({
             <span className="hidden lg:inline-flex items-center gap-1.5 text-sm text-muted-foreground">
               <Calendar className="w-4 h-4 shrink-0" />
               {formatDate(paciente.fechaNacimiento)}
-              {edad != null && ` (${edad} años)`}
+              {edad != null && ` (${edad} ${t("edadAnios")})`}
             </span>
           )}
           {paciente.email && (
@@ -217,7 +219,7 @@ export function PacienteFichaClient({
               href={`mailto:${paciente.email}`}
               className="p-2.5 lg:p-2 rounded-lg border border-border hover:bg-muted transition-colors min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 flex items-center justify-center"
               title={paciente.email}
-              aria-label="Enviar email"
+              aria-label={t("enviarEmail")}
             >
               <Mail className="w-4 h-4" />
             </a>
@@ -225,8 +227,8 @@ export function PacienteFichaClient({
           <Link
             href={`/pacientes/${paciente.id}/editar`}
             className="p-2.5 lg:p-2 rounded-lg border border-border hover:bg-muted transition-colors min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 flex items-center justify-center"
-            title="Editar paciente"
-            aria-label="Editar paciente"
+            title={t("editarPaciente")}
+            aria-label={t("editarPaciente")}
           >
             <Pencil className="w-4 h-4" />
           </Link>
@@ -342,8 +344,8 @@ export function PacienteFichaClient({
       {pestana === "planificacion" && (
         <>
           <div className="sm:hidden rounded-xl border border-border bg-muted/30 p-6 text-center">
-            <p className="text-sm font-medium text-foreground mb-1">Sección disponible en ordenador</p>
-            <p className="text-xs text-muted-foreground">La planificación nutricional requiere tablas amplias que no se visualizan correctamente en pantallas pequeñas. Ábrela desde un ordenador o tablet en horizontal.</p>
+            <p className="text-sm font-medium text-foreground mb-1">{t("seccionDisponibleOrdenador")}</p>
+            <p className="text-xs text-muted-foreground">{t("planificacionRequiereTablas")}</p>
           </div>
           <div className="hidden sm:block">
             <PlanificacionPorDefectoTab
@@ -414,14 +416,12 @@ export function PacienteFichaClient({
         pestana !== "portal-paciente" && (
         <div className="rounded-xl border border-dashed border-border bg-muted/20 p-10 text-center">
           <p className="text-muted-foreground text-sm max-w-md mx-auto">
-            La sección <strong className="text-foreground">{FICHA_TABS.find((x) => x.id === pestana)?.label}</strong> la
-            construiremos en el siguiente paso. Mientras tanto puedes usar el
-            resto de la app desde el menú o{" "}
+            {t("seccionEnConstruccion", { seccion: FICHA_TABS.find((x) => x.id === pestana)?.label ?? "" })}{" "}
             <Link
               href={`/pacientes/${paciente.id}/editar`}
               className="text-primary font-medium hover:underline"
             >
-              editar datos básicos
+              {t("editarDatosBasicos")}
             </Link>
             .
           </p>
@@ -439,6 +439,7 @@ function NotifBannerPestana({
   pestana: string;
   notifsDetalle: NotifDetalle[];
 }) {
+  const t = useTranslations("patients.ficha");
   const tipos = TIPOS_POR_PESTANA[pestana] || [];
   const relevantes = notifsDetalle.filter((n) => tipos.includes(n.tipo));
 
@@ -473,7 +474,7 @@ function NotifBannerPestana({
             <button
               onClick={() => setDismissedTab(pestana)}
               className="mt-0.5 p-0.5 rounded hover:bg-amber-200 dark:hover:bg-amber-500/30 text-amber-700 dark:text-amber-400 transition-colors shrink-0"
-              aria-label="Cerrar aviso"
+              aria-label={t("cerrarAviso")}
             >
               <X className="w-4 h-4" />
             </button>
@@ -491,9 +492,10 @@ function EnlacesRapidos({
   pacienteId: string;
   pestana: PestanaFicha;
 }) {
+  const t = useTranslations("patients.ficha");
   const links: { href: string; label: string }[] = [];
   if (pestana === "seguimiento")
-    links.push({ href: `/pacientes/${pacienteId}/seguimiento`, label: "Seguimiento diario" });
+    links.push({ href: `/pacientes/${pacienteId}/seguimiento`, label: t("seguimientoDiario") });
   if (!links.length) return null;
 
   return (

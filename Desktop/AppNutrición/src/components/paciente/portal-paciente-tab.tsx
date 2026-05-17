@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { Mail, Smartphone, Loader2, Shield, Check, AlertTriangle, Copy, ExternalLink, Info } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) {
+  const t = useTranslations("patients.portal");
   const [sendingAcceso, startSendingAcceso] = useTransition();
   const [accesoEstado, setAccesoEstado] = useState<{
     email: string;
@@ -36,15 +38,15 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
 
   function handleEnviarAcceso() {
     if (!pacienteEmail) {
-      toast.error("El paciente no tiene email registrado");
+      toast.error(t("sinEmailRegistradoError"));
       return;
     }
     startSendingAcceso(async () => {
       const res = await enviarAccesoPortal(pacienteId);
       if (res.ok) {
-        toast.success("Instrucciones de acceso enviadas por email");
+        toast.success(t("instruccionesEnviadas"));
       } else {
-        toast.error(res.error || "Error al enviar las instrucciones");
+        toast.error(res.error || t("errorConfigurarAcceso"));
       }
     });
   }
@@ -57,9 +59,9 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
       await crearAccesoPaciente(pacienteId, pinEmail, pin);
       setPinGenerado(pin);
       await loadAcceso();
-      toast.success("PIN generado correctamente");
+      toast.success(t("pinGenerado"));
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Error al generar PIN");
+      toast.error(e instanceof Error ? e.message : t("errorConfigurarAcceso"));
     } finally {
       setGeneratingPin(false);
     }
@@ -76,16 +78,14 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-200 mb-1">
-                Paciente de ejemplo — prueba el portal como si fueras el paciente
+                {t("pacienteEjemploPortal")}
               </h3>
               <p className="text-xs text-amber-800/90 mb-3">
-                Este paciente de prueba ya tiene el portal configurado. Usa las siguientes
-                credenciales para entrar como él y ver cómo funciona la vista del paciente
-                (dieta, seguimiento, diario alimentario, mediciones…).
+                {t("pacienteEjemploDescripcion")}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2 mb-2">
                 <div className="rounded-lg border border-amber-200 dark:border-amber-500/30 bg-card px-3 py-2 flex items-center gap-2">
-                  <span className="text-[11px] font-medium text-amber-900 dark:text-amber-200 shrink-0">Email</span>
+                  <span className="text-[11px] font-medium text-amber-900 dark:text-amber-200 shrink-0">{t("email")}</span>
                   <code className="text-xs font-mono text-foreground truncate flex-1">
                     {accesoEstado.email}
                   </code>
@@ -93,10 +93,10 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
                     type="button"
                     onClick={() => {
                       navigator.clipboard.writeText(accesoEstado.email);
-                      toast.success("Email copiado");
+                      toast.success(t("emailCopiado"));
                     }}
                     className="p-1 rounded hover:bg-amber-100 dark:hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 transition-colors shrink-0"
-                    title="Copiar email"
+                    title={t("copiarEmail")}
                   >
                     <Copy className="w-3.5 h-3.5" />
                   </button>
@@ -108,10 +108,10 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
                     type="button"
                     onClick={() => {
                       navigator.clipboard.writeText("123456");
-                      toast.success("PIN copiado");
+                      toast.success(t("pinCopiado"));
                     }}
                     className="p-1 rounded hover:bg-amber-100 dark:hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 transition-colors shrink-0"
-                    title="Copiar PIN"
+                    title={t("copiarPin")}
                   >
                     <Copy className="w-3.5 h-3.5" />
                   </button>
@@ -124,7 +124,7 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
                 className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-800 dark:text-amber-300 hover:text-amber-900 underline underline-offset-2"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
-                Abrir portal del paciente en una nueva pestaña
+                {t("abrirPortalNuevaPestana")}
               </a>
             </div>
           </div>
@@ -137,10 +137,10 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
             <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
-                Este paciente no tiene email registrado
+                {t("sinEmailRegistradoError")}
               </p>
               <p className="text-xs text-amber-800/80 dark:text-amber-300/80 mt-0.5">
-                Sin email no podrá acceder al portal ni recibir notificaciones por correo. Puedes añadir uno editando los datos del paciente.
+                {t("sinEmailExplicacion")}
               </p>
             </div>
           </div>
@@ -149,14 +149,14 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
 
       <div className="rounded-xl border border-border bg-card p-5">
         <h2 className="text-base font-semibold text-foreground mb-4">
-          Aplicacion para el cliente
+          {t("aplicacionCliente")}
         </h2>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Columna izquierda: enviar instrucciones */}
           <div>
             <p className="text-sm font-medium text-muted-foreground mb-3">
-              Enviar instrucciones de acceso al cliente
+              {t("enviarInstruccionesAcceso")}
             </p>
             <div className="space-y-3">
               <button
@@ -179,10 +179,10 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-foreground">
-                    Enviar por email
+                    {t("enviarPorEmail")}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {pacienteEmail || "Sin email registrado"}
+                    {pacienteEmail || t("sinEmailRegistrado")}
                   </p>
                 </div>
               </button>
@@ -197,10 +197,10 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-foreground">
-                    Enviar por mensaje
+                    {t("enviarPorMensaje")}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Proximamente
+                    {t("proximamente")}
                   </p>
                 </div>
               </button>
@@ -213,26 +213,26 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
               <div>
                 <h3 className="text-sm font-semibold flex items-center gap-2 mb-3">
                   <Shield className="w-4 h-4 text-primary" />
-                  Estado del acceso
+                  {t("estadoAcceso")}
                 </h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Email</span>
+                    <span className="text-muted-foreground">{t("email")}</span>
                     <span className="font-medium">{accesoEstado.email}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Estado</span>
+                    <span className="text-muted-foreground">{t("estado")}</span>
                     <span className={cn("px-2 py-0.5 rounded-full text-xs font-medium", accesoEstado.activo ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400")}>
-                      {accesoEstado.activo ? "Activo" : "Inactivo"}
+                      {accesoEstado.activo ? t("activo") : t("inactivo")}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Contraseña</span>
-                    <span className="font-medium">{accesoEstado.tienePassword ? "Configurada" : "Sin configurar"}</span>
+                    <span className="text-muted-foreground">{t("contrasena")}</span>
+                    <span className="font-medium">{accesoEstado.tienePassword ? t("configurada") : t("sinConfigurar")}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Perfil</span>
-                    <span className="font-medium">{accesoEstado.perfilCompleto ? "Completado" : "Pendiente"}</span>
+                    <span className="text-muted-foreground">{t("perfil")}</span>
+                    <span className="font-medium">{accesoEstado.perfilCompleto ? t("completado") : t("pendiente")}</span>
                   </div>
                 </div>
               </div>
@@ -240,20 +240,20 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
 
             <div className={accesoEstado ? "pt-5 border-t border-border" : ""}>
               <h3 className="text-sm font-semibold mb-3">
-                {accesoEstado ? "Regenerar PIN" : "O genera una contraseña por ellos"}
+                {accesoEstado ? t("regenerarPin") : t("oGeneraContrasena")}
               </h3>
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground">Email del paciente *</label>
+                  <label className="text-xs font-medium text-muted-foreground">{t("emailPacienteLabel")}</label>
                   <input
                     type="email"
                     value={pinEmail}
                     onChange={(e) => setPinEmail(e.target.value)}
-                    placeholder="email@ejemplo.com"
+                    placeholder={t("emailPlaceholder")}
                     maxLength={200}
                     className="w-full mt-1 px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                   />
-                  <p className="text-[11px] text-muted-foreground mt-1">El paciente usará este email para hacer login</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">{t("emailLoginHint")}</p>
                 </div>
                 <button
                   type="button"
@@ -264,7 +264,7 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
                   }}
                   className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors disabled:opacity-50"
                 >
-                  {generatingPin ? "Generando..." : accesoEstado ? "Regenerar PIN" : "Crear contraseña"}
+                  {generatingPin ? t("generando") : accesoEstado ? t("regenerarPin") : t("crearContrasena")}
                 </button>
                 {pinGenerado && (
                   <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30">
@@ -291,15 +291,13 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
               </div>
               <div>
                 <h3 className="font-semibold text-foreground text-base">
-                  ¿Regenerar PIN del paciente?
+                  {t("regenerarPinPregunta")}
                 </h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Se invalidará el PIN y la contraseña actuales. El paciente
-                  <strong className="text-foreground"> perderá el acceso</strong> al portal
-                  hasta que use el nuevo PIN.
+                  {t("regenerarPinAviso")}
                 </p>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Esta acción no se puede deshacer.
+                  {t("accionNoDeshacer")}
                 </p>
               </div>
             </div>
@@ -310,7 +308,7 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
                 onClick={() => setShowConfirmRegen(false)}
                 className="px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors"
               >
-                Cancelar
+                {t("cancelar")}
               </button>
               <button
                 type="button"
@@ -318,7 +316,7 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
                 disabled={generatingPin}
                 className="px-4 py-2 rounded-lg bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 transition-colors disabled:opacity-50"
               >
-                {generatingPin ? "Regenerando..." : "Sí, regenerar PIN"}
+                {generatingPin ? t("generando") : t("siRegenerarPin")}
               </button>
             </div>
           </div>

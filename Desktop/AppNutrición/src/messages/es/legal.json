@@ -1,0 +1,366 @@
+{
+  "layout": {
+    "navTerminos": "Términos y condiciones",
+    "navPrivacidad": "Política de privacidad",
+    "navCookies": "Política de cookies",
+    "volver": "Volver",
+    "contactoEmail": "legal@annonia.com",
+    "tocLabel": "Contenido"
+  },
+  "privacidad": {
+    "metadata": {
+      "title": "Política de privacidad — Annonia",
+      "description": "Política de privacidad y protección de datos de Annonia."
+    },
+    "badge": "Privacidad",
+    "titulo": "Política de privacidad",
+    "ultimaActualizacion": "Última actualización: 24 de abril de 2026",
+    "intro": "En <strong>Annonia Software S.L.</strong> nos comprometemos a proteger la privacidad de nuestros usuarios. Esta Política explica cómo recogemos, utilizamos, almacenamos y protegemos sus datos personales de conformidad con:",
+    "leyes": {
+      "rgpd": "Reglamento (UE) 2016/679",
+      "lopdgdd": "Ley Orgánica 3/2018",
+      "lssice": "Ley 34/2002"
+    },
+    "toc": {
+      "responsable": "Responsable del tratamiento",
+      "datosRecogemos": "Datos que recogemos",
+      "finalidades": "Finalidades y bases legales",
+      "destinatarios": "Destinatarios",
+      "conservacion": "Plazos de conservación",
+      "derechos": "Tus derechos",
+      "seguridad": "Medidas de seguridad",
+      "menores": "Datos de menores",
+      "modificaciones": "Modificaciones",
+      "contacto": "Contacto"
+    },
+    "responsable": {
+      "titulo": "1. Responsable del tratamiento",
+      "identidad": "Identidad:",
+      "identidadValor": "Annonia Software S.L.",
+      "domicilio": "Domicilio:",
+      "domicilioValor": "[Pendiente de completar]",
+      "cif": "CIF:",
+      "cifValor": "[Pendiente de completar]",
+      "email": "Email:",
+      "emailValor": "privacidad@annonia.com",
+      "dpd": "DPD:",
+      "dpdValor": "privacidad@annonia.com"
+    },
+    "datosRecogemos": {
+      "titulo": "2. Datos que recogemos",
+      "dietistas": {
+        "subtitulo": "Dietistas-nutricionistas",
+        "identificativos": "Identificativos: nombre, apellidos, email, nº colegiado",
+        "acceso": "Acceso: credenciales gestionadas por Supabase Auth (email/contraseña o Google OAuth)",
+        "facturacion": "Facturación: procesados por Stripe — Annonia no almacena datos de tarjetas",
+        "uso": "Uso: registros de actividad, preferencias, integraciones"
+      },
+      "pacientes": {
+        "subtitulo": "Pacientes",
+        "identificativos": "Identificativos: nombre, apellidos, email, teléfono, fecha de nacimiento, foto",
+        "datosSalud": "Datos de salud (art. 9 RGPD): peso, altura, medidas, patologías, alergias, intolerancias, medicación, antecedentes, hábitos, seguimiento diario, planes alimenticios",
+        "portal": "Portal: email y PIN cifrado"
+      },
+      "importante": "Importante: el dietista actúa como responsable del tratamiento de los datos de salud. Annonia actúa como encargado del tratamiento (art. 28 RGPD).",
+      "datosAutomaticos": {
+        "subtitulo": "Datos recogidos automáticamente",
+        "descripcion": "Dirección IP, datos de navegación, tipo de dispositivo/navegador, y cookies técnicas (ver Política de Cookies)."
+      }
+    },
+    "finalidades": {
+      "titulo": "3. Finalidades y bases legales",
+      "headerFinalidad": "Finalidad",
+      "headerBaseLegal": "Base legal",
+      "filas": {
+        "registro": { "finalidad": "Gestión del registro y autenticación", "base": "Ejecución del contrato (art. 6.1.b)" },
+        "servicio": { "finalidad": "Prestación del servicio contratado", "base": "Ejecución del contrato (art. 6.1.b)" },
+        "facturacion": { "finalidad": "Facturación y suscripciones", "base": "Contrato + obligación legal (art. 6.1.b y 6.1.c)" },
+        "datosSalud": { "finalidad": "Tratamiento de datos de salud", "base": "Interés vital + medicina preventiva (art. 9.2.c y 9.2.h)" },
+        "notificaciones": { "finalidad": "Notificaciones del servicio", "base": "Ejecución del contrato (art. 6.1.b)" },
+        "comunicaciones": { "finalidad": "Comunicaciones comerciales propias", "base": "Interés legítimo (art. 6.1.f) — con derecho de oposición" },
+        "mejora": { "finalidad": "Mejora del servicio y análisis", "base": "Interés legítimo (art. 6.1.f)" },
+        "obligaciones": { "finalidad": "Cumplimiento de obligaciones legales", "base": "Obligación legal (art. 6.1.c)" }
+      }
+    },
+    "destinatarios": {
+      "titulo": "4. Destinatarios de los datos",
+      "servicios": {
+        "supabase": { "nombre": "Supabase", "desc": "Autenticación y base de datos", "ubicacion": "Servidores en la UE" },
+        "stripe": { "nombre": "Stripe", "desc": "Procesamiento de pagos", "ubicacion": "Data Privacy Framework" },
+        "google": { "nombre": "Google", "desc": "Google Calendar (si se activa)", "ubicacion": "Data Privacy Framework" },
+        "openai": { "nombre": "OpenAI", "desc": "Generación con IA (datos mínimos)", "ubicacion": "Data Privacy Framework" }
+      },
+      "noVendemos": "No vendemos ni cedemos datos a terceros con fines comerciales. Las transferencias internacionales están amparadas por decisiones de adecuación de la Comisión Europea o el DPF UE-EE.UU."
+    },
+    "conservacion": {
+      "titulo": "5. Plazos de conservación",
+      "headerTipo": "Tipo de datos",
+      "headerPlazo": "Plazo",
+      "filas": {
+        "cuenta": { "tipo": "Datos de cuenta", "plazo": "Mientras esté activa + 30 días tras baja" },
+        "facturacion": { "tipo": "Facturación", "plazo": "5 años (Ley General Tributaria)" },
+        "pacientes": { "tipo": "Datos de pacientes", "plazo": "Mientras el dietista tenga cuenta activa; máx. 90 días tras baja" },
+        "adjuntos": { "tipo": "Adjuntos de mensajes", "plazo": "30 días (limpieza automática)" },
+        "mensajes": { "tipo": "Mensajes de texto", "plazo": "60 días (limpieza automática)" },
+        "logs": { "tipo": "Logs de actividad", "plazo": "Máximo 12 meses" }
+      }
+    },
+    "derechos": {
+      "titulo": "6. Tus derechos",
+      "lista": {
+        "acceso": { "derecho": "Acceso", "desc": "Confirmar si tratamos tus datos y acceder a ellos" },
+        "rectificacion": { "derecho": "Rectificación", "desc": "Corregir datos inexactos" },
+        "supresion": { "derecho": "Supresión", "desc": "Solicitar eliminación (derecho al olvido)" },
+        "limitacion": { "derecho": "Limitación", "desc": "Restringir el tratamiento" },
+        "portabilidad": { "derecho": "Portabilidad", "desc": "Recibir datos en formato estructurado" },
+        "oposicion": { "derecho": "Oposición", "desc": "Oponerse al tratamiento por interés legítimo" }
+      },
+      "instrucciones": "Envía un email a privacidad@annonia.com con tu nombre, email y el derecho que deseas ejercer. Responderemos en máximo 30 días.",
+      "reclamacion": "Si no estás satisfecho, puedes reclamar ante la Agencia Española de Protección de Datos (AEPD): www.aepd.es"
+    },
+    "seguridad": {
+      "titulo": "7. Medidas de seguridad",
+      "medidas": [
+        "Cifrado en tránsito (HTTPS/TLS) y en reposo",
+        "Hashing de contraseñas/PINs con PBKDF2 + sal única",
+        "Autenticación JWT con tokens de corta duración",
+        "Control de acceso basado en roles",
+        "Copias de seguridad automáticas",
+        "Revisión periódica de vulnerabilidades"
+      ]
+    },
+    "menores": {
+      "titulo": "8. Datos de menores",
+      "contenido": "La Plataforma no está dirigida a menores de 16 años como usuarios directos. Los datos de menores solo podrán tratarse cuando el paciente sea atendido por un dietista con consentimiento de padres o tutores (art. 7 LOPDGDD)."
+    },
+    "modificaciones": {
+      "titulo": "9. Modificaciones",
+      "contenido": "Annonia puede actualizar esta Política para adaptarla a cambios normativos o de servicio. Se notificará de cualquier cambio sustancial con al menos 30 días de antelación."
+    },
+    "contacto": {
+      "titulo": "10. Contacto",
+      "contenido": "Para cualquier consulta sobre privacidad: privacidad@annonia.com"
+    }
+  },
+  "terminos": {
+    "metadata": {
+      "title": "Términos y condiciones — Annonia",
+      "description": "Términos y condiciones de uso de la plataforma Annonia."
+    },
+    "badge": "Documento legal",
+    "titulo": "Términos y condiciones de uso",
+    "ultimaActualizacion": "Última actualización: 24 de abril de 2026",
+    "intro": {
+      "parrafo1": "Los presentes Términos y Condiciones regulan el acceso y uso de la plataforma web <strong>Annonia</strong>, accesible desde <strong>annonia.com</strong>, titularidad de Annonia Software S.L.",
+      "parrafo2": "Al registrarse o utilizar la Plataforma, el usuario acepta íntegramente estos Términos. Si no está de acuerdo con alguno de ellos, le rogamos que no utilice el servicio."
+    },
+    "toc": {
+      "identificacion": "Identificación del prestador",
+      "objeto": "Objeto del servicio",
+      "acceso": "Condiciones de acceso",
+      "pagos": "Planes y pagos",
+      "desistimiento": "Derecho de desistimiento",
+      "uso": "Uso aceptable",
+      "propiedad": "Propiedad intelectual",
+      "responsabilidadSanitaria": "Responsabilidad sanitaria",
+      "limitacion": "Limitación de responsabilidad",
+      "datos": "Protección de datos",
+      "modificaciones": "Modificaciones",
+      "jurisdiccion": "Legislación y jurisdicción",
+      "contacto": "Contacto"
+    },
+    "identificacion": {
+      "titulo": "1. Identificación del prestador",
+      "denominacion": "Denominación social:",
+      "denominacionValor": "Annonia Software S.L.",
+      "domicilio": "Domicilio social:",
+      "domicilioValor": "[Pendiente de completar]",
+      "cif": "CIF:",
+      "cifValor": "[Pendiente de completar]",
+      "email": "Email:",
+      "emailValor": "legal@annonia.com",
+      "registro": "Registro Mercantil:",
+      "registroValor": "[Pendiente de completar]",
+      "lssice": "De conformidad con la Ley 34/2002, de 11 de julio, de Servicios de la Sociedad de la Información y de Comercio Electrónico (LSSI-CE)."
+    },
+    "objeto": {
+      "titulo": "2. Objeto del servicio",
+      "descripcion": "Annonia es una plataforma de gestión de consultas de nutrición y dietética dirigida a profesionales colegiados y a sus pacientes. Permite, entre otras funcionalidades:",
+      "funcionalidades": [
+        "Fichas de pacientes con datos clínicos y antropométricos",
+        "Planes alimenticios personalizados con o sin IA",
+        "Gestión de citas, mensajería y notificaciones",
+        "Portal de acceso para pacientes",
+        "Informes clínicos en formato PDF",
+        "Base de datos de +2.600 alimentos"
+      ]
+    },
+    "acceso": {
+      "titulo": "3. Condiciones de acceso y registro",
+      "dietistas": {
+        "subtitulo": "Dietistas-nutricionistas",
+        "contenido": "Deberán estar en posesión de la titulación habilitante y colegiados. Annonia se reserva el derecho de verificar el número de colegiado y denegar el acceso en caso de datos incorrectos."
+      },
+      "pacientes": {
+        "subtitulo": "Pacientes",
+        "contenido": "Acceden al portal mediante credenciales proporcionadas por su dietista. No se requiere registro independiente."
+      },
+      "edadMinima": {
+        "subtitulo": "Edad mínima: 16 años",
+        "contenido": "Conforme al artículo 7 de la LOPDGDD. Los menores de 16 años necesitarán consentimiento de padres o tutores legales."
+      }
+    },
+    "pagos": {
+      "titulo": "4. Planes de suscripción y pagos",
+      "descripcion": "Annonia ofrece planes de suscripción mensual. Los precios se muestran en euros (€) e incluyen IVA cuando sea aplicable. El pago se realiza a través de Stripe.",
+      "puntos": [
+        "Los planes se renuevan automáticamente al final de cada periodo.",
+        "Puedes cancelar en cualquier momento desde Ajustes. Seguirás con acceso hasta el final del periodo pagado.",
+        "14 días de prueba gratuita sin tarjeta de crédito.",
+        "Los precios pueden modificarse con preaviso mínimo de 30 días."
+      ]
+    },
+    "desistimiento": {
+      "titulo": "5. Derecho de desistimiento",
+      "contenido": "Conforme al artículo 103 del Real Decreto Legislativo 1/2007, podrás ejercer tu derecho de desistimiento en los 14 días naturales siguientes a la contratación, salvo que hayas comenzado a utilizar el servicio con tu consentimiento expreso.",
+      "contacto": "Para ejercer este derecho: <strong>legal@annonia.com</strong>"
+    },
+    "uso": {
+      "titulo": "6. Uso aceptable",
+      "descripcion": "El usuario se compromete a:",
+      "puntos": [
+        "Proporcionar información veraz y mantenerla actualizada.",
+        "No utilizar la Plataforma para fines ilícitos.",
+        "No intentar acceder a cuentas o datos de otros usuarios.",
+        "No usar sistemas automatizados de extracción de datos.",
+        "Cumplir la normativa de protección de datos al tratar información de pacientes."
+      ],
+      "aviso": "Annonia se reserva el derecho de suspender o cancelar cuentas que incumplan estos Términos, previo aviso cuando sea posible."
+    },
+    "propiedad": {
+      "titulo": "7. Propiedad intelectual e industrial",
+      "contenido": "Todos los contenidos de la Plataforma (diseño, código, textos, gráficos, logos, marcas) son propiedad de Annonia o de sus licenciantes y están protegidos por la legislación española e internacional.",
+      "tuContenido": "<strong>Tus contenidos son tuyos:</strong> los datos clínicos, planes alimenticios y contenidos creados por los usuarios dentro de la Plataforma son propiedad del usuario que los ha generado."
+    },
+    "responsabilidadSanitaria": {
+      "titulo": "8. Responsabilidad del profesional sanitario",
+      "puntos": [
+        "<strong>Annonia es una herramienta de gestión</strong> y no sustituye el criterio profesional del dietista-nutricionista.",
+        "Las recomendaciones de IA son orientativas y deben ser revisadas y validadas por el profesional antes de su aplicación.",
+        "El dietista es el único responsable de las decisiones clínicas tomadas con respecto a sus pacientes."
+      ]
+    },
+    "limitacion": {
+      "titulo": "9. Limitación de responsabilidad",
+      "descripcion": "Annonia se esfuerza por mantener la Plataforma disponible y actualizada, pero no garantiza la ausencia de interrupciones o errores. En la medida permitida por la ley:",
+      "puntos": [
+        "No seremos responsables de daños indirectos, incidentales o consecuentes.",
+        "La responsabilidad total estará limitada al importe pagado en los 12 meses anteriores al evento."
+      ]
+    },
+    "datos": {
+      "titulo": "10. Protección de datos",
+      "contenido": "El tratamiento de datos personales se rige por nuestra <a>Política de Privacidad</a>, que forma parte integrante de estos Términos."
+    },
+    "modificaciones": {
+      "titulo": "11. Modificaciones",
+      "contenido": "Annonia se reserva el derecho de modificar estos Términos. Los cambios sustanciales se notificarán con al menos 30 días de antelación por email. El uso continuado del servicio tras la notificación implica aceptación."
+    },
+    "jurisdiccion": {
+      "titulo": "12. Legislación aplicable y jurisdicción",
+      "contenido": "Estos Términos se rigen por la legislación española. Para la resolución de controversias, las partes se someten a los Juzgados y Tribunales del domicilio social de Annonia, sin perjuicio de fueros imperativos del consumidor.",
+      "odr": "Plataforma de resolución de litigios en línea de la UE: <a>ec.europa.eu/consumers/odr</a>"
+    },
+    "contacto": {
+      "titulo": "13. Contacto",
+      "contenido": "Para cualquier consulta: <strong>legal@annonia.com</strong>"
+    }
+  },
+  "cookies": {
+    "metadata": {
+      "title": "Política de cookies — Annonia",
+      "description": "Política de cookies de la plataforma Annonia."
+    },
+    "badge": "Cookies",
+    "titulo": "Política de cookies",
+    "ultimaActualizacion": "Última actualización: 24 de abril de 2026",
+    "intro": "Esta Política de Cookies explica qué cookies utiliza <strong>Annonia</strong> y cómo puede el usuario gestionarlas. Cumple con la <strong>Ley 34/2002 (LSSI-CE)</strong> y las directrices de la Agencia Española de Protección de Datos (AEPD).",
+    "toc": {
+      "queSon": "¿Qué son las cookies?",
+      "necesarias": "Cookies necesarias",
+      "preferencias": "Cookies de preferencias",
+      "terceros": "Cookies de terceros",
+      "gestion": "Gestión de cookies",
+      "actualizaciones": "Actualizaciones",
+      "contacto": "Contacto"
+    },
+    "resumenRapido": {
+      "titulo": "Resumen rápido",
+      "soloCookiesNecesarias": "Solo cookies necesarias y de preferencias",
+      "sinTracking": "Sin tracking publicitario",
+      "gaConConsentimiento": "Google Analytics solo con consentimiento",
+      "gestionConsentimiento": "Puedes gestionar tu consentimiento"
+    },
+    "queSon": {
+      "titulo": "1. ¿Qué son las cookies?",
+      "contenido": "Las cookies son pequeños archivos de texto que se almacenan en tu dispositivo cuando visitas un sitio web. Permiten recordar preferencias como el idioma, inicio de sesión y configuraciones, facilitando tu experiencia en futuras visitas."
+    },
+    "necesarias": {
+      "titulo": "2. Cookies estrictamente necesarias",
+      "descripcion": "Imprescindibles para el funcionamiento de la Plataforma. Sin ellas, no podríamos prestar el servicio. <strong>No requieren consentimiento</strong> (art. 22.2 LSSI-CE).",
+      "cookies": {
+        "supabaseAuth": { "nombre": "sb-*-auth-token", "proposito": "Sesión de autenticación del dietista (Supabase Auth). Mantiene tu sesión iniciada.", "duracion": "Sesión / 30 días" },
+        "adminSession": { "nombre": "annonia-admin-session", "proposito": "Sesión del panel de administración. JWT cifrado con HS256.", "duracion": "7 días" },
+        "pacienteSession": { "nombre": "annonia-paciente-session", "proposito": "Sesión del portal del paciente. JWT cifrado con HS256.", "duracion": "30 días" }
+      }
+    },
+    "preferencias": {
+      "titulo": "3. Cookies de preferencias",
+      "descripcion": "Recuerdan tus preferencias para personalizar la experiencia. Se almacenan en el <code>localStorage</code> del navegador.",
+      "cookies": {
+        "theme": { "nombre": "annonia-theme", "proposito": "Tu preferencia de tema visual (claro u oscuro).", "duracion": "Persistente" },
+        "tours": { "nombre": "annonia-tours-*", "proposito": "Registro de qué tours guiados has completado, para no volver a mostrarlos.", "duracion": "Persistente" },
+        "welcome": { "nombre": "annonia-welcome-*", "proposito": "Marca de que ya se ha mostrado la pantalla de bienvenida.", "duracion": "Persistente" },
+        "consent": { "nombre": "annonia-cookie-consent", "proposito": "Registro de tu elección sobre cookies (aceptar/rechazar).", "duracion": "365 días" }
+      }
+    },
+    "terceros": {
+      "titulo": "4. Cookies de terceros",
+      "ga4Info": "Annonia utiliza Google Analytics 4 para mejorar la experiencia del usuario.",
+      "ga4Condicion": "Solo se activa si aceptas las cookies. No usamos Facebook Pixel ni ningún servicio de tracking publicitario.",
+      "descripcion": "Los únicos servicios de terceros que pueden establecer cookies son:",
+      "cookies": {
+        "supabase": { "nombre": "Supabase", "proposito": "Cookies de autenticación necesarias para el funcionamiento del servicio de login.", "duracion": "Variable" },
+        "stripe": { "nombre": "Stripe", "proposito": "Cookies de prevención de fraude durante el proceso de pago. Solo cuando accedes a la pasarela.", "duracion": "Variable" },
+        "googleCalendar": { "nombre": "Google (Calendar)", "proposito": "Cuando conectas voluntariamente tu Google Calendar, Google puede establecer cookies de sesión propias.", "duracion": "Variable" },
+        "ga4": { "nombre": "_ga, _ga_* (Google Analytics 4)", "proposito": "Cookies de análisis anónimo de uso. Solo se cargan si aceptas las cookies al visitar la web.", "duracion": "Hasta 2 años" }
+      }
+    },
+    "gestion": {
+      "titulo": "5. Gestión de cookies",
+      "banner": {
+        "subtitulo": "Banner de consentimiento",
+        "contenido": "Al visitar Annonia por primera vez, verás un banner donde puedes aceptar o rechazar cookies no esenciales. Puedes cambiar tu elección en cualquier momento desde \"Cookies\" en el pie de página."
+      },
+      "navegador": {
+        "subtitulo": "Configuración del navegador",
+        "contenido": "También puedes bloquear o eliminar cookies desde tu navegador:"
+      },
+      "aviso": "Desactivar cookies estrictamente necesarias puede impedir el funcionamiento correcto de la Plataforma (por ejemplo, no podrás iniciar sesión)."
+    },
+    "actualizaciones": {
+      "titulo": "6. Actualizaciones",
+      "contenido": "Esta Política puede actualizarse para reflejar cambios en los servicios o en la normativa. Se notificará a los usuarios de cambios sustanciales."
+    },
+    "contacto": {
+      "titulo": "7. Contacto",
+      "contenido": "Para cualquier consulta sobre cookies: <strong>privacidad@annonia.com</strong>"
+    },
+    "tipoLabels": {
+      "necesaria": "Necesaria",
+      "preferencia": "Preferencia",
+      "tercero": "Tercero"
+    },
+    "duracionPrefix": "Duración:"
+  }
+}

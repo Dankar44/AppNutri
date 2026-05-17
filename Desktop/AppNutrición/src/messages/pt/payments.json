@@ -1,0 +1,80 @@
+{
+  "page": {
+    "title": "Pagamentos",
+    "subtitle": "Gerencie as cobranças dos seus pacientes"
+  },
+  "stats": {
+    "totalPagos": "Total de pagamentos",
+    "cobrado": "Recebido",
+    "pendiente": "Pendente",
+    "balance": "Saldo"
+  },
+  "stripeNotConnected": {
+    "titulo": "Stripe não conectado",
+    "descripcion": "Conecte sua conta Stripe em <linkAjustes>Configurações</linkAjustes> para gerar links de pagamento automáticos e cobrar seus pacientes online."
+  },
+  "buttons": {
+    "nuevoCobro": "Nova cobrança",
+    "crearCobro": "Criar cobrança",
+    "cancelar": "Cancelar"
+  },
+  "form": {
+    "titulo": "Criar solicitação de cobrança",
+    "stripeLinkAuto": "Um link de pagamento Stripe será gerado automaticamente",
+    "pacienteLabel": "Paciente",
+    "sinPacienteAsignado": "Sem paciente atribuído",
+    "importeLabel": "Valor (EUR) *",
+    "importePlaceholder": "35.00",
+    "conceptoLabel": "Descrição *",
+    "conceptoPlaceholder": "Ex: Consulta mensal, Plano nutricional...",
+    "notasLabel": "Observações",
+    "notasPlaceholder": "Opcional"
+  },
+  "manualPayment": {
+    "titulo": "Marcar como pago",
+    "descripcion": "Registre um pagamento recebido fora do Stripe (dinheiro, transferência, etc.)",
+    "metodoLabel": "Método de pagamento",
+    "metodoPlaceholder": "Ex: Dinheiro, Transferência, Pix...",
+    "guardando": "Salvando...",
+    "confirmarPago": "Confirmar pagamento"
+  },
+  "emptyState": {
+    "titulo": "Sem cobranças",
+    "descripcion": "Crie sua primeira solicitação de cobrança"
+  },
+  "table": {
+    "concepto": "Descrição",
+    "paciente": "Paciente",
+    "importe": "Valor",
+    "estado": "Status",
+    "fecha": "Data",
+    "acciones": "Ações"
+  },
+  "estados": {
+    "pagado": "Pago",
+    "pendiente": "Pendente"
+  },
+  "actions": {
+    "copiado": "Copiado!",
+    "link": "Link",
+    "pagado": "Pago",
+    "copiarLinkTitle": "Copiar link de pagamento",
+    "abrirPaginaPagoTitle": "Abrir página de pagamento",
+    "generarLinkTitle": "Gerar link de pagamento",
+    "marcarPagadoTitle": "Marcar como pago manualmente"
+  },
+  "toasts": {
+    "completaConceptoImporte": "Preencha a descrição e o valor",
+    "cobroCreado": "Cobrança criada",
+    "cobroCreadoConLink": "Cobrança criada com link de pagamento",
+    "errorCrearCobro": "Erro ao criar cobrança",
+    "linkGeneradoCopiado": "Link de pagamento gerado e copiado para a área de transferência",
+    "errorGenerarLink": "Erro ao gerar link",
+    "linkCopiado": "Link copiado para a área de transferência",
+    "indicaMetodoPago": "Informe o método de pagamento",
+    "pagoMarcadoPagado": "Pagamento marcado como pago",
+    "errorMarcarPagado": "Erro ao marcar como pago",
+    "cobroEliminado": "Cobrança excluída",
+    "errorEliminar": "Erro ao excluir"
+  }
+}

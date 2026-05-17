@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { MacroBarra } from "./macro-barra";
 
 interface AnalisisSidebarProps {
@@ -27,16 +28,18 @@ export function AnalisisSidebar({
   grasasObj = 70,
   fibraObj = 32,
 }: AnalisisSidebarProps) {
+  const t = useTranslations("diets");
+
   return (
     <div className="rounded-xl border border-border bg-card shadow-sm">
       <div className="px-5 py-4 border-b border-border">
         <h3 className="text-sm font-semibold text-foreground">
-          Análisis global
+          {t("analisisSidebar.title")}
         </h3>
       </div>
       <div className="px-5 py-4 space-y-4">
         <MacroBarra
-          label="Energía"
+          label={t("analisisSidebar.energy")}
           actual={calorias}
           objetivo={caloriasObj}
           color="bg-purple-400"
@@ -45,7 +48,7 @@ export function AnalisisSidebar({
           icon="⚡"
         />
         <MacroBarra
-          label="Grasa"
+          label={t("analisisSidebar.fat")}
           actual={grasas}
           objetivo={grasasObj}
           color="bg-yellow-400"
@@ -53,7 +56,7 @@ export function AnalisisSidebar({
           icon="◎"
         />
         <MacroBarra
-          label="H. Carbono"
+          label={t("analisisSidebar.carbs")}
           actual={carbohidratos}
           objetivo={carbohidratosObj}
           color="bg-orange-300"
@@ -61,7 +64,7 @@ export function AnalisisSidebar({
           icon="◯"
         />
         <MacroBarra
-          label="Proteína"
+          label={t("analisisSidebar.protein")}
           actual={proteinas}
           objetivo={proteinasObj}
           color="bg-blue-400"
@@ -69,7 +72,7 @@ export function AnalisisSidebar({
           icon="◇"
         />
         <MacroBarra
-          label="Fibra"
+          label={t("analisisSidebar.fiber")}
           actual={fibra}
           objetivo={fibraObj}
           color="bg-emerald-400"

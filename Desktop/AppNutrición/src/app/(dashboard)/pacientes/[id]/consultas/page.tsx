@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Plus, FileText } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { getPaciente } from "@/app/actions/pacientes";
 import { getConsultas } from "@/app/actions/consultas";
 import { formatDate } from "@/lib/utils";
@@ -15,6 +16,7 @@ export default async function ConsultasPage({ params }: Props) {
   const paciente = await getPaciente(id);
   if (!paciente) notFound();
 
+  const t = await getTranslations("patients.consultas");
   const consultas = await getConsultas(id);
 
   return (
@@ -45,9 +47,9 @@ export default async function ConsultasPage({ params }: Props) {
       {consultas.length === 0 ? (
         <div className="bg-card rounded-xl border border-border p-12 text-center">
           <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="font-medium text-lg mb-1">Sin consultas</h3>
+          <h3 className="font-medium text-lg mb-1">{t("sinConsultas")}</h3>
           <p className="text-muted-foreground mb-4">
-            Registra la primera consulta con este paciente
+            {t("registraPrimera")}
           </p>
           <Link
             href={`/pacientes/${id}/consultas/nueva`}

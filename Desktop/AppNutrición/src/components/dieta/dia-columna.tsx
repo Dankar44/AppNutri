@@ -1,18 +1,9 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { ComidaSlot } from "./comida-slot";
 import { ResumenDiario } from "./resumen-diario";
 import { calcularMacrosPorcion, sumarMacros, convertirAGramos } from "@/lib/macros";
-
-const DIA_LABELS: Record<string, string> = {
-  LUNES: "Lunes",
-  MARTES: "Martes",
-  MIERCOLES: "Miércoles",
-  JUEVES: "Jueves",
-  VIERNES: "Viernes",
-  SABADO: "Sábado",
-  DOMINGO: "Domingo",
-};
 
 interface AlimentoData {
   id: string;
@@ -60,6 +51,7 @@ export function DiaColumna({
   compactHeader = false,
   showDayHeader = true,
 }: DiaColumnaProps) {
+  const t = useTranslations("diets");
   const todosAlimentos = comidas.flatMap((c) => c.alimentos);
   const macrosDia = sumarMacros(
     todosAlimentos.map((a) => {
@@ -84,7 +76,7 @@ export function DiaColumna({
     <div className="flex-1 min-w-0 flex flex-col snap-start">
       {showDayHeader && (
         <div className="text-center font-semibold text-sm py-2 border-b border-border bg-muted/50 rounded-t-lg sticky top-0">
-          {DIA_LABELS[dia] || dia}
+          {t(`editor.dayLabels.${dia}` as any) || dia}
         </div>
       )}
       <div className="flex-1 p-2 space-y-3 border-x border-border">

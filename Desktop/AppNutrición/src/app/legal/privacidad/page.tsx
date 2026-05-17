@@ -1,14 +1,18 @@
 import type { Metadata } from "next";
 import {
   Shield, Building2, Database, Target, Users2, Clock, UserCheck,
-  Lock, Baby, RefreshCcw, Mail, Server, Eye,
+  Lock, Baby, RefreshCcw, Mail,
 } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
-export const metadata: Metadata = {
-  title: "Política de privacidad — Annonia",
-  description: "Política de privacidad y protección de datos de Annonia.",
-  alternates: { canonical: "/legal/privacidad" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("legal");
+  return {
+    title: t("privacidad.metadata.title"),
+    description: t("privacidad.metadata.description"),
+    alternates: { canonical: "/legal/privacidad" },
+  };
+}
 
 function Section({
   icon: Icon, title, id, children,
@@ -55,37 +59,83 @@ function DataTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
   );
 }
 
-const TOC = [
-  { id: "responsable", label: "Responsable del tratamiento" },
-  { id: "datos-recogemos", label: "Datos que recogemos" },
-  { id: "finalidades", label: "Finalidades y bases legales" },
-  { id: "destinatarios", label: "Destinatarios" },
-  { id: "conservacion", label: "Plazos de conservación" },
-  { id: "derechos", label: "Tus derechos" },
-  { id: "seguridad", label: "Medidas de seguridad" },
-  { id: "menores", label: "Datos de menores" },
-  { id: "modificaciones", label: "Modificaciones" },
-  { id: "contacto", label: "Contacto" },
-];
+export default async function PrivacidadPage() {
+  const t = await getTranslations("legal");
 
-export default function PrivacidadPage() {
+  const TOC = [
+    { id: "responsable", label: t("privacidad.toc.responsable") },
+    { id: "datos-recogemos", label: t("privacidad.toc.datosRecogemos") },
+    { id: "finalidades", label: t("privacidad.toc.finalidades") },
+    { id: "destinatarios", label: t("privacidad.toc.destinatarios") },
+    { id: "conservacion", label: t("privacidad.toc.conservacion") },
+    { id: "derechos", label: t("privacidad.toc.derechos") },
+    { id: "seguridad", label: t("privacidad.toc.seguridad") },
+    { id: "menores", label: t("privacidad.toc.menores") },
+    { id: "modificaciones", label: t("privacidad.toc.modificaciones") },
+    { id: "contacto", label: t("privacidad.toc.contacto") },
+  ];
+
+  const FINALIDADES_ROWS = [
+    [t("privacidad.finalidades.filas.registro.finalidad"), t("privacidad.finalidades.filas.registro.base")],
+    [t("privacidad.finalidades.filas.servicio.finalidad"), t("privacidad.finalidades.filas.servicio.base")],
+    [t("privacidad.finalidades.filas.facturacion.finalidad"), t("privacidad.finalidades.filas.facturacion.base")],
+    [t("privacidad.finalidades.filas.datosSalud.finalidad"), t("privacidad.finalidades.filas.datosSalud.base")],
+    [t("privacidad.finalidades.filas.notificaciones.finalidad"), t("privacidad.finalidades.filas.notificaciones.base")],
+    [t("privacidad.finalidades.filas.comunicaciones.finalidad"), t("privacidad.finalidades.filas.comunicaciones.base")],
+    [t("privacidad.finalidades.filas.mejora.finalidad"), t("privacidad.finalidades.filas.mejora.base")],
+    [t("privacidad.finalidades.filas.obligaciones.finalidad"), t("privacidad.finalidades.filas.obligaciones.base")],
+  ];
+
+  const CONSERVACION_ROWS = [
+    [t("privacidad.conservacion.filas.cuenta.tipo"), t("privacidad.conservacion.filas.cuenta.plazo")],
+    [t("privacidad.conservacion.filas.facturacion.tipo"), t("privacidad.conservacion.filas.facturacion.plazo")],
+    [t("privacidad.conservacion.filas.pacientes.tipo"), t("privacidad.conservacion.filas.pacientes.plazo")],
+    [t("privacidad.conservacion.filas.adjuntos.tipo"), t("privacidad.conservacion.filas.adjuntos.plazo")],
+    [t("privacidad.conservacion.filas.mensajes.tipo"), t("privacidad.conservacion.filas.mensajes.plazo")],
+    [t("privacidad.conservacion.filas.logs.tipo"), t("privacidad.conservacion.filas.logs.plazo")],
+  ];
+
+  const DESTINATARIOS = [
+    { name: t("privacidad.destinatarios.servicios.supabase.nombre"), desc: t("privacidad.destinatarios.servicios.supabase.desc"), flag: t("privacidad.destinatarios.servicios.supabase.ubicacion") },
+    { name: t("privacidad.destinatarios.servicios.stripe.nombre"), desc: t("privacidad.destinatarios.servicios.stripe.desc"), flag: t("privacidad.destinatarios.servicios.stripe.ubicacion") },
+    { name: t("privacidad.destinatarios.servicios.google.nombre"), desc: t("privacidad.destinatarios.servicios.google.desc"), flag: t("privacidad.destinatarios.servicios.google.ubicacion") },
+    { name: t("privacidad.destinatarios.servicios.openai.nombre"), desc: t("privacidad.destinatarios.servicios.openai.desc"), flag: t("privacidad.destinatarios.servicios.openai.ubicacion") },
+  ];
+
+  const DERECHOS = [
+    { right: t("privacidad.derechos.lista.acceso.derecho"), desc: t("privacidad.derechos.lista.acceso.desc") },
+    { right: t("privacidad.derechos.lista.rectificacion.derecho"), desc: t("privacidad.derechos.lista.rectificacion.desc") },
+    { right: t("privacidad.derechos.lista.supresion.derecho"), desc: t("privacidad.derechos.lista.supresion.desc") },
+    { right: t("privacidad.derechos.lista.limitacion.derecho"), desc: t("privacidad.derechos.lista.limitacion.desc") },
+    { right: t("privacidad.derechos.lista.portabilidad.derecho"), desc: t("privacidad.derechos.lista.portabilidad.desc") },
+    { right: t("privacidad.derechos.lista.oposicion.derecho"), desc: t("privacidad.derechos.lista.oposicion.desc") },
+  ];
+
+  const SEGURIDAD_ITEMS: string[] = t.raw("privacidad.seguridad.medidas") as string[];
+
+  const LEYES = [
+    { name: "RGPD", desc: t("privacidad.leyes.rgpd") },
+    { name: "LOPDGDD", desc: t("privacidad.leyes.lopdgdd") },
+    { name: "LSSI-CE", desc: t("privacidad.leyes.lssice") },
+  ];
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
       {/* Hero */}
       <div className="text-center mb-12">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 text-sm font-medium mb-4">
           <Shield className="w-4 h-4" />
-          Privacidad
+          {t("privacidad.badge")}
         </div>
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">Política de privacidad</h1>
-        <p className="text-gray-400 text-sm">Última actualización: 24 de abril de 2026</p>
+        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">{t("privacidad.titulo")}</h1>
+        <p className="text-gray-400 text-sm">{t("privacidad.ultimaActualizacion")}</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-10">
         {/* TOC sidebar */}
         <aside className="lg:w-64 shrink-0">
           <div className="lg:sticky lg:top-24">
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">Contenido</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">{t("layout.tocLabel")}</p>
             <nav className="space-y-0.5">
               {TOC.map((item) => (
                 <a
@@ -104,15 +154,12 @@ export default function PrivacidadPage() {
         <div className="flex-1 min-w-0 space-y-10">
           <div className="bg-white dark:bg-[#17181e] rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 sm:p-8 text-[15px] text-gray-600 dark:text-gray-400 leading-relaxed space-y-3">
             <p>
-              En <strong className="text-gray-900 dark:text-gray-100">Annonia Software S.L.</strong> nos comprometemos a proteger la privacidad de nuestros
-              usuarios. Esta Política explica cómo recogemos, utilizamos, almacenamos y protegemos sus datos personales de conformidad con:
+              {t.rich("privacidad.intro", {
+                strong: (chunks) => <strong className="text-gray-900 dark:text-gray-100">{chunks}</strong>,
+              })}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3">
-              {[
-                { name: "RGPD", desc: "Reglamento (UE) 2016/679" },
-                { name: "LOPDGDD", desc: "Ley Orgánica 3/2018" },
-                { name: "LSSI-CE", desc: "Ley 34/2002" },
-              ].map((law) => (
+              {LEYES.map((law) => (
                 <div key={law.name} className="bg-green-50 dark:bg-green-900/20 rounded-lg px-3 py-2 text-center">
                   <p className="text-sm font-semibold text-green-800 dark:text-green-300">{law.name}</p>
                   <p className="text-xs text-green-600 dark:text-green-500">{law.desc}</p>
@@ -121,76 +168,60 @@ export default function PrivacidadPage() {
             </div>
           </div>
 
-          <Section icon={Building2} title="1. Responsable del tratamiento" id="responsable">
+          <Section icon={Building2} title={t("privacidad.responsable.titulo")} id="responsable">
             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-4 text-sm space-y-1.5">
-              <p><strong className="text-gray-900 dark:text-gray-100">Identidad:</strong> Annonia Software S.L.</p>
-              <p><strong className="text-gray-900 dark:text-gray-100">Domicilio:</strong> [Pendiente de completar]</p>
-              <p><strong className="text-gray-900 dark:text-gray-100">CIF:</strong> [Pendiente de completar]</p>
-              <p><strong className="text-gray-900 dark:text-gray-100">Email:</strong> privacidad@annonia.com</p>
-              <p><strong className="text-gray-900 dark:text-gray-100">DPD:</strong> privacidad@annonia.com</p>
+              <p><strong className="text-gray-900 dark:text-gray-100">{t("privacidad.responsable.identidad")}</strong> {t("privacidad.responsable.identidadValor")}</p>
+              <p><strong className="text-gray-900 dark:text-gray-100">{t("privacidad.responsable.domicilio")}</strong> {t("privacidad.responsable.domicilioValor")}</p>
+              <p><strong className="text-gray-900 dark:text-gray-100">{t("privacidad.responsable.cif")}</strong> {t("privacidad.responsable.cifValor")}</p>
+              <p><strong className="text-gray-900 dark:text-gray-100">{t("privacidad.responsable.email")}</strong> {t("privacidad.responsable.emailValor")}</p>
+              <p><strong className="text-gray-900 dark:text-gray-100">{t("privacidad.responsable.dpd")}</strong> {t("privacidad.responsable.dpdValor")}</p>
             </div>
           </Section>
 
-          <Section icon={Database} title="2. Datos que recogemos" id="datos-recogemos">
+          <Section icon={Database} title={t("privacidad.datosRecogemos.titulo")} id="datos-recogemos">
             <div className="space-y-4">
               <div className="bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 p-5">
-                <p className="font-semibold text-green-800 dark:text-green-300 text-sm mb-2">Dietistas-nutricionistas</p>
+                <p className="font-semibold text-green-800 dark:text-green-300 text-sm mb-2">{t("privacidad.datosRecogemos.dietistas.subtitulo")}</p>
                 <ul className="text-sm text-green-700 dark:text-green-400 space-y-1">
-                  <li>• <strong>Identificativos:</strong> nombre, apellidos, email, nº colegiado</li>
-                  <li>• <strong>Acceso:</strong> credenciales gestionadas por Supabase Auth (email/contraseña o Google OAuth)</li>
-                  <li>• <strong>Facturación:</strong> procesados por Stripe — Annonia no almacena datos de tarjetas</li>
-                  <li>• <strong>Uso:</strong> registros de actividad, preferencias, integraciones</li>
+                  <li>{t("privacidad.datosRecogemos.dietistas.identificativos")}</li>
+                  <li>{t("privacidad.datosRecogemos.dietistas.acceso")}</li>
+                  <li>{t("privacidad.datosRecogemos.dietistas.facturacion")}</li>
+                  <li>{t("privacidad.datosRecogemos.dietistas.uso")}</li>
                 </ul>
               </div>
 
               <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 p-5">
-                <p className="font-semibold text-blue-800 dark:text-blue-300 text-sm mb-2">Pacientes</p>
+                <p className="font-semibold text-blue-800 dark:text-blue-300 text-sm mb-2">{t("privacidad.datosRecogemos.pacientes.subtitulo")}</p>
                 <ul className="text-sm text-blue-700 dark:text-blue-400 space-y-1">
-                  <li>• <strong>Identificativos:</strong> nombre, apellidos, email, teléfono, fecha de nacimiento, foto</li>
-                  <li>• <strong>Datos de salud (art. 9 RGPD):</strong> peso, altura, medidas, patologías, alergias, intolerancias, medicación, antecedentes, hábitos, seguimiento diario, planes alimenticios</li>
-                  <li>• <strong>Portal:</strong> email y PIN cifrado</li>
+                  <li>{t("privacidad.datosRecogemos.pacientes.identificativos")}</li>
+                  <li>{t("privacidad.datosRecogemos.pacientes.datosSalud")}</li>
+                  <li>{t("privacidad.datosRecogemos.pacientes.portal")}</li>
                 </ul>
               </div>
 
               <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800 p-4 text-sm text-amber-800 dark:text-amber-400">
-                <strong className="dark:text-amber-300">Importante:</strong> el dietista actúa como responsable del tratamiento de los datos de salud. Annonia actúa como
-                encargado del tratamiento (art. 28 RGPD).
+                {t("privacidad.datosRecogemos.importante")}
               </div>
 
               <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-                <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm mb-1">Datos recogidos automáticamente</p>
+                <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm mb-1">{t("privacidad.datosRecogemos.datosAutomaticos.subtitulo")}</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Dirección IP, datos de navegación, tipo de dispositivo/navegador, y cookies técnicas
-                  (ver <a href="/legal/cookies" className="text-green-600 dark:text-green-400 hover:underline">Política de Cookies</a>).
+                  {t("privacidad.datosRecogemos.datosAutomaticos.descripcion")}
                 </p>
               </div>
             </div>
           </Section>
 
-          <Section icon={Target} title="3. Finalidades y bases legales" id="finalidades">
+          <Section icon={Target} title={t("privacidad.finalidades.titulo")} id="finalidades">
             <DataTable
-              headers={["Finalidad", "Base legal"]}
-              rows={[
-                ["Gestión del registro y autenticación", "Ejecución del contrato (art. 6.1.b)"],
-                ["Prestación del servicio contratado", "Ejecución del contrato (art. 6.1.b)"],
-                ["Facturación y suscripciones", "Contrato + obligación legal (art. 6.1.b y 6.1.c)"],
-                ["Tratamiento de datos de salud", "Interés vital + medicina preventiva (art. 9.2.c y 9.2.h)"],
-                ["Notificaciones del servicio", "Ejecución del contrato (art. 6.1.b)"],
-                ["Comunicaciones comerciales propias", "Interés legítimo (art. 6.1.f) — con derecho de oposición"],
-                ["Mejora del servicio y análisis", "Interés legítimo (art. 6.1.f)"],
-                ["Cumplimiento de obligaciones legales", "Obligación legal (art. 6.1.c)"],
-              ]}
+              headers={[t("privacidad.finalidades.headerFinalidad"), t("privacidad.finalidades.headerBaseLegal")]}
+              rows={FINALIDADES_ROWS}
             />
           </Section>
 
-          <Section icon={Users2} title="4. Destinatarios de los datos" id="destinatarios">
+          <Section icon={Users2} title={t("privacidad.destinatarios.titulo")} id="destinatarios">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {[
-                { name: "Supabase", desc: "Autenticación y base de datos", flag: "🇪🇺 Servidores en la UE" },
-                { name: "Stripe", desc: "Procesamiento de pagos", flag: "🛡️ Data Privacy Framework" },
-                { name: "Google", desc: "Google Calendar (si se activa)", flag: "🛡️ Data Privacy Framework" },
-                { name: "OpenAI", desc: "Generación con IA (datos mínimos)", flag: "🛡️ Data Privacy Framework" },
-              ].map((item) => (
+              {DESTINATARIOS.map((item) => (
                 <div key={item.name} className="bg-white dark:bg-[#17181e] rounded-xl border border-gray-200 dark:border-gray-700 p-4">
                   <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">{item.name}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{item.desc}</p>
@@ -199,37 +230,22 @@ export default function PrivacidadPage() {
               ))}
             </div>
             <div className="bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 p-4 text-sm text-green-800 dark:text-green-300">
-              No vendemos ni cedemos datos a terceros con fines comerciales. Las transferencias internacionales están amparadas por
-              decisiones de adecuación de la Comisión Europea o el DPF UE-EE.UU.
+              {t("privacidad.destinatarios.noVendemos")}
             </div>
           </Section>
 
-          <Section icon={Clock} title="5. Plazos de conservación" id="conservacion">
+          <Section icon={Clock} title={t("privacidad.conservacion.titulo")} id="conservacion">
             <DataTable
-              headers={["Tipo de datos", "Plazo"]}
-              rows={[
-                ["Datos de cuenta", "Mientras esté activa + 30 días tras baja"],
-                ["Facturación", "5 años (Ley General Tributaria)"],
-                ["Datos de pacientes", "Mientras el dietista tenga cuenta activa; máx. 90 días tras baja"],
-                ["Adjuntos de mensajes", "30 días (limpieza automática)"],
-                ["Mensajes de texto", "60 días (limpieza automática)"],
-                ["Logs de actividad", "Máximo 12 meses"],
-              ]}
+              headers={[t("privacidad.conservacion.headerTipo"), t("privacidad.conservacion.headerPlazo")]}
+              rows={CONSERVACION_ROWS}
             />
           </Section>
 
-          <Section icon={UserCheck} title="6. Tus derechos" id="derechos">
+          <Section icon={UserCheck} title={t("privacidad.derechos.titulo")} id="derechos">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {[
-                { right: "Acceso", desc: "Confirmar si tratamos tus datos y acceder a ellos" },
-                { right: "Rectificación", desc: "Corregir datos inexactos" },
-                { right: "Supresión", desc: "Solicitar eliminación (derecho al olvido)" },
-                { right: "Limitación", desc: "Restringir el tratamiento" },
-                { right: "Portabilidad", desc: "Recibir datos en formato estructurado" },
-                { right: "Oposición", desc: "Oponerse al tratamiento por interés legítimo" },
-              ].map((item) => (
+              {DERECHOS.map((item) => (
                 <div key={item.right} className="flex items-start gap-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-4 py-3">
-                  <span className="text-green-500 mt-0.5 font-bold text-sm">✓</span>
+                  <span className="text-green-500 mt-0.5 font-bold text-sm">&#10003;</span>
                   <div>
                     <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{item.right}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{item.desc}</p>
@@ -238,50 +254,40 @@ export default function PrivacidadPage() {
               ))}
             </div>
             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-4 text-sm space-y-2">
-              <p>Envía un email a <strong className="text-gray-900 dark:text-gray-100">privacidad@annonia.com</strong> con tu nombre, email y el derecho que deseas ejercer. Responderemos en máximo 30 días.</p>
+              <p>{t("privacidad.derechos.instrucciones")}</p>
               <p>
-                Si no estás satisfecho, puedes reclamar ante la <strong className="text-gray-900 dark:text-gray-100">Agencia Española de Protección de Datos (AEPD)</strong>:{" "}
-                <a href="https://www.aepd.es" target="_blank" rel="noopener noreferrer" className="text-green-600 dark:text-green-400 hover:underline">www.aepd.es</a>
+                {t("privacidad.derechos.reclamacion")}
               </p>
             </div>
           </Section>
 
-          <Section icon={Lock} title="7. Medidas de seguridad" id="seguridad">
+          <Section icon={Lock} title={t("privacidad.seguridad.titulo")} id="seguridad">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {[
-                "Cifrado en tránsito (HTTPS/TLS) y en reposo",
-                "Hashing de contraseñas/PINs con PBKDF2 + sal única",
-                "Autenticación JWT con tokens de corta duración",
-                "Control de acceso basado en roles",
-                "Copias de seguridad automáticas",
-                "Revisión periódica de vulnerabilidades",
-              ].map((item) => (
+              {SEGURIDAD_ITEMS.map((item) => (
                 <div key={item} className="flex items-start gap-2 bg-green-50 dark:bg-green-900/20 rounded-lg px-3 py-2 text-sm text-green-800 dark:text-green-300">
-                  <span className="text-green-500 mt-0.5">🔒</span>
+                  <span className="text-green-500 mt-0.5">&#128274;</span>
                   <span>{item}</span>
                 </div>
               ))}
             </div>
           </Section>
 
-          <Section icon={Baby} title="8. Datos de menores" id="menores">
+          <Section icon={Baby} title={t("privacidad.menores.titulo")} id="menores">
             <p>
-              La Plataforma no está dirigida a menores de 16 años como usuarios directos. Los datos de menores solo podrán tratarse
-              cuando el paciente sea atendido por un dietista con consentimiento de padres o tutores (art. 7 LOPDGDD).
+              {t("privacidad.menores.contenido")}
             </p>
           </Section>
 
-          <Section icon={RefreshCcw} title="9. Modificaciones" id="modificaciones">
+          <Section icon={RefreshCcw} title={t("privacidad.modificaciones.titulo")} id="modificaciones">
             <p>
-              Annonia puede actualizar esta Política para adaptarla a cambios normativos o de servicio. Se notificará de cualquier
-              cambio sustancial con al menos 30 días de antelación.
+              {t("privacidad.modificaciones.contenido")}
             </p>
           </Section>
 
-          <Section icon={Mail} title="10. Contacto" id="contacto">
+          <Section icon={Mail} title={t("privacidad.contacto.titulo")} id="contacto">
             <div className="bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 p-5 text-center">
               <p className="text-sm text-green-800 dark:text-green-300">
-                Para cualquier consulta sobre privacidad: <strong>privacidad@annonia.com</strong>
+                {t("privacidad.contacto.contenido")}
               </p>
             </div>
           </Section>

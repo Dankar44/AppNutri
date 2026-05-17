@@ -2,21 +2,7 @@
 
 import type { AIPlanGenerado, AIDia } from "@/lib/ai/types";
 import { formatQuantity } from "@/lib/units";
-
-const DIA_LABELS: Record<string, string> = {
-  LUNES: "Lunes", MARTES: "Martes", MIERCOLES: "Miércoles",
-  JUEVES: "Jueves", VIERNES: "Viernes", SABADO: "Sábado", DOMINGO: "Domingo",
-};
-
-const TIPO_LABELS: Record<string, string> = {
-  DESAYUNO: "Desayuno", MEDIA_MANANA: "Media mañana", ALMUERZO: "Almuerzo",
-  MERIENDA: "Merienda", CENA: "Cena", RECENA: "Recena",
-};
-
-const TIPO_EMOJI: Record<string, string> = {
-  DESAYUNO: "🌅", MEDIA_MANANA: "🍎", ALMUERZO: "🍽️",
-  MERIENDA: "🥤", CENA: "🌙", RECENA: "🫖",
-};
+import { useTranslations } from "next-intl";
 
 const TIPOS_ORDEN = ["DESAYUNO", "MEDIA_MANANA", "ALMUERZO", "MERIENDA", "CENA", "RECENA"];
 
@@ -42,13 +28,15 @@ interface PlanPreviewProps {
 }
 
 export function PlanPreview({ plan, onAccept, onReject, loading }: PlanPreviewProps) {
+  const t = useTranslations("diets");
+  const tipoEmojis = t.raw("planPreview.tipoEmojis") as Record<string, string>;
   return (
     <div className="space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between sticky top-0 bg-background z-10 py-3 border-b border-border -mx-1 px-1">
         <div>
           <h3 className="text-lg font-bold">{plan.nombre}</h3>
-          <p className="text-sm text-muted-foreground">Revisa el plan antes de aceptarlo</p>
+          <p className="text-sm text-muted-foreground">{t("planPreview.reviewBefore")}</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -56,19 +44,19 @@ export function PlanPreview({ plan, onAccept, onReject, loading }: PlanPreviewPr
             disabled={loading}
             className="px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium disabled:opacity-50"
           >
-            Descartar
+            {t("planPreview.discard")}
           </button>
           <button
             onClick={onAccept}
             disabled={loading}
             className="px-5 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium disabled:opacity-50"
           >
-            {loading ? "Creando plan..." : "Aceptar y crear plan"}
+            {loading ? t("planPreview.creating") : t("planPreview.acceptAndCreate")}
           </button>
         </div>
       </div>
 
-      {/* Grid semanal — 3 días visibles, scroll horizontal */}
+      {/* Grid semanal — 3 dias visibles, scroll horizontal */}
       <div className="overflow-x-auto pb-4 scroll-smooth">
         <div className="flex gap-4" style={{ width: `calc(((100% + 1rem) / 3) * 7 - 1rem)` }}>
           {plan.dias.map((dia) => {
@@ -77,9 +65,9 @@ export function PlanPreview({ plan, onAccept, onReject, loading }: PlanPreviewPr
 
             return (
               <div key={dia.dia} className="flex-1 min-w-0 bg-card rounded-xl border border-border overflow-hidden flex flex-col">
-                {/* Header del día */}
+                {/* Header del dia */}
                 <div className="text-center font-semibold text-sm py-2.5 bg-muted/50 border-b border-border">
-                  {DIA_LABELS[dia.dia] || dia.dia}
+                  {t(`editor.dayLabels.${dia.dia}` as never) || dia.dia}
                 </div>
 
                 {/* Comidas */}
@@ -91,8 +79,8 @@ export function PlanPreview({ plan, onAccept, onReject, loading }: PlanPreviewPr
                     return (
                       <div key={tipo} className={`rounded-lg p-2.5 ${tieneAlimentos ? "bg-muted/30" : ""}`}>
                         <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1 mb-1">
-                          <span>{TIPO_EMOJI[tipo]}</span>
-                          {TIPO_LABELS[tipo]}
+                          <span>{tipoEmojis[tipo] ?? ""}</span>
+                          {t(`comidaSlot.tipoLabels.${tipo}` as never)}
                         </p>
                         {tieneAlimentos ? (
                           <>

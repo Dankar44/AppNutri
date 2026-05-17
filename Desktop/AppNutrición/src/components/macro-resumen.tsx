@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 interface MacroResumenProps {
   calorias: number;
   proteinas: number;
@@ -17,6 +19,7 @@ export function MacroResumen({
   fibra,
   label,
 }: MacroResumenProps) {
+  const t = useTranslations("common.macros");
   const totalMacros = proteinas + carbohidratos + grasas;
   const protPct = totalMacros > 0 ? (proteinas / totalMacros) * 100 : 0;
   const carbPct = totalMacros > 0 ? (carbohidratos / totalMacros) * 100 : 0;
@@ -30,12 +33,12 @@ export function MacroResumen({
         <p className="text-xs text-muted-foreground">kcal</p>
       </div>
       <div className="space-y-2">
-        <MacroBarH label="Proteínas" value={proteinas} pct={protPct} color="bg-blue-500" />
-        <MacroBarH label="Carbohidratos" value={carbohidratos} pct={carbPct} color="bg-green-500" />
-        <MacroBarH label="Grasas" value={grasas} pct={grasPct} color="bg-red-500" />
+        <MacroBarH label={t("proteinas")} value={proteinas} pct={protPct} color="bg-blue-500" />
+        <MacroBarH label={t("carbohidratos")} value={carbohidratos} pct={carbPct} color="bg-green-500" />
+        <MacroBarH label={t("grasas")} value={grasas} pct={grasPct} color="bg-red-500" />
         {fibra !== undefined && fibra > 0 && (
           <div className="flex items-center justify-between text-xs pt-1">
-            <span className="text-muted-foreground">Fibra</span>
+            <span className="text-muted-foreground">{t("fibra")}</span>
             <span className="font-medium">{Math.round(fibra * 10) / 10}g</span>
           </div>
         )}

@@ -6,15 +6,18 @@ import { prisma } from "@/lib/prisma";
 import { crearPacienteDemoSiNoExiste } from "@/lib/paciente-demo";
 import { getDemoSession, clearDemoSession } from "@/lib/demo-auth";
 import { redirect } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
 
 export const getCurrentDietista = cache(async function getCurrentDietista() {
+  let locale: "es" | "pt" = "es";
+  try { const l = await getLocale(); if (l === "pt") locale = "pt"; } catch { /* default to es */ }
   const demoSession = await getDemoSession();
   if (demoSession) {
     const demoDietista = await prisma.dietista.findUnique({
       where: { id: demoSession.dietistaId },
     });
     if (demoDietista) {
-      crearPacienteDemoSiNoExiste(prisma, demoDietista.id).catch(() => {});
+      crearPacienteDemoSiNoExiste(prisma, demoDietista.id, locale).catch(() => {});
       return { ...demoDietista, verificado: true, isDemo: true as const };
     }
     await clearDemoSession();
@@ -46,18 +49,19 @@ export const getCurrentDietista = cache(async function getCurrentDietista() {
       if (paciente) return null;
     }
 
+    const t = await getTranslations("validation");
     dietista = await prisma.dietista.create({
       data: {
         authId: user.id,
         email: user.email!,
-        nombre: user.user_metadata.nombre || "Sin nombre",
+        nombre: user.user_metadata.nombre || t("auth.sinNombre"),
         apellidos: user.user_metadata.apellidos || "",
         especialidad: user.user_metadata.especialidad || null,
         numColegiado: user.user_metadata.numColegiado || null,
       },
     });
 
-    crearPacienteDemoSiNoExiste(prisma, dietista.id).catch((err) => {
+    crearPacienteDemoSiNoExiste(prisma, dietista.id, locale).catch((err) => {
       console.error("[paciente-demo] Error creando paciente demo:", err);
     });
   }

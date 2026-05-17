@@ -5,6 +5,7 @@ import { getCurrentDietista } from "./auth";
 import { crearPacienteDemoSiNoExiste } from "@/lib/paciente-demo";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getTranslations, getLocale } from "next-intl/server";
 import { ObjetivoPaciente, Sexo } from "@/generated/prisma/client";
 import type { FichaInformacionData } from "@/lib/ficha-informacion-types";
 
@@ -66,36 +67,36 @@ function sanitizeArray(arr: string[], maxItems = 20, maxLen = 100): string[] {
     .slice(0, maxItems);
 }
 
-function validatePacienteData(data: PacienteFormData): string | null {
+function validatePacienteData(data: PacienteFormData, t: (key: string) => string): string | null {
   const nombre = sanitizeString(data.nombre);
-  if (nombre.length < 1 || nombre.length > 100) return "El nombre es obligatorio (máx 100 caracteres)";
+  if (nombre.length < 1 || nombre.length > 100) return t("paciente.nombreObligatorio");
 
   const apellidos = sanitizeString(data.apellidos);
-  if (apellidos.length < 1 || apellidos.length > 100) return "Los apellidos son obligatorios (máx 100 caracteres)";
+  if (apellidos.length < 1 || apellidos.length > 100) return t("paciente.apellidosObligatorios");
 
   const email = sanitizeString(data.email);
-  if (email && !EMAIL_REGEX.test(email)) return "El formato del email no es válido";
+  if (email && !EMAIL_REGEX.test(email)) return t("paciente.emailFormatoInvalido");
 
   if (data.telefono) {
     const tel = sanitizeString(data.telefono);
-    if (tel && !PHONE_REGEX.test(tel)) return "El teléfono no tiene un formato válido";
+    if (tel && !PHONE_REGEX.test(tel)) return t("paciente.telefonoFormatoInvalido");
   }
 
   if (data.peso !== undefined && data.peso !== null) {
-    if (data.peso < 1 || data.peso > 500) return "El peso debe estar entre 1 y 500 kg";
+    if (data.peso < 1 || data.peso > 500) return t("paciente.pesoFueraRango");
   }
 
   if (data.altura !== undefined && data.altura !== null) {
-    if (data.altura < 30 || data.altura > 300) return "La altura debe estar entre 30 y 300 cm";
+    if (data.altura < 30 || data.altura > 300) return t("paciente.alturaFueraRango");
   }
 
-  if (data.sexo && !SEXOS_VALIDOS.includes(data.sexo)) return "Sexo no válido";
-  if (!OBJETIVOS_VALIDOS.includes(data.objetivo)) return "Objetivo no válido";
+  if (data.sexo && !SEXOS_VALIDOS.includes(data.sexo)) return t("paciente.sexoNoValido");
+  if (!OBJETIVOS_VALIDOS.includes(data.objetivo)) return t("paciente.objetivoNoValido");
 
-  if (!data.fechaNacimiento) return "La fecha de nacimiento es obligatoria";
+  if (!data.fechaNacimiento) return t("paciente.fechaNacimientoObligatoria");
   const fecha = new Date(data.fechaNacimiento);
-  if (isNaN(fecha.getTime())) return "Fecha de nacimiento no válida";
-  if (fecha > new Date()) return "La fecha de nacimiento no puede ser futura";
+  if (isNaN(fecha.getTime())) return t("paciente.fechaNacimientoInvalida");
+  if (fecha > new Date()) return t("paciente.fechaNacimientoFutura");
 
   return null;
 }
@@ -184,11 +185,12 @@ async function saveExtraFields(pacienteId: string, extra: ReturnType<typeof spli
 }
 
 export async function crearPaciente(data: PacienteFormData) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
-  const error = validatePacienteData(data);
+  const error = validatePacienteData(data, t);
   if (error) throw new Error(error);
 
   const sanitized = sanitizeFormData(data);
@@ -198,7 +200,7 @@ export async function crearPaciente(data: PacienteFormData) {
       where: { email: sanitized.email },
     });
     if (dietistaExistente) {
-      throw new Error("Este email pertenece a una cuenta de dietista. Una persona no puede ser dietista y paciente a la vez.");
+      throw new Error(t("paciente.emailPerteneceADietista"));
     }
   }
 
@@ -219,11 +221,12 @@ export async function crearPaciente(data: PacienteFormData) {
 }
 
 export async function actualizarPaciente(id: string, data: PacienteFormData) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
-  const error = validatePacienteData(data);
+  const error = validatePacienteData(data, t);
   if (error) throw new Error(error);
 
   const sanitized = sanitizeFormData(data);
@@ -233,7 +236,7 @@ export async function actualizarPaciente(id: string, data: PacienteFormData) {
       where: { email: sanitized.email },
     });
     if (dietistaExistente) {
-      throw new Error("Este email pertenece a una cuenta de dietista. Una persona no puede ser dietista y paciente a la vez.");
+      throw new Error(t("paciente.emailPerteneceADietista"));
     }
   }
 
@@ -253,8 +256,9 @@ export async function actualizarPaciente(id: string, data: PacienteFormData) {
 }
 
 export async function eliminarPaciente(id: string) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   // Si borra el paciente demo, marcar la flag para que NO se re-cree al recargar
@@ -294,8 +298,9 @@ export async function eliminarPaciente(id: string) {
  * Resetea la flag y recrea el paciente con todos sus datos de inmediato.
  */
 export async function restaurarPacienteDemo() {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   await prisma.$queryRawUnsafe(
@@ -303,7 +308,8 @@ export async function restaurarPacienteDemo() {
     dietista.id,
   );
 
-  await crearPacienteDemoSiNoExiste(prisma, dietista.id);
+  const locale = (await getLocale()) === "pt" ? "pt" : "es";
+  await crearPacienteDemoSiNoExiste(prisma, dietista.id, locale as "es" | "pt");
 
   revalidatePath("/pacientes");
   revalidatePath("/dashboard");
@@ -322,15 +328,16 @@ export async function isDemoEliminado(): Promise<boolean> {
 }
 
 export async function toggleActivoPaciente(id: string) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const paciente = await prisma.paciente.findUnique({
     where: { id, dietistaId: dietista.id },
   });
 
-  if (!paciente) throw new Error("Paciente no encontrado");
+  if (!paciente) throw new Error(t("paciente.pacienteNoEncontrado"));
 
   await prisma.paciente.update({
     where: { id },
@@ -403,8 +410,9 @@ export async function getHorarioPaciente(pacienteId: string): Promise<HorarioEnt
 }
 
 export async function guardarHorarioPaciente(pacienteId: string, horario: HorarioEntry[]) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   await prisma.$queryRawUnsafe(
@@ -442,8 +450,9 @@ export async function getRecomendaciones(pacienteId: string): Promise<string> {
 
 /** Saves only the "otrasRecomendaciones" text, preserving other structured fields. */
 export async function guardarRecomendaciones(pacienteId: string, texto: string) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const sanitized = texto.slice(0, 5000);
@@ -493,8 +502,9 @@ export async function guardarFichaInformacionPaciente(
   pacienteId: string,
   data: FichaInformacionData
 ) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const cleaned = sanitizeFichaInformacionDeep(data) as FichaInformacionData;

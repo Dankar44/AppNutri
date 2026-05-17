@@ -14,18 +14,12 @@ import {
 } from "lucide-react";
 import { getSeguimientoDia, type SeguimientoDia } from "@/app/actions/seguimiento";
 import { formatQuantity } from "@/lib/units";
+import { useTranslations } from "next-intl";
 
-const TIPO_LABELS: Record<string, string> = {
-  DESAYUNO: "Desayuno",
-  MEDIA_MANANA: "Media mañana",
-  ALMUERZO: "Comida",
-  MERIENDA: "Merienda",
-  CENA: "Cena",
-  RECENA: "Recena",
-};
 const TIPOS = ["DESAYUNO", "MEDIA_MANANA", "ALMUERZO", "MERIENDA", "CENA", "RECENA"];
 
 export function SeguimientoDietistaView({ pacienteId }: { pacienteId: string }) {
+  const t = useTranslations("patients.seguimientoDietista");
   const [fecha, setFecha] = useState(new Date().toISOString().split("T")[0]);
   const [data, setData] = useState<SeguimientoDia | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,7 +37,7 @@ export function SeguimientoDietistaView({ pacienteId }: { pacienteId: string }) 
     setFecha(d.toISOString().split("T")[0]);
   }
 
-  const fechaLabel = new Date(fecha + "T12:00:00").toLocaleDateString("es-ES", {
+  const fechaLabel = new Date(fecha + "T12:00:00").toLocaleDateString(undefined, {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -64,7 +58,7 @@ export function SeguimientoDietistaView({ pacienteId }: { pacienteId: string }) 
         <button
           onClick={() => cambiarDia(-1)}
           className="p-2 rounded-lg hover:bg-muted transition-colors"
-          aria-label="Día anterior"
+          aria-label={t("diaAnterior")}
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
@@ -80,18 +74,18 @@ export function SeguimientoDietistaView({ pacienteId }: { pacienteId: string }) 
         <button
           onClick={() => cambiarDia(1)}
           className="p-2 rounded-lg hover:bg-muted transition-colors"
-          aria-label="Día siguiente"
+          aria-label={t("diaSiguiente")}
         >
           <ChevronRight className="w-5 h-5" />
         </button>
       </div>
 
       {loading ? (
-        <p className="text-sm text-muted-foreground text-center py-8">Cargando...</p>
+        <p className="text-sm text-muted-foreground text-center py-8">{t("cargando")}</p>
       ) : !data ? (
         <div className="bg-card rounded-xl border border-border p-12 text-center">
           <p className="text-muted-foreground">
-            El paciente no ha registrado seguimiento este día
+            {t("sinSeguimiento")}
           </p>
         </div>
       ) : (
@@ -99,24 +93,24 @@ export function SeguimientoDietistaView({ pacienteId }: { pacienteId: string }) 
           {/* Resumen KPIs */}
           <div className="grid grid-cols-3 gap-3">
             <div className="bg-card rounded-xl border border-border p-4 text-center">
-              <p className="text-xs text-muted-foreground mb-1">Cumplimiento</p>
+              <p className="text-xs text-muted-foreground mb-1">{t("cumplimiento")}</p>
               <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                 {cumplimientoPct}%
               </p>
               <p className="text-[10px] text-muted-foreground mt-0.5">
-                {cumplidos}/{totalAlimentos} alimentos
+                {t("alimentosCount", { cumplidos, total: totalAlimentos })}
               </p>
             </div>
             <div className="bg-card rounded-xl border border-border p-4 text-center">
-              <p className="text-xs text-muted-foreground mb-1">Agua</p>
+              <p className="text-xs text-muted-foreground mb-1">{t("agua")}</p>
               <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                 {aguaML >= 1000 ? `${(aguaML / 1000).toFixed(1)}L` : `${aguaML}ml`}
               </p>
             </div>
             <div className="bg-card rounded-xl border border-border p-4 text-center">
-              <p className="text-xs text-muted-foreground mb-1">Ejercicio</p>
+              <p className="text-xs text-muted-foreground mb-1">{t("ejercicio")}</p>
               <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                {data.ejercicio ? `${data.ejercicioMinutos}'` : "No"}
+                {data.ejercicio ? `${data.ejercicioMinutos}'` : t("no")}
               </p>
               {data.ejercicio && data.ejercicioKcal > 0 && (
                 <p className="text-[10px] text-muted-foreground mt-0.5">
@@ -131,7 +125,7 @@ export function SeguimientoDietistaView({ pacienteId }: { pacienteId: string }) 
             <section>
               <div className="flex items-center gap-2 mb-3">
                 <UtensilsCrossed className="w-5 h-5 text-green-600 dark:text-green-400" />
-                <h2 className="text-base font-semibold">Comidas</h2>
+                <h2 className="text-base font-semibold">{t("comidas")}</h2>
               </div>
               <div className="space-y-3">
                 {TIPOS.map((tipo) => {
@@ -149,7 +143,7 @@ export function SeguimientoDietistaView({ pacienteId }: { pacienteId: string }) 
                     >
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="font-semibold text-sm flex items-center gap-2">
-                          {TIPO_LABELS[tipo] || tipo}
+                          {t(`tipoLabels.${tipo}`)}
                           {allDone && (
                             <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
                           )}
@@ -213,7 +207,7 @@ export function SeguimientoDietistaView({ pacienteId }: { pacienteId: string }) 
           <section className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/20 rounded-xl border border-blue-200 dark:border-blue-500/30 p-4">
             <div className="flex items-center gap-2 mb-2">
               <Droplets className="w-5 h-5 text-blue-500" />
-              <h2 className="text-base font-semibold">Agua</h2>
+              <h2 className="text-base font-semibold">{t("agua")}</h2>
             </div>
             <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">
               {aguaML >= 1000 ? `${(aguaML / 1000).toFixed(1)}L` : `${aguaML}ml`}
@@ -225,28 +219,28 @@ export function SeguimientoDietistaView({ pacienteId }: { pacienteId: string }) 
             <section className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/20 rounded-xl border border-emerald-200 dark:border-emerald-500/30 p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Dumbbell className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                <h2 className="text-base font-semibold">Ejercicio</h2>
+                <h2 className="text-base font-semibold">{t("ejercicio")}</h2>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
                 {data.ejercicioTipo && (
                   <div>
-                    <p className="text-xs text-muted-foreground">Tipo</p>
+                    <p className="text-xs text-muted-foreground">{t("tipo")}</p>
                     <p className="font-medium">{data.ejercicioTipo}</p>
                   </div>
                 )}
                 <div>
-                  <p className="text-xs text-muted-foreground">Duración</p>
-                  <p className="font-medium">{data.ejercicioMinutos} min</p>
+                  <p className="text-xs text-muted-foreground">{t("duracion")}</p>
+                  <p className="font-medium">{t("min", { value: data.ejercicioMinutos })}</p>
                 </div>
                 {data.ejercicioDistanciaKm > 0 && (
                   <div>
-                    <p className="text-xs text-muted-foreground">Distancia</p>
-                    <p className="font-medium">{data.ejercicioDistanciaKm} km</p>
+                    <p className="text-xs text-muted-foreground">{t("distancia")}</p>
+                    <p className="font-medium">{t("km", { value: data.ejercicioDistanciaKm })}</p>
                   </div>
                 )}
                 {data.ejercicioKcal > 0 && (
                   <div>
-                    <p className="text-xs text-muted-foreground">Kcal</p>
+                    <p className="text-xs text-muted-foreground">{t("kcal")}</p>
                     <p className="font-medium">~{data.ejercicioKcal}</p>
                   </div>
                 )}
@@ -259,7 +253,7 @@ export function SeguimientoDietistaView({ pacienteId }: { pacienteId: string }) 
             <section className="bg-card rounded-xl border border-border p-4">
               <div className="flex items-center gap-2 mb-2">
                 <StickyNote className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                <h2 className="text-base font-semibold">Notas del día</h2>
+                <h2 className="text-base font-semibold">{t("notasDelDia")}</h2>
               </div>
               <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                 {data.notas}

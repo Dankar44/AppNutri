@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/admin";
 import { publicarBroadcast } from "@/lib/realtime-publish";
 import { checkRateLimit, LIMITES } from "@/lib/rate-limit";
 import { randomUUID } from "crypto";
+import { getTranslations } from "next-intl/server";
 import type { MensajeSoporteData } from "./soporte";
 
 export interface ConversacionSoporteItem {
@@ -28,8 +29,9 @@ function cuid(): string {
 export async function getConversacionesSoporte(
   busqueda?: string,
 ): Promise<ConversacionSoporteItem[]> {
+  const t = await getTranslations("validation");
   const admin = await requireAdmin();
-  if (!admin) throw new Error("No autorizado");
+  if (!admin) throw new Error(t("auth.noAutorizado"));
 
   const q = (busqueda ?? "").trim().toLowerCase();
 
@@ -84,8 +86,9 @@ export async function getMensajesSoporteAdmin(
   dietistaId: string,
   limit = 100,
 ): Promise<MensajeSoporteData[]> {
+  const t = await getTranslations("validation");
   const admin = await requireAdmin();
-  if (!admin) throw new Error("No autorizado");
+  if (!admin) throw new Error(t("auth.noAutorizado"));
 
   return prisma.$queryRawUnsafe<MensajeSoporteData[]>(
     `SELECT * FROM (
@@ -105,25 +108,26 @@ export async function enviarMensajeSoporteAdmin(
   dietistaId: string,
   texto: string,
 ): Promise<MensajeSoporteData> {
+  const t = await getTranslations("validation");
   const admin = await requireAdmin();
-  if (!admin) throw new Error("No autorizado");
+  if (!admin) throw new Error(t("auth.noAutorizado"));
 
   const rl = checkRateLimit({
     key: `soporte:admin`,
     ...LIMITES.enviarMensaje,
   });
   if (!rl.ok) {
-    throw new Error(`Demasiados mensajes. Espera ${rl.retryAfter}s`);
+    throw new Error(t("mensajes.demasiadosMensajes", { retryAfter: rl.retryAfter }));
   }
 
   const textoLimpio = texto.trim().slice(0, 5000);
-  if (!textoLimpio) throw new Error("Mensaje vacío");
+  if (!textoLimpio) throw new Error(t("mensajes.mensajeVacio"));
 
   const dietista = await prisma.dietista.findUnique({
     where: { id: dietistaId },
     select: { id: true },
   });
-  if (!dietista) throw new Error("Dietista no encontrado");
+  if (!dietista) throw new Error(t("admin.dietistaNoEncontrado"));
 
   const id = cuid();
   const rows = await prisma.$queryRawUnsafe<MensajeSoporteData[]>(

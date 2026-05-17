@@ -12,79 +12,64 @@ import {
 import { cn } from "@/lib/utils";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { useTranslations } from "next-intl";
 
-const SHOWCASE_SECTIONS = [
+const SHOWCASE_LAYOUT = [
   {
-    tag: "Para dietistas:",
-    title: "Software de gestión para tu consulta de nutrición",
-    description:
-      "Dedica más tiempo a tus pacientes y menos a tareas administrativas. Annonia centraliza fichas, planes alimenticios, citas y mensajería en un software de nutrición diseñado por y para dietistas.",
-    ctaText: "Empieza gratis",
+    key: "dietistas" as const,
     ctaHref: "/registro",
     imageSrc: "/images/landing/sw_gestion.png",
-    imageAlt: "Software de gestión Annonia",
     imagePosition: "right" as const,
     gradientClasses: "from-green-50 to-green-200/60 border-green-200/60 dark:from-green-950/40 dark:to-green-900/30 dark:border-green-800/40",
     direction: "left" as const,
   },
   {
-    tag: "Para pacientes:",
-    title: "Portal del paciente con seguimiento nutricional",
-    description:
-      "Tus pacientes acceden desde el móvil o el ordenador. Consultan su dieta personalizada, registran su evolución y se comunican contigo de forma directa.",
-    ctaText: "Descubre el portal",
+    key: "pacientes" as const,
     ctaHref: "/registro",
     imageSrc: "/images/landing/pacientes.png",
-    imageAlt: "Portal del paciente Annonia",
     imagePosition: "left" as const,
     gradientClasses: "from-emerald-50 to-green-100/70 border-emerald-200/60 dark:from-emerald-950/40 dark:to-green-900/30 dark:border-emerald-800/40",
     direction: "right" as const,
   },
   {
-    tag: "Inteligencia artificial:",
-    title: "Genera planes alimenticios con IA en segundos",
-    description:
-      "Nuestra IA analiza el perfil, objetivos y restricciones de cada paciente para proponerte un plan nutricional equilibrado que puedes ajustar antes de asignarlo.",
-    ctaText: "Prueba la IA",
+    key: "ia" as const,
     ctaHref: "/registro",
     imageSrc: "/images/landing/planes_ai.png",
-    imageAlt: "Generación de planes con IA Annonia",
     imagePosition: "right" as const,
     gradientClasses: "from-green-100/80 to-emerald-200/50 border-green-200/60 dark:from-green-950/40 dark:to-emerald-900/30 dark:border-green-800/40",
     direction: "left" as const,
   },
 ];
 
-const FAQS = [
-  {
-    q: "¿Puedo probar Annonia gratis?",
-    a: "Sí, tienes 14 días de prueba gratuita con acceso completo. No necesitas tarjeta de crédito.",
-  },
-  {
-    q: "¿Mis datos y los de mis pacientes están seguros?",
-    a: "Absolutamente. Usamos encriptación, servidores en la UE y cumplimos con el RGPD. La seguridad de los datos clínicos es nuestra prioridad.",
-  },
-  {
-    q: "¿Puedo cambiar de plan o cancelar?",
-    a: "Sí, sin compromisos. Cambia o cancela desde Ajustes. Mantienes acceso hasta el final del periodo pagado.",
-  },
-  {
-    q: "¿Mis pacientes necesitan crear cuenta?",
-    a: "No. Tú les envías un acceso con email y PIN. Ellos acceden al portal sin registrarse.",
-  },
-  {
-    q: "¿Funciona en el móvil?",
-    a: "Sí, todo está optimizado para móvil, tablet y escritorio. Es una web app progresiva que puedes instalar.",
-  },
-];
+const FAQ_KEYS = ["probarGratis", "datosSeguridad", "cambiarPlan", "pacientesCuenta", "funcionaMovil"] as const;
 
-const TRUST_CARDS = [
-  { icon: Shield, title: "Segura", desc: "Datos cifrados, servidores en la UE, cumplimiento RGPD" },
-  { icon: Globe, title: "Accesible", desc: "Desde cualquier dispositivo, en cualquier momento" },
-  { icon: Zap, title: "Rápida", desc: "Interfaz ligera optimizada para tu día a día" },
-];
+const TRUST_ICONS = [Shield, Globe, Zap] as const;
+const TRUST_KEYS = ["segura", "accesible", "rapida"] as const;
 
 export function LandingPage() {
+  const t = useTranslations("landing");
+
+  const SHOWCASE_SECTIONS = SHOWCASE_LAYOUT.map((item) => ({
+    ...item,
+    tag: t(`showcase.${item.key}.tag`),
+    title: t(`showcase.${item.key}.titulo`),
+    description: t(`showcase.${item.key}.descripcion`),
+    ctaText: t(`showcase.${item.key}.cta`),
+    imageAlt: t(`showcase.${item.key}.imageAlt`),
+  }));
+
+  const TRUST_CARDS = TRUST_KEYS.map((key, i) => ({
+    icon: TRUST_ICONS[i],
+    title: t(`trust.${key}.titulo`),
+    desc: t(`trust.${key}.descripcion`),
+  }));
+
+  const FAQS = FAQ_KEYS.map((key) => ({
+    q: t(`faqSection.preguntas.${key}.pregunta`),
+    a: t(`faqSection.preguntas.${key}.respuesta`),
+  }));
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const heroRef = useRef<HTMLElement>(null);
@@ -141,7 +126,7 @@ export function LandingPage() {
                 scrolled ? "text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 drop-shadow-none" : "text-white hover:text-green-200"
               )}
             >
-              Cómo funciona
+              {t("navbar.comoFunciona")}
             </a>
             <Link
               href="/precios"
@@ -150,7 +135,7 @@ export function LandingPage() {
                 scrolled ? "text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 drop-shadow-none" : "text-white hover:text-green-200"
               )}
             >
-              Precios
+              {t("navbar.precios")}
             </Link>
             <a
               href="#faq"
@@ -159,7 +144,7 @@ export function LandingPage() {
                 scrolled ? "text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 drop-shadow-none" : "text-white hover:text-green-200"
               )}
             >
-              FAQ
+              {t("navbar.faq")}
             </a>
           </nav>
 
@@ -171,8 +156,13 @@ export function LandingPage() {
                 scrolled ? "text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 drop-shadow-none" : "text-white drop-shadow-md hover:text-green-200"
               )}
             >
-              Iniciar sesión
+              {t("navbar.iniciarSesion")}
             </Link>
+            <LanguageSwitcher className={cn(
+              scrolled
+                ? "border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                : "border-white/30 bg-white/15 text-white hover:bg-white/25 backdrop-blur-sm"
+            )} />
             <ThemeToggle className={cn(
               "!w-9 !h-9 rounded-lg transition-colors",
               scrolled ? "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300" : "hover:bg-white/15 text-white drop-shadow-md"
@@ -181,7 +171,7 @@ export function LandingPage() {
               href="/registro"
               className="px-5 py-2.5 text-sm font-semibold rounded-xl bg-green-600 text-white hover:bg-green-700 transition-colors shadow-sm shadow-green-600/20"
             >
-              Empezar gratis
+              {t("navbar.empezarGratis")}
             </Link>
           </div>
 
@@ -189,7 +179,7 @@ export function LandingPage() {
           <button
             onClick={() => setMenuOpen((prev) => !prev)}
             className="md:hidden flex flex-col items-center justify-center w-10 h-10 gap-[5px] z-[60]"
-            aria-label="Abrir menú"
+            aria-label={t("mobileMenu.abrirMenu")}
           >
             <span
               className={cn(
@@ -241,18 +231,19 @@ export function LandingPage() {
           <button
             onClick={closeMenu}
             className="w-10 h-10 flex items-center justify-center text-gray-800 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white transition-colors"
-            aria-label="Cerrar menú"
+            aria-label={t("mobileMenu.cerrarMenu")}
           >
             <X className="w-7 h-7" />
           </button>
         </div>
         <nav className="flex flex-col px-6 pt-6">
-          <a href="#como-funciona" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 hover:text-green-700 dark:hover:text-green-400 transition-colors">Cómo funciona</a>
-          <Link href="/precios" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 hover:text-green-700 dark:hover:text-green-400 transition-colors">Precios</Link>
-          <a href="#faq" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 hover:text-green-700 dark:hover:text-green-400 transition-colors">FAQ</a>
-          <Link href="/login" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 hover:text-green-700 dark:hover:text-green-400 transition-colors">Iniciar sesión</Link>
-          <Link href="/registro" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 hover:text-green-700 dark:hover:text-green-400 transition-colors">Empezar gratis</Link>
-          <div className="py-5">
+          <a href="#como-funciona" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 hover:text-green-700 dark:hover:text-green-400 transition-colors">{t("navbar.comoFunciona")}</a>
+          <Link href="/precios" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 hover:text-green-700 dark:hover:text-green-400 transition-colors">{t("navbar.precios")}</Link>
+          <a href="#faq" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 hover:text-green-700 dark:hover:text-green-400 transition-colors">{t("navbar.faq")}</a>
+          <Link href="/login" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 hover:text-green-700 dark:hover:text-green-400 transition-colors">{t("navbar.iniciarSesion")}</Link>
+          <Link href="/registro" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 hover:text-green-700 dark:hover:text-green-400 transition-colors">{t("navbar.empezarGratis")}</Link>
+          <div className="py-5 flex items-center gap-4">
+            <LanguageSwitcher variant="inline" className="!text-gray-900 dark:!text-gray-100 !text-xl !font-bold hover:!text-green-700 dark:hover:!text-green-400 w-auto" />
             <ThemeToggle variant="inline" className="!text-gray-900 dark:!text-gray-100 !text-xl !font-bold hover:!text-green-700 dark:hover:!text-green-400" />
           </div>
         </nav>
@@ -262,7 +253,7 @@ export function LandingPage() {
       <section ref={heroRef} className="relative bg-green-50 dark:bg-green-950 overflow-hidden">
         <Image
           src="/images/landing/banner.png"
-          alt="Banner Annonia"
+          alt={t("hero.bannerAlt")}
           width={1920}
           height={1080}
           priority
@@ -311,9 +302,9 @@ export function LandingPage() {
               <Leaf className="w-5 h-5 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Nutricionista Teresa</p>
+              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t("notificationCard.nombre")}</p>
               <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed mt-0.5">
-                ¡Muy bien Carmen, ya veo más colores en el plato! 👏
+                {t("notificationCard.mensaje")}
               </p>
             </div>
           </div>
@@ -324,12 +315,12 @@ export function LandingPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pl-3 sm:pl-5 lg:pl-8 xl:pl-12">
             <ScrollReveal direction="up" delay={100}>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black tracking-tight leading-[1.1] text-white drop-shadow-md max-w-3xl">
-                Nutrición{" "}
+                {t("hero.tituloPart1")}{" "}
                 <span className="bg-[#bdd9c5] dark:bg-[#2a5e3a] px-1.5 -mx-0.5 text-gray-900 dark:text-green-100 drop-shadow-none">
-                  personalizada
+                  {t("hero.tituloPart2")}
                 </span>
                 <br />
-                para cada paciente
+                {t("hero.tituloPart3")}
               </h1>
             </ScrollReveal>
           </div>
@@ -373,10 +364,10 @@ export function LandingPage() {
         <ScrollReveal>
           <div className="relative max-w-4xl mx-auto px-4 text-center">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 dark:text-gray-100 mb-3">
-              Software de nutrición personalizada.
+              {t("subheadline.titulo")}
             </h2>
             <p className="text-xl sm:text-2xl text-gray-400">
-              Pacientes únicos, planes alimenticios únicos.
+              {t("subheadline.subtitulo")}
             </p>
           </div>
         </ScrollReveal>
@@ -445,11 +436,11 @@ export function LandingPage() {
           <ScrollReveal>
             <div className="max-w-5xl mx-auto text-center mb-14">
               <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-5">
-                Software diseñado para{" "}
-                <span className="bg-[#9bc4a8] dark:bg-[#2a5e3a] px-2 -mx-0.5 text-white dark:text-green-200">nutricionistas</span>
+                {t("trust.tituloPart1")}{" "}
+                <span className="bg-[#9bc4a8] dark:bg-[#2a5e3a] px-2 -mx-0.5 text-white dark:text-green-200">{t("trust.tituloPart2")}</span>
               </h2>
               <p className="text-green-900/70 dark:text-green-200/70 text-lg leading-relaxed">
-                Cada funcionalidad ha sido pensada para ahorrar tiempo en tu consulta de nutrición y mejorar la experiencia de tus pacientes.
+                {t("trust.descripcion")}
               </p>
             </div>
           </ScrollReveal>
@@ -480,12 +471,12 @@ export function LandingPage() {
           <ScrollReveal>
             <div className="max-w-3xl mx-auto text-center mb-14 sm:mb-16">
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-5">
-                Respuestas{" "}
-                <span className="bg-[#bdd9c5] dark:bg-[#2a5e3a] dark:text-green-100 px-2 -mx-0.5">más cerca</span>{" "}
-                que nunca
+                {t("faqSection.tituloPart1")}{" "}
+                <span className="bg-[#bdd9c5] dark:bg-[#2a5e3a] dark:text-green-100 px-2 -mx-0.5">{t("faqSection.tituloPart2")}</span>{" "}
+                {t("faqSection.tituloPart3")}
               </h2>
               <p className="text-gray-500 dark:text-gray-400 text-base sm:text-lg leading-relaxed">
-                Resolvemos las preguntas más comunes sobre Annonia y cómo puede transformar tu consulta de nutrición.
+                {t("faqSection.descripcion")}
               </p>
             </div>
           </ScrollReveal>
@@ -510,7 +501,7 @@ export function LandingPage() {
                 <div className="absolute -inset-6 bg-gradient-to-br from-green-100/60 to-[#bdd9c5]/40 dark:from-green-900/30 dark:to-[#1a3a24]/40 rounded-[2rem] blur-2xl" />
                 <Image
                   src="/images/landing/pacientes.png"
-                  alt="Annonia — portal del paciente"
+                  alt={t("faqSection.faqImageAlt")}
                   width={560}
                   height={800}
                   sizes="280px"
@@ -528,23 +519,22 @@ export function LandingPage() {
           <ScrollReveal>
             <div className="max-w-3xl mx-auto text-center">
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-5">
-                Empieza a{" "}
-                <span className="bg-[#bdd9c5] dark:bg-[#2a5e3a] dark:text-green-100 px-2 -mx-0.5">digitalizar</span>{" "}
-                tu consulta de nutrición
+                {t("cta.tituloPart1")}{" "}
+                <span className="bg-[#bdd9c5] dark:bg-[#2a5e3a] dark:text-green-100 px-2 -mx-0.5">{t("cta.tituloPart2")}</span>{" "}
+                {t("cta.tituloPart3")}
               </h2>
               <p className="text-gray-500 dark:text-gray-400 text-base sm:text-lg leading-relaxed mb-10 max-w-xl mx-auto">
-                Únete a los dietistas-nutricionistas que confían en Annonia para ofrecer
-                dietas personalizadas y un seguimiento nutricional excepcional.
+                {t("cta.descripcion")}
               </p>
               <Link
                 href="/registro"
                 className="inline-flex items-center gap-2 px-8 py-4 text-base font-semibold rounded-2xl bg-green-600 text-white hover:bg-green-700 transition-all shadow-lg shadow-green-600/25 hover:-translate-y-0.5"
               >
-                Crear cuenta gratis
+                {t("cta.boton")}
                 <ArrowRight className="w-5 h-5" />
               </Link>
               <p className="mt-5 text-sm text-gray-400 dark:text-gray-500">
-                14 días gratis · Sin tarjeta · Cancela cuando quieras
+                {t("cta.garantia")}
               </p>
             </div>
           </ScrollReveal>
@@ -566,38 +556,38 @@ export function LandingPage() {
                 <span className="text-lg font-bold text-white">Annonia</span>
               </div>
               <p className="text-sm text-gray-400 leading-relaxed max-w-md">
-                Software de nutrición profesional para dietistas-nutricionistas. Gestión de consulta, dietas personalizadas y seguimiento de pacientes.
+                {t("footer.descripcion")}
               </p>
             </div>
             <div className="grid grid-cols-3 gap-4 sm:gap-6">
               <div>
-                <p className="text-sm font-semibold text-white mb-4">Producto</p>
+                <p className="text-sm font-semibold text-white mb-4">{t("footer.producto")}</p>
                 <ul className="space-y-2.5 text-sm text-gray-400">
-                  <li><a href="#como-funciona" className="hover:text-green-300 transition-colors">Cómo funciona</a></li>
-                  <li><Link href="/precios" className="hover:text-green-300 transition-colors">Precios</Link></li>
-                  <li><a href="#faq" className="hover:text-green-300 transition-colors">FAQ</a></li>
+                  <li><a href="#como-funciona" className="hover:text-green-300 transition-colors">{t("navbar.comoFunciona")}</a></li>
+                  <li><Link href="/precios" className="hover:text-green-300 transition-colors">{t("navbar.precios")}</Link></li>
+                  <li><a href="#faq" className="hover:text-green-300 transition-colors">{t("navbar.faq")}</a></li>
                 </ul>
               </div>
               <div>
-                <p className="text-sm font-semibold text-white mb-4">Acceso</p>
+                <p className="text-sm font-semibold text-white mb-4">{t("footer.acceso")}</p>
                 <ul className="space-y-2.5 text-sm text-gray-400">
-                  <li><Link href="/login" className="hover:text-green-300 transition-colors">Iniciar sesión</Link></li>
-                  <li><Link href="/registro" className="hover:text-green-300 transition-colors">Crear cuenta</Link></li>
-                  <li><Link href="/paciente/login" className="hover:text-green-300 transition-colors">Portal pacientes</Link></li>
+                  <li><Link href="/login" className="hover:text-green-300 transition-colors">{t("navbar.iniciarSesion")}</Link></li>
+                  <li><Link href="/registro" className="hover:text-green-300 transition-colors">{t("footer.crearCuenta")}</Link></li>
+                  <li><Link href="/paciente/login" className="hover:text-green-300 transition-colors">{t("footer.portalPacientes")}</Link></li>
                 </ul>
               </div>
               <div>
-                <p className="text-sm font-semibold text-white mb-4">Legal</p>
+                <p className="text-sm font-semibold text-white mb-4">{t("footer.legal")}</p>
                 <ul className="space-y-2.5 text-sm text-gray-400">
-                  <li><Link href="/legal/terminos" className="hover:text-green-300 transition-colors">Términos y condiciones</Link></li>
-                  <li><Link href="/legal/privacidad" className="hover:text-green-300 transition-colors">Política de privacidad</Link></li>
-                  <li><Link href="/legal/cookies" className="hover:text-green-300 transition-colors">Política de cookies</Link></li>
+                  <li><Link href="/legal/terminos" className="hover:text-green-300 transition-colors">{t("footer.terminosCondiciones")}</Link></li>
+                  <li><Link href="/legal/privacidad" className="hover:text-green-300 transition-colors">{t("footer.politicaPrivacidad")}</Link></li>
+                  <li><Link href="/legal/cookies" className="hover:text-green-300 transition-colors">{t("footer.politicaCookies")}</Link></li>
                 </ul>
               </div>
             </div>
           </div>
           <div className="border-t border-white/10 pt-8 text-sm text-gray-500 text-center">
-            &copy; {new Date().getFullYear()} Annonia. Todos los derechos reservados.
+            {t("footer.copyright", { year: new Date().getFullYear() })}
           </div>
         </div>
       </footer>

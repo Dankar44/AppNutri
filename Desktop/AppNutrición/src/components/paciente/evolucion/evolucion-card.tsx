@@ -10,6 +10,8 @@ import {
   Percent,
   type LucideIcon,
 } from "lucide-react";
+import { useTranslations, useLocale } from "next-intl";
+import { intlTag, type Locale } from "@/i18n/config";
 import { EvolucionChart } from "@/components/evolucion-chart";
 
 const ICONS: Record<string, LucideIcon> = {
@@ -42,23 +44,23 @@ interface Props {
 }
 
 const RANGOS = [
-  { value: "1m", label: "1M", days: 31 },
-  { value: "3m", label: "3M", days: 92 },
-  { value: "6m", label: "6M", days: 183 },
-  { value: "1a", label: "1A", days: 366 },
-  { value: "all", label: "Todo", days: Infinity },
+  { value: "1m", labelKey: "unMes", fallback: "1M", days: 31 },
+  { value: "3m", labelKey: "tresMeses", fallback: "3M", days: 92 },
+  { value: "6m", labelKey: "seisMeses", fallback: "6M", days: 183 },
+  { value: "1a", labelKey: "unAnio", fallback: "1A", days: 366 },
+  { value: "all", labelKey: "todo", fallback: "Todo", days: Infinity },
 ] as const;
 
 type Rango = typeof RANGOS[number]["value"];
 
-function formatFechaCorta(iso: string) {
+function formatFechaCorta(iso: string, tag: string) {
   const d = new Date(iso + "T12:00:00");
-  return d.toLocaleDateString("es-ES", { day: "2-digit", month: "short" });
+  return d.toLocaleDateString(tag, { day: "2-digit", month: "short" });
 }
 
-function formatFechaLarga(iso: string) {
+function formatFechaLarga(iso: string, tag: string) {
   const d = new Date(iso + "T12:00:00");
-  return d.toLocaleDateString("es-ES", {
+  return d.toLocaleDateString(tag, {
     day: "2-digit",
     month: "long",
     year: "numeric",
@@ -76,6 +78,9 @@ export function EvolucionCard({
   data,
   referenceArea,
 }: Props) {
+  const t = useTranslations("patient-portal.evolucion.cards");
+  const locale = useLocale() as Locale;
+  const tag = intlTag(locale);
   const Icon = ICONS[iconName];
   const [rango, setRango] = useState<Rango>("all");
 
@@ -92,11 +97,11 @@ export function EvolucionCard({
   const chartData = useMemo(
     () =>
       puntos.map((p) => ({
-        fecha: formatFechaCorta(p.fechaISO),
-        fechaFull: formatFechaLarga(p.fechaISO),
+        fecha: formatFechaCorta(p.fechaISO, tag),
+        fechaFull: formatFechaLarga(p.fechaISO, tag),
         [metric]: p[metric],
       })),
-    [puntos, metric]
+    [puntos, metric, tag]
   );
 
   const valores = puntos
@@ -136,9 +141,9 @@ export function EvolucionCard({
             <h2 className="text-base font-semibold">{title}</h2>
             {puntos.length > 0 && (
               <p className="text-[11px] text-muted-foreground">
-                Última medición:{" "}
+                {t("ultimaMedicion")}{" "}
                 <span className="tabular-nums">
-                  {formatFechaLarga(puntos[puntos.length - 1].fechaISO)}
+                  {formatFechaLarga(puntos[puntos.length - 1].fechaISO, tag)}
                 </span>
               </p>
             )}
@@ -175,7 +180,7 @@ export function EvolucionCard({
         <div className="px-5 pt-2 flex justify-end">
           <div
             role="tablist"
-            aria-label="Rango temporal"
+            aria-label={t("rangoTemporal")}
             className="inline-flex items-center bg-muted/50 rounded-lg p-0.5 text-[11px] font-medium"
           >
             {rangosDisponibles.map((r) => {
@@ -192,7 +197,7 @@ export function EvolucionCard({
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {r.label}
+                  {t(`rangos.${r.labelKey}`)}
                 </button>
               );
             })}
@@ -203,7 +208,7 @@ export function EvolucionCard({
       <div className="px-2 pb-3 pt-1">
         {chartData.length === 0 ? (
           <div className="h-[220px] flex items-center justify-center text-sm text-muted-foreground">
-            Sin datos en este rango
+            {t("sinDatosRango")}
           </div>
         ) : (
           <EvolucionChart
@@ -226,9 +231,9 @@ export function EvolucionCard({
 
       {min !== null && max !== null && chartData.length > 1 && (
         <footer className="grid grid-cols-3 border-t border-border text-center text-[11px]">
-          <StatFoot label="Mínimo" value={min} decimals={decimals} unit={unit} />
-          <StatFoot label="Actual" value={actual!} decimals={decimals} unit={unit} highlight color={color} />
-          <StatFoot label="Máximo" value={max} decimals={decimals} unit={unit} />
+          <StatFoot label={t("footer.minimo")} value={min} decimals={decimals} unit={unit} />
+          <StatFoot label={t("footer.actual")} value={actual!} decimals={decimals} unit={unit} highlight color={color} />
+          <StatFoot label={t("footer.maximo")} value={max} decimals={decimals} unit={unit} />
         </footer>
       )}
     </section>

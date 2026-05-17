@@ -8,6 +8,8 @@ import {
   Activity, Scale, BookOpen, FileText, Loader2, ChefHat, Apple,
   Layers, Plus,
 } from "lucide-react";
+import { useTranslations, useLocale } from "next-intl";
+import { intlTag, type Locale } from "@/i18n/config";
 import { toast } from "sonner";
 import {
   crearPlan,
@@ -34,16 +36,10 @@ type Paciente = {
 
 type Contexto = Awaited<ReturnType<typeof getPacienteContextoPlan>>;
 
-const OBJETIVO_LABEL: Record<string, string> = {
-  PERDER_PESO: "Perder peso",
-  GANAR_PESO: "Ganar peso",
-  MANTENER_PESO: "Mantener peso",
-  GANAR_MASA_MUSCULAR: "Ganar masa muscular",
-  MEJORAR_RENDIMIENTO: "Mejorar rendimiento",
-  HABITOS_SALUDABLES: "Hábitos saludables",
-  PATOLOGIA: "Patología",
-  OTRO: "Otro",
-};
+const OBJETIVO_KEYS = [
+  "PERDER_PESO", "GANAR_PESO", "MANTENER_PESO", "GANAR_MASA_MUSCULAR",
+  "MEJORAR_RENDIMIENTO", "HABITOS_SALUDABLES", "PATOLOGIA", "OTRO",
+] as const;
 
 function calcularEdad(fechaNacimiento: Date | string | null): number | null {
   if (!fechaNacimiento) return null;
@@ -60,6 +56,9 @@ function getInitials(nombre: string, apellidos: string) {
 }
 
 export default function NuevoPlanPage() {
+  const t = useTranslations("diets");
+  const locale = useLocale() as Locale;
+  const tag = intlTag(locale);
   const router = useRouter();
   const searchParams = useSearchParams();
   const plantillaParam = searchParams.get("plantilla") || "";
@@ -103,7 +102,7 @@ export default function NuevoPlanPage() {
     try {
       if (plantillaId) {
         await crearPlanDesdePlantilla(plantillaId, pId, nombre);
-        toast.success("Plan creado desde plantilla");
+        toast.success(t("nuevo.toastPlanCreatedFromTemplate"));
       } else {
         const data: PlanFormData = {
           nombre,
@@ -114,18 +113,20 @@ export default function NuevoPlanPage() {
           grasasObjetivo: parseFloat(form.get("grasasObjetivo") as string) || undefined,
         };
         await crearPlan(data);
-        toast.success("Plan creado");
+        toast.success(t("nuevo.toastPlanCreated"));
       }
     } catch (error) {
       if (error && typeof error === "object" && "digest" in error) throw error;
-      toast.error("Error al crear el plan");
+      toast.error(t("nuevo.toastErrorCreating"));
       setLoading(false);
     }
   }
 
   const edad = pacienteSeleccionado ? calcularEdad(pacienteSeleccionado.fechaNacimiento) : null;
   const objetivoLabel = pacienteSeleccionado?.objetivo
-    ? OBJETIVO_LABEL[pacienteSeleccionado.objetivo] || pacienteSeleccionado.objetivo
+    ? (OBJETIVO_KEYS.includes(pacienteSeleccionado.objetivo as typeof OBJETIVO_KEYS[number])
+        ? t(`nuevo.objetivoFormLabels.${pacienteSeleccionado.objetivo}`)
+        : pacienteSeleccionado.objetivo)
     : null;
 
   return (
@@ -136,11 +137,11 @@ export default function NuevoPlanPage() {
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3 py-2 sm:py-0 -my-2 sm:my-0"
         >
           <ArrowLeft className="w-4 h-4" />
-          Volver a planes
+          {t("nuevo.backToPlans")}
         </Link>
-        <h1 className="text-2xl sm:text-3xl font-bold">Nuevo plan alimenticio</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">{t("nuevo.pageTitle")}</h1>
         <p className="text-muted-foreground mt-1">
-          Crea un plan semanal personalizado para tu paciente
+          {t("nuevo.subtitle")}
         </p>
       </div>
 
@@ -152,7 +153,7 @@ export default function NuevoPlanPage() {
             <div className="p-4 sm:p-6 border-b border-border bg-gradient-to-br from-primary/5 to-transparent">
               <label className="flex items-center gap-2 text-sm font-semibold mb-3">
                 <User className="w-4 h-4 text-primary" />
-                Paciente *
+                {t("nuevo.patientLabel")}
               </label>
               <select
                 name="pacienteId"
@@ -161,7 +162,7 @@ export default function NuevoPlanPage() {
                 onChange={(e) => setPacienteId(e.target.value)}
                 className="w-full px-3 py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
               >
-                <option value="">Seleccionar paciente...</option>
+                <option value="">{t("nuevo.selectPatient")}</option>
                 {pacientes.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.nombre} {p.apellidos}
@@ -205,7 +206,7 @@ export default function NuevoPlanPage() {
                   </div>
                   {contexto && (
                     <div className="hidden sm:flex flex-col items-end gap-0.5 shrink-0 pl-2 border-l border-border">
-                      <p className="text-xs text-muted-foreground">Planes</p>
+                      <p className="text-xs text-muted-foreground">{t("nuevo.plans")}</p>
                       <p className="text-xl font-bold text-primary tabular-nums">
                         {contexto.totalPlanes}
                       </p>
@@ -219,13 +220,13 @@ export default function NuevoPlanPage() {
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium mb-1.5">
                   <FileText className="w-4 h-4 text-muted-foreground" />
-                  Nombre del plan *
+                  {t("nuevo.planNameLabel")}
                 </label>
                 <input
                   name="nombre"
                   required
                   maxLength={200}
-                  placeholder="Ej: Plan semanal - Pérdida de peso"
+                  placeholder={t("nuevo.planNamePlaceholder")}
                   className="w-full px-3 py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
                 />
               </div>
@@ -246,9 +247,9 @@ export default function NuevoPlanPage() {
                   <Activity className="w-5 h-5" />
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-base sm:text-lg font-semibold">Objetivos de macros</h2>
+                  <h2 className="text-base sm:text-lg font-semibold">{t("nuevo.macroGoals")}</h2>
                   <p className="text-xs text-muted-foreground">
-                    Opcionales. Sirven de referencia al armar el plan.
+                    {t("nuevo.macroGoalsHint")}
                   </p>
                 </div>
               </div>
@@ -256,7 +257,7 @@ export default function NuevoPlanPage() {
               <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-xs sm:text-sm font-medium mb-1 text-muted-foreground">
-                    Calorías (kcal)
+                    {t("nuevo.calories")}
                   </label>
                   <input
                     name="caloriasObjetivo"
@@ -270,7 +271,7 @@ export default function NuevoPlanPage() {
                 </div>
                 <div>
                   <label className="block text-xs sm:text-sm font-medium mb-1 text-muted-foreground">
-                    Proteínas (g)
+                    {t("nuevo.proteins")}
                   </label>
                   <input
                     name="proteinasObjetivo"
@@ -284,7 +285,7 @@ export default function NuevoPlanPage() {
                 </div>
                 <div>
                   <label className="block text-xs sm:text-sm font-medium mb-1 text-muted-foreground">
-                    Carbohidratos (g)
+                    {t("nuevo.carbs")}
                   </label>
                   <input
                     name="carbohidratosObjetivo"
@@ -298,7 +299,7 @@ export default function NuevoPlanPage() {
                 </div>
                 <div>
                   <label className="block text-xs sm:text-sm font-medium mb-1 text-muted-foreground">
-                    Grasas (g)
+                    {t("nuevo.fats")}
                   </label>
                   <input
                     name="grasasObjetivo"
@@ -315,7 +316,7 @@ export default function NuevoPlanPage() {
               {contexto?.planActivo?.caloriasObjetivo != null && (
                 <div className="rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 p-3 text-xs text-amber-900 dark:text-amber-200">
                   <p className="font-medium mb-0.5">
-                    Plan activo actual: {contexto.planActivo.nombre}
+                    {t("nuevo.activePlanCurrent")} {contexto.planActivo.nombre}
                   </p>
                   <p className="opacity-80">
                     Macros: {contexto.planActivo.caloriasObjetivo} kcal
@@ -340,7 +341,7 @@ export default function NuevoPlanPage() {
               href="/dietas"
               className="px-4 py-2.5 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium text-center"
             >
-              Cancelar
+              {t("nuevo.cancel")}
             </Link>
             <button
               type="submit"
@@ -350,11 +351,11 @@ export default function NuevoPlanPage() {
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Creando...
+                  {t("nuevo.creating")}
                 </>
               ) : (
                 <>
-                  Crear plan
+                  {t("nuevo.createPlan")}
                 </>
               )}
             </button>
@@ -368,26 +369,26 @@ export default function NuevoPlanPage() {
               <div className="w-14 h-14 rounded-full bg-muted mx-auto flex items-center justify-center mb-3">
                 <User className="w-7 h-7 text-muted-foreground" />
               </div>
-              <p className="text-sm font-medium mb-1">Sin paciente seleccionado</p>
+              <p className="text-sm font-medium mb-1">{t("nuevo.noPatientSelected")}</p>
               <p className="text-xs text-muted-foreground">
-                Elige un paciente para ver su contexto: objetivo, peso, plan activo, citas próximas...
+                {t("nuevo.selectPatientHintFull")}
               </p>
 
               <div className="mt-5 pt-5 border-t border-border space-y-2 text-left">
                 <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold mb-2">
-                  Consejos
+                  {t("nuevo.tips")}
                 </p>
                 <div className="flex items-start gap-2 text-xs">
                   <Sparkles className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
-                  <p>Usa una <strong>plantilla</strong> para reutilizar planes anteriores.</p>
+                  <p>{t.rich("nuevo.tipTemplateSidebar", { strong: (c) => <strong>{c}</strong> })}</p>
                 </div>
                 <div className="flex items-start gap-2 text-xs">
                   <Target className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
-                  <p>Define <strong>macros objetivo</strong> para guiar la composición.</p>
+                  <p>{t.rich("nuevo.tipMacrosSidebar", { strong: (c) => <strong>{c}</strong> })}</p>
                 </div>
                 <div className="flex items-start gap-2 text-xs">
                   <ChefHat className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
-                  <p>Después podrás añadir <strong>recetas y alimentos</strong> a cada comida.</p>
+                  <p>{t.rich("nuevo.tipRecipesSidebar", { strong: (c) => <strong>{c}</strong> })}</p>
                 </div>
               </div>
             </div>
@@ -433,7 +434,7 @@ export default function NuevoPlanPage() {
                 <div className="grid grid-cols-3 border-t border-border divide-x divide-border">
                   <div className="p-3 text-center">
                     <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
-                      Planes
+                      {t("nuevo.plans")}
                     </p>
                     <p className="text-lg font-bold tabular-nums mt-0.5">
                       {cargandoContexto ? "—" : contexto?.totalPlanes ?? 0}
@@ -441,7 +442,7 @@ export default function NuevoPlanPage() {
                   </div>
                   <div className="p-3 text-center">
                     <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
-                      Peso
+                      {t("nuevo.weight")}
                     </p>
                     <p className="text-lg font-bold tabular-nums mt-0.5">
                       {pacienteSeleccionado.peso ? `${pacienteSeleccionado.peso}` : "—"}
@@ -452,7 +453,7 @@ export default function NuevoPlanPage() {
                   </div>
                   <div className="p-3 text-center">
                     <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
-                      Altura
+                      {t("nuevo.height")}
                     </p>
                     <p className="text-lg font-bold tabular-nums mt-0.5">
                       {pacienteSeleccionado.altura ? `${pacienteSeleccionado.altura}` : "—"}
@@ -468,7 +469,7 @@ export default function NuevoPlanPage() {
               {(pacienteSeleccionado.email || pacienteSeleccionado.telefono) && (
                 <div className="bg-card rounded-xl border border-border p-4 space-y-2.5">
                   <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">
-                    Contacto
+                    {t("nuevo.contact")}
                   </p>
                   {pacienteSeleccionado.email && (
                     <a
@@ -497,7 +498,7 @@ export default function NuevoPlanPage() {
                   <div className="flex items-center gap-2 mb-2">
                     <Layers className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
                     <p className="text-[11px] uppercase tracking-wide text-emerald-900 dark:text-emerald-200 font-bold">
-                      Plan activo
+                      {t("nuevo.activePlan")}
                     </p>
                   </div>
                   <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-200 truncate">
@@ -509,7 +510,7 @@ export default function NuevoPlanPage() {
                     </p>
                   )}
                   <p className="text-[11px] text-emerald-700/70 mt-2">
-                    Al crear el nuevo plan, este pasará a inactivo automáticamente.
+                    {t("nuevo.autoDeactivateNote")}
                   </p>
                 </div>
               )}
@@ -520,7 +521,7 @@ export default function NuevoPlanPage() {
                   <div className="flex items-center gap-2 mb-2">
                     <Scale className="w-4 h-4 text-muted-foreground" />
                     <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">
-                      Última medida
+                      {t("nuevo.lastMeasure")}
                     </p>
                   </div>
                   <div className="flex items-baseline gap-3">
@@ -536,7 +537,7 @@ export default function NuevoPlanPage() {
                     )}
                   </div>
                   <p className="text-[11px] text-muted-foreground mt-1">
-                    {new Date(contexto.ultimaMedida.fecha).toLocaleDateString("es-ES", {
+                    {new Date(contexto.ultimaMedida.fecha).toLocaleDateString(tag, {
                       day: "numeric",
                       month: "long",
                       year: "numeric",
@@ -551,18 +552,18 @@ export default function NuevoPlanPage() {
                   <div className="flex items-center gap-2 mb-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
                     <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">
-                      Próxima cita
+                      {t("nuevo.nextAppointment")}
                     </p>
                   </div>
                   <p className="text-sm font-medium">
-                    {new Date(contexto.proximaCita.fechaHora).toLocaleDateString("es-ES", {
+                    {new Date(contexto.proximaCita.fechaHora).toLocaleDateString(tag, {
                       weekday: "long",
                       day: "numeric",
                       month: "long",
                     })}
                   </p>
                   <p className="text-xs text-muted-foreground tabular-nums mt-0.5">
-                    {new Date(contexto.proximaCita.fechaHora).toLocaleTimeString("es-ES", {
+                    {new Date(contexto.proximaCita.fechaHora).toLocaleTimeString(tag, {
                       hour: "2-digit",
                       minute: "2-digit",
                     })}
@@ -574,7 +575,7 @@ export default function NuevoPlanPage() {
               {/* Atajos rápidos */}
               <div className="bg-card rounded-xl border border-border p-4">
                 <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold mb-2.5">
-                  Atajos
+                  {t("nuevo.shortcuts")}
                 </p>
                 <div className="space-y-1.5">
                   <Link
@@ -582,21 +583,21 @@ export default function NuevoPlanPage() {
                     className="flex items-center gap-2 text-xs text-foreground hover:text-primary transition-colors"
                   >
                     <User className="w-3.5 h-3.5" />
-                    Ver ficha del paciente
+                    {t("nuevo.viewPatientFile")}
                   </Link>
                   <Link
                     href="/recetas"
                     className="flex items-center gap-2 text-xs text-foreground hover:text-primary transition-colors"
                   >
                     <BookOpen className="w-3.5 h-3.5" />
-                    Explorar recetas
+                    {t("nuevo.exploreRecipes")}
                   </Link>
                   <Link
                     href="/alimentos"
                     className="flex items-center gap-2 text-xs text-foreground hover:text-primary transition-colors"
                   >
                     <Apple className="w-3.5 h-3.5" />
-                    Explorar alimentos
+                    {t("nuevo.exploreFoods")}
                   </Link>
                 </div>
               </div>

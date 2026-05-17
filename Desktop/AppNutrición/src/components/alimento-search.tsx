@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Search } from "lucide-react";
 import { MacroBadges } from "./macro-badge";
+import { useTranslations } from "next-intl";
 
 interface AlimentoOption {
   id: string;
@@ -23,9 +24,10 @@ interface AlimentoSearchProps {
 
 export function AlimentoSearch({
   onSelect,
-  placeholder = "Buscar alimento...",
+  placeholder,
   searchAction,
 }: AlimentoSearchProps) {
+  const t = useTranslations("foods");
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<AlimentoOption[]>([]);
   const [loading, setLoading] = useState(false);
@@ -80,7 +82,7 @@ export function AlimentoSearch({
           type="text"
           value={query}
           onChange={(e) => handleChange(e.target.value)}
-          placeholder={placeholder}
+          placeholder={placeholder ?? t("busqueda.buscarAlimento")}
           maxLength={100}
           className="w-full pl-9 pr-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
         />
@@ -113,7 +115,7 @@ export function AlimentoSearch({
 
       {open && results.length === 0 && !loading && query.length >= 2 && (
         <div className="absolute z-50 top-full mt-1 w-full bg-card border border-border rounded-lg shadow-lg p-4 text-center text-sm text-muted-foreground">
-          No se encontraron resultados
+          {t("busqueda.sinResultados")}
         </div>
       )}
     </div>

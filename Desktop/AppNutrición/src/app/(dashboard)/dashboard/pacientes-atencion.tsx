@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { AlertTriangle, Ruler, UtensilsCrossed } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface PacienteAlerta {
   id: string;
@@ -13,11 +16,12 @@ interface Props {
 }
 
 export function PacientesAtencion({ sinConsulta, sinMedidas, planesAntiguos }: Props) {
+  const t = useTranslations("dashboard");
   const total = sinConsulta.length + sinMedidas.length + planesAntiguos.length;
   if (total === 0) {
     return (
       <div className="p-6 text-center text-sm text-muted-foreground">
-        Todos tus pacientes están al día
+        {t("pacientesAtencion.todosAlDia")}
       </div>
     );
   }
@@ -29,7 +33,7 @@ export function PacientesAtencion({ sinConsulta, sinMedidas, planesAntiguos }: P
           <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">{p.nombre}</p>
-            <p className="text-xs text-muted-foreground">Sin consulta en +30 días</p>
+            <p className="text-xs text-muted-foreground">{t("pacientesAtencion.sinConsulta")}</p>
           </div>
         </Link>
       ))}
@@ -38,7 +42,7 @@ export function PacientesAtencion({ sinConsulta, sinMedidas, planesAntiguos }: P
           <Ruler className="w-4 h-4 text-blue-500 shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">{p.nombre}</p>
-            <p className="text-xs text-muted-foreground">Sin medidas en +30 días</p>
+            <p className="text-xs text-muted-foreground">{t("pacientesAtencion.sinMedidas")}</p>
           </div>
         </Link>
       ))}
@@ -47,7 +51,7 @@ export function PacientesAtencion({ sinConsulta, sinMedidas, planesAntiguos }: P
           <UtensilsCrossed className="w-4 h-4 text-orange-500 shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">{p.nombre}</p>
-            <p className="text-xs text-muted-foreground">Plan sin actualizar en +30 días</p>
+            <p className="text-xs text-muted-foreground">{t("pacientesAtencion.planSinActualizar")}</p>
           </div>
         </Link>
       ))}

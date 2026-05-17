@@ -12,6 +12,8 @@ import {
   Calendar,
   type LucideIcon,
 } from "lucide-react";
+import { useTranslations, useLocale } from "next-intl";
+import { intlTag, type Locale } from "@/i18n/config";
 
 interface Medicion {
   fechaISO: string;
@@ -35,12 +37,12 @@ interface Hito {
   progreso?: { actual: number; objetivo: number; unit: string };
 }
 
-function formatFechaCorta(iso: string) {
+function formatFechaCorta(iso: string, tag: string) {
   const d = new Date(iso + "T12:00:00");
-  return d.toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
+  return d.toLocaleDateString(tag, { day: "2-digit", month: "short", year: "numeric" });
 }
 
-function calcularHitos(data: Medicion[]): Hito[] {
+function calcularHitos(data: Medicion[], t: (key: string) => string): Hito[] {
   const pesos = data.filter((m) => m.peso !== null) as (Medicion & { peso: number })[];
   const imcs = data.filter((m) => m.imc !== null) as (Medicion & { imc: number })[];
   const hitos: Hito[] = [];
@@ -49,8 +51,8 @@ function calcularHitos(data: Medicion[]): Hito[] {
   if (data.length > 0) {
     hitos.push({
       id: "primera",
-      titulo: "Primer paso",
-      descripcion: "Tu primera medición registrada",
+      titulo: t("primerPaso.titulo"),
+      descripcion: t("primerPaso.descripcionConseguido"),
       Icon: Sparkles,
       color: "#8b5cf6",
       conseguido: true,
@@ -59,8 +61,8 @@ function calcularHitos(data: Medicion[]): Hito[] {
   } else {
     hitos.push({
       id: "primera",
-      titulo: "Primer paso",
-      descripcion: "Tu primera medición",
+      titulo: t("primerPaso.titulo"),
+      descripcion: t("primerPaso.descripcionPendiente"),
       Icon: Sparkles,
       color: "#8b5cf6",
       conseguido: false,
@@ -71,17 +73,17 @@ function calcularHitos(data: Medicion[]): Hito[] {
   if (pesos.length >= 2) {
     const pesoInicial = pesos[0].peso;
     const umbrales = [
-      { id: "kg1", kg: 1, titulo: "Primer kilo", Icon: TrendingDown, color: "#10b981" },
-      { id: "kg5", kg: 5, titulo: "5 kilos menos", Icon: Trophy, color: "#f59e0b" },
-      { id: "kg10", kg: 10, titulo: "10 kilos menos", Icon: Trophy, color: "#ef4444" },
+      { id: "kg1", kg: 1, tituloKey: "primerKilo.titulo", descKey: "primerKilo.descripcion", Icon: TrendingDown, color: "#10b981" },
+      { id: "kg5", kg: 5, tituloKey: "cincoKilos.titulo", descKey: "cincoKilos.descripcion", Icon: Trophy, color: "#f59e0b" },
+      { id: "kg10", kg: 10, tituloKey: "diezKilos.titulo", descKey: "diezKilos.descripcion", Icon: Trophy, color: "#ef4444" },
     ];
     for (const u of umbrales) {
       const punto = pesos.find((m) => pesoInicial - m.peso >= u.kg);
       const actualDiff = Math.max(0, pesoInicial - pesos[pesos.length - 1].peso);
       hitos.push({
         id: u.id,
-        titulo: u.titulo,
-        descripcion: `Bajar ${u.kg} kg desde tu peso inicial`,
+        titulo: t(u.tituloKey),
+        descripcion: t(u.descKey),
         Icon: u.Icon,
         color: u.color,
         conseguido: !!punto,
@@ -94,8 +96,8 @@ function calcularHitos(data: Medicion[]): Hito[] {
   } else {
     hitos.push({
       id: "kg1",
-      titulo: "Primer kilo",
-      descripcion: "Bajar 1 kg desde tu peso inicial",
+      titulo: t("primerKilo.titulo"),
+      descripcion: t("primerKilo.descripcion"),
       Icon: TrendingDown,
       color: "#10b981",
       conseguido: false,
@@ -109,8 +111,8 @@ function calcularHitos(data: Medicion[]): Hito[] {
     if (imcInicial >= 25) {
       hitos.push({
         id: "imc_sano",
-        titulo: "IMC saludable",
-        descripcion: "Alcanzar un IMC por debajo de 25",
+        titulo: t("imcSaludable.titulo"),
+        descripcion: t("imcSaludable.descripcionAlcanzar"),
         Icon: Heart,
         color: "#ec4899",
         conseguido: !!saludable,
@@ -119,8 +121,8 @@ function calcularHitos(data: Medicion[]): Hito[] {
     } else {
       hitos.push({
         id: "imc_mantener",
-        titulo: "IMC saludable",
-        descripcion: "Mantente en tu IMC saludable",
+        titulo: t("imcSaludable.titulo"),
+        descripcion: t("imcSaludable.descripcionMantener"),
         Icon: Heart,
         color: "#ec4899",
         conseguido: true,
@@ -132,8 +134,8 @@ function calcularHitos(data: Medicion[]): Hito[] {
   // Constancia: 5 y 10 mediciones
   hitos.push({
     id: "med5",
-    titulo: "Constancia",
-    descripcion: "Registrar 5 mediciones",
+    titulo: t("constancia.titulo"),
+    descripcion: t("constancia.descripcion"),
     Icon: Calendar,
     color: "#0ea5e9",
     conseguido: data.length >= 5,
@@ -160,8 +162,8 @@ function calcularHitos(data: Medicion[]): Hito[] {
     }
     hitos.push({
       id: "racha",
-      titulo: "En racha",
-      descripcion: "3 mediciones consecutivas bajando",
+      titulo: t("enRacha.titulo"),
+      descripcion: t("enRacha.descripcion"),
       Icon: Flame,
       color: "#f97316",
       conseguido: maxRacha >= 3,
@@ -179,7 +181,10 @@ function calcularHitos(data: Medicion[]): Hito[] {
 }
 
 export function HitosCard({ data }: Props) {
-  const hitos = calcularHitos(data);
+  const t = useTranslations("patient-portal.evolucion.hitos");
+  const locale = useLocale() as Locale;
+  const tag = intlTag(locale);
+  const hitos = calcularHitos(data, t);
   const conseguidos = hitos.filter((h) => h.conseguido).length;
 
   return (
@@ -190,9 +195,9 @@ export function HitosCard({ data }: Props) {
             <Trophy className="w-5 h-5" strokeWidth={1.75} />
           </span>
           <div>
-            <h2 className="text-base font-semibold">Hitos</h2>
+            <h2 className="text-base font-semibold">{t("title")}</h2>
             <p className="text-[11px] text-muted-foreground">
-              Logros conseguidos durante tu seguimiento
+              {t("subtitle")}
             </p>
           </div>
         </div>
@@ -204,7 +209,7 @@ export function HitosCard({ data }: Props) {
             </span>
           </p>
           <p className="text-[10px] text-muted-foreground uppercase tracking-wide mt-0.5">
-            desbloqueados
+            {t("desbloqueados")}
           </p>
         </div>
       </header>
@@ -212,7 +217,7 @@ export function HitosCard({ data }: Props) {
       <div className="px-3 pb-3">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-2">
           {hitos.map((h) => (
-            <HitoItem key={h.id} hito={h} />
+            <HitoItem key={h.id} hito={h} t={t} tag={tag} />
           ))}
         </div>
       </div>
@@ -220,7 +225,7 @@ export function HitosCard({ data }: Props) {
   );
 }
 
-function HitoItem({ hito }: { hito: Hito }) {
+function HitoItem({ hito, t, tag }: { hito: Hito; t: (key: string) => string; tag: string }) {
   const { Icon, color, titulo, descripcion, conseguido, fechaConseguido, progreso } = hito;
 
   return (
@@ -245,14 +250,14 @@ function HitoItem({ hito }: { hito: Hito }) {
         {conseguido ? (
           <span
             className="absolute -bottom-0.5 -right-0.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-green-500 text-white border-2 border-card"
-            aria-label="Conseguido"
+            aria-label={t("conseguido")}
           >
             <Check className="w-2.5 h-2.5" strokeWidth={3} />
           </span>
         ) : (
           <span
             className="absolute -bottom-0.5 -right-0.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-muted text-muted-foreground border-2 border-card"
-            aria-label="Bloqueado"
+            aria-label={t("bloqueado")}
           >
             <Lock className="w-2.5 h-2.5" />
           </span>
@@ -272,7 +277,7 @@ function HitoItem({ hito }: { hito: Hito }) {
 
       {conseguido && fechaConseguido ? (
         <p className="text-[10px] text-muted-foreground/80 mt-1 tabular-nums">
-          {formatFechaCorta(fechaConseguido)}
+          {formatFechaCorta(fechaConseguido, tag)}
         </p>
       ) : progreso ? (
         <div className="mt-1.5 w-full">

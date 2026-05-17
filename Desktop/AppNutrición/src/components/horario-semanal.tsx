@@ -2,11 +2,21 @@
 
 import { useState, useMemo } from "react";
 import { X, Save, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { HorarioEntry } from "@/app/actions/pacientes";
 import { toast } from "sonner";
 
-const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
-const DIAS_CORTO = ["L", "M", "X", "J", "V", "S", "D"];
+// Stable data keys stored in the DB — must NOT be translated
+const DIA_KEYS = ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"] as const;
+const DIA_DB_VALUE: Record<(typeof DIA_KEYS)[number], string> = {
+  LUNES: "Lunes",
+  MARTES: "Martes",
+  MIERCOLES: "Miércoles",
+  JUEVES: "Jueves",
+  VIERNES: "Viernes",
+  SABADO: "Sábado",
+  DOMINGO: "Domingo",
+};
 const HORAS = [
   "06:00", "07:00", "08:00", "09:00", "10:00", "11:00", "12:00",
   "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00",
@@ -14,16 +24,17 @@ const HORAS = [
 ];
 const PREVIEW_ROWS = 5;
 
-const COLORES = [
-  { id: "trabajo", label: "Trabajo", class: "bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/30" },
-  { id: "ejercicio", label: "Ejercicio", class: "bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/30" },
-  { id: "comida", label: "Comida", class: "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30" },
-  { id: "descanso", label: "Descanso", class: "bg-purple-100 dark:bg-purple-500/15 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/30" },
-  { id: "otro", label: "Otro", class: "bg-muted text-foreground border-border" },
-];
+const COLOR_IDS = ["trabajo", "ejercicio", "comida", "descanso", "otro"] as const;
+const COLOR_CLASSES: Record<string, string> = {
+  trabajo: "bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/30",
+  ejercicio: "bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/30",
+  comida: "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30",
+  descanso: "bg-purple-100 dark:bg-purple-500/15 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/30",
+  otro: "bg-muted text-foreground border-border",
+};
 
 function getColorClass(color?: string) {
-  return COLORES.find((c) => c.id === color)?.class || COLORES[4].class;
+  return COLOR_CLASSES[color || "otro"] || COLOR_CLASSES.otro;
 }
 
 interface Props {
@@ -33,6 +44,8 @@ interface Props {
 }
 
 export function HorarioSemanal({ initialEntries, readOnly, onSave }: Props) {
+  const t = useTranslations("agenda");
+  const DIAS = DIA_KEYS.map((k) => DIA_DB_VALUE[k]);
   const [entries, setEntries] = useState<HorarioEntry[]>(initialEntries);
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -102,9 +115,9 @@ export function HorarioSemanal({ initialEntries, readOnly, onSave }: Props) {
     setSaving(true);
     try {
       await onSave(entries);
-      toast.success("Horario guardado");
+      toast.success(t("horarioSemanal.toastSaved"));
     } catch {
-      toast.error("Error al guardar");
+      toast.error(t("horarioSemanal.toastSaveError"));
     } finally {
       setSaving(false);
     }
@@ -114,13 +127,13 @@ export function HorarioSemanal({ initialEntries, readOnly, onSave }: Props) {
     return (
       <div className="p-2 space-y-1.5">
         <div className="flex gap-1">
-          {COLORES.map((c) => (
+          {COLOR_IDS.map((id) => (
             <button
-              key={c.id}
+              key={id}
               type="button"
-              onClick={(e) => { e.stopPropagation(); setInputColor(c.id); }}
-              className={`w-5 h-5 sm:w-4 sm:h-4 rounded-full border-2 transition-all ${inputColor === c.id ? "border-foreground scale-110" : "border-transparent"} ${c.class}`}
-              title={c.label}
+              onClick={(e) => { e.stopPropagation(); setInputColor(id); }}
+              className={`w-5 h-5 sm:w-4 sm:h-4 rounded-full border-2 transition-all ${inputColor === id ? "border-foreground scale-110" : "border-transparent"} ${COLOR_CLASSES[id]}`}
+              title={t(`horarioSemanal.colorLabels.${id}`)}
             />
           ))}
         </div>
@@ -129,7 +142,7 @@ export function HorarioSemanal({ initialEntries, readOnly, onSave }: Props) {
           value={inputActividad}
           onChange={(e) => setInputActividad(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && saveCell()}
-          placeholder="Actividad..."
+          placeholder={t("horarioSemanal.activityPlaceholder")}
           autoFocus
           className="w-full px-2 py-1 text-sm sm:text-[11px] rounded border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary"
           onClick={(e) => e.stopPropagation()}
@@ -139,13 +152,13 @@ export function HorarioSemanal({ initialEntries, readOnly, onSave }: Props) {
           value={inputNota}
           onChange={(e) => setInputNota(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && saveCell()}
-          placeholder="Nota (opcional)..."
+          placeholder={t("horarioSemanal.notePlaceholder")}
           className="w-full px-2 py-1 text-xs sm:text-[10px] rounded border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary text-muted-foreground"
           onClick={(e) => e.stopPropagation()}
         />
         <div className="flex gap-1.5">
           <button onClick={(e) => { e.stopPropagation(); saveCell(); }} className="text-xs px-2 py-1 rounded bg-primary text-white">OK</button>
-          <button onClick={(e) => { e.stopPropagation(); setEditingCell(null); }} className="text-xs px-2 py-1 rounded border border-border">Cancelar</button>
+          <button onClick={(e) => { e.stopPropagation(); setEditingCell(null); }} className="text-xs px-2 py-1 rounded border border-border">{t("horarioSemanal.cancel")}</button>
         </div>
       </div>
     );
@@ -156,9 +169,9 @@ export function HorarioSemanal({ initialEntries, readOnly, onSave }: Props) {
       {/* Leyenda + guardar */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex flex-wrap gap-1.5">
-          {COLORES.map((c) => (
-            <span key={c.id} className={`text-[11px] px-2 py-0.5 rounded-full border ${c.class}`}>
-              {c.label}
+          {COLOR_IDS.map((id) => (
+            <span key={id} className={`text-[11px] px-2 py-0.5 rounded-full border ${COLOR_CLASSES[id]}`}>
+              {t(`horarioSemanal.colorLabels.${id}`)}
             </span>
           ))}
         </div>
@@ -169,7 +182,7 @@ export function HorarioSemanal({ initialEntries, readOnly, onSave }: Props) {
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
           >
             {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-            Guardar
+            {t("horarioSemanal.save")}
           </button>
         )}
       </div>
@@ -188,7 +201,7 @@ export function HorarioSemanal({ initialEntries, readOnly, onSave }: Props) {
                   mobileDia === dia ? "bg-primary text-primary-foreground" : "hover:bg-muted"
                 }`}
               >
-                {DIAS_CORTO[i]}
+                {t(`horarioSemanal.daysShort.${DIA_KEYS[i]}`)}
                 {count > 0 && (
                   <span className={`w-1.5 h-1.5 rounded-full mt-0.5 ${mobileDia === dia ? "bg-primary-foreground/60" : "bg-primary/50"}`} />
                 )}
@@ -238,9 +251,9 @@ export function HorarioSemanal({ initialEntries, readOnly, onSave }: Props) {
         <table className="w-full border-collapse min-w-[600px]">
           <thead>
             <tr>
-              <th className="bg-muted/50 p-2 text-xs font-medium text-muted-foreground text-center w-[60px] border-b border-r border-border">Hora</th>
-              {DIAS.map((dia) => (
-                <th key={dia} className="bg-muted/50 p-2 text-xs font-semibold text-center border-b border-r border-border last:border-r-0">{dia}</th>
+              <th className="bg-muted/50 p-2 text-xs font-medium text-muted-foreground text-center w-[60px] border-b border-r border-border">{t("horarioSemanal.hour")}</th>
+              {DIAS.map((dia, i) => (
+                <th key={dia} className="bg-muted/50 p-2 text-xs font-semibold text-center border-b border-r border-border last:border-r-0">{t(`horarioSemanal.daysFull.${DIA_KEYS[i]}`)}</th>
               ))}
             </tr>
           </thead>
@@ -263,13 +276,13 @@ export function HorarioSemanal({ initialEntries, readOnly, onSave }: Props) {
                       {isEditing ? (
                         <div className="p-1 space-y-1">
                           <div className="flex gap-0.5">
-                            {COLORES.map((c) => (
+                            {COLOR_IDS.map((id) => (
                               <button
-                                key={c.id}
+                                key={id}
                                 type="button"
-                                onClick={(e) => { e.stopPropagation(); setInputColor(c.id); }}
-                                className={`w-4 h-4 rounded-full border-2 transition-all ${inputColor === c.id ? "border-foreground scale-110" : "border-transparent"} ${c.class}`}
-                                title={c.label}
+                                onClick={(e) => { e.stopPropagation(); setInputColor(id); }}
+                                className={`w-4 h-4 rounded-full border-2 transition-all ${inputColor === id ? "border-foreground scale-110" : "border-transparent"} ${COLOR_CLASSES[id]}`}
+                                title={t(`horarioSemanal.colorLabels.${id}`)}
                               />
                             ))}
                           </div>
@@ -278,7 +291,7 @@ export function HorarioSemanal({ initialEntries, readOnly, onSave }: Props) {
                             value={inputActividad}
                             onChange={(e) => setInputActividad(e.target.value)}
                             onKeyDown={(e) => e.key === "Enter" && saveCell()}
-                            placeholder="Actividad..."
+                            placeholder={t("horarioSemanal.activityPlaceholder")}
                             autoFocus
                             className="w-full px-1.5 py-0.5 text-[11px] rounded border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary"
                             onClick={(e) => e.stopPropagation()}
@@ -288,7 +301,7 @@ export function HorarioSemanal({ initialEntries, readOnly, onSave }: Props) {
                             value={inputNota}
                             onChange={(e) => setInputNota(e.target.value)}
                             onKeyDown={(e) => e.key === "Enter" && saveCell()}
-                            placeholder="Nota (opcional)..."
+                            placeholder={t("horarioSemanal.notePlaceholder")}
                             className="w-full px-1.5 py-0.5 text-[10px] rounded border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary text-muted-foreground"
                             onClick={(e) => e.stopPropagation()}
                           />
@@ -328,12 +341,12 @@ export function HorarioSemanal({ initialEntries, readOnly, onSave }: Props) {
         {expanded ? (
           <>
             <ChevronUp className="w-4 h-4" />
-            Mostrar menos
+            {t("horarioSemanal.showLess")}
           </>
         ) : (
           <>
             <ChevronDown className="w-4 h-4" />
-            Ver horario completo ({HORAS.length - PREVIEW_ROWS} horas más)
+            {t("horarioSemanal.showMore", { count: HORAS.length - PREVIEW_ROWS })}
           </>
         )}
       </button>

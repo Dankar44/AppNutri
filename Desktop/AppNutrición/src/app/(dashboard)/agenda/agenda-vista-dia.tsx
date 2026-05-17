@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useTranslations, useLocale } from "next-intl";
+import { intlTag, type Locale } from "@/i18n/config";
 import { Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CitaDetalleModal, type CitaDetalle } from "./cita-detalle-modal";
@@ -52,6 +54,8 @@ interface Props {
 const formatLocalDate = toMadridDateStr;
 
 export function AgendaVistaDia({ fecha, citas }: Props) {
+  const t = useTranslations("agenda.dayView");
+  const tag = intlTag(useLocale() as Locale);
   const isMobile = useIsMobile();
   const pxPerHour = isMobile ? 56 : 52;
   const [ahora, setAhora] = useState(() => new Date());
@@ -180,7 +184,7 @@ export function AgendaVistaDia({ fecha, citas }: Props) {
                 <div className="w-2 h-2 rounded-full bg-rose-500 shrink-0 shadow-sm" />
                 <div className="h-0.5 flex-1 bg-rose-500/90" />
                 <span className="text-[10px] font-semibold text-rose-600 dark:text-rose-400 tabular-nums pr-2 shrink-0 bg-card/90 px-1 rounded">
-                  {ahora.toLocaleTimeString("es-ES", {
+                  {ahora.toLocaleTimeString(tag, {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
@@ -225,9 +229,9 @@ export function AgendaVistaDia({ fecha, citas }: Props) {
 
       {citas.length === 0 && (
         <p className="text-sm text-muted-foreground text-center py-6 px-4 border-t border-border">
-          Sin citas este día.{" "}
+          {t("noAppointments")}{" "}
           <Link href="/agenda/nueva" className="text-primary font-medium hover:underline">
-            Crear cita
+            {t("createAppointment")}
           </Link>
         </p>
       )}

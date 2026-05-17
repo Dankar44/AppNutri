@@ -1,14 +1,20 @@
 "use client";
 
-import { formatDistanceToNow } from "date-fns";
-import { es } from "date-fns/locale";
+import { formatDistanceToNow, type Locale } from "date-fns";
 import { Tooltip } from "@/components/ui/tooltip";
+import { useTranslations } from "next-intl";
+import { useLocale } from "@/components/locale-provider";
+import { getDateLocale } from "@/i18n/date-locale";
 
 export interface NotifMini {
   id: string;
   tipo: string;
   titulo: string;
   mensaje: string;
+  tituloKey?: string | null;
+  mensajeKey?: string | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  params?: any;
   createdAt: Date | string;
 }
 
@@ -22,7 +28,39 @@ interface Props {
   overlay?: boolean;
 }
 
+function useNotifText(n: NotifMini) {
+  const tv = useTranslations("validation");
+  let titulo = n.titulo;
+  let mensaje = n.mensaje;
+  if (n.tituloKey) {
+    try { titulo = tv(n.tituloKey, n.params ?? {}); } catch {}
+  }
+  if (n.mensajeKey) {
+    try { mensaje = tv(n.mensajeKey, n.params ?? {}); } catch {}
+  }
+  return { titulo, mensaje };
+}
+
+function NotifItem({ n, dateFnsLocale }: { n: NotifMini; dateFnsLocale: Locale }) {
+  const { titulo, mensaje } = useNotifText(n);
+  return (
+    <div>
+      <p className="font-semibold text-[11px] leading-tight">{titulo}</p>
+      <p className="text-[10.5px] text-muted-foreground leading-snug mt-0.5">
+        {mensaje.replace(/ - [a-z0-9-]{8,}$/i, "")}
+      </p>
+      <p className="text-[10px] text-muted-foreground/70 mt-0.5">
+        {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: dateFnsLocale })}
+      </p>
+    </div>
+  );
+}
+
 export function NotificationDot({ notificaciones, overlay = true }: Props) {
+  const t = useTranslations("notifications");
+  const { locale } = useLocale();
+  const dateFnsLocale = getDateLocale(locale);
+
   if (!notificaciones || notificaciones.length === 0) return null;
 
   const count = notificaciones.length;
@@ -32,25 +70,17 @@ export function NotificationDot({ notificaciones, overlay = true }: Props) {
   const tooltipContent = (
     <div className="space-y-2 text-left">
       {visible.map((n) => (
-        <div key={n.id}>
-          <p className="font-semibold text-[11px] leading-tight">{n.titulo}</p>
-          <p className="text-[10.5px] text-muted-foreground leading-snug mt-0.5">
-            {n.mensaje.replace(/ - [a-z0-9-]{8,}$/i, "")}
-          </p>
-          <p className="text-[10px] text-muted-foreground/70 mt-0.5">
-            {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: es })}
-          </p>
-        </div>
+        <NotifItem key={n.id} n={n} dateFnsLocale={dateFnsLocale} />
       ))}
       {extra > 0 && (
         <p className="text-[10.5px] text-muted-foreground italic pt-1 border-t border-border">
-          y {extra} más
+          {t("dot.andMore", { count: extra })}
         </p>
       )}
     </div>
   );
 
-  const ariaLabel = `${count} notificación${count === 1 ? "" : "es"} sin leer`;
+  const ariaLabel = t("dot.unreadCount", { count });
 
   const pill = (
     <Tooltip content={tooltipContent} side="top">

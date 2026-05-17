@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { Plus, Users } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { getPacientes } from "@/app/actions/pacientes";
 import { getMapaNotificacionesPacientes } from "@/app/actions/notificaciones";
-import { formatDate, OBJETIVO_LABELS, calcularIMC, capitalizarNombre } from "@/lib/utils";
+import { formatDate, OBJETIVO_KEYS, calcularIMC, capitalizarNombre } from "@/lib/utils";
 import { AvatarPaciente } from "@/components/avatar-paciente";
 import { NotificationDot } from "@/components/notification-dot";
 import { PacientesFilter } from "./pacientes-filter";
@@ -17,17 +18,18 @@ export default async function PacientesPage({ searchParams }: Props) {
   const busqueda = params.busqueda || "";
   const soloActivos = params.activos === "true";
   const vista = params.vista || "tabla";
-  const [pacientes, notifsPorPaciente] = await Promise.all([
+  const [pacientes, notifsPorPaciente, t] = await Promise.all([
     getPacientes(busqueda, soloActivos),
     getMapaNotificacionesPacientes(),
+    getTranslations("patients"),
   ]);
 
   return (
     <div>
       <PageHeader
         icon={Users}
-        title="Pacientes"
-        subtitle={`${pacientes.length} paciente${pacientes.length !== 1 ? "s" : ""}`}
+        title={t("list.title")}
+        subtitle={pacientes.length !== 1 ? t("list.subtitleCountPlural", { count: pacientes.length }) : t("list.subtitleCount", { count: pacientes.length })}
         action={
           <Link
             href="/pacientes/nuevo"
@@ -35,7 +37,7 @@ export default async function PacientesPage({ searchParams }: Props) {
             className="hidden sm:inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-lg font-medium hover:bg-green-700 transition-colors min-h-11"
           >
             <Plus className="w-4 h-4" />
-            <span>Nuevo paciente</span>
+            <span>{t("list.nuevoPaciente")}</span>
           </Link>
         }
       />
@@ -49,17 +51,17 @@ export default async function PacientesPage({ searchParams }: Props) {
         <div className="bg-card rounded-xl border border-border p-12 text-center">
           <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="font-medium text-lg mb-1">
-            {busqueda ? "No se encontraron pacientes" : "No tienes pacientes aún"}
+            {busqueda ? t("list.sinResultados") : t("list.sinPacientes")}
           </h3>
           <p className="text-muted-foreground mb-4">
-            {busqueda ? "Prueba con otra búsqueda" : "Empieza añadiendo tu primer paciente"}
+            {busqueda ? t("list.pruebaBusqueda") : t("list.empiezaAnadiendo")}
           </p>
           {!busqueda && (
             <Link
               href="/pacientes/nuevo"
               className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors"
             >
-              <Plus className="w-4 h-4" /> Añadir paciente
+              <Plus className="w-4 h-4" /> {t("list.anadirPaciente")}
             </Link>
           )}
         </div>
@@ -83,11 +85,11 @@ export default async function PacientesPage({ searchParams }: Props) {
               </h3>
               {p.nombre === "Paciente" && p.apellidos === "Prueba" && (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 text-[10px] font-medium border border-amber-200 dark:border-amber-500/30 mt-1">
-                  Paciente de ejemplo
+                  {t("list.pacienteEjemplo")}
                 </span>
               )}
               <p className="text-xs text-muted-foreground mt-0.5">
-                {OBJETIVO_LABELS[p.objetivo] || p.objetivo}
+                {OBJETIVO_KEYS.includes(p.objetivo as typeof OBJETIVO_KEYS[number]) ? t(`objetivoLabels.${p.objetivo}`) : p.objetivo}
               </p>
               <div className="flex items-center justify-center gap-2 mt-2">
                 <span
@@ -95,7 +97,7 @@ export default async function PacientesPage({ searchParams }: Props) {
                     p.activo ? "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400" : "bg-muted text-muted-foreground"
                   }`}
                 >
-                  {p.activo ? "Activo" : "Inactivo"}
+                  {p.activo ? t("list.activo") : t("list.inactivo")}
                 </span>
                 {p.peso && p.altura && (
                   <span className="text-xs text-muted-foreground">
@@ -116,12 +118,12 @@ export default async function PacientesPage({ searchParams }: Props) {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border bg-muted/50">
-                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Paciente</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground hidden md:table-cell">Contacto</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground hidden lg:table-cell">Objetivo</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground hidden lg:table-cell">IMC</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Estado</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground hidden sm:table-cell">Fecha alta</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">{t("list.headerPaciente")}</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground hidden md:table-cell">{t("list.headerContacto")}</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground hidden lg:table-cell">{t("list.headerObjetivo")}</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground hidden lg:table-cell">{t("list.headerImc")}</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">{t("list.headerEstado")}</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground hidden sm:table-cell">{t("list.headerFechaAlta")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -139,7 +141,7 @@ export default async function PacientesPage({ searchParams }: Props) {
                           </p>
                           {p.nombre === "Paciente" && p.apellidos === "Prueba" && (
                             <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 text-[10px] font-medium border border-amber-200 dark:border-amber-500/30 shrink-0">
-                              Ejemplo
+                              {t("list.ejemplo")}
                             </span>
                           )}
                         </div>
@@ -149,11 +151,11 @@ export default async function PacientesPage({ searchParams }: Props) {
                       <p className="text-sm text-muted-foreground truncate">{p.email || "-"}</p>
                       <p className="text-xs text-muted-foreground">{p.telefono || ""}</p>
                     </td>
-                    <td className="px-4 py-3 hidden lg:table-cell text-sm">{OBJETIVO_LABELS[p.objetivo] || p.objetivo}</td>
+                    <td className="px-4 py-3 hidden lg:table-cell text-sm">{OBJETIVO_KEYS.includes(p.objetivo as typeof OBJETIVO_KEYS[number]) ? t(`objetivoLabels.${p.objetivo}`) : p.objetivo}</td>
                     <td className="px-4 py-3 hidden lg:table-cell text-sm">{p.peso && p.altura ? calcularIMC(p.peso, p.altura) : "-"}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${p.activo ? "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400" : "bg-muted text-muted-foreground"}`}>
-                        {p.activo ? "Activo" : "Inactivo"}
+                        {p.activo ? t("list.activo") : t("list.inactivo")}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground hidden sm:table-cell">{formatDate(p.createdAt)}</td>

@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { X, Loader2, Clock, CalendarClock } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations, useLocale } from "next-intl";
+import { intlTag, type Locale } from "@/i18n/config";
 import { DatePicker } from "@/components/date-picker";
 import {
   contraproponerCita,
@@ -24,23 +26,25 @@ interface Props {
   onDone: () => void;
 }
 
-function labelFechaLarga(fechaYYYYMMDD: string): string {
+function labelFechaLarga(fechaYYYYMMDD: string, tag: string): string {
   if (!fechaYYYYMMDD) return "";
   const [y, m, d] = fechaYYYYMMDD.split("-").map(Number);
   const date = new Date(y, m - 1, d);
-  return date.toLocaleDateString("es-ES", {
+  return date.toLocaleDateString(tag, {
     weekday: "long", day: "numeric", month: "long", year: "numeric",
   });
 }
 
-function formatFechaActual(iso: string): string {
-  return new Date(iso).toLocaleString("es-ES", {
+function formatFechaActual(iso: string, tag: string): string {
+  return new Date(iso).toLocaleString(tag, {
     timeZone: "Europe/Madrid",
     weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit",
   });
 }
 
 export function ContraproponerModal({ citaId, citaActual, onClose, onDone }: Props) {
+  const t = useTranslations("agenda.contraproponerModal");
+  const tag = intlTag(useLocale() as Locale);
   const hoy = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Madrid" });
   const [fechaSeleccionada, setFechaSeleccionada] = useState<string>(hoy);
   const [slots, setSlots] = useState<SlotLibre[] | null>(null);
@@ -82,7 +86,7 @@ export function ContraproponerModal({ citaId, citaActual, onClose, onDone }: Pro
     startSubmit(async () => {
       try {
         await contraproponerCita(citaId, slotSeleccionado, duracion, nota.trim() || undefined);
-        toast.success("Contrapropuesta enviada al paciente");
+        toast.success(t("toastSent"));
         onDone();
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Error");
@@ -102,7 +106,7 @@ export function ContraproponerModal({ citaId, citaActual, onClose, onDone }: Pro
         <div className="flex items-center justify-between p-5 border-b border-border">
           <div className="flex items-center gap-2">
             <CalendarClock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-            <h2 className="text-lg font-semibold">Proponer otra fecha</h2>
+            <h2 className="text-lg font-semibold">{t("title")}</h2>
           </div>
           <button
             type="button"
@@ -115,27 +119,27 @@ export function ContraproponerModal({ citaId, citaActual, onClose, onDone }: Pro
 
         {citaActual && (
           <div className="px-5 py-3 bg-muted/30 border-b border-border">
-            <p className="text-xs text-muted-foreground">Solicitud actual del paciente:</p>
+            <p className="text-xs text-muted-foreground">{t("currentRequest")}</p>
             <p className="text-sm font-medium">
               {citaActual.paciente.nombre} {citaActual.paciente.apellidos}
             </p>
             <p className="text-sm capitalize">
-              {formatFechaActual(citaActual.fechaHora)} ({citaActual.duracion} min)
+              {formatFechaActual(citaActual.fechaHora, tag)} ({citaActual.duracion} min)
             </p>
           </div>
         )}
 
         <div className="p-5 space-y-5">
           <div>
-            <label className="block text-sm font-medium mb-1.5">Nueva fecha</label>
+            <label className="block text-sm font-medium mb-1.5">{t("newDate")}</label>
             <DatePicker value={fechaSeleccionada} onChange={(v) => { setFechaSeleccionada(v); setSlotSeleccionado(null); }} />
             <p className="text-xs text-muted-foreground mt-1 capitalize">
-              {labelFechaLarga(fechaSeleccionada)}
+              {labelFechaLarga(fechaSeleccionada, tag)}
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1.5">Horas disponibles</label>
+            <label className="block text-sm font-medium mb-1.5">{t("availableHours")}</label>
             {loadingSlots ? (
               <div className="flex items-center justify-center py-8 text-muted-foreground">
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -143,7 +147,7 @@ export function ContraproponerModal({ citaId, citaActual, onClose, onDone }: Pro
             ) : slotsDelDia.length === 0 ? (
               <div className="rounded-lg border border-dashed border-border py-6 text-center text-sm text-muted-foreground">
                 <Clock className="w-5 h-5 mx-auto mb-2" />
-                No hay huecos este día. Prueba con otro.
+                {t("noSlots")}
               </div>
             ) : (
               <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-[280px] overflow-y-auto">
@@ -169,7 +173,7 @@ export function ContraproponerModal({ citaId, citaActual, onClose, onDone }: Pro
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1.5">Duración</label>
+            <label className="block text-sm font-medium mb-1.5">{t("duration")}</label>
             <select
               value={duracion}
               onChange={(e) => setDuracion(parseInt(e.target.value))}
@@ -184,14 +188,14 @@ export function ContraproponerModal({ citaId, citaActual, onClose, onDone }: Pro
           {slotSeleccionado && (
             <div>
               <label className="block text-sm font-medium mb-1.5">
-                Nota para el paciente <span className="text-muted-foreground font-normal">(opcional)</span>
+                {t("noteForPatient")}
               </label>
               <textarea
                 value={nota}
                 onChange={(e) => setNota(e.target.value)}
                 rows={2}
                 maxLength={500}
-                placeholder="Ej: Ese día no tengo hueco, ¿te viene bien este otro?"
+                placeholder={t("notePlaceholder")}
                 className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
               />
             </div>
@@ -202,8 +206,8 @@ export function ContraproponerModal({ citaId, citaActual, onClose, onDone }: Pro
           <p className="text-xs text-muted-foreground">
             {slotSeleccionado && (
               <>
-                Propones: <strong className="text-foreground">
-                  {new Date(slotSeleccionado).toLocaleString("es-ES", {
+                {t("youPropose")} <strong className="text-foreground">
+                  {new Date(slotSeleccionado).toLocaleString(tag, {
                     timeZone: "Europe/Madrid",
                     weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
                   })}
@@ -218,7 +222,7 @@ export function ContraproponerModal({ citaId, citaActual, onClose, onDone }: Pro
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500 text-white text-sm font-semibold hover:bg-amber-600 disabled:opacity-60 transition-colors"
           >
             {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-            Enviar propuesta
+            {t("sendProposal")}
           </button>
         </div>
       </div>

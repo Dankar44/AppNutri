@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { calcularMacrosPorcion, sumarMacros, convertirAGramos } from "@/lib/macros";
 import { MacroBadges } from "@/components/macro-badge";
@@ -79,26 +80,7 @@ interface PlanVisualSharedProps {
 // Constants
 // ---------------------------------------------------------------------------
 
-const DIA_LABELS: Record<string, string> = {
-  LUNES: "Lunes",
-  MARTES: "Martes",
-  MIERCOLES: "Miércoles",
-  JUEVES: "Jueves",
-  VIERNES: "Viernes",
-  SABADO: "Sábado",
-  DOMINGO: "Domingo",
-};
-
 const DIA_KEYS = ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"] as const;
-
-const TIPO_LABELS: Record<string, string> = {
-  DESAYUNO: "Desayuno",
-  MEDIA_MANANA: "Media mañana",
-  ALMUERZO: "Almuerzo",
-  MERIENDA: "Merienda",
-  CENA: "Cena",
-  RECENA: "Recena",
-};
 
 const HORA_DEFAULT: Record<string, string> = {
   DESAYUNO: "08:30",
@@ -146,13 +128,14 @@ function macrosDeItem(a: AlimentoData) {
 // ---------------------------------------------------------------------------
 
 function RecetaInline({ receta, cantidad }: { receta: RecetaDetalle; cantidad: number }) {
+  const t = useTranslations("diets.planVisualShared");
   return (
     <div className="mx-3 my-1.5 rounded-lg border border-purple-200 dark:border-purple-500/30 bg-purple-50/30 overflow-hidden">
       <div className="px-3 py-2">
         <div className="flex items-center gap-2 mb-1.5">
           <CookingPot className="w-3.5 h-3.5 text-purple-500 shrink-0" />
           <span className="text-sm font-medium text-purple-900 dark:text-purple-200">{receta.nombre}</span>
-          <span className="text-xs text-purple-500">({cantidad} porc.)</span>
+          <span className="text-xs text-purple-500">({t("portions", { count: cantidad })})</span>
         </div>
         {receta.descripcion && (
           <p className="text-xs text-purple-700 dark:text-purple-400 italic mb-2">{receta.descripcion}</p>
@@ -177,6 +160,7 @@ function ComidaSlotShared({ tipo, descripcion, alimentos }: {
   descripcion?: string | null;
   alimentos: AlimentoData[];
 }) {
+  const t = useTranslations("diets.planVisualShared");
   const [collapsed, setCollapsed] = useState(false);
 
   const mealTotals = useMemo(
@@ -195,7 +179,7 @@ function ComidaSlotShared({ tipo, descripcion, alimentos }: {
           {HORA_DEFAULT[tipo] || ""}
         </span>
         <h4 className="text-base sm:text-lg font-bold text-foreground flex-1 min-w-0 truncate text-left">
-          {TIPO_LABELS[tipo] || tipo}
+          {t(`mealTypeLabels.${tipo}`, { defaultValue: tipo })}
         </h4>
         {collapsed ? (
           <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -207,7 +191,7 @@ function ComidaSlotShared({ tipo, descripcion, alimentos }: {
       {!collapsed && (
         <div className="border-t border-border/40">
           {alimentos.length === 0 ? (
-            <div className="px-4 sm:px-6 py-3 text-xs text-muted-foreground italic">Sin alimentos</div>
+            <div className="px-4 sm:px-6 py-3 text-xs text-muted-foreground italic">{t("noFoods")}</div>
           ) : (
             <div>
               {alimentos.map((a, ai) => {
@@ -220,10 +204,10 @@ function ComidaSlotShared({ tipo, descripcion, alimentos }: {
                       {a.cantidad}
                     </span>
                     <span className="text-muted-foreground text-sm shrink-0">
-                      {getUnidadLabel(a.unidad || "GRAMOS")} de
+                      {getUnidadLabel(a.unidad || "GRAMOS")} {t("unitConnector")}
                     </span>
                     <span className="truncate font-medium text-sm text-foreground flex-1 min-w-0">
-                      {a.alimento?.nombre || "Sin nombre"}
+                      {a.alimento?.nombre || t("noName")}
                     </span>
                     {a.alimento?.enlaceProducto && (
                       <a href={a.alimento.enlaceProducto} target="_blank" rel="noopener noreferrer" className="shrink-0">
@@ -243,7 +227,7 @@ function ComidaSlotShared({ tipo, descripcion, alimentos }: {
 
           {descripcion?.trim() && (
             <div className="px-4 sm:px-6 py-3 border-t border-border/40">
-              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Notas</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">{t("notes")}</p>
               <p className="text-sm text-foreground/80 whitespace-pre-wrap">{descripcion}</p>
             </div>
           )}
@@ -255,13 +239,13 @@ function ComidaSlotShared({ tipo, descripcion, alimentos }: {
                   {Math.round(mealTotals.calorias)} kcal
                 </span>
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 font-medium">
-                  Grasa {mealTotals.grasas.toFixed(1)}g
+                  {t("fat")} {mealTotals.grasas.toFixed(1)}g
                 </span>
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 font-medium">
-                  HC {mealTotals.carbohidratos.toFixed(1)}g
+                  {t("carbs")} {mealTotals.carbohidratos.toFixed(1)}g
                 </span>
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium">
-                  Prot {mealTotals.proteinas.toFixed(1)}g
+                  {t("protein")} {mealTotals.proteinas.toFixed(1)}g
                 </span>
               </div>
             </div>
@@ -273,6 +257,7 @@ function ComidaSlotShared({ tipo, descripcion, alimentos }: {
 }
 
 function ResumenView({ dias, onSelectDay }: { dias: DiaData[]; onSelectDay: (dayKey: string) => void }) {
+  const t = useTranslations("diets.planVisualShared");
   const semanal = useMemo(() => {
     const allMacros = dias.flatMap((d) => d.comidas.flatMap((c) => c.alimentos.map(macrosDeItem)));
     const total = sumarMacros(allMacros);
@@ -291,22 +276,22 @@ function ResumenView({ dias, onSelectDay }: { dias: DiaData[]; onSelectDay: (day
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-              Media diaria de la semana
+              {t("weeklyAvgTitle")}
             </p>
             <div className="flex items-baseline gap-1">
               <span className="text-3xl font-bold tabular-nums">{semanal.calorias}</span>
-              <span className="text-sm text-muted-foreground">kcal / día</span>
+              <span className="text-sm text-muted-foreground">{t("kcalPerDay")}</span>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 text-sm font-medium">
-              Grasa {semanal.grasas} g
+              {t("fatLabel")} {semanal.grasas} g
             </span>
             <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 text-sm font-medium">
-              H. Carbono {semanal.carbohidratos} g
+              {t("carbsLabel")} {semanal.carbohidratos} g
             </span>
             <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-sm font-medium">
-              Proteína {semanal.proteinas} g
+              {t("proteinLabel")} {semanal.proteinas} g
             </span>
           </div>
         </div>
@@ -327,17 +312,17 @@ function ResumenView({ dias, onSelectDay }: { dias: DiaData[]; onSelectDay: (day
               <div className="px-5 py-4 border-b border-border/60 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-primary" />
-                  <h3 className="font-semibold text-foreground">{DIA_LABELS[dia.dia] || dia.dia}</h3>
+                  <h3 className="font-semibold text-foreground">{t(`dayLabels.${dia.dia}`)}</h3>
                 </div>
                 <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors">
-                  Ver día →
+                  {t("viewDay")}
                 </span>
               </div>
 
               <div className="px-5 py-4 space-y-3">
                 <div>
                   <div className="flex items-baseline justify-between mb-1">
-                    <span className="text-xs font-medium text-muted-foreground">Energía</span>
+                    <span className="text-xs font-medium text-muted-foreground">{t("energy")}</span>
                     <span className="text-sm font-bold tabular-nums">
                       {Math.round(diaTotales.calorias)}
                       <span className="text-xs font-normal text-muted-foreground ml-1">kcal</span>
@@ -355,19 +340,19 @@ function ResumenView({ dias, onSelectDay }: { dias: DiaData[]; onSelectDay: (day
 
                 <div className="grid grid-cols-3 gap-1.5">
                   <div className="rounded-lg bg-yellow-50 dark:bg-yellow-500/10 px-2 py-1.5 text-center">
-                    <p className="text-[10px] font-medium text-yellow-700 dark:text-yellow-400 uppercase">Grasa</p>
+                    <p className="text-[10px] font-medium text-yellow-700 dark:text-yellow-400 uppercase">{t("fatShort")}</p>
                     <p className="text-sm font-bold text-yellow-700 dark:text-yellow-400 tabular-nums">
                       {diaTotales.grasas.toFixed(0)}g
                     </p>
                   </div>
                   <div className="rounded-lg bg-orange-50 dark:bg-orange-500/10 px-2 py-1.5 text-center">
-                    <p className="text-[10px] font-medium text-orange-700 dark:text-orange-400 uppercase">H. C.</p>
+                    <p className="text-[10px] font-medium text-orange-700 dark:text-orange-400 uppercase">{t("carbsShort")}</p>
                     <p className="text-sm font-bold text-orange-700 dark:text-orange-400 tabular-nums">
                       {diaTotales.carbohidratos.toFixed(0)}g
                     </p>
                   </div>
                   <div className="rounded-lg bg-blue-50 dark:bg-blue-500/10 px-2 py-1.5 text-center">
-                    <p className="text-[10px] font-medium text-blue-700 dark:text-blue-400 uppercase">Prot.</p>
+                    <p className="text-[10px] font-medium text-blue-700 dark:text-blue-400 uppercase">{t("proteinShort")}</p>
                     <p className="text-sm font-bold text-blue-700 dark:text-blue-400 tabular-nums">
                       {diaTotales.proteinas.toFixed(0)}g
                     </p>
@@ -384,7 +369,7 @@ function ResumenView({ dias, onSelectDay }: { dias: DiaData[]; onSelectDay: (day
                     return (
                       <div key={ci} className="flex items-start gap-2 text-xs">
                         <span className="font-semibold text-muted-foreground w-20 shrink-0">
-                          {TIPO_LABELS[comida.tipo] || comida.tipo}
+                          {t(`mealTypeLabels.${comida.tipo}`, { defaultValue: comida.tipo })}
                         </span>
                         <span className="text-foreground/80 flex-1 line-clamp-1">{previews}</span>
                       </div>
@@ -392,7 +377,7 @@ function ResumenView({ dias, onSelectDay }: { dias: DiaData[]; onSelectDay: (day
                   })}
                   {dia.comidas.filter((c) => c.alimentos.length === 0).length > 0 && (
                     <p className="text-[10px] text-muted-foreground italic">
-                      {dia.comidas.filter((c) => c.alimentos.length === 0).length} comida(s) sin alimentos
+                      {t("mealsWithoutFoods", { count: dia.comidas.filter((c) => c.alimentos.length === 0).length })}
                     </p>
                   )}
                 </div>
@@ -406,6 +391,7 @@ function ResumenView({ dias, onSelectDay }: { dias: DiaData[]; onSelectDay: (day
 }
 
 function AnalisisView({ dias }: { dias: DiaData[] }) {
+  const t = useTranslations("diets.planVisualShared");
   const stats = useMemo(() => {
     const n = Math.max(dias.length, 1);
     const allItems = dias.flatMap((d) => d.comidas.flatMap((c) => c.alimentos));
@@ -449,7 +435,7 @@ function AnalisisView({ dias }: { dias: DiaData[] }) {
       const cal = gAvg * 9 + cAvg * 4 + pAvg * 4;
       return {
         tipo,
-        label: TIPO_LABELS[tipo] || tipo,
+        label: t(`mealTypeLabels.${tipo}`, { defaultValue: tipo }),
         grasasG: Math.round(gAvg * 10) / 10,
         carbG: Math.round(cAvg * 10) / 10,
         protG: Math.round(pAvg * 10) / 10,
@@ -464,13 +450,13 @@ function AnalisisView({ dias }: { dias: DiaData[] }) {
     });
 
     return { avg, grasaKcal, carbKcal, protKcal, energyTotal, comidasMacros };
-  }, [dias]);
+  }, [dias, t]);
 
   const { avg, grasaKcal, carbKcal, protKcal, energyTotal, comidasMacros } = stats;
   const macroPieData = [
-    { name: "Grasa", value: grasaKcal, color: MACRO_COLORS.grasas },
-    { name: "Hidratos", value: carbKcal, color: MACRO_COLORS.carbohidratos },
-    { name: "Proteína", value: protKcal, color: MACRO_COLORS.proteinas },
+    { name: t("macroFat"), value: grasaKcal, color: MACRO_COLORS.grasas },
+    { name: t("macroCarbs"), value: carbKcal, color: MACRO_COLORS.carbohidratos },
+    { name: t("macroProtein"), value: protKcal, color: MACRO_COLORS.proteinas },
   ];
   const mealsWithEnergy = comidasMacros.filter((c) => c.calTotal > 0);
   const mealsWithProtein = comidasMacros.filter((c) => c.protG > 0);
@@ -478,19 +464,19 @@ function AnalisisView({ dias }: { dias: DiaData[] }) {
   return (
     <div className="space-y-4">
       {dias.length > 1 && (
-        <p className="text-xs italic text-muted-foreground text-right">Mostrando media diaria</p>
+        <p className="text-xs italic text-muted-foreground text-right">{t("showingDailyAvg")}</p>
       )}
 
       {/* Análisis global */}
       <div className="bg-card rounded-xl border border-border p-5">
-        <h4 className="text-base font-semibold mb-4">Análisis global</h4>
+        <h4 className="text-base font-semibold mb-4">{t("analysisTitle")}</h4>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
           {[
-            { icon: <Flame className="w-4 h-4" />, label: "Energía", value: Math.round(avg.calorias), unit: "kcal", color: "#b197fc", bg: "bg-purple-50 dark:bg-purple-500/10" },
-            { icon: <Droplets className="w-4 h-4" />, label: "Grasa", value: avg.grasas, unit: "g", color: MACRO_COLORS.grasas, bg: "bg-yellow-50 dark:bg-yellow-500/10" },
-            { icon: <Circle className="w-4 h-4" />, label: "H. Carbono", value: avg.carbohidratos, unit: "g", color: MACRO_COLORS.carbohidratos, bg: "bg-orange-50 dark:bg-orange-500/10" },
-            { icon: <Diamond className="w-4 h-4" />, label: "Proteína", value: avg.proteinas, unit: "g", color: MACRO_COLORS.proteinas, bg: "bg-blue-50 dark:bg-blue-500/10" },
-            { icon: <Triangle className="w-4 h-4" />, label: "Fibra", value: avg.fibra, unit: "g", color: "#10b981", bg: "bg-emerald-50 dark:bg-emerald-500/10" },
+            { icon: <Flame className="w-4 h-4" />, label: t("energyAnalysis"), value: Math.round(avg.calorias), unit: "kcal", color: "#b197fc", bg: "bg-purple-50 dark:bg-purple-500/10" },
+            { icon: <Droplets className="w-4 h-4" />, label: t("fatAnalysis"), value: avg.grasas, unit: "g", color: MACRO_COLORS.grasas, bg: "bg-yellow-50 dark:bg-yellow-500/10" },
+            { icon: <Circle className="w-4 h-4" />, label: t("carbsAnalysis"), value: avg.carbohidratos, unit: "g", color: MACRO_COLORS.carbohidratos, bg: "bg-orange-50 dark:bg-orange-500/10" },
+            { icon: <Diamond className="w-4 h-4" />, label: t("proteinAnalysis"), value: avg.proteinas, unit: "g", color: MACRO_COLORS.proteinas, bg: "bg-blue-50 dark:bg-blue-500/10" },
+            { icon: <Triangle className="w-4 h-4" />, label: t("fiberAnalysis"), value: avg.fibra, unit: "g", color: "#10b981", bg: "bg-emerald-50 dark:bg-emerald-500/10" },
           ].map((m) => (
             <div key={m.label} className="space-y-2">
               <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">{m.icon} {m.label}</div>
@@ -510,7 +496,7 @@ function AnalisisView({ dias }: { dias: DiaData[] }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Macronutrientes */}
         <div className="bg-card rounded-xl border border-border p-5">
-          <h4 className="text-sm font-semibold mb-3">Distribución de macronutrientes</h4>
+          <h4 className="text-sm font-semibold mb-3">{t("macroDistribution")}</h4>
           <div className="flex items-center gap-4">
             <div className="w-[120px] h-[120px] shrink-0">
               <ResponsiveContainer width="100%" height="100%">
@@ -539,7 +525,7 @@ function AnalisisView({ dias }: { dias: DiaData[] }) {
 
         {/* Distribución energética */}
         <div className="bg-card rounded-xl border border-border p-5">
-          <h4 className="text-sm font-semibold mb-3">Distribución energética</h4>
+          <h4 className="text-sm font-semibold mb-3">{t("energyDistribution")}</h4>
           <div className="flex items-center gap-4">
             <div className="w-[120px] h-[120px] shrink-0">
               <ResponsiveContainer width="100%" height="100%">
@@ -568,7 +554,7 @@ function AnalisisView({ dias }: { dias: DiaData[] }) {
 
         {/* Distribución proteica */}
         <div className="bg-card rounded-xl border border-border p-5">
-          <h4 className="text-sm font-semibold mb-3">Distribución proteica</h4>
+          <h4 className="text-sm font-semibold mb-3">{t("proteinDistribution")}</h4>
           <div className="flex items-center gap-4">
             <div className="w-[120px] h-[120px] shrink-0">
               <ResponsiveContainer width="100%" height="100%">
@@ -599,8 +585,8 @@ function AnalisisView({ dias }: { dias: DiaData[] }) {
       {/* Distribución de grasas e hidratos */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {[
-          { title: "Distribución de las grasas", totalG: avg.grasas, kcal: Math.round(grasaKcal), pct: Math.round((grasaKcal / energyTotal) * 100), field: "grasasG" as const, color: MACRO_COLORS.grasas },
-          { title: "Distribución de los hidratos", totalG: avg.carbohidratos, kcal: Math.round(carbKcal), pct: Math.round((carbKcal / energyTotal) * 100), field: "carbG" as const, color: MACRO_COLORS.carbohidratos },
+          { title: t("fatDistribution"), totalG: avg.grasas, kcal: Math.round(grasaKcal), pct: Math.round((grasaKcal / energyTotal) * 100), field: "grasasG" as const, color: MACRO_COLORS.grasas },
+          { title: t("carbDistribution"), totalG: avg.carbohidratos, kcal: Math.round(carbKcal), pct: Math.round((carbKcal / energyTotal) * 100), field: "carbG" as const, color: MACRO_COLORS.carbohidratos },
         ].map((block) => {
           const mealsForBlock = comidasMacros.filter((m) => m[block.field] > 0);
           return (
@@ -638,7 +624,7 @@ function AnalisisView({ dias }: { dias: DiaData[] }) {
       {/* Comidas mini charts */}
       {mealsWithEnergy.length > 0 && (
         <div className="bg-card rounded-xl border border-border p-4">
-          <h4 className="text-sm font-semibold mb-3">Comidas</h4>
+          <h4 className="text-sm font-semibold mb-3">{t("mealsLabel")}</h4>
           <div className="grid" style={{ gridTemplateColumns: `repeat(${Math.min(mealsWithEnergy.length, 4)}, 1fr)` }}>
             {mealsWithEnergy.map((meal) => (
               <div key={meal.tipo} className="relative group flex flex-col items-center gap-1 cursor-pointer">
@@ -670,21 +656,21 @@ function AnalisisView({ dias }: { dias: DiaData[] }) {
                 <div className="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50">
                   <div className="bg-card border border-border/30 rounded-2xl shadow-xl p-3 whitespace-nowrap text-[11px]">
                     <div className="grid grid-cols-[auto_auto_auto_auto] gap-x-3 gap-y-1.5 items-center">
-                      <span className="font-semibold px-2 py-0.5 rounded-full" style={{ color: MACRO_COLORS.grasas, background: MACRO_COLORS.grasas + "22" }}>Grasa</span>
+                      <span className="font-semibold px-2 py-0.5 rounded-full" style={{ color: MACRO_COLORS.grasas, background: MACRO_COLORS.grasas + "22" }}>{t("macroFat")}</span>
                       <span className="tabular-nums text-right">{meal.grasasKcal} kcal</span>
                       <span className="tabular-nums text-right">{meal.grasasPct}%</span>
                       <span className="tabular-nums text-right">{meal.grasasG} g</span>
-                      <span className="font-semibold px-2 py-0.5 rounded-full" style={{ color: MACRO_COLORS.carbohidratos, background: MACRO_COLORS.carbohidratos + "22" }}>H. Carbono</span>
+                      <span className="font-semibold px-2 py-0.5 rounded-full" style={{ color: MACRO_COLORS.carbohidratos, background: MACRO_COLORS.carbohidratos + "22" }}>{t("carbsLabel")}</span>
                       <span className="tabular-nums text-right">{meal.carbKcal} kcal</span>
                       <span className="tabular-nums text-right">{meal.carbPct}%</span>
                       <span className="tabular-nums text-right">{meal.carbG} g</span>
-                      <span className="font-semibold px-2 py-0.5 rounded-full" style={{ color: MACRO_COLORS.proteinas, background: MACRO_COLORS.proteinas + "22" }}>Proteína</span>
+                      <span className="font-semibold px-2 py-0.5 rounded-full" style={{ color: MACRO_COLORS.proteinas, background: MACRO_COLORS.proteinas + "22" }}>{t("macroProtein")}</span>
                       <span className="tabular-nums text-right">{meal.protKcal} kcal</span>
                       <span className="tabular-nums text-right">{meal.protPct}%</span>
                       <span className="tabular-nums text-right">{meal.protG} g</span>
                     </div>
                     <div className="flex items-center gap-3 pt-2 mt-2 border-t border-border/30">
-                      <span className="font-semibold text-muted-foreground">Energía</span>
+                      <span className="font-semibold text-muted-foreground">{t("energyTooltip")}</span>
                       <span className="tabular-nums font-semibold">{meal.calTotal} kcal</span>
                     </div>
                   </div>
@@ -703,6 +689,7 @@ function AnalisisView({ dias }: { dias: DiaData[] }) {
 // ---------------------------------------------------------------------------
 
 export function PlanVisualShared({ nombre, pacienteNombre, dias, brandName, dietistaNombre }: PlanVisualSharedProps) {
+  const t = useTranslations("diets.planVisualShared");
   const [vista, setVista] = useState<"resumen" | "plan" | "analisis">("resumen");
   const [selectedDayKey, setSelectedDayKey] = useState<string>("TODOS");
 
@@ -741,7 +728,7 @@ export function PlanVisualShared({ nombre, pacienteNombre, dias, brandName, diet
           className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium print:hidden"
         >
           <Printer className="w-4 h-4" />
-          Imprimir
+          {t("print")}
         </button>
       </div>
 
@@ -765,7 +752,7 @@ export function PlanVisualShared({ nombre, pacienteNombre, dias, brandName, diet
                 : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
             )}
           >
-            Todas
+            {t("all")}
           </button>
           {DIA_KEYS.map((key) => {
             const exists = diasOrdenados.some((d) => d.dia === key);
@@ -788,7 +775,7 @@ export function PlanVisualShared({ nombre, pacienteNombre, dias, brandName, diet
                   !exists && "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-muted-foreground",
                 )}
               >
-                {DIA_LABELS[key]}
+                {t(`dayLabels.${key}`)}
               </button>
             );
           })}
@@ -806,7 +793,7 @@ export function PlanVisualShared({ nombre, pacienteNombre, dias, brandName, diet
             )}
           >
             <LayoutGrid className="w-4 h-4" />
-            Resumen
+            {t("summaryTab")}
           </button>
           <button
             type="button"
@@ -819,7 +806,7 @@ export function PlanVisualShared({ nombre, pacienteNombre, dias, brandName, diet
             )}
           >
             <ClipboardList className="w-4 h-4" />
-            Plan
+            {t("planTab")}
           </button>
           <button
             type="button"
@@ -832,7 +819,7 @@ export function PlanVisualShared({ nombre, pacienteNombre, dias, brandName, diet
             )}
           >
             <BarChart3 className="w-4 h-4" />
-            Análisis
+            {t("analysisTab")}
           </button>
         </div>
       </div>
@@ -857,7 +844,7 @@ export function PlanVisualShared({ nombre, pacienteNombre, dias, brandName, diet
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-primary" />
-                    {DIA_LABELS[dia.dia] || dia.dia}
+                    {t(`dayLabels.${dia.dia}`)}
                   </h2>
                   <MacroBadges
                     calorias={dayMacros.calorias}
@@ -888,7 +875,7 @@ export function PlanVisualShared({ nombre, pacienteNombre, dias, brandName, diet
           <Leaf className="w-5 h-5 text-primary" />
           <span className="text-lg font-bold text-primary">Annonia</span>
         </div>
-        <p className="text-xs text-muted-foreground">Plan generado con annonia.com</p>
+        <p className="text-xs text-muted-foreground">{t("generatedWith")}</p>
       </div>
     </div>
   );

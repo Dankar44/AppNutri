@@ -4,34 +4,35 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Search, SlidersHorizontal, X, Sparkles, ChevronDown, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 const VITAMINAS_FILTER = [
-  { key: "vitaminaA", label: "Vitamina A", unit: "ug" },
-  { key: "vitaminaB6", label: "Vitamina B6", unit: "mg" },
-  { key: "vitaminaB12", label: "Vitamina B12", unit: "ug" },
-  { key: "vitaminaC", label: "Vitamina C", unit: "mg" },
-  { key: "vitaminaD", label: "Vitamina D", unit: "ug" },
-  { key: "vitaminaE", label: "Vitamina E", unit: "mg" },
-  { key: "vitaminaK", label: "Vitamina K", unit: "ug" },
-  { key: "tiamina", label: "Tiamina (B1)", unit: "mg" },
-  { key: "riboflavina", label: "Riboflavina (B2)", unit: "mg" },
-  { key: "niacina", label: "Niacina (B3)", unit: "mg" },
-  { key: "folato", label: "Folato (B9)", unit: "ug" },
-  { key: "acidoPantotenico", label: "Ác. Pantoténico", unit: "mg" },
-  { key: "colina", label: "Colina", unit: "mg" },
+  { key: "vitaminaA", labelKey: "micros.vitaminaA" as const, unit: "ug" },
+  { key: "vitaminaB6", labelKey: "micros.vitaminaB6" as const, unit: "mg" },
+  { key: "vitaminaB12", labelKey: "micros.vitaminaB12" as const, unit: "ug" },
+  { key: "vitaminaC", labelKey: "micros.vitaminaC" as const, unit: "mg" },
+  { key: "vitaminaD", labelKey: "micros.vitaminaD" as const, unit: "ug" },
+  { key: "vitaminaE", labelKey: "micros.vitaminaE" as const, unit: "mg" },
+  { key: "vitaminaK", labelKey: "micros.vitaminaK" as const, unit: "ug" },
+  { key: "tiamina", labelKey: "micros.tiamina" as const, unit: "mg" },
+  { key: "riboflavina", labelKey: "micros.riboflavina" as const, unit: "mg" },
+  { key: "niacina", labelKey: "micros.niacina" as const, unit: "mg" },
+  { key: "folato", labelKey: "micros.folato" as const, unit: "ug" },
+  { key: "acidoPantotenico", labelKey: "micros.acidoPantotenico" as const, unit: "mg" },
+  { key: "colina", labelKey: "micros.colina" as const, unit: "mg" },
 ];
 const MINERALES_FILTER = [
-  { key: "calcio", label: "Calcio", unit: "mg" },
-  { key: "hierro", label: "Hierro", unit: "mg" },
-  { key: "magnesio", label: "Magnesio", unit: "mg" },
-  { key: "fosforo", label: "Fósforo", unit: "mg" },
-  { key: "potasio", label: "Potasio", unit: "mg" },
-  { key: "sodio", label: "Sodio", unit: "mg" },
-  { key: "cinc", label: "Cinc", unit: "mg" },
-  { key: "cobre", label: "Cobre", unit: "mg" },
-  { key: "manganeso", label: "Manganeso", unit: "mg" },
-  { key: "selenio", label: "Selenio", unit: "ug" },
-  { key: "fluor", label: "Flúor", unit: "ug" },
+  { key: "calcio", labelKey: "micros.calcio" as const, unit: "mg" },
+  { key: "hierro", labelKey: "micros.hierro" as const, unit: "mg" },
+  { key: "magnesio", labelKey: "micros.magnesio" as const, unit: "mg" },
+  { key: "fosforo", labelKey: "micros.fosforo" as const, unit: "mg" },
+  { key: "potasio", labelKey: "micros.potasio" as const, unit: "mg" },
+  { key: "sodio", labelKey: "micros.sodio" as const, unit: "mg" },
+  { key: "cinc", labelKey: "micros.cinc" as const, unit: "mg" },
+  { key: "cobre", labelKey: "micros.cobre" as const, unit: "mg" },
+  { key: "manganeso", labelKey: "micros.manganeso" as const, unit: "mg" },
+  { key: "selenio", labelKey: "micros.selenio" as const, unit: "ug" },
+  { key: "fluor", labelKey: "micros.fluor" as const, unit: "ug" },
 ];
 const ALL_MICRO_FILTERS = [...VITAMINAS_FILTER, ...MINERALES_FILTER];
 
@@ -42,6 +43,7 @@ const MACRO_PARAMS = [
 ] as const;
 
 export function RecetasFilter() {
+  const t = useTranslations("recipes");
   const router = useRouter();
   const searchParams = useSearchParams();
   const searchDebounce = useRef<NodeJS.Timeout>(null);
@@ -90,7 +92,7 @@ export function RecetasFilter() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Buscar receta..."
+            placeholder={t("filter.buscarPlaceholder")}
             defaultValue={searchParams.get("busqueda") || ""}
             onChange={(e) => handleSearch(e.target.value)}
             maxLength={100}
@@ -106,7 +108,7 @@ export function RecetasFilter() {
           }`}
         >
           <SlidersHorizontal className="w-4 h-4" />
-          <span className="hidden sm:inline">Filtros</span>
+          <span className="hidden sm:inline">{t("filter.filtros")}</span>
           {(hasFilters || hasMicroFilters) && (
             <span className="absolute top-1 right-1 sm:static sm:w-2 sm:h-2 w-2 h-2 rounded-full bg-primary" />
           )}
@@ -114,7 +116,7 @@ export function RecetasFilter() {
         <Link
           href="/recetas/nueva"
           className="sm:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
-          aria-label="Nueva receta"
+          aria-label={t("list.nuevaReceta")}
         >
           <Plus className="w-4 h-4" />
         </Link>
@@ -123,61 +125,73 @@ export function RecetasFilter() {
       {showAdvanced && (
         <div className="bg-card rounded-xl border border-border p-3 sm:p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold">Filtros</h3>
+            <h3 className="text-sm font-semibold">{t("filter.filtros")}</h3>
             {hasFilters && (
               <button
                 onClick={clearFilters}
                 className="text-xs text-primary hover:underline flex items-center gap-1"
               >
-                <X className="w-3 h-3" /> Limpiar filtros
+                <X className="w-3 h-3" /> {t("filter.limpiarFiltros")}
               </button>
             )}
           </div>
 
           <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
             <RangeInput
-              label="Ingredientes"
+              label={t("filter.ingredientes")}
               minKey="ingMin"
               maxKey="ingMax"
               step={1}
               searchParams={searchParams}
               onChange={handleNumberChange}
+              minPlaceholder={t("filter.min")}
+              maxPlaceholder={t("filter.max")}
             />
             <RangeInput
-              label="Tiempo (min)"
+              label={t("filter.tiempoMin")}
               minKey="tiempoMin"
               maxKey="tiempoMax"
               step={1}
               searchParams={searchParams}
               onChange={handleNumberChange}
+              minPlaceholder={t("filter.min")}
+              maxPlaceholder={t("filter.max")}
             />
             <RangeInput
-              label="Calorías /porción"
+              label={t("filter.caloriasPorcion")}
               minKey="calMin"
               maxKey="calMax"
               searchParams={searchParams}
               onChange={handleNumberChange}
+              minPlaceholder={t("filter.min")}
+              maxPlaceholder={t("filter.max")}
             />
             <RangeInput
-              label="Proteínas /porción"
+              label={t("filter.proteinasPorcion")}
               minKey="protMin"
               maxKey="protMax"
               searchParams={searchParams}
               onChange={handleNumberChange}
+              minPlaceholder={t("filter.min")}
+              maxPlaceholder={t("filter.max")}
             />
             <RangeInput
-              label="Carbos /porción"
+              label={t("filter.carbosPorcion")}
               minKey="carbMin"
               maxKey="carbMax"
               searchParams={searchParams}
               onChange={handleNumberChange}
+              minPlaceholder={t("filter.min")}
+              maxPlaceholder={t("filter.max")}
             />
             <RangeInput
-              label="Grasas /porción"
+              label={t("filter.grasasPorcion")}
               minKey="grasaMin"
               maxKey="grasaMax"
               searchParams={searchParams}
               onChange={handleNumberChange}
+              minPlaceholder={t("filter.min")}
+              maxPlaceholder={t("filter.max")}
             />
           </div>
         </div>
@@ -191,8 +205,8 @@ export function RecetasFilter() {
           >
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-primary" />
-              <h3 className="text-sm font-semibold">Filtros avanzados</h3>
-              <span className="text-xs text-muted-foreground hidden sm:inline">· Mínimos de vitaminas y minerales por porción</span>
+              <h3 className="text-sm font-semibold">{t("filter.filtrosAvanzados")}</h3>
+              <span className="text-xs text-muted-foreground hidden sm:inline">· {t("filter.minimosMicros")}</span>
               {hasMicroFilters && <span className="w-2 h-2 rounded-full bg-primary ml-1" />}
             </div>
             <div className="flex items-center gap-3">
@@ -204,7 +218,7 @@ export function RecetasFilter() {
                   onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); clearMicroFilters(); } }}
                   className="text-xs text-primary hover:underline flex items-center gap-1"
                 >
-                  <X className="w-3 h-3" /> Limpiar
+                  <X className="w-3 h-3" /> {t("filter.limpiar")}
                 </span>
               )}
               <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${showMicros ? "rotate-180" : ""}`} />
@@ -214,18 +228,18 @@ export function RecetasFilter() {
           {showMicros && (
             <div className="px-3 sm:px-5 pb-3 sm:pb-5 space-y-4 sm:space-y-5 border-t border-border/60 pt-3 sm:pt-5">
               <div>
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Vitaminas</h4>
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">{t("filter.vitaminas")}</h4>
                 <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                   {VITAMINAS_FILTER.map((m) => (
-                    <MicroInput key={m.key} micro={m} searchParams={searchParams} onChange={handleNumberChange} />
+                    <MicroInput key={m.key} micro={{ key: m.key, label: t(m.labelKey), unit: m.unit }} searchParams={searchParams} onChange={handleNumberChange} minPlaceholder={t("filter.min")} />
                   ))}
                 </div>
               </div>
               <div>
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Minerales</h4>
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">{t("filter.minerales")}</h4>
                 <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                   {MINERALES_FILTER.map((m) => (
-                    <MicroInput key={m.key} micro={m} searchParams={searchParams} onChange={handleNumberChange} />
+                    <MicroInput key={m.key} micro={{ key: m.key, label: t(m.labelKey), unit: m.unit }} searchParams={searchParams} onChange={handleNumberChange} minPlaceholder={t("filter.min")} />
                   ))}
                 </div>
               </div>
@@ -244,6 +258,8 @@ function RangeInput({
   step,
   searchParams,
   onChange,
+  minPlaceholder,
+  maxPlaceholder,
 }: {
   label: string;
   minKey: string;
@@ -251,6 +267,8 @@ function RangeInput({
   step?: number;
   searchParams: { get(key: string): string | null };
   onChange: (key: string, value: string) => void;
+  minPlaceholder: string;
+  maxPlaceholder: string;
 }) {
   return (
     <div>
@@ -260,7 +278,7 @@ function RangeInput({
           type="number"
           min={0}
           {...(step ? { step } : {})}
-          placeholder="Mín"
+          placeholder={minPlaceholder}
           defaultValue={searchParams.get(minKey) || ""}
           onChange={(e) => onChange(minKey, e.target.value)}
           className="w-full px-2 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
@@ -269,7 +287,7 @@ function RangeInput({
           type="number"
           min={0}
           {...(step ? { step } : {})}
-          placeholder="Máx"
+          placeholder={maxPlaceholder}
           defaultValue={searchParams.get(maxKey) || ""}
           onChange={(e) => onChange(maxKey, e.target.value)}
           className="w-full px-2 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
@@ -283,10 +301,12 @@ function MicroInput({
   micro,
   searchParams,
   onChange,
+  minPlaceholder,
 }: {
   micro: { key: string; label: string; unit: string };
   searchParams: { get(key: string): string | null };
   onChange: (key: string, value: string) => void;
+  minPlaceholder: string;
 }) {
   return (
     <div>
@@ -298,7 +318,7 @@ function MicroInput({
           type="number"
           min={0}
           step="0.01"
-          placeholder="Mín"
+          placeholder={minPlaceholder}
           defaultValue={searchParams.get(`m_${micro.key}`) || ""}
           onChange={(e) => onChange(`m_${micro.key}`, e.target.value)}
           className="w-full pl-3 pr-10 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"

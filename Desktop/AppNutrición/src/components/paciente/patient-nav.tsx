@@ -11,7 +11,9 @@ import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logoutPaciente } from "@/app/actions/paciente-auth";
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { ThemeToggle } from "@/components/theme-toggle";
+
 
 type NavItem = {
   href: string;
@@ -25,39 +27,41 @@ type NavSection = {
   items: NavItem[];
 };
 
-const NAV_SECTIONS: NavSection[] = [
-  {
-    title: "Mi plan",
-    items: [
-      { href: "/paciente/portal", label: "Dashboard", icon: LayoutDashboard, exact: true },
-      { href: "/paciente/portal/dieta", label: "Mi dieta", icon: UtensilsCrossed, exact: true },
-      { href: "/paciente/portal/dieta/lista-compra", label: "Lista de la compra", icon: ShoppingCart },
-      { href: "/paciente/portal/recomendaciones", label: "Recomendaciones", icon: MessageSquareText },
-    ],
-  },
-  {
-    title: "Mi seguimiento",
-    items: [
-      { href: "/paciente/portal/seguimiento", label: "Diario", icon: BookOpen, exact: true },
-      { href: "/paciente/portal/seguimiento/horario", label: "Mi horario", icon: Clock },
-      { href: "/paciente/portal/evolucion", label: "Evolución", icon: TrendingUp },
-    ],
-  },
-  {
-    title: "Con mi nutri",
-    items: [
-      { href: "/paciente/portal/citas", label: "Mis citas", icon: Calendar },
-      { href: "/paciente/portal/mensajes", label: "Mensajes", icon: MessageSquare },
-    ],
-  },
-  {
-    title: "Cuenta",
-    items: [
-      { href: "/paciente/portal/exportar-pdf", label: "Generar PDF", icon: FileDown },
-      { href: "/paciente/portal/perfil", label: "Mi perfil", icon: Settings },
-    ],
-  },
-];
+function getPatientNavSections(t: (key: string) => string): NavSection[] {
+  return [
+    {
+      title: t("patientNav.miPlan"),
+      items: [
+        { href: "/paciente/portal", label: t("patientNavItems.dashboard"), icon: LayoutDashboard, exact: true },
+        { href: "/paciente/portal/dieta", label: t("patientNavItems.miDieta"), icon: UtensilsCrossed, exact: true },
+        { href: "/paciente/portal/dieta/lista-compra", label: t("patientNavItems.listaDeLaCompra"), icon: ShoppingCart },
+        { href: "/paciente/portal/recomendaciones", label: t("patientNavItems.recomendaciones"), icon: MessageSquareText },
+      ],
+    },
+    {
+      title: t("patientNav.miSeguimiento"),
+      items: [
+        { href: "/paciente/portal/seguimiento", label: t("patientNavItems.diario"), icon: BookOpen, exact: true },
+        { href: "/paciente/portal/seguimiento/horario", label: t("patientNavItems.miHorario"), icon: Clock },
+        { href: "/paciente/portal/evolucion", label: t("patientNavItems.evolucion"), icon: TrendingUp },
+      ],
+    },
+    {
+      title: t("patientNav.conMiNutri"),
+      items: [
+        { href: "/paciente/portal/citas", label: t("patientNavItems.misCitas"), icon: Calendar },
+        { href: "/paciente/portal/mensajes", label: t("patientNavItems.mensajes"), icon: MessageSquare },
+      ],
+    },
+    {
+      title: t("patientNav.cuenta"),
+      items: [
+        { href: "/paciente/portal/exportar-pdf", label: t("patientNavItems.generarPdf"), icon: FileDown },
+        { href: "/paciente/portal/perfil", label: t("patientNavItems.miPerfil"), icon: Settings },
+      ],
+    },
+  ];
+}
 
 interface Props {
   nombre: string;
@@ -67,6 +71,7 @@ interface Props {
 }
 
 export function PatientNav({ nombre, apellidos, fotoUrl, badges: badgesInit = {} }: Props) {
+  const t = useTranslations("common");
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -145,7 +150,7 @@ export function PatientNav({ nombre, apellidos, fotoUrl, badges: badgesInit = {}
 
       {/* Nav por secciones */}
       <nav className="flex-1 py-4 px-3 overflow-y-auto">
-        {NAV_SECTIONS.map((section, idx) => (
+        {getPatientNavSections(t).map((section, idx) => (
           <div key={section.title} className={cn(idx > 0 && "mt-6")}>
             <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/90 leading-snug">
               {section.title}
@@ -206,17 +211,17 @@ export function PatientNav({ nombre, apellidos, fotoUrl, badges: badgesInit = {}
           )}
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium truncate">{nombre} {apellidos}</p>
-            <p className="text-xs text-muted-foreground">Paciente</p>
+            <p className="text-xs text-muted-foreground">{t("patientSidebar.paciente")}</p>
           </div>
           <ThemeToggle className="shrink-0" />
         </div>
         <button
           onClick={() => logoutPaciente()}
           className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors w-full"
-          title="Cerrar sesión"
+          title={t("patientSidebar.cerrarSesionTitle")}
         >
           <LogOut className="w-5 h-5 shrink-0" />
-          <span>Cerrar sesión</span>
+          <span>{t("patientSidebar.cerrarSesion")}</span>
         </button>
       </div>
     </>
@@ -229,7 +234,7 @@ export function PatientNav({ nombre, apellidos, fotoUrl, badges: badgesInit = {}
         <div className="min-w-20 shrink-0">
           <button
             onClick={() => setMobileOpen(true)}
-            aria-label="Abrir menú"
+            aria-label={t("patientSidebar.abrirMenu")}
             className="p-2.5 -ml-1 rounded-lg hover:bg-muted transition-colors min-h-11 min-w-11 flex items-center justify-center"
           >
             <Menu className="w-5 h-5" />

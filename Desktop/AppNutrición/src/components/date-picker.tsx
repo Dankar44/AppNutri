@@ -2,9 +2,8 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
-
-const DIAS_SEMANA = ["L", "M", "X", "J", "V", "S", "D"];
-const MESES = [
+const DAY_LABELS = ["L", "M", "X", "J", "V", "S", "D"];
+const MONTH_LABELS = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
 ];
@@ -27,11 +26,31 @@ function formatDisplay(dateStr: string): string {
 const DROP_W = 280;
 const DROP_H = 340;
 
+function parseTypedDate(input: string, pastOnly: boolean): string | null {
+  const clean = input.replace(/[^\d]/g, "");
+  if (clean.length !== 8) return null;
+  const day = parseInt(clean.slice(0, 2));
+  const month = parseInt(clean.slice(2, 4));
+  const year = parseInt(clean.slice(4, 8));
+  if (month < 1 || month > 12 || day < 1 || day > 31 || year < 1900 || year > 2100) return null;
+  const maxDays = new Date(year, month, 0).getDate();
+  if (day > maxDays) return null;
+  if (pastOnly && new Date(year, month - 1, day) > new Date()) return null;
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+function formatTypedInput(raw: string): string {
+  const digits = raw.replace(/[^\d]/g, "").slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
 export function DatePicker({
   value,
   onChange,
   required,
-  placeholder = "dd/mm/aaaa",
+  placeholder,
   pastOnly = false,
 }: {
   value: string;
@@ -41,6 +60,7 @@ export function DatePicker({
   pastOnly?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [typedValue, setTypedValue] = useState(() => value ? formatDisplay(value) : "");
   const [viewYear, setViewYear] = useState(() => {
     if (value) return parseInt(value.split("-")[0]);
     return new Date().getFullYear();
@@ -53,6 +73,11 @@ export function DatePicker({
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const ref = useRef<HTMLDivElement>(null);
   const dropRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setTypedValue(value ? formatDisplay(value) : "");
+  }, [value]);
 
   const calcPos = useCallback(() => {
     if (!ref.current) return;
@@ -143,18 +168,59 @@ export function DatePicker({
 
   return (
     <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={toggle}
-        className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg border bg-card text-left transition-shadow text-sm ${
+      <div
+        className={`w-full flex items-center gap-2 px-4 py-2.5 rounded-lg border bg-card transition-shadow text-sm ${
           open ? "border-primary ring-2 ring-ring" : "border-input hover:border-primary/40"
         }`}
       >
-        <span className={value ? "text-foreground" : "text-muted-foreground"}>
-          {value ? formatDisplay(value) : placeholder}
-        </span>
-        <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
-      </button>
+        <input
+          ref={inputRef}
+          type="text"
+          inputMode="numeric"
+          placeholder={placeholder ?? "dd/mm/aaaa"}
+          value={typedValue}
+          onChange={(e) => {
+            const formatted = formatTypedInput(e.target.value);
+            setTypedValue(formatted);
+            const digits = formatted.replace(/[^\d]/g, "");
+            if (digits.length === 8) {
+              const parsed = parseTypedDate(formatted, pastOnly);
+              if (parsed) {
+                onChange(parsed);
+                const [y, m] = parsed.split("-").map(Number);
+                setViewYear(y);
+                setViewMonth(m - 1);
+              }
+            }
+          }}
+          onBlur={() => {
+            if (!typedValue) {
+              onChange("");
+              return;
+            }
+            const parsed = parseTypedDate(typedValue, pastOnly);
+            if (parsed) {
+              onChange(parsed);
+            } else {
+              setTypedValue(value ? formatDisplay(value) : "");
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              inputRef.current?.blur();
+            }
+          }}
+          className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground min-w-0"
+        />
+        <button
+          type="button"
+          onClick={toggle}
+          className="shrink-0 p-0.5 rounded hover:bg-muted transition-colors"
+        >
+          <Calendar className="w-4 h-4 text-muted-foreground" />
+        </button>
+      </div>
 
       {required && !value && (
         <input
@@ -179,7 +245,7 @@ export function DatePicker({
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button type="button" onClick={() => setShowYearGrid(!showYearGrid)} className="text-sm font-semibold hover:text-primary transition-colors">
-              {MESES[viewMonth]} {viewYear}
+              {MONTH_LABELS[viewMonth]} {viewYear}
             </button>
             <button type="button" onClick={nextMonth} className="p-1.5 rounded-md hover:bg-muted transition-colors touch-manipulation">
               <ChevronRight className="w-4 h-4" />
@@ -222,9 +288,9 @@ export function DatePicker({
           ) : (
             <div>
               <div className="grid grid-cols-7 mb-1">
-                {DIAS_SEMANA.map((d) => (
-                  <div key={d} className="text-center text-[11px] font-medium text-muted-foreground py-1">
-                    {d}
+                {DAY_LABELS.map((label) => (
+                  <div key={label} className="text-center text-[11px] font-medium text-muted-foreground py-1">
+                    {label}
                   </div>
                 ))}
               </div>

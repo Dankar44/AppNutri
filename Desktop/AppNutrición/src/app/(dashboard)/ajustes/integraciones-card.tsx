@@ -7,6 +7,7 @@ import {
   desconectarGoogleNutri,
   toggleSincronizarNutri,
 } from "@/app/actions/google-integracion";
+import { useTranslations } from "next-intl";
 
 type Props = {
   integracion: {
@@ -19,6 +20,7 @@ type Props = {
 };
 
 export function IntegracionesCard({ integracion, flash }: Props) {
+  const t = useTranslations("settings.integraciones");
   const [pending, startTransition] = useTransition();
   const [showDisconnect, setShowDisconnect] = useState(false);
 
@@ -38,7 +40,7 @@ export function IntegracionesCard({ integracion, flash }: Props) {
     <section className="bg-card rounded-xl border border-border p-5">
       <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
         <CalendarCheck2 className="w-5 h-5 text-primary" />
-        Integraciones
+        {t("titulo")}
       </h2>
 
       {flash && (
@@ -63,10 +65,9 @@ export function IntegracionesCard({ integracion, flash }: Props) {
         <div className="flex items-start gap-3">
           <GoogleCalendarLogo />
           <div className="flex-1 min-w-0">
-            <p className="font-semibold">Google Calendar</p>
+            <p className="font-semibold">{t("googleCalendar")}</p>
             <p className="text-xs text-muted-foreground">
-              Sincroniza automáticamente tus citas con tu calendario de Google.
-              Si activas Google Meet en una cita, se genera el enlace automáticamente.
+              {t("googleCalendarDescripcion")}
             </p>
           </div>
         </div>
@@ -78,22 +79,22 @@ export function IntegracionesCard({ integracion, flash }: Props) {
             className="mt-4 w-full flex items-center justify-center gap-2 rounded-lg bg-primary text-white px-4 py-2.5 text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
           >
             {pending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-            {pending ? "Conectando…" : "Conectar con Google"}
+            {pending ? t("conectando") : t("conectarConGoogle")}
           </button>
         ) : (
           <div className="mt-4 space-y-3">
             <div className="flex items-center gap-2 text-xs bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30 rounded-lg px-3 py-2">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
               <span className="truncate">
-                Conectado como <strong className="font-semibold">{integracion.email}</strong>
+                {t("conectadoComo", { email: integracion.email })}
               </span>
             </div>
 
             <label className="flex items-center justify-between gap-3 cursor-pointer">
               <div className="min-w-0">
-                <p className="text-sm font-medium">Sincronizar citas automáticamente</p>
+                <p className="text-sm font-medium">{t("sincronizarCitasAutomaticamente")}</p>
                 <p className="text-xs text-muted-foreground">
-                  Al crear/editar/cancelar una cita se actualizará en Google Calendar.
+                  {t("sincronizarDescripcion")}
                 </p>
               </div>
               <Toggle
@@ -109,7 +110,7 @@ export function IntegracionesCard({ integracion, flash }: Props) {
               className="w-full flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors disabled:opacity-50"
             >
               <Link2Off className="w-4 h-4" />
-              Desconectar
+              {t("desconectar")}
             </button>
           </div>
         )}
@@ -172,12 +173,13 @@ function DisconnectDialog({
   onConfirm: (accion: "borrar" | "dejar") => void;
   pending: boolean;
 }) {
+  const t = useTranslations("settings.desconectarDialog");
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="bg-card rounded-xl border border-border max-w-md w-full p-5">
-        <h3 className="text-lg font-semibold">Desconectar Google Calendar</h3>
+        <h3 className="text-lg font-semibold">{t("titulo")}</h3>
         <p className="text-sm text-muted-foreground mt-2">
-          ¿Qué quieres hacer con las citas que ya se han sincronizado con Google Calendar?
+          {t("descripcion")}
         </p>
 
         <div className="mt-4 space-y-2">
@@ -186,9 +188,9 @@ function DisconnectDialog({
             disabled={pending}
             className="w-full text-left rounded-lg border border-border p-3 hover:bg-muted disabled:opacity-50"
           >
-            <p className="text-sm font-medium">Dejar las citas en Google</p>
+            <p className="text-sm font-medium">{t("dejarCitas")}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Los eventos creados se quedan en tu calendario pero dejan de actualizarse.
+              {t("dejarCitasDescripcion")}
             </p>
           </button>
           <button
@@ -196,9 +198,9 @@ function DisconnectDialog({
             disabled={pending}
             className="w-full text-left rounded-lg border border-red-200 dark:border-red-500/30 p-3 hover:bg-red-50 dark:hover:bg-red-500/15 disabled:opacity-50"
           >
-            <p className="text-sm font-medium text-red-700 dark:text-red-400">Borrar las citas de Google</p>
+            <p className="text-sm font-medium text-red-700 dark:text-red-400">{t("borrarCitas")}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Se eliminarán todos los eventos creados por Annonia de tu calendario.
+              {t("borrarCitasDescripcion")}
             </p>
           </button>
         </div>
@@ -209,7 +211,7 @@ function DisconnectDialog({
             disabled={pending}
             className="text-sm text-muted-foreground hover:text-foreground px-3 py-2 disabled:opacity-50"
           >
-            Cancelar
+            {t("cancelar")}
           </button>
         </div>
       </div>

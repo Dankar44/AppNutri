@@ -4,12 +4,14 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 type Props = {
   googleLinked: { email: string } | null;
 };
 
 export function GoogleLoginCard({ googleLinked }: Props) {
+  const t = useTranslations("settings.googleLogin");
   const [loading, setLoading] = useState(false);
 
   async function handleLink() {
@@ -22,7 +24,7 @@ export function GoogleLoginCard({ googleLinked }: Props) {
       },
     });
     if (error) {
-      toast.error("No se pudo vincular la cuenta de Google.");
+      toast.error(t("toastError"));
       setLoading(false);
     }
   }
@@ -34,10 +36,9 @@ export function GoogleLoginCard({ googleLinked }: Props) {
           <GoogleGlyph />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold">Inicio de sesión con Google</p>
+          <p className="font-semibold">{t("titulo")}</p>
           <p className="text-xs text-muted-foreground">
-            Vincula tu cuenta de Google para iniciar sesión con un solo clic, sin
-            contraseña.
+            {t("descripcion")}
           </p>
         </div>
       </div>
@@ -46,8 +47,7 @@ export function GoogleLoginCard({ googleLinked }: Props) {
         <div className="mt-3 flex items-center gap-2 text-xs bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30 rounded-lg px-3 py-2">
           <CheckCircle2 className="w-4 h-4 shrink-0" />
           <span className="truncate">
-            Vinculada con{" "}
-            <strong className="font-semibold">{googleLinked.email}</strong>
+            {t("vinculadaCon", { email: googleLinked.email })}
           </span>
         </div>
       ) : (
@@ -61,7 +61,7 @@ export function GoogleLoginCard({ googleLinked }: Props) {
           ) : (
             <GoogleGlyph />
           )}
-          {loading ? "Conectando…" : "Vincular cuenta de Google"}
+          {loading ? t("conectando") : t("vincularCuenta")}
         </button>
       )}
     </div>

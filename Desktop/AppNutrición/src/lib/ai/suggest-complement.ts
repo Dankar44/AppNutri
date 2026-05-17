@@ -40,18 +40,18 @@ export function sugerirComplementos(
 
     if (mayorDeficit[0] === "proteinas" && deficit.proteinas > 5) {
       score = alimento.proteinas * factor;
-      razon = "Alto en proteínas";
+      razon = "highProtein";
     } else if (mayorDeficit[0] === "carbohidratos" && deficit.carbohidratos > 10) {
       score = alimento.carbohidratos * factor;
-      razon = "Fuente de carbohidratos";
+      razon = "carbSource";
     } else if (mayorDeficit[0] === "grasas" && deficit.grasas > 5) {
       score = alimento.grasas * factor;
-      razon = "Fuente de grasas saludables";
+      razon = "healthyFatSource";
     } else {
       const calPorPorcion = alimento.calorias * factor;
       if (deficit.calorias > 100 && calPorPorcion > 50) {
         score = calPorPorcion / 10;
-        razon = "Aporta calorías";
+        razon = "calorieSource";
       }
     }
 

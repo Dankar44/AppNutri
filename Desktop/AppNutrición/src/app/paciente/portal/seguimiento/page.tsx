@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BookOpen, Loader2, UtensilsCrossed, CheckCircle2, AlertCircle, Save } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import {
   getSeguimientoPacienteDia,
   guardarSeguimientoPaciente,
@@ -37,6 +38,7 @@ function combinarSensacion(sensacion: string | null, texto: string): string {
 }
 
 export default function SeguimientoPage() {
+  const t = useTranslations("patient-portal");
   const [fecha, setFecha] = useState(new Date().toISOString().split("T")[0]);
   const [loading, setLoading] = useState(true);
   const [manualSaving, setManualSaving] = useState(false);
@@ -96,7 +98,7 @@ export default function SeguimientoPage() {
         setComidasData(inicializarComidas(planData.comidas));
       }
     } catch {
-      toast.error("Error al cargar datos");
+      toast.error(t("seguimiento.toast.errorCargar"));
     } finally {
       setLoading(false);
     }
@@ -166,7 +168,7 @@ export default function SeguimientoPage() {
       !celebracionRef.current
     ) {
       celebracionRef.current = true;
-      toast.success("Día completo", { duration: 3000 });
+      toast.success(t("seguimiento.toast.diaCompleto"), { duration: 3000 });
     }
   }, [alimentosCumplidos, totalAlimentos, loading]);
 
@@ -215,9 +217,9 @@ export default function SeguimientoPage() {
         notas: combinarSensacion(sensacion, notasTexto) || undefined,
         comidasData,
       });
-      toast.success("Seguimiento guardado");
+      toast.success(t("seguimiento.toast.seguimientoGuardado"));
     } catch {
-      toast.error("Error al guardar");
+      toast.error(t("seguimiento.toast.errorGuardar"));
     } finally {
       setManualSaving(false);
     }
@@ -281,14 +283,14 @@ export default function SeguimientoPage() {
       {comidasPlan.length === 0 ? (
         <section className="rounded-2xl border border-border bg-card p-8 text-center">
           <UtensilsCrossed className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
-          <h3 className="font-semibold mb-1">Sin plan activo para hoy</h3>
+          <h3 className="font-semibold mb-1">{t("seguimiento.sinPlanHoy.title")}</h3>
           <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-            Tu nutricionista aún no te ha asignado un plan alimenticio para este día.
+            {t("seguimiento.sinPlanHoy.description")}
           </p>
         </section>
       ) : (
         <section
-          aria-label="Comidas del día"
+          aria-label={t("seguimiento.comidasDelDia.title")}
           className="rounded-2xl border border-border bg-card overflow-hidden"
         >
           <header className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border">
@@ -297,9 +299,9 @@ export default function SeguimientoPage() {
                 <UtensilsCrossed className="w-5 h-5" strokeWidth={1.75} />
               </span>
               <div>
-                <h2 className="text-base font-semibold">Comidas del día</h2>
+                <h2 className="text-base font-semibold">{t("seguimiento.comidasDelDia.title")}</h2>
                 <p className="text-[11px] text-muted-foreground">
-                  Marca lo que has tomado
+                  {t("seguimiento.comidasDelDia.subtitle")}
                 </p>
               </div>
             </div>
@@ -356,7 +358,7 @@ export default function SeguimientoPage() {
           ) : (
             <Save className="w-4 h-4" />
           )}
-          {manualSaving ? "Guardando..." : "Guardar ahora"}
+          {manualSaving ? t("seguimiento.guardando") : t("seguimiento.guardarAhora")}
         </button>
       </div>
     </div>
@@ -364,32 +366,34 @@ export default function SeguimientoPage() {
 }
 
 function SeguimientoHeader({ status }: { status: "idle" | "saving" | "saved" | "error" }) {
+  const t = useTranslations("patient-portal");
   return (
     <PageHeader
       icon={BookOpen}
-      title="Diario"
-      subtitle="Registra cómo te ha ido el día"
+      title={t("seguimiento.title")}
+      subtitle={t("seguimiento.subtitle")}
       action={<SaveIndicator status={status} />}
     />
   );
 }
 
 function SaveIndicator({ status }: { status: "idle" | "saving" | "saved" | "error" }) {
+  const t = useTranslations("patient-portal");
   if (status === "idle") return null;
   const config = {
     saving: {
       icon: <Loader2 className="w-3 h-3 animate-spin" />,
-      text: "Guardando…",
+      text: t("seguimiento.saveIndicator.guardando"),
       color: "text-muted-foreground",
     },
     saved: {
       icon: <CheckCircle2 className="w-3 h-3" />,
-      text: "Guardado",
+      text: t("seguimiento.saveIndicator.guardado"),
       color: "text-green-600 dark:text-green-400",
     },
     error: {
       icon: <AlertCircle className="w-3 h-3" />,
-      text: "Error",
+      text: t("seguimiento.saveIndicator.error"),
       color: "text-red-600 dark:text-red-400",
     },
   }[status];

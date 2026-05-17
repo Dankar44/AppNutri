@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, Clock, UtensilsCrossed } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { TIPO_LABELS, TIPO_HORAS } from "@/lib/seguimiento";
 import { formatQuantity } from "@/lib/units";
 
@@ -24,6 +27,7 @@ export function ComidaActualCard({
   hayPlan,
   className = "",
 }: Props) {
+  const t = useTranslations("patient-portal.dashboard.comidaActualCard");
   const shell = `rounded-2xl border border-border bg-card w-full flex flex-col ${className}`;
 
   if (!hayPlan) {
@@ -34,14 +38,14 @@ export function ComidaActualCard({
             <UtensilsCrossed className="w-5 h-5" strokeWidth={1.75} />
           </span>
           <div>
-            <h2 className="text-base font-semibold">Tu plan</h2>
+            <h2 className="text-base font-semibold">{t("tuPlan")}</h2>
             <p className="text-[11px] text-muted-foreground">
-              Aún no tienes un plan alimenticio asignado
+              {t("sinPlanAsignado")}
             </p>
           </div>
         </div>
         <p className="text-sm text-muted-foreground mt-3">
-          Tu nutricionista te asignará un plan personalizado. Te avisaremos en cuanto esté listo.
+          {t("sinPlanDesc")}
         </p>
       </section>
     );
@@ -55,18 +59,18 @@ export function ComidaActualCard({
             <UtensilsCrossed className="w-5 h-5" strokeWidth={1.75} />
           </span>
           <div>
-            <h2 className="text-base font-semibold">Sin comida ahora</h2>
-            <p className="text-[11px] text-muted-foreground">Son las {ahoraHHMM}</p>
+            <h2 className="text-base font-semibold">{t("sinComidaAhora")}</h2>
+            <p className="text-[11px] text-muted-foreground">{t("sonLas", { hora: ahoraHHMM })}</p>
           </div>
         </div>
         <p className="text-sm text-muted-foreground mb-4 flex-1">
-          Estás entre comidas. La siguiente se registrará automáticamente cuando llegue su horario.
+          {t("entreComidas")}
         </p>
         <Link
           href="/paciente/portal/dieta"
           className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
         >
-          Ver mi dieta completa
+          {t("verDietaCompleta")}
           <ArrowRight className="w-3.5 h-3.5" />
         </Link>
       </section>
@@ -82,7 +86,7 @@ export function ComidaActualCard({
           </span>
           <div className="min-w-0">
             <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-              Te toca
+              {t("teToca")}
             </p>
             <h2 className="text-base font-semibold truncate">
               {TIPO_LABELS[tipoActual] || tipoActual}
@@ -110,13 +114,13 @@ export function ComidaActualCard({
           ))}
           {alimentos.length > 5 && (
             <li className="text-[11px] text-muted-foreground pl-3">
-              y {alimentos.length - 5} más…
+              {t("yMas", { count: alimentos.length - 5 })}
             </li>
           )}
         </ul>
       ) : (
         <p className="px-5 pb-3 text-sm text-muted-foreground flex-1">
-          Sin alimentos configurados para esta comida.
+          {t("sinAlimentos")}
         </p>
       )}
 
@@ -125,13 +129,13 @@ export function ComidaActualCard({
           href="/paciente/portal/dieta"
           className="text-sm text-primary hover:underline"
         >
-          Ver dieta completa
+          {t("verDieta")}
         </Link>
         <Link
           href="/paciente/portal/seguimiento"
           className="inline-flex items-center gap-1 text-sm font-medium hover:underline"
         >
-          Registrar
+          {t("registrar")}
           <ArrowRight className="w-3.5 h-3.5" />
         </Link>
       </div>

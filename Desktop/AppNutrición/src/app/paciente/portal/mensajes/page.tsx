@@ -5,10 +5,12 @@ import { getConversacionPaciente, getMensajesPaciente } from "@/app/actions/mens
 import { redirect } from "next/navigation";
 import { PacienteMensajesClient } from "./paciente-mensajes-client";
 import { PageHeader } from "@/components/page-header";
+import { getTranslations } from "next-intl/server";
 
 export default async function MensajesPacientePage() {
   const session = await getCurrentPaciente();
   if (!session) redirect("/paciente/login");
+  const t = await getTranslations("patient-portal");
 
   const paciente = await prisma.paciente.findUnique({
     where: { id: session.pacienteId },
@@ -34,8 +36,8 @@ export default async function MensajesPacientePage() {
     <div>
       <PageHeader
         icon={MessageSquare}
-        title="Mensajes"
-        subtitle="Habla con tu nutricionista"
+        title={t("mensajes.title")}
+        subtitle={t("mensajes.subtitle")}
       />
       <PacienteMensajesClient
         dietista={paciente.dietista}

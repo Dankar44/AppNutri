@@ -2,6 +2,9 @@ import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { CalendarDays, ArrowRight } from "lucide-react";
+import { getTranslations } from "next-intl/server";
+import { getLocale } from "@/i18n/locale";
+import { intlTag } from "@/i18n/config";
 import { AvatarPaciente } from "@/components/avatar-paciente";
 import { GoogleCalendarSidebar } from "./google-calendar-sidebar";
 
@@ -17,7 +20,7 @@ export type ProximaCitaAgenda = {
   };
 };
 
-export function AgendaSidebar({
+export async function AgendaSidebar({
   proximaCita,
   esPrimeraConsulta,
   googleConfigured,
@@ -28,11 +31,14 @@ export function AgendaSidebar({
   googleConfigured: boolean;
   googleIntegracion: { email: string; sincronizar: boolean } | null;
 }) {
+  const t = await getTranslations("agenda");
+  const locale = await getLocale();
+  const tag = intlTag(locale);
   return (
     <aside className="w-full xl:w-[min(100%,20rem)] shrink-0 space-y-4 xl:sticky xl:top-6 self-start order-2 mb-6 xl:mb-0">
       <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
         <div className="flex items-start justify-between gap-2 mb-4">
-          <h2 className="text-base font-semibold">Próxima consulta</h2>
+          <h2 className="text-base font-semibold">{t("sidebar.nextAppointment")}</h2>
           {proximaCita && (
             <div className="flex flex-wrap items-center justify-end gap-1.5 shrink-0">
               {esPrimeraConsulta && (
@@ -54,13 +60,13 @@ export function AgendaSidebar({
           <div className="text-center py-6">
             <CalendarDays className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
             <p className="text-sm text-muted-foreground mb-4">
-              No tienes citas programadas a partir de ahora
+              {t("sidebar.noAppointments")}
             </p>
             <Link
               href="/agenda/nueva"
               className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
             >
-              Nueva cita
+              {t("sidebar.newAppointment")}
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -89,17 +95,17 @@ export function AgendaSidebar({
                       inicio.getMonth() === hoy.getMonth() &&
                       inicio.getFullYear() === hoy.getFullYear();
                     const prefijo = mismoDia
-                      ? "Hoy"
-                      : inicio.toLocaleDateString("es-ES", {
+                      ? t("sidebar.today")
+                      : inicio.toLocaleDateString(tag, {
                           weekday: "long",
                         });
                     const pref =
                       prefijo.charAt(0).toUpperCase() + prefijo.slice(1);
-                    const t0 = inicio.toLocaleTimeString("es-ES", {
+                    const t0 = inicio.toLocaleTimeString(tag, {
                       hour: "2-digit",
                       minute: "2-digit",
                     });
-                    const t1 = fin.toLocaleTimeString("es-ES", {
+                    const t1 = fin.toLocaleTimeString(tag, {
                       hour: "2-digit",
                       minute: "2-digit",
                     });
@@ -112,7 +118,7 @@ export function AgendaSidebar({
               href={`/pacientes/${proximaCita.paciente.id}/consultas/nueva`}
               className="flex w-full items-center justify-center rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
             >
-              Iniciar consulta
+              {t("sidebar.startConsultation")}
             </Link>
           </>
         )}
@@ -120,7 +126,7 @@ export function AgendaSidebar({
 
       <div>
         <p className="text-xs font-medium text-muted-foreground mb-2 px-0.5">
-          Configura tu disponibilidad
+          {t("sidebar.configureAvailability")}
         </p>
         <Link
           href="/agenda/horario"
@@ -129,14 +135,13 @@ export function AgendaSidebar({
           <div className="flex gap-4 items-start">
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-base text-foreground">
-                Horario de trabajo
+                {t("sidebar.workScheduleTitle")}
               </h3>
               <p className="text-sm text-muted-foreground mt-2 leading-snug">
-                Indica en tu perfil horarios y datos de consulta para organizar
-                mejor tus citas con pacientes.
+                {t("sidebar.workScheduleDescription")}
               </p>
               <span className="inline-flex items-center gap-1 mt-4 text-sm font-medium text-primary hover:underline">
-                Definir horario de trabajo
+                {t("sidebar.defineWorkSchedule")}
                 <ArrowRight className="w-4 h-4" />
               </span>
             </div>

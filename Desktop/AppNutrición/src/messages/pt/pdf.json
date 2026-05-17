@@ -1,0 +1,128 @@
+{
+  "planDietetico": {
+    "portada": {
+      "titulo": "PLANO ALIMENTAR",
+      "subtitulo": "PERSONALIZADO"
+    },
+    "header": {
+      "subtitulo": "PLANO ALIMENTAR SEMANAL DE {pacienteNombre}"
+    },
+    "secciones": {
+      "planSemanal": "PLANO ALIMENTAR SEMANAL",
+      "recomendaciones": "RECOMENDAÇÕES",
+      "listaCompra": "LISTA DE COMPRAS"
+    },
+    "tabla": {
+      "comida": "Refeição",
+      "platos": "Pratos",
+      "ingredientesYCantidades": "Ingredientes e quantidades"
+    },
+    "macros": {
+      "kcal": "kcal",
+      "proteinas": "Proteínas",
+      "carbohidratos": "Carboidratos",
+      "grasas": "Gorduras"
+    },
+    "receta": {
+      "ingredientes": "INGREDIENTES:",
+      "receta": "RECEITA:"
+    },
+    "enlaceProducto": {
+      "ver": "(ver)",
+      "verImagen": "(ver imagem)"
+    },
+    "contraportada": {
+      "generadoPor": "Gerado por {dietistaNombre}",
+      "plataforma": "annonia.com"
+    },
+    "footer": {
+      "texto": "{brandName} — {fecha}",
+      "plataforma": "annonia.com"
+    },
+    "libre": "livre",
+    "diaLabels": {
+      "lunes": "Segunda-feira",
+      "martes": "Terça-feira",
+      "miercoles": "Quarta-feira",
+      "jueves": "Quinta-feira",
+      "viernes": "Sexta-feira",
+      "sabado": "Sábado",
+      "domingo": "Domingo"
+    },
+    "tipoLabels": {
+      "desayuno": "Café da manhã",
+      "mediaManana": "Lanche da manhã",
+      "almuerzo": "Almoço",
+      "merienda": "Lanche",
+      "cena": "Jantar",
+      "recena": "Ceia"
+    },
+    "horaDefault": {
+      "desayuno": "09:00",
+      "mediaManana": "11:00",
+      "almuerzo": "14:00",
+      "merienda": "17:00",
+      "cena": "21:00",
+      "recena": "23:00"
+    }
+  },
+  "anamnesis": {
+    "titulo": "Anamnese nutricional",
+    "pacienteLabel": "Paciente:",
+    "nutricionistaLabel": "Nutricionista:",
+    "secciones": {
+      "consulta": "Informações da consulta",
+      "personalSocial": "Histórico pessoal e social",
+      "clinica": "Histórico clínico",
+      "alimentaria": "Histórico alimentar",
+      "camposPersonalizados": "Campos personalizados"
+    },
+    "labels": {
+      "motivoConsulta": "Motivo da consulta",
+      "expectativas": "Expectativas",
+      "objetivosClinicos": "Objetivos clínicos",
+      "detalleObjetivos": "Detalhes dos objetivos",
+      "otrasInformaciones": "Outras informações",
+      "funcionIntestinal": "Função intestinal",
+      "detalle": "Detalhe",
+      "calidadSueno": "Qualidade do sono",
+      "fumador": "Fumante",
+      "bebeAlcohol": "Consome álcool",
+      "estadoCivil": "Estado civil",
+      "actividadFisica": "Atividade física",
+      "razaEtnia": "Raça / etnia",
+      "prefiereNoIndicar": "Prefere não informar",
+      "patologias": "Patologias",
+      "detallePatologias": "Detalhes de patologias / evolução",
+      "medicamentos": "Medicamentos",
+      "medicacion": "Medicação (texto livre)",
+      "antecedentesPersonales": "Antecedentes pessoais",
+      "antecedentesFamiliares": "Antecedentes familiares",
+      "otrasClinicas": "Outras informações",
+      "alergias": "Alergias",
+      "intolerancias": "Intolerâncias",
+      "horaLevantarse": "Horário habitual de acordar",
+      "horaAcostarse": "Horário habitual de dormir",
+      "tipoDieta": "Tipo de dieta",
+      "detalleDieta": "Detalhes da dieta",
+      "alimentosFavoritos": "Alimentos favoritos",
+      "alimentosRechazados": "Alimentos rejeitados",
+      "alergiasDetalle": "Alergias (detalhes)",
+      "intoleranciasDetalle": "Intolerâncias (detalhes)",
+      "deficienciasNutricionales": "Deficiências nutricionais",
+      "ingestaAgua": "Ingestão de água",
+      "otrasAlimentaria": "Outras informações"
+    },
+    "footer": {
+      "texto": "{brand} · Gerado em {fecha}",
+      "plataforma": "annonia.com"
+    }
+  },
+  "temas": {
+    "verde": "verde",
+    "azul": "azul",
+    "morado": "roxo",
+    "naranja": "laranja",
+    "oscuro": "escuro"
+  }
+}

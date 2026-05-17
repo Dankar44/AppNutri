@@ -3,6 +3,7 @@ import { TrendingUp, LineChart as LineChartIcon } from "lucide-react";
 import { getCurrentPaciente } from "@/lib/patient-auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/page-header";
+import { getTranslations } from "next-intl/server";
 import {
   EvolucionCard,
   type Medida,
@@ -13,6 +14,7 @@ import { HitosCard } from "@/components/paciente/evolucion/hitos-card";
 export default async function PatientEvolucionPage() {
   const session = await getCurrentPaciente();
   if (!session) redirect("/paciente/login");
+  const t = await getTranslations("patient-portal");
 
   const medidas = await prisma.medidaAntropometrica.findMany({
     where: { pacienteId: session.pacienteId },
@@ -53,11 +55,11 @@ export default async function PatientEvolucionPage() {
     <div>
       <PageHeader
         icon={TrendingUp}
-        title="Mi evolución"
+        title={t("evolucion.title")}
         subtitle={
           data.length > 0
-            ? `${data.length} medicion${data.length !== 1 ? "es" : ""} registrada${data.length !== 1 ? "s" : ""}`
-            : "Gráficos de peso y medidas"
+            ? t("evolucion.subtitleConMediciones", { count: data.length, countPlural: data.length !== 1 ? "es" : "" })
+            : t("evolucion.subtitleSinMediciones")
         }
       />
 
@@ -69,7 +71,7 @@ export default async function PatientEvolucionPage() {
             {hasPeso && (
               <EvolucionCard
                 iconName="scale"
-                title="Peso"
+                title={t("evolucion.cards.peso")}
                 metric="peso"
                 unit="kg"
                 decimals={1}
@@ -80,19 +82,19 @@ export default async function PatientEvolucionPage() {
             {hasImc && (
               <EvolucionCard
                 iconName="activity"
-                title="IMC"
+                title={t("evolucion.cards.imc")}
                 metric="imc"
                 unit=""
                 decimals={1}
                 color="#f59e0b"
                 data={data}
-                referenceArea={{ y1: 18.5, y2: 24.9, label: "Saludable" }}
+                referenceArea={{ y1: 18.5, y2: 24.9, label: t("evolucion.cards.saludable") }}
               />
             )}
             {hasGrasa && (
               <EvolucionCard
                 iconName="percent"
-                title="% Grasa corporal"
+                title={t("evolucion.cards.grasaCorporal")}
                 metric="grasa"
                 unit="%"
                 decimals={1}
@@ -110,15 +112,16 @@ export default async function PatientEvolucionPage() {
   );
 }
 
-function EmptyState() {
+async function EmptyState() {
+  const t = await getTranslations("patient-portal");
   return (
     <div className="rounded-2xl border border-dashed border-border bg-card/50 p-10 sm:p-14 text-center">
       <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl border border-border text-muted-foreground mb-4">
         <LineChartIcon className="w-7 h-7" strokeWidth={1.5} />
       </div>
-      <h2 className="text-lg font-semibold mb-1">Aún no hay mediciones</h2>
+      <h2 className="text-lg font-semibold mb-1">{t("evolucion.empty.title")}</h2>
       <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-        Tu nutricionista registrará tu peso, IMC y composición corporal en las próximas consultas. Aparecerán aquí en cuanto las añada.
+        {t("evolucion.empty.description")}
       </p>
     </div>
   );

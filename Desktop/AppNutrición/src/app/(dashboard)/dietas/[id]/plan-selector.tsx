@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, Check, Flame, CheckCircle2, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { asignarPlanComoActual } from "@/app/actions/planes";
+import { useTranslations } from "next-intl";
 
 interface PlanItem {
   id: string;
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export function PlanSelector({ planActualId, pacienteId, planes }: Props) {
+  const t = useTranslations("diets.planSelector");
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -64,10 +66,10 @@ export function PlanSelector({ planActualId, pacienteId, planes }: Props) {
     startTransition(async () => {
       try {
         await asignarPlanComoActual(planActual.id);
-        toast.success("Dieta asignada como actual");
+        toast.success(t("toastAssigned"));
         router.refresh();
       } catch {
-        toast.error("No se pudo asignar como actual");
+        toast.error(t("toastAssignError"));
       }
     });
   }
@@ -81,7 +83,7 @@ export function PlanSelector({ planActualId, pacienteId, planes }: Props) {
           type="button"
           onClick={() => setAbierto((v) => !v)}
           className="w-full flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border bg-card hover:bg-muted/40 transition-colors"
-          title={totalPlanes > 1 ? `Ver las ${totalPlanes} dietas` : "Dietas del paciente"}
+          title={t("patientDiets")}
         >
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <span className="text-base font-semibold truncate">
@@ -90,7 +92,7 @@ export function PlanSelector({ planActualId, pacienteId, planes }: Props) {
             {esActivo && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-medium shrink-0">
                 <CheckCircle2 className="w-3 h-3" />
-                Actual
+                {t("current")}
               </span>
             )}
             {planActual?.caloriasObjetivo != null && (
@@ -101,7 +103,8 @@ export function PlanSelector({ planActualId, pacienteId, planes }: Props) {
             )}
           </div>
           <span className="inline-flex items-center gap-1 text-xs text-muted-foreground shrink-0 border-l border-border pl-2.5 ml-1">
-            {totalPlanes} <span className="hidden sm:inline">dieta{totalPlanes !== 1 ? "s" : ""}</span>
+            <span className="hidden sm:inline">{t("dietCount", { count: totalPlanes })}</span>
+            <span className="sm:hidden">{totalPlanes}</span>
             <ChevronDown
               className={`w-4 h-4 transition-transform ${abierto ? "rotate-180" : ""}`}
             />
@@ -111,11 +114,11 @@ export function PlanSelector({ planActualId, pacienteId, planes }: Props) {
         {abierto && (
           <div className="absolute left-0 right-0 mt-1 z-40 bg-card border border-border rounded-lg shadow-lg overflow-y-auto max-h-80">
             <div className="px-3 py-1.5 border-b border-border text-[11px] uppercase tracking-wide text-muted-foreground">
-              Dietas del paciente
+              {t("patientDiets")}
             </div>
             {planes.length === 0 ? (
               <div className="px-3 py-2 text-sm text-muted-foreground">
-                Sin dietas.
+                {t("noDiets")}
               </div>
             ) : (
               planes.map((p) => {
@@ -135,7 +138,7 @@ export function PlanSelector({ planActualId, pacienteId, planes }: Props) {
                       {esEsteElActual && (
                         <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-medium shrink-0">
                           <CheckCircle2 className="w-3 h-3" />
-                          Actual
+                          {t("current")}
                         </span>
                       )}
                       {p.caloriasObjetivo != null && (
@@ -159,10 +162,10 @@ export function PlanSelector({ planActualId, pacienteId, planes }: Props) {
       <Link
         href={`/dietas/nuevo?pacienteId=${pacienteId}`}
         className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors shrink-0 border border-primary/30 text-primary hover:bg-primary/5"
-        title="Crear nuevo plan para este paciente"
+        title={t("newPlan")}
       >
         <Plus className="w-4 h-4" />
-        <span className="hidden sm:inline">Nuevo plan</span>
+        <span className="hidden sm:inline">{t("newPlan")}</span>
       </Link>
 
       <button
@@ -174,7 +177,7 @@ export function PlanSelector({ planActualId, pacienteId, planes }: Props) {
             ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30 cursor-default"
             : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
         }`}
-        title={esActivo ? "Esta dieta ya está marcada como actual" : "Marcar esta dieta como la actual"}
+        title={esActivo ? t("markedAsCurrent") : t("markAsCurrent")}
       >
         {pending ? (
           <Loader2 className="w-4 h-4 animate-spin" />
@@ -182,7 +185,7 @@ export function PlanSelector({ planActualId, pacienteId, planes }: Props) {
           <CheckCircle2 className="w-4 h-4" />
         )}
         <span className="hidden sm:inline">
-          {esActivo ? "Marcada como actual" : "Marcar como dieta actual"}
+          {esActivo ? t("markedAsCurrent") : t("markAsCurrent")}
         </span>
       </button>
     </div>

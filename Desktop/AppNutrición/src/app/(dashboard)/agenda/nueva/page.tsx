@@ -18,6 +18,8 @@ import {
   Lightbulb,
   Video,
 } from "lucide-react";
+import { useTranslations, useLocale } from "next-intl";
+import { intlTag, type Locale } from "@/i18n/config";
 import { toast } from "sonner";
 import {
   crearCita,
@@ -41,14 +43,7 @@ type PacienteListItem = {
 
 type ContextoCita = Awaited<ReturnType<typeof getPacienteContextoCita>>;
 
-const OBJETIVO_LABELS: Record<string, string> = {
-  PERDER_PESO: "Pérdida de peso",
-  GANAR_MASA: "Ganar masa",
-  MANTENIMIENTO: "Mantenimiento",
-  PATOLOGIA: "Patología",
-  DEPORTIVO: "Rendimiento deportivo",
-  OTRO: "Otro",
-};
+const OBJETIVO_KEYS = ["PERDIDA_PESO", "GANANCIA_MUSCULO", "MANTENIMIENTO", "DEPORTIVO", "SALUD_GENERAL", "EMBARAZO", "PATOLOGIA_DIGESTIVA", "OTRO", "PERDER_PESO", "GANAR_MASA", "PATOLOGIA"] as const;
 
 function calcularEdad(fecha: Date | string | null) {
   if (!fecha) return null;
@@ -62,6 +57,8 @@ function calcularEdad(fecha: Date | string | null) {
 
 export default function NuevaCitaPage() {
   const router = useRouter();
+  const t = useTranslations("agenda");
+  const tag = intlTag(useLocale() as Locale);
   const [loading, setLoading] = useState(false);
   const [pacientes, setPacientes] = useState<PacienteListItem[]>([]);
   const [pacienteId, setPacienteId] = useState("");
@@ -113,13 +110,13 @@ export default function NuevaCitaPage() {
       });
       toast.success(
         modo === "proponer"
-          ? "Propuesta enviada al paciente"
-          : "Cita creada y confirmada",
+          ? t("nueva.toastProposed")
+          : t("nueva.toastCreatedConfirmed"),
       );
       router.push("/agenda");
     } catch (error) {
       if (error && typeof error === "object" && "digest" in error) throw error;
-      toast.error("Error al crear la cita");
+      toast.error(t("nueva.toastCreateError"));
       setLoading(false);
     }
   }
@@ -134,11 +131,11 @@ export default function NuevaCitaPage() {
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3 py-2 sm:py-0 -my-2 sm:my-0"
         >
           <ArrowLeft className="w-4 h-4" />
-          Volver a agenda
+          {t("nueva.backToAgenda")}
         </Link>
-        <h1 className="text-2xl sm:text-3xl font-bold">Nueva cita</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">{t("nueva.pageTitle")}</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Programa una nueva consulta para uno de tus pacientes.
+          {t("nueva.subtitle")}
         </p>
       </div>
 
@@ -148,10 +145,10 @@ export default function NuevaCitaPage() {
           <section className="bg-card rounded-xl border border-border p-4 sm:p-6 space-y-4">
             <h2 className="text-base sm:text-lg font-semibold inline-flex items-center gap-2">
               <User className="w-5 h-5 text-primary" />
-              Paciente y horario
+              {t("nueva.patientAndSchedule")}
             </h2>
             <div>
-              <label className="block text-sm font-medium mb-1.5">Paciente *</label>
+              <label className="block text-sm font-medium mb-1.5">{t("nueva.patientLabel")}</label>
               <select
                 name="pacienteId"
                 required
@@ -159,7 +156,7 @@ export default function NuevaCitaPage() {
                 onChange={(e) => setPacienteId(e.target.value)}
                 className="w-full px-3 py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
               >
-                <option value="">Seleccionar paciente...</option>
+                <option value="">{t("nueva.selectPatient")}</option>
                 {pacientes.map((p) => (
                   <option key={p.id} value={p.id}>
                     {capitalizarNombre(p.nombre)} {capitalizarNombre(p.apellidos)}
@@ -168,16 +165,16 @@ export default function NuevaCitaPage() {
               </select>
               {pacientes.length === 0 && (
                 <p className="text-xs text-muted-foreground mt-1.5">
-                  No tienes pacientes activos.{" "}
+                  {t("nueva.noActivePatients")}{" "}
                   <Link href="/pacientes/nuevo" className="text-primary hover:underline">
-                    Crear paciente
+                    {t("nueva.createPatient")}
                   </Link>
                 </p>
               )}
             </div>
             <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1.5">Fecha *</label>
+                <label className="block text-sm font-medium mb-1.5">{t("nueva.dateLabel")}</label>
                 <input
                   name="fecha"
                   type="date"
@@ -187,7 +184,7 @@ export default function NuevaCitaPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1.5">Hora *</label>
+                <label className="block text-sm font-medium mb-1.5">{t("nueva.timeLabel")}</label>
                 <input
                   name="hora"
                   type="time"
@@ -198,18 +195,18 @@ export default function NuevaCitaPage() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">Duración</label>
+              <label className="block text-sm font-medium mb-1.5">{t("nueva.durationLabel")}</label>
               <select
                 name="duracion"
                 defaultValue="30"
                 className="w-full px-3 py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
               >
-                <option value="15">15 minutos</option>
-                <option value="30">30 minutos</option>
-                <option value="45">45 minutos</option>
-                <option value="60">1 hora</option>
-                <option value="90">1 hora y media</option>
-                <option value="120">2 horas</option>
+                <option value="15">{t("nueva.duration15")}</option>
+                <option value="30">{t("nueva.duration30")}</option>
+                <option value="45">{t("nueva.duration45")}</option>
+                <option value="60">{t("nueva.duration60")}</option>
+                <option value="90">{t("nueva.duration90")}</option>
+                <option value="120">{t("nueva.duration120")}</option>
               </select>
             </div>
 
@@ -218,32 +215,32 @@ export default function NuevaCitaPage() {
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium inline-flex items-center gap-2">
                   <Video className="w-4 h-4 text-primary" />
-                  Cita online (Google Meet)
+                  {t("nueva.onlineAppointment")}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Si tienes Google Calendar conectado, se generará automáticamente un enlace de Meet.
+                  {t("nueva.onlineHintFull")}
                 </p>
               </div>
             </label>
 
             <div>
-              <label className="block text-sm font-medium mb-1.5">Cómo crear la cita</label>
+              <label className="block text-sm font-medium mb-1.5">{t("nueva.howToCreate")}</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <label className="relative flex items-start gap-2 p-3 rounded-lg border border-border cursor-pointer hover:bg-muted/40 has-[:checked]:border-primary has-[:checked]:bg-primary/5 transition-colors">
                   <input type="radio" name="modo" value="directa" defaultChecked className="mt-1 accent-primary" />
                   <div className="min-w-0">
-                    <p className="text-sm font-medium">Cita ya acordada</p>
+                    <p className="text-sm font-medium">{t("nueva.agreedAppointment")}</p>
                     <p className="text-xs text-muted-foreground">
-                      Se crea confirmada directamente. Útil si ya la has acordado con el paciente por otro canal.
+                      {t("nueva.agreedHintFull")}
                     </p>
                   </div>
                 </label>
                 <label className="relative flex items-start gap-2 p-3 rounded-lg border border-border cursor-pointer hover:bg-muted/40 has-[:checked]:border-primary has-[:checked]:bg-primary/5 transition-colors">
                   <input type="radio" name="modo" value="proponer" className="mt-1 accent-primary" />
                   <div className="min-w-0">
-                    <p className="text-sm font-medium">Proponer al paciente</p>
+                    <p className="text-sm font-medium">{t("nueva.proposeToPatient")}</p>
                     <p className="text-xs text-muted-foreground">
-                      Queda pendiente y el paciente recibe notificación para aceptar, contraponer o rechazar.
+                      {t("nueva.proposeHintFull")}
                     </p>
                   </div>
                 </label>
@@ -254,28 +251,28 @@ export default function NuevaCitaPage() {
           <section className="bg-card rounded-xl border border-border p-4 sm:p-6 space-y-4">
             <h2 className="text-base sm:text-lg font-semibold inline-flex items-center gap-2">
               <Lightbulb className="w-5 h-5 text-amber-500" />
-              Detalles
+              {t("nueva.details")}
             </h2>
             <div>
-              <label className="block text-sm font-medium mb-1.5">Motivo</label>
+              <label className="block text-sm font-medium mb-1.5">{t("nueva.reasonLabel")}</label>
               <input
                 name="motivo"
                 maxLength={200}
-                placeholder="Ej. Primera consulta, Revisión mensual…"
+                placeholder={t("nueva.reasonPlaceholderAlt")}
                 className="w-full px-3 py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">Notas internas</label>
+              <label className="block text-sm font-medium mb-1.5">{t("nueva.internalNotes")}</label>
               <textarea
                 name="notas"
                 rows={4}
                 maxLength={2000}
-                placeholder="Recordatorios, preparación previa, temas a tratar…"
+                placeholder={t("nueva.notesPlaceholderAlt")}
                 className="w-full px-3 py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm resize-y"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Sólo visible para ti, no se comparten con el paciente.
+                {t("nueva.onlyVisibleToYouFull")}
               </p>
             </div>
           </section>
@@ -285,14 +282,14 @@ export default function NuevaCitaPage() {
               href="/agenda"
               className="inline-flex items-center justify-center px-4 py-2.5 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium min-h-11"
             >
-              Cancelar
+              {t("nueva.cancel")}
             </Link>
             <button
               type="submit"
               disabled={loading || !pacienteId}
               className="inline-flex items-center justify-center px-6 py-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium disabled:opacity-50 min-h-11"
             >
-              {loading ? "Creando…" : "Crear cita"}
+              {loading ? t("nueva.creating") : t("nueva.createAppointment")}
             </button>
           </div>
         </form>
@@ -315,7 +312,7 @@ export default function NuevaCitaPage() {
                       {capitalizarNombre(pacienteSeleccionado.apellidos)}
                     </h3>
                     {edad != null && (
-                      <p className="text-xs text-muted-foreground">{edad} años</p>
+                      <p className="text-xs text-muted-foreground">{t("nueva.yearsOld", { age: edad })}</p>
                     )}
                   </div>
                 </div>
@@ -325,11 +322,10 @@ export default function NuevaCitaPage() {
                     <div className="inline-flex items-start gap-2 w-full">
                       <Target className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs text-muted-foreground">Objetivo</p>
+                        <p className="text-xs text-muted-foreground">{t("nueva.goal")}</p>
                         <p className="font-medium text-sm leading-tight">
                           {pacienteSeleccionado.objetivoDetalle ||
-                            OBJETIVO_LABELS[pacienteSeleccionado.objetivo] ||
-                            pacienteSeleccionado.objetivo}
+                            (OBJETIVO_KEYS.includes(pacienteSeleccionado.objetivo as typeof OBJETIVO_KEYS[number]) ? t(`objetivoLabels.${pacienteSeleccionado.objetivo}`) : pacienteSeleccionado.objetivo)}
                         </p>
                       </div>
                     </div>
@@ -353,7 +349,7 @@ export default function NuevaCitaPage() {
                     href={`/pacientes/${pacienteSeleccionado.id}`}
                     className="text-xs text-primary hover:underline"
                   >
-                    Ver ficha completa →
+                    {t("nueva.viewFullFile")}
                   </Link>
                 </div>
               </section>
@@ -361,23 +357,23 @@ export default function NuevaCitaPage() {
               {/* Contexto */}
               {contextoLoading ? (
                 <section className="bg-card rounded-xl border border-border p-5 text-center text-xs text-muted-foreground">
-                  Cargando información del paciente…
+                  {t("nueva.loadingPatientInfo")}
                 </section>
               ) : (
                 contexto && (
                   <section className="bg-card rounded-xl border border-border p-5 space-y-3">
                     <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                      Contexto
+                      {t("nueva.context")}
                     </h3>
 
                     {contexto.proximaCita && (
                       <div className="flex items-start gap-2.5">
                         <CalendarCheck className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs text-muted-foreground">Próxima cita</p>
+                          <p className="text-xs text-muted-foreground">{t("nueva.nextAppointment")}</p>
                           <p className="text-sm font-medium">
                             {formatDate(contexto.proximaCita.fechaHora)} ·{" "}
-                            {new Date(contexto.proximaCita.fechaHora).toLocaleTimeString("es-ES", {
+                            {new Date(contexto.proximaCita.fechaHora).toLocaleTimeString(tag, {
                               hour: "2-digit",
                               minute: "2-digit",
                             })}
@@ -395,7 +391,7 @@ export default function NuevaCitaPage() {
                       <div className="flex items-start gap-2.5">
                         <CalendarX className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs text-muted-foreground">Última cita</p>
+                          <p className="text-xs text-muted-foreground">{t("nueva.lastAppointment")}</p>
                           <p className="text-sm font-medium">
                             {formatDate(contexto.ultimaCita.fechaHora)}
                           </p>
@@ -412,7 +408,7 @@ export default function NuevaCitaPage() {
                       <div className="flex items-start gap-2.5">
                         <Utensils className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs text-muted-foreground">Dieta actual</p>
+                          <p className="text-xs text-muted-foreground">{t("nueva.currentDiet")}</p>
                           <p className="text-sm font-medium truncate">
                             {contexto.planActivo.nombre}
                           </p>
@@ -429,7 +425,7 @@ export default function NuevaCitaPage() {
                       <div className="flex items-start gap-2.5">
                         <Scale className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" />
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs text-muted-foreground">Última medida</p>
+                          <p className="text-xs text-muted-foreground">{t("nueva.lastMeasure")}</p>
                           <p className="text-sm font-medium">
                             {contexto.ultimaMedida.peso != null
                               ? `${contexto.ultimaMedida.peso} kg`
@@ -449,7 +445,7 @@ export default function NuevaCitaPage() {
                       !contexto.planActivo &&
                       !contexto.ultimaMedida && (
                         <p className="text-xs text-muted-foreground italic">
-                          Sin historial registrado todavía.
+                          {t("nueva.noHistory")}
                         </p>
                       )}
                   </section>
@@ -462,25 +458,25 @@ export default function NuevaCitaPage() {
               <section className="bg-card rounded-xl border border-border p-5">
                 <h3 className="font-semibold text-base mb-3 inline-flex items-center gap-2">
                   <Lightbulb className="w-4 h-4 text-amber-500" />
-                  Cómo crear una cita útil
+                  {t("nueva.tipsTitle")}
                 </h3>
                 <ul className="space-y-2.5 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <span className="text-emerald-600 dark:text-emerald-400 font-bold">·</span>
                     <span>
-                      <strong className="text-foreground">Selecciona el paciente</strong> y verás aquí su perfil, dieta activa y última medida.
+                      <strong className="text-foreground">{t("nueva.tipSelectPatientShort")}</strong> {t("nueva.tipSelectPatientDesc")}
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-emerald-600 dark:text-emerald-400 font-bold">·</span>
                     <span>
-                      Reserva <strong className="text-foreground">30-45 min</strong> para revisiones y <strong className="text-foreground">60 min</strong> para primera consulta.
+                      {t("nueva.tipDurationPrefix")} <strong className="text-foreground">{t("nueva.tipDurationShort")}</strong> {t("nueva.tipDurationDesc")} <strong className="text-foreground">{t("nueva.tipDurationLong")}</strong> {t("nueva.tipDurationDescEnd")}
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-emerald-600 dark:text-emerald-400 font-bold">·</span>
                     <span>
-                      Anota en <strong className="text-foreground">Notas</strong> los temas a tratar para no olvidarlos durante la sesión.
+                      {t("nueva.tipNotesPrefix")} <strong className="text-foreground">{t("nueva.tipNotesShort")}</strong> {t("nueva.tipNotesDesc")}
                     </span>
                   </li>
                 </ul>
@@ -489,7 +485,7 @@ export default function NuevaCitaPage() {
               <section className="bg-card rounded-xl border border-border p-5">
                 <h3 className="font-semibold text-base mb-3 inline-flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-primary" />
-                  Atajos
+                  {t("nueva.shortcuts")}
                 </h3>
                 <div className="space-y-2">
                   <Link
@@ -497,21 +493,21 @@ export default function NuevaCitaPage() {
                     className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-1.5"
                   >
                     <Clock className="w-3.5 h-3.5" />
-                    Configurar horario laboral
+                    {t("nueva.configureWorkSchedule")}
                   </Link>
                   <Link
                     href="/agenda"
                     className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-1.5"
                   >
                     <Calendar className="w-3.5 h-3.5" />
-                    Ver agenda completa
+                    {t("nueva.viewFullAgenda")}
                   </Link>
                   <Link
                     href="/pacientes"
                     className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-1.5"
                   >
                     <User className="w-3.5 h-3.5" />
-                    Ver mis pacientes
+                    {t("nueva.viewMyPatients")}
                   </Link>
                 </div>
               </section>

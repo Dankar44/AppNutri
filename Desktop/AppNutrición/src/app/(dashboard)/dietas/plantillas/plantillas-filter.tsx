@@ -3,8 +3,10 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
 import { useRef } from "react";
+import { useTranslations } from "next-intl";
 
 export function PlantillasFilter() {
+  const t = useTranslations("diets.plantillas");
   const router = useRouter();
   const searchParams = useSearchParams();
   const debounceRef = useRef<NodeJS.Timeout>(null);
@@ -27,7 +29,7 @@ export function PlantillasFilter() {
       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
       <input
         type="text"
-        placeholder="Buscar plantilla por nombre..."
+        placeholder={t("searchPlaceholder")}
         defaultValue={searchParams.get("busqueda") || ""}
         onChange={(e) => handleSearch(e.target.value)}
         maxLength={100}

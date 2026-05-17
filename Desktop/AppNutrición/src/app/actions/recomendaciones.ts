@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 
 // ─── Types ───
 
@@ -75,8 +76,9 @@ export async function guardarRecomendacionesEstructuradas(
   pacienteId: string,
   data: RecomendacionesData
 ) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   // Sanitize

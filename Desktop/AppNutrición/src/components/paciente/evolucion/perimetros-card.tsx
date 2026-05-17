@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { Ruler } from "lucide-react";
+import { useTranslations, useLocale } from "next-intl";
+import { intlTag, type Locale } from "@/i18n/config";
 import { EvolucionChart } from "@/components/evolucion-chart";
 
 export interface PerimetroPoint {
@@ -16,19 +18,19 @@ interface Props {
 }
 
 const SERIES = [
-  { key: "cintura", label: "Cintura", color: "#8b5cf6" },
-  { key: "cadera", label: "Cadera", color: "#ec4899" },
-  { key: "brazo", label: "Brazo", color: "#14b8a6" },
+  { key: "cintura", labelKey: "cintura", color: "#8b5cf6" },
+  { key: "cadera", labelKey: "cadera", color: "#ec4899" },
+  { key: "brazo", labelKey: "brazo", color: "#14b8a6" },
 ] as const;
 
-function formatFechaCorta(iso: string) {
+function formatFechaCorta(iso: string, tag: string) {
   const d = new Date(iso + "T12:00:00");
-  return d.toLocaleDateString("es-ES", { day: "2-digit", month: "short" });
+  return d.toLocaleDateString(tag, { day: "2-digit", month: "short" });
 }
 
-function formatFechaLarga(iso: string) {
+function formatFechaLarga(iso: string, tag: string) {
   const d = new Date(iso + "T12:00:00");
-  return d.toLocaleDateString("es-ES", {
+  return d.toLocaleDateString(tag, {
     day: "2-digit",
     month: "long",
     year: "numeric",
@@ -36,6 +38,9 @@ function formatFechaLarga(iso: string) {
 }
 
 export function PerimetrosCard({ data }: Props) {
+  const t = useTranslations("patient-portal.evolucion.perimetros");
+  const locale = useLocale() as Locale;
+  const tag = intlTag(locale);
   const seriesDisponibles = useMemo(
     () =>
       SERIES.filter((s) =>
@@ -51,12 +56,12 @@ export function PerimetrosCard({ data }: Props) {
   const chartData = useMemo(
     () =>
       data.map((p) => ({
-        fecha: formatFechaCorta(p.fechaISO),
+        fecha: formatFechaCorta(p.fechaISO, tag),
         cintura: p.cintura,
         cadera: p.cadera,
         brazo: p.brazo,
       })),
-    [data]
+    [data, tag]
   );
 
   const ultima = data[data.length - 1];
@@ -85,11 +90,11 @@ export function PerimetrosCard({ data }: Props) {
             <Ruler className="w-5 h-5" strokeWidth={1.75} />
           </span>
           <div className="min-w-0">
-            <h2 className="text-base font-semibold">Perímetros</h2>
+            <h2 className="text-base font-semibold">{t("title")}</h2>
             {ultima && (
               <p className="text-[11px] text-muted-foreground">
-                Última medición:{" "}
-                <span className="tabular-nums">{formatFechaLarga(ultima.fechaISO)}</span>
+                {t("ultimaMedicion")}{" "}
+                <span className="tabular-nums">{formatFechaLarga(ultima.fechaISO, tag)}</span>
               </p>
             )}
           </div>
@@ -119,7 +124,7 @@ export function PerimetrosCard({ data }: Props) {
                 className="inline-block w-2 h-2 rounded-full"
                 style={{ backgroundColor: s.color }}
               />
-              {s.label}
+              {t(s.labelKey)}
               {ultima && ultima[s.key] !== null && (
                 <span className="tabular-nums opacity-75">
                   {ultima[s.key]!.toFixed(0)} cm
@@ -139,7 +144,7 @@ export function PerimetrosCard({ data }: Props) {
             .filter((s) => activas.has(s.key))
             .map((s) => ({
               key: s.key,
-              label: s.label,
+              label: t(s.labelKey),
               color: s.color,
               unit: "cm",
               decimals: 1,
@@ -155,7 +160,7 @@ export function PerimetrosCard({ data }: Props) {
               return (
                 <div key={s.key} className="py-2.5 border-r last:border-r-0 border-border">
                   <p className="uppercase text-muted-foreground text-[10px] tracking-wide">
-                    {s.label}
+                    {t(s.labelKey)}
                   </p>
                   <p className="text-xs text-muted-foreground">—</p>
                 </div>
@@ -167,7 +172,7 @@ export function PerimetrosCard({ data }: Props) {
             return (
               <div key={s.key} className="py-2.5 border-r last:border-r-0 border-border">
                 <p className="uppercase text-muted-foreground text-[10px] tracking-wide">
-                  {s.label}
+                  {t(s.labelKey)}
                 </p>
                 <p className="font-semibold tabular-nums text-sm" style={{ color: s.color }}>
                   {actual.toFixed(1)} cm

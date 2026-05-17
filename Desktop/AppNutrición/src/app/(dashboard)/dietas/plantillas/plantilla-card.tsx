@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BookCopy, CalendarDays, UtensilsCrossed, Trash2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { eliminarPlantilla } from "@/app/actions/plantillas";
 import { formatDate } from "@/lib/utils";
 import { toast } from "sonner";
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export function PlantillaCard({ id, nombre, createdAt, diasCount, alimentosCount }: Props) {
+  const t = useTranslations("diets.plantillas");
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -26,11 +28,11 @@ export function PlantillaCard({ id, nombre, createdAt, diasCount, alimentosCount
     setDeleting(true);
     try {
       await eliminarPlantilla(id);
-      toast.success("Plantilla eliminada");
+      toast.success(t("toastDeleted"));
       setShowConfirm(false);
       router.refresh();
     } catch {
-      toast.error("Error al eliminar");
+      toast.error(t("toastDeleteError"));
       setDeleting(false);
     }
   }
@@ -57,11 +59,11 @@ export function PlantillaCard({ id, nombre, createdAt, diasCount, alimentosCount
           <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
             <span className="flex items-center gap-1">
               <CalendarDays className="w-3.5 h-3.5" />
-              {diasCount} días
+              {t("daysCount", { count: diasCount })}
             </span>
             <span className="flex items-center gap-1">
               <UtensilsCrossed className="w-3.5 h-3.5" />
-              {alimentosCount} alimentos
+              {t("foodsCount", { count: alimentosCount })}
             </span>
           </div>
         </Link>
@@ -71,13 +73,13 @@ export function PlantillaCard({ id, nombre, createdAt, diasCount, alimentosCount
             href={`/dietas/nuevo?plantilla=${id}`}
             className="flex-1 text-center px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium"
           >
-            Usar plantilla
+            {t("useTemplate")}
           </Link>
           <button
             onClick={() => setShowConfirm(true)}
             disabled={deleting}
             className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/15 transition-colors disabled:opacity-50"
-            title="Eliminar plantilla"
+            title={t("deleteTemplate")}
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -86,9 +88,9 @@ export function PlantillaCard({ id, nombre, createdAt, diasCount, alimentosCount
 
       <ConfirmModal
         open={showConfirm}
-        title="Eliminar plantilla"
-        description={`¿Estás seguro de que quieres eliminar la plantilla "${nombre}"? Esta acción no se puede deshacer.`}
-        confirmLabel="Eliminar"
+        title={t("confirmDeleteTitle")}
+        description={t("confirmDeleteMessage", { name: nombre })}
+        confirmLabel={t("delete")}
         destructive
         loading={deleting}
         onConfirm={handleEliminar}

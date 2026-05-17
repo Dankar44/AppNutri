@@ -3,22 +3,23 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { useTranslations } from "next-intl";
 
-const MESES_CORTOS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-const MESES_LARGOS = [
-  "enero", "febrero", "marzo", "abril", "mayo", "junio",
-  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
-];
+const MONTH_KEYS = [
+  "january", "february", "march", "april", "may", "june",
+  "july", "august", "september", "october", "november", "december",
+] as const;
 
 export function MonthPicker({
   value,
   onChange,
-  placeholder = "Seleccionar mes",
+  placeholder,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
 }) {
+  const t = useTranslations("common");
   const [open, setOpen] = useState(false);
   const [viewYear, setViewYear] = useState(() => {
     if (value) return parseInt(value.split("-")[0]);
@@ -89,7 +90,7 @@ export function MonthPicker({
   }
 
   const displayText = value
-    ? `${MESES_LARGOS[selectedMonth!]} de ${selectedYear}`
+    ? t("monthPicker.displayFormat", { month: t(`monthsLong.${MONTH_KEYS[selectedMonth!]}`), year: String(selectedYear) })
     : "";
 
   return (
@@ -102,7 +103,7 @@ export function MonthPicker({
       >
         <Calendar className="w-4 h-4 text-muted-foreground" />
         <span className={displayText ? "font-medium" : "text-muted-foreground"}>
-          {displayText || placeholder}
+          {displayText || (placeholder ?? t("monthPicker.placeholder"))}
         </span>
       </button>
 
@@ -134,11 +135,11 @@ export function MonthPicker({
 
               {/* Month grid */}
               <div className="grid grid-cols-4 gap-1.5">
-                {MESES_CORTOS.map((mes, i) => {
+                {MONTH_KEYS.map((key, i) => {
                   const isSelected = selectedYear === viewYear && selectedMonth === i;
                   return (
                     <button
-                      key={mes}
+                      key={key}
                       type="button"
                       onClick={() => selectMonth(i)}
                       className={`py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -147,7 +148,7 @@ export function MonthPicker({
                           : "hover:bg-primary/10 text-foreground"
                       }`}
                     >
-                      {mes}
+                      {t(`monthsShort.${key}`)}
                     </button>
                   );
                 })}
@@ -160,14 +161,14 @@ export function MonthPicker({
                   onClick={handleClear}
                   className="text-xs font-medium text-primary hover:underline"
                 >
-                  Limpiar
+                  {t("monthPicker.clear")}
                 </button>
                 <button
                   type="button"
                   onClick={handleThisMonth}
                   className="text-xs font-medium text-primary hover:underline"
                 >
-                  Este mes
+                  {t("monthPicker.thisMonth")}
                 </button>
               </div>
             </div>,

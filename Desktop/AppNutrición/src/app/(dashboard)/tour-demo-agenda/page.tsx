@@ -1,9 +1,8 @@
 import { ChevronLeft, ChevronRight, CalendarDays, Calendar, CalendarRange, Plus, Clock, User, Check, X, Trash2 } from "lucide-react";
-import { DEMO_CITAS_SEMANA } from "@/lib/tour-demo-data";
+import { getDemoCitasSemana } from "@/lib/tour-demo-data";
+import { getTranslations, getLocale } from "next-intl/server";
 
-const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
-
-function getFechasSemana(): string[] {
+function getFechasSemana(locale: string): string[] {
   const hoy = new Date();
   const diaSemana = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1;
   const lunes = new Date(hoy);
@@ -11,16 +10,16 @@ function getFechasSemana(): string[] {
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(lunes);
     d.setDate(lunes.getDate() + i);
-    return `${d.getDate()} ${d.toLocaleDateString("es-ES", { month: "short" })}`;
+    return `${d.getDate()} ${d.toLocaleDateString(locale === "pt" ? "pt-BR" : "es-ES", { month: "short" })}`;
   });
 }
 
-function getDetalleDia(): string {
+function getDetalleDia(locale: string): string {
   const hoy = new Date();
   const diaSemana = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1;
   const miercoles = new Date(hoy);
   miercoles.setDate(hoy.getDate() - diaSemana + 2);
-  return miercoles.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  return miercoles.toLocaleDateString(locale === "pt" ? "pt-BR" : "es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 }
 
 const HOY_INDEX = 2;
@@ -32,26 +31,34 @@ const ESTADO_STYLES: Record<string, string> = {
   CANCELADA: "bg-muted text-muted-foreground border-border",
 };
 
-const ESTADO_LABELS: Record<string, string> = {
-  PENDIENTE: "Pendiente", CONFIRMADA: "Confirmada", COMPLETADA: "Completada", CANCELADA: "Cancelada",
-};
-
-export default function TourDemoAgendaPage() {
-  const fechas = getFechasSemana();
-  const detalleFecha = getDetalleDia();
+export default async function TourDemoAgendaPage() {
+  const t = await getTranslations("settings.tours");
+  const tDemo = await getTranslations("settings.tours.demoData");
+  const locale = await getLocale();
+  const DEMO_CITAS_SEMANA = getDemoCitasSemana(tDemo);
+  const DIAS = [
+    t("daysOfWeek.monday"), t("daysOfWeek.tuesday"), t("daysOfWeek.wednesday"),
+    t("daysOfWeek.thursday"), t("daysOfWeek.friday"), t("daysOfWeek.saturday"), t("daysOfWeek.sunday"),
+  ];
+  const ESTADO_LABELS: Record<string, string> = {
+    PENDIENTE: t("statusPending"), CONFIRMADA: t("statusConfirmed"),
+    COMPLETADA: t("statusCompleted"), CANCELADA: t("statusCancelled"),
+  };
+  const fechas = getFechasSemana(locale);
+  const detalleFecha = getDetalleDia(locale);
 
   return (
     <div>
       <div className="mb-4">
         <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-3 py-1.5 rounded-lg inline-flex items-center gap-1 mb-3 font-medium">
-          Agenda de demostración — Solo para el tour guiado
+          {t("agendaDemoBanner")}
         </p>
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold">Agenda</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">{t("agenda")}</h1>
         <span data-tour="agenda-nueva-cita" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium">
-          <Plus className="w-4 h-4" /> Nueva cita
+          <Plus className="w-4 h-4" /> {t("newAppointment")}
         </span>
       </div>
 
@@ -59,20 +66,20 @@ export default function TourDemoAgendaPage() {
       <div data-tour="agenda-controles" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2">
           <span className="p-1.5 rounded-lg border border-border"><ChevronLeft className="w-4 h-4" /></span>
-          <span className="px-3 py-1.5 rounded-lg border border-border text-sm font-medium">Hoy</span>
+          <span className="px-3 py-1.5 rounded-lg border border-border text-sm font-medium">{t("today")}</span>
           <span className="p-1.5 rounded-lg border border-border"><ChevronRight className="w-4 h-4" /></span>
           <span className="text-sm font-medium ml-2">{fechas[0]} - {fechas[6]}</span>
         </div>
 
         <div data-tour="agenda-vistas" className="flex rounded-lg border border-border overflow-hidden">
           <span className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium hover:bg-muted">
-            <CalendarRange className="w-4 h-4" /> Día
+            <CalendarRange className="w-4 h-4" /> {t("dayView")}
           </span>
           <span className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-primary text-primary-foreground">
-            <CalendarDays className="w-4 h-4" /> Semana
+            <CalendarDays className="w-4 h-4" /> {t("weekView")}
           </span>
           <span className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium hover:bg-muted">
-            <Calendar className="w-4 h-4" /> Mes
+            <Calendar className="w-4 h-4" /> {t("monthView")}
           </span>
         </div>
       </div>
@@ -143,9 +150,9 @@ export default function TourDemoAgendaPage() {
                 </div>
               </div>
               <div data-tour="agenda-acciones-cita" className="flex items-center gap-2 mt-3 pt-3 border-t border-current/10">
-                <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded border border-current/20 font-medium"><Check className="w-3 h-3" /> Completar</span>
-                <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded border border-current/20 font-medium"><Calendar className="w-3 h-3" /> Google Calendar</span>
-                <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 font-medium"><Trash2 className="w-3 h-3" /> Eliminar</span>
+                <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded border border-current/20 font-medium"><Check className="w-3 h-3" /> {t("complete")}</span>
+                <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded border border-current/20 font-medium"><Calendar className="w-3 h-3" /> {t("googleCalendar")}</span>
+                <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 font-medium"><Trash2 className="w-3 h-3" /> {t("delete")}</span>
               </div>
             </div>
           ))}

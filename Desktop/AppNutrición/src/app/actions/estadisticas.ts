@@ -2,6 +2,9 @@
 
 import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
+import { getTranslations } from "next-intl/server";
+import { getLocale } from "@/i18n/locale";
+import { intlTag } from "@/i18n/config";
 
 export async function getEstadisticasDietista() {
   const dietista = await getCurrentDietista();
@@ -48,6 +51,7 @@ export async function getEstadisticasDietista() {
 export async function getDistribucionObjetivos() {
   const dietista = await getCurrentDietista();
   if (!dietista) return [];
+  const t = await getTranslations("validation");
 
   const pacientes = await prisma.paciente.groupBy({
     by: ["objetivo"],
@@ -56,12 +60,12 @@ export async function getDistribucionObjetivos() {
   });
 
   const labels: Record<string, string> = {
-    PERDER_PESO: "Perder peso",
-    GANAR_MASA: "Ganar masa",
-    MANTENIMIENTO: "Mantenimiento",
-    PATOLOGIA: "Patología",
-    DEPORTIVO: "Deportivo",
-    OTRO: "Otro",
+    PERDER_PESO: t("estadisticas.objetivos.perderPeso"),
+    GANAR_MASA: t("estadisticas.objetivos.ganarMasa"),
+    MANTENIMIENTO: t("estadisticas.objetivos.mantenimiento"),
+    PATOLOGIA: t("estadisticas.objetivos.patologia"),
+    DEPORTIVO: t("estadisticas.objetivos.deportivo"),
+    OTRO: t("estadisticas.objetivos.otro"),
   };
 
   return pacientes.map((p) => ({
@@ -74,6 +78,9 @@ export async function getConsultasPorMes() {
   const dietista = await getCurrentDietista();
   if (!dietista) return [];
 
+  const locale = await getLocale();
+  const tag = intlTag(locale);
+
   const meses: { mes: string; consultas: number; pacientes: number }[] = [];
 
   for (let i = 11; i >= 0; i--) {
@@ -81,7 +88,7 @@ export async function getConsultasPorMes() {
     d.setMonth(d.getMonth() - i);
     const inicio = new Date(d.getFullYear(), d.getMonth(), 1);
     const fin = new Date(d.getFullYear(), d.getMonth() + 1, 1);
-    const label = inicio.toLocaleDateString("es-ES", { month: "short", year: "2-digit" });
+    const label = inicio.toLocaleDateString(tag, { month: "short", year: "2-digit" });
 
     const [consultas, pacientes] = await Promise.all([
       prisma.consulta.count({ where: { dietistaId: dietista.id, fecha: { gte: inicio, lt: fin } } }),

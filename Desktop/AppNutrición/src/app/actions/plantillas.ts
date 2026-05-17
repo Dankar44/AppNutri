@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { DiaSemana, TipoComida, UnidadMedida } from "@/generated/prisma/client";
 import { sanitizeString, sanitizeSearch, LIMITS } from "@/lib/validation";
+import { getTranslations } from "next-intl/server";
 
 interface PlantillaDia {
   dia: DiaSemana;
@@ -94,8 +95,9 @@ export async function getPlantillaDetalle(id: string) {
 }
 
 export async function actualizarDatosPlantilla(id: string, datos: PlantillaDia[]) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) return { ok: false, error: "No autorizado" };
+  if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
   if (dietista.isDemo) return { ok: true };
 
   await prisma.plantilla.update({
@@ -109,11 +111,12 @@ export async function actualizarDatosPlantilla(id: string, datos: PlantillaDia[]
 }
 
 export async function renombrarPlantilla(id: string, nombre: string) {
+  const t = await getTranslations("validation");
   nombre = sanitizeString(nombre, LIMITS.NOMBRE);
-  if (!nombre) return { ok: false, error: "El nombre es obligatorio" };
+  if (!nombre) return { ok: false, error: t("plan.nombreObligatorio") };
 
   const dietista = await getCurrentDietista();
-  if (!dietista) return { ok: false, error: "No autorizado" };
+  if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
   if (dietista.isDemo) return { ok: true };
 
   await prisma.plantilla.update({
@@ -127,8 +130,9 @@ export async function renombrarPlantilla(id: string, nombre: string) {
 }
 
 export async function eliminarPlantilla(id: string) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   await prisma.plantilla.delete({
@@ -145,17 +149,18 @@ export async function crearPlanDesdePlantilla(
   nombre: string
 ) {
   // Validar y sanitizar inputs
+  const t = await getTranslations("validation");
   nombre = sanitizeString(nombre, LIMITS.NOMBRE);
-  if (!nombre) throw new Error("El nombre es obligatorio");
+  if (!nombre) throw new Error(t("plan.nombreObligatorio"));
 
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const plantilla = await prisma.plantilla.findUnique({
     where: { id: plantillaId, dietistaId: dietista.id },
   });
-  if (!plantilla) throw new Error("Plantilla no encontrada");
+  if (!plantilla) throw new Error(t("plantilla.plantillaNoEncontrada"));
 
   const datos = (plantilla.datos as unknown as PlantillaDia[]) || [];
 

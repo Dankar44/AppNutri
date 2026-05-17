@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, Trophy, type LucideIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface Props {
   titulo: string;
@@ -11,6 +14,7 @@ interface Props {
 }
 
 export function HitoRecienteCard({ titulo, descripcion, fecha, Icon, color, className = "" }: Props) {
+  const t = useTranslations("patient-portal.dashboard.hitoRecienteCard");
   return (
     <Link
       href="/paciente/portal/evolucion"
@@ -29,7 +33,7 @@ export function HitoRecienteCard({ titulo, descripcion, fecha, Icon, color, clas
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-            Hito reciente
+            {t("label")}
           </p>
           <h2 className="text-base font-semibold truncate">{titulo}</h2>
         </div>
@@ -37,7 +41,7 @@ export function HitoRecienteCard({ titulo, descripcion, fecha, Icon, color, clas
       </header>
       <p className="text-xs text-muted-foreground relative">{descripcion}</p>
       <p className="text-[11px] text-muted-foreground/80 mt-2 tabular-nums relative">
-        Conseguido el {fecha}
+        {t("conseguidoEl", { fecha })}
       </p>
     </Link>
   );

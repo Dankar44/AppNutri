@@ -1,23 +1,27 @@
 import { Activity, Stethoscope, CalendarDays, BookOpen, Sparkles, Users } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { getActividadGlobal } from "@/app/actions/admin";
 import { capitalizarNombre, formatDate } from "@/lib/utils";
 
 export default async function ActividadPage() {
-  const actividad = await getActividadGlobal();
+  const [actividad, t] = await Promise.all([
+    getActividadGlobal(),
+    getTranslations("admin"),
+  ]);
 
   const statsHoy = [
-    { label: "Consultas hoy", value: actividad.consultasHoy, icon: Stethoscope, color: "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10" },
-    { label: "Citas hoy", value: actividad.citasHoy, icon: CalendarDays, color: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10" },
-    { label: "Entradas diario hoy", value: actividad.diarioHoy, icon: BookOpen, color: "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10" },
-    { label: "Consultas este mes", value: actividad.consultasMes, icon: Activity, color: "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10" },
-    { label: "Generaciones IA mes", value: actividad.generacionesIA, icon: Sparkles, color: "text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-500/10" },
+    { label: t("actividad.stats.consultasHoy"), value: actividad.consultasHoy, icon: Stethoscope, color: "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10" },
+    { label: t("actividad.stats.citasHoy"), value: actividad.citasHoy, icon: CalendarDays, color: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10" },
+    { label: t("actividad.stats.entradasDiarioHoy"), value: actividad.diarioHoy, icon: BookOpen, color: "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10" },
+    { label: t("actividad.stats.consultasEsteMes"), value: actividad.consultasMes, icon: Activity, color: "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10" },
+    { label: t("actividad.stats.generacionesIAMes"), value: actividad.generacionesIA, icon: Sparkles, color: "text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-500/10" },
   ];
 
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold">Actividad de la plataforma</h1>
-        <p className="text-muted-foreground mt-1">Métricas de uso en tiempo real</p>
+        <h1 className="text-2xl sm:text-3xl font-bold">{t("actividad.title")}</h1>
+        <p className="text-muted-foreground mt-1">{t("actividad.subtitle")}</p>
       </div>
 
       {/* Stats de hoy */}
@@ -41,19 +45,19 @@ export default async function ActividadPage() {
           <div className="px-6 py-4 border-b border-border">
             <h2 className="font-semibold flex items-center gap-2">
               <Activity className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-              Dietistas más activos este mes
+              {t("actividad.dietistasActivos.title")}
             </h2>
           </div>
           {actividad.dietistasActivos.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground text-sm">Sin actividad este mes</div>
+            <div className="p-8 text-center text-muted-foreground text-sm">{t("actividad.dietistasActivos.empty")}</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border bg-muted/50">
-                    <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Dietista</th>
-                    <th className="text-center px-4 py-3 text-sm font-medium text-muted-foreground">Consultas mes</th>
-                    <th className="text-center px-4 py-3 text-sm font-medium text-muted-foreground">Pacientes</th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">{t("actividad.dietistasActivos.columns.dietista")}</th>
+                    <th className="text-center px-4 py-3 text-sm font-medium text-muted-foreground">{t("actividad.dietistasActivos.columns.consultasMes")}</th>
+                    <th className="text-center px-4 py-3 text-sm font-medium text-muted-foreground">{t("actividad.dietistasActivos.columns.pacientes")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -80,11 +84,11 @@ export default async function ActividadPage() {
           <div className="px-6 py-4 border-b border-border">
             <h2 className="font-semibold flex items-center gap-2">
               <Users className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-              Últimos dietistas registrados
+              {t("actividad.ultimosRegistros.title")}
             </h2>
           </div>
           {actividad.ultimosDietistas.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground text-sm">Sin registros</div>
+            <div className="p-8 text-center text-muted-foreground text-sm">{t("actividad.ultimosRegistros.empty")}</div>
           ) : (
             <div className="divide-y divide-border">
               {actividad.ultimosDietistas.map((d) => (

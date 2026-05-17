@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
 import { publicarBroadcast } from "@/lib/realtime-publish";
 import { checkRateLimit, LIMITES } from "@/lib/rate-limit";
+import { getTranslations } from "next-intl/server";
 
 export interface Conversacion {
   id: string;
@@ -169,15 +170,16 @@ export async function getConversaciones(options?: {
  * Solo puede crear conversaciones entre dietista actual y pacientes suyos.
  */
 export async function getOrCrearConversacion(pacienteId: string): Promise<Conversacion> {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
 
   // Verificar que el paciente pertenece al dietista
   const paciente = await prisma.paciente.findFirst({
     where: { id: pacienteId, dietistaId: dietista.id },
     select: { id: true },
   });
-  if (!paciente) throw new Error("Paciente no encontrado");
+  if (!paciente) throw new Error(t("paciente.pacienteNoEncontrado"));
 
   const existing = await prisma.$queryRawUnsafe<Conversacion[]>(
     `SELECT * FROM conversaciones WHERE "dietistaId" = $1 AND "pacienteId" = $2`,
@@ -251,9 +253,10 @@ export async function enviarMensaje(
   texto: string,
   adjunto?: { url: string; nombre: string; tipo: string },
 ): Promise<Mensaje> {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
-  if (dietista.isDemo) throw new Error("No disponible en modo demo");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
+  if (dietista.isDemo) throw new Error(t("general.noDisponibleDemo"));
 
   // Rate limit: 20 mensajes/min por dietista
   const rl = checkRateLimit({
@@ -261,11 +264,11 @@ export async function enviarMensaje(
     ...LIMITES.enviarMensaje,
   });
   if (!rl.ok) {
-    throw new Error(`Demasiados mensajes. Espera ${rl.retryAfter}s`);
+    throw new Error(t("mensajes.demasiadosMensajes", { retryAfter: rl.retryAfter }));
   }
 
   const textoLimpio = texto.trim().slice(0, 5000);
-  if (!textoLimpio && !adjunto) throw new Error("Mensaje vacío");
+  if (!textoLimpio && !adjunto) throw new Error(t("mensajes.mensajeVacio"));
 
   // Verificar que la conversación pertenece al dietista
   const conv = await prisma.$queryRawUnsafe<{ dietistaId: string; pacienteId: string }[]>(
@@ -273,7 +276,7 @@ export async function enviarMensaje(
     conversacionId,
   );
   if (!conv[0] || conv[0].dietistaId !== dietista.id) {
-    throw new Error("No autorizado");
+    throw new Error(t("auth.noAutorizado"));
   }
 
   const id = cuid();
@@ -510,8 +513,9 @@ export async function enviarMensajePaciente(
   texto: string,
   adjunto?: { url: string; nombre: string; tipo: string },
 ): Promise<Mensaje> {
+  const t = await getTranslations("validation");
   const paciente = await getSessionPaciente();
-  if (!paciente) throw new Error("No autorizado");
+  if (!paciente) throw new Error(t("auth.noAutorizado"));
 
   // Rate limit: 20 mensajes/min por paciente
   const rl = checkRateLimit({
@@ -519,11 +523,11 @@ export async function enviarMensajePaciente(
     ...LIMITES.enviarMensaje,
   });
   if (!rl.ok) {
-    throw new Error(`Demasiados mensajes. Espera ${rl.retryAfter}s`);
+    throw new Error(t("mensajes.demasiadosMensajes", { retryAfter: rl.retryAfter }));
   }
 
   const textoLimpio = texto.trim().slice(0, 5000);
-  if (!textoLimpio && !adjunto) throw new Error("Mensaje vacío");
+  if (!textoLimpio && !adjunto) throw new Error(t("mensajes.mensajeVacio"));
 
   // Obtener o crear conversación
   let conv = await prisma.$queryRawUnsafe<{ id: string }[]>(

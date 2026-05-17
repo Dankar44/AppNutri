@@ -4,10 +4,14 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
 import { TipoNotificacion } from "@/generated/prisma/client";
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
+import { getLocale } from "@/i18n/locale";
 
 const generacionEnCurso = new Map<string, number>();
 
 export async function generarNotificaciones() {
+  const t = await getTranslations("validation");
+  const locale = await getLocale();
   const dietista = await getCurrentDietista();
   if (!dietista) return;
   if (dietista.isDemo) return;
@@ -70,27 +74,34 @@ export async function generarNotificaciones() {
   ]);
 
   // Preparar batch de notificaciones a crear
-  const nuevas: {
+  type NotifData = {
     dietistaId: string;
     pacienteId?: string;
     citaId?: string;
     tipo: TipoNotificacion;
     titulo: string;
     mensaje: string;
+    tituloKey?: string;
+    mensajeKey?: string;
+    params?: Record<string, string>;
     enlace: string;
-  }[] = [];
+  };
+  const nuevas: NotifData[] = [];
 
   // Citas de hoy
   for (const cita of citasHoy) {
     if (!existeCitaNotif("CITA_HOY", cita.id)) {
-      const hora = new Date(cita.fechaHora).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+      const hora = new Date(cita.fechaHora).toLocaleTimeString(locale === "pt" ? "pt-BR" : "es-ES", { hour: "2-digit", minute: "2-digit" });
+      const nombrePaciente = `${cita.paciente.nombre} ${cita.paciente.apellidos}`;
       nuevas.push({
         dietistaId: dietista.id,
         pacienteId: cita.pacienteId,
         citaId: cita.id,
         tipo: "CITA_HOY",
-        titulo: `Cita a las ${hora}`,
-        mensaje: `${cita.paciente.nombre} ${cita.paciente.apellidos}`,
+        titulo: t("notificaciones.titulos.citaHoy", { hora }),
+        mensaje: nombrePaciente,
+        tituloKey: "notificaciones.titulos.citaHoy",
+        params: { hora, nombrePaciente },
         enlace: "/agenda",
       });
     }
@@ -98,14 +109,18 @@ export async function generarNotificaciones() {
 
   // Pacientes sin consulta/medidas >30 días
   for (const p of pacientes) {
+    const nombrePaciente = `${p.nombre} ${p.apellidos}`;
     if (p.consultas.length === 0 || new Date(p.consultas[0].fecha) < hace30Dias) {
       if (!existePacienteNotif("PACIENTE_SIN_CONSULTA", p.id)) {
         nuevas.push({
           dietistaId: dietista.id,
           pacienteId: p.id,
           tipo: "PACIENTE_SIN_CONSULTA",
-          titulo: "Paciente sin consulta reciente",
-          mensaje: `${p.nombre} ${p.apellidos} lleva >30 días sin consulta`,
+          titulo: t("notificaciones.titulos.pacienteSinConsultaReciente"),
+          mensaje: t("notificaciones.mensajes.pacienteSinConsulta", { nombrePaciente }),
+          tituloKey: "notificaciones.titulos.pacienteSinConsultaReciente",
+          mensajeKey: "notificaciones.mensajes.pacienteSinConsulta",
+          params: { nombrePaciente },
           enlace: `/pacientes/${p.id}`,
         });
       }
@@ -116,8 +131,11 @@ export async function generarNotificaciones() {
           dietistaId: dietista.id,
           pacienteId: p.id,
           tipo: "PACIENTE_SIN_MEDIDAS",
-          titulo: "Paciente sin medidas recientes",
-          mensaje: `${p.nombre} ${p.apellidos} lleva >30 días sin medidas`,
+          titulo: t("notificaciones.titulos.pacienteSinMedidasRecientes"),
+          mensaje: t("notificaciones.mensajes.pacienteSinMedidas", { nombrePaciente }),
+          tituloKey: "notificaciones.titulos.pacienteSinMedidasRecientes",
+          mensajeKey: "notificaciones.mensajes.pacienteSinMedidas",
+          params: { nombrePaciente },
           enlace: `/pacientes/${p.id}/medidas`,
         });
       }
@@ -127,12 +145,16 @@ export async function generarNotificaciones() {
   // Seguimientos registrados hoy
   for (const e of entradasHoy) {
     if (!existePacienteNotif("DIARIO_NUEVO", e.paciente.id)) {
+      const nombrePaciente = `${e.paciente.nombre} ${e.paciente.apellidos}`;
       nuevas.push({
         dietistaId: dietista.id,
         pacienteId: e.paciente.id,
         tipo: "DIARIO_NUEVO",
-        titulo: "Nuevo seguimiento diario",
-        mensaje: `${e.paciente.nombre} ${e.paciente.apellidos} registró su seguimiento hoy`,
+        titulo: t("notificaciones.titulos.nuevoSeguimientoDiario"),
+        mensaje: t("notificaciones.mensajes.pacienteRegistroSeguimiento", { nombrePaciente }),
+        tituloKey: "notificaciones.titulos.nuevoSeguimientoDiario",
+        mensajeKey: "notificaciones.mensajes.pacienteRegistroSeguimiento",
+        params: { nombrePaciente },
         enlace: `/pacientes/${e.paciente.id}/seguimiento`,
       });
     }
@@ -300,18 +322,18 @@ export async function getBadgesNavegacion(): Promise<Record<string, number>> {
  * Una sola query agrupada para pintar dots en el listado sin N+1.
  */
 export async function getMapaNotificacionesPacientes(): Promise<
-  Record<string, { id: string; tipo: string; titulo: string; mensaje: string; createdAt: Date }[]>
+  Record<string, { id: string; tipo: string; titulo: string; mensaje: string; tituloKey: string | null; mensajeKey: string | null; params: Record<string, string> | null; createdAt: Date }[]>
 > {
   const dietista = await getCurrentDietista();
   if (!dietista) return {};
 
   const notifs = await prisma.notificacion.findMany({
     where: { dietistaId: dietista.id, leida: false, pacienteId: { not: null } },
-    select: { id: true, pacienteId: true, tipo: true, titulo: true, mensaje: true, createdAt: true },
+    select: { id: true, pacienteId: true, tipo: true, titulo: true, mensaje: true, tituloKey: true, mensajeKey: true, params: true, createdAt: true },
     orderBy: { createdAt: "desc" },
   });
 
-  const mapa: Record<string, { id: string; tipo: string; titulo: string; mensaje: string; createdAt: Date }[]> = {};
+  const mapa: Record<string, { id: string; tipo: string; titulo: string; mensaje: string; tituloKey: string | null; mensajeKey: string | null; params: Record<string, string> | null; createdAt: Date }[]> = {};
   for (const n of notifs) {
     if (!n.pacienteId) continue;
     if (!mapa[n.pacienteId]) mapa[n.pacienteId] = [];
@@ -320,6 +342,9 @@ export async function getMapaNotificacionesPacientes(): Promise<
       tipo: n.tipo,
       titulo: n.titulo,
       mensaje: n.mensaje,
+      tituloKey: n.tituloKey,
+      mensajeKey: n.mensajeKey,
+      params: n.params as Record<string, string> | null,
       createdAt: n.createdAt,
     });
   }
@@ -332,7 +357,7 @@ export async function getMapaNotificacionesPacientes(): Promise<
  */
 export async function getMapaNotificacionesCitas(
   citaIds: string[],
-): Promise<Record<string, { id: string; tipo: string; titulo: string; mensaje: string; createdAt: Date }[]>> {
+): Promise<Record<string, { id: string; tipo: string; titulo: string; mensaje: string; tituloKey: string | null; mensajeKey: string | null; params: Record<string, string> | null; createdAt: Date }[]>> {
   const dietista = await getCurrentDietista();
   if (!dietista || citaIds.length === 0) return {};
 
@@ -342,11 +367,11 @@ export async function getMapaNotificacionesCitas(
       leida: false,
       citaId: { in: citaIds },
     },
-    select: { id: true, citaId: true, tipo: true, titulo: true, mensaje: true, createdAt: true },
+    select: { id: true, citaId: true, tipo: true, titulo: true, mensaje: true, tituloKey: true, mensajeKey: true, params: true, createdAt: true },
     orderBy: { createdAt: "desc" },
   });
 
-  const mapa: Record<string, { id: string; tipo: string; titulo: string; mensaje: string; createdAt: Date }[]> = {};
+  const mapa: Record<string, { id: string; tipo: string; titulo: string; mensaje: string; tituloKey: string | null; mensajeKey: string | null; params: Record<string, string> | null; createdAt: Date }[]> = {};
   for (const n of notifs) {
     if (!n.citaId) continue;
     if (!mapa[n.citaId]) mapa[n.citaId] = [];
@@ -355,6 +380,9 @@ export async function getMapaNotificacionesCitas(
       tipo: n.tipo,
       titulo: n.titulo,
       mensaje: n.mensaje,
+      tituloKey: n.tituloKey,
+      mensajeKey: n.mensajeKey,
+      params: n.params as Record<string, string> | null,
       createdAt: n.createdAt,
     });
   }
@@ -502,8 +530,9 @@ export async function getNotifPreferencias(): Promise<NotifPreferencias> {
 }
 
 export async function setNotifPreferencias(prefs: NotifPreferencias) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   await prisma.$executeRawUnsafe(

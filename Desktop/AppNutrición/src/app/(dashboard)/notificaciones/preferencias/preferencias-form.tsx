@@ -18,125 +18,55 @@ import {
   AlertCircle,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { setNotifPreferencias, type NotifPreferencias } from "@/app/actions/notificaciones";
 
-type Categoria = {
-  label: string;
-  descripcion: string;
+type CategoriaConfig = {
+  categoryKey: string;
   items: {
     key: keyof NotifPreferencias;
-    titulo: string;
-    descripcion: string;
     icon: LucideIcon;
   }[];
 };
 
-const CATEGORIAS: Categoria[] = [
+const CATEGORIAS: CategoriaConfig[] = [
   {
-    label: "Citas",
-    descripcion: "Notificaciones relacionadas con citas de pacientes",
+    categoryKey: "citas",
     items: [
-      {
-        key: "CITA_HOY",
-        titulo: "Cita de hoy",
-        descripcion: "Recordatorio de las citas del día",
-        icon: CalendarClock,
-      },
-      {
-        key: "CITA_SOLICITADA",
-        titulo: "Solicitud de cita",
-        descripcion: "Cuando un paciente solicita una nueva cita",
-        icon: CalendarPlus,
-      },
-      {
-        key: "CITA_CONFIRMADA",
-        titulo: "Cita confirmada",
-        descripcion: "El paciente acepta la cita que propusiste",
-        icon: CalendarCheck,
-      },
-      {
-        key: "CITA_CONTRAPROPUESTA",
-        titulo: "Contrapropuesta",
-        descripcion: "El paciente propone otra fecha u hora",
-        icon: CalendarDays,
-      },
-      {
-        key: "CITA_RECHAZADA",
-        titulo: "Cita rechazada",
-        descripcion: "El paciente rechaza la cita propuesta",
-        icon: CalendarX,
-      },
-      {
-        key: "CITA_CANCELADA_POR_PACIENTE",
-        titulo: "Cita cancelada",
-        descripcion: "El paciente cancela una cita ya confirmada",
-        icon: CalendarX,
-      },
+      { key: "CITA_HOY", icon: CalendarClock },
+      { key: "CITA_SOLICITADA", icon: CalendarPlus },
+      { key: "CITA_CONFIRMADA", icon: CalendarCheck },
+      { key: "CITA_CONTRAPROPUESTA", icon: CalendarDays },
+      { key: "CITA_RECHAZADA", icon: CalendarX },
+      { key: "CITA_CANCELADA_POR_PACIENTE", icon: CalendarX },
     ],
   },
   {
-    label: "Seguimiento de pacientes",
-    descripcion: "Alertas sobre el seguimiento clínico",
+    categoryKey: "seguimiento",
     items: [
-      {
-        key: "PACIENTE_SIN_CONSULTA",
-        titulo: "Paciente sin consulta",
-        descripcion: "Pacientes sin citas en los últimos 30 días",
-        icon: UserX,
-      },
-      {
-        key: "PACIENTE_SIN_MEDIDAS",
-        titulo: "Paciente sin medidas",
-        descripcion: "Pacientes sin nuevas medidas antropométricas",
-        icon: Scale,
-      },
-      {
-        key: "PLAN_ANTIGUO",
-        titulo: "Plan antiguo",
-        descripcion: "Planes alimenticios con más de 60 días",
-        icon: FileWarning,
-      },
+      { key: "PACIENTE_SIN_CONSULTA", icon: UserX },
+      { key: "PACIENTE_SIN_MEDIDAS", icon: Scale },
+      { key: "PLAN_ANTIGUO", icon: FileWarning },
     ],
   },
   {
-    label: "Actividad del paciente",
-    descripcion: "Interacciones del paciente con la app",
+    categoryKey: "actividad",
     items: [
-      {
-        key: "DIARIO_NUEVO",
-        titulo: "Entrada en diario",
-        descripcion: "Cuando un paciente registra comida o síntomas",
-        icon: BookOpen,
-      },
+      { key: "DIARIO_NUEVO", icon: BookOpen },
     ],
   },
   {
-    label: "Pagos",
-    descripcion: "Movimientos de cobros de tus pacientes",
+    categoryKey: "pagos",
     items: [
-      {
-        key: "PAGO_RECIBIDO",
-        titulo: "Pago recibido",
-        descripcion: "Un paciente ha completado un pago",
-        icon: Wallet,
-      },
-      {
-        key: "PAGO_PENDIENTE",
-        titulo: "Pago pendiente",
-        descripcion: "Factura o cobro a la espera de confirmación",
-        icon: WalletCards,
-      },
-      {
-        key: "PAGO_FALLIDO",
-        titulo: "Pago fallido",
-        descripcion: "Un cobro no se ha podido procesar",
-        icon: AlertCircle,
-      },
+      { key: "PAGO_RECIBIDO", icon: Wallet },
+      { key: "PAGO_PENDIENTE", icon: WalletCards },
+      { key: "PAGO_FALLIDO", icon: AlertCircle },
     ],
   },
 ];
 
 export function PreferenciasForm({ prefs: prefsIniciales }: { prefs: NotifPreferencias }) {
+  const t = useTranslations("notifications");
   const [prefs, setPrefs] = useState(prefsIniciales);
   const [pending, startTransition] = useTransition();
   const [dirty, setDirty] = useState(false);
@@ -159,10 +89,10 @@ export function PreferenciasForm({ prefs: prefsIniciales }: { prefs: NotifPrefer
     startTransition(async () => {
       try {
         await setNotifPreferencias(prefs);
-        toast.success("Preferencias guardadas");
+        toast.success(t("preferencias.toastSaved"));
         setDirty(false);
       } catch {
-        toast.error("Error al guardar");
+        toast.error(t("preferencias.toastSaveError"));
       }
     });
   }
@@ -175,9 +105,9 @@ export function PreferenciasForm({ prefs: prefsIniciales }: { prefs: NotifPrefer
       {/* Toggle global */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card rounded-2xl border border-border p-4 sm:p-5">
         <div>
-          <p className="text-sm font-semibold">Todas las notificaciones</p>
+          <p className="text-sm font-semibold">{t("preferencias.allNotifications")}</p>
           <p className="text-xs text-muted-foreground">
-            Activa o desactiva todos los tipos a la vez
+            {t("preferencias.toggleAllDescription")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -187,7 +117,7 @@ export function PreferenciasForm({ prefs: prefsIniciales }: { prefs: NotifPrefer
             disabled={todosActivos}
             className="px-3 py-1.5 text-xs font-medium rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Activar todas
+            {t("preferencias.enableAll")}
           </button>
           <button
             type="button"
@@ -195,16 +125,16 @@ export function PreferenciasForm({ prefs: prefsIniciales }: { prefs: NotifPrefer
             disabled={ningunoActivo}
             className="px-3 py-1.5 text-xs font-medium rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Desactivar todas
+            {t("preferencias.disableAll")}
           </button>
         </div>
       </div>
 
       {CATEGORIAS.map((cat) => (
-        <section key={cat.label} className="bg-card rounded-2xl border border-border overflow-hidden">
+        <section key={cat.categoryKey} className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="px-4 sm:px-5 py-4 border-b border-border">
-            <h2 className="text-sm font-bold">{cat.label}</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">{cat.descripcion}</p>
+            <h2 className="text-sm font-bold">{t(`preferencias.categories.${cat.categoryKey}.label`)}</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">{t(`preferencias.categories.${cat.categoryKey}.description`)}</p>
           </div>
           <div className="divide-y divide-border">
             {cat.items.map((item) => (
@@ -227,8 +157,8 @@ export function PreferenciasForm({ prefs: prefsIniciales }: { prefs: NotifPrefer
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold leading-tight">{item.titulo}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{item.descripcion}</p>
+                  <p className="text-sm font-semibold leading-tight">{t(`preferencias.items.${item.key}.title`)}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{t(`preferencias.items.${item.key}.description`)}</p>
                 </div>
                 <Switch checked={prefs[item.key]} />
               </button>
@@ -245,7 +175,7 @@ export function PreferenciasForm({ prefs: prefsIniciales }: { prefs: NotifPrefer
           className="inline-flex items-center gap-2 rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
         >
           <Save className="w-4 h-4" />
-          {pending ? "Guardando..." : dirty ? "Guardar cambios" : "Sin cambios"}
+          {pending ? t("preferencias.saving") : dirty ? t("preferencias.saveChanges") : t("preferencias.noChanges")}
         </button>
       </div>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface ConfirmModalProps {
   open: boolean;
@@ -18,14 +19,17 @@ export function ConfirmModal({
   open,
   title,
   description,
-  confirmLabel = "Confirmar",
-  cancelLabel = "Cancelar",
+  confirmLabel,
+  cancelLabel,
   destructive = false,
   loading = false,
   onConfirm,
   onCancel,
 }: ConfirmModalProps) {
+  const t = useTranslations("common");
   if (!open) return null;
+  const resolvedConfirmLabel = confirmLabel ?? t("confirm.confirmLabel");
+  const resolvedCancelLabel = cancelLabel ?? t("confirm.cancelLabel");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4" onClick={onCancel}>
@@ -55,7 +59,7 @@ export function ConfirmModal({
             disabled={loading}
             className="px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium disabled:opacity-50"
           >
-            {cancelLabel}
+            {resolvedCancelLabel}
           </button>
           <button
             onClick={onConfirm}
@@ -66,7 +70,7 @@ export function ConfirmModal({
                 : "bg-primary text-primary-foreground hover:bg-primary/90"
             }`}
           >
-            {loading ? "Eliminando..." : confirmLabel}
+            {loading ? t("confirm.deleting") : resolvedConfirmLabel}
           </button>
         </div>
       </div>

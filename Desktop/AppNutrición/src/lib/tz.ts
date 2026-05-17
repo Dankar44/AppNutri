@@ -14,6 +14,8 @@
  * del dietista y pasarla a estas funciones.
  */
 
+import { intlTag, type Locale } from "@/i18n/config";
+
 const TZ = "Europe/Madrid" as const;
 
 /**
@@ -67,8 +69,8 @@ export function toMadridDateStr(d: Date): string {
 }
 
 /** Devuelve la hora en formato "HH:MM" según Europa/Madrid. */
-export function toMadridTimeStr(d: Date): string {
-  return d.toLocaleTimeString("es-ES", {
+export function toMadridTimeStr(d: Date, locale?: Locale): string {
+  return d.toLocaleTimeString(locale ? intlTag(locale) : "es-ES", {
     timeZone: TZ,
     hour: "2-digit",
     minute: "2-digit",

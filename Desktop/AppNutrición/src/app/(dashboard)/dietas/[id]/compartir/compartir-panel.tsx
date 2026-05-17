@@ -6,6 +6,7 @@ import { Link2, Copy, Check, XCircle } from "lucide-react";
 import { crearEnlace, eliminarEnlace } from "@/app/actions/compartir";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface Enlace {
   id: string;
@@ -20,6 +21,7 @@ export function CompartirPanel({
   planId: string;
   enlaces: Enlace[];
 }) {
+  const t = useTranslations("diets.compartir");
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
@@ -28,10 +30,10 @@ export function CompartirPanel({
     setLoading(true);
     try {
       await crearEnlace(planId);
-      toast.success("Enlace creado");
+      toast.success(t("toastLinkCreated"));
       router.refresh();
     } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
-      toast.error("Error al crear enlace");
+      toast.error(t("toastCreateError"));
     } finally {
       setLoading(false);
     }
@@ -40,10 +42,10 @@ export function CompartirPanel({
   async function handleEliminar(id: string) {
     try {
       await eliminarEnlace(id);
-      toast.success("Enlace eliminado");
+      toast.success(t("toastLinkDeleted"));
       router.refresh();
     } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
-      toast.error("Error al eliminar");
+      toast.error(t("toastDeleteError"));
     }
   }
 
@@ -51,7 +53,7 @@ export function CompartirPanel({
     const url = `${window.location.origin}/compartido/${token}`;
     navigator.clipboard.writeText(url);
     setCopied(token);
-    toast.success("Enlace copiado");
+    toast.success(t("toastLinkCopied"));
     setTimeout(() => setCopied(null), 2000);
   }
 
@@ -63,7 +65,7 @@ export function CompartirPanel({
         className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium disabled:opacity-50"
       >
         <Link2 className="w-4 h-4" />
-        {loading ? "Generando..." : "Generar nuevo enlace"}
+        {loading ? t("generating") : t("generateLink")}
       </button>
 
       <div className="space-y-3">
@@ -74,7 +76,7 @@ export function CompartirPanel({
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400">
-                Activo
+                {t("active")}
               </span>
               <span className="text-xs text-muted-foreground">
                 {formatDate(enlace.createdAt)}
@@ -89,23 +91,23 @@ export function CompartirPanel({
                 className="inline-flex items-center gap-1 px-3 py-1 rounded border border-border hover:bg-muted transition-colors text-xs font-medium"
               >
                 {copied === enlace.token ? (
-                  <><Check className="w-3 h-3" /> Copiado</>
+                  <><Check className="w-3 h-3" /> {t("copied")}</>
                 ) : (
-                  <><Copy className="w-3 h-3" /> Copiar enlace</>
+                  <><Copy className="w-3 h-3" /> {t("copyLink")}</>
                 )}
               </button>
               <button
                 onClick={() => handleEliminar(enlace.id)}
                 className="inline-flex items-center gap-1 px-3 py-1 rounded border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/15 transition-colors text-xs font-medium"
               >
-                <XCircle className="w-3 h-3" /> Eliminar
+                <XCircle className="w-3 h-3" /> {t("delete")}
               </button>
             </div>
           </div>
         ))}
         {enlaces.length === 0 && (
           <p className="text-sm text-muted-foreground">
-            No hay enlaces creados. Genera uno para compartir este plan.
+            {t("noLinks")}
           </p>
         )}
       </div>

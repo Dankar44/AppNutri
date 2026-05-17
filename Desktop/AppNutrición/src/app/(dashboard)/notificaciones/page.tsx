@@ -4,10 +4,12 @@ import { getNotificaciones } from "@/app/actions/notificaciones";
 import { NotificacionActions } from "./notificacion-actions";
 import { NotificacionItem } from "./notificacion-item";
 import { PageHeader } from "@/components/page-header";
+import { getTranslations } from "next-intl/server";
+import { getLocale } from "@/i18n/locale";
 
 type Notif = Awaited<ReturnType<typeof getNotificaciones>>[number];
 
-function formatLabelDia(d: Date): string {
+function formatLabelDia(d: Date, t: Awaited<ReturnType<typeof getTranslations<"notifications">>>, localeTag: string): string {
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
   const ayer = new Date(hoy);
@@ -15,16 +17,16 @@ function formatLabelDia(d: Date): string {
   const fecha = new Date(d);
   fecha.setHours(0, 0, 0, 0);
 
-  if (fecha.getTime() === hoy.getTime()) return "Hoy";
-  if (fecha.getTime() === ayer.getTime()) return "Ayer";
+  if (fecha.getTime() === hoy.getTime()) return t("dateLabels.today");
+  if (fecha.getTime() === ayer.getTime()) return t("dateLabels.yesterday");
 
   const diffDias = Math.round((hoy.getTime() - fecha.getTime()) / 86400000);
   if (diffDias > 1 && diffDias <= 6) {
-    const wd = fecha.toLocaleDateString("es-ES", { weekday: "long" });
+    const wd = fecha.toLocaleDateString(localeTag, { weekday: "long" });
     return wd.charAt(0).toUpperCase() + wd.slice(1);
   }
 
-  const formato = fecha.toLocaleDateString("es-ES", {
+  const formato = fecha.toLocaleDateString(localeTag, {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -32,7 +34,7 @@ function formatLabelDia(d: Date): string {
   return formato.charAt(0).toUpperCase() + formato.slice(1);
 }
 
-function agruparPorDia(notifs: Notif[]): { label: string; items: Notif[] }[] {
+function agruparPorDia(notifs: Notif[], t: Awaited<ReturnType<typeof getTranslations<"notifications">>>, localeTag: string): { label: string; items: Notif[] }[] {
   const grupos: Record<string, Notif[]> = {};
   const ordenes: string[] = [];
 
@@ -47,22 +49,25 @@ function agruparPorDia(notifs: Notif[]): { label: string; items: Notif[] }[] {
   }
 
   return ordenes.map((key) => ({
-    label: formatLabelDia(new Date(grupos[key][0].createdAt)),
+    label: formatLabelDia(new Date(grupos[key][0].createdAt), t, localeTag),
     items: grupos[key],
   }));
 }
 
 export default async function NotificacionesPage() {
+  const t = await getTranslations("notifications");
+  const locale = await getLocale();
+  const localeTag = locale === "pt" ? "pt-BR" : "es-ES";
   const notificaciones = await getNotificaciones();
   const noLeidas = notificaciones.filter((n) => !n.leida).length;
-  const grupos = agruparPorDia(notificaciones);
+  const grupos = agruparPorDia(notificaciones, t, localeTag);
 
   return (
     <div>
       <PageHeader
         icon={Bell}
-        title="Notificaciones"
-        subtitle={noLeidas > 0 ? `${noLeidas} sin leer` : "Todas leídas"}
+        title={t("page.title")}
+        subtitle={noLeidas > 0 ? t("page.unreadCount", { count: noLeidas }) : t("page.allRead")}
         action={
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <Link
@@ -70,7 +75,7 @@ export default async function NotificacionesPage() {
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium shrink-0"
             >
               <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">Preferencias</span>
+              <span className="hidden sm:inline">{t("page.preferences")}</span>
             </Link>
             <NotificacionActions
               mostrarMarcarLeidas={noLeidas > 0}
@@ -85,9 +90,9 @@ export default async function NotificacionesPage() {
           <div className="w-16 h-16 rounded-full bg-primary/10 mx-auto flex items-center justify-center mb-4">
             <Bell strokeWidth={1.75} className="w-8 h-8 text-primary" />
           </div>
-          <h3 className="font-semibold text-lg mb-1">Sin notificaciones</h3>
+          <h3 className="font-semibold text-lg mb-1">{t("page.emptyTitle")}</h3>
           <p className="text-muted-foreground text-sm">
-            Cuando llegue una nueva aparecerá aquí
+            {t("page.emptyMessage")}
           </p>
         </div>
       ) : (
@@ -99,7 +104,7 @@ export default async function NotificacionesPage() {
                   {grupo.label}
                 </h2>
                 <span className="text-[11px] text-muted-foreground/70 tabular-nums">
-                  {grupo.items.length} {grupo.items.length === 1 ? "notificación" : "notificaciones"}
+                  {t("page.notificationCount", { count: grupo.items.length })}
                 </span>
                 <div className="flex-1 h-px bg-border" />
               </div>

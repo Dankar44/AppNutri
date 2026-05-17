@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Ruler, Trash2 } from "lucide-react";
+import { getTranslations } from "next-intl/server";
+import { getLocale } from "@/i18n/locale";
+import { intlTag } from "@/i18n/config";
 import { getPaciente } from "@/app/actions/pacientes";
 import { getMedidas, getMedidasEvolucion } from "@/app/actions/medidas";
 import { formatDate } from "@/lib/utils";
@@ -17,13 +20,16 @@ export default async function MedidasPage({ params }: Props) {
   const paciente = await getPaciente(id);
   if (!paciente) notFound();
 
-  const [medidas, evolucion] = await Promise.all([
+  const [medidas, evolucion, t, locale] = await Promise.all([
     getMedidas(id),
     getMedidasEvolucion(id),
+    getTranslations("patients"),
+    getLocale(),
   ]);
+  const tag = intlTag(locale);
 
   const chartData = evolucion.map((m) => ({
-    fecha: new Date(m.fecha).toLocaleDateString("es-ES", {
+    fecha: new Date(m.fecha).toLocaleDateString(tag, {
       day: "2-digit",
       month: "short",
     }),
@@ -42,17 +48,17 @@ export default async function MedidasPage({ params }: Props) {
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3 py-2 sm:py-0 -my-2 sm:my-0"
         >
           <ArrowLeft className="w-4 h-4" />
-          Volver a {paciente.nombre}
+          {t("medidas.volverAPaciente", { nombre: paciente.nombre })}
         </Link>
         <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
           <Ruler className="w-6 h-6 text-primary" />
-          Medidas de {paciente.nombre} {paciente.apellidos}
+          {t("medidas.medidasDe", { nombre: paciente.nombre, apellidos: paciente.apellidos })}
         </h1>
       </div>
 
       <div className="max-w-4xl mx-auto space-y-6">
         <section className="bg-card rounded-xl border border-border p-6">
-          <h2 className="text-lg font-semibold mb-4">Registro de mediciones</h2>
+          <h2 className="text-lg font-semibold mb-4">{t("medidas.registroMediciones")}</h2>
           <MedidasFormWrapper
             pacienteId={id}
             defaultPeso={paciente.peso}
@@ -64,22 +70,22 @@ export default async function MedidasPage({ params }: Props) {
 
         <section className="bg-card rounded-xl border border-border p-6">
           <h2 className="text-lg font-semibold mb-4">
-            Historial ({medidas.length})
+            {t("medidas.historial", { count: medidas.length })}
           </h2>
           {medidas.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No hay medidas registradas
+              {t("medidas.noHayMedidas")}
             </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border text-left text-muted-foreground">
-                    <th className="pb-2 font-medium">Fecha</th>
-                    <th className="pb-2 font-medium">Peso</th>
-                    <th className="pb-2 font-medium">IMC</th>
-                    <th className="pb-2 font-medium hidden sm:table-cell">% Grasa</th>
-                    <th className="pb-2 font-medium hidden md:table-cell">Cintura</th>
+                    <th className="pb-2 font-medium">{t("medidas.fecha")}</th>
+                    <th className="pb-2 font-medium">{t("medidas.peso")}</th>
+                    <th className="pb-2 font-medium">{t("medidas.imc")}</th>
+                    <th className="pb-2 font-medium hidden sm:table-cell">{t("medidas.grasaPorcentaje")}</th>
+                    <th className="pb-2 font-medium hidden md:table-cell">{t("medidas.cintura")}</th>
                     <th className="pb-2 font-medium"></th>
                   </tr>
                 </thead>

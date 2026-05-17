@@ -1,0 +1,732 @@
+{
+  "login": {
+    "title": "Portal del Paciente",
+    "subtitle": "Accede con tu email y contraseña o PIN",
+    "emailLabel": "Email",
+    "passwordLabel": "Contraseña o PIN",
+    "passwordPlaceholder": "Tu contraseña o PIN de 6 dígitos",
+    "pinHint": "Primera vez: usa el PIN que te dio tu dietista",
+    "submit": "Acceder",
+    "submitting": "Entrando...",
+    "errorGenerico": "Error al iniciar sesión",
+    "esDietista": "¿Eres dietista?",
+    "accedeProfesional": "Accede como profesional"
+  },
+  "completarPerfil": {
+    "title": "Completa tu perfil",
+    "subtitle": "Configura tu contraseña para acceder en el futuro sin necesitar el PIN",
+    "fotoLabel": "Añadir foto de perfil (opcional)",
+    "fotoClickCambiar": "Click para cambiar",
+    "passwordLabel": "Nueva contraseña *",
+    "passwordPlaceholder": "Mínimo 6 caracteres",
+    "confirmPasswordLabel": "Repetir contraseña *",
+    "confirmPasswordPlaceholder": "Repite la contraseña",
+    "submit": "Completar perfil",
+    "submitting": "Guardando...",
+    "futuroAcceso": "A partir de ahora podrás acceder con tu email y esta contraseña",
+    "toast": {
+      "imagenGrande": "La imagen no puede superar 2MB",
+      "passwordCorta": "La contraseña debe tener al menos 6 caracteres",
+      "passwordNoCoincide": "Las contraseñas no coinciden",
+      "perfilCompletado": "Perfil completado",
+      "errorCompletar": "Error al completar el perfil"
+    }
+  },
+  "portal": {
+    "saludos": {
+      "buenosDias": "Buenos días",
+      "buenasTardes": "Buenas tardes",
+      "buenasNoches": "Buenas noches"
+    },
+    "proximaCita": {
+      "label": "Próxima cita",
+      "confirmada": "Confirmada",
+      "pendiente": "Pendiente",
+      "online": "Online",
+      "unirse": "Unirse",
+      "verCitas": "Ver citas"
+    },
+    "hitos": {
+      "primerKilo": "Primer kilo",
+      "cincoKilosMenos": "5 kilos menos",
+      "diezKilosMenos": "10 kilos menos",
+      "imcSaludable": "IMC saludable",
+      "enRacha": "En racha",
+      "hasBajado": "Has bajado {kg} kg desde que empezaste",
+      "imcBajoDe25": "Tu IMC ha bajado por debajo de 25",
+      "tresMedicionesBajando": "3 mediciones consecutivas bajando"
+    }
+  },
+  "dashboard": {
+    "hoyCard": {
+      "title": "Hoy",
+      "haRegistrado": "Llevas registrado tu día",
+      "noHaRegistrado": "Aún no has registrado nada hoy",
+      "diasSeguidos": "{count} {count, plural, one {día} other {días}} seguidos",
+      "delDia": "del día",
+      "comidas": "Comidas",
+      "agua": "Agua",
+      "ejercicio": "Ejercicio",
+      "continuar": "Continuar",
+      "registrarDia": "Registrar día"
+    },
+    "progresoCard": {
+      "title": "Progreso",
+      "subtitle": "Tendencia reciente",
+      "verTodo": "Ver todo",
+      "sinDatos": "Aún sin datos suficientes",
+      "peso": "Peso",
+      "imc": "IMC",
+      "grasa": "Grasa",
+      "periodoLabel": "7 días"
+    },
+    "alimentoFallback": "Alimento",
+    "comidaActualCard": {
+      "tuPlan": "Tu plan",
+      "sinPlanAsignado": "Aún no tienes un plan alimenticio asignado",
+      "sinPlanDesc": "Tu nutricionista te asignará un plan personalizado. Te avisaremos en cuanto esté listo.",
+      "sinComidaAhora": "Sin comida ahora",
+      "sonLas": "Son las {hora}",
+      "entreComidas": "Estás entre comidas. La siguiente se registrará automáticamente cuando llegue su horario.",
+      "verDietaCompleta": "Ver mi dieta completa",
+      "teToca": "Te toca",
+      "yMas": "y {count} más…",
+      "sinAlimentos": "Sin alimentos configurados para esta comida.",
+      "verDieta": "Ver dieta completa",
+      "registrar": "Registrar"
+    },
+    "mensajesCard": {
+      "title": "Mensajes",
+      "sinLeer": "{count} sin leer",
+      "sinPendientes": "Sin mensajes pendientes",
+      "cuandoTeEscriba": "Cuando tu nutricionista te escriba aparecerá aquí.",
+      "fallbackNutri": "Tu nutricionista"
+    },
+    "mensajesPreview": {
+      "ahora": "ahora",
+      "haceMins": "hace {min} min",
+      "haceHoras": "hace {h} h",
+      "haceDias": "hace {d} día",
+      "haceDiasPlural": "hace {d} días",
+      "emptyState": "Cuando tu nutricionista te escriba aparecerá aquí."
+    },
+    "hitoRecienteCard": {
+      "label": "Hito reciente",
+      "conseguidoEl": "Conseguido el {fecha}"
+    }
+  },
+  "citas": {
+    "title": "Mis citas",
+    "subtitle": "Solicita nuevas citas con tu nutricionista y gestiona las que ya tienes.",
+    "solicitarNueva": "Solicitar nueva cita",
+    "estadoBadge": {
+      "pendiente": "Esperando respuesta",
+      "confirmada": "Confirmada",
+      "contrapropuesta": "Nueva propuesta",
+      "cancelada": "Cancelada",
+      "completada": "Completada"
+    },
+    "propuestaNutri": {
+      "title": "Tu nutricionista te ha propuesto una cita",
+      "propone": "{nombre} propone:",
+      "aceptar": "Aceptar",
+      "proponerOtraFecha": "Proponer otra fecha",
+      "rechazar": "Rechazar"
+    },
+    "contrapropuestaNutri": {
+      "title": "Nueva propuesta de tu nutricionista"
+    },
+    "proximasCitas": {
+      "title": "Próximas citas",
+      "empty": "No tienes citas confirmadas. Solicita una nueva arriba.",
+      "cancelar": "Cancelar"
+    },
+    "esperandoRespuesta": {
+      "title": "Esperando respuesta de tu nutricionista",
+      "cancelarSolicitud": "Cancelar solicitud"
+    },
+    "historial": "Historial",
+    "solicitadaPorTi": "Solicitada por ti",
+    "motivo": "Motivo: {motivo}",
+    "unirseGoogleMeet": "Unirse a Google Meet",
+    "confirmarCancelar": {
+      "title": "¿Seguro que quieres cancelar esta cita?",
+      "description": "Tu nutricionista recibirá una notificación de la cancelación.",
+      "mantener": "No, mantener",
+      "confirmar": "Sí, cancelar"
+    },
+    "toast": {
+      "citaConfirmada": "Cita confirmada",
+      "propuestaRechazada": "Propuesta rechazada",
+      "citaRechazada": "Cita rechazada",
+      "citaCancelada": "Cita cancelada"
+    },
+    "formatFecha": {
+      "template": "{dia}, {fecha} de {mes} de {anio} a las {hora}",
+      "dias": {
+        "domingo": "domingo",
+        "lunes": "lunes",
+        "martes": "martes",
+        "miercoles": "miércoles",
+        "jueves": "jueves",
+        "viernes": "viernes",
+        "sabado": "sábado"
+      },
+      "meses": {
+        "enero": "enero",
+        "febrero": "febrero",
+        "marzo": "marzo",
+        "abril": "abril",
+        "mayo": "mayo",
+        "junio": "junio",
+        "julio": "julio",
+        "agosto": "agosto",
+        "septiembre": "septiembre",
+        "octubre": "octubre",
+        "noviembre": "noviembre",
+        "diciembre": "diciembre"
+      }
+    }
+  },
+  "contraproponer": {
+    "title": "Proponer otra fecha",
+    "propuestaActual": "Propuesta actual del nutricionista:",
+    "nuevaFecha": "Nueva fecha",
+    "horasDisponibles": "Horas disponibles",
+    "sinHuecos": "No hay huecos este día. Prueba con otro.",
+    "mensajeNutricionista": "Mensaje para el nutricionista",
+    "mensajeOpcional": "(opcional)",
+    "mensajePlaceholder": "Ej: No puedo ese día, prefiero este otro hueco.",
+    "propones": "Propones:",
+    "enviarPropuesta": "Enviar propuesta",
+    "toast": {
+      "propuestaEnviada": "Propuesta enviada a tu nutricionista"
+    }
+  },
+  "nuevaCita": {
+    "volverMisCitas": "Volver a mis citas",
+    "title": "Solicitar nueva cita",
+    "subtitle": "Elige un hueco libre en la agenda de tu nutricionista. Verás en tiempo real qué horas tiene disponibles.",
+    "estaSemana": "Esta semana",
+    "minPorCita": "{duracion} min por cita",
+    "leyenda": {
+      "disponible": "Disponible",
+      "ocupado": "Ocupado",
+      "fueraHorario": "Fuera de horario"
+    },
+    "sinHorario": {
+      "title": "No hay horario configurado",
+      "description": "Tu nutricionista aún no ha publicado su horario. Vuelve a intentarlo más tarde."
+    },
+    "sinHuecosSemana": "Esta semana no hay huecos libres. Prueba con otra semana usando las flechas de arriba.",
+    "citaSeleccionada": "Cita seleccionada",
+    "seleccionaHueco": "Selecciona un hueco libre",
+    "seleccionaHuecoDesc": "Haz click en cualquier casilla verde del calendario para proponer esa hora.",
+    "motivoPlaceholder": "Motivo (opcional): revisión, duda sobre el plan…",
+    "cancelar": "Cancelar",
+    "solicitarCita": "Solicitar cita",
+    "toast": {
+      "solicitudEnviada": "Solicitud enviada. Tu nutricionista la revisará pronto.",
+      "errorSolicitar": "Error al solicitar la cita",
+      "errorCargarDisponibilidad": "No se pudo cargar la disponibilidad"
+    },
+    "grid": {
+      "ocupado": "Ocupado",
+      "dias": ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"],
+      "solicitarALas": "Solicitar a las {hora}",
+      "semanaAnterior": "Semana anterior",
+      "semanaSiguiente": "Semana siguiente"
+    }
+  },
+  "integraciones": {
+    "googleCalendar": {
+      "title": "Google Calendar",
+      "description": "Conecta tu cuenta de Google para que tus citas aparezcan automáticamente en tu calendario personal.",
+      "conectar": "Conectar con Google",
+      "conectando": "Conectando…",
+      "conectadoComo": "Conectado como {email}",
+      "sincronizarAutomaticamente": "Sincronizar automáticamente",
+      "sincronizarDesc": "Cuando tu nutricionista cree o modifique una cita, también aparecerá en tu Google Calendar.",
+      "desconectar": "Desconectar",
+      "desconectarTitle": "Desconectar Google Calendar",
+      "desconectarDesc": "Ya no se añadirán nuevas citas a tu calendario. Los eventos ya creados permanecerán en Google hasta que los borres manualmente.",
+      "cancelar": "Cancelar",
+      "confirmarDesconectar": "Sí, desconectar",
+      "flashOk": "Google Calendar conectado correctamente.",
+      "errors": {
+        "noConfigurado": "Google aún no está disponible. Tu nutricionista debe terminar la configuración.",
+        "stateMismatch": "La conexión con Google se canceló o expiró. Inténtalo de nuevo.",
+        "missingParams": "No se recibió la respuesta de Google. Inténtalo de nuevo.",
+        "noTokens": "Google no concedió los permisos necesarios. Asegúrate de aceptar todos los permisos.",
+        "exchangeFailed": "Error al conectar con Google. Inténtalo de nuevo en unos minutos.",
+        "accessDenied": "Se denegó el acceso a Google. Inténtalo de nuevo y acepta los permisos.",
+        "default": "No se pudo conectar con Google. Inténtalo de nuevo."
+      }
+    }
+  },
+  "dieta": {
+    "title": "Mi dieta",
+    "subtitle": "Plan alimenticio activo",
+    "sinPlan": {
+      "title": "Sin plan activo",
+      "description": "Tu nutricionista aún no te ha asignado un plan alimenticio"
+    },
+    "listaCompra": "Lista de la compra"
+  },
+  "listaCompra": {
+    "title": "Lista de la compra",
+    "sinPlan": {
+      "title": "Sin plan activo",
+      "description": "Tu nutricionista aún no te ha asignado un plan alimenticio."
+    }
+  },
+  "evolucion": {
+    "title": "Mi evolución",
+    "subtitleConMediciones": "{count} medicion{countPlural} registrada{countPlural}",
+    "subtitleSinMediciones": "Gráficos de peso y medidas",
+    "empty": {
+      "title": "Aún no hay mediciones",
+      "description": "Tu nutricionista registrará tu peso, IMC y composición corporal en las próximas consultas. Aparecerán aquí en cuanto las añada."
+    },
+    "cards": {
+      "peso": "Peso",
+      "imc": "IMC",
+      "grasaCorporal": "% Grasa corporal",
+      "ultimaMedicion": "Última medición:",
+      "sinDatosRango": "Sin datos en este rango",
+      "saludable": "Saludable",
+      "rangos": {
+        "unMes": "1M",
+        "tresMeses": "3M",
+        "seisMeses": "6M",
+        "unAnio": "1A",
+        "todo": "Todo"
+      },
+      "footer": {
+        "minimo": "Mínimo",
+        "actual": "Actual",
+        "maximo": "Máximo"
+      },
+      "rangoTemporal": "Rango temporal"
+    },
+    "perimetros": {
+      "title": "Perímetros",
+      "ultimaMedicion": "Última medición:",
+      "cintura": "Cintura",
+      "cadera": "Cadera",
+      "brazo": "Brazo"
+    },
+    "hitos": {
+      "title": "Hitos",
+      "subtitle": "Logros conseguidos durante tu seguimiento",
+      "desbloqueados": "desbloqueados",
+      "conseguido": "Conseguido",
+      "bloqueado": "Bloqueado",
+      "primerPaso": {
+        "titulo": "Primer paso",
+        "descripcionConseguido": "Tu primera medición registrada",
+        "descripcionPendiente": "Tu primera medición"
+      },
+      "primerKilo": {
+        "titulo": "Primer kilo",
+        "descripcion": "Bajar 1 kg desde tu peso inicial"
+      },
+      "cincoKilos": {
+        "titulo": "5 kilos menos",
+        "descripcion": "Bajar 5 kg desde tu peso inicial"
+      },
+      "diezKilos": {
+        "titulo": "10 kilos menos",
+        "descripcion": "Bajar 10 kg desde tu peso inicial"
+      },
+      "imcSaludable": {
+        "titulo": "IMC saludable",
+        "descripcionAlcanzar": "Alcanzar un IMC por debajo de 25",
+        "descripcionMantener": "Mantente en tu IMC saludable"
+      },
+      "constancia": {
+        "titulo": "Constancia",
+        "descripcion": "Registrar 5 mediciones"
+      },
+      "enRacha": {
+        "titulo": "En racha",
+        "descripcion": "3 mediciones consecutivas bajando"
+      }
+    }
+  },
+  "mensajes": {
+    "title": "Mensajes",
+    "subtitle": "Habla con tu nutricionista",
+    "fallbackEspecialidad": "Nutricionista",
+    "escribele": "Escríbele a tu nutricionista",
+    "resuelve": "Resuelve dudas sobre tu dieta o envía fotos de comidas",
+    "placeholder": "Escribe un mensaje...",
+    "adjuntarAriaLabel": "Adjuntar archivo",
+    "enviarAriaLabel": "Enviar mensaje",
+    "archivoLabel": "Archivo",
+    "adjuntoLabel": "adjunto",
+    "diasLabel": {
+      "hoy": "Hoy",
+      "ayer": "Ayer"
+    },
+    "toast": {
+      "archivoGrande": "El archivo no puede superar los 10 MB",
+      "errorSubirArchivo": "No se pudo subir el archivo",
+      "errorEnviar": "No se pudo enviar"
+    }
+  },
+  "perfil": {
+    "title": "Mi perfil",
+    "subtitle": "Gestiona tu información personal",
+    "datosPersonales": "Datos personales",
+    "nombre": "Nombre",
+    "apellidos": "Apellidos",
+    "telefono": "Teléfono",
+    "email": "Email",
+    "emailNoEditable": "El email no se puede cambiar",
+    "guardarCambios": "Guardar cambios",
+    "cambiarPassword": {
+      "title": "Cambiar contraseña",
+      "actual": "Contraseña actual",
+      "nueva": "Nueva contraseña",
+      "confirmar": "Confirmar contraseña",
+      "submit": "Cambiar contraseña"
+    },
+    "toast": {
+      "nombreObligatorio": "Nombre y apellidos son obligatorios",
+      "perfilActualizado": "Perfil actualizado",
+      "errorGuardar": "Error al guardar",
+      "maxFoto": "Máximo 2MB",
+      "fotoActualizada": "Foto actualizada",
+      "errorFoto": "Error al subir la foto",
+      "passwordCorta": "Mínimo 6 caracteres",
+      "passwordNoCoincide": "Las contraseñas no coinciden",
+      "passwordCambiada": "Contraseña cambiada",
+      "errorPassword": "Error al cambiar contraseña"
+    }
+  },
+  "recomendaciones": {
+    "title": "Recomendaciones",
+    "subtitle": "Escritas por {nombre}",
+    "fallbackNutri": "Tu nutricionista",
+    "empty": {
+      "title": "Sin recomendaciones",
+      "description": "Tu nutricionista aún no ha escrito recomendaciones para ti."
+    },
+    "sections": {
+      "ingestaAgua": "Ingesta de agua",
+      "ejercicioFisico": "Ejercicio físico recomendado",
+      "alimentosEvitar": "Alimentos a evitar",
+      "otrasRecomendaciones": "Otras recomendaciones"
+    },
+    "frecuencia": {
+      "todosDias": "Todos los días",
+      "vecesSemana": "{count} {count, plural, one {vez} other {veces}} por semana"
+    }
+  },
+  "seguimiento": {
+    "title": "Diario",
+    "subtitle": "Registra cómo te ha ido el día",
+    "saveIndicator": {
+      "guardando": "Guardando…",
+      "guardado": "Guardado",
+      "error": "Error"
+    },
+    "sinPlanHoy": {
+      "title": "Sin plan activo para hoy",
+      "description": "Tu nutricionista aún no te ha asignado un plan alimenticio para este día."
+    },
+    "comidasDelDia": {
+      "title": "Comidas del día",
+      "subtitle": "Marca lo que has tomado"
+    },
+    "guardarAhora": "Guardar ahora",
+    "guardando": "Guardando...",
+    "toast": {
+      "diaCompleto": "Día completo",
+      "errorCargar": "Error al cargar datos",
+      "seguimientoGuardado": "Seguimiento guardado",
+      "errorGuardar": "Error al guardar"
+    },
+    "dateNavigator": {
+      "diaAnterior": "Día anterior",
+      "diaSiguiente": "Día siguiente",
+      "seleccionarFecha": "Seleccionar fecha",
+      "volverHoy": "Volver a hoy"
+    },
+    "comidaCard": {
+      "horaReal": "real {hora}",
+      "ocultarDetalles": "Ocultar detalles",
+      "anadirHoraNotas": "Añadir hora real o notas",
+      "horaRealLabel": "Hora real",
+      "notasPlaceholder": "Notas de esta comida...",
+      "notasLabel": "Notas de la comida"
+    },
+    "aguaTracker": {
+      "title": "Agua",
+      "objetivoAlcanzado": "Objetivo alcanzado",
+      "quitar250": "Quitar 250 mililitros",
+      "anadir": "Añadir {label}"
+    },
+    "ejercicioCard": {
+      "title": "Ejercicio",
+      "seleccionaActividad": "Selecciona una actividad",
+      "teHasMovido": "¿Te has movido hoy?",
+      "activarEjercicio": "Activar ejercicio",
+      "desactivarEjercicio": "Desactivar ejercicio",
+      "toggleHint": "Activa el toggle si hoy has hecho ejercicio para registrarlo.",
+      "duracion": "Duración (min)",
+      "distancia": "Distancia (km)",
+      "buscarActividad": "Buscar actividad...",
+      "sinActividades": "No se encontraron actividades",
+      "compendioParagraph": "Compendio de actividades físicas",
+      "customTitle": "¿No encuentras tu ejercicio? Créalo:",
+      "customNombre": "Nombre",
+      "customNombrePlaceholder": "Ej: Pádel adaptado",
+      "customMet": "MET",
+      "customAnadir": "Añadir",
+      "sinActividad": "sin actividad",
+      "prevPage": "Página anterior",
+      "nextPage": "Página siguiente",
+      "kcalLabel": "Kcal",
+      "autoPlaceholder": "Auto",
+      "kcalEditable": "Kcal (editable)",
+      "distanciaPlaceholder": "Opc."
+    },
+    "ejercicios": {
+      "nombres": {
+        "caminarNormal": "Caminar (ritmo normal)",
+        "caminarRapido": "Caminar (ritmo rápido)",
+        "marchaNordica": "Marcha nórdica",
+        "correrSuave": "Correr (ritmo suave)",
+        "correrModerado": "Correr (ritmo moderado)",
+        "correrIntenso": "Correr (ritmo intenso)",
+        "sprint": "Sprint",
+        "trailRunning": "Trail running",
+        "carreraEnCinta": "Carrera en cinta",
+        "ciclismoPaseo": "Ciclismo (paseo)",
+        "ciclismoModerado": "Ciclismo (moderado)",
+        "ciclismoIntenso": "Ciclismo (intenso)",
+        "ciclismoBmx": "Ciclismo BMX",
+        "ciclismoSpinning": "Ciclismo (spinning)",
+        "ciclismoMontana": "Ciclismo de montaña",
+        "bicicletaEstaticaSuave": "Bicicleta estática (suave)",
+        "bicicletaEstaticaIntensa": "Bicicleta estática (intensa)",
+        "natacionSuave": "Natación (suave)",
+        "natacionModerada": "Natación (moderada)",
+        "natacionIntensa": "Natación (intensa)",
+        "aquagym": "Aquagym",
+        "waterpolo": "Waterpolo",
+        "surf": "Surf",
+        "kayak": "Kayak",
+        "remoEnAgua": "Remo en agua",
+        "musculacionModerada": "Musculación (moderada)",
+        "musculacionIntensa": "Musculación (intensa)",
+        "crossfit": "CrossFit",
+        "hiit": "HIIT",
+        "circuitoFuerza": "Circuito de fuerza",
+        "eliptica": "Elíptica",
+        "elipticaIntensa": "Elíptica (intensa)",
+        "remoMaquina": "Remo (máquina)",
+        "remoMaquinaIntenso": "Remo (máquina, intenso)",
+        "escaladora": "Escaladora (stairmaster)",
+        "saltarCuerda": "Saltar a la cuerda",
+        "battleRopes": "Battle ropes",
+        "kettlebell": "Kettlebell",
+        "calistenia": "Calistenia",
+        "trxSuspension": "TRX / Suspensión",
+        "tenisIndividual": "Tenis (individual)",
+        "tenisDobles": "Tenis (dobles)",
+        "padel": "Pádel",
+        "badminton": "Bádminton",
+        "squash": "Squash",
+        "pingPong": "Ping pong",
+        "futbol": "Fútbol",
+        "futbolSala": "Fútbol sala",
+        "baloncesto": "Baloncesto",
+        "balonmano": "Balonmano",
+        "voleibol": "Voleibol",
+        "voleibolPlaya": "Voleibol playa",
+        "rugby": "Rugby",
+        "hockey": "Hockey",
+        "beisbol": "Béisbol",
+        "boxeoEntrenamiento": "Boxeo (entrenamiento)",
+        "boxeoSparring": "Boxeo (sparring)",
+        "kickboxing": "Kickboxing",
+        "judo": "Judo",
+        "karate": "Karate",
+        "taekwondo": "Taekwondo",
+        "mma": "MMA",
+        "artesMarciales": "Artes marciales (general)",
+        "esgrima": "Esgrima",
+        "yogaHatha": "Yoga (hatha)",
+        "yogaVinyasa": "Yoga (vinyasa/power)",
+        "pilates": "Pilates",
+        "taiChi": "Tai Chi",
+        "estiramientos": "Estiramientos",
+        "baileGeneral": "Baile (general)",
+        "zumba": "Zumba",
+        "aerobic": "Aeróbic",
+        "salsaBachata": "Salsa / Bachata",
+        "danzaContemporanea": "Danza contemporánea",
+        "flamenco": "Flamenco",
+        "senderismo": "Senderismo",
+        "senderismoMontana": "Senderismo (montaña)",
+        "escaladaRoca": "Escalada (roca)",
+        "escaladaRocodromo": "Escalada (rocódromo)",
+        "esquiAlpino": "Esquí alpino",
+        "esquiFondo": "Esquí de fondo",
+        "snowboard": "Snowboard",
+        "patinajeHielo": "Patinaje sobre hielo",
+        "patinajeLinea": "Patinaje en línea",
+        "golfCaminando": "Golf (caminando)",
+        "golfCarro": "Golf (con carro)",
+        "equitacion": "Equitación",
+        "tiroConArco": "Tiro con arco",
+        "bolos": "Bolos",
+        "frisbee": "Frisbee / Ultimate",
+        "parkour": "Parkour",
+        "skateboard": "Skateboard",
+        "gimnasiaRitmica": "Gimnasia rítmica",
+        "gimnasiaArtistica": "Gimnasia artística",
+        "saltoTrampolin": "Salto de trampolín",
+        "buceo": "Buceo",
+        "snorkel": "Snorkel",
+        "vela": "Vela",
+        "trabajoJardin": "Trabajo en jardín / huerto",
+        "tareasDomesticas": "Tareas domésticas (intensas)",
+        "subirEscaleras": "Subir escaleras"
+      },
+      "frecuencias": {
+        "freq1": "1 vez/semana",
+        "freq2": "2 veces/semana",
+        "freq3": "3 veces/semana",
+        "freq4": "4 veces/semana",
+        "freq5": "5 veces/semana",
+        "freq6": "6 veces/semana",
+        "freq7": "Todos los días"
+      },
+      "agua": {
+        "menosDe05": "Menos de 0,5 litros",
+        "entre05y1": "Entre 0,5 y 1 litro",
+        "entre1y15": "Entre 1 y 1,5 litros",
+        "entre15y2": "Entre 1,5 y 2 litros",
+        "entre2y25": "Entre 2 y 2,5 litros",
+        "entre25y3": "Entre 2,5 y 3 litros",
+        "masDe3": "Más de 3 litros"
+      },
+      "alimentosEvitar": {
+        "grasasTrans": "Alimentos ricos en grasas trans",
+        "precocinados": "Alimentos precocinados",
+        "fastFood": "Fast food",
+        "patatasFritas": "Patatas fritas",
+        "conservas": "Conservas",
+        "embutidos": "Embutidos",
+        "carnesProcesadas": "Carnes procesadas",
+        "salsas": "Salsas",
+        "harinasRefinadas": "Harinas refinadas",
+        "bebidasAlcoholicas": "Bebidas alcohólicas",
+        "bebidasRefrescantes": "Bebidas refrescantes",
+        "dulces": "Dulces (azúcar, miel, mermelada)"
+      }
+    },
+    "notasCard": {
+      "title": "¿Cómo te has sentido?",
+      "sensaciones": {
+        "genial": "Genial",
+        "bien": "Bien",
+        "regular": "Regular",
+        "cansado": "Cansado",
+        "mal": "Mal"
+      },
+      "placeholder": "Cuenta cómo te ha ido el día, qué has comido fuera del plan, antojos...",
+      "nutricionistaLeera": "Tu nutricionista podrá leer estas notas"
+    },
+    "resumenHero": {
+      "total": "Total",
+      "comidas": "Comidas",
+      "agua": "Agua",
+      "ejercicio": "Ejercicio",
+      "sinActividad": "sin actividad",
+      "racha": "{count} {count, plural, one {día} other {días}}"
+    }
+  },
+  "horario": {
+    "title": "Mi horario semanal",
+    "subtitle": "Configura tu horario — tu nutricionista lo verá reflejado.",
+    "plantilla": "Plantilla",
+    "aplicar": "Aplicar",
+    "aplicarPlantilla": "Aplicar plantilla",
+    "vaciarSemana": "Vaciar semana",
+    "guardarCambios": "Guardar cambios",
+    "sinActividades": "Sin actividades",
+    "actividades": "{count} actividad{countPlural}",
+    "copiar": "Copiar",
+    "mobileHint": "Toca cualquier casilla para añadir una actividad, o aplica una plantilla.",
+    "desktopHint": "Haz click en cualquier casilla para añadir una actividad, o aplica una plantilla.",
+    "columnaHora": "Hora",
+    "editor": {
+      "nuevaActividad": "Nueva actividad",
+      "editarActividad": "Editar actividad",
+      "nombre": "Nombre",
+      "nombrePlaceholder": "Ej: Reunión de equipo",
+      "categoria": "Categoría",
+      "desde": "Desde",
+      "hasta": "Hasta",
+      "repetirEn": "Repetir también en",
+      "nota": "Nota (opcional)",
+      "notaPlaceholder": "Detalles, ubicación…",
+      "eliminar": "Eliminar",
+      "cancelar": "Cancelar",
+      "guardar": "Guardar",
+      "anadir": "Añadir"
+    },
+    "plantillasModal": {
+      "title": "Aplicar plantilla",
+      "subtitle": "Reemplaza tu horario actual con una base que puedes editar después."
+    },
+    "toast": {
+      "actividadSinNombre": "Añade un nombre a la actividad",
+      "horaFinPosterior": "La hora de fin debe ser posterior a la de inicio",
+      "sinActividadesDuplicar": "No hay actividades en {dia} para duplicar",
+      "copiadoSemana": "Copiado de {dia} a toda la semana",
+      "plantillaAplicada": "Plantilla aplicada: {nombre}",
+      "vaciarConfirm": "¿Quieres vaciar toda la semana? Esto borrará todas las actividades.",
+      "horarioGuardado": "Horario guardado",
+      "errorGuardar": "Error al guardar"
+    }
+  },
+  "exportarPdf": {
+    "title": "Generar PDF",
+    "subtitle": "Elige qué incluir en tu documento personalizado",
+    "sinPlan": {
+      "title": "Sin plan activo",
+      "description": "Necesitas un plan alimenticio para generar el PDF."
+    },
+    "planAlimenticio": "Plan alimenticio",
+    "planActual": "(actual)",
+    "contenidoPdf": "Contenido del PDF",
+    "opciones": {
+      "portada": "Portada",
+      "portadaDesc": "Página de presentación con tu nombre",
+      "planSemanal": "Plan semanal completo",
+      "planSemanalDesc": "Tabla resumen con todas las comidas de la semana",
+      "detalleDiario": "Detalle diario de comidas",
+      "detalleDiarioDesc": "Desglose de cada día con ingredientes y cantidades",
+      "recomendaciones": "Recomendaciones",
+      "recomendacionesDesc": "Consejos y recomendaciones personalizadas",
+      "listaCompra": "Lista de la compra",
+      "listaCompraDesc": "Ingredientes agrupados por categoría",
+      "horarioSemanal": "Horario semanal",
+      "horarioSemanalDesc": "Tu horario habitual de actividades"
+    },
+    "generarVistaPrevia": "Generar vista previa",
+    "vistaPreviaActualizada": "Vista previa actualizada",
+    "descargarPdf": "Descargar PDF",
+    "vistaPrevia": "Vista previa",
+    "vistaPreviaTitle": "Vista previa del PDF",
+    "horarioHtmlTitle": "MI HORARIO SEMANAL",
+    "horarioHtmlSubtitle": "PLAN DIETÉTICO SEMANAL",
+    "horaLabel": "Hora"
+  }
+}

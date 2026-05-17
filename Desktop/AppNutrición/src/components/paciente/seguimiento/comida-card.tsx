@@ -15,6 +15,7 @@ import {
   Soup,
   type LucideIcon,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { ComidaSeguimiento } from "@/app/actions/seguimiento-paciente";
 import { TIPO_HORAS, TIPO_LABELS } from "@/lib/seguimiento";
 
@@ -42,6 +43,7 @@ export function ComidaCard({
   onChangeNotas,
   embedded = false,
 }: Props) {
+  const t = useTranslations("patient-portal.seguimiento.comidaCard");
   const [detallesAbiertos, setDetallesAbiertos] = useState(
     Boolean(comida.horaReal || comida.notas)
   );
@@ -186,7 +188,7 @@ export function ComidaCard({
           <ChevronDown
             className={`w-3 h-3 transition-transform ${detallesAbiertos ? "rotate-180" : ""}`}
           />
-          {detallesAbiertos ? "Ocultar detalles" : "Añadir hora real o notas"}
+          {detallesAbiertos ? t("ocultarDetalles") : t("anadirHoraNotas")}
         </button>
 
         <div
@@ -203,7 +205,7 @@ export function ComidaCard({
                   value={comida.horaReal || ""}
                   onChange={(e) => onChangeHora(e.target.value)}
                   className="bg-transparent border-none outline-none w-20 tabular-nums"
-                  aria-label="Hora real"
+                  aria-label={t("horaRealLabel")}
                 />
               </label>
               <label className="flex-1 flex items-center gap-2 bg-muted/40 border border-border rounded-lg px-2.5 py-1.5 text-xs">
@@ -212,10 +214,10 @@ export function ComidaCard({
                   type="text"
                   value={comida.notas || ""}
                   onChange={(e) => onChangeNotas(e.target.value)}
-                  placeholder="Notas de esta comida..."
+                  placeholder={t("notasPlaceholder")}
                   maxLength={500}
                   className="flex-1 bg-transparent border-none outline-none placeholder:text-muted-foreground/60"
-                  aria-label="Notas de la comida"
+                  aria-label={t("notasLabel")}
                 />
               </label>
             </div>

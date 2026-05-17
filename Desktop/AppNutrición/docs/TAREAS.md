@@ -61,9 +61,9 @@ Las opciones del menú "···" de la lista de la compra (Copiar al portapapeles
 - Comprobar que el enlace compartido público muestra la lista correctamente para quien lo reciba.
 - Revisar formato y presentación del contenido compartido.
 
-### 9. Cambiar contraseña en Ajustes
+### ~~9. Cambiar contraseña en Ajustes~~ ✅ COMPLETADO (mayo 2026)
 
-Añadir en la página de Ajustes la opción de cambiar la contraseña de la cuenta del dietista. Usar la API de Supabase Auth (`updateUser({ password })`) con confirmación de la contraseña actual.
+Implementado en Ajustes con confirmación de contraseña actual vía Supabase Auth.
 
 ### 10. Botón de ayuda solapa el botón de formularios
 

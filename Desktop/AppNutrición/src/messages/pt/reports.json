@@ -1,0 +1,101 @@
+{
+  "page": {
+    "title": "Relatórios e Estatísticas",
+    "subtitle": "Métricas do seu consultório"
+  },
+  "resumenMes": {
+    "titulo": "Resumo do mês",
+    "totalPacientes": "Total de pacientes",
+    "consultasEsteMes": "Consultas este mês",
+    "planesActivos": "Planos ativos",
+    "citasEstaSemana": "Agendamentos esta semana"
+  },
+  "metricas": {
+    "titulo": "Métricas do consultório",
+    "tasaRetencion": "Taxa de retenção",
+    "mediaConsultasPac": "Média consultas/pac.",
+    "planesCreados": "Planos criados",
+    "pacientesConPortal": "Pacientes com portal"
+  },
+  "charts": {
+    "pacientesPorObjetivo": "Pacientes por objetivo",
+    "actividadUltimos12Meses": "Atividade (últimos 12 meses)",
+    "sinDatos": "Sem dados",
+    "legends": {
+      "pacientes": "Pacientes",
+      "consultas": "Consultas",
+      "pacientesNuevos": "Novos pacientes"
+    }
+  },
+  "exportar": {
+    "titulo": "Exportar relatórios por paciente",
+    "verInformes": "Ver relatórios",
+    "planesCount": "{count} planos",
+    "consultasCount": "{count} consultas",
+    "medidasCount": "{count} medidas"
+  },
+  "paciente": {
+    "volverAReportes": "Voltar a relatórios",
+    "informesDe": "Relatórios de {nombre} {apellidos}",
+    "planes": "Planos",
+    "consultas": "Consultas",
+    "evolucionPeso": "Evolução de peso",
+    "generarInformesPdf": "Gerar relatórios PDF",
+    "ultimasConsultas": "Últimas consultas",
+    "sinNombre": "Sem nome"
+  },
+  "generarPdf": {
+    "informeEvolucion": "Relatório de evolução",
+    "fichaPaciente": "Ficha do paciente",
+    "dietaSemanal": "Dieta semanal"
+  },
+  "pdfContent": {
+    "informeEvolucionTitulo": "Relatório de Evolução",
+    "objetivo": "Objetivo",
+    "datosActuales": "Dados atuais",
+    "peso": "Peso",
+    "altura": "Altura",
+    "historialMedidas": "Histórico de medidas",
+    "fecha": "Data",
+    "pesoKg": "Peso (kg)",
+    "imc": "IMC",
+    "porcentajeGrasa": "% Gordura",
+    "historialConsultas": "Histórico de consultas",
+    "fichaPacienteTitulo": "Ficha do Paciente",
+    "email": "Email",
+    "telefono": "Telefone",
+    "ultimaMedicion": "Última medição ({fecha})",
+    "planAlimenticioSemanal": "Plano Alimentar Semanal",
+    "plan": "Plano",
+    "verImagen": "(ver imagem)",
+    "generadoEl": "Gerado em {fecha}",
+    "alimento": "Alimento",
+    "cantidad": "Quantidade",
+    "dietaTitulo": "Dieta - {nombre} {apellidos}"
+  },
+  "objetivoLabels": {
+    "PERDER_PESO": "Perder peso",
+    "GANAR_MASA": "Ganhar massa muscular",
+    "MANTENIMIENTO": "Manutenção",
+    "PATOLOGIA": "Patologia",
+    "DEPORTIVO": "Desempenho esportivo",
+    "OTRO": "Outro"
+  },
+  "diaLabels": {
+    "LUNES": "Segunda-feira",
+    "MARTES": "Terça-feira",
+    "MIERCOLES": "Quarta-feira",
+    "JUEVES": "Quinta-feira",
+    "VIERNES": "Sexta-feira",
+    "SABADO": "Sábado",
+    "DOMINGO": "Domingo"
+  },
+  "tipoComidaLabels": {
+    "DESAYUNO": "Café da manhã",
+    "MEDIA_MANANA": "Lanche da manhã",
+    "ALMUERZO": "Almoço",
+    "MERIENDA": "Lanche da tarde",
+    "CENA": "Jantar",
+    "RECENA": "Ceia"
+  }
+}

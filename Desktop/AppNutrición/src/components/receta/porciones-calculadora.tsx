@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { Flame, Droplets, Circle, Diamond, Triangle, Minus, Plus, Users } from "lucide-react";
 
@@ -13,12 +14,12 @@ interface Props {
   porcionesReceta: number;
 }
 
-const ROWS = [
-  { key: "calorias", label: "Energía", unit: "kcal", icon: Flame, color: "#a78bfa", bg: "bg-purple-50 dark:bg-purple-500/10" },
-  { key: "grasas", label: "Grasa", unit: "g", icon: Droplets, color: "#f0b845", bg: "bg-yellow-50 dark:bg-yellow-500/10" },
-  { key: "carbohidratos", label: "Hidratos", unit: "g", icon: Circle, color: "#d9956a", bg: "bg-orange-50 dark:bg-orange-500/10" },
-  { key: "proteinas", label: "Proteína", unit: "g", icon: Diamond, color: "#7eaadf", bg: "bg-blue-50 dark:bg-blue-500/10" },
-  { key: "fibra", label: "Fibra", unit: "g", icon: Triangle, color: "#4ec4a0", bg: "bg-emerald-50 dark:bg-emerald-500/10" },
+const ROW_DEFS = [
+  { key: "calorias", labelKey: "energia", unit: "kcal", icon: Flame, color: "#a78bfa", bg: "bg-purple-50 dark:bg-purple-500/10" },
+  { key: "grasas", labelKey: "grasa", unit: "g", icon: Droplets, color: "#f0b845", bg: "bg-yellow-50 dark:bg-yellow-500/10" },
+  { key: "carbohidratos", labelKey: "hidratos", unit: "g", icon: Circle, color: "#d9956a", bg: "bg-orange-50 dark:bg-orange-500/10" },
+  { key: "proteinas", labelKey: "proteina", unit: "g", icon: Diamond, color: "#7eaadf", bg: "bg-blue-50 dark:bg-blue-500/10" },
+  { key: "fibra", labelKey: "fibra", unit: "g", icon: Triangle, color: "#4ec4a0", bg: "bg-emerald-50 dark:bg-emerald-500/10" },
 ] as const;
 
 export function PorcionesCalculadora({
@@ -29,6 +30,7 @@ export function PorcionesCalculadora({
   fibra,
   porcionesReceta,
 }: Props) {
+  const t = useTranslations("recipes.porcionesCalc");
   const searchParams = useSearchParams();
   const porcionesUrl = searchParams.get("porciones");
   const [porciones, setPorciones] = useState<number>(() =>
@@ -54,15 +56,15 @@ export function PorcionesCalculadora({
   return (
     <section className="bg-card rounded-xl border border-border p-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold">Calculadora de porciones</h2>
-        <span className="text-xs text-muted-foreground">receta base: {porcionesReceta}</span>
+        <h2 className="text-lg font-semibold">{t("title")}</h2>
+        <span className="text-xs text-muted-foreground">{t("recetaBase", { count: porcionesReceta })}</span>
       </div>
 
       <div className="flex items-center gap-2 mb-3">
         <button
           onClick={() => setPorciones((p) => clamp(p - 0.5))}
           className="w-9 h-9 shrink-0 rounded-lg border border-border hover:bg-muted transition-colors flex items-center justify-center"
-          aria-label="Menos porción"
+          aria-label={t("menosPorcion")}
         >
           <Minus className="w-4 h-4" />
         </button>
@@ -78,13 +80,13 @@ export function PorcionesCalculadora({
             className="w-full h-11 pl-10 pr-12 rounded-lg border border-border bg-background text-center text-lg font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">
-            porc.
+            {t("porc")}
           </span>
         </div>
         <button
           onClick={() => setPorciones((p) => clamp(p + 0.5))}
           className="w-9 h-9 shrink-0 rounded-lg border border-border hover:bg-muted transition-colors flex items-center justify-center"
-          aria-label="Más porción"
+          aria-label={t("masPorcion")}
         >
           <Plus className="w-4 h-4" />
         </button>
@@ -101,13 +103,13 @@ export function PorcionesCalculadora({
                 : "border-border hover:bg-muted"
             }`}
           >
-            {p === porcionesReceta ? `${p} (receta)` : `${p} porc.`}
+            {p === porcionesReceta ? t("recetaPreset", { count: p }) : t("porcPreset", { count: p })}
           </button>
         ))}
       </div>
 
       <div className="space-y-2">
-        {ROWS.map((row) => {
+        {ROW_DEFS.map((row) => {
           const Icon = row.icon;
           const v = values[row.key];
           return (
@@ -117,7 +119,7 @@ export function PorcionesCalculadora({
             >
               <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                 <Icon className="w-3.5 h-3.5" style={{ color: row.color }} />
-                {row.label}
+                {t(`macroLabels.${row.labelKey}`)}
               </div>
               <div className="tabular-nums">
                 <span className="text-base font-bold" style={{ color: row.color }}>

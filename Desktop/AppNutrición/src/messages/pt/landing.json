@@ -1,0 +1,168 @@
+{
+  "metadata": {
+    "title": "Annonia — Software de Nutrição para Nutricionistas | Dietas Personalizadas com IA",
+    "description": "Software para nutricionistas e dietistas: crie dietas personalizadas, gerencie pacientes, agende consultas online e gere planos alimentares com inteligência artificial. Teste grátis por 14 dias.",
+    "ogTitle": "Annonia — Software de Nutrição para Nutricionistas",
+    "ogDescription": "Software para nutricionistas: dietas personalizadas com IA, gestão de pacientes, agenda e portal do paciente. A partir de 9,99€/mês.",
+    "twitterTitle": "Annonia — Software de Nutrição para Nutricionistas",
+    "twitterDescription": "Dietas personalizadas com IA, gestão de pacientes e agenda online. Teste grátis por 14 dias.",
+    "ogImageAlt": "Annonia — Software de nutrição para dietistas e nutricionistas"
+  },
+  "navbar": {
+    "comoFunciona": "Como funciona",
+    "precios": "Preços",
+    "faq": "FAQ",
+    "iniciarSesion": "Entrar",
+    "empezarGratis": "Começar grátis"
+  },
+  "mobileMenu": {
+    "abrirMenu": "Abrir menu",
+    "cerrarMenu": "Fechar menu"
+  },
+  "hero": {
+    "titulo": "Nutrição personalizada para cada paciente",
+    "tituloPart1": "Nutrição",
+    "tituloPart2": "personalizada",
+    "tituloPart3": "para cada paciente",
+    "bannerAlt": "Banner Annonia"
+  },
+  "subheadline": {
+    "titulo": "Software de nutrição personalizada.",
+    "subtitulo": "Pacientes únicos, planos alimentares únicos."
+  },
+  "showcase": {
+    "dietistas": {
+      "tag": "Para nutricionistas:",
+      "titulo": "Software de gestão para seu consultório de nutrição",
+      "descripcion": "Dedique mais tempo aos seus pacientes e menos a tarefas administrativas. Annonia centraliza fichas, planos alimentares, consultas e mensagens em um software de nutrição desenvolvido por e para nutricionistas.",
+      "cta": "Comece grátis",
+      "imageAlt": "Software de gestão Annonia"
+    },
+    "pacientes": {
+      "tag": "Para pacientes:",
+      "titulo": "Portal do paciente com acompanhamento nutricional",
+      "descripcion": "Seus pacientes acessam pelo celular ou computador. Consultam sua dieta personalizada, registram sua evolução e se comunicam com você de forma direta.",
+      "cta": "Conheça o portal",
+      "imageAlt": "Portal do paciente Annonia"
+    },
+    "ia": {
+      "tag": "Inteligência artificial:",
+      "titulo": "Gere planos alimentares com IA em segundos",
+      "descripcion": "Nossa IA analisa o perfil, objetivos e restrições de cada paciente para propor um plano nutricional equilibrado que você pode ajustar antes de atribuir.",
+      "cta": "Experimente a IA",
+      "imageAlt": "Geração de planos com IA Annonia"
+    }
+  },
+  "trust": {
+    "titulo": "Software desenvolvido para nutricionistas",
+    "tituloPart1": "Software desenvolvido para",
+    "tituloPart2": "nutricionistas",
+    "descripcion": "Cada funcionalidade foi pensada para economizar tempo no seu consultório de nutrição e melhorar a experiência dos seus pacientes.",
+    "segura": {
+      "titulo": "Seguro",
+      "descripcion": "Dados criptografados, servidores na UE, conformidade com RGPD"
+    },
+    "accesible": {
+      "titulo": "Acessível",
+      "descripcion": "De qualquer dispositivo, a qualquer momento"
+    },
+    "rapida": {
+      "titulo": "Rápido",
+      "descripcion": "Interface leve otimizada para o seu dia a dia"
+    }
+  },
+  "faqSection": {
+    "titulo": "Respostas mais perto do que nunca",
+    "tituloPart1": "Respostas mais",
+    "tituloPart2": "perto",
+    "tituloPart3": "do que nunca",
+    "descripcion": "Respondemos as perguntas mais comuns sobre Annonia e como pode transformar seu consultório de nutrição.",
+    "faqImageAlt": "Annonia — portal do paciente",
+    "preguntas": {
+      "probarGratis": {
+        "pregunta": "Posso experimentar Annonia gratuitamente?",
+        "respuesta": "Sim, você tem 14 dias de teste gratuito com acesso completo. Não é necessário cartão de crédito."
+      },
+      "datosSeguridad": {
+        "pregunta": "Meus dados e os dos meus pacientes estão seguros?",
+        "respuesta": "Absolutamente. Usamos criptografia, servidores na UE e cumprimos o RGPD. A segurança dos dados clínicos é nossa prioridade."
+      },
+      "cambiarPlan": {
+        "pregunta": "Posso mudar de plano ou cancelar?",
+        "respuesta": "Sim, sem compromisso. Mude ou cancele nas Configurações. Você mantém o acesso até o final do período pago."
+      },
+      "pacientesCuenta": {
+        "pregunta": "Meus pacientes precisam criar uma conta?",
+        "respuesta": "Não. Você envia um acesso com email e PIN. Eles acessam o portal sem precisar se cadastrar."
+      },
+      "funcionaMovil": {
+        "pregunta": "Funciona no celular?",
+        "respuesta": "Sim, tudo está otimizado para celular, tablet e desktop. É um web app progressivo que você pode instalar."
+      }
+    }
+  },
+  "cta": {
+    "titulo": "Comece a digitalizar seu consultório de nutrição",
+    "tituloPart1": "Comece a digitalizar",
+    "tituloPart2": "seu consultório",
+    "tituloPart3": "de nutrição",
+    "descripcion": "Junte-se aos nutricionistas que confiam na Annonia para oferecer dietas personalizadas e um acompanhamento nutricional excepcional.",
+    "boton": "Criar conta grátis",
+    "garantia": "14 dias grátis · Sem cartão · Cancele quando quiser"
+  },
+  "notificationCard": {
+    "nombre": "Nutricionista Teresa",
+    "mensaje": "Muito bem Carmen, já vejo mais cores no prato! 👏"
+  },
+  "footer": {
+    "descripcion": "Software de nutrição profissional para nutricionistas e dietistas. Gestão de consultório, dietas personalizadas e acompanhamento de pacientes.",
+    "producto": "Produto",
+    "acceso": "Acesso",
+    "legal": "Legal",
+    "crearCuenta": "Criar conta",
+    "portalPacientes": "Portal de pacientes",
+    "terminosCondiciones": "Termos e condições",
+    "politicaPrivacidad": "Política de privacidade",
+    "politicaCookies": "Política de cookies",
+    "copyright": "© {year} Annonia. Todos os direitos reservados."
+  },
+  "structuredData": {
+    "organization": {
+      "description": "Empresa espanhola de software de nutrição para nutricionistas-dietistas. Plataforma de gestão de consultas, dietas personalizadas e inteligência artificial.",
+      "availableLanguage": "Portuguese"
+    },
+    "website": {
+      "alternateName": "Annonia — Software para Nutricionistas e Dietistas",
+      "inLanguage": "pt"
+    },
+    "software": {
+      "description": "Software de nutrição para nutricionistas: crie dietas personalizadas, gerencie pacientes, agende consultas online e gere planos alimentares com inteligência artificial.",
+      "offerBasico": "Básico",
+      "offerProfesional": "Profissional",
+      "offerPrueba": "Teste gratuito",
+      "offerPruebaDesc": "14 dias de teste gratuito com acesso completo"
+    },
+    "landingFaq": {
+      "q1": "Posso experimentar Annonia gratuitamente?",
+      "a1": "Sim, você tem 14 dias de teste gratuito com acesso completo. Não é necessário cartão de crédito.",
+      "q2": "Meus dados e os dos meus pacientes estão seguros?",
+      "a2": "Absolutamente. Usamos criptografia, servidores na UE e cumprimos o RGPD. A segurança dos dados clínicos é nossa prioridade.",
+      "q3": "Posso mudar de plano ou cancelar?",
+      "a3": "Sim, sem compromisso. Mude ou cancele nas Configurações. Você mantém o acesso até o final do período pago.",
+      "q4": "Meus pacientes precisam criar uma conta?",
+      "a4": "Não. Você envia um acesso com email e PIN. Eles acessam o portal sem precisar se cadastrar.",
+      "q5": "Funciona no celular?",
+      "a5": "Sim, tudo está otimizado para celular, tablet e desktop. É um web app progressivo que você pode instalar."
+    },
+    "preciosFaq": {
+      "q1": "Posso mudar de plano a qualquer momento?",
+      "a1": "Sim, você pode subir ou descer de plano quando quiser. A mudança se aplica no próximo ciclo de faturamento.",
+      "q2": "O que acontece depois dos 14 dias de teste?",
+      "a2": "Ao finalizar o teste, seu plano selecionado será ativado. Se você não adicionou um método de pagamento, sua conta passará para modo leitura.",
+      "q3": "Posso cancelar a qualquer momento?",
+      "a3": "Sim, sem perguntas. Você pode cancelar nas Configurações e continuará tendo acesso até o final do período pago.",
+      "q4": "Meus dados estão seguros?",
+      "a4": "Absolutamente. Usamos criptografia de ponta a ponta, servidores na UE e cumprimos o RGPD. Seus dados e os dos seus pacientes estão protegidos."
+    }
+  }
+}

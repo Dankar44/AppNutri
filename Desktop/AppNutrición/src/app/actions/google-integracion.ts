@@ -10,6 +10,7 @@ import { prisma } from "@/lib/prisma";
 import { buildAuthUrl, isGoogleConfigured } from "@/lib/google-oauth";
 import { deleteGoogleEvent } from "@/lib/google-calendar";
 import { backfillCitasNutri, backfillCitasPaciente } from "@/lib/google-sync";
+import { getTranslations } from "next-intl/server";
 
 const STATE_COOKIE_NUTRI = "google_oauth_state_nutri";
 const STATE_COOKIE_PACIENTE = "google_oauth_state_paciente";
@@ -53,8 +54,9 @@ export async function conectarGoogleNutri(): Promise<never> {
 export async function desconectarGoogleNutri(options: {
   accion: "borrar" | "dejar";
 }) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autenticado");
+  if (!dietista) throw new Error(t("auth.noAutenticado"));
   if (dietista.isDemo) return;
 
   const integracion = await prisma.googleIntegracion.findUnique({
@@ -97,8 +99,9 @@ export async function desconectarGoogleNutri(options: {
 }
 
 export async function toggleSincronizarNutri(activar: boolean) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autenticado");
+  if (!dietista) throw new Error(t("auth.noAutenticado"));
   if (dietista.isDemo) return;
 
   await prisma.googleIntegracion.update({
@@ -117,8 +120,9 @@ export async function toggleSincronizarNutri(activar: boolean) {
 }
 
 export async function toggleCrearMeetNutri(activar: boolean) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autenticado");
+  if (!dietista) throw new Error(t("auth.noAutenticado"));
   if (dietista.isDemo) return;
 
   await prisma.googleIntegracion.update({
@@ -146,8 +150,9 @@ export async function conectarGooglePaciente(): Promise<never> {
 export async function desconectarGooglePaciente(options: {
   accion: "borrar" | "dejar";
 }) {
+  const t = await getTranslations("validation");
   const session = await getCurrentPaciente();
-  if (!session) throw new Error("No autenticado");
+  if (!session) throw new Error(t("auth.noAutenticado"));
 
   // No hay campo dedicado por paciente en Cita para su googleEventId personal
   // → solo desconectamos y perdemos referencia (idéntico al caso "dejar").
@@ -161,8 +166,9 @@ export async function desconectarGooglePaciente(options: {
 }
 
 export async function toggleSincronizarPaciente(activar: boolean) {
+  const t = await getTranslations("validation");
   const session = await getCurrentPaciente();
-  if (!session) throw new Error("No autenticado");
+  if (!session) throw new Error(t("auth.noAutenticado"));
 
   await prisma.googleIntegracionPaciente.update({
     where: { pacienteId: session.pacienteId },

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState, useEffect, useRef } from "react";
 import { X, Search, Sparkles, CookingPot, User, Plus, Minus, SlidersHorizontal } from "lucide-react";
 import { MacroBadges } from "@/components/macro-badge";
@@ -74,6 +75,7 @@ function scaledMacros(
 }
 
 export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObjetivo }: SelectorAlimentoProps) {
+  const t = useTranslations("diets");
   const [query, setQuery] = useState("");
   const [filtro, setFiltro] = useState<Filtro>("todos");
   const [alimentos, setAlimentos] = useState<AlimentoResult[]>([]);
@@ -267,7 +269,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
           onClick={() => addExpanded(alimentoId, recetaId, nombre, base, unidadOriginal)}
           className="w-full py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
         >
-          Añadir
+          {t("selectorAlimento.add")}
         </button>
       </div>
     );
@@ -277,10 +279,10 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 px-0 sm:px-4">
       <div className="bg-card rounded-t-xl sm:rounded-xl border border-border shadow-xl w-full sm:max-w-lg max-h-[90dvh] sm:max-h-[80vh] flex flex-col pb-safe sm:pb-0">
         <div className="flex items-center justify-between p-4 border-b border-border">
-          <h3 className="font-semibold">Añadir alimento o receta</h3>
+          <h3 className="font-semibold">{t("selectorAlimento.title")}</h3>
           <button
             onClick={onClose}
-            aria-label="Cerrar"
+            aria-label={t("selectorAlimento.close")}
             className="p-2 hover:bg-muted rounded transition-colors min-h-11 min-w-11 flex items-center justify-center"
           >
             <X className="w-5 h-5" />
@@ -293,7 +295,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
               type="text"
               value={query}
               onChange={(e) => handleSearch(e.target.value)}
-              placeholder={filtroActivo ? "Filtrar por nombre..." : "Buscar alimento o receta..."}
+              placeholder={filtroActivo ? t("selectorAlimento.filterByName") : t("selectorAlimento.searchPlaceholder")}
               autoFocus
               maxLength={100}
               className="w-full pl-9 pr-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
@@ -301,9 +303,9 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
           </div>
           <div className="flex gap-2 mt-3">
             {([
-              { id: "todos" as const, label: "Todos" },
-              { id: "mis-alimentos" as const, label: "Mis alimentos" },
-              { id: "mis-recetas" as const, label: "Mis recetas" },
+              { id: "todos" as const, label: t("selectorAlimento.tabAll") },
+              { id: "mis-alimentos" as const, label: t("selectorAlimento.tabMyFoods") },
+              { id: "mis-recetas" as const, label: t("selectorAlimento.tabMyRecipes") },
             ]).map((f) => (
               <button
                 key={f.id}
@@ -327,7 +329,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
             <div className="mb-4">
               <div className="flex items-center gap-1.5 mb-2">
                 <Sparkles className="w-4 h-4 text-amber-500" />
-                <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">Sugerencias para equilibrar macros</span>
+                <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">{t("selectorAlimento.macroSuggestions")}</span>
               </div>
               <div className="space-y-1">
                 {sugerencias.map((s) => (
@@ -343,7 +345,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
                         <p className="text-sm font-medium">{s.nombre}</p>
                         <div className="flex items-center gap-1.5">
                           <span className="text-[10px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded-full font-medium">
-                            {s.razon}
+                            {t(`selectorAlimento.reasons.${s.razon}`)}
                           </span>
                           <button
                             type="button"
@@ -352,7 +354,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
                               "p-1 rounded-md border transition-colors",
                               expanded?.id === s.id ? "bg-primary/10 border-primary/30 text-primary" : "border-border/60 text-muted-foreground/50 hover:text-primary hover:border-primary/30",
                             )}
-                            title="Ajustar cantidad"
+                            title={t("selectorAlimento.adjustQuantity")}
                           >
                             <SlidersHorizontal className="w-3.5 h-3.5" />
                           </button>
@@ -370,20 +372,20 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
           )}
 
           {loadingSugerencias && query.length < 2 && !filtroActivo && (
-            <p className="text-xs text-muted-foreground text-center py-2">Calculando sugerencias...</p>
+            <p className="text-xs text-muted-foreground text-center py-2">{t("selectorAlimento.calculatingSuggestions")}</p>
           )}
 
           {loading && (
-            <p className="text-sm text-muted-foreground text-center py-4">Buscando...</p>
+            <p className="text-sm text-muted-foreground text-center py-4">{t("selectorAlimento.searching")}</p>
           )}
 
           {!loading && !hasResults && (query.length >= 2 || filtroActivo) && (
             <p className="text-sm text-muted-foreground text-center py-4">
               {filtro === "mis-alimentos"
-                ? "No tienes alimentos propios. Crea uno desde la sección Alimentos."
+                ? t("selectorAlimento.noOwnFoods")
                 : filtro === "mis-recetas"
-                  ? "No tienes recetas propias. Crea una desde la sección Recetas."
-                  : "No se encontraron resultados"}
+                  ? t("selectorAlimento.noOwnRecipes")
+                  : t("selectorAlimento.noResults")}
             </p>
           )}
 
@@ -393,7 +395,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
               <div className="flex items-center gap-1.5 mb-2">
                 <CookingPot className="w-4 h-4 text-purple-500" />
                 <span className="text-xs font-semibold text-purple-700 dark:text-purple-400">
-                  {filtro === "mis-recetas" ? "Mis recetas" : "Recetas"}
+                  {filtro === "mis-recetas" ? t("selectorAlimento.tabMyRecipes") : t("selectorAlimento.recipesSection")}
                 </span>
               </div>
               <div className="space-y-1">
@@ -413,7 +415,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
                           {r.esPropio && filtro === "todos" && (
                             <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400 flex items-center gap-0.5 shrink-0">
                               <User className="w-2.5 h-2.5" />
-                              Tuya
+                              {t("selectorAlimento.ownFeminine")}
                             </span>
                           )}
                         </div>
@@ -428,7 +430,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
                               "p-1 rounded-md border transition-colors",
                               expanded?.id === r.id && expanded.type === "receta" ? "bg-primary/10 border-primary/30 text-primary" : "border-purple-200 dark:border-purple-500/30 text-purple-400 hover:text-primary hover:border-primary/30",
                             )}
-                            title="Ajustar cantidad"
+                            title={t("selectorAlimento.adjustQuantity")}
                           >
                             <SlidersHorizontal className="w-3.5 h-3.5" />
                           </button>
@@ -439,7 +441,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
                       </div>
                       {r.ingredientes.length > 0 && (
                         <p className="mt-1.5 text-[10px] text-purple-600 dark:text-purple-400 truncate">
-                          Ingredientes: {r.ingredientes.map((i) => `${i.alimento.nombre}`).join(", ")}
+                          {t("selectorAlimento.ingredients")} {r.ingredientes.map((i) => `${i.alimento.nombre}`).join(", ")}
                         </p>
                       )}
                     </div>
@@ -454,7 +456,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
           {alimentos.length > 0 && (
             <div>
               {recetas.length > 0 && (
-                <p className="text-xs font-semibold text-muted-foreground mb-2">Alimentos</p>
+                <p className="text-xs font-semibold text-muted-foreground mb-2">{t("selectorAlimento.foodsSection")}</p>
               )}
               <div className="space-y-1">
                 {alimentos.map((item) => {
@@ -482,7 +484,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
                             {item.esPropio && filtro === "todos" && (
                               <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400 flex items-center gap-0.5 shrink-0">
                                 <User className="w-2.5 h-2.5" />
-                                Tuyo
+                                {t("selectorAlimento.ownMasculine")}
                               </span>
                             )}
                           </div>
@@ -493,7 +495,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
                               "p-1 rounded-md border transition-colors shrink-0",
                               expanded?.id === item.id && expanded.type === "alimento" ? "bg-primary/10 border-primary/30 text-primary" : "border-border/60 text-muted-foreground/50 hover:text-primary hover:border-primary/30",
                             )}
-                            title="Ajustar cantidad"
+                            title={t("selectorAlimento.adjustQuantity")}
                           >
                             <SlidersHorizontal className="w-3.5 h-3.5" />
                           </button>

@@ -10,6 +10,7 @@ import { actualizarDatosPlantilla } from "@/app/actions/plantillas";
 import { EliminarPlantillaButton } from "./eliminar-button";
 import { RenombrarPlantillaButton } from "./renombrar-button";
 import { formatDate } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface EditorAlimento {
   alimentoId: string | null;
@@ -107,6 +108,7 @@ export function PlantillaDetalleClient({
   plantillaId, plantillaNombre, plantillaCreatedAt,
   diasCount, totalAlimentos, initialPlanData, editorDias: initialEditorDias,
 }: Props) {
+  const t = useTranslations("diets.plantillaDetalle");
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -243,12 +245,12 @@ export function PlantillaDetalleClient({
     setSaving(false);
 
     if (res.ok) {
-      toast.success("Plantilla actualizada");
+      toast.success(t("toastUpdated"));
       setHasChanges(false);
       setEditing(false);
       router.refresh();
     } else {
-      toast.error(res.error || "Error al guardar");
+      toast.error(res.error || t("toastUpdateError"));
     }
   }
 
@@ -260,7 +262,7 @@ export function PlantillaDetalleClient({
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3 py-2 sm:py-0 -my-2 sm:my-0"
         >
           <ArrowLeft className="w-4 h-4" />
-          Volver a plantillas
+          {t("backToTemplates")}
         </Link>
 
         <div className="flex items-center gap-4 flex-wrap">
@@ -273,7 +275,7 @@ export function PlantillaDetalleClient({
                 {plantillaNombre}
               </h1>
               <p className="text-sm text-muted-foreground">
-                Creada el {formatDate(plantillaCreatedAt)} · {diasCount} días · {totalAlimentos} alimentos
+                {t("createdInfo", { date: formatDate(plantillaCreatedAt), days: diasCount, foods: totalAlimentos })}
               </p>
             </div>
           </div>
@@ -287,17 +289,17 @@ export function PlantillaDetalleClient({
                   className="inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-xs sm:text-sm font-medium flex-1 sm:flex-none min-h-10 sm:min-h-0 disabled:opacity-50"
                 >
                   <Save className="w-3.5 h-3.5" />
-                  {saving ? "Guardando..." : "Guardar"}
+                  {saving ? t("saving") : t("save")}
                 </button>
                 <button
                   onClick={() => { setDias(initialEditorDias); setEditing(false); setHasChanges(false); }}
                   className="inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg hover:bg-muted transition-colors text-xs sm:text-sm font-medium flex-1 sm:flex-none min-h-10 sm:min-h-0"
                 >
-                  Cancelar
+                  {t("cancel")}
                 </button>
                 {hasChanges && (
                   <span className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/15 px-2 py-1 rounded-full shrink-0">
-                    Sin guardar
+                    {t("unsaved")}
                   </span>
                 )}
               </>
@@ -307,14 +309,14 @@ export function PlantillaDetalleClient({
                   href={`/dietas/nuevo?plantilla=${plantillaId}`}
                   className="inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-xs sm:text-sm font-medium flex-1 sm:flex-none min-h-10 sm:min-h-0"
                 >
-                  Usar plantilla
+                  {t("useTemplate")}
                 </Link>
                 <button
                   onClick={() => setEditing(true)}
                   className="inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg hover:bg-muted transition-colors text-xs sm:text-sm font-medium flex-1 sm:flex-none min-h-10 sm:min-h-0"
                 >
                   <Pencil className="w-3.5 h-3.5" />
-                  <span className="hidden xs:inline sm:inline">Editar</span>
+                  <span className="hidden xs:inline sm:inline">{t("edit")}</span>
                 </button>
                 <RenombrarPlantillaButton id={plantillaId} nombreActual={plantillaNombre} />
                 <EliminarPlantillaButton id={plantillaId} nombre={plantillaNombre} />

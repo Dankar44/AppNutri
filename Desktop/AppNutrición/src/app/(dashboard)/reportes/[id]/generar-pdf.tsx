@@ -1,6 +1,7 @@
 "use client";
 
 import { FileDown } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { formatQuantity } from "@/lib/pdf/generate-plan-pdf";
 
 function escapeHtml(s: string): string {
@@ -45,16 +46,16 @@ interface Props {
   dieta?: { nombre: string; dias: DietaDia[] } | null;
 }
 
-const OBJETIVO_LABELS: Record<string, string> = {
-  PERDER_PESO: "Perder peso",
-  GANAR_MASA: "Ganar masa muscular",
-  MANTENIMIENTO: "Mantenimiento",
-  PATOLOGIA: "Patología",
-  DEPORTIVO: "Rendimiento deportivo",
-  OTRO: "Otro",
+const OBJETIVO_KEYS: Record<string, string> = {
+  PERDER_PESO: "PERDER_PESO",
+  GANAR_MASA: "GANAR_MASA",
+  MANTENIMIENTO: "MANTENIMIENTO",
+  PATOLOGIA: "PATOLOGIA",
+  DEPORTIVO: "DEPORTIVO",
+  OTRO: "OTRO",
 };
 
-function abrirVentanaPDF(titulo: string, contenidoHTML: string, brandName = "Annonia") {
+function abrirVentanaPDF(titulo: string, contenidoHTML: string, brandName = "Annonia", footerDate = "") {
   const ventana = window.open("", "_blank");
   if (!ventana) return;
 
@@ -82,7 +83,7 @@ function abrirVentanaPDF(titulo: string, contenidoHTML: string, brandName = "Ann
     </head>
     <body>
       ${contenidoHTML}
-      <div class="footer">${brandName} &mdash; Generado el ${new Date().toLocaleDateString("es-ES")}<div style="color:#c0c8c3;font-size:8px;margin-top:2px;">annonia.com</div></div>
+      <div class="footer">${brandName} &mdash; ${footerDate}<div style="color:#c0c8c3;font-size:8px;margin-top:2px;">annonia.com</div></div>
       <script>window.onload = function() { window.print(); }</script>
     </body>
     </html>
@@ -90,39 +91,33 @@ function abrirVentanaPDF(titulo: string, contenidoHTML: string, brandName = "Ann
   ventana.document.close();
 }
 
-const DIA_LABELS: Record<string, string> = {
-  LUNES: "Lunes", MARTES: "Martes", MIERCOLES: "Miércoles",
-  JUEVES: "Jueves", VIERNES: "Viernes", SABADO: "Sábado", DOMINGO: "Domingo",
-};
-
-const TIPO_COMIDA_LABELS: Record<string, string> = {
-  DESAYUNO: "Desayuno", MEDIA_MANANA: "Media mañana", ALMUERZO: "Almuerzo",
-  MERIENDA: "Merienda", CENA: "Cena", RECENA: "Recena",
-};
+const DIA_KEYS = ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"] as const;
+const TIPO_COMIDA_KEYS = ["DESAYUNO", "MEDIA_MANANA", "ALMUERZO", "MERIENDA", "CENA", "RECENA"] as const;
 
 export function GenerarPDFButtons({ paciente, medidas, consultas, dieta, branding }: Props) {
+  const t = useTranslations("reports");
   const brand = branding?.brandName || "Annonia";
   const linkCol = branding?.linkColor || "#6b9e80";
   function generarInformeEvolucion() {
     let html = `
-      <h1>Informe de Evolución</h1>
+      <h1>${escapeHtml(t("pdfContent.informeEvolucionTitulo"))}</h1>
       <p class="meta">
         <strong>${escapeHtml(paciente.nombre)} ${escapeHtml(paciente.apellidos)}</strong><br>
-        Objetivo: ${OBJETIVO_LABELS[paciente.objetivo] || escapeHtml(paciente.objetivo)}
+        ${escapeHtml(t("pdfContent.objetivo"))}: ${OBJETIVO_KEYS[paciente.objetivo] ? escapeHtml(t(`objetivoLabels.${OBJETIVO_KEYS[paciente.objetivo]}`)) : escapeHtml(paciente.objetivo)}
       </p>
     `;
 
     if (paciente.peso || paciente.altura) {
-      html += `<h2>Datos actuales</h2><p>`;
-      if (paciente.peso) html += `Peso: ${paciente.peso} kg<br>`;
-      if (paciente.altura) html += `Altura: ${paciente.altura} cm`;
+      html += `<h2>${escapeHtml(t("pdfContent.datosActuales"))}</h2><p>`;
+      if (paciente.peso) html += `${escapeHtml(t("pdfContent.peso"))}: ${paciente.peso} kg<br>`;
+      if (paciente.altura) html += `${escapeHtml(t("pdfContent.altura"))}: ${paciente.altura} cm`;
       html += `</p>`;
     }
 
     if (medidas.length > 0) {
-      html += `<h2>Historial de medidas</h2>
+      html += `<h2>${escapeHtml(t("pdfContent.historialMedidas"))}</h2>
         <table>
-          <tr><th>Fecha</th><th>Peso (kg)</th><th>IMC</th><th>% Grasa</th></tr>
+          <tr><th>${escapeHtml(t("pdfContent.fecha"))}</th><th>${escapeHtml(t("pdfContent.pesoKg"))}</th><th>${escapeHtml(t("pdfContent.imc"))}</th><th>${escapeHtml(t("pdfContent.porcentajeGrasa"))}</th></tr>
           ${medidas.map((m) => `
             <tr>
               <td>${m.fecha}</td>
@@ -135,7 +130,7 @@ export function GenerarPDFButtons({ paciente, medidas, consultas, dieta, brandin
     }
 
     if (consultas.length > 0) {
-      html += `<h2>Historial de consultas</h2>`;
+      html += `<h2>${escapeHtml(t("pdfContent.historialConsultas"))}</h2>`;
       for (const c of consultas) {
         html += `<div class="consulta">
           <div class="consulta-fecha">${escapeHtml(c.fecha)}${c.motivo ? ` - ${escapeHtml(c.motivo)}` : ""}</div>
@@ -147,36 +142,38 @@ export function GenerarPDFButtons({ paciente, medidas, consultas, dieta, brandin
     abrirVentanaPDF(
       `Evolución - ${paciente.nombre} ${paciente.apellidos}`,
       html,
-      brand
+      brand,
+      escapeHtml(t("pdfContent.generadoEl", { fecha: new Date().toLocaleDateString() }))
     );
   }
 
   function generarFichaPaciente() {
     let html = `
-      <h1>Ficha del Paciente</h1>
+      <h1>${escapeHtml(t("pdfContent.fichaPacienteTitulo"))}</h1>
       <h2>${escapeHtml(paciente.nombre)} ${escapeHtml(paciente.apellidos)}</h2>
       <p>
-        ${paciente.email ? `Email: ${escapeHtml(paciente.email)}<br>` : ""}
-        ${paciente.telefono ? `Teléfono: ${escapeHtml(paciente.telefono)}<br>` : ""}
-        Objetivo: ${OBJETIVO_LABELS[paciente.objetivo] || escapeHtml(paciente.objetivo)}<br>
-        ${paciente.peso ? `Peso: ${paciente.peso} kg<br>` : ""}
-        ${paciente.altura ? `Altura: ${paciente.altura} cm` : ""}
+        ${paciente.email ? `${escapeHtml(t("pdfContent.email"))}: ${escapeHtml(paciente.email)}<br>` : ""}
+        ${paciente.telefono ? `${escapeHtml(t("pdfContent.telefono"))}: ${escapeHtml(paciente.telefono)}<br>` : ""}
+        ${escapeHtml(t("pdfContent.objetivo"))}: ${OBJETIVO_KEYS[paciente.objetivo] ? escapeHtml(t(`objetivoLabels.${OBJETIVO_KEYS[paciente.objetivo]}`)) : escapeHtml(paciente.objetivo)}<br>
+        ${paciente.peso ? `${escapeHtml(t("pdfContent.peso"))}: ${paciente.peso} kg<br>` : ""}
+        ${paciente.altura ? `${escapeHtml(t("pdfContent.altura"))}: ${paciente.altura} cm` : ""}
       </p>
     `;
 
     if (medidas.length > 0) {
       const ultima = medidas[medidas.length - 1];
-      html += `<h2>Última medición (${ultima.fecha})</h2><p>`;
-      if (ultima.peso) html += `Peso: ${ultima.peso} kg<br>`;
-      if (ultima.imc) html += `IMC: ${ultima.imc}<br>`;
-      if (ultima.grasa) html += `% Grasa: ${ultima.grasa}%`;
+      html += `<h2>${escapeHtml(t("pdfContent.ultimaMedicion", { fecha: ultima.fecha }))}</h2><p>`;
+      if (ultima.peso) html += `${escapeHtml(t("pdfContent.peso"))}: ${ultima.peso} kg<br>`;
+      if (ultima.imc) html += `${escapeHtml(t("pdfContent.imc"))}: ${ultima.imc}<br>`;
+      if (ultima.grasa) html += `${escapeHtml(t("pdfContent.porcentajeGrasa"))}: ${ultima.grasa}%`;
       html += `</p>`;
     }
 
     abrirVentanaPDF(
       `Ficha - ${paciente.nombre} ${paciente.apellidos}`,
       html,
-      brand
+      brand,
+      escapeHtml(t("pdfContent.generadoEl", { fecha: new Date().toLocaleDateString() }))
     );
   }
 
@@ -184,21 +181,21 @@ export function GenerarPDFButtons({ paciente, medidas, consultas, dieta, brandin
     if (!dieta) return;
 
     let html = `
-      <h1>Plan Alimenticio Semanal</h1>
+      <h1>${escapeHtml(t("pdfContent.planAlimenticioSemanal"))}</h1>
       <p class="meta">
-        <strong>${paciente.nombre} ${paciente.apellidos}</strong><br>
-        Plan: ${dieta.nombre}
+        <strong>${escapeHtml(paciente.nombre)} ${escapeHtml(paciente.apellidos)}</strong><br>
+        ${escapeHtml(t("pdfContent.plan"))}: ${escapeHtml(dieta.nombre)}
       </p>
     `;
 
     for (const dia of dieta.dias) {
-      html += `<h2>${DIA_LABELS[dia.dia] || dia.dia}</h2>`;
+      html += `<h2>${DIA_KEYS.includes(dia.dia as typeof DIA_KEYS[number]) ? escapeHtml(t(`diaLabels.${dia.dia}`)) : escapeHtml(dia.dia)}</h2>`;
       for (const comida of dia.comidas) {
         if (comida.alimentos.length === 0) continue;
-        html += `<p style="margin-bottom:2px;"><strong>${TIPO_COMIDA_LABELS[comida.tipo] || comida.tipo}</strong></p>`;
-        html += `<table><tr><th>Alimento</th><th>Cantidad</th></tr>`;
+        html += `<p style="margin-bottom:2px;"><strong>${TIPO_COMIDA_KEYS.includes(comida.tipo as typeof TIPO_COMIDA_KEYS[number]) ? escapeHtml(t(`tipoComidaLabels.${comida.tipo}`)) : escapeHtml(comida.tipo)}</strong></p>`;
+        html += `<table><tr><th>${escapeHtml(t("pdfContent.alimento"))}</th><th>${escapeHtml(t("pdfContent.cantidad"))}</th></tr>`;
         for (const a of comida.alimentos) {
-          const imgLink = a.imagenUrl ? ` <a href="${escapeHtml(a.imagenUrl)}" target="_blank" style="color:#7c3aed;font-size:9px;text-decoration:underline;">(ver imagen)</a>` : "";
+          const imgLink = a.imagenUrl ? ` <a href="${escapeHtml(a.imagenUrl)}" target="_blank" style="color:#7c3aed;font-size:9px;text-decoration:underline;">${escapeHtml(t("pdfContent.verImagen"))}</a>` : "";
           const nombreHtml = a.enlaceProducto
             ? `<a href="${escapeHtml(a.enlaceProducto)}" target="_blank" style="color:${linkCol};text-decoration:underline;">${escapeHtml(a.nombre)}</a>${imgLink}`
             : `${escapeHtml(a.nombre)}${imgLink}`;
@@ -209,9 +206,10 @@ export function GenerarPDFButtons({ paciente, medidas, consultas, dieta, brandin
     }
 
     abrirVentanaPDF(
-      `Dieta - ${paciente.nombre} ${paciente.apellidos}`,
+      t("pdfContent.dietaTitulo", { nombre: paciente.nombre, apellidos: paciente.apellidos }),
       html,
-      brand
+      brand,
+      escapeHtml(t("pdfContent.generadoEl", { fecha: new Date().toLocaleDateString() }))
     );
   }
 
@@ -222,14 +220,14 @@ export function GenerarPDFButtons({ paciente, medidas, consultas, dieta, brandin
         className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium"
       >
         <FileDown className="w-4 h-4" />
-        Informe de evolución
+        {t("generarPdf.informeEvolucion")}
       </button>
       <button
         onClick={generarFichaPaciente}
         className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
       >
         <FileDown className="w-4 h-4" />
-        Ficha del paciente
+        {t("generarPdf.fichaPaciente")}
       </button>
       {dieta && (
         <button
@@ -237,7 +235,7 @@ export function GenerarPDFButtons({ paciente, medidas, consultas, dieta, brandin
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
         >
           <FileDown className="w-4 h-4" />
-          Dieta semanal
+          {t("generarPdf.dietaSemanal")}
         </button>
       )}
     </div>

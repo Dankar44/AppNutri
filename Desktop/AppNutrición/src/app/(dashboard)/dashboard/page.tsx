@@ -25,11 +25,14 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { DashboardCharts } from "./dashboard-charts";
 import { AvatarPaciente } from "@/components/avatar-paciente";
+import { getTranslations } from "next-intl/server";
+import { getLocale } from "@/i18n/locale";
+import { intlTag } from "@/i18n/config";
 
-function getSaludoMadrid(): { saludo: string; fechaLarga: string; horaActual: string } {
+function getSaludoMadrid(tag: string): { saludoKey: "buenosDias" | "buenasTardes" | "buenasNoches"; fechaLarga: string; horaActual: string } {
   const ahora = new Date();
   const horaMadrid = parseInt(
-    ahora.toLocaleString("es-ES", {
+    ahora.toLocaleString(tag, {
       timeZone: "Europe/Madrid",
       hour: "numeric",
       hour12: false,
@@ -37,40 +40,44 @@ function getSaludoMadrid(): { saludo: string; fechaLarga: string; horaActual: st
     10,
   );
 
-  let saludo = "Buenos días";
-  if (horaMadrid >= 13 && horaMadrid < 21) saludo = "Buenas tardes";
-  else if (horaMadrid >= 21 || horaMadrid < 6) saludo = "Buenas noches";
+  let saludoKey: "buenosDias" | "buenasTardes" | "buenasNoches" = "buenosDias";
+  if (horaMadrid >= 13 && horaMadrid < 21) saludoKey = "buenasTardes";
+  else if (horaMadrid >= 21 || horaMadrid < 6) saludoKey = "buenasNoches";
 
-  const fechaLarga = ahora.toLocaleDateString("es-ES", {
+  const fechaLarga = ahora.toLocaleDateString(tag, {
     timeZone: "Europe/Madrid",
     weekday: "long",
     day: "numeric",
     month: "long",
   });
 
-  const horaActual = ahora.toLocaleTimeString("es-ES", {
+  const horaActual = ahora.toLocaleTimeString(tag, {
     timeZone: "Europe/Madrid",
     hour: "2-digit",
     minute: "2-digit",
   });
 
   return {
-    saludo,
+    saludoKey,
     fechaLarga: fechaLarga.charAt(0).toUpperCase() + fechaLarga.slice(1),
     horaActual,
   };
 }
 
 const ACCESOS_RAPIDOS = [
-  { href: "/pacientes/nuevo", label: "Nuevo paciente", descripcion: "Alta rápida", icon: UserPlus },
-  { href: "/dietas/nuevo", label: "Nuevo plan", descripcion: "Crear dieta", icon: FileText },
-  { href: "/agenda/nueva", label: "Nueva cita", descripcion: "Agendar visita", icon: CalendarPlus },
-  { href: "/recetas/nueva", label: "Nueva receta", descripcion: "Al catálogo", icon: ChefHat },
+  { href: "/pacientes/nuevo", labelKey: "nuevoPaciente" as const, descKey: "nuevoPacienteDesc" as const, icon: UserPlus },
+  { href: "/dietas/nuevo", labelKey: "nuevoPlan" as const, descKey: "nuevoPlanDesc" as const, icon: FileText },
+  { href: "/agenda/nueva", labelKey: "nuevaCita" as const, descKey: "nuevaCitaDesc" as const, icon: CalendarPlus },
+  { href: "/recetas/nueva", labelKey: "nuevaReceta" as const, descKey: "nuevaRecetaDesc" as const, icon: ChefHat },
 ];
 
 export default async function DashboardPage() {
   const dietista = await getCurrentDietista();
   if (!dietista) redirect("/login");
+
+  const t = await getTranslations("dashboard");
+  const locale = await getLocale();
+  const tag = intlTag(locale);
 
   generarNotificaciones().catch(() => {});
 
@@ -84,7 +91,8 @@ export default async function DashboardPage() {
   if (!metricas) redirect("/login");
 
   const primeraCita = proximasCitas[0];
-  const { saludo, fechaLarga, horaActual } = getSaludoMadrid();
+  const { saludoKey, fechaLarga, horaActual } = getSaludoMadrid(tag);
+  const saludo = t(`greeting.${saludoKey}`);
 
   const ultimaNotificacion = notificaciones[0];
 
@@ -99,7 +107,7 @@ export default async function DashboardPage() {
           />
           <div className="min-w-0 flex-1">
             <h1 className="text-xl sm:text-3xl font-bold leading-tight line-clamp-2 sm:truncate">
-              ¡{saludo} {dietista.nombre}!
+              {t("greeting.title", { saludo, nombre: dietista.nombre })}
             </h1>
             <p className="text-muted-foreground text-xs sm:text-sm mt-0.5">
               {fechaLarga}
@@ -125,10 +133,10 @@ export default async function DashboardPage() {
               </div>
               <div>
                 <h2 className="text-base sm:text-lg font-semibold leading-tight">
-                  Tu actividad
+                  {t("actividad.sectionTitle")}
                 </h2>
                 <p className="text-[11px] sm:text-xs text-muted-foreground">
-                  Últimos 6 meses
+                  {t("actividad.sectionSubtitle")}
                 </p>
               </div>
             </div>
@@ -147,10 +155,10 @@ export default async function DashboardPage() {
               </div>
               <div>
                 <h2 className="text-base sm:text-lg font-semibold leading-tight">
-                  Accesos rápidos
+                  {t("quickAccess.sectionTitle")}
                 </h2>
                 <p className="text-[11px] sm:text-xs text-muted-foreground">
-                  Crea en un clic
+                  {t("quickAccess.sectionSubtitle")}
                 </p>
               </div>
             </div>
@@ -176,8 +184,8 @@ export default async function DashboardPage() {
                   />
                 </div>
                 <div className="relative">
-                  <p className="text-base sm:text-lg font-bold leading-tight">{a.label}</p>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">{a.descripcion}</p>
+                  <p className="text-base sm:text-lg font-bold leading-tight">{t(`quickAccess.${a.labelKey}`)}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t(`quickAccess.${a.descKey}`)}</p>
                 </div>
               </Link>
             ))}
@@ -193,7 +201,7 @@ export default async function DashboardPage() {
               </div>
               <div className="min-w-0">
                 <h2 className="text-base sm:text-lg font-semibold leading-tight">
-                  Próxima consulta
+                  {t("proximaConsulta.sectionTitle")}
                 </h2>
                 <p className="text-[11px] sm:text-xs text-muted-foreground">
                   {primeraCita
@@ -201,7 +209,7 @@ export default async function DashboardPage() {
                         addSuffix: true,
                         locale: es,
                       })
-                    : "Sin citas pendientes"}
+                    : t("proximaConsulta.sinCitasPendientes")}
                 </p>
               </div>
             </div>
@@ -209,7 +217,7 @@ export default async function DashboardPage() {
               href="/agenda"
               className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-primary transition-colors shrink-0"
             >
-              Ver agenda
+              {t("proximaConsulta.verAgenda")}
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -219,13 +227,13 @@ export default async function DashboardPage() {
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
                 <CalendarDays strokeWidth={1.75} className="w-6 h-6 text-primary" />
               </div>
-              <p className="text-sm font-medium mb-1">Sin citas programadas</p>
+              <p className="text-sm font-medium mb-1">{t("proximaConsulta.sinCitasProgramadas")}</p>
               <Link
                 href="/agenda/nueva"
                 className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline mt-1"
               >
                 <CalendarPlus className="w-3.5 h-3.5" />
-                Agendar cita
+                {t("proximaConsulta.agendarCita")}
               </Link>
             </div>
           ) : (
@@ -261,7 +269,7 @@ export default async function DashboardPage() {
                     <CalendarDays className="w-3 h-3" />
                     {(() => {
                       const d = new Date(primeraCita.fechaHora);
-                      const wd = d.toLocaleDateString("es-ES", {
+                      const wd = d.toLocaleDateString(tag, {
                         weekday: "long",
                         day: "numeric",
                         month: "long",
@@ -275,12 +283,12 @@ export default async function DashboardPage() {
                     {(() => {
                       const inicio = new Date(primeraCita.fechaHora);
                       const fin = new Date(inicio.getTime() + primeraCita.duracion * 60_000);
-                      const t0 = inicio.toLocaleTimeString("es-ES", {
+                      const t0 = inicio.toLocaleTimeString(tag, {
                         hour: "2-digit",
                         minute: "2-digit",
                         timeZone: "Europe/Madrid",
                       });
-                      const t1 = fin.toLocaleTimeString("es-ES", {
+                      const t1 = fin.toLocaleTimeString(tag, {
                         hour: "2-digit",
                         minute: "2-digit",
                         timeZone: "Europe/Madrid",
@@ -310,7 +318,7 @@ export default async function DashboardPage() {
               </div>
               <div className="min-w-0">
                 <h2 className="text-base sm:text-lg font-semibold leading-tight">
-                  Última notificación
+                  {t("ultimaNotificacion.sectionTitle")}
                 </h2>
                 <p className="text-[11px] sm:text-xs text-muted-foreground truncate">
                   {ultimaNotificacion
@@ -318,7 +326,7 @@ export default async function DashboardPage() {
                         addSuffix: true,
                         locale: es,
                       })
-                    : "Sin notificaciones"}
+                    : t("ultimaNotificacion.sinNotificaciones")}
                 </p>
               </div>
             </div>
@@ -326,7 +334,7 @@ export default async function DashboardPage() {
               href="/notificaciones"
               className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-primary transition-colors shrink-0"
             >
-              Ver todas
+              {t("ultimaNotificacion.verTodas")}
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -353,9 +361,9 @@ export default async function DashboardPage() {
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-2">
                 <Bell strokeWidth={1.75} className="w-5 h-5 text-primary" />
               </div>
-              <p className="text-sm font-medium">Todo al día</p>
+              <p className="text-sm font-medium">{t("ultimaNotificacion.todoAlDia")}</p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Sin notificaciones pendientes
+                {t("ultimaNotificacion.sinNotificacionesPendientes")}
               </p>
             </div>
           )}

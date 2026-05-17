@@ -10,6 +10,8 @@ import {
   Flame,
   type LucideIcon,
 } from "lucide-react";
+import { getTranslations } from "next-intl/server";
+import { getLocale } from "@/i18n/locale";
 import { getCurrentPaciente } from "@/lib/patient-auth";
 import { prisma } from "@/lib/prisma";
 import { capitalizarNombre } from "@/lib/utils";
@@ -34,32 +36,37 @@ const DIAS_SEMANA_MAP: Record<number, string> = {
   6: "SABADO",
 };
 
-function getSaludoMadrid(): { saludo: string; fechaLarga: string; ahoraHHMM: string } {
+const INTL_LOCALE_MAP: Record<string, string> = { es: "es-ES", pt: "pt-PT" };
+
+function getSaludoMadrid(intlLocale: string): { saludoKey: string; fechaLarga: string; ahoraHHMM: string } {
   const ahora = new Date();
-  const hh = ahora.toLocaleString("es-ES", {
+  const hh = ahora.toLocaleString(intlLocale, {
     timeZone: "Europe/Madrid",
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
   });
   const horaMadrid = parseInt(hh.split(":")[0], 10);
-  let saludo = "Buenos días";
-  if (horaMadrid >= 13 && horaMadrid < 21) saludo = "Buenas tardes";
-  else if (horaMadrid >= 21 || horaMadrid < 6) saludo = "Buenas noches";
-  const fechaLarga = ahora.toLocaleDateString("es-ES", {
+  let saludoKey = "portal.saludos.buenosDias";
+  if (horaMadrid >= 13 && horaMadrid < 21) saludoKey = "portal.saludos.buenasTardes";
+  else if (horaMadrid >= 21 || horaMadrid < 6) saludoKey = "portal.saludos.buenasNoches";
+  const fechaLarga = ahora.toLocaleDateString(intlLocale, {
     timeZone: "Europe/Madrid",
     weekday: "long",
     day: "numeric",
     month: "long",
   });
   return {
-    saludo,
+    saludoKey,
     fechaLarga: fechaLarga.charAt(0).toUpperCase() + fechaLarga.slice(1),
     ahoraHHMM: hh,
   };
 }
 
 export default async function PatientPortalPage() {
+  const t = await getTranslations("patient-portal");
+  const locale = await getLocale();
+  const intlLocale = INTL_LOCALE_MAP[locale] ?? "es-ES";
   const session = await getCurrentPaciente();
   if (!session) redirect("/paciente/login");
 
@@ -153,7 +160,7 @@ export default async function PatientPortalPage() {
       }),
     ]);
 
-  const { saludo, fechaLarga, ahoraHHMM } = getSaludoMadrid();
+  const { saludoKey, fechaLarga, ahoraHHMM } = getSaludoMadrid(intlLocale);
 
   // Seguimiento de HOY (raw query para comidasData)
   const seguimientoHoyRows = await prisma.$queryRawUnsafe<
@@ -217,7 +224,7 @@ export default async function PatientPortalPage() {
       : null;
   const alimentosActual = comidaPlan
     ? comidaPlan.alimentos.map((a) => ({
-        nombre: a.alimento?.nombre || a.receta?.nombre || "Alimento",
+        nombre: a.alimento?.nombre || a.receta?.nombre || t("dashboard.alimentoFallback"),
         cantidad: a.cantidad,
         unidad: a.unidad ?? "GRAMOS",
       }))
@@ -250,7 +257,7 @@ export default async function PatientPortalPage() {
     }));
 
   // Hito reciente (último conseguido)
-  const hitoReciente = calcularHitoReciente(pesoVals, imcVals);
+  const hitoReciente = calcularHitoReciente(pesoVals, imcVals, t, intlLocale);
 
   return (
     <div className="space-y-5 sm:space-y-6">
@@ -259,14 +266,14 @@ export default async function PatientPortalPage() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold leading-tight flex items-center gap-2">
             <LayoutDashboard className="w-6 h-6 text-primary shrink-0" strokeWidth={1.75} />
-            {saludo}, {capitalizarNombre(paciente?.nombre || "")}
+            {t(saludoKey as never)}, {capitalizarNombre(paciente?.nombre || "")}
           </h1>
           <p className="text-muted-foreground text-xs sm:text-sm mt-0.5">{fechaLarga}</p>
         </div>
       </section>
 
       {/* Próxima cita compacta */}
-      {proximaCita && <ProximaCitaBanner cita={proximaCita} />}
+      {proximaCita && <ProximaCitaBanner cita={proximaCita} t={t} intlLocale={intlLocale} />}
 
       {/* Matriz 2x2: (Hoy | Progreso) / (Te toca | [Mensajes + Hito stack]) */}
       <div className="grid gap-5 lg:grid-cols-2 lg:items-stretch">
@@ -285,29 +292,29 @@ export default async function PatientPortalPage() {
         <ProgresoCard
           className="h-full"
           peso={{
-            label: "Peso",
+            label: t("dashboard.progresoCard.peso"),
             unit: "kg",
             actual: pesoVals[pesoVals.length - 1]?.v ?? null,
             delta: deltaSemana(pesoVals),
-            periodoLabel: "7 días",
+            periodoLabel: t("dashboard.progresoCard.periodoLabel"),
             color: "#3b82f6",
             downIsGood: true,
           }}
           imc={{
-            label: "IMC",
+            label: t("dashboard.progresoCard.imc"),
             unit: "",
             actual: imcVals[imcVals.length - 1]?.v ?? null,
             delta: deltaSemana(imcVals),
-            periodoLabel: "7 días",
+            periodoLabel: t("dashboard.progresoCard.periodoLabel"),
             color: "#f59e0b",
             downIsGood: true,
           }}
           grasa={{
-            label: "Grasa",
+            label: t("dashboard.progresoCard.grasa"),
             unit: "%",
             actual: grasaVals[grasaVals.length - 1]?.v ?? null,
             delta: deltaSemana(grasaVals),
-            periodoLabel: "7 días",
+            periodoLabel: t("dashboard.progresoCard.periodoLabel"),
             color: "#ef4444",
             downIsGood: true,
           }}
@@ -337,7 +344,7 @@ export default async function PatientPortalPage() {
                     createdAt: ultimoMensaje.createdAt,
                     remitenteNombre: ultimoMensaje.dietista
                       ? `${ultimoMensaje.dietista.nombre} ${ultimoMensaje.dietista.apellidos}`
-                      : "Tu nutricionista",
+                      : t("dashboard.mensajesCard.fallbackNutri"),
                     fotoUrl: ultimoMensaje.dietista?.logoUrl ?? null,
                   }
                 : null
@@ -365,6 +372,8 @@ void TIPOS_ORDEN;
 
 function ProximaCitaBanner({
   cita,
+  t,
+  intlLocale,
 }: {
   cita: {
     id: string;
@@ -374,6 +383,8 @@ function ProximaCitaBanner({
     isOnline: boolean;
     googleMeetLink: string | null;
   };
+  t: Awaited<ReturnType<typeof getTranslations<"patient-portal">>>;
+  intlLocale: string;
 }) {
   return (
     <section className="rounded-2xl border border-border bg-card p-4 sm:p-5 flex items-start justify-between gap-3 flex-wrap">
@@ -383,10 +394,10 @@ function ProximaCitaBanner({
         </span>
         <div className="min-w-0">
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-            Próxima cita
+            {t("portal.proximaCita.label")}
           </p>
           <p className="font-semibold capitalize leading-tight">
-            {new Date(cita.fechaHora).toLocaleDateString("es-ES", {
+            {new Date(cita.fechaHora).toLocaleDateString(intlLocale, {
               weekday: "long",
               day: "numeric",
               month: "long",
@@ -394,7 +405,7 @@ function ProximaCitaBanner({
             })}
             {" · "}
             <span className="tabular-nums">
-              {new Date(cita.fechaHora).toLocaleTimeString("es-ES", {
+              {new Date(cita.fechaHora).toLocaleTimeString(intlLocale, {
                 hour: "2-digit",
                 minute: "2-digit",
                 timeZone: "Europe/Madrid",
@@ -412,11 +423,11 @@ function ProximaCitaBanner({
                   : "bg-amber-500/15 text-amber-700 dark:text-amber-400"
               }`}
             >
-              {cita.estado === "CONFIRMADA" ? "Confirmada" : "Pendiente"}
+              {cita.estado === "CONFIRMADA" ? t("portal.proximaCita.confirmada") : t("portal.proximaCita.pendiente")}
             </span>
             {cita.isOnline && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-500/15 text-sky-700 dark:text-sky-400">
-                Online
+                {t("portal.proximaCita.online")}
               </span>
             )}
           </div>
@@ -430,14 +441,14 @@ function ProximaCitaBanner({
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-sky-600 text-white text-sm font-medium hover:bg-sky-700 transition-colors"
           >
-            Unirse
+            {t("portal.proximaCita.unirse")}
           </a>
         )}
         <Link
           href="/paciente/portal/citas"
           className="inline-flex items-center gap-1 px-3 h-9 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
         >
-          Ver citas
+          {t("portal.proximaCita.verCitas")}
           <ArrowRight className="w-3.5 h-3.5" />
         </Link>
       </div>
@@ -447,7 +458,9 @@ function ProximaCitaBanner({
 
 function calcularHitoReciente(
   pesos: { fecha: Date; v: number }[],
-  imcs: { fecha: Date; v: number }[]
+  imcs: { fecha: Date; v: number }[],
+  t: Awaited<ReturnType<typeof getTranslations<"patient-portal">>>,
+  intlLocale: string,
 ): { titulo: string; descripcion: string; fecha: string; Icon: LucideIcon; color: string } | null {
   const candidatos: {
     titulo: string;
@@ -460,15 +473,15 @@ function calcularHitoReciente(
   if (pesos.length >= 2) {
     const inicial = pesos[0].v;
     for (const u of [
-      { kg: 1, titulo: "Primer kilo", Icon: TrendingDown, color: "#10b981" },
-      { kg: 5, titulo: "5 kilos menos", Icon: Trophy, color: "#f59e0b" },
-      { kg: 10, titulo: "10 kilos menos", Icon: Trophy, color: "#ef4444" },
+      { kg: 1, tituloKey: "portal.hitos.primerKilo" as const, Icon: TrendingDown, color: "#10b981" },
+      { kg: 5, tituloKey: "portal.hitos.cincoKilosMenos" as const, Icon: Trophy, color: "#f59e0b" },
+      { kg: 10, tituloKey: "portal.hitos.diezKilosMenos" as const, Icon: Trophy, color: "#ef4444" },
     ]) {
       const punto = pesos.find((m) => inicial - m.v >= u.kg);
       if (punto)
         candidatos.push({
-          titulo: u.titulo,
-          descripcion: `Has bajado ${u.kg} kg desde que empezaste`,
+          titulo: t(u.tituloKey),
+          descripcion: t("portal.hitos.hasBajado", { kg: u.kg }),
           fecha: punto.fecha,
           Icon: u.Icon,
           color: u.color,
@@ -480,8 +493,8 @@ function calcularHitoReciente(
     const saludable = imcs.find((m) => m.v < 25);
     if (saludable)
       candidatos.push({
-        titulo: "IMC saludable",
-        descripcion: "Tu IMC ha bajado por debajo de 25",
+        titulo: t("portal.hitos.imcSaludable"),
+        descripcion: t("portal.hitos.imcBajoDe25"),
         fecha: saludable.fecha,
         Icon: Heart,
         color: "#ec4899",
@@ -501,8 +514,8 @@ function calcularHitoReciente(
     }
     if (fecha)
       candidatos.push({
-        titulo: "En racha",
-        descripcion: "3 mediciones consecutivas bajando",
+        titulo: t("portal.hitos.enRacha"),
+        descripcion: t("portal.hitos.tresMedicionesBajando"),
         fecha,
         Icon: Flame,
         color: "#f97316",
@@ -514,7 +527,7 @@ function calcularHitoReciente(
   const c = candidatos[0];
   return {
     ...c,
-    fecha: new Date(c.fecha).toLocaleDateString("es-ES", {
+    fecha: new Date(c.fecha).toLocaleDateString(intlLocale, {
       day: "2-digit",
       month: "long",
       year: "numeric",

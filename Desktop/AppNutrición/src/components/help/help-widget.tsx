@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { MessageCircleQuestion, X, Search, RotateCcw, Leaf } from "lucide-react";
 import {
+  buildHelpEntries,
   getSection,
   getEntriesForSection,
   getRelatedEntries,
@@ -16,54 +18,9 @@ interface Message {
   content: string;
 }
 
-const SECTION_LABELS: Record<string, string> = {
-  general: "General",
-  dashboard: "Dashboard",
-  pacientes: "Pacientes",
-  "paciente-detalle": "Ficha del paciente",
-  "paciente-informacion": "Información del paciente",
-  "paciente-mediciones": "Mediciones",
-  "paciente-consultas": "Consultas",
-  "paciente-planificacion": "Planificación",
-  "paciente-plan-alimentacion": "Plan de alimentación",
-  "paciente-seguimiento": "Seguimiento del paciente",
-  "paciente-recomendaciones": "Recomendaciones",
-  "paciente-entregables": "Entregables",
-  "paciente-portal-config": "Portal del paciente",
-  dietas: "Dietas",
-  "dieta-editor": "Editor de plan",
-  "dieta-ia": "Generación con IA",
-  "dieta-compartir": "Compartir plan",
-  "dieta-plantillas": "Plantillas",
-  alimentos: "Alimentos",
-  recetas: "Recetas",
-  agenda: "Agenda",
-  "agenda-horario": "Horario laboral",
-  "agenda-citas": "Nueva cita",
-  "agenda-google": "Google Calendar",
-  pagos: "Pagos",
-  mensajes: "Mensajes",
-  reportes: "Reportes",
-  notificaciones: "Notificaciones",
-  ajustes: "Ajustes",
-  "ajustes-perfil": "Ajustes · Perfil",
-  "ajustes-integraciones": "Ajustes · Integraciones",
-  "ajustes-suscripcion": "Ajustes · Suscripción",
-  "ajustes-cobros": "Ajustes · Cobros",
-  "ajustes-demo": "Ajustes · Paciente de ejemplo",
-  "ajustes-guias": "Ajustes · Guías",
-  "ajustes-peligroso": "Ajustes · Zona peligrosa",
-  "portal-general": "Mi portal",
-  "portal-dashboard": "Mi dashboard",
-  "portal-citas": "Mis citas",
-  "portal-horario": "Mi horario",
-  "portal-seguimiento": "Mi seguimiento",
-  "portal-perfil": "Mi perfil",
-  "portal-entregables": "Exportar PDF",
-};
-
 export function HelpWidget() {
   const pathname = usePathname();
+  const t = useTranslations("help");
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [chips, setChips] = useState<HelpEntry[]>([]);
@@ -71,16 +28,21 @@ export function HelpWidget() {
   const [searchResults, setSearchResults] = useState<HelpEntry[] | null>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
 
+  // Construir las entradas traducidas una sola vez por render del locale
+  const entries = useMemo(() => buildHelpEntries((key) => t(key)), [t]);
+
   const section = getSection(pathname);
-  const sectionLabel = SECTION_LABELS[section] || "esta sección";
+  const sectionLabel = t.has(`sections.${section}`)
+    ? t(`sections.${section}`)
+    : t("widget.defaultSectionLabel");
   const searchDebounceRef = useRef<NodeJS.Timeout>(null);
 
   useEffect(() => {
     setMessages([]);
-    setChips(getEntriesForSection(section));
+    setChips(getEntriesForSection(entries, section));
     setSearchQuery("");
     setSearchResults(null);
-  }, [pathname, section]);
+  }, [pathname, section, entries]);
 
   useEffect(() => {
     if (!open || !bodyRef.current) return;
@@ -91,7 +53,7 @@ export function HelpWidget() {
 
   function resetChat() {
     setMessages([]);
-    setChips(getEntriesForSection(section));
+    setChips(getEntriesForSection(entries, section));
     setSearchQuery("");
     setSearchResults(null);
   }
@@ -104,8 +66,8 @@ export function HelpWidget() {
       { type: "user", content: entry.question },
       { type: "assistant", content: entry.answer },
     ]);
-    const related = getRelatedEntries(entry);
-    setChips(related.length > 0 ? related : getEntriesForSection(section).slice(0, 4));
+    const related = getRelatedEntries(entries, entry);
+    setChips(related.length > 0 ? related : getEntriesForSection(entries, section).slice(0, 4));
   }
 
   function handleSearch(q: string) {
@@ -113,11 +75,11 @@ export function HelpWidget() {
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     if (q.trim().length < 2) { setSearchResults(null); return; }
     searchDebounceRef.current = setTimeout(() => {
-      setSearchResults(searchHelp(q));
+      setSearchResults(searchHelp(entries, q));
     }, 200);
   }
 
-  // No mostrar en auth / admin / vistas compartidas, pero SÍ en el portal paciente
+  // No mostrar en auth / admin / vistas compartidas, pero SI en el portal paciente
   if (
     pathname.startsWith("/login") ||
     pathname.startsWith("/registro") ||
@@ -149,7 +111,7 @@ export function HelpWidget() {
             <Leaf className="w-4 h-4 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold">Asistente Annonia</p>
+            <p className="text-sm font-semibold">{t("widget.title")}</p>
             <p className="text-[11px] text-muted-foreground">
               {sectionLabel}
             </p>
@@ -159,7 +121,7 @@ export function HelpWidget() {
               <button
                 onClick={resetChat}
                 className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
-                title="Volver al inicio"
+                title={t("widget.resetTitle")}
               >
                 <RotateCcw className="w-4 h-4" />
               </button>
@@ -178,9 +140,11 @@ export function HelpWidget() {
           {/* Mensaje de bienvenida */}
           {messages.length === 0 && !searchResults && (
             <div className="bg-muted/60 rounded-xl rounded-tl-sm px-3.5 py-2.5 text-sm">
-              Hola, soy el asistente de Annonia. Estoy aquí para ayudarte con cualquier duda sobre la aplicación.
+              {t("widget.welcome")}
               {section !== "general" && (
-                <span> Veo que estás en <strong>{sectionLabel}</strong>. Aquí tienes algunas preguntas frecuentes:</span>
+                <span>
+                  {" "}{t("widget.welcomeSection", { section: sectionLabel })}
+                </span>
               )}
             </div>
           )}
@@ -199,16 +163,18 @@ export function HelpWidget() {
             </div>
           ))}
 
-          {/* Resultados de búsqueda */}
+          {/* Resultados de busqueda */}
           {searchResults !== null ? (
             searchResults.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">
-                No encontré resultados para &ldquo;{searchQuery}&rdquo;
+                {t("widget.noResults", { query: searchQuery })}
               </p>
             ) : (
               <div className="space-y-1.5">
                 <p className="text-xs text-muted-foreground">
-                  {searchResults.length} resultado{searchResults.length !== 1 ? "s" : ""}:
+                  {searchResults.length === 1
+                    ? t("widget.resultCount", { count: searchResults.length })
+                    : t("widget.resultCountPlural", { count: searchResults.length })}
                 </p>
                 {searchResults.slice(0, 8).map((entry) => (
                   <button
@@ -226,7 +192,7 @@ export function HelpWidget() {
             chips.length > 0 && (
               <div className="space-y-1.5">
                 {messages.length > 0 && (
-                  <p className="text-xs text-muted-foreground mt-2">Preguntas relacionadas:</p>
+                  <p className="text-xs text-muted-foreground mt-2">{t("widget.relatedQuestions")}</p>
                 )}
                 {chips.slice(0, 6).map((entry) => (
                   <button
@@ -248,7 +214,7 @@ export function HelpWidget() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Buscar en la ayuda..."
+              placeholder={t("widget.searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
               className="w-full pl-9 pr-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
@@ -265,7 +231,7 @@ export function HelpWidget() {
             ? "bg-muted text-muted-foreground hover:bg-muted/80 rotate-0"
             : "bg-primary text-primary-foreground hover:bg-primary/90 animate-[pulse_3s_ease-in-out_infinite]"
         }`}
-        title="Ayuda"
+        title={t("widget.helpTitle")}
       >
         {open ? (
           <X className="w-6 h-6" />

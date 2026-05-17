@@ -1,0 +1,347 @@
+{
+  "login": {
+    "title": "Panel de administración",
+    "subtitle": "Acceso restringido",
+    "emailLabel": "Email",
+    "emailPlaceholder": "admin@ejemplo.com",
+    "passwordLabel": "Contraseña",
+    "submitButton": "Acceder",
+    "verifying": "Verificando...",
+    "errorLogin": "Error al iniciar sesión",
+    "backToHome": "Volver al inicio"
+  },
+  "layout": {
+    "title": "Annonia Admin"
+  },
+  "sidebar": {
+    "brandName": "Annonia",
+    "nav": {
+      "panel": "Panel",
+      "dietistas": "Dietistas",
+      "verificaciones": "Verificaciones",
+      "seguimiento": "Seguimiento",
+      "mensajes": "Mensajes",
+      "actividad": "Actividad",
+      "suscripciones": "Suscripciones",
+      "crearCuenta": "Crear cuenta"
+    },
+    "roles": {
+      "creator": "Creador de cuentas",
+      "admin": "Administrador"
+    },
+    "volverApp": "Volver a la app",
+    "cerrarSesion": "Cerrar sesión"
+  },
+  "dashboard": {
+    "title": "Panel de administración",
+    "subtitle": "Vista general de la plataforma",
+    "stats": {
+      "totalDietistas": "Total dietistas",
+      "totalPacientes": "Total pacientes",
+      "planesActivos": "Planes activos",
+      "consultasEsteMes": "Consultas este mes",
+      "nuevos": "{count} nuevos"
+    },
+    "charts": {
+      "registrosMensuales": "Registros mensuales",
+      "chartLegendDietistas": "Dietistas",
+      "chartLegendPacientes": "Pacientes"
+    },
+    "resumenRapido": {
+      "title": "Resumen rápido",
+      "dietistasRegistrados": "Dietistas registrados",
+      "mediaPacientesDietista": "Media pacientes/dietista",
+      "planesPorDietista": "Planes por dietista"
+    },
+    "topDietistas": {
+      "title": "Dietistas con más pacientes",
+      "columns": {
+        "dietista": "Dietista",
+        "email": "Email",
+        "pacientes": "Pacientes",
+        "planes": "Planes",
+        "consultas": "Consultas",
+        "registro": "Registro"
+      },
+      "empty": "No hay dietistas registrados"
+    }
+  },
+  "dietistas": {
+    "title": "Dietistas registrados",
+    "subtitle": "{count} dietista{countPlural} · {totalPacientes} paciente{pacientesPlural} en total",
+    "searchPlaceholder": "Buscar por nombre o email...",
+    "empty": {
+      "sinResultados": "Sin resultados",
+      "sinDietistas": "Sin dietistas",
+      "noEncontrados": "No se encontraron dietistas para \"{query}\"",
+      "noRegistrados": "No hay dietistas registrados en la plataforma"
+    },
+    "sort": {
+      "masRecientes": "Más recientes",
+      "masPacientes": "Más pacientes",
+      "ultimaActividad": "Última actividad",
+      "nombreAZ": "Nombre A-Z"
+    },
+    "list": {
+      "pacientes": "pacientes",
+      "planes": "planes",
+      "consultas": "consultas",
+      "recetas": "{count} recetas",
+      "registro": "Registro: {date}",
+      "ultimoAcceso": "Último acceso: {date}",
+      "clinica": "Clínica: {name}",
+      "sinPacientes": "Este dietista no tiene pacientes",
+      "verDetalle": "Ver detalle completo",
+      "columnas": {
+        "paciente": "Paciente",
+        "objetivo": "Objetivo",
+        "estado": "Estado",
+        "fechaAlta": "Fecha alta"
+      }
+    },
+    "planBadge": {
+      "basico": "Básico",
+      "pro": "Pro"
+    },
+    "estadoBadge": {
+      "prueba": "Prueba",
+      "activa": "Activa",
+      "cancelada": "Cancelada",
+      "expirada": "Expirada"
+    },
+    "objetivoLabel": {
+      "perderPeso": "Perder peso",
+      "ganarMasa": "Ganar masa",
+      "mantenimiento": "Mantenimiento",
+      "patologia": "Patología",
+      "deportivo": "Deportivo",
+      "otro": "Otro"
+    },
+    "pacienteEstado": {
+      "activo": "Activo",
+      "inactivo": "Inactivo"
+    },
+    "tiempoRelativo": {
+      "ahora": "ahora",
+      "minutos": "hace {count}min",
+      "horas": "hace {count}h",
+      "dias": "hace {count}d",
+      "meses": "hace {count}mes{plural}"
+    }
+  },
+  "dietistaDetalle": {
+    "volverDietistas": "Volver a dietistas",
+    "registradoEl": "Registrado el {date}",
+    "numColegiado": "N.Col: {number}",
+    "suscripcion": {
+      "title": "Suscripción",
+      "plan": "Plan",
+      "estado": "Estado",
+      "inicio": "Inicio",
+      "fin": "Fin",
+      "sinSuscripcion": "Sin suscripción",
+      "planLabel": {
+        "basico": "Básico",
+        "profesional": "Profesional"
+      },
+      "estadoLabel": {
+        "activa": "Activa",
+        "prueba": "Periodo de prueba",
+        "cancelada": "Cancelada",
+        "expirada": "Expirada"
+      }
+    },
+    "stats": {
+      "pacientes": "Pacientes",
+      "planes": "Planes",
+      "consultas": "Consultas",
+      "recetas": "Recetas",
+      "alimentos": "Alimentos",
+      "citas": "Citas"
+    },
+    "pacientesSection": {
+      "title": "Pacientes ({count})",
+      "empty": "Este dietista no tiene pacientes",
+      "columns": {
+        "paciente": "Paciente",
+        "email": "Email",
+        "objetivo": "Objetivo",
+        "planes": "Planes",
+        "consultas": "Consultas",
+        "estado": "Estado",
+        "fechaAlta": "Fecha alta"
+      }
+    },
+    "ultimasConsultas": "Últimas consultas"
+  },
+  "crearCuenta": {
+    "title": "Crear cuenta nutricionista",
+    "subtitle": "La cuenta se crea verificada y lista para usar",
+    "form": {
+      "nombre": "Nombre *",
+      "nombrePlaceholder": "Ej: María",
+      "apellidos": "Apellidos",
+      "apellidosPlaceholder": "Ej: García López",
+      "email": "Email *",
+      "emailPlaceholder": "nutricionista@ejemplo.com",
+      "password": "Contraseña *",
+      "passwordPlaceholder": "Mínimo 6 caracteres",
+      "submit": "Crear cuenta",
+      "submitting": "Creando..."
+    },
+    "success": {
+      "title": "Cuenta creada",
+      "emailLabel": "Email:",
+      "passwordLabel": "Contraseña:",
+      "loginLabel": "Login:",
+      "copiado": "Copiado",
+      "copiarCredenciales": "Copiar credenciales",
+      "crearOtra": "Crear otra cuenta"
+    },
+    "toast": {
+      "cuentaCreada": "Cuenta creada correctamente",
+      "errorCrear": "Error al crear la cuenta",
+      "credencialesCopiadas": "Credenciales copiadas"
+    }
+  },
+  "verificaciones": {
+    "title": "Verificaciones pendientes",
+    "subtitle": "{count} solicitud{countPlural} pendiente{countPlural}",
+    "todoVerificado": {
+      "title": "Todo verificado",
+      "description": "No hay solicitudes pendientes de verificación"
+    },
+    "numColegiado": "N.º colegiado: {number}",
+    "registradoEl": "Registrado el {date}",
+    "actions": {
+      "verificar": "Verificar",
+      "rechazar": "Rechazar",
+      "confirmarRechazo": "¿Eliminar cuenta?",
+      "si": "Sí",
+      "no": "No"
+    },
+    "toast": {
+      "verificado": "{nombre} ha sido verificado",
+      "rechazado": "Solicitud de {nombre} rechazada",
+      "errorVerificar": "Error al verificar",
+      "errorRechazar": "Error al rechazar"
+    }
+  },
+  "suscripciones": {
+    "title": "Suscripciones",
+    "subtitle": "{total} suscripciones en total",
+    "planLabel": "Plan {plan}",
+    "empty": {
+      "title": "Sin suscripciones",
+      "description": "No hay suscripciones registradas"
+    },
+    "columns": {
+      "dietista": "Dietista",
+      "email": "Email",
+      "plan": "Plan",
+      "estado": "Estado",
+      "inicio": "Inicio",
+      "fin": "Fin"
+    },
+    "planLabels": {
+      "basico": "Básico",
+      "profesional": "Profesional"
+    },
+    "estadoLabels": {
+      "activa": "Activa",
+      "prueba": "Prueba",
+      "cancelada": "Cancelada",
+      "expirada": "Expirada"
+    }
+  },
+  "seguimiento": {
+    "title": "Seguimiento de accesos",
+    "subtitle": "Último acceso de dietistas y pacientes a la plataforma",
+    "stats": {
+      "dietistasActivosHoy": "Dietistas activos hoy",
+      "pacientesActivosHoy": "Pacientes activos hoy",
+      "dietistasSinAcceso": "Dietistas sin acceso",
+      "pacientesSinAcceso": "Pacientes sin acceso",
+      "deTotales": "de {total} totales"
+    },
+    "tablaDietistas": {
+      "title": "Dietistas ({count})",
+      "columns": {
+        "dietista": "Dietista",
+        "email": "Email",
+        "pacientes": "Pacientes",
+        "ultimoAcceso": "Último acceso",
+        "fechaExacta": "Fecha exacta",
+        "estado": "Estado"
+      },
+      "noVerificado": "No verificado"
+    },
+    "tablaPacientes": {
+      "title": "Pacientes ({count})",
+      "columns": {
+        "paciente": "Paciente",
+        "email": "Email",
+        "dietista": "Dietista",
+        "ultimoAcceso": "Último acceso",
+        "fechaExacta": "Fecha exacta",
+        "estado": "Estado"
+      },
+      "empty": "No hay pacientes registrados"
+    },
+    "timeAgo": {
+      "nunca": "Nunca",
+      "ahoraMismo": "Ahora mismo",
+      "minutos": "Hace {count} min",
+      "horas": "Hace {count}h",
+      "dias": "Hace {count}d",
+      "semanas": "Hace {count} sem",
+      "meses": "Hace {count} mes{plural}"
+    },
+    "statusBadge": {
+      "sinAcceso": "Sin acceso",
+      "activoHoy": "Activo hoy",
+      "estaSemana": "Esta semana",
+      "esteMes": "Este mes",
+      "inactivo": "Inactivo"
+    }
+  },
+  "actividad": {
+    "title": "Actividad de la plataforma",
+    "subtitle": "Métricas de uso en tiempo real",
+    "stats": {
+      "consultasHoy": "Consultas hoy",
+      "citasHoy": "Citas hoy",
+      "entradasDiarioHoy": "Entradas diario hoy",
+      "consultasEsteMes": "Consultas este mes",
+      "generacionesIAMes": "Generaciones IA mes"
+    },
+    "dietistasActivos": {
+      "title": "Dietistas más activos este mes",
+      "empty": "Sin actividad este mes",
+      "columns": {
+        "dietista": "Dietista",
+        "consultasMes": "Consultas mes",
+        "pacientes": "Pacientes"
+      }
+    },
+    "ultimosRegistros": {
+      "title": "Últimos dietistas registrados",
+      "empty": "Sin registros"
+    }
+  },
+  "mensajes": {
+    "title": "Mensajes Soporte",
+    "subtitle": "Conversaciones con dietistas",
+    "buscarPlaceholder": "Buscar dietista...",
+    "sinResultados": "No hay resultados",
+    "sinConversaciones": "No hay conversaciones de soporte",
+    "seleccionaConversacion": "Selecciona una conversación",
+    "seleccionaSubtitle": "Elige un dietista de la lista para ver sus mensajes",
+    "volver": "Volver",
+    "sinMensajes": "Sin mensajes todavía",
+    "responderPlaceholder": "Responder a {nombre}...",
+    "enviarAriaLabel": "Enviar mensaje",
+    "errorEnviar": "No se pudo enviar",
+    "tuPrefix": "Tú: "
+  }
+}

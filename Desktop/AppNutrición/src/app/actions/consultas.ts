@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { sanitizeStringOptional, LIMITS } from "@/lib/validation";
 
 export interface ConsultaFormData {
@@ -15,8 +16,9 @@ export interface ConsultaFormData {
 }
 
 export async function crearConsulta(data: ConsultaFormData) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const consulta = await prisma.consulta.create({
@@ -36,14 +38,15 @@ export async function crearConsulta(data: ConsultaFormData) {
 }
 
 export async function actualizarConsulta(id: string, data: Partial<ConsultaFormData>) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const consulta = await prisma.consulta.findFirst({
     where: { id, dietistaId: dietista.id },
   });
-  if (!consulta) throw new Error("Consulta no encontrada");
+  if (!consulta) throw new Error(t("consulta.consultaNoEncontrada"));
 
   await prisma.consulta.update({
     where: { id },
@@ -58,14 +61,15 @@ export async function actualizarConsulta(id: string, data: Partial<ConsultaFormD
 }
 
 export async function eliminarConsulta(id: string) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const consulta = await prisma.consulta.findFirst({
     where: { id, dietistaId: dietista.id },
   });
-  if (!consulta) throw new Error("Consulta no encontrada");
+  if (!consulta) throw new Error(t("consulta.consultaNoEncontrada"));
 
   await prisma.consulta.delete({ where: { id } });
   revalidatePath(`/pacientes/${consulta.pacienteId}/consultas`);

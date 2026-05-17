@@ -6,6 +6,7 @@ import { getCurrentDietista } from "./auth";
 import { getCurrentPaciente } from "@/lib/patient-auth";
 import { randomUUID } from "crypto";
 import { checkRateLimit, LIMITES } from "@/lib/rate-limit";
+import { getTranslations } from "next-intl/server";
 
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 const TIPOS_PERMITIDOS = [
@@ -19,12 +20,13 @@ const TIPOS_PERMITIDOS = [
 const BUCKET = "mensajes-adjuntos";
 const URL_TTL_SECONDS = 60 * 60 * 24 * 14; // 14 días
 
-function adminClient() {
+async function adminClient() {
+  const t = await getTranslations("validation");
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey =
     process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !serviceKey) {
-    throw new Error("Supabase no configurado (falta SECRET_KEY)");
+    throw new Error(t("adjuntos.supabaseNoConfigurado"));
   }
   return createSupabaseClient(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -50,12 +52,13 @@ async function getUsuarioId(): Promise<string | null> {
  *   - Rate limit 5 archivos/min por usuario
  */
 export async function subirAdjuntoMensaje(formData: FormData) {
+  const t = await getTranslations("validation");
   // Demo guard: bloquear subida si el dietista es demo
   const dietistaCheck = await getCurrentDietista();
-  if (dietistaCheck?.isDemo) throw new Error("No disponible en modo demo");
+  if (dietistaCheck?.isDemo) throw new Error(t("general.noDisponibleDemo"));
 
   const usuarioId = await getUsuarioId();
-  if (!usuarioId) throw new Error("No autorizado");
+  if (!usuarioId) throw new Error(t("auth.noAutorizado"));
 
   // Rate limit
   const rl = checkRateLimit({
@@ -63,18 +66,18 @@ export async function subirAdjuntoMensaje(formData: FormData) {
     ...LIMITES.subirAdjunto,
   });
   if (!rl.ok) {
-    throw new Error(`Demasiados archivos. Espera ${rl.retryAfter}s`);
+    throw new Error(t("mensajes.demasiadosArchivos", { retryAfter: rl.retryAfter }));
   }
 
   const archivo = formData.get("archivo") as File | null;
-  if (!archivo) throw new Error("Sin archivo");
+  if (!archivo) throw new Error(t("adjuntos.sinArchivo"));
 
   if (archivo.size > MAX_SIZE) {
-    throw new Error(`El archivo supera ${Math.round(MAX_SIZE / 1024 / 1024)}MB`);
+    throw new Error(t("adjuntos.archivoSuperaTamano", { maxMB: Math.round(MAX_SIZE / 1024 / 1024) }));
   }
 
   if (!TIPOS_PERMITIDOS.includes(archivo.type)) {
-    throw new Error("Tipo de archivo no permitido");
+    throw new Error(t("adjuntos.tipoNoPermitido"));
   }
 
   const buffer = Buffer.from(await archivo.arrayBuffer());
@@ -82,13 +85,13 @@ export async function subirAdjuntoMensaje(formData: FormData) {
   // Validar magic bytes: el contenido real debe coincidir con el MIME declarado
   const detectado = await fileTypeFromBuffer(buffer);
   if (!detectado || !TIPOS_PERMITIDOS.includes(detectado.mime)) {
-    throw new Error("El contenido del archivo no es válido");
+    throw new Error(t("adjuntos.contenidoNoValido"));
   }
   if (detectado.mime !== archivo.type) {
-    throw new Error("El tipo de archivo no coincide con su contenido");
+    throw new Error(t("adjuntos.tipoNoCoincide"));
   }
 
-  const supabase = adminClient();
+  const supabase = await adminClient();
 
   // Asegurar bucket (idempotente)
   await supabase.storage.createBucket(BUCKET, { public: false }).catch(() => {});
@@ -105,7 +108,7 @@ export async function subirAdjuntoMensaje(formData: FormData) {
 
   if (error) {
     console.error("[adjuntos] error upload:", error);
-    throw new Error("No se pudo subir el archivo");
+    throw new Error(t("adjuntos.noSePudoSubir"));
   }
 
   const { data: signedUrl, error: signedErr } = await supabase.storage
@@ -114,7 +117,7 @@ export async function subirAdjuntoMensaje(formData: FormData) {
 
   if (signedErr || !signedUrl) {
     console.error("[adjuntos] error signedUrl:", signedErr);
-    throw new Error("No se pudo generar URL");
+    throw new Error(t("adjuntos.noSePudoGenerarUrl"));
   }
 
   return {
@@ -137,7 +140,7 @@ export async function renovarUrlFirmada(path: string): Promise<string | null> {
   // Verificar que el path empieza por el prefijo del usuario actual
   if (!path.startsWith(`${usuarioId}/`)) return null;
 
-  const supabase = adminClient();
+  const supabase = await adminClient();
   const { data, error } = await supabase.storage
     .from(BUCKET)
     .createSignedUrl(path, URL_TTL_SECONDS);

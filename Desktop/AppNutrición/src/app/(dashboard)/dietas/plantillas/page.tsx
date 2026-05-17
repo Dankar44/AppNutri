@@ -3,6 +3,7 @@ import { ArrowLeft, BookCopy } from "lucide-react";
 import { getPlantillas } from "@/app/actions/plantillas";
 import { PlantillaCard } from "./plantilla-card";
 import { PlantillasFilter } from "./plantillas-filter";
+import { getTranslations } from "next-intl/server";
 
 interface Props {
   searchParams: Promise<{ busqueda?: string }>;
@@ -10,7 +11,10 @@ interface Props {
 
 export default async function PlantillasPage({ searchParams }: Props) {
   const { busqueda } = await searchParams;
-  const plantillas = await getPlantillas(busqueda);
+  const [plantillas, t] = await Promise.all([
+    getPlantillas(busqueda),
+    getTranslations("diets.plantillas"),
+  ]);
 
   return (
     <div>
@@ -20,13 +24,13 @@ export default async function PlantillasPage({ searchParams }: Props) {
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3 py-2 sm:py-0 -my-2 sm:my-0"
         >
           <ArrowLeft className="w-4 h-4" />
-          Volver a planes
+          {t("backToPlans")}
         </Link>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">Mis plantillas</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">{t("pageTitle")}</h1>
             <p className="text-muted-foreground mt-1">
-              {plantillas.length} plantilla{plantillas.length !== 1 ? "s" : ""} guardada{plantillas.length !== 1 ? "s" : ""}
+              {t("subtitle", { count: plantillas.length })}
             </p>
           </div>
         </div>
@@ -38,12 +42,12 @@ export default async function PlantillasPage({ searchParams }: Props) {
         <div className="bg-card rounded-xl border border-border p-12 text-center">
           <BookCopy className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="font-medium text-lg mb-1">
-            {busqueda ? "Sin resultados" : "Sin plantillas"}
+            {busqueda ? t("noResultsTitle") : t("noTemplatesTitle")}
           </h3>
           <p className="text-muted-foreground mb-4">
             {busqueda
-              ? `No se encontraron plantillas para "${busqueda}"`
-              : "Puedes guardar un plan existente como plantilla desde la vista de detalle del plan"}
+              ? t("noResultsMessage", { query: busqueda })
+              : t("emptyMessage")}
           </p>
         </div>
       ) : (

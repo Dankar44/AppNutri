@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, BookOpen } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { ProgressRing } from "@/components/paciente/seguimiento/progress-ring";
 import { formatMlCorto } from "@/lib/seguimiento";
 
@@ -26,12 +29,13 @@ export function HoyCard({
   racha,
   className = "",
 }: Props) {
+  const t = useTranslations("patient-portal.dashboard.hoyCard");
   const comidasPct = comidasTotal > 0 ? (comidasCumplidas / comidasTotal) * 100 : 0;
   const aguaPct = aguaObjetivo > 0 ? (aguaML / aguaObjetivo) * 100 : 0;
   const ejercicioPct = ejercicio ? Math.min(100, (ejercicioMinutos / 30) * 100) : 0;
   const globalPct = Math.round((comidasPct + aguaPct + ejercicioPct) / 3);
 
-  const ctaLabel = haRegistrado ? "Continuar" : "Registrar día";
+  const ctaLabel = haRegistrado ? t("continuar") : t("registrarDia");
 
   return (
     <section data-tour="portal-hoy-card" className={`rounded-2xl border border-border bg-card overflow-hidden flex flex-col ${className}`}>
@@ -41,15 +45,15 @@ export function HoyCard({
             <BookOpen className="w-5 h-5" strokeWidth={1.75} />
           </span>
           <div>
-            <h2 className="text-base font-semibold">Hoy</h2>
+            <h2 className="text-base font-semibold">{t("title")}</h2>
             <p className="text-[11px] text-muted-foreground">
-              {haRegistrado ? "Llevas registrado tu día" : "Aún no has registrado nada hoy"}
+              {haRegistrado ? t("haRegistrado") : t("noHaRegistrado")}
             </p>
           </div>
         </div>
         {typeof racha === "number" && racha > 0 && (
           <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400 px-2.5 py-0.5 text-[11px] font-semibold">
-            {racha} {racha === 1 ? "día" : "días"} seguidos
+            {t("diasSeguidos", { count: racha })}
           </span>
         )}
       </header>
@@ -62,31 +66,31 @@ export function HoyCard({
           stroke={9}
           color="text-primary"
           bg="text-primary/10"
-          label={`${globalPct}% del día`}
+          label={`${globalPct}% ${t("delDia")}`}
         >
           <div className="text-center">
             <p className="text-xl font-bold leading-none tabular-nums">{globalPct}%</p>
             <p className="text-[9px] text-muted-foreground uppercase tracking-wide mt-0.5">
-              del día
+              {t("delDia")}
             </p>
           </div>
         </ProgressRing>
 
         <div className="flex-1 space-y-2.5">
           <Metric
-            label="Comidas"
+            label={t("comidas")}
             value={`${comidasCumplidas}/${comidasTotal}`}
             pct={comidasPct}
             tint="green"
           />
           <Metric
-            label="Agua"
+            label={t("agua")}
             value={formatMlCorto(aguaML)}
             pct={aguaPct}
             tint="blue"
           />
           <Metric
-            label="Ejercicio"
+            label={t("ejercicio")}
             value={ejercicio ? `${ejercicioMinutos} min` : "—"}
             pct={ejercicioPct}
             tint="emerald"

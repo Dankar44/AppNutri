@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { asignarPlanComoActual } from "@/app/actions/planes";
 import {
@@ -107,6 +108,7 @@ export function PlanDeAlimentacionTab({
   pacientePeso?: number | null;
   pacienteObjetivo?: string | null;
 }) {
+  const t = useTranslations("patients.planAlimentacion");
   const router = useRouter();
   const [isPendingAssign, startAssign] = useTransition();
   const [abierto, setAbierto] = useState(false);
@@ -153,10 +155,10 @@ export function PlanDeAlimentacionTab({
     startAssign(async () => {
       try {
         await asignarPlanComoActual(selectedPlan.id);
-        toast.success("Dieta asignada como actual");
+        toast.success(t("dietaAsignadaActual"));
         router.refresh();
       } catch {
-        toast.error("No se pudo asignar como actual");
+        toast.error(t("noSePudoAsignar"));
       }
     });
   }
@@ -165,13 +167,13 @@ export function PlanDeAlimentacionTab({
     return (
       <section className="bg-card rounded-xl border border-border p-8 text-center">
         <p className="text-sm text-muted-foreground mb-3">
-          Este paciente no tiene aún ningún plan de alimentación.
+          {t("sinPlanAlimentacion")}
         </p>
         <Link
           href={`/dietas/nuevo?pacienteId=${pacienteId}`}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
         >
-          Crear primera dieta
+          {t("crearPrimeraDieta")}
         </Link>
       </section>
     );
@@ -199,14 +201,14 @@ export function PlanDeAlimentacionTab({
             type="button"
             onClick={() => setAbierto((v) => !v)}
             className="w-full flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg border border-border bg-card hover:bg-muted/40 transition-colors"
-            title={totalPlanes > 1 ? `Ver las ${totalPlanes} dietas` : "Dietas del paciente"}
+            title={t("dietasPaciente")}
           >
             <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
               <span className="text-sm sm:text-base font-semibold truncate">{selectedPlan.nombre}</span>
               {esActivo && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-medium shrink-0">
                   <CheckCircle2 className="w-3 h-3" />
-                  Actual
+                  {t("actual")}
                 </span>
               )}
               {selectedPlan.caloriasObjetivo != null && (
@@ -218,7 +220,7 @@ export function PlanDeAlimentacionTab({
             </div>
             <span className="inline-flex items-center gap-1 text-xs text-muted-foreground shrink-0 border-l border-border pl-2.5 ml-1">
               {totalPlanes}{" "}
-              <span className="hidden sm:inline">dieta{totalPlanes !== 1 ? "s" : ""}</span>
+              <span className="hidden sm:inline">{t("dietaCount", { count: totalPlanes })}</span>
               <ChevronDown
                 className={cn("w-4 h-4 transition-transform", abierto && "rotate-180")}
               />
@@ -228,7 +230,7 @@ export function PlanDeAlimentacionTab({
           {abierto && (
             <div className="absolute left-0 right-0 mt-1 z-40 bg-card border border-border rounded-lg shadow-lg overflow-y-auto max-h-80">
               <div className="px-3 py-1.5 border-b border-border text-[11px] uppercase tracking-wide text-muted-foreground">
-                Dietas del paciente
+                {t("dietasPaciente")}
               </div>
               {planes.map((p) => {
                 const seleccionado = p.id === selectedPlanId;
@@ -251,7 +253,7 @@ export function PlanDeAlimentacionTab({
                       {esEsteActivo && (
                         <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-medium shrink-0">
                           <CheckCircle2 className="w-3 h-3" />
-                          Actual
+                          {t("actual")}
                         </span>
                       )}
                       {p.caloriasObjetivo != null && (
@@ -273,10 +275,10 @@ export function PlanDeAlimentacionTab({
           <Link
             href={`/dietas/nuevo?pacienteId=${pacienteId}`}
             className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors shrink-0 border border-primary/30 text-primary hover:bg-primary/5"
-            title="Crear nuevo plan para este paciente"
+            title={t("crearNuevoPlanParaPaciente")}
           >
             <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Nuevo plan</span>
+            <span className="hidden sm:inline">{t("nuevoPlan")}</span>
           </Link>
 
           <button
@@ -289,10 +291,10 @@ export function PlanDeAlimentacionTab({
                 ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30 cursor-default"
                 : "bg-muted text-muted-foreground border-border hover:bg-muted/80",
             )}
-            title={esActivo ? "Esta dieta ya está marcada como actual" : "Marcar esta dieta como la actual"}
+            title={esActivo ? t("dietaYaMarcada") : t("marcarDietaActual")}
           >
             {isPendingAssign ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-            <span className="hidden sm:inline">{esActivo ? "Marcada" : "Marcar actual"}</span>
+            <span className="hidden sm:inline">{esActivo ? t("marcada") : t("marcarActual")}</span>
           </button>
         </div>
       </div>

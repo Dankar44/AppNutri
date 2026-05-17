@@ -4,6 +4,7 @@ import { getCurrentPaciente } from "@/lib/patient-auth";
 import { prisma } from "@/lib/prisma";
 import { capitalizarNombre } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
+import { getTranslations } from "next-intl/server";
 
 interface EjercicioItem {
   nombre: string;
@@ -37,14 +38,12 @@ function parseRecomendaciones(raw: string | null): RecomendacionesData | string 
   return raw;
 }
 
-function frecuenciaLabel(f: number) {
-  if (f >= 7) return "Todos los días";
-  return `${f} ${f === 1 ? "vez" : "veces"} por semana`;
-}
+// frecuenciaLabel is now inlined using t() in the component
 
 export default async function RecomendacionesPage() {
   const session = await getCurrentPaciente();
   if (!session) redirect("/paciente/login");
+  const t = await getTranslations("patient-portal");
 
   const rows = await prisma.$queryRawUnsafe<{
     recomendaciones: string | null;
@@ -61,7 +60,7 @@ export default async function RecomendacionesPage() {
   const parsed = parseRecomendaciones(data?.recomendaciones || null);
   const dietistaNombre = data
     ? `${capitalizarNombre(data.dietistaNombre)} ${capitalizarNombre(data.dietistaApellidos)}`
-    : "Tu nutricionista";
+    : t("recomendaciones.fallbackNutri");
 
   const isStructured = parsed !== null && typeof parsed === "object";
   const structured = isStructured ? (parsed as RecomendacionesData) : null;
@@ -73,16 +72,16 @@ export default async function RecomendacionesPage() {
     <div>
       <PageHeader
         icon={MessageSquareText}
-        title="Recomendaciones"
-        subtitle={`Escritas por ${dietistaNombre}`}
+        title={t("recomendaciones.title")}
+        subtitle={t("recomendaciones.subtitle", { nombre: dietistaNombre })}
       />
 
       {!hasContent ? (
         <div className="bg-card rounded-xl border border-border p-12 text-center">
           <MessageSquareText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="font-medium text-lg mb-1">Sin recomendaciones</h3>
+          <h3 className="font-medium text-lg mb-1">{t("recomendaciones.empty.title")}</h3>
           <p className="text-muted-foreground">
-            Tu nutricionista aún no ha escrito recomendaciones para ti.
+            {t("recomendaciones.empty.description")}
           </p>
         </div>
       ) : structured ? (
@@ -91,7 +90,7 @@ export default async function RecomendacionesPage() {
             <section className="bg-card rounded-xl border border-border p-5">
               <h2 className="text-base font-semibold flex items-center gap-2 mb-3">
                 <Droplets className="w-5 h-5 text-blue-500" />
-                Ingesta de agua
+                {t("recomendaciones.sections.ingestaAgua")}
               </h2>
               <p className="text-sm text-foreground">{structured.agua}</p>
             </section>
@@ -101,7 +100,7 @@ export default async function RecomendacionesPage() {
             <section className="bg-card rounded-xl border border-border p-5">
               <h2 className="text-base font-semibold flex items-center gap-2 mb-4">
                 <Dumbbell className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                Ejercicio físico recomendado
+                {t("recomendaciones.sections.ejercicioFisico")}
               </h2>
               <div className="space-y-2">
                 {structured.ejercicios.map((ej) => (
@@ -112,7 +111,9 @@ export default async function RecomendacionesPage() {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium">{ej.nombre}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        {frecuenciaLabel(ej.frecuencia)}
+                        {ej.frecuencia >= 7
+                          ? t("recomendaciones.frecuencia.todosDias")
+                          : t("recomendaciones.frecuencia.vecesSemana", { count: ej.frecuencia })}
                       </p>
                     </div>
                     <div className="flex items-center gap-4 text-xs text-muted-foreground shrink-0">
@@ -135,7 +136,7 @@ export default async function RecomendacionesPage() {
             <section className="bg-card rounded-xl border border-border p-5">
               <h2 className="text-base font-semibold flex items-center gap-2 mb-4">
                 <ShieldBan className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                Alimentos a evitar
+                {t("recomendaciones.sections.alimentosEvitar")}
               </h2>
               <div className="flex flex-wrap gap-2">
                 {structured.alimentosEvitar.map((item, idx) => (
@@ -154,7 +155,7 @@ export default async function RecomendacionesPage() {
             <section className="bg-card rounded-xl border border-border p-5">
               <h2 className="text-base font-semibold flex items-center gap-2 mb-3">
                 <Sparkles className="w-5 h-5 text-teal-500" />
-                Otras recomendaciones
+                {t("recomendaciones.sections.otrasRecomendaciones")}
               </h2>
               <div className="prose prose-sm max-w-none whitespace-pre-line text-foreground text-sm leading-relaxed">
                 {structured.otrasRecomendaciones}

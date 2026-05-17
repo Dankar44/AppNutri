@@ -52,6 +52,6 @@ export async function sendEmail(opts: {
   }
 
   throw new Error(
-    "No hay servicio de email configurado. Añade RESEND_API_KEY o GMAIL_USER + GMAIL_APP_PASSWORD en las variables de entorno.",
+    "No email service configured. Add RESEND_API_KEY or GMAIL_USER + GMAIL_APP_PASSWORD to environment variables.",
   );
 }

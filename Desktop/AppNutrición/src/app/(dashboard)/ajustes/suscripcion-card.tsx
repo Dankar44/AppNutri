@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Crown, Clock, ArrowUpRight, Check } from "lucide-react";
 import { cambiarPlan } from "@/app/actions/suscripcion";
 import { toast } from "sonner";
+import { useTranslations, useLocale } from "next-intl";
+import { intlTag, type Locale } from "@/i18n/config";
 
 interface Props {
   plan: string;
@@ -13,25 +15,24 @@ interface Props {
   fechaFin: string | null;
 }
 
-const PLAN_LABELS: Record<string, { nombre: string; precio: string }> = {
-  BASICO: { nombre: "Básico", precio: "9,99€/mes" },
-  PROFESIONAL: { nombre: "Profesional", precio: "11,99€/mes" },
-};
-
-const ESTADO_LABELS: Record<string, { texto: string; color: string }> = {
-  ACTIVA: { texto: "Activa", color: "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400" },
-  PRUEBA: { texto: "Periodo de prueba", color: "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400" },
-  CANCELADA: { texto: "Cancelada", color: "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400" },
-  EXPIRADA: { texto: "Expirada", color: "bg-muted text-muted-foreground" },
+const ESTADO_COLORS: Record<string, string> = {
+  ACTIVA: "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400",
+  PRUEBA: "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400",
+  CANCELADA: "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400",
+  EXPIRADA: "bg-muted text-muted-foreground",
 };
 
 export function SuscripcionCard({ plan, estado, fechaInicio, fechaFin }: Props) {
+  const t = useTranslations("settings.suscripcion");
+  const tComp = useTranslations("settings.suscripcion.comparativa");
+  const locale = useLocale() as Locale;
+  const tag = intlTag(locale);
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const planInfo = PLAN_LABELS[plan] || PLAN_LABELS.BASICO;
-  const estadoInfo = ESTADO_LABELS[estado] || ESTADO_LABELS.PRUEBA;
+  const planKey = (plan === "BASICO" || plan === "PROFESIONAL") ? plan : "BASICO";
+  const estadoKey = (estado in ESTADO_COLORS) ? estado : "PRUEBA";
+  const estadoColor = ESTADO_COLORS[estadoKey];
   const otroPlan = plan === "BASICO" ? "PROFESIONAL" : "BASICO";
-  const otroPlanInfo = PLAN_LABELS[otroPlan];
 
   // Calcular días restantes
   let diasRestantes: number | null = null;
@@ -44,10 +45,10 @@ export function SuscripcionCard({ plan, estado, fechaInicio, fechaFin }: Props) 
     setLoading(true);
     try {
       await cambiarPlan(otroPlan);
-      toast.success(`Plan cambiado a ${otroPlanInfo.nombre}`);
+      toast.success(t("toastPlanCambiado", { nombre: t(`planes.${otroPlan}.nombre`) }));
       router.refresh();
     } catch {
-      toast.error("Error al cambiar de plan");
+      toast.error(t("toastErrorCambiarPlan"));
     } finally {
       setLoading(false);
     }
@@ -62,12 +63,12 @@ export function SuscripcionCard({ plan, estado, fechaInicio, fechaFin }: Props) 
             <Crown className={`w-5 h-5 ${plan === "PROFESIONAL" ? "text-amber-600 dark:text-amber-400" : "text-primary"}`} />
           </div>
           <div>
-            <p className="font-semibold">Plan {planInfo.nombre}</p>
-            <p className="text-sm text-muted-foreground">{planInfo.precio}</p>
+            <p className="font-semibold">{t("planLabel", { nombre: t(`planes.${planKey}.nombre`) })}</p>
+            <p className="text-sm text-muted-foreground">{t(`planes.${planKey}.precio`)}</p>
           </div>
         </div>
-        <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${estadoInfo.color}`}>
-          {estadoInfo.texto}
+        <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${estadoColor}`}>
+          {t(`estados.${estadoKey}`)}
         </span>
       </div>
 
@@ -80,11 +81,11 @@ export function SuscripcionCard({ plan, estado, fechaInicio, fechaFin }: Props) 
           <span className="text-sm">
             {diasRestantes === 0
               ? estado === "PRUEBA"
-                ? "Tu prueba gratuita ha expirado"
-                : "Tu suscripción ha expirado"
+                ? t("pruebaExpirada")
+                : t("suscripcionExpirada")
               : estado === "PRUEBA"
-                ? `Te quedan ${diasRestantes} día${diasRestantes !== 1 ? "s" : ""} de prueba gratuita`
-                : `Tu suscripción se renueva en ${diasRestantes} día${diasRestantes !== 1 ? "s" : ""}`}
+                ? t("diasPruebaRestantes", { dias: diasRestantes, plural: diasRestantes !== 1 ? "s" : "" })
+                : t("diasRenovacion", { dias: diasRestantes, plural: diasRestantes !== 1 ? "s" : "" })}
           </span>
         </div>
       )}
@@ -92,9 +93,9 @@ export function SuscripcionCard({ plan, estado, fechaInicio, fechaFin }: Props) 
       {/* Info de fechas */}
       <div className="grid grid-cols-2 gap-4 text-sm">
         <div>
-          <p className="text-muted-foreground text-xs">Inicio</p>
+          <p className="text-muted-foreground text-xs">{t("inicioLabel")}</p>
           <p className="font-medium">
-            {new Date(fechaInicio).toLocaleDateString("es-ES", {
+            {new Date(fechaInicio).toLocaleDateString(tag, {
               day: "numeric",
               month: "long",
               year: "numeric",
@@ -104,10 +105,10 @@ export function SuscripcionCard({ plan, estado, fechaInicio, fechaFin }: Props) 
         {fechaFin && (
           <div>
             <p className="text-muted-foreground text-xs">
-              {estado === "PRUEBA" ? "Fin de prueba" : "Próxima renovación"}
+              {estado === "PRUEBA" ? t("finPruebaLabel") : t("proximaRenovacionLabel")}
             </p>
             <p className="font-medium">
-              {new Date(fechaFin).toLocaleDateString("es-ES", {
+              {new Date(fechaFin).toLocaleDateString(tag, {
                 day: "numeric",
                 month: "long",
                 year: "numeric",
@@ -122,12 +123,12 @@ export function SuscripcionCard({ plan, estado, fechaInicio, fechaFin }: Props) 
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium">
-              {plan === "BASICO" ? "Pasa a Profesional" : "Cambiar a Básico"}
+              {plan === "BASICO" ? t("pasaAProfesional") : t("cambiarABasico")}
             </p>
             <p className="text-xs text-muted-foreground">
               {plan === "BASICO"
-                ? "IA, pacientes ilimitados, informes PDF — solo 2€ más"
-                : "25 pacientes, sin IA ni informes PDF"}
+                ? t("upgradeDescripcion")
+                : t("downgradeDescripcion")}
             </p>
           </div>
           <button
@@ -142,10 +143,10 @@ export function SuscripcionCard({ plan, estado, fechaInicio, fechaFin }: Props) 
             {plan === "BASICO" ? (
               <>
                 <ArrowUpRight className="w-4 h-4" />
-                Mejorar plan
+                {t("mejorarPlan")}
               </>
             ) : (
-              "Cambiar a Básico"
+              t("cambiarABasico")
             )}
           </button>
         </div>
@@ -155,16 +156,16 @@ export function SuscripcionCard({ plan, estado, fechaInicio, fechaFin }: Props) 
       <div className="bg-muted/30 rounded-lg p-3 text-xs space-y-1.5">
         <div className="grid grid-cols-3 gap-2 font-semibold text-muted-foreground">
           <span></span>
-          <span className="text-center">Básico</span>
-          <span className="text-center">Profesional</span>
+          <span className="text-center">{tComp("basico")}</span>
+          <span className="text-center">{tComp("profesional")}</span>
         </div>
         {[
-          ["Pacientes", "25", "Ilimitados"],
-          ["Planes y recetas", "Ilimitados", "Ilimitados"],
-          ["Portal paciente", "check", "check"],
-          ["Generación con IA", "no", "check"],
-          ["Informes PDF", "no", "check"],
-          ["Soporte prioritario", "no", "check"],
+          [tComp("features.pacientes"), tComp("features.basico25"), tComp("features.ilimitados")],
+          [tComp("features.planesRecetas"), tComp("features.ilimitados"), tComp("features.ilimitados")],
+          [tComp("features.portalPaciente"), "check", "check"],
+          [tComp("features.generacionIA"), "no", "check"],
+          [tComp("features.informesPDF"), "no", "check"],
+          [tComp("features.soportePrioritario"), "no", "check"],
         ].map(([feature, basico, pro]) => (
           <div key={feature} className="grid grid-cols-3 gap-2 items-center">
             <span>{feature}</span>

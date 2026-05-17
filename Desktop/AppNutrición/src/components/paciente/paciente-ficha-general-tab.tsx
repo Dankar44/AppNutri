@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   BookOpen,
   Brain,
@@ -67,24 +68,31 @@ type PlanResumen = {
   activo: boolean;
 };
 
-function renderObjetivo(objetivo: string | null, detalle: string | null) {
-  if (detalle?.trim()) return detalle;
-  if (!objetivo) return "No registrado";
+function useRenderObjetivo() {
+  const t = useTranslations("patients.general");
+  const tForm = useTranslations("patients.form");
+  return (objetivo: string | null, detalle: string | null) => {
+    if (detalle?.trim()) return detalle;
+    if (!objetivo) return t("noRegistrado");
 
-  const labels: Record<string, string> = {
-    PERDER_PESO: "Perdida de peso",
-    GANAR_MASA: "Ganar masa",
-    MANTENIMIENTO: "Mantenimiento",
-    PATOLOGIA: "Patologia",
-    DEPORTIVO: "Deportivo",
-    OTRO: "Otro",
+    const labels: Record<string, string> = {
+      PERDER_PESO: tForm("objetivoPerderPeso"),
+      GANAR_MASA: tForm("objetivoGanarMasa"),
+      MANTENIMIENTO: tForm("objetivoMantenimiento"),
+      PATOLOGIA: tForm("objetivoPatologia"),
+      DEPORTIVO: tForm("objetivoRendimiento"),
+      OTRO: tForm("objetivoOtro"),
+    };
+
+    return labels[objetivo] ?? objetivo;
   };
-
-  return labels[objetivo] ?? objetivo;
 }
 
-function renderLista(items: string[] | undefined | null) {
-  return items?.length ? items.join(", ") : "Ninguna registrada";
+function useRenderLista() {
+  const t = useTranslations("patients.general");
+  return (items: string[] | undefined | null) => {
+    return items?.length ? items.join(", ") : t("ningunaRegistrada");
+  };
 }
 
 export function PacienteFichaGeneralTab({
@@ -100,6 +108,10 @@ export function PacienteFichaGeneralTab({
   planes: PlanResumen[];
   sidebarData?: FichaSidebarData;
 }) {
+  const t = useTranslations("patients.general");
+  const tSidebar = useTranslations("patients.sidebar");
+  const renderObjetivo = useRenderObjetivo();
+  const renderLista = useRenderLista();
   const [sidebar, setSidebar] = useState<FichaSidebarData>(initialSidebar);
   const [saving, setSaving] = useState(false);
   const [modal, setModal] = useState<null | "observacion" | "comportamiento" | "objetivo">(null);
@@ -111,7 +123,7 @@ export function PacienteFichaGeneralTab({
       setSidebar(updated);
       setModal(null);
     } catch {
-      toast.error("No se pudo guardar");
+      toast.error(tSidebar("noSePudoGuardar"));
     } finally {
       setSaving(false);
     }
@@ -132,79 +144,79 @@ export function PacienteFichaGeneralTab({
       <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
         <h3 className="text-xl sm:text-2xl font-semibold mb-3 sm:mb-4 inline-flex items-center gap-2">
           <UserRound className="w-5 h-5 text-green-600 dark:text-green-400" />
-          Datos personales
+          {t("datosPersonales")}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
           <div className="space-y-1">
             <p className="text-muted-foreground inline-flex items-center gap-2">
               <Mail className="w-4 h-4" />
-              Email
+              {t("email")}
             </p>
-            <p className="font-medium">{paciente.email || "No registrado"}</p>
+            <p className="font-medium">{paciente.email || t("noRegistrado")}</p>
           </div>
           <div className="space-y-1">
             <p className="text-muted-foreground inline-flex items-center gap-2">
               <Phone className="w-4 h-4" />
-              Teléfono
+              {t("telefono")}
             </p>
-            <p className="font-medium">{paciente.telefono || "No registrado"}</p>
+            <p className="font-medium">{paciente.telefono || t("noRegistrado")}</p>
           </div>
           <div className="space-y-1">
             <p className="text-muted-foreground inline-flex items-center gap-2">
               <Calendar className="w-4 h-4" />
-              Fecha nacimiento
+              {t("fechaNacimiento")}
             </p>
             <p className="font-medium">
-              {paciente.fechaNacimiento ? formatDate(paciente.fechaNacimiento) : "No registrada"}
+              {paciente.fechaNacimiento ? formatDate(paciente.fechaNacimiento) : t("noRegistrada")}
             </p>
           </div>
           <div className="space-y-1">
             <p className="text-muted-foreground inline-flex items-center gap-2">
               <UserRound className="w-4 h-4" />
-              Sexo
+              {t("sexo")}
             </p>
-            <p className="font-medium">{paciente.sexo || "No registrado"}</p>
+            <p className="font-medium">{paciente.sexo || t("noRegistrado")}</p>
           </div>
         </div>
       </section>
       <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
         <h3 className="text-base sm:text-2xl font-semibold mb-4 inline-flex items-center gap-2">
           <Heart className="w-5 h-5 text-rose-500" />
-          Historial médico
+          {t("historialMedico")}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
           <div>
             <p className="text-muted-foreground inline-flex items-center gap-2">
               <Heart className="w-4 h-4" />
-              Alergias
+              {t("alergias")}
             </p>
             <p className="font-medium mt-1">{renderLista(paciente.alergias)}</p>
           </div>
           <div>
             <p className="text-muted-foreground inline-flex items-center gap-2">
               <Stethoscope className="w-4 h-4" />
-              Intolerancias
+              {t("intolerancias")}
             </p>
             <p className="font-medium mt-1">{renderLista(paciente.intolerancias)}</p>
           </div>
           <div>
             <p className="text-muted-foreground inline-flex items-center gap-2">
               <Heart className="w-4 h-4" />
-              Patologías
+              {t("patologias")}
             </p>
             <p className="font-medium mt-1">{renderLista(paciente.patologias)}</p>
           </div>
           <div>
             <p className="text-muted-foreground inline-flex items-center gap-2">
               <Pill className="w-4 h-4" />
-              Medicamentos
+              {t("medicamentos")}
             </p>
             <p className="font-medium mt-1">{renderLista(paciente.medicamentos)}</p>
           </div>
           <div className="sm:col-span-2">
             <p className="text-muted-foreground inline-flex items-center gap-2">
               <Pill className="w-4 h-4" />
-              Suplementos
+              {t("suplementos")}
             </p>
             <p className="font-medium mt-1">{renderLista(paciente.suplementos)}</p>
           </div>
@@ -213,10 +225,10 @@ export function PacienteFichaGeneralTab({
       <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
         <h3 className="text-base sm:text-2xl font-semibold mb-2 inline-flex items-center gap-2">
           <Clock3 className="w-5 h-5 text-indigo-500" />
-          Horario semanal
+          {t("horarioSemanal")}
         </h3>
         <p className="text-sm text-muted-foreground mb-3">
-          Horario compartido con el paciente. Haz clic en una celda para añadir una actividad.
+          {t("horarioCompartidoHint")}
         </p>
         <HorarioSemanal initialEntries={horario} readOnly onSave={async () => {}} />
       </section>
@@ -224,13 +236,13 @@ export function PacienteFichaGeneralTab({
         <div className="mb-4 flex items-center justify-between gap-3">
           <h3 className="text-base sm:text-2xl font-semibold inline-flex items-center gap-2">
             <UtensilsCrossed className="w-5 h-5 text-green-600 dark:text-green-400" />
-            Planes alimenticios
+            {t("planesAlimenticios")}
           </h3>
           <Link
             href={`/dietas/nuevo?pacienteId=${paciente.id}`}
             className="inline-flex items-center rounded-full bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
           >
-            + Nuevo plan
+            {t("nuevoPlan")}
           </Link>
         </div>
 
@@ -259,7 +271,7 @@ export function PacienteFichaGeneralTab({
             href={`/pacientes/${paciente.id}?pestana=plan-alimentacion`}
             className="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-border px-3 py-2 text-base font-medium text-primary hover:bg-muted/50"
           >
-            Ver todos los planes ({planesOrdenados.length})
+            {t("verTodosPlanes", { count: planesOrdenados.length })}
           </Link>
         )}
       </section>
@@ -271,19 +283,19 @@ export function PacienteFichaGeneralTab({
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-base sm:text-2xl font-semibold inline-flex items-center gap-2">
             <Target className="w-5 h-5 text-green-600 dark:text-green-400" />
-            Objetivos
+            {t("objetivos")}
           </h3>
           <button
             type="button"
             onClick={() => setModal("objetivo")}
             className="px-3 py-1.5 text-xs font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
           >
-            + Añadir
+            {t("anadirObjetivo")}
           </button>
         </div>
 
         <div className="mb-3">
-          <p className="text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">Objetivo principal</p>
+          <p className="text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">{t("objetivoPrincipal")}</p>
           <div className="w-full rounded-lg bg-sidebar-accent px-3 py-2.5 text-sidebar-foreground font-semibold flex items-center justify-center text-center">
             {renderObjetivo(paciente.objetivo, paciente.objetivoDetalle)}
           </div>
@@ -291,7 +303,7 @@ export function PacienteFichaGeneralTab({
 
         {(sidebar.objetivos || []).length > 0 && (
           <div>
-            <p className="text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">Objetivos parciales</p>
+            <p className="text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">{t("objetivosParciales")}</p>
             <div className="space-y-2">
               {(sidebar.objetivos || []).map((o) => (
                 <EntryCard key={o.id} fecha={o.fechaLimite || ""} text={`${o.descripcion}${o.valor ? ` — ${o.valor} ${o.unidad}` : ""}`} onDelete={() => deleteEntry("objetivos", o.id)} />
@@ -304,20 +316,20 @@ export function PacienteFichaGeneralTab({
       <section className="rounded-xl border border-border bg-card p-5 space-y-4">
         <h3 className="text-base sm:text-2xl font-semibold inline-flex items-center gap-2">
           <Ruler className="w-5 h-5 text-blue-500" />
-          Medidas
+          {t("medidas")}
         </h3>
         <div className="text-sm space-y-2">
           <p className="flex items-center justify-between">
             <span className="text-muted-foreground inline-flex items-center gap-2">
               <Scale className="w-4 h-4" />
-              Peso
+              {t("peso")}
             </span>
             <span className="font-medium">{paciente.peso != null ? `${paciente.peso} kg` : "-"}</span>
           </p>
           <p className="flex items-center justify-between">
             <span className="text-muted-foreground inline-flex items-center gap-2">
               <Ruler className="w-4 h-4" />
-              Altura
+              {t("altura")}
             </span>
             <span className="font-medium">{paciente.altura != null ? `${paciente.altura} cm` : "-"}</span>
           </p>
@@ -326,16 +338,16 @@ export function PacienteFichaGeneralTab({
           href={`/pacientes/${paciente.id}?pestana=mediciones`}
           className="inline-flex w-full items-center justify-center rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted"
         >
-          Ver evolución y registrar medidas
+          {t("verEvolucion")}
         </Link>
       </section>
 
       {/* Observaciones */}
       <SeguimientoSection
-        title="Observaciones"
+        title={tSidebar("observaciones")}
         icon={FileText}
         iconColor="text-amber-600 dark:text-amber-400"
-        empty="Todavía no has registrado observaciones"
+        empty={tSidebar("sinObservaciones")}
         onAdd={() => setModal("observacion")}
       >
         {(sidebar.observaciones || []).map((o) => (
@@ -345,10 +357,10 @@ export function PacienteFichaGeneralTab({
 
       {/* Comportamientos alimentarios */}
       <SeguimientoSection
-        title="Comportamientos alimentarios"
+        title={tSidebar("comportamientosAlimentarios")}
         icon={Brain}
         iconColor="text-indigo-500"
-        empty="Todavía no has registrado ningún comportamiento"
+        empty={tSidebar("sinComportamientos")}
         onAdd={() => setModal("comportamiento")}
       >
         {(sidebar.comportamientos || []).map((c) => (
@@ -359,26 +371,26 @@ export function PacienteFichaGeneralTab({
       <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
         <h3 className="text-base sm:text-2xl font-semibold mb-4 inline-flex items-center gap-2">
           <BookOpen className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-          Seguimiento diario
+          {t("seguimientoDiario")}
         </h3>
         <Link
           href={`/pacientes/${paciente.id}/seguimiento`}
           className="inline-flex w-full items-center justify-center rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted"
         >
-          Ver seguimiento del paciente
+          {t("verSeguimiento")}
         </Link>
       </section>
 
       <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
         <h3 className="text-base sm:text-2xl font-semibold mb-4 inline-flex items-center gap-2">
           <Shield className="w-5 h-5 text-violet-500" />
-          Portal del paciente
+          {t("portalPaciente")}
         </h3>
         <Link
           href={`/pacientes/${paciente.id}/portal`}
           className="inline-flex w-full items-center justify-center rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted"
         >
-          Configurar acceso al portal
+          {t("configurarAcceso")}
         </Link>
       </section>
 
@@ -443,6 +455,7 @@ function SeguimientoSection({
   onAdd: () => void;
   children?: React.ReactNode;
 }) {
+  const t = useTranslations("patients.general");
   const hasChildren = Array.isArray(children) ? children.filter(Boolean).length > 0 : !!children;
   return (
     <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
@@ -456,7 +469,7 @@ function SeguimientoSection({
           onClick={onAdd}
           className="px-3 py-1.5 text-xs font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
         >
-          + Añadir
+          {t("anadirObjetivo")}
         </button>
       </div>
       {hasChildren ? (
@@ -501,26 +514,28 @@ function ModalShell({ open, onClose, title, children }: { open: boolean; onClose
   );
 }
 
-function ModalButtons({ saving, onCancel, label = "Guardar" }: { saving: boolean; onCancel: () => void; label?: string }) {
+function ModalButtons({ saving, onCancel, label }: { saving: boolean; onCancel: () => void; label?: string }) {
+  const t = useTranslations("patients.sidebar");
   return (
     <div className="flex justify-end gap-2 mt-5">
-      <button type="button" onClick={onCancel} disabled={saving} className="px-4 py-2 text-sm rounded-lg border border-border hover:bg-muted">Cancelar</button>
+      <button type="button" onClick={onCancel} disabled={saving} className="px-4 py-2 text-sm rounded-lg border border-border hover:bg-muted">{t("cancelar")}</button>
       <button type="submit" disabled={saving} className="px-4 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 inline-flex items-center gap-2">
         {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-        {label}
+        {label ?? t("guardar")}
       </button>
     </div>
   );
 }
 
 function ModalObservacion({ open, onClose, saving, onSave }: { open: boolean; onClose: () => void; saving: boolean; onSave: (e: Observacion) => void }) {
+  const t = useTranslations("patients.sidebar");
   const [form, setForm] = useState({ fecha: todayStr(), texto: "" });
   return (
-    <ModalShell open={open} onClose={onClose} title="Observaciones">
+    <ModalShell open={open} onClose={onClose} title={t("observaciones")}>
       <form onSubmit={(e) => { e.preventDefault(); if (!form.texto.trim()) return; onSave({ id: genId(), ...form }); setForm({ fecha: todayStr(), texto: "" }); }}>
         <div className="space-y-3">
-          <div><label className="block text-sm font-medium text-muted-foreground mb-1">Fecha de registro</label><DatePicker value={form.fecha} onChange={(v) => setForm({ ...form, fecha: v })} /></div>
-          <div><label className="block text-sm font-medium text-muted-foreground mb-1">Observaciones <span className="text-destructive">*</span></label><textarea rows={5} value={form.texto} onChange={(e) => setForm({ ...form, texto: e.target.value })} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none" /></div>
+          <div><label className="block text-sm font-medium text-muted-foreground mb-1">{t("fechaRegistro")}</label><DatePicker value={form.fecha} onChange={(v) => setForm({ ...form, fecha: v })} /></div>
+          <div><label className="block text-sm font-medium text-muted-foreground mb-1">{t("observaciones")} <span className="text-destructive">*</span></label><textarea rows={5} value={form.texto} onChange={(e) => setForm({ ...form, texto: e.target.value })} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none" /></div>
         </div>
         <ModalButtons saving={saving} onCancel={onClose} />
       </form>
@@ -529,13 +544,14 @@ function ModalObservacion({ open, onClose, saving, onSave }: { open: boolean; on
 }
 
 function ModalComportamiento({ open, onClose, saving, onSave }: { open: boolean; onClose: () => void; saving: boolean; onSave: (e: ComportamientoAlimentario) => void }) {
+  const t = useTranslations("patients.sidebar");
   const [form, setForm] = useState({ fecha: todayStr(), texto: "" });
   return (
-    <ModalShell open={open} onClose={onClose} title="Comportamiento alimentario">
+    <ModalShell open={open} onClose={onClose} title={t("comportamientosAlimentarios")}>
       <form onSubmit={(e) => { e.preventDefault(); if (!form.texto.trim()) return; onSave({ id: genId(), ...form }); setForm({ fecha: todayStr(), texto: "" }); }}>
         <div className="space-y-3">
-          <div><label className="block text-sm font-medium text-muted-foreground mb-1">Fecha de registro</label><DatePicker value={form.fecha} onChange={(v) => setForm({ ...form, fecha: v })} /></div>
-          <div><label className="block text-sm font-medium text-muted-foreground mb-1">Comportamientos alimentarios <span className="text-destructive">*</span></label><textarea rows={4} value={form.texto} onChange={(e) => setForm({ ...form, texto: e.target.value })} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none" /></div>
+          <div><label className="block text-sm font-medium text-muted-foreground mb-1">{t("fechaRegistro")}</label><DatePicker value={form.fecha} onChange={(v) => setForm({ ...form, fecha: v })} /></div>
+          <div><label className="block text-sm font-medium text-muted-foreground mb-1">{t("comportamientosAlimentarios")} <span className="text-destructive">*</span></label><textarea rows={4} value={form.texto} onChange={(e) => setForm({ ...form, texto: e.target.value })} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none" /></div>
         </div>
         <ModalButtons saving={saving} onCancel={onClose} />
       </form>
@@ -544,9 +560,10 @@ function ModalComportamiento({ open, onClose, saving, onSave }: { open: boolean;
 }
 
 function ModalObjetivo({ open, onClose, saving, onSave }: { open: boolean; onClose: () => void; saving: boolean; onSave: (e: Objetivo) => void }) {
+  const t = useTranslations("patients.sidebar");
   const [form, setForm] = useState({ tipo: "generico" as "generico" | "medicion", descripcion: "", fechaLimite: "", tipoMedicion: "peso", valor: "", unidad: "kg" });
   return (
-    <ModalShell open={open} onClose={onClose} title="Define un nuevo objetivo">
+    <ModalShell open={open} onClose={onClose} title={t("definirNuevoObjetivo")}>
       <form onSubmit={(e) => {
         e.preventDefault();
         if (!form.descripcion.trim()) return;
@@ -559,7 +576,7 @@ function ModalObjetivo({ open, onClose, saving, onSave }: { open: boolean; onClo
       }}>
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-1">Tipo de objetivo <span className="text-destructive">*</span></label>
+            <label className="block text-sm font-medium text-muted-foreground mb-1">{t("tipoObjetivo")} <span className="text-destructive">*</span></label>
             <select value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value as "generico" | "medicion" })} className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               {TIPOS_OBJETIVO.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
@@ -567,21 +584,21 @@ function ModalObjetivo({ open, onClose, saving, onSave }: { open: boolean; onClo
           {form.tipo === "medicion" && (
             <>
               <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-1">Tipo de medición <span className="text-destructive">*</span></label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">{t("tipoMedicion")} <span className="text-destructive">*</span></label>
                 <select value={form.tipoMedicion} onChange={(e) => setForm({ ...form, tipoMedicion: e.target.value, unidad: UNIDADES_MEDICION[e.target.value] || "" })} className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   {TIPOS_MEDICION.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div><label className="block text-sm font-medium text-muted-foreground mb-1">Valor <span className="text-destructive">*</span></label><input type="number" inputMode="decimal" step="0.1" value={form.valor} onChange={(e) => setForm({ ...form, valor: e.target.value })} placeholder="Número" className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" /></div>
-                <div><label className="block text-sm font-medium text-muted-foreground mb-1">Unidad</label><input value={form.unidad} onChange={(e) => setForm({ ...form, unidad: e.target.value })} className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" /></div>
+                <div><label className="block text-sm font-medium text-muted-foreground mb-1">{t("valor")} <span className="text-destructive">*</span></label><input type="number" inputMode="decimal" step="0.1" value={form.valor} onChange={(e) => setForm({ ...form, valor: e.target.value })} placeholder={t("introduzcaNumero")} className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" /></div>
+                <div><label className="block text-sm font-medium text-muted-foreground mb-1">{t("unidad")}</label><input value={form.unidad} onChange={(e) => setForm({ ...form, unidad: e.target.value })} className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" /></div>
               </div>
             </>
           )}
-          <div><label className="block text-sm font-medium text-muted-foreground mb-1">Descripción <span className="text-destructive">*</span></label><input value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} placeholder="ej: Beber más de 1 litro de agua al día" className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" /></div>
-          <div><label className="block text-sm font-medium text-muted-foreground mb-1">Fecha límite</label><DatePicker value={form.fechaLimite} onChange={(v) => setForm({ ...form, fechaLimite: v })} /></div>
+          <div><label className="block text-sm font-medium text-muted-foreground mb-1">{t("descripcion")} <span className="text-destructive">*</span></label><input value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} placeholder={t("ejemploAgua")} className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" /></div>
+          <div><label className="block text-sm font-medium text-muted-foreground mb-1">{t("fechaLimite")}</label><DatePicker value={form.fechaLimite} onChange={(v) => setForm({ ...form, fechaLimite: v })} /></div>
         </div>
-        <ModalButtons saving={saving} onCancel={onClose} label="Definir objetivo" />
+        <ModalButtons saving={saving} onCancel={onClose} label={t("definirObjetivo")} />
       </form>
     </ModalShell>
   );

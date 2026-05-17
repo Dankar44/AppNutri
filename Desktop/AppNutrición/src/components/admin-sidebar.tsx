@@ -20,17 +20,18 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import type { AdminRole } from "@/lib/admin";
 
 const navItems = [
-  { href: "/admin", label: "Panel", icon: LayoutDashboard },
-  { href: "/admin/dietistas", label: "Dietistas", icon: Users },
-  { href: "/admin/verificaciones", label: "Verificaciones", icon: ShieldCheck },
-  { href: "/admin/seguimiento", label: "Seguimiento", icon: Eye },
-  { href: "/admin/mensajes", label: "Mensajes", icon: MessageSquare },
-  { href: "/admin/actividad", label: "Actividad", icon: Activity },
-  { href: "/admin/suscripciones", label: "Suscripciones", icon: CreditCard },
-  { href: "/admin/crear-cuenta", label: "Crear cuenta", icon: UserPlus },
+  { href: "/admin", labelKey: "nav.panel" as const, icon: LayoutDashboard },
+  { href: "/admin/dietistas", labelKey: "nav.dietistas" as const, icon: Users },
+  { href: "/admin/verificaciones", labelKey: "nav.verificaciones" as const, icon: ShieldCheck },
+  { href: "/admin/seguimiento", labelKey: "nav.seguimiento" as const, icon: Eye },
+  { href: "/admin/mensajes", labelKey: "nav.mensajes" as const, icon: MessageSquare },
+  { href: "/admin/actividad", labelKey: "nav.actividad" as const, icon: Activity },
+  { href: "/admin/suscripciones", labelKey: "nav.suscripciones" as const, icon: CreditCard },
+  { href: "/admin/crear-cuenta", labelKey: "nav.crearCuenta" as const, icon: UserPlus },
 ];
 
 interface AdminSidebarProps {
@@ -42,6 +43,7 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ adminNombre, onSignOut, mensajesCount = 0, role }: AdminSidebarProps) {
   const pathname = usePathname();
+  const t = useTranslations("admin.sidebar");
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -67,7 +69,7 @@ export function AdminSidebar({ adminNombre, onSignOut, mensajesCount = 0, role }
       <div className="h-16 flex items-center gap-2 px-4 border-b border-indigo-100 shrink-0">
         <ShieldCheck className="w-7 h-7 text-indigo-600 dark:text-indigo-400 shrink-0" />
         {(!collapsed || mobileOpen) && (
-          <span className="text-xl font-bold text-foreground">Annonia</span>
+          <span className="text-xl font-bold text-foreground">{t("brandName")}</span>
         )}
         {mobileOpen && (
           <button
@@ -96,12 +98,12 @@ export function AdminSidebar({ adminNombre, onSignOut, mensajesCount = 0, role }
                   ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
-              title={collapsed && !mobileOpen ? item.label : undefined}
+              title={collapsed && !mobileOpen ? t(item.labelKey) : undefined}
             >
               <item.icon className="w-5 h-5 shrink-0" />
               {(!collapsed || mobileOpen) && (
                 <>
-                  <span className="flex-1">{item.label}</span>
+                  <span className="flex-1">{t(item.labelKey)}</span>
                   {item.href === "/admin/mensajes" && mensajesCount > 0 && (
                     <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-indigo-600 text-white text-[10px] font-bold">
                       {mensajesCount}
@@ -124,7 +126,7 @@ export function AdminSidebar({ adminNombre, onSignOut, mensajesCount = 0, role }
             <div className="min-w-0">
               <p className="text-sm font-medium truncate">{adminNombre}</p>
               <p className="text-xs text-indigo-600 dark:text-indigo-400">
-                {role === "creator" ? "Creador de cuentas" : "Administrador"}
+                {role === "creator" ? t("roles.creator") : t("roles.admin")}
               </p>
             </div>
           )}
@@ -135,16 +137,16 @@ export function AdminSidebar({ adminNombre, onSignOut, mensajesCount = 0, role }
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors w-full"
           >
             <ArrowLeft className="w-5 h-5 shrink-0" />
-            {(!collapsed || mobileOpen) && <span>Volver a la app</span>}
+            {(!collapsed || mobileOpen) && <span>{t("volverApp")}</span>}
           </Link>
         )}
         <button
           onClick={onSignOut}
           className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors w-full"
-          title="Cerrar sesión"
+          title={t("cerrarSesion")}
         >
           <LogOut className="w-5 h-5 shrink-0" />
-          {(!collapsed || mobileOpen) && <span>Cerrar sesión</span>}
+          {(!collapsed || mobileOpen) && <span>{t("cerrarSesion")}</span>}
         </button>
       </div>
     </>
@@ -161,7 +163,7 @@ export function AdminSidebar({ adminNombre, onSignOut, mensajesCount = 0, role }
           <Menu className="w-5 h-5" />
         </button>
         <ShieldCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-        <span className="font-bold text-sm">Annonia</span>
+        <span className="font-bold text-sm">{t("brandName")}</span>
       </div>
 
       {/* Overlay móvil */}

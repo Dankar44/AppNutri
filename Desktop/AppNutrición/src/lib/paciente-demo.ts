@@ -6,200 +6,442 @@ export { AVATAR_DEMO };
 const DIAS = ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"] as const;
 const COMIDAS = ["DESAYUNO", "MEDIA_MANANA", "ALMUERZO", "MERIENDA", "CENA"] as const;
 
-const FICHA_INFORMACION = {
-  consulta: {
-    motivo: "Pérdida de peso saludable y mejora del hábito alimentario. Quiere aprender a comer mejor sin pasar hambre.",
-    expectativas: "Perder 5 kg en 3 meses y mantener el peso a largo plazo. Mejorar energía y digestión.",
-    objetivosClinicos: "control_peso",
-    objetivosClinicosDetalle: "Perder 5 kg de forma saludable en 3 meses",
-    otras: "Vida sedentaria por trabajo de oficina. Quiere establecer rutina de ejercicio y mejorar composición corporal.",
-  },
-  personalSocial: {
-    funcionIntestinal: "Regular, 1 vez al día, sin molestias.",
-    calidadSueno: "Buena en general, 7-8h, a veces despierta a media noche sin motivo aparente.",
-    fumador: "No",
-    alcohol: "Ocasional: 1-2 cervezas los fines de semana.",
-    estadoCivil: "Soltero",
-    actividadFisica: "Ligera-moderada: camina al trabajo (15 min) y gimnasio 3 veces por semana.",
-    raza: "Caucásico",
-    otrasPersonal: "Vida social activa. Come fuera 2-3 veces por semana.",
-  },
-  clinica: {
-    patologiasDetalle: "HTA diagnosticada hace 2 años, controlada con medicación. Hipotiroidismo subclínico leve.",
-    medicacion: "Enalapril 10 mg cada 24 h. Levotiroxina 50 mcg en ayunas.",
-    antecedentesPersonales: "Apendicectomía a los 14 años. Sin otros antecedentes relevantes.",
-    antecedentesFamiliares: "Padre con diabetes tipo 2. Madre con hipertensión. Abuelo materno con infarto.",
-    otrasClinicas: "Análisis recientes: colesterol total 210, LDL 135, HDL 45, TG 160. TSH 4.5 mU/L.",
-  },
-  alimentaria: {
-    horaLevantarse: "07:00",
-    horaAcostarse: "23:30",
-    tiposDieta: "Mediterránea. No sigue ninguna dieta restrictiva.",
-    alimentosFavoritos: "Pescado azul, pasta, frutas cítricas, arroz con pollo, aceitunas.",
-    alimentosRechazados: "Casquería, hígado, pescado crudo, kale.",
-    alergiasDetalle: "Frutos secos (almendra en particular): picor en boca y garganta.",
-    intoleranciasDetalle: "Lactosa en cantidades grandes: molestias digestivas.",
-    deficiencias: "Vitamina D por debajo del rango en último análisis (22 ng/mL).",
-    ingestaAgua: "1.5-2 litros diarios aproximadamente.",
-    otrasAlimentaria: "Come fuera 2-3 veces por semana. Cocina 4-5 días en casa.",
-  },
+// ─── Locale-keyed demo strings (seed data stored in DB) ──────────────
+
+type Locale = "es" | "pt";
+
+interface HorarioEntry { dia: string; hora: string; actividad: string; color: string }
+
+interface DemoStrings {
+  objetivoDetalle: string;
+  preferencias: string[];
+  alergias: string[];
+  intolerancias: string[];
+  patologias: string[];
+  medicamentos: string[];
+  suplementos: string[];
+  nota: string;
+  ficha: {
+    consulta: { motivo: string; expectativas: string; objetivosClinicos: string; objetivosClinicosDetalle: string; otras: string };
+    personalSocial: { funcionIntestinal: string; calidadSueno: string; fumador: string; alcohol: string; estadoCivil: string; actividadFisica: string; raza: string; otrasPersonal: string };
+    clinica: { patologiasDetalle: string; medicacion: string; antecedentesPersonales: string; antecedentesFamiliares: string; otrasClinicas: string };
+    alimentaria: { horaLevantarse: string; horaAcostarse: string; tiposDieta: string; alimentosFavoritos: string; alimentosRechazados: string; alergiasDetalle: string; intoleranciasDetalle: string; deficiencias: string; ingestaAgua: string; otrasAlimentaria: string };
+  };
+  horario: HorarioEntry[];
+  recomendaciones: {
+    agua: string;
+    ejercicios: { nombre: string; met: number; duracion: number; frecuencia: string }[];
+    alimentosEvitar: string[];
+    otrasRecomendaciones: string;
+  };
+  planNames: string[];
+  planificacionNombre: string;
+  medidaNotas: string[];
+  consultaMotivos: string[];
+  consultaNotas: string[];
+  citaMotivos: string[];
+  citaNotas: string[];
+  pagoConceptos: string[];
+  pagoNotas: string[];
+  seguimientoNotas: (string | null)[];
+  entradaDescripciones: string[];
+  entradaNotas: (string | null)[];
+}
+
+// Helper to build horario for a given locale's day/activity names
+function buildHorario(days: Record<string, string>, acts: Record<string, string>): HorarioEntry[] {
+  const d = days; const a = acts;
+  return [
+    // Lunes
+    { dia: d.lun, hora: "07:00", actividad: a.rutinaMañana, color: "descanso" },
+    { dia: d.lun, hora: "08:00", actividad: a.desayuno, color: "comida" },
+    { dia: d.lun, hora: "09:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.lun, hora: "10:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.lun, hora: "11:00", actividad: a.mediaMañana, color: "comida" },
+    { dia: d.lun, hora: "12:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.lun, hora: "13:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.lun, hora: "14:00", actividad: a.almuerzo, color: "comida" },
+    { dia: d.lun, hora: "15:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.lun, hora: "16:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.lun, hora: "17:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.lun, hora: "18:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.lun, hora: "19:00", actividad: a.gimFuerza, color: "ejercicio" },
+    { dia: d.lun, hora: "20:00", actividad: a.duchaDescanso, color: "descanso" },
+    { dia: d.lun, hora: "21:00", actividad: a.cena, color: "comida" },
+    { dia: d.lun, hora: "22:00", actividad: a.lecturaSofa, color: "descanso" },
+    { dia: d.lun, hora: "23:00", actividad: a.dormir, color: "descanso" },
+    // Martes
+    { dia: d.mar, hora: "07:00", actividad: a.rutinaMañana, color: "descanso" },
+    { dia: d.mar, hora: "08:00", actividad: a.desayuno, color: "comida" },
+    { dia: d.mar, hora: "09:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.mar, hora: "10:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.mar, hora: "11:00", actividad: a.mediaMañana, color: "comida" },
+    { dia: d.mar, hora: "12:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.mar, hora: "13:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.mar, hora: "14:00", actividad: a.almuerzo, color: "comida" },
+    { dia: d.mar, hora: "15:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.mar, hora: "16:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.mar, hora: "17:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.mar, hora: "18:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.mar, hora: "19:00", actividad: a.caminataSuave, color: "ejercicio" },
+    { dia: d.mar, hora: "20:00", actividad: a.recadosOcio, color: "otro" },
+    { dia: d.mar, hora: "21:00", actividad: a.cena, color: "comida" },
+    { dia: d.mar, hora: "22:00", actividad: a.descanso, color: "descanso" },
+    { dia: d.mar, hora: "23:00", actividad: a.dormir, color: "descanso" },
+    // Miércoles
+    { dia: d.mie, hora: "07:00", actividad: a.rutinaMañana, color: "descanso" },
+    { dia: d.mie, hora: "08:00", actividad: a.desayuno, color: "comida" },
+    { dia: d.mie, hora: "09:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.mie, hora: "10:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.mie, hora: "11:00", actividad: a.mediaMañana, color: "comida" },
+    { dia: d.mie, hora: "12:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.mie, hora: "13:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.mie, hora: "14:00", actividad: a.almuerzo, color: "comida" },
+    { dia: d.mie, hora: "15:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.mie, hora: "16:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.mie, hora: "17:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.mie, hora: "18:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.mie, hora: "19:00", actividad: a.gimFuerza, color: "ejercicio" },
+    { dia: d.mie, hora: "20:00", actividad: a.duchaDescanso, color: "descanso" },
+    { dia: d.mie, hora: "21:00", actividad: a.cena, color: "comida" },
+    { dia: d.mie, hora: "22:00", actividad: a.lecturaSofa, color: "descanso" },
+    { dia: d.mie, hora: "23:00", actividad: a.dormir, color: "descanso" },
+    // Jueves
+    { dia: d.jue, hora: "07:00", actividad: a.rutinaMañana, color: "descanso" },
+    { dia: d.jue, hora: "08:00", actividad: a.desayuno, color: "comida" },
+    { dia: d.jue, hora: "09:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.jue, hora: "10:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.jue, hora: "11:00", actividad: a.mediaMañana, color: "comida" },
+    { dia: d.jue, hora: "12:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.jue, hora: "13:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.jue, hora: "14:00", actividad: a.almuerzo, color: "comida" },
+    { dia: d.jue, hora: "15:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.jue, hora: "16:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.jue, hora: "17:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.jue, hora: "18:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.jue, hora: "19:00", actividad: a.movilidadEstiramientos, color: "ejercicio" },
+    { dia: d.jue, hora: "20:00", actividad: a.recadosOcio, color: "otro" },
+    { dia: d.jue, hora: "21:00", actividad: a.cena, color: "comida" },
+    { dia: d.jue, hora: "22:00", actividad: a.descanso, color: "descanso" },
+    { dia: d.jue, hora: "23:00", actividad: a.dormir, color: "descanso" },
+    // Viernes
+    { dia: d.vie, hora: "07:00", actividad: a.rutinaMañana, color: "descanso" },
+    { dia: d.vie, hora: "08:00", actividad: a.desayuno, color: "comida" },
+    { dia: d.vie, hora: "09:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.vie, hora: "10:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.vie, hora: "11:00", actividad: a.mediaMañana, color: "comida" },
+    { dia: d.vie, hora: "12:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.vie, hora: "13:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.vie, hora: "14:00", actividad: a.almuerzo, color: "comida" },
+    { dia: d.vie, hora: "15:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.vie, hora: "16:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.vie, hora: "17:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.vie, hora: "18:00", actividad: a.trabajo, color: "trabajo" },
+    { dia: d.vie, hora: "19:00", actividad: a.gimFuerza, color: "ejercicio" },
+    { dia: d.vie, hora: "20:00", actividad: a.ducha, color: "descanso" },
+    { dia: d.vie, hora: "21:00", actividad: a.cenaAmigos, color: "comida" },
+    { dia: d.vie, hora: "22:00", actividad: a.social, color: "otro" },
+    { dia: d.vie, hora: "23:00", actividad: a.social, color: "otro" },
+    // Sábado
+    { dia: d.sab, hora: "09:00", actividad: a.despertar, color: "descanso" },
+    { dia: d.sab, hora: "10:00", actividad: a.desayuno, color: "comida" },
+    { dia: d.sab, hora: "11:00", actividad: a.natacion, color: "ejercicio" },
+    { dia: d.sab, hora: "12:00", actividad: a.recadosCompras, color: "otro" },
+    { dia: d.sab, hora: "13:00", actividad: a.prepararComida, color: "otro" },
+    { dia: d.sab, hora: "14:00", actividad: a.almuerzo, color: "comida" },
+    { dia: d.sab, hora: "15:00", actividad: a.sobremesa, color: "descanso" },
+    { dia: d.sab, hora: "16:00", actividad: a.descanso, color: "descanso" },
+    { dia: d.sab, hora: "17:00", actividad: a.ocioHobbies, color: "otro" },
+    { dia: d.sab, hora: "18:00", actividad: a.ocioHobbies, color: "otro" },
+    { dia: d.sab, hora: "19:00", actividad: a.paseo, color: "ejercicio" },
+    { dia: d.sab, hora: "20:00", actividad: a.planSocial, color: "otro" },
+    { dia: d.sab, hora: "21:00", actividad: a.cenaFuera, color: "comida" },
+    { dia: d.sab, hora: "22:00", actividad: a.social, color: "otro" },
+    { dia: d.sab, hora: "23:00", actividad: a.social, color: "otro" },
+    // Domingo
+    { dia: d.dom, hora: "09:00", actividad: a.descanso, color: "descanso" },
+    { dia: d.dom, hora: "10:00", actividad: a.desayunoTranquilo, color: "comida" },
+    { dia: d.dom, hora: "11:00", actividad: a.caminataLarga, color: "ejercicio" },
+    { dia: d.dom, hora: "12:00", actividad: a.caminataLarga, color: "ejercicio" },
+    { dia: d.dom, hora: "13:00", actividad: a.prepararComida, color: "otro" },
+    { dia: d.dom, hora: "14:00", actividad: a.comidaFamiliar, color: "comida" },
+    { dia: d.dom, hora: "15:00", actividad: a.sobremesa, color: "descanso" },
+    { dia: d.dom, hora: "16:00", actividad: a.descanso, color: "descanso" },
+    { dia: d.dom, hora: "17:00", actividad: a.lectura, color: "descanso" },
+    { dia: d.dom, hora: "18:00", actividad: a.ocioHobbies, color: "otro" },
+    { dia: d.dom, hora: "19:00", actividad: a.prepararSemana, color: "otro" },
+    { dia: d.dom, hora: "20:00", actividad: a.cenaLigera, color: "comida" },
+    { dia: d.dom, hora: "21:00", actividad: a.descanso, color: "descanso" },
+    { dia: d.dom, hora: "22:00", actividad: a.dormir, color: "descanso" },
+  ];
+}
+
+const DAYS_ES = { lun: "Lunes", mar: "Martes", mie: "Miércoles", jue: "Jueves", vie: "Viernes", sab: "Sábado", dom: "Domingo" };
+const DAYS_PT = { lun: "Segunda", mar: "Terça", mie: "Quarta", jue: "Quinta", vie: "Sexta", sab: "Sábado", dom: "Domingo" };
+
+const ACTS_ES = {
+  rutinaMañana: "Rutina mañana", desayuno: "Desayuno", trabajo: "Trabajo", mediaMañana: "Media mañana",
+  almuerzo: "Almuerzo", gimFuerza: "Gimnasio (fuerza)", duchaDescanso: "Ducha / descanso", cena: "Cena",
+  lecturaSofa: "Lectura / sofá", dormir: "Dormir", caminataSuave: "Caminata suave", recadosOcio: "Recados / ocio",
+  descanso: "Descanso", movilidadEstiramientos: "Movilidad / estiramientos", ducha: "Ducha",
+  cenaAmigos: "Cena con amigos", social: "Social", despertar: "Despertar", natacion: "Natación",
+  recadosCompras: "Recados / compras", prepararComida: "Preparar comida", sobremesa: "Sobremesa",
+  ocioHobbies: "Ocio / hobbies", paseo: "Paseo", planSocial: "Plan social", cenaFuera: "Cena fuera",
+  desayunoTranquilo: "Desayuno tranquilo", caminataLarga: "Caminata larga", comidaFamiliar: "Comida familiar",
+  lectura: "Lectura", prepararSemana: "Preparar la semana", cenaLigera: "Cena ligera",
 };
 
-// Los colores válidos del componente son: trabajo | ejercicio | comida | descanso | otro
-// Las horas deben ser en punto (HH:00) para que aparezcan en la rejilla del horario semanal.
-const HORARIO_ENTRIES = [
-  // ─── Lunes — jornada laboral + gimnasio ───
-  { dia: "Lunes", hora: "07:00", actividad: "Rutina mañana", color: "descanso" },
-  { dia: "Lunes", hora: "08:00", actividad: "Desayuno", color: "comida" },
-  { dia: "Lunes", hora: "09:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Lunes", hora: "10:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Lunes", hora: "11:00", actividad: "Media mañana", color: "comida" },
-  { dia: "Lunes", hora: "12:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Lunes", hora: "13:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Lunes", hora: "14:00", actividad: "Almuerzo", color: "comida" },
-  { dia: "Lunes", hora: "15:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Lunes", hora: "16:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Lunes", hora: "17:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Lunes", hora: "18:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Lunes", hora: "19:00", actividad: "Gimnasio (fuerza)", color: "ejercicio" },
-  { dia: "Lunes", hora: "20:00", actividad: "Ducha / descanso", color: "descanso" },
-  { dia: "Lunes", hora: "21:00", actividad: "Cena", color: "comida" },
-  { dia: "Lunes", hora: "22:00", actividad: "Lectura / sofá", color: "descanso" },
-  { dia: "Lunes", hora: "23:00", actividad: "Dormir", color: "descanso" },
-
-  // ─── Martes — jornada laboral, sin gimnasio ───
-  { dia: "Martes", hora: "07:00", actividad: "Rutina mañana", color: "descanso" },
-  { dia: "Martes", hora: "08:00", actividad: "Desayuno", color: "comida" },
-  { dia: "Martes", hora: "09:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Martes", hora: "10:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Martes", hora: "11:00", actividad: "Media mañana", color: "comida" },
-  { dia: "Martes", hora: "12:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Martes", hora: "13:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Martes", hora: "14:00", actividad: "Almuerzo", color: "comida" },
-  { dia: "Martes", hora: "15:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Martes", hora: "16:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Martes", hora: "17:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Martes", hora: "18:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Martes", hora: "19:00", actividad: "Caminata suave", color: "ejercicio" },
-  { dia: "Martes", hora: "20:00", actividad: "Recados / ocio", color: "otro" },
-  { dia: "Martes", hora: "21:00", actividad: "Cena", color: "comida" },
-  { dia: "Martes", hora: "22:00", actividad: "Descanso", color: "descanso" },
-  { dia: "Martes", hora: "23:00", actividad: "Dormir", color: "descanso" },
-
-  // ─── Miércoles — jornada laboral + gimnasio ───
-  { dia: "Miércoles", hora: "07:00", actividad: "Rutina mañana", color: "descanso" },
-  { dia: "Miércoles", hora: "08:00", actividad: "Desayuno", color: "comida" },
-  { dia: "Miércoles", hora: "09:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Miércoles", hora: "10:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Miércoles", hora: "11:00", actividad: "Media mañana", color: "comida" },
-  { dia: "Miércoles", hora: "12:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Miércoles", hora: "13:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Miércoles", hora: "14:00", actividad: "Almuerzo", color: "comida" },
-  { dia: "Miércoles", hora: "15:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Miércoles", hora: "16:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Miércoles", hora: "17:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Miércoles", hora: "18:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Miércoles", hora: "19:00", actividad: "Gimnasio (fuerza)", color: "ejercicio" },
-  { dia: "Miércoles", hora: "20:00", actividad: "Ducha / descanso", color: "descanso" },
-  { dia: "Miércoles", hora: "21:00", actividad: "Cena", color: "comida" },
-  { dia: "Miércoles", hora: "22:00", actividad: "Lectura / sofá", color: "descanso" },
-  { dia: "Miércoles", hora: "23:00", actividad: "Dormir", color: "descanso" },
-
-  // ─── Jueves — jornada laboral, sin gimnasio ───
-  { dia: "Jueves", hora: "07:00", actividad: "Rutina mañana", color: "descanso" },
-  { dia: "Jueves", hora: "08:00", actividad: "Desayuno", color: "comida" },
-  { dia: "Jueves", hora: "09:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Jueves", hora: "10:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Jueves", hora: "11:00", actividad: "Media mañana", color: "comida" },
-  { dia: "Jueves", hora: "12:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Jueves", hora: "13:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Jueves", hora: "14:00", actividad: "Almuerzo", color: "comida" },
-  { dia: "Jueves", hora: "15:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Jueves", hora: "16:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Jueves", hora: "17:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Jueves", hora: "18:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Jueves", hora: "19:00", actividad: "Movilidad / estiramientos", color: "ejercicio" },
-  { dia: "Jueves", hora: "20:00", actividad: "Recados / ocio", color: "otro" },
-  { dia: "Jueves", hora: "21:00", actividad: "Cena", color: "comida" },
-  { dia: "Jueves", hora: "22:00", actividad: "Descanso", color: "descanso" },
-  { dia: "Jueves", hora: "23:00", actividad: "Dormir", color: "descanso" },
-
-  // ─── Viernes — jornada laboral + gimnasio + social ───
-  { dia: "Viernes", hora: "07:00", actividad: "Rutina mañana", color: "descanso" },
-  { dia: "Viernes", hora: "08:00", actividad: "Desayuno", color: "comida" },
-  { dia: "Viernes", hora: "09:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Viernes", hora: "10:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Viernes", hora: "11:00", actividad: "Media mañana", color: "comida" },
-  { dia: "Viernes", hora: "12:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Viernes", hora: "13:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Viernes", hora: "14:00", actividad: "Almuerzo", color: "comida" },
-  { dia: "Viernes", hora: "15:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Viernes", hora: "16:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Viernes", hora: "17:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Viernes", hora: "18:00", actividad: "Trabajo", color: "trabajo" },
-  { dia: "Viernes", hora: "19:00", actividad: "Gimnasio (fuerza)", color: "ejercicio" },
-  { dia: "Viernes", hora: "20:00", actividad: "Ducha", color: "descanso" },
-  { dia: "Viernes", hora: "21:00", actividad: "Cena con amigos", color: "comida" },
-  { dia: "Viernes", hora: "22:00", actividad: "Social", color: "otro" },
-  { dia: "Viernes", hora: "23:00", actividad: "Social", color: "otro" },
-
-  // ─── Sábado — deporte por la mañana, día relajado ───
-  { dia: "Sábado", hora: "09:00", actividad: "Despertar", color: "descanso" },
-  { dia: "Sábado", hora: "10:00", actividad: "Desayuno", color: "comida" },
-  { dia: "Sábado", hora: "11:00", actividad: "Natación", color: "ejercicio" },
-  { dia: "Sábado", hora: "12:00", actividad: "Recados / compras", color: "otro" },
-  { dia: "Sábado", hora: "13:00", actividad: "Preparar comida", color: "otro" },
-  { dia: "Sábado", hora: "14:00", actividad: "Almuerzo", color: "comida" },
-  { dia: "Sábado", hora: "15:00", actividad: "Sobremesa", color: "descanso" },
-  { dia: "Sábado", hora: "16:00", actividad: "Descanso", color: "descanso" },
-  { dia: "Sábado", hora: "17:00", actividad: "Ocio / hobbies", color: "otro" },
-  { dia: "Sábado", hora: "18:00", actividad: "Ocio / hobbies", color: "otro" },
-  { dia: "Sábado", hora: "19:00", actividad: "Paseo", color: "ejercicio" },
-  { dia: "Sábado", hora: "20:00", actividad: "Plan social", color: "otro" },
-  { dia: "Sábado", hora: "21:00", actividad: "Cena fuera", color: "comida" },
-  { dia: "Sábado", hora: "22:00", actividad: "Social", color: "otro" },
-  { dia: "Sábado", hora: "23:00", actividad: "Social", color: "otro" },
-
-  // ─── Domingo — día tranquilo y familiar ───
-  { dia: "Domingo", hora: "09:00", actividad: "Descanso", color: "descanso" },
-  { dia: "Domingo", hora: "10:00", actividad: "Desayuno tranquilo", color: "comida" },
-  { dia: "Domingo", hora: "11:00", actividad: "Caminata larga", color: "ejercicio" },
-  { dia: "Domingo", hora: "12:00", actividad: "Caminata larga", color: "ejercicio" },
-  { dia: "Domingo", hora: "13:00", actividad: "Preparar comida", color: "otro" },
-  { dia: "Domingo", hora: "14:00", actividad: "Comida familiar", color: "comida" },
-  { dia: "Domingo", hora: "15:00", actividad: "Sobremesa", color: "descanso" },
-  { dia: "Domingo", hora: "16:00", actividad: "Descanso", color: "descanso" },
-  { dia: "Domingo", hora: "17:00", actividad: "Lectura", color: "descanso" },
-  { dia: "Domingo", hora: "18:00", actividad: "Ocio / hobbies", color: "otro" },
-  { dia: "Domingo", hora: "19:00", actividad: "Preparar la semana", color: "otro" },
-  { dia: "Domingo", hora: "20:00", actividad: "Cena ligera", color: "comida" },
-  { dia: "Domingo", hora: "21:00", actividad: "Descanso", color: "descanso" },
-  { dia: "Domingo", hora: "22:00", actividad: "Dormir", color: "descanso" },
-];
-
-const RECOMENDACIONES = {
-  agua: "Beber mínimo 2 litros de agua al día, repartidos a lo largo de la jornada. Empezar el día con un vaso en ayunas.",
-  ejercicios: [
-    { nombre: "Caminar rápido", met: 4, duracion: 30, frecuencia: "Diaria" },
-    { nombre: "Entrenamiento de fuerza", met: 6, duracion: 45, frecuencia: "3 veces por semana" },
-    { nombre: "Natación", met: 7, duracion: 30, frecuencia: "1 vez por semana" },
-    { nombre: "Estiramientos/Movilidad", met: 2.5, duracion: 15, frecuencia: "Diaria" },
-  ],
-  alimentosEvitar: [
-    "Azúcares añadidos y bollería industrial",
-    "Refrescos azucarados y zumos envasados",
-    "Carnes procesadas (embutidos, salchichas, bacon)",
-    "Exceso de sal y snacks salados",
-    "Alcohol entre semana",
-    "Fritos y rebozados",
-  ],
-  otrasRecomendaciones: "Cenar ligero 2-3 horas antes de dormir. Masticar despacio y comer sin pantallas. Priorizar alimentos frescos y de temporada. Cocinar al vapor, plancha o horno.",
+const ACTS_PT = {
+  rutinaMañana: "Rotina matinal", desayuno: "Café da manhã", trabajo: "Trabalho", mediaMañana: "Lanche da manhã",
+  almuerzo: "Almoço", gimFuerza: "Academia (força)", duchaDescanso: "Banho / descanso", cena: "Jantar",
+  lecturaSofa: "Leitura / sofá", dormir: "Dormir", caminataSuave: "Caminhada leve", recadosOcio: "Recados / lazer",
+  descanso: "Descanso", movilidadEstiramientos: "Mobilidade / alongamento", ducha: "Banho",
+  cenaAmigos: "Jantar com amigos", social: "Social", despertar: "Despertar", natacion: "Natação",
+  recadosCompras: "Recados / compras", prepararComida: "Preparar comida", sobremesa: "Sobremesa",
+  ocioHobbies: "Lazer / hobbies", paseo: "Passeio", planSocial: "Plano social", cenaFuera: "Jantar fora",
+  desayunoTranquilo: "Café da manhã tranquilo", caminataLarga: "Caminhada longa", comidaFamiliar: "Almoço em família",
+  lectura: "Leitura", prepararSemana: "Preparar a semana", cenaLigera: "Jantar leve",
 };
+
+const STRINGS_ES: DemoStrings = {
+  objetivoDetalle: "Perder 5 kg de forma saludable en 3 meses",
+  preferencias: ["Mediterránea", "Pescado azul", "Verduras de temporada", "Sin ultraprocesados"],
+  alergias: ["Frutos secos (almendras)", "Polen estacional"],
+  intolerancias: ["Lactosa (parcial)"],
+  patologias: ["Hipertensión controlada", "Hipotiroidismo subclínico leve"],
+  medicamentos: ["Enalapril 10 mg cada 24 h", "Levotiroxina 50 mcg en ayunas"],
+  suplementos: ["Vitamina D3 1000 UI", "Omega-3 EPA/DHA", "Magnesio bisglicinato"],
+  nota: "Paciente de prueba preconfigurado para que explores las funciones de la app. Puedes editarlo o eliminarlo cuando quieras.",
+  ficha: {
+    consulta: {
+      motivo: "Pérdida de peso saludable y mejora del hábito alimentario. Quiere aprender a comer mejor sin pasar hambre.",
+      expectativas: "Perder 5 kg en 3 meses y mantener el peso a largo plazo. Mejorar energía y digestión.",
+      objetivosClinicos: "control_peso",
+      objetivosClinicosDetalle: "Perder 5 kg de forma saludable en 3 meses",
+      otras: "Vida sedentaria por trabajo de oficina. Quiere establecer rutina de ejercicio y mejorar composición corporal.",
+    },
+    personalSocial: {
+      funcionIntestinal: "Regular, 1 vez al día, sin molestias.",
+      calidadSueno: "Buena en general, 7-8h, a veces despierta a media noche sin motivo aparente.",
+      fumador: "No", alcohol: "Ocasional: 1-2 cervezas los fines de semana.", estadoCivil: "Soltero",
+      actividadFisica: "Ligera-moderada: camina al trabajo (15 min) y gimnasio 3 veces por semana.",
+      raza: "Caucásico", otrasPersonal: "Vida social activa. Come fuera 2-3 veces por semana.",
+    },
+    clinica: {
+      patologiasDetalle: "HTA diagnosticada hace 2 años, controlada con medicación. Hipotiroidismo subclínico leve.",
+      medicacion: "Enalapril 10 mg cada 24 h. Levotiroxina 50 mcg en ayunas.",
+      antecedentesPersonales: "Apendicectomía a los 14 años. Sin otros antecedentes relevantes.",
+      antecedentesFamiliares: "Padre con diabetes tipo 2. Madre con hipertensión. Abuelo materno con infarto.",
+      otrasClinicas: "Análisis recientes: colesterol total 210, LDL 135, HDL 45, TG 160. TSH 4.5 mU/L.",
+    },
+    alimentaria: {
+      horaLevantarse: "07:00", horaAcostarse: "23:30",
+      tiposDieta: "Mediterránea. No sigue ninguna dieta restrictiva.",
+      alimentosFavoritos: "Pescado azul, pasta, frutas cítricas, arroz con pollo, aceitunas.",
+      alimentosRechazados: "Casquería, hígado, pescado crudo, kale.",
+      alergiasDetalle: "Frutos secos (almendra en particular): picor en boca y garganta.",
+      intoleranciasDetalle: "Lactosa en cantidades grandes: molestias digestivas.",
+      deficiencias: "Vitamina D por debajo del rango en último análisis (22 ng/mL).",
+      ingestaAgua: "1.5-2 litros diarios aproximadamente.",
+      otrasAlimentaria: "Come fuera 2-3 veces por semana. Cocina 4-5 días en casa.",
+    },
+  },
+  horario: buildHorario(DAYS_ES, ACTS_ES),
+  recomendaciones: {
+    agua: "Beber mínimo 2 litros de agua al día, repartidos a lo largo de la jornada. Empezar el día con un vaso en ayunas.",
+    ejercicios: [
+      { nombre: "Caminar rápido", met: 4, duracion: 30, frecuencia: "Diaria" },
+      { nombre: "Entrenamiento de fuerza", met: 6, duracion: 45, frecuencia: "3 veces por semana" },
+      { nombre: "Natación", met: 7, duracion: 30, frecuencia: "1 vez por semana" },
+      { nombre: "Estiramientos/Movilidad", met: 2.5, duracion: 15, frecuencia: "Diaria" },
+    ],
+    alimentosEvitar: [
+      "Azúcares añadidos y bollería industrial", "Refrescos azucarados y zumos envasados",
+      "Carnes procesadas (embutidos, salchichas, bacon)", "Exceso de sal y snacks salados",
+      "Alcohol entre semana", "Fritos y rebozados",
+    ],
+    otrasRecomendaciones: "Cenar ligero 2-3 horas antes de dormir. Masticar despacio y comer sin pantallas. Priorizar alimentos frescos y de temporada. Cocinar al vapor, plancha o horno.",
+  },
+  planNames: [
+    "Plan inicial — ejemplo", "Plan de mantenimiento", "Plan deportivo — alto volumen",
+    "Plan low-carb", "Plan mediterráneo — legumbres",
+  ],
+  planificacionNombre: "Planificación por defecto",
+  medidaNotas: [
+    "Primera toma de contacto. Se pactan objetivos.", "Medida inicial tras arranque del plan.",
+    "Evolución lenta pero positiva.", "Buena adherencia al plan.", "Revisión mensual.",
+    "Reducción de cintura notable.", "Evolución estable.", "Última medida. -5.6 kg desde el inicio.",
+  ],
+  consultaMotivos: ["Primera consulta", "Revisión de seguimiento", "Revisión mensual"],
+  consultaNotas: [
+    "Anamnesis completa, antropometría y pactación de plan.",
+    "Primera revisión. Pérdida de 2.3 kg. Ajuste de raciones.",
+    "Segunda revisión. Pérdida total 4.3 kg.",
+  ],
+  citaMotivos: [
+    "Segunda revisión de seguimiento",
+    "Consulta puntual — duda sobre suplementación",
+    "Tercera revisión mensual",
+  ],
+  citaNotas: [
+    "Revisión presencial. Ajuste de plan.",
+    "El paciente avisó con antelación; reprogramada.",
+    "Próxima revisión.",
+  ],
+  pagoConceptos: [
+    "Consulta inicial — valoración y plan",
+    "Revisión mensual — seguimiento",
+    "Próxima revisión mensual",
+  ],
+  pagoNotas: [
+    "Primera consulta. Incluye valoración completa y elaboración del plan nutricional.",
+    "Revisión de evolución a los 30 días.",
+    "Pendiente de cobro. Revisión programada.",
+  ],
+  seguimientoNotas: [
+    "Hoy comí fuera, ensalada de quinoa.", null,
+    "Entreno intenso de piernas.", null,
+    "Se me olvidó la media mañana.", null, null, null,
+    "Día libre — picoteo ligero.",
+  ],
+  entradaDescripciones: [
+    "Avena con leche y fruta", "Salmón al horno con ensalada", "Tostadas con aguacate y huevo",
+    "Pollo a la plancha con ensalada", "Manzana y yogur", "Merluza al horno con patatas",
+    "Yogur con fresas y almendras", "Lentejas estofadas con verduras", "Plátano y nueces pre-entreno",
+    "Tortilla francesa con ensalada",
+  ],
+  entradaNotas: [
+    "Me senté a desayunar tranquilo.", "Muy saciante.", null, "Muy satisfecho.",
+    null, "Cena ligera.", null, "Plato completo.", null, "Noche sencilla.",
+  ],
+};
+
+const STRINGS_PT: DemoStrings = {
+  objetivoDetalle: "Perder 5 kg de forma saudável em 3 meses",
+  preferencias: ["Mediterrânea", "Peixe gordo", "Legumes da época", "Sem ultraprocessados"],
+  alergias: ["Frutos secos (amêndoas)", "Pólen estacional"],
+  intolerancias: ["Lactose (parcial)"],
+  patologias: ["Hipertensão controlada", "Hipotiroidismo subclínico leve"],
+  medicamentos: ["Enalapril 10 mg a cada 24 h", "Levotiroxina 50 mcg em jejum"],
+  suplementos: ["Vitamina D3 1000 UI", "Omega-3 EPA/DHA", "Magnésio bisglicinato"],
+  nota: "Paciente de teste pré-configurado para que você explore as funções do app. Pode editá-lo ou eliminá-lo quando quiser.",
+  ficha: {
+    consulta: {
+      motivo: "Perda de peso saudável e melhora do hábito alimentar. Quer aprender a comer melhor sem passar fome.",
+      expectativas: "Perder 5 kg em 3 meses e manter o peso a longo prazo. Melhorar energia e digestão.",
+      objetivosClinicos: "control_peso",
+      objetivosClinicosDetalle: "Perder 5 kg de forma saudável em 3 meses",
+      otras: "Vida sedentária por trabalho de escritório. Quer estabelecer rotina de exercício e melhorar composição corporal.",
+    },
+    personalSocial: {
+      funcionIntestinal: "Regular, 1 vez ao dia, sem incómodo.",
+      calidadSueno: "Boa em geral, 7-8h, às vezes acorda a meio da noite sem motivo aparente.",
+      fumador: "Não", alcohol: "Ocasional: 1-2 cervejas aos fins de semana.", estadoCivil: "Solteiro",
+      actividadFisica: "Ligeira-moderada: caminha para o trabalho (15 min) e ginásio 3 vezes por semana.",
+      raza: "Caucasiano", otrasPersonal: "Vida social ativa. Come fora 2-3 vezes por semana.",
+    },
+    clinica: {
+      patologiasDetalle: "HTA diagnosticada há 2 anos, controlada com medicação. Hipotiroidismo subclínico leve.",
+      medicacion: "Enalapril 10 mg a cada 24 h. Levotiroxina 50 mcg em jejum.",
+      antecedentesPersonales: "Apendicectomia aos 14 anos. Sem outros antecedentes relevantes.",
+      antecedentesFamiliares: "Pai com diabetes tipo 2. Mãe com hipertensão. Avô materno com enfarte.",
+      otrasClinicas: "Análises recentes: colesterol total 210, LDL 135, HDL 45, TG 160. TSH 4.5 mU/L.",
+    },
+    alimentaria: {
+      horaLevantarse: "07:00", horaAcostarse: "23:30",
+      tiposDieta: "Mediterrânea. Não segue nenhuma dieta restritiva.",
+      alimentosFavoritos: "Peixe gordo, massa, frutas cítricas, arroz com frango, azeitonas.",
+      alimentosRechazados: "Vísceras, fígado, peixe cru, couve-kale.",
+      alergiasDetalle: "Frutos secos (amêndoa em particular): coceira na boca e garganta.",
+      intoleranciasDetalle: "Lactose em grandes quantidades: desconforto digestivo.",
+      deficiencias: "Vitamina D abaixo da faixa na última análise (22 ng/mL).",
+      ingestaAgua: "1.5-2 litros diários aproximadamente.",
+      otrasAlimentaria: "Come fora 2-3 vezes por semana. Cozinha 4-5 dias em casa.",
+    },
+  },
+  horario: buildHorario(DAYS_PT, ACTS_PT),
+  recomendaciones: {
+    agua: "Beber no mínimo 2 litros de água por dia, distribuídos ao longo do dia. Começar o dia com um copo em jejum.",
+    ejercicios: [
+      { nombre: "Caminhada rápida", met: 4, duracion: 30, frecuencia: "Diária" },
+      { nombre: "Treino de força", met: 6, duracion: 45, frecuencia: "3 vezes por semana" },
+      { nombre: "Natação", met: 7, duracion: 30, frecuencia: "1 vez por semana" },
+      { nombre: "Alongamento/Mobilidade", met: 2.5, duracion: 15, frecuencia: "Diária" },
+    ],
+    alimentosEvitar: [
+      "Açúcares adicionados e pastelaria industrial", "Refrigerantes açucarados e sumos embalados",
+      "Carnes processadas (enchidos, salsichas, bacon)", "Excesso de sal e snacks salgados",
+      "Álcool durante a semana", "Fritos e panados",
+    ],
+    otrasRecomendaciones: "Jantar leve 2-3 horas antes de dormir. Mastigar devagar e comer sem ecrãs. Priorizar alimentos frescos e da época. Cozinhar a vapor, grelhado ou forno.",
+  },
+  planNames: [
+    "Plano inicial — exemplo", "Plano de manutenção", "Plano esportivo — alto volume",
+    "Plano low-carb", "Plano mediterrâneo — leguminosas",
+  ],
+  planificacionNombre: "Planificação padrão",
+  medidaNotas: [
+    "Primeiro contacto. Objetivos acordados.", "Medida inicial após início do plano.",
+    "Evolução lenta mas positiva.", "Boa adesão ao plano.", "Revisão mensal.",
+    "Redução de cintura notável.", "Evolução estável.", "Última medida. -5.6 kg desde o início.",
+  ],
+  consultaMotivos: ["Primeira consulta", "Revisão de acompanhamento", "Revisão mensal"],
+  consultaNotas: [
+    "Anamnese completa, antropometria e elaboração do plano.",
+    "Primeira revisão. Perda de 2.3 kg. Ajuste de porções.",
+    "Segunda revisão. Perda total 4.3 kg.",
+  ],
+  citaMotivos: [
+    "Segunda revisão de acompanhamento",
+    "Consulta pontual — dúvida sobre suplementação",
+    "Terceira revisão mensal",
+  ],
+  citaNotas: [
+    "Revisão presencial. Ajuste do plano.",
+    "O paciente avisou com antecedência; remarcada.",
+    "Próxima revisão.",
+  ],
+  pagoConceptos: [
+    "Consulta inicial — avaliação e plano",
+    "Revisão mensal — acompanhamento",
+    "Próxima revisão mensal",
+  ],
+  pagoNotas: [
+    "Primeira consulta. Inclui avaliação completa e elaboração do plano nutricional.",
+    "Revisão de evolução aos 30 dias.",
+    "Pendente de cobrança. Revisão programada.",
+  ],
+  seguimientoNotas: [
+    "Hoje comi fora, salada de quinoa.", null,
+    "Treino intenso de pernas.", null,
+    "Esqueci-me do lanche da manhã.", null, null, null,
+    "Dia livre — petiscos leves.",
+  ],
+  entradaDescripciones: [
+    "Aveia com leite e fruta", "Salmão assado com salada", "Torradas com abacate e ovo",
+    "Frango grelhado com salada", "Maçã e iogurte", "Pescada assada com batatas",
+    "Iogurte com morangos e amêndoas", "Lentilhas estufadas com legumes", "Banana e nozes pré-treino",
+    "Omelete francesa com salada",
+  ],
+  entradaNotas: [
+    "Sentei-me a tomar café da manhã tranquilo.", "Muito saciante.", null, "Muito satisfeito.",
+    null, "Jantar leve.", null, "Prato completo.", null, "Noite simples.",
+  ],
+};
+
+function getStrings(locale?: Locale): DemoStrings {
+  return locale === "pt" ? STRINGS_PT : STRINGS_ES;
+}
+
+// ─── Main function ───────────────────────────────────────────────────
 
 export async function crearPacienteDemoSiNoExiste(
   prisma: PrismaClient,
   dietistaId: string,
+  locale?: Locale,
 ): Promise<{ id: string; creado: boolean }> {
+  const s = getStrings(locale);
+
   // Respetar la decisión del nutri: si eliminó el demo conscientemente, NO re-crearlo.
   // Puede restaurarlo con un botón en la lista de pacientes.
   const flagRows = await prisma.$queryRawUnsafe<{ demoEliminado: boolean }[]>(
@@ -218,11 +460,6 @@ export async function crearPacienteDemoSiNoExiste(
   const existente = existentes[0] ?? null;
   if (existente) {
     // Auto-alineación del paciente demo al mes actual.
-    // Solo se ejecuta si el mes más reciente del seguimiento diario no coincide con el mes actual.
-    // Es una operación barata (UPDATEs con INTERVAL) y solo se dispara UNA vez por mes
-    // cuando el nutri vuelve tras un cambio de mes. No toca NUNCA pacientes reales.
-    // Usamos raw SQL porque algunos modelos (seguimiento_diario) no se acceden bien por el cliente
-    // con el adaptador de pg en todas las versiones.
     const ultimoRows = await prisma.$queryRawUnsafe<{ fecha: Date }[]>(
       `SELECT fecha FROM seguimiento_diario WHERE "pacienteId" = $1 ORDER BY fecha DESC LIMIT 1`,
       existente.id,
@@ -235,8 +472,6 @@ export async function crearPacienteDemoSiNoExiste(
         (ahora.getFullYear() - ultimaFecha.getFullYear()) * 12 +
         (ahora.getMonth() - ultimaFecha.getMonth());
       if (diffMeses !== 0) {
-        // Desplazar TODAS las fechas del paciente demo diffMeses meses (+ o –)
-        // Postgres mantiene el día del mes al sumar INTERVAL 'N month' (salvo ajustes por fin de mes).
         const intervalo = `${diffMeses} month`;
         await prisma.$executeRawUnsafe(
           `UPDATE seguimiento_diario SET fecha = fecha + $1::interval WHERE "pacienteId" = $2`,
@@ -264,7 +499,6 @@ export async function crearPacienteDemoSiNoExiste(
              AND "expiraEn" IS NOT NULL`,
           intervalo, existente.id,
         );
-        // Planificaciones (datos sí, fechas no cambian — solo mantenemos consistencia si tienen fecha)
         await prisma.$executeRawUnsafe(
           `UPDATE planificaciones
            SET "fechaInicio" = "fechaInicio" + $1::interval,
@@ -286,8 +520,7 @@ export async function crearPacienteDemoSiNoExiste(
     return { id: existente.id, creado: false };
   }
 
-  // Crear el paciente con raw SQL — evitamos depender del cliente Prisma generado
-  // (que puede no tener todos los campos del schema si no se regeneró tras un cambio).
+  // Crear el paciente con raw SQL
   const pacienteIdRows = await prisma.$queryRawUnsafe<{ id: string }[]>(
     `INSERT INTO pacientes (
       id, "dietistaId", nombre, apellidos, email, telefono, "fotoUrl", sexo,
@@ -309,17 +542,17 @@ export async function crearPacienteDemoSiNoExiste(
     "+34 600 123 456",
     AVATAR_DEMO,
     new Date(Date.UTC(1992, 5, 15)),
-    "Perder 5 kg de forma saludable en 3 meses",
-    ["Mediterránea", "Pescado azul", "Verduras de temporada", "Sin ultraprocesados"],
-    ["Frutos secos (almendras)", "Polen estacional"],
-    ["Lactosa (parcial)"],
-    ["Hipertensión controlada", "Hipotiroidismo subclínico leve"],
-    ["Enalapril 10 mg cada 24 h", "Levotiroxina 50 mcg en ayunas"],
-    ["Vitamina D3 1000 UI", "Omega-3 EPA/DHA", "Magnesio bisglicinato"],
-    JSON.stringify(FICHA_INFORMACION),
-    JSON.stringify(HORARIO_ENTRIES),
-    JSON.stringify(RECOMENDACIONES),
-    "Paciente de prueba preconfigurado para que explores las funciones de la app. Puedes editarlo o eliminarlo cuando quieras.",
+    s.objetivoDetalle,
+    s.preferencias,
+    s.alergias,
+    s.intolerancias,
+    s.patologias,
+    s.medicamentos,
+    s.suplementos,
+    JSON.stringify(s.ficha),
+    JSON.stringify(s.horario),
+    JSON.stringify(s.recomendaciones),
+    s.nota,
   );
   const paciente = { id: pacienteIdRows[0].id };
 
@@ -377,7 +610,6 @@ export async function crearPacienteDemoSiNoExiste(
       },
       include: { dias: { include: { comidas: { select: { id: true, tipo: true } } } } },
     });
-    // Replicar los mismos alimentos en los 7 días de la semana
     const items: { comidaId: string; alimentoId: string; cantidad: number; orden: number }[] = [];
     for (const diaObj of plan.dias) {
       for (const [tipo, alimentos] of Object.entries(lunesRellenos)) {
@@ -401,7 +633,7 @@ export async function crearPacienteDemoSiNoExiste(
   const now = new Date();
 
   // Plan 1 — Inicial (activo)
-  await crearPlanConDias("Plan inicial — ejemplo", 2000, { prot: 150, carb: 220, grasa: 70 }, true, 0, {
+  await crearPlanConDias(s.planNames[0], 2000, { prot: 150, carb: 220, grasa: 70 }, true, 0, {
     DESAYUNO: [
       { alimentoId: avena?.id, cantidad: 60 },
       { alimentoId: platano?.id, cantidad: 100 },
@@ -426,7 +658,7 @@ export async function crearPacienteDemoSiNoExiste(
   });
 
   // Plan 2 — Mantenimiento
-  await crearPlanConDias("Plan de mantenimiento", 2200, { prot: 140, carb: 260, grasa: 75 }, false, 20, {
+  await crearPlanConDias(s.planNames[1], 2200, { prot: 140, carb: 260, grasa: 75 }, false, 20, {
     DESAYUNO: [
       { alimentoId: panIntegral?.id, cantidad: 60 },
       { alimentoId: huevo?.id, cantidad: 100 },
@@ -450,7 +682,7 @@ export async function crearPacienteDemoSiNoExiste(
   });
 
   // Plan 3 — Deportivo
-  await crearPlanConDias("Plan deportivo — alto volumen", 2600, { prot: 180, carb: 320, grasa: 75 }, false, 40, {
+  await crearPlanConDias(s.planNames[2], 2600, { prot: 180, carb: 320, grasa: 75 }, false, 40, {
     DESAYUNO: [
       { alimentoId: avena?.id, cantidad: 80 },
       { alimentoId: platano?.id, cantidad: 120 },
@@ -475,7 +707,7 @@ export async function crearPacienteDemoSiNoExiste(
   });
 
   // Plan 4 — Low-carb
-  await crearPlanConDias("Plan low-carb", 1800, { prot: 140, carb: 90, grasa: 115 }, false, 60, {
+  await crearPlanConDias(s.planNames[3], 1800, { prot: 140, carb: 90, grasa: 115 }, false, 60, {
     DESAYUNO: [
       { alimentoId: huevo?.id, cantidad: 150 },
       { alimentoId: aguacate?.id, cantidad: 80 },
@@ -498,7 +730,7 @@ export async function crearPacienteDemoSiNoExiste(
   });
 
   // Plan 5 — Mediterránea legumbres
-  await crearPlanConDias("Plan mediterráneo — legumbres", 1900, { prot: 110, carb: 230, grasa: 65 }, false, 75, {
+  await crearPlanConDias(s.planNames[4], 1900, { prot: 110, carb: 230, grasa: 65 }, false, 75, {
     DESAYUNO: [
       { alimentoId: panIntegral?.id, cantidad: 50 },
       { alimentoId: tomate?.id, cantidad: 80 },
@@ -524,18 +756,19 @@ export async function crearPacienteDemoSiNoExiste(
   });
 
   // Medidas (8 puntos con evolución)
-  const medidas = [
-    { diasAtras: 90, peso: 83.2, imc: 27.2, grasa: 24.1, muscular: 31.8, cintura: 98, cadera: 102.5, brazo: 33.8, notas: "Primera toma de contacto. Se pactan objetivos." },
-    { diasAtras: 75, peso: 82.5, imc: 26.9, grasa: 23.5, muscular: 32.2, cintura: 97, cadera: 102, brazo: 34, notas: "Medida inicial tras arranque del plan." },
-    { diasAtras: 60, peso: 81.3, imc: 26.5, grasa: 23.0, muscular: 32.5, cintura: 96, cadera: 101.5, brazo: 34, notas: "Evolución lenta pero positiva." },
-    { diasAtras: 45, peso: 80.2, imc: 26.1, grasa: 22.4, muscular: 32.8, cintura: 94.5, cadera: 101, brazo: 34.2, notas: "Buena adherencia al plan." },
-    { diasAtras: 30, peso: 79.1, imc: 25.8, grasa: 21.8, muscular: 33.0, cintura: 93, cadera: 100, brazo: 34.5, notas: "Revisión mensual." },
-    { diasAtras: 15, peso: 78.2, imc: 25.5, grasa: 21.0, muscular: 33.3, cintura: 92, cadera: 99.5, brazo: 34.5, notas: "Reducción de cintura notable." },
-    { diasAtras: 7, peso: 77.9, imc: 25.4, grasa: 20.7, muscular: 33.4, cintura: 91.5, cadera: 99.2, brazo: 34.6, notas: "Evolución estable." },
-    { diasAtras: 3, peso: 77.6, imc: 25.3, grasa: 20.5, muscular: 33.5, cintura: 91, cadera: 99, brazo: 34.8, notas: "Última medida. -5.6 kg desde el inicio." },
+  const medidasData = [
+    { diasAtras: 90, peso: 83.2, imc: 27.2, grasa: 24.1, muscular: 31.8, cintura: 98, cadera: 102.5, brazo: 33.8 },
+    { diasAtras: 75, peso: 82.5, imc: 26.9, grasa: 23.5, muscular: 32.2, cintura: 97, cadera: 102, brazo: 34 },
+    { diasAtras: 60, peso: 81.3, imc: 26.5, grasa: 23.0, muscular: 32.5, cintura: 96, cadera: 101.5, brazo: 34 },
+    { diasAtras: 45, peso: 80.2, imc: 26.1, grasa: 22.4, muscular: 32.8, cintura: 94.5, cadera: 101, brazo: 34.2 },
+    { diasAtras: 30, peso: 79.1, imc: 25.8, grasa: 21.8, muscular: 33.0, cintura: 93, cadera: 100, brazo: 34.5 },
+    { diasAtras: 15, peso: 78.2, imc: 25.5, grasa: 21.0, muscular: 33.3, cintura: 92, cadera: 99.5, brazo: 34.5 },
+    { diasAtras: 7, peso: 77.9, imc: 25.4, grasa: 20.7, muscular: 33.4, cintura: 91.5, cadera: 99.2, brazo: 34.6 },
+    { diasAtras: 3, peso: 77.6, imc: 25.3, grasa: 20.5, muscular: 33.5, cintura: 91, cadera: 99, brazo: 34.8 },
   ];
   const medidasCreadas: { id: string }[] = [];
-  for (const m of medidas) {
+  for (let mi = 0; mi < medidasData.length; mi++) {
+    const m = medidasData[mi];
     const fecha = new Date(now);
     fecha.setDate(now.getDate() - m.diasAtras);
     const creada = await prisma.medidaAntropometrica.create({
@@ -544,25 +777,27 @@ export async function crearPacienteDemoSiNoExiste(
         peso: m.peso, altura: 175, imc: m.imc,
         grasaCorporal: m.grasa, masaMuscular: m.muscular,
         perimetroCintura: m.cintura, perimetroCadera: m.cadera, perimetroBrazo: m.brazo,
-        notas: m.notas,
+        notas: s.medidaNotas[mi],
       },
       select: { id: true },
     });
     medidasCreadas.push(creada);
   }
 
-  // Consultas (índices actualizados para el array de 8 medidas)
-  const consultas = [
-    { diasAtras: 75, motivo: "Primera consulta", notas: "Anamnesis completa, antropometría y pactación de plan.", medidaIdx: 1 },
-    { diasAtras: 45, motivo: "Revisión de seguimiento", notas: "Primera revisión. Pérdida de 2.3 kg. Ajuste de raciones.", medidaIdx: 3 },
-    { diasAtras: 15, motivo: "Revisión mensual", notas: "Segunda revisión. Pérdida total 4.3 kg.", medidaIdx: 5 },
+  // Consultas
+  const consultasData = [
+    { diasAtras: 75, medidaIdx: 1 },
+    { diasAtras: 45, medidaIdx: 3 },
+    { diasAtras: 15, medidaIdx: 5 },
   ];
-  for (const c of consultas) {
+  for (let ci = 0; ci < consultasData.length; ci++) {
+    const c = consultasData[ci];
     const fecha = new Date(now);
     fecha.setDate(now.getDate() - c.diasAtras);
     await prisma.consulta.create({
       data: {
-        pacienteId: paciente.id, dietistaId, fecha, motivo: c.motivo, notas: c.notas,
+        pacienteId: paciente.id, dietistaId, fecha,
+        motivo: s.consultaMotivos[ci], notas: s.consultaNotas[ci],
         medidaId: medidasCreadas[c.medidaIdx].id,
       },
     });
@@ -574,9 +809,9 @@ export async function crearPacienteDemoSiNoExiste(
   const citaFutura = new Date(now); citaFutura.setDate(now.getDate() + 12); citaFutura.setHours(11, 30, 0, 0);
   await prisma.cita.createMany({
     data: [
-      { pacienteId: paciente.id, dietistaId, fechaHora: citaPasada, duracion: 45, motivo: "Segunda revisión de seguimiento", estado: "COMPLETADA", notas: "Revisión presencial. Ajuste de plan." },
-      { pacienteId: paciente.id, dietistaId, fechaHora: citaCancelada, duracion: 30, motivo: "Consulta puntual — duda sobre suplementación", estado: "CANCELADA", notas: "El paciente avisó con antelación; reprogramada." },
-      { pacienteId: paciente.id, dietistaId, fechaHora: citaFutura, duracion: 30, motivo: "Tercera revisión mensual", estado: "CONFIRMADA", notas: "Próxima revisión." },
+      { pacienteId: paciente.id, dietistaId, fechaHora: citaPasada, duracion: 45, motivo: s.citaMotivos[0], estado: "COMPLETADA", notas: s.citaNotas[0] },
+      { pacienteId: paciente.id, dietistaId, fechaHora: citaCancelada, duracion: 30, motivo: s.citaMotivos[1], estado: "CANCELADA", notas: s.citaNotas[1] },
+      { pacienteId: paciente.id, dietistaId, fechaHora: citaFutura, duracion: 30, motivo: s.citaMotivos[2], estado: "CONFIRMADA", notas: s.citaNotas[2] },
     ],
   });
 
@@ -594,7 +829,6 @@ export async function crearPacienteDemoSiNoExiste(
     const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
     return `${saltHex}:${hashHex}`;
   }
-  // El email de AccesoPaciente es UNIQUE global, así que añadimos sufijo único por paciente
   const emailAccesoPortal = `paciente.prueba+${paciente.id.slice(-6)}@demo.annonia.com`;
   await prisma.accesoPaciente.create({
     data: {
@@ -606,7 +840,7 @@ export async function crearPacienteDemoSiNoExiste(
     },
   });
 
-  // Enlace compartido del plan activo (entregable de ejemplo)
+  // Enlace compartido del plan activo
   const planActivo = await prisma.planAlimenticio.findFirst({
     where: { pacienteId: paciente.id, activo: true },
     select: { id: true },
@@ -623,7 +857,7 @@ export async function crearPacienteDemoSiNoExiste(
     });
   }
 
-  // Planificación por defecto con datos coherentes (raw SQL porque la tabla no está en schema.prisma como modelo nativo)
+  // Planificación por defecto
   const planificacionDatos = {
     actividadActual: "Sedentario",
     actividadObjetivo: "Activo",
@@ -649,8 +883,8 @@ export async function crearPacienteDemoSiNoExiste(
     `INSERT INTO planificaciones (
       "pacienteId", "dietistaId", nombre, estado, "esDefecto",
       "fechaInicio", "fechaUltimoCambio", "fechaFinPrevista", datos
-    ) VALUES ($1, $2, 'Planificación por defecto', 'activa', true, $3, $4, $5, $6::jsonb)`,
-    paciente.id, dietistaId, fechaInicio, now, fechaFin, JSON.stringify(planificacionDatos),
+    ) VALUES ($1, $2, $3, 'activa', true, $4, $5, $6, $7::jsonb)`,
+    paciente.id, dietistaId, s.planificacionNombre, fechaInicio, now, fechaFin, JSON.stringify(planificacionDatos),
   );
 
   // Cargar mapa id → nombre para comidasData
@@ -714,12 +948,7 @@ export async function crearPacienteDemoSiNoExiste(
     const ejercicio = i % 2 === 0;
     const comidasDia = buildComidasDia(i);
     const cumplido = comidasDia.every((c) => !c.alimentos.length || c.alimentos.every((a) => (a as { cumplido: boolean }).cumplido));
-    const notas =
-      i === 0 ? "Hoy comí fuera, ensalada de quinoa." :
-      i === 2 ? "Entreno intenso de piernas." :
-      i === 4 ? "Se me olvidó la media mañana." :
-      i === 8 ? "Día libre — picoteo ligero." :
-      null;
+    const notas = s.seguimientoNotas[i] ?? null;
     try {
       await prisma.$queryRawUnsafe(
         `INSERT INTO seguimiento_diario (
@@ -742,19 +971,20 @@ export async function crearPacienteDemoSiNoExiste(
   }
 
   // Entradas de diario alimentario (10 entradas variadas)
-  const entradas = [
-    { diasAtras: 0, tipo: "DESAYUNO" as const, alimentoId: avena?.id, cantidad: 50, descripcion: "Avena con leche y fruta", notas: "Me senté a desayunar tranquilo." },
-    { diasAtras: 0, tipo: "ALMUERZO" as const, alimentoId: salmon?.id, cantidad: 150, descripcion: "Salmón al horno con ensalada", notas: "Muy saciante." },
-    { diasAtras: 1, tipo: "DESAYUNO" as const, alimentoId: panIntegral?.id, cantidad: 60, descripcion: "Tostadas con aguacate y huevo", notas: null },
-    { diasAtras: 1, tipo: "ALMUERZO" as const, alimentoId: pollo?.id, cantidad: 150, descripcion: "Pollo a la plancha con ensalada", notas: "Muy satisfecho." },
-    { diasAtras: 2, tipo: "MERIENDA" as const, alimentoId: manzana?.id, cantidad: 180, descripcion: "Manzana y yogur", notas: null },
-    { diasAtras: 2, tipo: "CENA" as const, alimentoId: merluza?.id, cantidad: 150, descripcion: "Merluza al horno con patatas", notas: "Cena ligera." },
-    { diasAtras: 4, tipo: "DESAYUNO" as const, alimentoId: yogur?.id, cantidad: 125, descripcion: "Yogur con fresas y almendras", notas: null },
-    { diasAtras: 5, tipo: "ALMUERZO" as const, alimentoId: lentejas?.id, cantidad: 80, descripcion: "Lentejas estofadas con verduras", notas: "Plato completo." },
-    { diasAtras: 6, tipo: "MERIENDA" as const, alimentoId: platano?.id, cantidad: 100, descripcion: "Plátano y nueces pre-entreno", notas: null },
-    { diasAtras: 8, tipo: "CENA" as const, alimentoId: huevo?.id, cantidad: 120, descripcion: "Tortilla francesa con ensalada", notas: "Noche sencilla." },
+  const entradasData = [
+    { diasAtras: 0, tipo: "DESAYUNO" as const, alimentoId: avena?.id, cantidad: 50 },
+    { diasAtras: 0, tipo: "ALMUERZO" as const, alimentoId: salmon?.id, cantidad: 150 },
+    { diasAtras: 1, tipo: "DESAYUNO" as const, alimentoId: panIntegral?.id, cantidad: 60 },
+    { diasAtras: 1, tipo: "ALMUERZO" as const, alimentoId: pollo?.id, cantidad: 150 },
+    { diasAtras: 2, tipo: "MERIENDA" as const, alimentoId: manzana?.id, cantidad: 180 },
+    { diasAtras: 2, tipo: "CENA" as const, alimentoId: merluza?.id, cantidad: 150 },
+    { diasAtras: 4, tipo: "DESAYUNO" as const, alimentoId: yogur?.id, cantidad: 125 },
+    { diasAtras: 5, tipo: "ALMUERZO" as const, alimentoId: lentejas?.id, cantidad: 80 },
+    { diasAtras: 6, tipo: "MERIENDA" as const, alimentoId: platano?.id, cantidad: 100 },
+    { diasAtras: 8, tipo: "CENA" as const, alimentoId: huevo?.id, cantidad: 120 },
   ];
-  for (const e of entradas) {
+  for (let ei = 0; ei < entradasData.length; ei++) {
+    const e = entradasData[ei];
     if (!e.alimentoId) continue;
     const fecha = new Date(now);
     fecha.setDate(now.getDate() - e.diasAtras);
@@ -762,18 +992,19 @@ export async function crearPacienteDemoSiNoExiste(
       data: {
         pacienteId: paciente.id, fecha, tipoComida: e.tipo,
         alimentoId: e.alimentoId, cantidad: e.cantidad, unidad: "GRAMOS",
-        descripcion: e.descripcion, notas: e.notas,
+        descripcion: s.entradaDescripciones[ei], notas: s.entradaNotas[ei],
       },
     });
   }
 
   // Pagos de ejemplo (3 registros: 1 pagado transferencia, 1 pagado Stripe, 1 pendiente)
   const pagosDemo = [
-    { diasAtras: 60, concepto: "Consulta inicial — valoración y plan", importe: 45, estado: "PAGADO", metodoPago: "Transferencia", diasHastaPago: 2, notas: "Primera consulta. Incluye valoración completa y elaboración del plan nutricional." },
-    { diasAtras: 25, concepto: "Revisión mensual — seguimiento", importe: 30, estado: "PAGADO", metodoPago: "Stripe", diasHastaPago: 0, notas: "Revisión de evolución a los 30 días." },
-    { diasAtras: 3, concepto: "Próxima revisión mensual", importe: 30, estado: "PENDIENTE", metodoPago: null, diasHastaPago: null as number | null, notas: "Pendiente de cobro. Revisión programada." },
+    { diasAtras: 60, importe: 45, estado: "PAGADO", metodoPago: "Transferencia", diasHastaPago: 2 },
+    { diasAtras: 25, importe: 30, estado: "PAGADO", metodoPago: "Stripe", diasHastaPago: 0 },
+    { diasAtras: 3, importe: 30, estado: "PENDIENTE", metodoPago: null, diasHastaPago: null as number | null },
   ];
-  for (const p of pagosDemo) {
+  for (let pi = 0; pi < pagosDemo.length; pi++) {
+    const p = pagosDemo[pi];
     const createdAt = new Date(now);
     createdAt.setDate(now.getDate() - p.diasAtras);
     const fechaPago = p.diasHastaPago !== null
@@ -782,8 +1013,8 @@ export async function crearPacienteDemoSiNoExiste(
     await prisma.$queryRawUnsafe(
       `INSERT INTO pagos (id, "dietistaId", "pacienteId", concepto, importe, estado, "metodoPago", "fechaPago", notas, "createdAt", "updatedAt")
        VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, $9, $9)`,
-      dietistaId, paciente.id, p.concepto, p.importe, p.estado,
-      p.metodoPago, fechaPago, p.notas, createdAt,
+      dietistaId, paciente.id, s.pagoConceptos[pi], p.importe, p.estado,
+      p.metodoPago, fechaPago, s.pagoNotas[pi], createdAt,
     );
   }
 

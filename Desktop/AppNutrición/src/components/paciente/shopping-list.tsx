@@ -34,6 +34,7 @@ import {
   ExternalLink,
   Image as ImageLinkIcon,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { CategoriaCompra, ItemCompra } from "@/lib/shopping-list";
@@ -43,7 +44,7 @@ import type { CategoriaCompra, ItemCompra } from "@/lib/shopping-list";
 const CATEGORIA_META: Record<
   string,
   {
-    label: string;
+    labelKey: string;
     icon: typeof Apple;
     color: string; // tailwind text color
     bg: string; // tailwind bg
@@ -52,7 +53,7 @@ const CATEGORIA_META: Record<
   }
 > = {
   FRUTAS: {
-    label: "Frutas",
+    labelKey: "categoriaFrutas",
     icon: Apple,
     color: "text-rose-600 dark:text-rose-400",
     bg: "bg-rose-50 dark:bg-rose-500/10",
@@ -60,7 +61,7 @@ const CATEGORIA_META: Record<
     order: 1,
   },
   VERDURAS: {
-    label: "Verduras",
+    labelKey: "categoriaVerduras",
     icon: Leaf,
     color: "text-emerald-600 dark:text-emerald-400",
     bg: "bg-emerald-50 dark:bg-emerald-500/10",
@@ -68,7 +69,7 @@ const CATEGORIA_META: Record<
     order: 2,
   },
   CEREALES: {
-    label: "Cereales",
+    labelKey: "categoriaCereales",
     icon: Wheat,
     color: "text-amber-700 dark:text-amber-400",
     bg: "bg-amber-50 dark:bg-amber-500/10",
@@ -76,7 +77,7 @@ const CATEGORIA_META: Record<
     order: 3,
   },
   LEGUMBRES: {
-    label: "Legumbres",
+    labelKey: "categoriaLegumbres",
     icon: Package,
     color: "text-orange-700 dark:text-orange-400",
     bg: "bg-orange-50 dark:bg-orange-500/10",
@@ -84,7 +85,7 @@ const CATEGORIA_META: Record<
     order: 4,
   },
   CARNES: {
-    label: "Carnes",
+    labelKey: "categoriaCarnes",
     icon: Beef,
     color: "text-red-700 dark:text-red-400",
     bg: "bg-red-50 dark:bg-red-500/10",
@@ -92,7 +93,7 @@ const CATEGORIA_META: Record<
     order: 5,
   },
   PESCADOS: {
-    label: "Pescados",
+    labelKey: "categoriaPescados",
     icon: Fish,
     color: "text-sky-700 dark:text-sky-400",
     bg: "bg-sky-50 dark:bg-sky-500/10",
@@ -100,7 +101,7 @@ const CATEGORIA_META: Record<
     order: 6,
   },
   LACTEOS: {
-    label: "Lácteos",
+    labelKey: "categoriaLacteos",
     icon: Milk,
     color: "text-blue-700 dark:text-blue-400",
     bg: "bg-blue-50 dark:bg-blue-500/10",
@@ -108,7 +109,7 @@ const CATEGORIA_META: Record<
     order: 7,
   },
   HUEVOS: {
-    label: "Huevos",
+    labelKey: "categoriaHuevos",
     icon: Egg,
     color: "text-yellow-700 dark:text-yellow-400",
     bg: "bg-yellow-50 dark:bg-yellow-500/10",
@@ -116,7 +117,7 @@ const CATEGORIA_META: Record<
     order: 8,
   },
   FRUTOS_SECOS: {
-    label: "Frutos secos",
+    labelKey: "categoriaFrutosSecos",
     icon: Nut,
     color: "text-amber-800 dark:text-amber-500",
     bg: "bg-amber-50 dark:bg-amber-500/10",
@@ -124,7 +125,7 @@ const CATEGORIA_META: Record<
     order: 9,
   },
   ACEITES: {
-    label: "Aceites",
+    labelKey: "categoriaAceites",
     icon: Droplet,
     color: "text-lime-700 dark:text-lime-400",
     bg: "bg-lime-50 dark:bg-lime-500/10",
@@ -132,7 +133,7 @@ const CATEGORIA_META: Record<
     order: 10,
   },
   BEBIDAS: {
-    label: "Bebidas",
+    labelKey: "categoriaBebidas",
     icon: Wine,
     color: "text-purple-700 dark:text-purple-400",
     bg: "bg-purple-50 dark:bg-purple-500/10",
@@ -140,7 +141,7 @@ const CATEGORIA_META: Record<
     order: 11,
   },
   CONDIMENTOS: {
-    label: "Condimentos",
+    labelKey: "categoriaCondimentos",
     icon: Droplets,
     color: "text-teal-700 dark:text-teal-400",
     bg: "bg-teal-50 dark:bg-teal-500/10",
@@ -148,7 +149,7 @@ const CATEGORIA_META: Record<
     order: 12,
   },
   DULCES: {
-    label: "Dulces",
+    labelKey: "categoriaDulces",
     icon: Candy,
     color: "text-pink-700 dark:text-pink-400",
     bg: "bg-pink-50 dark:bg-pink-500/10",
@@ -156,7 +157,7 @@ const CATEGORIA_META: Record<
     order: 13,
   },
   PANADERIA: {
-    label: "Panadería",
+    labelKey: "categoriaPanaderia",
     icon: Cookie,
     color: "text-orange-800 dark:text-orange-400",
     bg: "bg-orange-50 dark:bg-orange-500/10",
@@ -164,7 +165,7 @@ const CATEGORIA_META: Record<
     order: 14,
   },
   OTROS: {
-    label: "Otros",
+    labelKey: "categoriaOtros",
     icon: Package,
     color: "text-slate-700 dark:text-slate-300",
     bg: "bg-slate-50 dark:bg-slate-500/10",
@@ -293,6 +294,7 @@ function savePrefs(planId: string, prefs: { sort: SortMode; dense: boolean }) {
 // ─── Componente principal ───
 
 export function ShoppingList({ planId, planNombre, categoriasIniciales }: ShoppingListProps) {
+  const t = useTranslations("patients.shoppingList");
   // Build initial items with stable IDs from categorias
   const itemsDesdePlan = useMemo<LocalItem[]>(() => {
     const out: LocalItem[] = [];
@@ -456,18 +458,22 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
 
   const clearChecked = useCallback(() => {
     if (checkedIds.size === 0) {
-      toast.info("No hay artículos marcados");
+      toast.info(t("toastNoMarcados"));
       return;
     }
     const snapshot = new Set(checkedIds);
     setCheckedIds(new Set());
-    toast.success(`${snapshot.size} marca${snapshot.size !== 1 ? "s" : ""} borrada${snapshot.size !== 1 ? "s" : ""}`);
-    showUndo("Deshacer desmarcar todo", () => setCheckedIds(snapshot));
-  }, [checkedIds, showUndo]);
+    toast.success(
+      snapshot.size !== 1
+        ? t("toastMarcasBorradasPlural", { count: snapshot.size })
+        : t("toastMarcasBorradas", { count: snapshot.size })
+    );
+    showUndo(t("toastDeshacerDesmarcar"), () => setCheckedIds(snapshot));
+  }, [checkedIds, showUndo, t]);
 
   const removeChecked = useCallback(() => {
     if (checkedIds.size === 0) {
-      toast.info("No hay artículos marcados");
+      toast.info(t("toastNoMarcados"));
       return;
     }
     const snapshot = new Set(deletedIds);
@@ -477,9 +483,9 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
       return next;
     });
     setCheckedIds(new Set());
-    toast.success("Ocultados los artículos comprados");
-    showUndo("Recuperar comprados", () => setDeletedIds(snapshot));
-  }, [checkedIds, deletedIds, showUndo]);
+    toast.success(t("toastOcultadosComprados"));
+    showUndo(t("toastRecuperarComprados"), () => setDeletedIds(snapshot));
+  }, [checkedIds, deletedIds, showUndo, t]);
 
   const removeItem = useCallback(
     (id: string) => {
@@ -491,8 +497,8 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
         return next;
       });
       if (item) {
-        toast.success(`${item.nombre} eliminado`);
-        showUndo("Recuperar " + item.nombre, () => {
+        toast.success(t("toastItemEliminado", { nombre: item.nombre }));
+        showUndo(t("toastRecuperarItem", { nombre: item.nombre }), () => {
           setDeletedIds((prev) => {
             const next = new Set(prev);
             next.delete(id);
@@ -501,7 +507,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
         });
       }
     },
-    [allItems, showUndo]
+    [allItems, showUndo, t]
   );
 
   const editQuantity = useCallback((id: string, newCantidad: number) => {
@@ -513,7 +519,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
       // For plan items, we keep the plan value but store the override as a custom item
       // Simplest: treat as custom edit — store in customItems with same ID prefix overridden
       // Actually, simpler: don't allow editing plan items to keep plan source of truth.
-      toast.info("Solo puedes editar cantidad de artículos añadidos manualmente");
+      toast.info(t("toastSoloEditarCustom"));
     }
   }, []);
 
@@ -535,23 +541,18 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
         next.delete(id);
         return next;
       });
-      toast.success(`${nombre} añadido`);
+      toast.success(t("toastItemAnadido", { nombre }));
     },
-    []
+    [t]
   );
 
   const regenerar = useCallback(() => {
-    if (
-      !confirm(
-        "¿Regenerar la lista desde tu plan? Se perderán los artículos personalizados y las marcas."
-      )
-    )
-      return;
+    if (!confirm(t("confirmarRegenerar"))) return;
     setCheckedIds(new Set());
     setDeletedIds(new Set());
     setCustomItems([]);
-    toast.success("Lista regenerada desde el plan");
-  }, []);
+    toast.success(t("toastRegenerada"));
+  }, [t]);
 
   // Shares
   const buildPlainText = useCallback(() => {
@@ -565,7 +566,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
       ([a], [b]) => metaFor(a).order - metaFor(b).order
     );
     for (const [cat, items] of sortedCats) {
-      lines.push(`📌 ${metaFor(cat).label}`);
+      lines.push(`📌 ${t(metaFor(cat).labelKey)}`);
       for (const it of items) {
         const check = checkedIds.has(it.id) ? "✅" : "▫️";
         const urlSuffix = it.enlaceProducto ? ` → ${it.enlaceProducto}` : "";
@@ -573,18 +574,18 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
       }
       lines.push("");
     }
-    lines.push(`Total: ${totalItems} artículos · ${formatearCantidad(pesoTotal)}`);
+    lines.push(`${t("totalArticulosTexto", { count: totalItems })} · ${formatearCantidad(pesoTotal)}`);
     return lines.join("\n");
-  }, [planNombre, allItems, checkedIds, totalItems, pesoTotal]);
+  }, [planNombre, allItems, checkedIds, totalItems, pesoTotal, t]);
 
   const copyToClipboard = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(buildPlainText());
-      toast.success("Lista copiada al portapapeles");
+      toast.success(t("toastCopiadaPortapapeles"));
     } catch {
-      toast.error("No se pudo copiar");
+      toast.error(t("toastNoPudoCopiar"));
     }
-  }, [buildPlainText]);
+  }, [buildPlainText, t]);
 
   const shareWhatsApp = useCallback(() => {
     const text = encodeURIComponent(buildPlainText());
@@ -592,10 +593,10 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
   }, [buildPlainText]);
 
   const shareEmail = useCallback(() => {
-    const subject = encodeURIComponent(`Lista de la compra — ${planNombre}`);
+    const subject = encodeURIComponent(t("emailSubject", { planNombre }));
     const body = encodeURIComponent(buildPlainText());
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
-  }, [buildPlainText, planNombre]);
+  }, [buildPlainText, planNombre, t]);
 
   const downloadTxt = useCallback(() => {
     try {
@@ -608,11 +609,11 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-      toast.success("Archivo descargado");
+      toast.success(t("toastArchivoDescargado"));
     } catch {
-      toast.error("No se pudo descargar");
+      toast.error(t("toastNoPudoDescargar"));
     }
-  }, [buildPlainText, planNombre]);
+  }, [buildPlainText, planNombre, t]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -666,14 +667,14 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
           <div className="flex items-center justify-between mb-6">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                Modo compra
+                {t("modoCompraTitle")}
               </p>
               <h1 className="text-2xl font-bold">{planNombre}</h1>
             </div>
             <button
               onClick={() => setShoppingMode(false)}
               className="p-2 rounded-full hover:bg-muted transition-colors"
-              aria-label="Salir"
+              aria-label={t("ariaSalir")}
             >
               <X className="w-6 h-6" />
             </button>
@@ -699,8 +700,8 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
                 <Check className="w-8 h-8 text-primary" />
               </div>
-              <h2 className="text-xl font-bold mb-1">¡Lista completada!</h2>
-              <p className="text-muted-foreground">Has marcado todos los artículos.</p>
+              <h2 className="text-xl font-bold mb-1">{t("listaCompletada")}</h2>
+              <p className="text-muted-foreground">{t("todosArticulosMarcados")}</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -732,7 +733,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
                           </a>
                         )}
                       </p>
-                      <p className="text-sm text-muted-foreground">{meta.label}</p>
+                      <p className="text-sm text-muted-foreground">{t(meta.labelKey)}</p>
                     </div>
                     <span className="text-lg font-bold tabular-nums">
                       {formatearCantidad(it.cantidadTotal, it.unidad)}
@@ -761,29 +762,29 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
           <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
             <div className="min-w-0">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-primary/80 mb-1">
-                Plan de compra
+                {t("planCompra")}
               </p>
               <h2 className="text-lg sm:text-xl font-bold leading-tight">
-                Generada a partir de {planNombre}
+                {t("generadaDesde", { planNombre })}
               </h2>
               <p className="text-xs text-muted-foreground mt-1">
-                Marca los artículos según los vayas comprando. Se guardan en este dispositivo.
+                {t("marcaArticulos")}
               </p>
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShoppingMode(true)}
                 className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-semibold shadow-sm"
-                title="Entrar en modo compra (fullscreen)"
+                title={t("entrarModoCompra")}
               >
                 <Sparkles className="w-4 h-4" />
-                Modo compra
+                {t("modoCompraTitle")}
               </button>
               <div className="relative" ref={moreMenuRef}>
                 <button
                   onClick={() => setMoreMenuOpen((v) => !v)}
                   className="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-border hover:bg-muted transition-colors"
-                  aria-label="Más opciones"
+                  aria-label={t("ariaMasOpciones")}
                 >
                   <MoreHorizontal className="w-4 h-4" />
                 </button>
@@ -793,7 +794,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
                   <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl border-t border-border bg-card shadow-xl py-2 pb-safe lg:absolute lg:bottom-auto lg:left-auto lg:right-0 lg:mt-1 lg:w-56 lg:rounded-lg lg:border lg:pb-1">
                     <MenuItem
                       icon={Copy}
-                      label="Copiar al portapapeles"
+                      label={t("menuCopiarPortapapeles")}
                       onClick={() => {
                         copyToClipboard();
                         setMoreMenuOpen(false);
@@ -801,7 +802,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
                     />
                     <MenuItem
                       icon={ShareWhatsAppIcon}
-                      label="Enviar por WhatsApp"
+                      label={t("menuEnviarWhatsapp")}
                       onClick={() => {
                         shareWhatsApp();
                         setMoreMenuOpen(false);
@@ -809,7 +810,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
                     />
                     <MenuItem
                       icon={Mail}
-                      label="Enviar por email"
+                      label={t("menuEnviarEmail")}
                       onClick={() => {
                         shareEmail();
                         setMoreMenuOpen(false);
@@ -817,7 +818,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
                     />
                     <MenuItem
                       icon={Printer}
-                      label="Imprimir"
+                      label={t("menuImprimir")}
                       onClick={() => {
                         window.print();
                         setMoreMenuOpen(false);
@@ -825,7 +826,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
                     />
                     <MenuItem
                       icon={DownloadIcon}
-                      label="Descargar .txt"
+                      label={t("menuDescargarTxt")}
                       onClick={() => {
                         downloadTxt();
                         setMoreMenuOpen(false);
@@ -834,7 +835,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
                     <div className="my-1 border-t border-border" />
                     <MenuItem
                       icon={ChevronsUp}
-                      label="Expandir todo"
+                      label={t("menuExpandirTodo")}
                       onClick={() => {
                         expandAll();
                         setMoreMenuOpen(false);
@@ -842,7 +843,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
                     />
                     <MenuItem
                       icon={ChevronsDown}
-                      label="Colapsar todo"
+                      label={t("menuColapsarTodo")}
                       onClick={() => {
                         collapseAll();
                         setMoreMenuOpen(false);
@@ -851,7 +852,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
                     <div className="my-1 border-t border-border" />
                     <MenuItem
                       icon={Trash2}
-                      label="Eliminar comprados"
+                      label={t("menuEliminarComprados")}
                       onClick={() => {
                         removeChecked();
                         setMoreMenuOpen(false);
@@ -859,7 +860,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
                     />
                     <MenuItem
                       icon={Check}
-                      label="Desmarcar todo"
+                      label={t("menuDesmarcarTodo")}
                       onClick={() => {
                         clearChecked();
                         setMoreMenuOpen(false);
@@ -867,7 +868,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
                     />
                     <MenuItem
                       icon={Sparkles}
-                      label="Regenerar desde plan"
+                      label={t("menuRegenerarDesdePlan")}
                       onClick={() => {
                         regenerar();
                         setMoreMenuOpen(false);
@@ -882,14 +883,14 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
 
           {/* KPIs + progreso */}
           <div className="grid grid-cols-4 gap-2 sm:gap-3 mb-4">
-            <Kpi label="Artículos" value={String(totalItems)} />
-            <Kpi label="Comprados" value={`${totalChecked}/${totalItems}`} />
-            <Kpi label="Categorías" value={String(categoriasActivas.size)} />
-            <Kpi label="Peso total" value={formatearCantidad(pesoTotal)} />
+            <Kpi label={t("kpiArticulos")} value={String(totalItems)} />
+            <Kpi label={t("kpiComprados")} value={`${totalChecked}/${totalItems}`} />
+            <Kpi label={t("kpiCategorias")} value={String(categoriasActivas.size)} />
+            <Kpi label={t("kpiPesoTotal")} value={formatearCantidad(pesoTotal)} />
           </div>
           <div>
             <div className="flex items-center justify-between text-xs mb-1.5">
-              <span className="text-muted-foreground">Progreso</span>
+              <span className="text-muted-foreground">{t("progreso")}</span>
               <span className="font-semibold tabular-nums">{pctChecked}%</span>
             </div>
             <div className="h-2 rounded-full bg-muted overflow-hidden">
@@ -910,7 +911,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
             <input
               ref={searchRef}
               type="text"
-              placeholder="Buscar… (atajo: /)"
+              placeholder={t("buscarPlaceholder2")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="w-full pl-9 pr-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
@@ -919,7 +920,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
               <button
                 onClick={() => setQuery("")}
                 className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-muted-foreground hover:text-foreground"
-                aria-label="Limpiar"
+                aria-label={t("ariaLimpiar")}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -928,10 +929,10 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
           <button
             onClick={() => setShowAddModal(true)}
             className="inline-flex items-center justify-center gap-1.5 py-2 rounded-lg border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-sm font-medium shrink-0 w-24"
-            title="Añadir artículo (atajo: A)"
+            title={t("anadirTitulo")}
           >
             <Plus className="w-4 h-4" />
-            Añadir
+            {t("anadirBoton")}
           </button>
         </div>
 
@@ -948,7 +949,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                {mode === "categoria" ? "Categoría" : mode === "alfabetico" ? "A-Z" : "Cantidad"}
+                {mode === "categoria" ? t("sortCategoria") : mode === "alfabetico" ? t("sortAz") : t("sortCantidad")}
               </button>
             ))}
           </div>
@@ -966,8 +967,10 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
               >
                 <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", filterOpen && "rotate-180")} />
                 {filterCats.size === 0
-                  ? "Filtrar"
-                  : `${filterCats.size} filtro${filterCats.size > 1 ? "s" : ""}`}
+                  ? t("sortFiltrar")
+                  : filterCats.size > 1
+                    ? t("sortFiltrosPlural", { count: filterCats.size })
+                    : t("sortFiltros", { count: filterCats.size })}
                 {filterCats.size > 0 && (
                   <span
                     role="button"
@@ -1007,7 +1010,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
                             {checked && <Check className="w-3.5 h-3.5" />}
                           </span>
                           <Icon className={cn("w-4 h-4", meta.color)} />
-                          <span className="flex-1 text-left">{meta.label}</span>
+                          <span className="flex-1 text-left">{t(meta.labelKey)}</span>
                           <span className="text-xs text-muted-foreground">{count}</span>
                         </button>
                       );
@@ -1023,22 +1026,22 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
       {allItems.length === 0 ? (
         <div className="rounded-2xl border border-border bg-muted/20 p-12 text-center">
           <ShoppingCart className="w-12 h-12 text-muted-foreground mx-auto mb-4" strokeWidth={1.5} />
-          <h2 className="text-lg font-semibold mb-1">Tu lista está vacía</h2>
+          <h2 className="text-lg font-semibold mb-1">{t("listaVacia")}</h2>
           <p className="text-muted-foreground mb-4">
-            Añade artículos manualmente o regenera desde tu plan.
+            {t("listaVaciaDescripcion")}
           </p>
           <button
             onClick={() => setShowAddModal(true)}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium"
           >
             <Plus className="w-4 h-4" />
-            Añadir primer artículo
+            {t("anadirPrimerArticulo")}
           </button>
         </div>
       ) : visibleItems.length === 0 ? (
         <div className="rounded-xl border border-border bg-muted/20 p-8 text-center">
           <Search className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">No se encontraron artículos con esos filtros.</p>
+          <p className="text-sm text-muted-foreground">{t("sinResultadosFiltro")}</p>
         </div>
       ) : prefs.sort === "categoria" ? (
         <div className="space-y-4">
@@ -1066,7 +1069,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
                     <Icon className={cn("w-5 h-5", meta.color)} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className={cn("text-base font-semibold", meta.color)}>{meta.label}</h3>
+                    <h3 className={cn("text-base font-semibold", meta.color)}>{t(meta.labelKey)}</h3>
                     <p className="text-xs text-muted-foreground">
                       {catCheckedCount}/{items.length} ·{" "}
                       {formatearCantidad(catWeight)}
@@ -1139,13 +1142,13 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
       {totalItems > 0 && (
         <div className="mt-6 lg:rounded-xl lg:border lg:border-border lg:bg-card p-4 flex flex-wrap items-center justify-between gap-3 print:hidden">
           <div className="text-sm">
-            <span className="font-semibold">{totalChecked}</span> comprados ·{" "}
-            <span className="font-semibold">{totalItems - totalChecked}</span> pendientes
+            <span className="font-semibold">{totalChecked}</span> {t("compradosResumen")} ·{" "}
+            <span className="font-semibold">{totalItems - totalChecked}</span> {t("pendientesResumen")}
           </div>
           {totalChecked === totalItems && totalItems > 0 ? (
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-sm font-semibold">
               <Check className="w-4 h-4" />
-              ¡Lista completa!
+              {t("listaCompleta")}
             </span>
           ) : (
             <div className="flex items-center gap-2">
@@ -1155,7 +1158,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                Ocultar comprados
+                {t("ocultarComprados")}
               </button>
             </div>
           )}
@@ -1174,7 +1177,7 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
               }}
               className="text-sm font-semibold text-primary-foreground/80 hover:text-primary-foreground underline underline-offset-2"
             >
-              Deshacer
+              {t("deshacer")}
             </button>
           </div>
         </div>
@@ -1252,6 +1255,7 @@ function ItemRow({
   onStartEdit: () => void;
   onEndEdit: (val: number) => void;
 }) {
+  const t = useTranslations("patients.shoppingList");
   const [editValue, setEditValue] = useState(String(Math.round(item.cantidadTotal)));
 
   useEffect(() => {
@@ -1277,7 +1281,7 @@ function ItemRow({
             ? "bg-primary border-primary text-primary-foreground scale-105"
             : "border-muted-foreground/40 hover:border-primary hover:bg-primary/5"
         )}
-        aria-label={checked ? "Desmarcar" : "Marcar como comprado"}
+        aria-label={checked ? t("ariaDesmarcar") : t("ariaMarcarComprado")}
       >
         {checked && <Check className="w-3.5 h-3.5" strokeWidth={3} />}
       </button>
@@ -1291,7 +1295,7 @@ function ItemRow({
           )}
         >
           <Icon className="w-3 h-3" />
-          {meta.label}
+          {t(meta.labelKey)}
         </span>
       )}
 
@@ -1324,7 +1328,7 @@ function ItemRow({
           )}
           {item.custom && (
             <span className="ml-2 text-[10px] uppercase tracking-wider text-primary font-semibold">
-              Añadido
+              {t("anadidoTag")}
             </span>
           )}
         </p>
@@ -1352,7 +1356,7 @@ function ItemRow({
             item.custom && "hover:text-primary cursor-pointer",
             !item.custom && "cursor-default"
           )}
-          title={item.custom ? "Editar cantidad" : undefined}
+          title={item.custom ? t("ariaEditarCantidad") : undefined}
         >
           {formatearCantidad(item.cantidadTotal, item.unidad)}
           {item.custom && <Pencil className="w-3 h-3 ml-1 inline opacity-0 group-hover:opacity-60" />}
@@ -1362,7 +1366,7 @@ function ItemRow({
       <button
         onClick={onDelete}
         className="p-1.5 rounded text-muted-foreground/50 hover:bg-red-50 dark:hover:bg-red-500/15 hover:text-red-500 transition-colors shrink-0 sm:opacity-0 sm:group-hover:opacity-100 print:hidden"
-        aria-label="Eliminar"
+        aria-label={t("ariaEliminar")}
       >
         <Trash2 className="w-4 h-4" />
       </button>
@@ -1377,6 +1381,7 @@ function AddItemModal({
   onClose: () => void;
   onAdd: (nombre: string, categoria: string, cantidad: number) => void;
 }) {
+  const t = useTranslations("patients.shoppingList");
   const [nombre, setNombre] = useState("");
   const [categoria, setCategoria] = useState("OTROS");
   const [cantidad, setCantidad] = useState("100");
@@ -1390,11 +1395,11 @@ function AddItemModal({
     const n = nombre.trim();
     const q = parseFloat(cantidad);
     if (!n) {
-      toast.error("Introduce un nombre");
+      toast.error(t("toastIntroduceNombre"));
       return;
     }
     if (isNaN(q) || q <= 0) {
-      toast.error("Introduce una cantidad válida");
+      toast.error(t("toastCantidadValida"));
       return;
     }
     onAdd(n, categoria, q);
@@ -1410,32 +1415,32 @@ function AddItemModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Añadir artículo</h2>
+          <h2 className="text-lg font-semibold">{t("anadirArticuloTitulo")}</h2>
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg hover:bg-muted transition-colors"
-            aria-label="Cerrar"
+            aria-label={t("ariaCerrar")}
           >
             <X className="w-4 h-4" />
           </button>
         </div>
         <div className="space-y-3">
           <div>
-            <label className="text-xs font-medium text-muted-foreground">Nombre *</label>
+            <label className="text-xs font-medium text-muted-foreground">{t("nombreLabel")}</label>
             <input
               ref={inputRef}
               type="text"
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && submit()}
-              placeholder="Ej: Pan integral"
+              placeholder={t("nombrePlaceholder")}
               maxLength={60}
               className="w-full mt-1 px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Categoría</label>
+              <label className="text-xs font-medium text-muted-foreground">{t("categoriaLabel")}</label>
               <select
                 value={categoria}
                 onChange={(e) => setCategoria(e.target.value)}
@@ -1445,13 +1450,13 @@ function AddItemModal({
                   .sort(([, a], [, b]) => a.order - b.order)
                   .map(([key, meta]) => (
                     <option key={key} value={key}>
-                      {meta.label}
+                      {t(meta.labelKey)}
                     </option>
                   ))}
               </select>
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Cantidad (g)</label>
+              <label className="text-xs font-medium text-muted-foreground">{t("cantidadGLabel")}</label>
               <input
                 type="number"
                 inputMode="decimal"
@@ -1470,13 +1475,13 @@ function AddItemModal({
             onClick={onClose}
             className="px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors"
           >
-            Cancelar
+            {t("cancelarBoton")}
           </button>
           <button
             onClick={submit}
             className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
           >
-            Añadir
+            {t("anadirBotonSubmit")}
           </button>
         </div>
       </div>

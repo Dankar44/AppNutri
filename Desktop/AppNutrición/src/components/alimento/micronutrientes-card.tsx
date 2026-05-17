@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { type MicroKey, VITAMINAS, MINERALES } from "@/lib/micronutrientes";
 
 interface Props {
@@ -44,7 +45,10 @@ function Row({
   );
 }
 
-export function MicronutrientesCard({ values, title = "Micronutrientes por 100g", subtitleSuffix = "% sobre DDR" }: Props) {
+export function MicronutrientesCard({ values, title, subtitleSuffix }: Props) {
+  const t = useTranslations("foods.micronutrientes");
+  const displayTitle = title ?? t("titulo");
+  const displaySubtitle = subtitleSuffix ?? t("subtituloDdr");
   const allMicros = [...VITAMINAS, ...MINERALES];
   const totalPresentes = allMicros.filter((r) => typeof values[r.key] === "number").length;
 
@@ -53,16 +57,16 @@ export function MicronutrientesCard({ values, title = "Micronutrientes por 100g"
   return (
     <section className="bg-card rounded-xl border border-border p-6 sm:p-8">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold">{title}</h2>
+        <h2 className="text-xl font-semibold">{displayTitle}</h2>
         <span className="text-xs text-muted-foreground">
-          {totalPresentes} / {allMicros.length} presentes · {subtitleSuffix}
+          {t("presentes", { presentes: totalPresentes, total: allMicros.length })} · {displaySubtitle}
         </span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
         <div>
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-            Vitaminas
+            {t("vitaminas")}
           </h3>
           <div className="divide-y divide-border/50">
             {VITAMINAS.map((row) => (
@@ -73,7 +77,7 @@ export function MicronutrientesCard({ values, title = "Micronutrientes por 100g"
 
         <div>
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-            Minerales
+            {t("minerales")}
           </h3>
           <div className="divide-y divide-border/50">
             {MINERALES.map((row) => (

@@ -2,8 +2,10 @@ import { Users, UserPlus, UtensilsCrossed, Stethoscope, TrendingUp, TrendingDown
 import { getAdminStats, getRegistrosMensuales, getDietistasAdmin } from "@/app/actions/admin";
 import { AdminCharts } from "./admin-charts";
 import { capitalizarNombre, formatDate } from "@/lib/utils";
+import { getTranslations } from "next-intl/server";
 
 export default async function AdminDashboardPage() {
+  const t = await getTranslations("admin.dashboard");
   const [stats, registros, dietistas] = await Promise.all([
     getAdminStats(),
     getRegistrosMensuales(),
@@ -16,7 +18,7 @@ export default async function AdminDashboardPage() {
 
   const statCards = [
     {
-      label: "Total dietistas",
+      label: t("stats.totalDietistas"),
       value: stats.totalDietistas,
       change: stats.cambioDietistas,
       nuevos: stats.dietistasEsteMes,
@@ -24,7 +26,7 @@ export default async function AdminDashboardPage() {
       color: "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10",
     },
     {
-      label: "Total pacientes",
+      label: t("stats.totalPacientes"),
       value: stats.totalPacientes,
       change: stats.cambioPacientes,
       nuevos: stats.pacientesEsteMes,
@@ -32,7 +34,7 @@ export default async function AdminDashboardPage() {
       color: "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10",
     },
     {
-      label: "Planes activos",
+      label: t("stats.planesActivos"),
       value: stats.totalPlanes,
       change: null,
       nuevos: null,
@@ -40,7 +42,7 @@ export default async function AdminDashboardPage() {
       color: "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10",
     },
     {
-      label: "Consultas este mes",
+      label: t("stats.consultasEsteMes"),
       value: stats.totalConsultas,
       change: null,
       nuevos: null,
@@ -52,8 +54,8 @@ export default async function AdminDashboardPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold">Panel de administración</h1>
-        <p className="text-muted-foreground mt-1">Vista general de la plataforma</p>
+        <h1 className="text-2xl sm:text-3xl font-bold">{t("title")}</h1>
+        <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
       </div>
 
       {/* Stats cards */}
@@ -81,7 +83,7 @@ export default async function AdminDashboardPage() {
                   {card.change >= 0 ? "+" : ""}{card.change}%
                 </span>
                 <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:inline">
-                  ({card.nuevos} nuevos)
+                  ({t("stats.nuevos", { count: card.nuevos })})
                 </span>
               </div>
             )}
@@ -92,21 +94,21 @@ export default async function AdminDashboardPage() {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div className="lg:col-span-2 bg-card rounded-xl border border-border p-6">
-          <h2 className="font-semibold mb-4">Registros mensuales</h2>
+          <h2 className="font-semibold mb-4">{t("charts.registrosMensuales")}</h2>
           <AdminCharts data={registros} />
         </div>
         <div className="bg-card rounded-xl border border-border p-6">
-          <h2 className="font-semibold mb-4">Resumen rápido</h2>
+          <h2 className="font-semibold mb-4">{t("resumenRapido.title")}</h2>
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Dietistas registrados</span>
+              <span className="text-sm text-muted-foreground">{t("resumenRapido.dietistasRegistrados")}</span>
               <span className="font-semibold">{stats.totalDietistas}</span>
             </div>
             <div className="w-full bg-muted rounded-full h-2">
               <div className="bg-indigo-500 h-2 rounded-full" style={{ width: "100%" }} />
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Media pacientes/dietista</span>
+              <span className="text-sm text-muted-foreground">{t("resumenRapido.mediaPacientesDietista")}</span>
               <span className="font-semibold">
                 {stats.totalDietistas > 0
                   ? (stats.totalPacientes / stats.totalDietistas).toFixed(1)
@@ -114,7 +116,7 @@ export default async function AdminDashboardPage() {
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Planes por dietista</span>
+              <span className="text-sm text-muted-foreground">{t("resumenRapido.planesPorDietista")}</span>
               <span className="font-semibold">
                 {stats.totalDietistas > 0
                   ? (stats.totalPlanes / stats.totalDietistas).toFixed(1)
@@ -128,18 +130,18 @@ export default async function AdminDashboardPage() {
       {/* Top dietistas */}
       <div className="bg-card rounded-xl border border-border overflow-hidden">
         <div className="px-6 py-4 border-b border-border">
-          <h2 className="font-semibold">Dietistas con más pacientes</h2>
+          <h2 className="font-semibold">{t("topDietistas.title")}</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-muted/50">
-                <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Dietista</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground hidden md:table-cell">Email</th>
-                <th className="text-center px-4 py-3 text-sm font-medium text-muted-foreground">Pacientes</th>
-                <th className="text-center px-4 py-3 text-sm font-medium text-muted-foreground hidden sm:table-cell">Planes</th>
-                <th className="text-center px-4 py-3 text-sm font-medium text-muted-foreground hidden sm:table-cell">Consultas</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground hidden lg:table-cell">Registro</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">{t("topDietistas.columns.dietista")}</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground hidden md:table-cell">{t("topDietistas.columns.email")}</th>
+                <th className="text-center px-4 py-3 text-sm font-medium text-muted-foreground">{t("topDietistas.columns.pacientes")}</th>
+                <th className="text-center px-4 py-3 text-sm font-medium text-muted-foreground hidden sm:table-cell">{t("topDietistas.columns.planes")}</th>
+                <th className="text-center px-4 py-3 text-sm font-medium text-muted-foreground hidden sm:table-cell">{t("topDietistas.columns.consultas")}</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground hidden lg:table-cell">{t("topDietistas.columns.registro")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -163,7 +165,7 @@ export default async function AdminDashboardPage() {
               {topDietistas.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                    No hay dietistas registrados
+                    {t("topDietistas.empty")}
                   </td>
                 </tr>
               )}

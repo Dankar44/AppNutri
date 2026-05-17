@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { crearConsulta } from "@/app/actions/consultas";
 import { crearMedida } from "@/app/actions/medidas";
@@ -11,6 +12,7 @@ import { crearMedida } from "@/app/actions/medidas";
 export default function NuevaConsultaPage() {
   const params = useParams();
   const pacienteId = params.id as string;
+  const t = useTranslations("patients");
   const [loading, setLoading] = useState(false);
   const [incluirMedidas, setIncluirMedidas] = useState(false);
 
@@ -50,9 +52,9 @@ export default function NuevaConsultaPage() {
         medidaId,
       });
 
-      toast.success("Consulta registrada");
+      toast.success(t("consultas.consultaRegistrada"));
     } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
-      toast.error("Error al crear la consulta");
+      toast.error(t("consultas.errorCrearConsulta"));
       setLoading(false);
     }
   }
@@ -65,17 +67,17 @@ export default function NuevaConsultaPage() {
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3 py-2 sm:py-0 -my-2 sm:my-0"
         >
           <ArrowLeft className="w-4 h-4" />
-          Volver a consultas
+          {t("consultas.volverAConsultas")}
         </Link>
-        <h1 className="text-2xl sm:text-3xl font-bold">Nueva consulta</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">{t("consultas.titulo")}</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
         <section className="bg-card rounded-xl border border-border p-6 space-y-4">
-          <h2 className="text-lg font-semibold">Datos de la consulta</h2>
+          <h2 className="text-lg font-semibold">{t("consultas.datosConsulta")}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Fecha</label>
+              <label className="block text-sm font-medium mb-1">{t("consultas.fecha")}</label>
               <input
                 name="fecha"
                 type="date"
@@ -84,22 +86,22 @@ export default function NuevaConsultaPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Motivo</label>
+              <label className="block text-sm font-medium mb-1">{t("consultas.motivo")}</label>
               <input
                 name="motivo"
                 maxLength={200}
-                placeholder="Ej: Revisión mensual"
+                placeholder={t("consultas.motivoPlaceholder")}
                 className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Notas clínicas</label>
+            <label className="block text-sm font-medium mb-1">{t("consultas.notasClinicas")}</label>
             <textarea
               name="notas"
               rows={5}
               maxLength={2000}
-              placeholder="Observaciones, indicaciones, seguimiento..."
+              placeholder={t("consultas.notasPlaceholder")}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm resize-y"
             />
           </div>
@@ -113,13 +115,13 @@ export default function NuevaConsultaPage() {
               onChange={(e) => setIncluirMedidas(e.target.checked)}
               className="rounded border-border"
             />
-            <span className="text-sm font-medium">Registrar medidas en esta consulta</span>
+            <span className="text-sm font-medium">{t("consultas.registrarMedidas")}</span>
           </label>
 
           {incluirMedidas && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
               <div>
-                <label className="block text-xs font-medium mb-1">Peso (kg)</label>
+                <label className="block text-xs font-medium mb-1">{t("consultas.pesoKg")}</label>
                 <input
                   name="peso"
                   type="number"
@@ -130,7 +132,7 @@ export default function NuevaConsultaPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1">Altura (cm)</label>
+                <label className="block text-xs font-medium mb-1">{t("consultas.alturaCm")}</label>
                 <input
                   name="altura"
                   type="number"
@@ -141,7 +143,7 @@ export default function NuevaConsultaPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1">% Grasa</label>
+                <label className="block text-xs font-medium mb-1">{t("consultas.grasaPorcentaje")}</label>
                 <input
                   name="grasaCorporal"
                   type="number"
@@ -152,7 +154,7 @@ export default function NuevaConsultaPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1">Cintura (cm)</label>
+                <label className="block text-xs font-medium mb-1">{t("consultas.cinturaCm")}</label>
                 <input
                   name="perimetroCintura"
                   type="number"
@@ -171,14 +173,14 @@ export default function NuevaConsultaPage() {
             href={`/pacientes/${pacienteId}/consultas`}
             className="px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
           >
-            Cancelar
+            {t("consultas.cancelar")}
           </Link>
           <button
             type="submit"
             disabled={loading}
             className="px-6 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium disabled:opacity-50"
           >
-            {loading ? "Guardando..." : "Registrar consulta"}
+            {loading ? t("consultas.guardando") : t("consultas.registrarConsulta")}
           </button>
         </div>
       </form>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { AlimentoSearch } from "./alimento-search";
 import { MacroBadges } from "./macro-badge";
 import { calcularMacrosPorcion, convertirAGramos, type Macros } from "@/lib/macros";
@@ -28,6 +29,7 @@ export function IngredienteList({
   onChange,
   porciones,
 }: IngredienteListProps) {
+  const t = useTranslations("recipes");
   function addIngrediente(alimento: {
     id: string;
     nombre: string;
@@ -74,13 +76,13 @@ export function IngredienteList({
     <div className="space-y-4">
       <AlimentoSearch
         onSelect={addIngrediente}
-        placeholder="Buscar alimento para añadir..."
+        placeholder={t("ingredientes.buscarParaAnadir")}
         searchAction={buscarAlimentosParaReceta}
       />
 
       {ingredientes.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-4">
-          Añade ingredientes buscando alimentos arriba
+          {t("ingredientes.anadirArriba")}
         </p>
       ) : (
         <>
@@ -136,8 +138,8 @@ export function IngredienteList({
           </div>
 
           <div className="flex items-center justify-between px-3 text-xs text-muted-foreground">
-            <span>Total de la receta</span>
-            <span className="font-semibold tabular-nums">{Math.round(pesoTotal)} g · 100%</span>
+            <span>{t("ingredientes.totalReceta")}</span>
+            <span className="font-semibold tabular-nums">{t("ingredientes.totalRecetaPeso", { peso: Math.round(pesoTotal) })}</span>
           </div>
         </>
       )}

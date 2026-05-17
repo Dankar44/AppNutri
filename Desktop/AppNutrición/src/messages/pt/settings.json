@@ -1,0 +1,672 @@
+{
+  "page": {
+    "title": "Configurações",
+    "subtitle": "Configure seu perfil, integrações e preferências",
+    "plan": "Plano {plan}"
+  },
+  "nav": {
+    "title": "Configurações",
+    "perfil": "Perfil",
+    "contrasena": "Senha",
+    "profesional": "Profissional",
+    "documentos": "Documentos",
+    "anamnesis": "Anamnese",
+    "integraciones": "Integrações",
+    "pacienteDemo": "Paciente de exemplo",
+    "suscripcion": "Assinatura",
+    "cobros": "Cobranças",
+    "guias": "Guias",
+    "zonaPeligrosa": "Zona perigosa",
+    "idioma": "Idioma"
+  },
+  "sections": {
+    "perfil": {
+      "title": "Perfil pessoal",
+      "description": "Dados básicos que serão exibidos na sua conta e nas comunicações com pacientes."
+    },
+    "contrasena": {
+      "title": "Senha",
+      "description": "Altere a senha de acesso à sua conta."
+    },
+    "profesional": {
+      "title": "Informações profissionais",
+      "description": "Número de registro profissional, especialidade e clínica (editados na seção de Perfil)."
+    },
+    "documentos": {
+      "title": "Personalizar documentos",
+      "description": "Escolha as cores, logo e nome da marca dos seus documentos PDF."
+    },
+    "anamnesis": {
+      "title": "Campos da anamnese",
+      "description": "Adicione campos personalizados que aparecerão na ficha de informações de todos os seus pacientes."
+    },
+    "integraciones": {
+      "title": "Integrações",
+      "description": "Conecte serviços externos para automatizar o seu dia a dia."
+    },
+    "pacienteDemo": {
+      "title": "Paciente de exemplo",
+      "description": "Paciente com dados pré-carregados para testar todas as funções sem afetar seus pacientes reais."
+    },
+    "suscripcion": {
+      "title": "Assinatura",
+      "description": "Plano atual, status e datas de renovação."
+    },
+    "cobros": {
+      "title": "Cobranças com Stripe",
+      "description": "Conecte sua conta Stripe para cobrar consultas através da plataforma."
+    },
+    "guias": {
+      "title": "Guias interativos",
+      "description": "Tours passo a passo para aprender cada seção do aplicativo."
+    },
+    "zonaPeligrosa": {
+      "title": "Zona perigosa",
+      "description": "Ações irreversíveis sobre sua conta. Use com precaução."
+    },
+    "idioma": {
+      "title": "Idioma da interface",
+      "description": "Selecione o idioma em que deseja usar o aplicativo."
+    }
+  },
+  "googleErrors": {
+    "noConfigurado": "Google não está configurado neste ambiente.",
+    "stateMismatch": "A conexão com Google foi cancelada ou expirou. Tente novamente.",
+    "missingParams": "Não foi recebida a resposta do Google. Tente novamente.",
+    "noTokens": "Google não concedeu as permissões necessárias. Certifique-se de aceitar todas as permissões.",
+    "exchangeFailed": "Erro ao conectar com Google. Tente novamente em alguns minutos.",
+    "accessDenied": "O acesso ao Google foi negado. Tente novamente e aceite as permissões.",
+    "default": "Não foi possível conectar com Google. Tente novamente."
+  },
+  "googleFlash": {
+    "ok": "Google Calendar conectado com sucesso."
+  },
+  "perfilForm": {
+    "nombreLabel": "Nome *",
+    "apellidosLabel": "Sobrenome *",
+    "telefonoLabel": "Telefone",
+    "especialidadLabel": "Especialidade",
+    "numColegiadoLabel": "Registro profissional",
+    "clinicaLabel": "Clínica",
+    "guardando": "Salvando...",
+    "guardarCambios": "Salvar alterações",
+    "toastSuccess": "Perfil atualizado",
+    "toastError": "Erro ao atualizar o perfil"
+  },
+  "profesionalInfo": {
+    "especialidadLabel": "Especialidade",
+    "numColegiadoLabel": "Registro profissional",
+    "clinicaLabel": "Clínica",
+    "emptyValue": "—"
+  },
+  "cambiarPassword": {
+    "actualLabel": "Senha atual",
+    "nuevaLabel": "Nova senha",
+    "confirmarLabel": "Confirmar senha",
+    "cambiando": "Alterando...",
+    "cambiarContrasena": "Alterar senha",
+    "toastSuccess": "Senha atualizada",
+    "toastErrorNoCoinciden": "As senhas não coincidem",
+    "toastErrorGenerico": "Erro ao alterar a senha"
+  },
+  "fotoPerfil": {
+    "subiendo": "Enviando...",
+    "clickParaCambiar": "Clique para alterar sua foto",
+    "restricciones": "JPG, PNG. Máximo 2MB. Seus pacientes verão esta foto.",
+    "errorTamano": "A imagem não pode exceder 2MB",
+    "toastSuccess": "Foto atualizada",
+    "toastError": "Erro ao atualizar a foto",
+    "altFoto": "Foto"
+  },
+  "documentosPdf": {
+    "vistaPrevia": "Pré-visualização"
+  },
+  "temaPdf": {
+    "titulo": "Tema de cor",
+    "descripcion": "Escolha as cores dos seus documentos PDF (plano alimentar, relatórios, lista de compras).",
+    "temas": {
+      "verde": "Verde",
+      "azul": "Azul",
+      "morado": "Roxo",
+      "naranja": "Laranja",
+      "oscuro": "Escuro",
+      "custom": "Custom"
+    },
+    "colorPersonalizado": "Cor personalizada",
+    "colorPrimario": "Primário",
+    "colorAcento": "Destaque",
+    "colorFondoSeccion": "Fundo da seção",
+    "colorFondoClaro": "Fundo claro",
+    "vistaPreviaPaleta": "Pré-visualização da paleta",
+    "guardando": "Salvando...",
+    "guardarTema": "Salvar tema",
+    "toastSuccess": "Tema atualizado",
+    "toastErrorGenerico": "Erro ao salvar"
+  },
+  "logoPdf": {
+    "titulo": "Logo para documentos",
+    "descripcion": "Aparecerá na capa, cabeçalho e contracapa dos seus PDFs. Recomendado: 400×100px, PNG com fundo transparente.",
+    "sinLogo": "Sem logo",
+    "cambiar": "Alterar",
+    "subirLogo": "Enviar logo",
+    "eliminar": "Excluir",
+    "nombreMarcaTitulo": "Nome da marca",
+    "nombreMarcaDescripcion": "Substitui \"Annonia\" nos cabeçalhos e rodapés dos seus documentos PDF.",
+    "nombreMarcaPlaceholder": "Annonia (padrão)",
+    "guardar": "Salvar",
+    "errorImagenInvalida": "Imagem inválida (apenas JPEG, PNG, WebP ou GIF, máx ~2MB)",
+    "toastLogoActualizado": "Logo atualizado",
+    "toastErrorSubirLogo": "Erro ao enviar logo",
+    "toastLogoEliminado": "Logo excluído",
+    "toastErrorEliminar": "Erro ao excluir",
+    "toastMarcaActualizada": "Nome da marca atualizado",
+    "toastErrorGuardar": "Erro ao salvar"
+  },
+  "pdfPreview": {
+    "nombrePaciente": "NOME PACIENTE",
+    "planDieteticoSemanal": "PLANO DIETÉTICO SEMANAL",
+    "diasCortos": {
+      "lun": "Seg",
+      "mar": "Ter",
+      "mie": "Qua",
+      "jue": "Qui",
+      "vie": "Sex"
+    },
+    "comidas": {
+      "desayuno": "Café da manhã",
+      "almuerzo": "Almoço",
+      "cena": "Jantar"
+    }
+  },
+  "camposAnamnesis": {
+    "emptyState": "Você ainda não criou campos personalizados. Os campos que adicionar aqui aparecerão na anamnese de todos os seus pacientes.",
+    "nombreCampoLabel": "Nome do campo",
+    "nombreCampoPlaceholder": "Ex: Horas de treino semanal",
+    "tipoLabel": "Tipo",
+    "seccionLabel": "Seção",
+    "opcionesLabel": "Opções (separadas por vírgulas)",
+    "opcionesPlaceholder": "Ex: Sim, Não, Às vezes",
+    "anadirCampo": "Adicionar campo",
+    "anadirCampoPersonalizado": "Adicionar campo personalizado",
+    "cancelar": "Cancelar",
+    "guardar": "Salvar",
+    "editarTitle": "Editar",
+    "eliminarTitle": "Excluir",
+    "contadorCampos": "({count}/20)",
+    "tipoLabels": {
+      "texto": "Texto curto",
+      "textarea": "Texto longo",
+      "selector": "Lista suspensa"
+    },
+    "seccionLabels": {
+      "consulta": "Consulta",
+      "personalSocial": "Pessoal e social",
+      "clinica": "Clínica",
+      "alimentaria": "Alimentar",
+      "personalizado": "Seção própria"
+    },
+    "toastGuardados": "Campos salvos",
+    "toastErrorGuardar": "Erro ao salvar",
+    "toastNombreObligatorio": "O nome do campo é obrigatório",
+    "toastMaximoCampos": "Máximo de 20 campos personalizados",
+    "toastDesplegableMinOpciones": "Uma lista suspensa precisa de pelo menos 2 opções separadas por vírgulas",
+    "opcionesEditPlaceholder": "Opções separadas por vírgulas (ex: Sim, Não, Às vezes)"
+  },
+  "integraciones": {
+    "titulo": "Integrações",
+    "googleCalendar": "Google Calendar",
+    "googleCalendarDescripcion": "Sincronize automaticamente seus agendamentos com o Google Calendar. Se ativar o Google Meet em um agendamento, o link será gerado automaticamente.",
+    "conectando": "Conectando…",
+    "conectarConGoogle": "Conectar com Google",
+    "conectadoComo": "Conectado como {email}",
+    "sincronizarCitasAutomaticamente": "Sincronizar agendamentos automaticamente",
+    "sincronizarDescripcion": "Ao criar/editar/cancelar um agendamento, ele será atualizado no Google Calendar.",
+    "desconectar": "Desconectar"
+  },
+  "desconectarDialog": {
+    "titulo": "Desconectar Google Calendar",
+    "descripcion": "O que você deseja fazer com os agendamentos que já foram sincronizados com o Google Calendar?",
+    "dejarCitas": "Manter os agendamentos no Google",
+    "dejarCitasDescripcion": "Os eventos criados permanecem no seu calendário, mas deixam de ser atualizados.",
+    "borrarCitas": "Excluir os agendamentos do Google",
+    "borrarCitasDescripcion": "Todos os eventos criados pelo Annonia serão removidos do seu calendário.",
+    "cancelar": "Cancelar"
+  },
+  "googleLogin": {
+    "titulo": "Login com Google",
+    "descripcion": "Vincule sua conta Google para fazer login com um só clique, sem senha.",
+    "vinculadaCon": "Vinculada com {email}",
+    "conectando": "Conectando…",
+    "vincularCuenta": "Vincular conta Google",
+    "toastError": "Não foi possível vincular a conta Google."
+  },
+  "pacienteDemo": {
+    "eliminado": {
+      "titulo": "Você excluiu o paciente de exemplo",
+      "descripcion": "Se quiser tê-lo novamente com dados pré-carregados para explorar todas as funções, você pode restaurá-lo quando quiser.",
+      "restaurar": "Restaurar"
+    },
+    "activo": {
+      "titulo": "Paciente de exemplo ativo",
+      "descripcion": "Você tem um paciente <strong>Teste</strong> com dados pré-carregados. Pode excluí-lo quando quiser na ficha do paciente — ele continua disponível aqui para restauração.",
+      "verFicha": "Ver ficha"
+    },
+    "toastRestaurado": "Paciente de exemplo restaurado",
+    "toastErrorRestaurar": "Erro ao restaurar"
+  },
+  "suscripcion": {
+    "planes": {
+      "BASICO": {
+        "nombre": "Básico",
+        "precio": "9,99€/mês"
+      },
+      "PROFESIONAL": {
+        "nombre": "Profissional",
+        "precio": "11,99€/mês"
+      }
+    },
+    "estados": {
+      "ACTIVA": "Ativa",
+      "PRUEBA": "Período de teste",
+      "CANCELADA": "Cancelada",
+      "EXPIRADA": "Expirada"
+    },
+    "planLabel": "Plano {nombre}",
+    "pruebaExpirada": "Seu período de teste gratuito expirou",
+    "suscripcionExpirada": "Sua assinatura expirou",
+    "diasPruebaRestantes": "Restam {dias} dia{plural} de teste gratuito",
+    "diasRenovacion": "Sua assinatura será renovada em {dias} dia{plural}",
+    "inicioLabel": "Início",
+    "finPruebaLabel": "Fim do teste",
+    "proximaRenovacionLabel": "Próxima renovação",
+    "pasaAProfesional": "Mudar para Profissional",
+    "cambiarABasico": "Mudar para Básico",
+    "upgradeDescripcion": "IA, pacientes ilimitados, relatórios PDF — apenas 2€ a mais",
+    "downgradeDescripcion": "25 pacientes, sem IA nem relatórios PDF",
+    "mejorarPlan": "Melhorar plano",
+    "toastPlanCambiado": "Plano alterado para {nombre}",
+    "toastErrorCambiarPlan": "Erro ao alterar o plano",
+    "comparativa": {
+      "basico": "Básico",
+      "profesional": "Profissional",
+      "features": {
+        "pacientes": "Pacientes",
+        "basico25": "25",
+        "ilimitados": "Ilimitados",
+        "planesRecetas": "Planos e receitas",
+        "portalPaciente": "Portal do paciente",
+        "generacionIA": "Geração com IA",
+        "informesPDF": "Relatórios PDF",
+        "soportePrioritario": "Suporte prioritário"
+      }
+    }
+  },
+  "stripeConnect": {
+    "noConectado": {
+      "titulo": "Conecte sua conta Stripe",
+      "descripcion": "Conecte sua própria conta Stripe para cobrar seus pacientes diretamente. O dinheiro vai para sua conta bancária.",
+      "conectando": "Conectando...",
+      "conectarStripe": "Conectar Stripe"
+    },
+    "onboardingIncompleto": {
+      "titulo": "Configuração incompleta",
+      "descripcion": "Sua conta Stripe está conectada, mas você precisa completar a verificação para poder receber pagamentos.",
+      "cargando": "Carregando...",
+      "completarVerificacion": "Completar verificação"
+    },
+    "conectado": {
+      "titulo": "Stripe conectado",
+      "descripcion": "Sua conta está verificada e pronta para receber pagamentos. As cobranças que criar gerarão um link de pagamento automaticamente.",
+      "abriendo": "Abrindo...",
+      "dashboardStripe": "Dashboard do Stripe"
+    },
+    "statusLabels": {
+      "activo": "Ativo",
+      "inactivo": "Inativo",
+      "completo": "Completo",
+      "pendiente": "Pendente"
+    },
+    "statusCategories": {
+      "cobros": "Cobranças",
+      "transferencias": "Transferências",
+      "verificacion": "Verificação"
+    },
+    "desconectarTitle": "Desconectar Stripe",
+    "confirmDesconectar": "Tem certeza de que deseja desconectar sua conta Stripe? Os pagamentos pendentes com link deixarão de funcionar.",
+    "toastErrorConectar": "Erro ao conectar com Stripe",
+    "toastErrorOnboarding": "Erro ao gerar link de onboarding",
+    "toastErrorDashboard": "Erro ao abrir o dashboard do Stripe",
+    "toastDesconectada": "Conta Stripe desconectada",
+    "toastErrorDesconectar": "Erro ao desconectar"
+  },
+  "eliminarCuenta": {
+    "titulo": "Excluir conta",
+    "descripcion": "Todos os seus dados (pacientes, consultas, medidas, dietas, mensagens...) serão apagados permanentemente.",
+    "boton": "Excluir conta",
+    "confirmacion": "Todos os seus dados serão apagados permanentemente.",
+    "confirmar": "Confirmar",
+    "eliminando": "Excluindo...",
+    "cancelar": "Cancelar"
+  },
+  "tours": {
+    "demoBanner": "Paciente de demonstração — Apenas para o tour guiado",
+    "agendaDemoBanner": "Agenda de demonstração — Apenas para o tour guiado",
+    "planDemoBanner": "Plano de demonstração — Apenas para o tour guiado",
+    "iaDemoBanner": "Geração IA de demonstração — Apenas para o tour guiado",
+    "planesDemoBanner": "Planos de demonstração — Apenas para o tour guiado",
+    "examplePatient": "Paciente de exemplo",
+    "active": "Ativo",
+    "personalData": "Dados pessoais",
+    "email": "Email",
+    "phone": "Telefone",
+    "birthDate": "Nascimento",
+    "sex": "Sexo",
+    "medicalHistory": "Histórico médico",
+    "allergies": "Alergias",
+    "intolerances": "Intolerâncias",
+    "pathologies": "Patologias",
+    "medications": "Medicamentos",
+    "supplements": "Suplementos",
+    "activityLifestyle": "Atividade física e estilo de vida",
+    "occupation": "Ocupação",
+    "activityLevel": "Nível de atividade",
+    "exerciseType": "Tipo de exercício",
+    "workSchedule": "Horário de trabalho",
+    "exerciseSchedule": "Horário de exercício",
+    "rest": "Descanso",
+    "weeklySchedule": "Horário semanal",
+    "weeklyScheduleDescription": "Compartilhado entre nutricionista e paciente. Ambos podem editá-lo.",
+    "mealPlans": "Planos alimentares",
+    "newPlan": "Novo plano",
+    "viewAllPlans": "Ver todos os planos ({count})",
+    "goal": "Objetivo",
+    "measures": "Medidas",
+    "weight": "Peso",
+    "height": "Altura",
+    "viewEvolution": "Ver evolução e registrar medidas",
+    "observations": "Observações",
+    "recommendations": "Recomendações",
+    "patientPortal": "Portal do paciente",
+    "configurePortalAccess": "Configurar acesso ao portal",
+    "noneRegistered": "Nenhuma registrada",
+    "years": "anos",
+    "agenda": "Agenda",
+    "newAppointment": "Nova consulta",
+    "today": "Hoje",
+    "dayView": "Dia",
+    "weekView": "Semana",
+    "monthView": "Mês",
+    "complete": "Completar",
+    "googleCalendar": "Google Calendar",
+    "delete": "Excluir",
+    "statusPending": "Pendente",
+    "statusConfirmed": "Confirmada",
+    "statusCompleted": "Concluída",
+    "statusCancelled": "Cancelada",
+    "daysOfWeek": {
+      "monday": "Segunda-feira",
+      "tuesday": "Terça-feira",
+      "wednesday": "Quarta-feira",
+      "thursday": "Quinta-feira",
+      "friday": "Sexta-feira",
+      "saturday": "Sábado",
+      "sunday": "Domingo"
+    },
+    "backToPlans": "Voltar aos planos",
+    "ia": "IA",
+    "template": "Modelo",
+    "share": "Compartilhar",
+    "edit": "Editar",
+    "pdf": "PDF",
+    "dailyGoals": "Objetivos diários:",
+    "noFoods": "Sem alimentos",
+    "plans": "planos",
+    "generateDietWithAI": "Gerar dieta com IA",
+    "backToPlan": "Voltar ao plano",
+    "forPatient": "Para {name}",
+    "planConfiguration": "Configuração do plano",
+    "defineParamsForGeneration": "Defina os parâmetros para a geração",
+    "nutritionalPhase": "Fase nutricional",
+    "customOption": "Personalizado",
+    "deficitOption": "Déficit calórico (perder gordura)",
+    "maintenanceOption": "Manutenção",
+    "bulkOption": "Volume (ganhar massa muscular)",
+    "definitionOption": "Definição (manter músculo, perder gordura)",
+    "reverseOption": "Reverse diet (aumento progressivo)",
+    "dietType": "Tipo de dieta",
+    "mediterraneanDefault": "Mediterrânea (padrão)",
+    "lowCarbOption": "Baixa em carboidratos",
+    "highProteinOption": "Alta em proteínas",
+    "vegetarianOption": "Vegetariana",
+    "veganOption": "Vegana",
+    "ketogenicOption": "Cetogênica (keto)",
+    "glutenFreeOption": "Sem glúten",
+    "antiInflammatoryOption": "Anti-inflamatória",
+    "mealsPerDay": "Refeições por dia",
+    "mealsCount": "{count} refeições",
+    "dailyMacros": "Macros diários",
+    "adjustedToDeficit": "Ajustados ao déficit",
+    "caloriesLabel": "Calorias (kcal) *",
+    "proteinsLabel": "Proteínas (g)",
+    "carbsLabel": "Carboidratos (g)",
+    "fatsLabel": "Gorduras (g)",
+    "preferences": "Preferências",
+    "prefEasyToPrepare": "Fácil de preparar",
+    "prefBatchCooking": "Batch cooking",
+    "prefEconomical": "Econômico",
+    "prefVaried": "Muito variado",
+    "patientData": "Dados do paciente",
+    "name": "Nome",
+    "additionalInstructions": "Instruções adicionais",
+    "aiInstructionsPriority": "A IA seguirá estas instruções com prioridade máxima.",
+    "aiInstructionsExample": "Rico em peixe gordo e legumes da época. Sem frutos secos por causa da alergia. Minimizar laticínios pela intolerância parcial à lactose. Priorizar alimentos mediterrâneos.",
+    "generatePlanWithAI": "Gerar plano com IA",
+    "plansTitle": "Planos alimentares",
+    "plansSubtitle": "{count} planos · 1 paciente",
+    "templates": "Modelos ({count})",
+    "searchPlansPlaceholder": "Buscar por nome de dieta ou paciente...",
+    "overlay": {
+      "elementNotFound": "Elemento não encontrado",
+      "stepOf": "Passo {current} de {total}",
+      "stepShort": "{current}/{total}",
+      "previous": "Anterior",
+      "next": "Próximo",
+      "finish": "Finalizar"
+    },
+    "settings": {
+      "title": "Guias interativos",
+      "reset": "Reiniciar",
+      "progress": "{completed} de {total} completados — Tours passo a passo para aprender cada seção.",
+      "completed": "Concluído",
+      "repeat": "Repetir",
+      "start": "Iniciar",
+      "showLess": "Mostrar menos",
+      "showMore": "Ver todos os tours ({count} mais)"
+    },
+    "welcome": {
+      "titleDietista": "Bem-vindo ao Annonia!",
+      "titlePaciente": "Bem-vindo ao seu portal!",
+      "descDietista": "Vamos guiá-lo passo a passo pelas funcionalidades da plataforma para que aproveite ao máximo desde o primeiro dia.",
+      "descPaciente": "Mostraremos como usar seu portal de nutrição: ver sua dieta, registrar refeições, acompanhar sua evolução e mais.",
+      "startTour": "Iniciar tour guiado",
+      "skipTour": "Pular, já conheço o app",
+      "reactivateHintDietista": "Você pode reativar os guias a qualquer momento nas Configurações",
+      "reactivateHintPaciente": "Você pode reativar os guias a qualquer momento em Meu perfil"
+    },
+    "data": {
+      "dietistaDashboard": {
+        "name": "Boas-vindas ao Dashboard",
+        "description": "Conheça seu painel principal e as métricas do seu consultório",
+        "steps": {
+          "d1-1": { "title": "Seu menu de navegação", "description": "Pelo sidebar você acessa todas as seções do Annonia: pacientes, dietas, alimentos, agenda e mais." },
+          "d1-2": { "title": "Próxima consulta", "description": "Sua próxima consulta aparece aqui com o nome do paciente, data, hora e motivo. Clique para ir à ficha." },
+          "d1-3": { "title": "Notificações", "description": "Sua última notificação aparece aqui. As notificações avisam sobre pacientes sem consulta recente, planos expirados e mais." },
+          "d1-4": { "title": "Gráfico de atividade", "description": "Visualize sua atividade dos últimos 6 meses: consultas realizadas e pacientes novos." },
+          "d1-5": { "title": "Acessos rápidos", "description": "Crie um novo paciente, plano dietético, consulta ou receita com um só clique nestas cards." }
+        }
+      },
+      "dietistaPacientes": {
+        "name": "Gerenciar Pacientes",
+        "description": "Aprenda a criar e gerenciar a ficha dos seus pacientes",
+        "steps": {
+          "d2-1": { "title": "Lista de pacientes", "description": "Aqui estão todos os seus pacientes. Você pode ver seus dados, status e objetivo nutricional." },
+          "d2-2": { "title": "Criar novo paciente", "description": "Clique neste botão para registrar um novo paciente com todos os dados: pessoais, médicos, alergias, suplementos, atividade física e mais." },
+          "d2-3": { "title": "Buscar e filtrar", "description": "Use o buscador para encontrar pacientes por nome. Filtre entre ativos e inativos." }
+        }
+      },
+      "dietistaFichaPaciente": {
+        "name": "Ficha do Paciente",
+        "description": "Descubra tudo o que pode ver e fazer na ficha de um paciente",
+        "steps": {
+          "d2b-1": { "title": "Paciente de demonstração", "description": "Mostramos uma ficha de exemplo com dados fictícios para que veja todas as seções disponíveis." },
+          "d2b-2": { "title": "Dados pessoais", "description": "Aqui você verá email, telefone, data de nascimento e sexo do paciente. É preenchido ao criar o paciente." },
+          "d2b-3": { "title": "Histórico médico", "description": "Alergias, intolerâncias, patologias, medicamentos e suplementos. Tudo com etiquetas coloridas para ver de relance." },
+          "d2b-4": { "title": "Atividade e estilo de vida", "description": "Ocupação, nível de atividade, tipo de exercício, horários de trabalho, exercício e descanso. Informação chave para personalizar a dieta." },
+          "d2b-5": { "title": "Horário semanal", "description": "Calendário compartilhado entre nutricionista e paciente. Ambos podem adicionar atividades (trabalho, exercício, refeições, descanso) e sincroniza automaticamente." },
+          "d2b-6": { "title": "Medidas e registro rápido", "description": "Peso, altura e IMC atuais. O botão 'Registro rápido' permite anotar novas medidas diretamente durante a consulta." },
+          "d2b-7": { "title": "Recomendações", "description": "Escreva recomendações personalizadas. O paciente as verá pelo portal. São salvas automaticamente a cada 5 segundos." },
+          "d2b-8": { "title": "Planos alimentares", "description": "Os planos dietéticos do paciente. Máximo 3 visíveis, com link para 'Ver todos'. Daqui você cria novos planos ou acessa os existentes." }
+        }
+      },
+      "dietistaPlanes": {
+        "name": "Planos Alimentares",
+        "description": "Aprenda a navegar e gerenciar seus planos dietéticos",
+        "steps": {
+          "dpl-1": { "title": "Sua lista de planos", "description": "Aqui você vê todos os seus planos organizados por paciente. Cada card mostra o avatar, nome do paciente e quantos planos tem." },
+          "dpl-2": { "title": "Buscar planos", "description": "Use o buscador para encontrar planos por nome de dieta ou nome de paciente." },
+          "dpl-3": { "title": "Cada plano", "description": "Cada plano mostra seu nome, data de criação e calorias objetivo. Clique para abrir o editor completo." },
+          "dpl-4": { "title": "Modelos", "description": "Os modelos são planos salvos como base. Você pode criar um plano novo a partir de um modelo para economizar tempo." },
+          "dpl-5": { "title": "Novo plano", "description": "Clique aqui para criar um plano novo: selecione paciente, dê um nome e opcionalmente configure macros objetivo." }
+        }
+      },
+      "dietistaDietas": {
+        "name": "Editor de Plano Dietético",
+        "description": "Crie planos alimentares semanais com IA ou manualmente",
+        "steps": {
+          "d3-1": { "title": "Plano de demonstração", "description": "Mostramos um plano de exemplo com dados fictícios para que veja como funciona o editor de dietas." },
+          "d3-2": { "title": "Barra de ações", "description": "Daqui você pode gerar com IA, salvar como modelo, compartilhar, editar, exportar PDF ou excluir o plano." },
+          "d3-3": { "title": "Macros objetivo", "description": "Os objetivos diários do plano: calorias, proteínas, carboidratos e gorduras. São configurados ao criar ou editar o plano." },
+          "d3-4": { "title": "Editor semanal", "description": "Cada dia tem 6 refeições com hora, descrição do prato e alimentos com quantidades. São exibidos 3 dias por vez e você pode deslizar horizontalmente." },
+          "d3-5": { "title": "Geração com IA", "description": "O botão 'IA' gera um menu semanal completo. Configure fase nutricional (déficit, volume, definição...), tipo de dieta e preferências." },
+          "d3-6": { "title": "Exportar PDF", "description": "Gere um PDF profissional com capa, resumo semanal, detalhamento por dia com ingredientes, recomendações e lista de compras." },
+          "d3-7": { "title": "Compartilhar", "description": "Gere um link único para que seu paciente veja o plano sem precisar de conta. Perfeito para enviar por WhatsApp ou email." }
+        }
+      },
+      "dietistaIA": {
+        "name": "Gerar Dieta com IA",
+        "description": "Aprenda a usar a inteligência artificial para criar planos automáticos",
+        "steps": {
+          "dia-1": { "title": "Painel de geração IA", "description": "Aqui você configura todos os parâmetros antes que a IA gere um plano semanal completo. Vamos ver cada seção." },
+          "dia-2": { "title": "Fase nutricional", "description": "Selecione a fase do paciente: déficit (perder gordura), manutenção, volume (ganhar massa), definição ou reverse diet. Os macros se ajustam automaticamente." },
+          "dia-3": { "title": "Tipo de dieta", "description": "Escolha o estilo: mediterrânea, baixa em carboidratos, alta em proteínas, vegetariana, vegana, cetogênica, sem glúten ou anti-inflamatória." },
+          "dia-4": { "title": "Macros diários", "description": "Os objetivos de calorias, proteínas, carboidratos e gorduras. Se ajustam automaticamente ao selecionar uma fase, mas você pode modificá-los manualmente." },
+          "dia-5": { "title": "Preferências rápidas", "description": "Marque checkboxes para indicar se quer receitas fáceis, aptas para batch cooking, econômicas ou muito variadas." },
+          "dia-6": { "title": "Dados do paciente", "description": "A IA usa os dados do paciente automaticamente: alergias, intolerâncias, preferências e objetivo. Por isso é importante ter a ficha completa." },
+          "dia-7": { "title": "Instruções adicionais", "description": "Escreva instruções livres: 'rico em peixe', 'evitar laticínios no jantar', 'café da manhã sempre com aveia'... A IA as seguirá com prioridade máxima." },
+          "dia-8": { "title": "Gerar", "description": "Clique neste botão e a IA gerará um plano semanal completo em 1-2 minutos. Você poderá revisar o resultado e aceitá-lo ou descartá-lo." }
+        }
+      },
+      "dietistaAlimentos": {
+        "name": "Base de Alimentos",
+        "description": "Gerencie seu banco de dados nutricional com filtros avançados",
+        "steps": {
+          "d4-1": { "title": "Seu banco de dados", "description": "Mais de 2600 alimentos com informação nutricional detalhada. Filtre por categoria, macros e origem." },
+          "d4-2": { "title": "Filtros avançados", "description": "Busque alimentos por faixa de calorias, proteínas, carboidratos e gorduras. Ideal para encontrar o ingrediente perfeito." },
+          "d4-3": { "title": "Importar alimentos", "description": "Importe do Open Food Facts: busque qualquer produto e adicione-o ao seu banco de dados com um clique." }
+        }
+      },
+      "dietistaAgenda": {
+        "name": "Agenda e Consultas",
+        "description": "Gerencie seu calendário de consultas com todas as funcionalidades",
+        "steps": {
+          "d5-1": { "title": "Sua agenda", "description": "Aqui você gerencia todas as suas consultas. Vamos ver cada parte do calendário." },
+          "d5-2": { "title": "Nova consulta", "description": "Clique aqui para agendar uma nova consulta: selecione paciente, data, hora, duração (15-90 min) e motivo." },
+          "d5-3": { "title": "Controles de navegação", "description": "Navegue entre semanas ou meses com as setas. O botão 'Hoje' leva ao dia atual. Também vê o intervalo de datas." },
+          "d5-4": { "title": "Vista Semana / Mês", "description": "Alterne entre vista semanal (detalhada, vê cada consulta) e mensal (calendário com pontos). A vista semanal é a mais usada." },
+          "d5-5": { "title": "Vista semanal", "description": "Cada coluna é um dia. O dia atual é destacado em verde. As consultas mostram hora, paciente, duração e motivo com cores conforme o status." },
+          "d5-6": { "title": "Detalhe do dia", "description": "Ao clicar em um dia, abre-se o detalhe com todas as consultas expandidas. O dia atual abre automaticamente ao entrar na agenda." },
+          "d5-7": { "title": "Status da consulta", "description": "Cada consulta tem um status com cor: Azul = Confirmada, Âmbar = Pendente, Verde = Concluída, Cinza = Cancelada." },
+          "d5-8": { "title": "Ações da consulta", "description": "Daqui você pode: marcar como concluída, exportar para Google Calendar para sincronizá-la, ou excluir a consulta." }
+        }
+      },
+      "dietistaReportes": {
+        "name": "Relatórios e PDF",
+        "description": "Estatísticas do seu consultório e exportação de relatórios",
+        "steps": {
+          "d6-1": { "title": "Estatísticas", "description": "Métricas do seu consultório: taxa de retenção, média de consultas por paciente, planos criados e pacientes com portal." },
+          "d6-2": { "title": "Relatórios por paciente", "description": "Selecione um paciente para gerar relatórios PDF com sua ficha, evolução, consultas e plano dietético." }
+        }
+      },
+      "pacienteDashboard": {
+        "name": "Boas-vindas ao Portal",
+        "description": "Conheça seu portal de nutrição personalizado",
+        "steps": {
+          "p1-1": { "title": "Seu menu", "description": "Pelo sidebar você acessa todas as seções: dieta, diário, evolução, recomendações e mais." },
+          "p1-2": { "title": "Seu dia de hoje", "description": "Aqui você vê seu progresso do dia: refeições registradas, água e exercício. Clique para registrar seu acompanhamento diário." },
+          "p1-3": { "title": "Seu progresso", "description": "Peso, IMC e porcentagem de gordura com a variação em relação à semana anterior." }
+        }
+      },
+      "pacienteDieta": {
+        "name": "Sua Dieta",
+        "description": "Aprenda a consultar seu plano alimentar semanal",
+        "steps": {
+          "p2-1": { "title": "Seu plano semanal", "description": "Aqui você vê sua dieta completa: 7 dias com todas as refeições, ingredientes e quantidades." },
+          "p2-2": { "title": "Lista de compras", "description": "Gere automaticamente sua lista de compras a partir dos ingredientes do seu plano semanal." }
+        }
+      },
+      "pacienteEvolucion": {
+        "name": "Sua Evolução",
+        "description": "Visualize seu progresso com gráficos",
+        "steps": {
+          "p4-1": { "title": "Gráficos de progresso", "description": "Aqui você vê sua evolução: peso, IMC, porcentagem de gordura e perímetros ao longo do tempo." }
+        }
+      }
+    },
+    "demoData": {
+      "patient": {
+        "sexo": "Masculino",
+        "objetivo": "Perder peso",
+        "objetivoDetalle": "Perder 5 kg de forma saudável em 3 meses",
+        "alergias": ["Frutos secos (amêndoas)", "Pólen estacional"],
+        "intolerancias": ["Lactose (parcial)"],
+        "patologias": ["Hipertensão controlada", "Hipotireoidismo subclínico leve"],
+        "medicamentos": ["Enalapril 10 mg a cada 24 h", "Levotiroxina 50 mcg em jejum"],
+        "suplementos": ["Vitamina D3 1000 UI", "Omega-3 EPA/DHA", "Magnésio bisglicinato"],
+        "ocupacion": "Escritório",
+        "nivelActividad": "Moderado (3 vezes/sem)",
+        "tipoEjercicio": "Treino de força e cardio",
+        "horarioTrabajo": "09:00 – 18:00",
+        "horarioEjercicio": "S/Q/S 19:00",
+        "horasDescanso": "7-8 horas",
+        "preferencias": ["Mediterrânea", "Peixe gordo", "Legumes da época", "Sem ultraprocessados"],
+        "recomendaciones": "Beber pelo menos 2L de água por dia. Jantar leve 2h antes de dormir. Incluir mais vegetais de folha verde.",
+        "notas": "Paciente de teste pré-configurado para que você explore as funções do app. Pode editá-lo ou excluí-lo quando quiser."
+      },
+      "plans": {
+        "plan1": "Plano inicial — exemplo",
+        "plan2": "Plano de manutenção",
+        "plan3": "Plano esportivo — alto volume",
+        "plan4": "Plano low-carb",
+        "plan5": "Plano mediterrâneo — leguminosas"
+      },
+      "days": {
+        "lunes": "Segunda",
+        "martes": "Terça",
+        "miercoles": "Quarta"
+      },
+      "citas": {
+        "motivo1": "Segunda revisão de acompanhamento",
+        "motivo2": "Revisão de medidas",
+        "motivo3": "Consulta pontual",
+        "motivo4": "Terceira revisão mensal",
+        "motivo5": "Revisão plano esportivo",
+        "motivo6": "Controle de peso quinzenal"
+      }
+    }
+  },
+  "idioma": {
+    "espanol": "Español",
+    "portugues": "Português",
+    "activo": "Ativo"
+  }
+}

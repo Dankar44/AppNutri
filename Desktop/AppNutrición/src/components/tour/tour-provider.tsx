@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { getToursByAudience, getTourById, type Tour, type TourStep } from "@/lib/tour-data";
 
 interface TourContextType {
@@ -54,7 +55,8 @@ interface Props {
 export function TourProvider({ audience, children }: Props) {
   const router = useRouter();
   const pathname = usePathname();
-  const tours = getToursByAudience(audience);
+  const t = useTranslations();
+  const tours = getToursByAudience(audience, t);
   const [activeTour, setActiveTour] = useState<Tour | null>(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [completedTours, setCompletedTours] = useState<string[]>([]);
@@ -77,7 +79,7 @@ export function TourProvider({ audience, children }: Props) {
   }, []);
 
   const startTour = useCallback((tourId: string) => {
-    const tour = getTourById(tourId);
+    const tour = getTourById(tourId, t);
     if (!tour) return;
     setActiveTour(tour);
     setCurrentStepIndex(0);
@@ -86,7 +88,7 @@ export function TourProvider({ audience, children }: Props) {
       isNavigatingRef.current = true;
       router.push(tour.steps[0].route);
     }
-  }, [router, pathname]);
+  }, [router, pathname, t]);
 
   const completeTour = useCallback(() => {
     if (!activeTour) return;

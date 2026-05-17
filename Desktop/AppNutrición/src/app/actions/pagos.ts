@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
 import { getCurrentDietista } from "./auth";
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 
 export interface Pago {
   id: string;
@@ -70,12 +71,13 @@ export async function crearPago(data: {
   importe: number;
   notas?: string;
 }) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
-  if (!data.concepto.trim()) throw new Error("El concepto es obligatorio");
-  if (data.importe <= 0) throw new Error("El importe debe ser mayor que 0");
+  if (!data.concepto.trim()) throw new Error(t("pago.conceptoObligatorio"));
+  if (data.importe <= 0) throw new Error(t("pago.importeMayorCero"));
 
   // Insertar pago en BD
   const rows = await prisma.$queryRawUnsafe<{ id: string }[]>(
@@ -150,8 +152,9 @@ export async function crearPago(data: {
 // ─── Generar nuevo link de pago para un pago existente ─────────────────
 
 export async function generarLinkPago(pagoId: string): Promise<{ url: string | null }> {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return { url: null };
 
   // Obtener datos del pago
@@ -162,8 +165,8 @@ export async function generarLinkPago(pagoId: string): Promise<{ url: string | n
   );
 
   const pago = pagoRows[0];
-  if (!pago) throw new Error("Pago no encontrado");
-  if (pago.estado === "PAGADO") throw new Error("El pago ya está completado");
+  if (!pago) throw new Error(t("pago.pagoNoEncontrado"));
+  if (pago.estado === "PAGADO") throw new Error(t("pago.pagoYaCompletado"));
 
   // Verificar que tiene Stripe
   const stripeRows = await prisma.$queryRawUnsafe<{ stripeAccountId: string | null; stripeOnboarded: boolean }[]>(
@@ -173,7 +176,7 @@ export async function generarLinkPago(pagoId: string): Promise<{ url: string | n
 
   const stripeAccount = stripeRows[0];
   if (!stripeAccount?.stripeAccountId || !stripeAccount.stripeOnboarded) {
-    throw new Error("Conecta tu cuenta de Stripe en Ajustes para generar links de pago");
+    throw new Error(t("pago.conectaStripe"));
   }
 
   const origin = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
@@ -217,8 +220,9 @@ export async function generarLinkPago(pagoId: string): Promise<{ url: string | n
 }
 
 export async function marcarPagado(pagoId: string, metodoPago: string) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   await prisma.$queryRawUnsafe(
@@ -233,8 +237,9 @@ export async function marcarPagado(pagoId: string, metodoPago: string) {
 }
 
 export async function eliminarPago(pagoId: string) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   await prisma.$queryRawUnsafe(

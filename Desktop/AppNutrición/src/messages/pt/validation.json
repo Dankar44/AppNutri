@@ -1,0 +1,225 @@
+{
+  "auth": {
+    "noAutorizado": "Não autorizado",
+    "noAutenticado": "Não autenticado",
+    "sinNombre": "Sem nome",
+    "emailNoEncontrado": "Email não encontrado ou conta inativa",
+    "contrasenaOPinIncorrectos": "Senha ou PIN incorretos",
+    "emailNoValido": "Email inválido",
+    "registrosCerrados": "Os registros estão fechados. Se já tem conta de nutricionista, inicie sessão com email e senha.",
+    "emailRegistradoComoPaciente": "Este email está registrado como paciente. Não é possível criar uma conta de nutricionista com o mesmo email."
+  },
+  "perfil": {
+    "nombreObligatorio": "O nome é obrigatório",
+    "apellidosObligatorios": "O sobrenome é obrigatório",
+    "imagenInvalida": "Imagem inválida",
+    "temaNoValido": "Tema inválido",
+    "colorNoValido": "Cor inválida"
+  },
+  "password": {
+    "noDisponibleDemo": "Não disponível no modo demonstração",
+    "camposObligatorios": "Todos os campos são obrigatórios",
+    "longitudMinima": "A nova senha deve ter pelo menos 6 caracteres",
+    "debeSerDiferente": "A nova senha deve ser diferente da atual",
+    "actualIncorrecta": "A senha atual não está correta"
+  },
+  "paciente": {
+    "nombreObligatorio": "O nome é obrigatório (máx. 100 caracteres)",
+    "apellidosObligatorios": "O sobrenome é obrigatório (máx. 100 caracteres)",
+    "emailFormatoInvalido": "O formato do email não é válido",
+    "telefonoFormatoInvalido": "O telefone não tem um formato válido",
+    "pesoFueraRango": "O peso deve estar entre 1 e 500 kg",
+    "alturaFueraRango": "A altura deve estar entre 30 e 300 cm",
+    "sexoNoValido": "Sexo inválido",
+    "objetivoNoValido": "Objetivo inválido",
+    "fechaNacimientoObligatoria": "A data de nascimento é obrigatória",
+    "fechaNacimientoInvalida": "Data de nascimento inválida",
+    "fechaNacimientoFutura": "A data de nascimento não pode ser futura",
+    "pacienteNoEncontrado": "Paciente não encontrado",
+    "sinEmailRegistrado": "O paciente não tem email registrado",
+    "emailPerteneceADietista": "Este email pertence a uma conta de nutricionista. Uma pessoa não pode ser nutricionista e paciente ao mesmo tempo."
+  },
+  "plan": {
+    "planNoEncontrado": "Plano não encontrado",
+    "planNoValido": "Plano inválido",
+    "nombreObligatorio": "O nome é obrigatório"
+  },
+  "cita": {
+    "citaNoEncontrada": "Consulta não encontrada",
+    "fechaNoPuedePasada": "A data não pode ser no passado",
+    "fechaInvalida": "Data inválida",
+    "fechaHoraInvalidas": "Data e hora inválidas",
+    "sinNutricionistaAsignado": "Paciente sem nutricionista atribuído",
+    "horarioOcupado": "Esse horário já está ocupado. Escolha outro.",
+    "noEsContrapropuesta": "Esta consulta não é uma contraproposta",
+    "noPuedeCancelar": "Esta consulta já não pode ser cancelada",
+    "noEsPropuestaNutri": "Esta consulta não é uma proposta do nutricionista",
+    "noPermiteContrapropuestaPaciente": "Esta consulta não permite contraproposta do paciente",
+    "horarioOcupadoPorOtraCita": "Esse horário já está ocupado por outra consulta",
+    "noEsContrapropuestaPaciente": "Esta consulta não é uma contraproposta do paciente",
+    "yaNoEstaPendiente": "Esta consulta já não está pendente",
+    "noPermiteContrapropuestaNutri": "Esta consulta não permite contraproposta do nutricionista",
+    "horarioOcupadoNutri": "Esse horário está ocupado por outra consulta"
+  },
+  "consulta": {
+    "consultaNoEncontrada": "Consulta não encontrada"
+  },
+  "receta": {
+    "nombreObligatorio": "O nome é obrigatório",
+    "recetaNoEncontrada": "Receita não encontrada",
+    "soloFavoritasApp": "Só pode marcar como favoritas as receitas da aplicação"
+  },
+  "plantilla": {
+    "plantillaNoEncontrada": "Modelo não encontrado"
+  },
+  "alimento": {
+    "nombreObligatorio": "O nome é obrigatório",
+    "categoriaNoValida": "Categoria inválida",
+    "unidadNoValida": "Unidade inválida",
+    "urlImagenNoValida": "A URL da imagem não é válida",
+    "yaExisteNombre": "Já existe um alimento com esse nome",
+    "enlaceNoValido": "O link não é uma URL válida"
+  },
+  "generacionIA": {
+    "generacionNoEncontrada": "Geração não encontrada",
+    "apiKeysNoConfiguradas": "API keys do Groq não configuradas. Acesse Configurações.",
+    "nuevaPlanificacion": "Nova planificação",
+    "errorCrearPlanificacion": "Erro ao criar a planificação",
+    "errorAlGenerar": "Erro ao gerar: {msg}",
+    "respuestaFormatoInvalido": "A resposta da IA não tem o formato esperado"
+  },
+  "pago": {
+    "pagoNoEncontrado": "Pagamento não encontrado",
+    "errorCambiarPlan": "Erro ao alterar o plano",
+    "errorCheckout": "Erro ao criar Stripe Checkout Session:",
+    "conceptoObligatorio": "O conceito é obrigatório",
+    "importeMayorCero": "O valor deve ser maior que 0",
+    "pagoYaCompletado": "O pagamento já foi concluído",
+    "conectaStripe": "Conecte sua conta Stripe em Configurações para gerar links de pagamento"
+  },
+  "mensajes": {
+    "demasiadosMensajes": "Muitas mensagens. Aguarde {retryAfter}s",
+    "demasiadosArchivos": "Muitos arquivos. Aguarde {retryAfter}s",
+    "mensajeVacio": "Mensagem vazia"
+  },
+  "adjuntos": {
+    "supabaseNoConfigurado": "Supabase não configurado (falta SECRET_KEY)",
+    "sinArchivo": "Sem arquivo",
+    "archivoSuperaTamano": "O arquivo excede {maxMB}MB",
+    "tipoNoPermitido": "Tipo de arquivo não permitido",
+    "contenidoNoValido": "O conteúdo do arquivo não é válido",
+    "tipoNoCoincide": "O tipo do arquivo não corresponde ao seu conteúdo",
+    "noSePudoSubir": "Não foi possível enviar o arquivo",
+    "noSePudoGenerarUrl": "Não foi possível gerar a URL"
+  },
+  "admin": {
+    "yaExisteDietistaEmail": "Já existe um nutricionista com esse email",
+    "yaExisteUsuarioEmail": "Já existe um usuário com esse email",
+    "emailOContrasenaIncorrectos": "Email ou senha incorretos",
+    "emailNoValido": "Email inválido",
+    "contrasenaMinima": "A senha deve ter pelo menos 6 caracteres",
+    "nombreObligatorio": "O nome é obrigatório",
+    "dietistaNoEncontrado": "Nutricionista não encontrado"
+  },
+  "stripe": {
+    "sinCuentaStripe": "Você não tem conta Stripe conectada"
+  },
+  "planificacion": {
+    "nombreObligatorio": "O nome é obrigatório",
+    "errorCrear": "Erro ao criar a planificação",
+    "porDefecto": "Planificação padrão",
+    "nueva": "Nova planificação"
+  },
+  "general": {
+    "errorDesconocido": "Erro desconhecido",
+    "noDisponibleDemo": "Não disponível no modo demonstração",
+    "tuNutricionista": "Seu nutricionista"
+  },
+  "notificaciones": {
+    "titulos": {
+      "nutricionistaPropone": "Seu nutricionista propôs uma consulta",
+      "citaConfirmada": "Sua consulta foi confirmada",
+      "citaConfirmadaDietista": "Consulta confirmada",
+      "nuevaSolicitud": "Nova solicitação de consulta",
+      "pacienteRechazoCita": "O paciente recusou a consulta",
+      "pacienteProponeOtraFecha": "O paciente propõe outra data",
+      "solicitudRechazada": "Sua solicitação de consulta foi recusada",
+      "nutricionistaProponeOtraFecha": "Seu nutricionista propôs outra data",
+      "nutricionistaRechazoContrapropuesta": "Seu nutricionista recusou sua proposta",
+      "contrapropuestaRechazada": "Contraproposta recusada",
+      "citaCanceladaPaciente": "Consulta cancelada pelo paciente",
+      "citaHoy": "Consulta às {hora}",
+      "nuevoSeguimientoDiario": "Novo acompanhamento diário",
+      "pacienteSinConsultaReciente": "Paciente sem consulta recente",
+      "pacienteSinMedidasRecientes": "Paciente sem medidas recentes",
+      "consulta": "Consulta",
+      "ejercicio": "Exercício"
+    },
+    "mensajes": {
+      "proponeCita": "{nombreDietista} propõe uma consulta para {fecha}",
+      "pacienteAceptoPropuesta": "{nombrePaciente} aceitou sua proposta para {fecha}",
+      "pacienteRechazoPropuesta": "{nombrePaciente} recusou sua proposta para {fecha}",
+      "pacienteCanceloCita": "{nombrePaciente} cancelou sua consulta de {fecha}",
+      "pacienteAceptoCita": "{nombrePaciente} aceitou a consulta de {fecha}",
+      "pacienteRechazoCita": "{nombrePaciente} recusou a consulta de {fecha}",
+      "pacienteProponeOtraFecha": "{nombrePaciente} propõe {fechaNueva} em vez de {fechaOriginal}",
+      "dietistaAceptoPropuesta": "{nombreDietista} aceitou sua proposta para {fecha}",
+      "dietistaRechazoPropuesta": "{nombreDietista} recusou sua proposta de {fecha}",
+      "dietistaConfirmoCita": "{nombreDietista} confirmou sua consulta para {fecha}",
+      "dietistaProponeOtraFecha": "{nombreDietista} propõe {fechaNueva} em vez de {fechaOriginal}",
+      "dietistaRechazoSolicitud": "{nombreDietista} recusou sua solicitação para {fecha}",
+      "pacienteSolicitoCita": "{nombrePaciente} solicitou uma consulta para {fecha}",
+      "pacienteSinConsulta": "{nombrePaciente} está há mais de 30 dias sem consulta",
+      "pacienteSinMedidas": "{nombrePaciente} está há mais de 30 dias sem medidas",
+      "pacienteRegistroSeguimiento": "{nombrePaciente} registrou seu acompanhamento hoje",
+      "motivo": "Motivo: {motivo}"
+    }
+  },
+  "pacienteAuth": {
+    "pinFormatoInvalido": "O PIN deve ter entre 4 e 8 dígitos",
+    "contrasenaMinima": "A senha deve ter pelo menos 6 caracteres",
+    "nuevaContrasenaMinima": "A nova senha deve ter pelo menos 6 caracteres",
+    "accesoNoEncontrado": "Acesso não encontrado",
+    "contrasenaActualIncorrecta": "A senha atual está incorreta"
+  },
+  "estadisticas": {
+    "objetivos": {
+      "perderPeso": "Perder peso",
+      "ganarMasa": "Ganhar massa",
+      "mantenimiento": "Manutenção",
+      "patologia": "Patologia",
+      "deportivo": "Esportivo",
+      "otro": "Outro"
+    }
+  },
+  "seguimiento": {
+    "tipoLabels": {
+      "desayuno": "café da manhã",
+      "mediaManana": "lanche da manhã",
+      "almuerzo": "almoço",
+      "merienda": "lanche",
+      "cena": "jantar",
+      "recena": "ceia"
+    },
+    "actividadTitulos": {
+      "diarioTipoComida": "Diário: {tipoComida}",
+      "consulta": "Consulta",
+      "ejercicioGenerico": "Exercício",
+      "ejercicioConTipo": "Exercício: {tipo}"
+    },
+    "cumplioComida": "Seguiu o {mealLabel} do dia {fechaStr} às {hora}.",
+    "hizoCambiosComida": "Fez alterações no {mealLabel} do dia {fechaStr} às {hora}.",
+    "meses": [
+      "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+      "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"
+    ]
+  },
+  "imagen": {
+    "errorProcesar": "Erro ao processar a imagem"
+  },
+  "ai": {
+    "noApiKeys": "Não há chaves de API de IA configuradas",
+    "timeout": "Tempo máximo de espera esgotado. Tente novamente mais tarde.",
+    "rateLimitExhausted": "Muitas tentativas por limite de taxa. Tente novamente mais tarde."
+  }
+}

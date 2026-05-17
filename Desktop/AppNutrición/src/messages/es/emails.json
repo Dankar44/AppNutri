@@ -1,0 +1,80 @@
+{
+  "mailer": {
+    "noServicioConfigurado": "No hay servicio de email configurado. Añade RESEND_API_KEY o GMAIL_USER + GMAIL_APP_PASSWORD en las variables de entorno."
+  },
+  "mensajesPaciente": {
+    "subject": "Tienes un mensaje de {nombreDietista}",
+    "saludo": "Hola, {nombre}",
+    "cuerpo": "{nombreDietista} te ha enviado un mensaje:",
+    "cta": "Ver mensaje",
+    "instrucciones": "Responde desde la aplicación para mantener toda la conversación en un único sitio.",
+    "footer": "Este correo es una notificación automática de Annonia.",
+    "footerDesactivar": "Si no quieres recibir estos avisos, desactívalos desde tu portal."
+  },
+  "mensajesDietista": {
+    "subject": "Nuevo mensaje de {nombrePaciente}",
+    "saludo": "Hola, {nombre}",
+    "cuerpo": "Tu paciente {nombrePaciente} te ha enviado un mensaje:",
+    "cta": "Abrir mensajes",
+    "footer": "Este correo es una notificación automática de Annonia.",
+    "footerPreferencias": "Puedes ajustar las preferencias desde tu panel."
+  },
+  "cuestionario": {
+    "subject": "Tu cuestionario nutricional — {dietistaNombre}",
+    "titulo": "Resumen de tu cuestionario",
+    "saludo": "Hola {pacienteNombre}, tu nutricionista {dietistaNombre} ha registrado la siguiente información de tu consulta.",
+    "seccionConsulta": "Informaciones de consulta",
+    "seccionPersonal": "Historia personal y social",
+    "seccionClinica": "Historia clínica",
+    "seccionAlimentaria": "Historia alimentaria",
+    "seccionCamposPersonalizados": "Campos personalizados",
+    "avisoIncorrecto": "Si alguno de estos datos no es correcto, por favor responde a este correo o contacta con tu nutricionista para actualizarlos.",
+    "footer": "Enviado desde Annonia",
+    "labels": {
+      "motivoConsulta": "Motivo de consulta",
+      "expectativas": "Expectativas",
+      "objetivosClinicos": "Objetivos clínicos",
+      "detalleObjetivos": "Detalle objetivos",
+      "otrasInformaciones": "Otras informaciones",
+      "funcionIntestinal": "Función intestinal",
+      "detalle": "Detalle",
+      "calidadSueno": "Calidad del sueño",
+      "fumador": "Fumador",
+      "bebeAlcohol": "Bebe alcohol",
+      "estadoCivil": "Estado civil",
+      "actividadFisica": "Actividad física",
+      "razaEtnia": "Raza / etnia",
+      "prefiereNoIndicar": "Prefiere no indicar",
+      "detallePatologias": "Detalle patologías / evolución",
+      "medicacion": "Medicación",
+      "antecedentesPersonales": "Antecedentes personales",
+      "antecedentesFamiliares": "Antecedentes familiares",
+      "horaLevantarse": "Hora habitual para levantarse",
+      "horaAcostarse": "Hora habitual para acostarse",
+      "tipoDieta": "Tipo de dieta",
+      "detalleDieta": "Detalle dieta",
+      "alimentosFavoritos": "Alimentos favoritos",
+      "alimentosRechazados": "Alimentos rechazados",
+      "alergiasDetalle": "Alergias (detalle)",
+      "intoleranciasDetalle": "Intolerancias (detalle)",
+      "deficienciasNutricionales": "Deficiencias nutricionales",
+      "ingestaAgua": "Ingesta de agua"
+    }
+  },
+  "planAlimenticio": {
+    "subject": "Tu plan de alimentación — {planNombre}"
+  },
+  "accesoPortal": {
+    "subject": "Acceso a tu portal de nutricion — {dietistaNombre}",
+    "titulo": "Acceso a tu portal de nutricion",
+    "saludo": "Hola {pacienteNombre}, tu nutricionista {dietistaNombre} te ha dado acceso a tu portal personal.",
+    "accedeTuPortal": "Accede a tu portal aqui:",
+    "boton": "Ir a mi portal",
+    "instruccionesLabel": "Instrucciones:",
+    "paso1": "Accede al enlace de arriba",
+    "paso2": "Introduce tu email: {email}",
+    "paso3": "Introduce el PIN que te ha proporcionado tu nutricionista",
+    "paso4": "Desde el portal podras consultar tu dieta, registrar tu peso y mas",
+    "footer": "Enviado desde Annonia"
+  }
+}

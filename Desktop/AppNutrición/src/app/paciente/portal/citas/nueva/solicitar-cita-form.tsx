@@ -13,6 +13,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations, useLocale } from "next-intl";
 import {
   getDisponibilidadSemanaPaciente,
   solicitarCitaPaciente,
@@ -20,20 +21,9 @@ import {
   type DisponibilidadSemanal,
 } from "@/app/actions/citas-flujo";
 
-const DIAS_LABEL = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"] as const;
-const MESES_LARGO = [
-  "enero",
-  "febrero",
-  "marzo",
-  "abril",
-  "mayo",
-  "junio",
-  "julio",
-  "agosto",
-  "septiembre",
-  "octubre",
-  "noviembre",
-  "diciembre",
+const MESES_KEYS = [
+  "january", "february", "march", "april", "may", "june",
+  "july", "august", "september", "october", "november", "december",
 ] as const;
 
 const PX_PER_HOUR = 36;
@@ -60,20 +50,23 @@ function hhmmToMinutes(s: string): number {
   return h * 60 + (m || 0);
 }
 
-function labelSemana(lunesISO: string): string {
+function labelSemana(lunesISO: string, tCommon: ReturnType<typeof useTranslations<"common">>): string {
   const [y, m, d] = lunesISO.split("-").map(Number);
   const ini = new Date(y, m - 1, d);
   const fin = new Date(ini);
   fin.setDate(fin.getDate() + 6);
   if (ini.getMonth() === fin.getMonth()) {
-    return `${ini.getDate()}–${fin.getDate()} de ${MESES_LARGO[ini.getMonth()]}`;
+    const mes = tCommon(`monthsLong.${MESES_KEYS[ini.getMonth()]}` as never) as string;
+    return `${ini.getDate()}–${fin.getDate()} de ${mes}`;
   }
-  return `${ini.getDate()} ${MESES_LARGO[ini.getMonth()].slice(0, 3)} – ${fin.getDate()} ${MESES_LARGO[fin.getMonth()].slice(0, 3)}`;
+  const mesIniShort = tCommon(`monthsShort.${MESES_KEYS[ini.getMonth()]}` as never) as string;
+  const mesFinShort = tCommon(`monthsShort.${MESES_KEYS[fin.getMonth()]}` as never) as string;
+  return `${ini.getDate()} ${mesIniShort} – ${fin.getDate()} ${mesFinShort}`;
 }
 
-function labelFechaCita(fechaHoraISO: string): string {
+function labelFechaCita(fechaHoraISO: string, locale: string): string {
   const d = new Date(fechaHoraISO);
-  return d.toLocaleString("es-ES", {
+  return d.toLocaleString(locale, {
     timeZone: "Europe/Madrid",
     weekday: "long",
     day: "numeric",
@@ -84,6 +77,10 @@ function labelFechaCita(fechaHoraISO: string): string {
 }
 
 export function SolicitarCitaForm() {
+  const t = useTranslations("patient-portal");
+  const tCommon = useTranslations("common");
+  const locale = useLocale();
+  const dateLocale = locale === "pt" ? "pt-BR" : "es-ES";
   const router = useRouter();
   const [lunesISO, setLunesISO] = useState<string>(() =>
     toYYYYMMDD(lunesDeSemana(new Date())),
@@ -101,7 +98,7 @@ export function SolicitarCitaForm() {
       setData(res);
     } catch {
       setData(null);
-      toast.error("No se pudo cargar la disponibilidad");
+      toast.error(t("nuevaCita.toast.errorCargarDisponibilidad"));
     } finally {
       setLoading(false);
     }
@@ -139,11 +136,11 @@ export function SolicitarCitaForm() {
     startSubmit(async () => {
       try {
         await solicitarCitaPaciente(slotSeleccionado, motivo.trim() || undefined);
-        toast.success("Solicitud enviada. Tu nutricionista la revisará pronto.");
+        toast.success(t("nuevaCita.toast.solicitudEnviada"));
         router.push("/paciente/portal/citas");
         router.refresh();
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Error al solicitar la cita");
+        toast.error(e instanceof Error ? e.message : t("nuevaCita.toast.errorSolicitar"));
       }
     });
   }
@@ -163,7 +160,7 @@ export function SolicitarCitaForm() {
             onClick={semanaAnterior}
             disabled={!puedeAtras}
             className="p-1.5 rounded-lg border border-border bg-card hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            aria-label="Semana anterior"
+            aria-label={t("nuevaCita.grid.semanaAnterior" as never)}
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -172,38 +169,38 @@ export function SolicitarCitaForm() {
             onClick={semanaActual}
             className="px-3 h-8 rounded-lg border border-border bg-card hover:bg-muted text-xs font-medium transition-colors"
           >
-            Esta semana
+            {t("nuevaCita.estaSemana")}
           </button>
           <button
             type="button"
             onClick={semanaSiguiente}
             className="p-1.5 rounded-lg border border-border bg-card hover:bg-muted transition-colors"
-            aria-label="Semana siguiente"
+            aria-label={t("nuevaCita.grid.semanaSiguiente" as never)}
           >
             <ChevronRight className="w-4 h-4" />
           </button>
           <div className="ml-2 text-sm font-semibold capitalize">
-            {labelSemana(lunesISO)}
+            {labelSemana(lunesISO, tCommon)}
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
           {data && (
             <span className="font-medium text-foreground">
-              {data.duracion} min por cita
+              {t("nuevaCita.minPorCita", { duracion: data.duracion })}
             </span>
           )}
           <span className="inline-flex items-center gap-1.5">
             <span className="w-3 h-3 rounded bg-emerald-100 border border-emerald-300 dark:bg-emerald-500/20 dark:border-emerald-500/40" />
-            Disponible
+            {t("nuevaCita.leyenda.disponible")}
           </span>
           <span className="inline-flex items-center gap-1.5">
             <span className="w-3 h-3 rounded bg-rose-100 border border-rose-300 dark:bg-rose-500/20 dark:border-rose-500/40" />
-            Ocupado
+            {t("nuevaCita.leyenda.ocupado")}
           </span>
           <span className="inline-flex items-center gap-1.5">
             <span className="w-3 h-3 rounded bg-muted border border-border" />
-            Fuera de horario
+            {t("nuevaCita.leyenda.fueraHorario")}
           </span>
         </div>
       </div>
@@ -217,9 +214,9 @@ export function SolicitarCitaForm() {
         ) : !data ? (
           <div className="p-10 text-center">
             <Clock className="w-8 h-8 mx-auto text-muted-foreground/60 mb-3" />
-            <h3 className="font-semibold text-sm mb-1">No hay horario configurado</h3>
+            <h3 className="font-semibold text-sm mb-1">{t("nuevaCita.sinHorario.title")}</h3>
             <p className="text-xs text-muted-foreground max-w-md mx-auto">
-              Tu nutricionista aún no ha publicado su horario. Vuelve a intentarlo más tarde.
+              {t("nuevaCita.sinHorario.description")}
             </p>
           </div>
         ) : (
@@ -232,7 +229,7 @@ export function SolicitarCitaForm() {
             />
             {totalHuecos === 0 && (
               <div className="border-t border-border bg-muted/20 px-4 py-3 text-center text-xs text-muted-foreground">
-                Esta semana no hay huecos libres. Prueba con otra semana usando las flechas de arriba.
+                {t("nuevaCita.sinHuecosSemana")}
               </div>
             )}
           </>
@@ -250,10 +247,10 @@ export function SolicitarCitaForm() {
                 </span>
                 <div className="min-w-0">
                   <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
-                    Cita seleccionada
+                    {t("nuevaCita.citaSeleccionada")}
                   </p>
                   <p className="text-sm font-semibold capitalize truncate">
-                    {labelFechaCita(slotSeleccionado)}
+                    {labelFechaCita(slotSeleccionado, dateLocale)}
                   </p>
                 </div>
               </>
@@ -263,9 +260,9 @@ export function SolicitarCitaForm() {
                   <Info className="w-5 h-5" />
                 </span>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium">Selecciona un hueco libre</p>
+                  <p className="text-sm font-medium">{t("nuevaCita.seleccionaHueco")}</p>
                   <p className="text-xs text-muted-foreground">
-                    Haz click en cualquier casilla verde del calendario para proponer esa hora.
+                    {t("nuevaCita.seleccionaHuecoDesc")}
                   </p>
                 </div>
               </>
@@ -279,7 +276,7 @@ export function SolicitarCitaForm() {
                 value={motivo}
                 onChange={(e) => setMotivo(e.target.value)}
                 maxLength={200}
-                placeholder="Motivo (opcional): revisión, duda sobre el plan…"
+                placeholder={t("nuevaCita.motivoPlaceholder")}
                 className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
@@ -291,7 +288,7 @@ export function SolicitarCitaForm() {
               onClick={() => router.push("/paciente/portal/citas")}
               className="h-10 px-4 rounded-lg border border-border bg-card hover:bg-muted text-sm font-medium transition-colors"
             >
-              Cancelar
+              {t("nuevaCita.cancelar")}
             </button>
             <button
               type="button"
@@ -304,7 +301,7 @@ export function SolicitarCitaForm() {
               ) : (
                 <CalendarCheck2 className="w-4 h-4" />
               )}
-              Solicitar cita
+              {t("nuevaCita.solicitarCita")}
             </button>
           </div>
         </div>
@@ -324,6 +321,8 @@ function GridSemanal({
   onSelect: (slot: string) => void;
   hoyISO: string;
 }) {
+  const t = useTranslations("patient-portal");
+  const diasLabel = t.raw("nuevaCita.grid.dias") as string[];
   const { rangoHoras, dias } = data;
   const inicioH = rangoHoras.inicio;
   const finH = rangoHoras.fin;
@@ -358,7 +357,7 @@ function GridSemanal({
                     esHoy ? "text-primary font-bold" : "text-muted-foreground font-medium"
                   }`}
                 >
-                  {DIAS_LABEL[i]}
+                  {diasLabel[i]}
                 </div>
                 <div
                   className={`text-lg font-bold tabular-nums leading-tight ${
@@ -440,6 +439,7 @@ function DiaColumna({
   slotSeleccionado: string | null;
   onSelect: (slot: string) => void;
 }) {
+  const t = useTranslations("patient-portal");
   const pxPerMin = PX_PER_HOUR / 60;
   const startMin = inicioH * 60;
   const endMin = finH * 60;
@@ -477,11 +477,11 @@ function DiaColumna({
             key={idx}
             className="absolute left-0.5 right-0.5 bg-rose-100/80 dark:bg-rose-500/15 border border-rose-200 dark:border-rose-500/30 rounded-md overflow-hidden"
             style={{ top: `${top + 1}px`, height: `${height - 2}px` }}
-            title="Ocupado"
+            title={t("nuevaCita.grid.ocupado")}
           >
             <div className="flex items-center justify-center h-full gap-1 text-[10px] font-medium text-rose-700 dark:text-rose-300">
               <Lock className="w-3 h-3" strokeWidth={2} />
-              <span className="hidden sm:inline">Ocupado</span>
+              <span className="hidden sm:inline">{t("nuevaCita.grid.ocupado")}</span>
             </div>
           </div>
         );
@@ -506,7 +506,7 @@ function DiaColumna({
                 : "bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 hover:shadow-sm dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30 dark:hover:bg-emerald-500/25 cursor-pointer"
             }`}
             style={{ top: `${top + 1}px`, height: `${height - 2}px` }}
-            aria-label={`Solicitar a las ${s.horaLocal}`}
+            aria-label={t("nuevaCita.grid.solicitarALas" as never, { hora: s.horaLocal } as never)}
           >
             <Clock className="w-3 h-3" strokeWidth={2} />
             {s.horaLocal}

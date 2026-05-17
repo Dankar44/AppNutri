@@ -3,10 +3,12 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Cookie, Shield, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 const COOKIE_KEY = "annonia-cookie-consent";
 
 export function CookieBanner() {
+  const t = useTranslations("common");
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -49,26 +51,24 @@ export function CookieBanner() {
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
                 <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-                  Tu privacidad nos importa
+                  {t("cookie.title")}
                 </h3>
                 <button
                   onClick={reject}
                   className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors shrink-0"
-                  aria-label="Cerrar"
+                  aria-label={t("cookie.closeAriaLabel")}
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1.5 leading-relaxed">
-                Usamos cookies <strong className="text-gray-700 dark:text-gray-300">estrictamente necesarias</strong> para que la app funcione
-                y cookies de <strong className="text-gray-700 dark:text-gray-300">preferencias</strong> para recordar tu configuración (tema, tours).
-                Usamos cookies de análisis (Google Analytics) solo si aceptas. No usamos cookies de publicidad.
+                {t("cookie.descriptionPart1")} <strong className="text-gray-700 dark:text-gray-300">{t("cookie.descriptionStrict")}</strong> {t("cookie.descriptionPart2")} <strong className="text-gray-700 dark:text-gray-300">{t("cookie.descriptionPrefs")}</strong> {t("cookie.descriptionPart3")}
               </p>
 
               <div className="flex items-center gap-2 mt-3 text-xs text-gray-400 dark:text-gray-500">
                 <Shield className="w-3.5 h-3.5" />
-                <span>Analytics solo con consentimiento · Sin publicidad · LSSI-CE y RGPD</span>
+                <span>{t("cookie.analyticsNote")}</span>
               </div>
 
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 mt-5">
@@ -76,20 +76,20 @@ export function CookieBanner() {
                   onClick={accept}
                   className="flex-1 sm:flex-none px-6 py-2.5 text-sm font-semibold rounded-xl bg-green-600 text-white hover:bg-green-500 transition-colors shadow-sm"
                 >
-                  Aceptar todas
+                  {t("cookie.acceptAll")}
                 </button>
                 <button
                   onClick={reject}
                   className="flex-1 sm:flex-none px-6 py-2.5 text-sm font-medium rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
-                  Solo necesarias
+                  {t("cookie.onlyNecessary")}
                 </button>
                 <Link
                   href="/legal/cookies"
                   onClick={reject}
                   className="text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium text-center sm:ml-2 py-2.5 sm:py-0 transition-colors"
                 >
-                  Política de cookies
+                  {t("cookie.cookiePolicy")}
                 </Link>
               </div>
             </div>

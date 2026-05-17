@@ -1,43 +1,51 @@
 import { prisma } from "@/lib/prisma";
 import { Eye, Users, UserCheck, Clock, AlertCircle } from "lucide-react";
+import { getTranslations } from "next-intl/server";
+import { getLocale } from "@/i18n/locale";
+import { intlTag } from "@/i18n/config";
 import { capitalizarNombre } from "@/lib/utils";
 
-function timeAgo(date: Date | null): string {
-  if (!date) return "Nunca";
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "Ahora mismo";
-  if (mins < 60) return `Hace ${mins} min`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `Hace ${hours}h`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `Hace ${days}d`;
-  if (days < 30) return `Hace ${Math.floor(days / 7)} sem`;
-  return `Hace ${Math.floor(days / 30)} mes${Math.floor(days / 30) > 1 ? "es" : ""}`;
-}
-
-function formatFecha(date: Date | null): string {
-  if (!date) return "—";
-  return date.toLocaleDateString("es-ES", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function statusBadge(date: Date | null) {
-  if (!date) return { label: "Sin acceso", color: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400" };
-  const days = (Date.now() - date.getTime()) / 86400000;
-  if (days < 1) return { label: "Activo hoy", color: "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400" };
-  if (days < 7) return { label: "Esta semana", color: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400" };
-  if (days < 30) return { label: "Este mes", color: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400" };
-  return { label: "Inactivo", color: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400" };
-}
-
 export default async function SeguimientoPage() {
+  const t = await getTranslations("admin");
+  const locale = await getLocale();
+  const tag = intlTag(locale);
+
+  function formatFecha(date: Date | null): string {
+    if (!date) return "—";
+    return date.toLocaleDateString(tag, {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
+  function timeAgo(date: Date | null): string {
+    if (!date) return t("seguimiento.timeAgo.nunca");
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return t("seguimiento.timeAgo.ahoraMismo");
+    if (mins < 60) return t("seguimiento.timeAgo.minutos", { count: mins });
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return t("seguimiento.timeAgo.horas", { count: hours });
+    const days = Math.floor(hours / 24);
+    if (days < 7) return t("seguimiento.timeAgo.dias", { count: days });
+    if (days < 30) return t("seguimiento.timeAgo.semanas", { count: Math.floor(days / 7) });
+    const months = Math.floor(days / 30);
+    return t("seguimiento.timeAgo.meses", { count: months, plural: months > 1 ? "es" : "" });
+  }
+
+  function statusBadge(date: Date | null) {
+    if (!date) return { label: t("seguimiento.statusBadge.sinAcceso"), color: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400" };
+    const days = (Date.now() - date.getTime()) / 86400000;
+    if (days < 1) return { label: t("seguimiento.statusBadge.activoHoy"), color: "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400" };
+    if (days < 7) return { label: t("seguimiento.statusBadge.estaSemana"), color: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400" };
+    if (days < 30) return { label: t("seguimiento.statusBadge.esteMes"), color: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400" };
+    return { label: t("seguimiento.statusBadge.inactivo"), color: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400" };
+  }
+
   const [dietistas, pacientes] = await Promise.all([
     prisma.dietista.findMany({
       where: { demoEliminado: false },
@@ -80,9 +88,9 @@ export default async function SeguimientoPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold">Seguimiento de accesos</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">{t("seguimiento.title")}</h1>
         <p className="text-muted-foreground mt-1">
-          Último acceso de dietistas y pacientes a la plataforma
+          {t("seguimiento.subtitle")}
         </p>
       </div>
 
@@ -90,28 +98,28 @@ export default async function SeguimientoPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
           {
-            label: "Dietistas activos hoy",
+            label: t("seguimiento.stats.dietistasActivosHoy"),
             value: dietistasActivos,
             total: dietistas.length,
             icon: Users,
             color: "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10",
           },
           {
-            label: "Pacientes activos hoy",
+            label: t("seguimiento.stats.pacientesActivosHoy"),
             value: pacientesActivos,
             total: pacientes.length,
             icon: UserCheck,
             color: "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10",
           },
           {
-            label: "Dietistas sin acceso",
+            label: t("seguimiento.stats.dietistasSinAcceso"),
             value: sinAccesoDietistas,
             total: dietistas.length,
             icon: AlertCircle,
             color: "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10",
           },
           {
-            label: "Pacientes sin acceso",
+            label: t("seguimiento.stats.pacientesSinAcceso"),
             value: sinAccesoPacientes,
             total: pacientes.length,
             icon: AlertCircle,
@@ -126,7 +134,7 @@ export default async function SeguimientoPage() {
               </div>
             </div>
             <p className="text-2xl font-bold">{s.value}</p>
-            <p className="text-xs text-muted-foreground mt-1">de {s.total} totales</p>
+            <p className="text-xs text-muted-foreground mt-1">{t("seguimiento.stats.deTotales", { total: s.total })}</p>
           </div>
         ))}
       </div>
@@ -135,18 +143,18 @@ export default async function SeguimientoPage() {
       <div className="bg-card rounded-xl border border-border overflow-hidden mb-8">
         <div className="px-5 py-4 border-b border-border flex items-center gap-2">
           <Users className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-          <h2 className="font-semibold">Dietistas ({dietistas.length})</h2>
+          <h2 className="font-semibold">{t("seguimiento.tablaDietistas.title", { count: dietistas.length })}</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/50">
-                <th className="text-left px-5 py-3 font-medium text-muted-foreground">Dietista</th>
-                <th className="text-left px-5 py-3 font-medium text-muted-foreground hidden sm:table-cell">Email</th>
-                <th className="text-left px-5 py-3 font-medium text-muted-foreground hidden md:table-cell">Pacientes</th>
-                <th className="text-left px-5 py-3 font-medium text-muted-foreground">Último acceso</th>
-                <th className="text-left px-5 py-3 font-medium text-muted-foreground hidden lg:table-cell">Fecha exacta</th>
-                <th className="text-left px-5 py-3 font-medium text-muted-foreground">Estado</th>
+                <th className="text-left px-5 py-3 font-medium text-muted-foreground">{t("seguimiento.tablaDietistas.columns.dietista")}</th>
+                <th className="text-left px-5 py-3 font-medium text-muted-foreground hidden sm:table-cell">{t("seguimiento.tablaDietistas.columns.email")}</th>
+                <th className="text-left px-5 py-3 font-medium text-muted-foreground hidden md:table-cell">{t("seguimiento.tablaDietistas.columns.pacientes")}</th>
+                <th className="text-left px-5 py-3 font-medium text-muted-foreground">{t("seguimiento.tablaDietistas.columns.ultimoAcceso")}</th>
+                <th className="text-left px-5 py-3 font-medium text-muted-foreground hidden lg:table-cell">{t("seguimiento.tablaDietistas.columns.fechaExacta")}</th>
+                <th className="text-left px-5 py-3 font-medium text-muted-foreground">{t("seguimiento.tablaDietistas.columns.estado")}</th>
               </tr>
             </thead>
             <tbody>
@@ -158,7 +166,7 @@ export default async function SeguimientoPage() {
                       {capitalizarNombre(`${d.nombre} ${d.apellidos}`)}
                       {!d.verificado && (
                         <span className="ml-2 text-xs bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400 px-1.5 py-0.5 rounded">
-                          No verificado
+                          {t("seguimiento.tablaDietistas.noVerificado")}
                         </span>
                       )}
                     </td>
@@ -190,18 +198,18 @@ export default async function SeguimientoPage() {
       <div className="bg-card rounded-xl border border-border overflow-hidden">
         <div className="px-5 py-4 border-b border-border flex items-center gap-2">
           <UserCheck className="w-5 h-5 text-green-600 dark:text-green-400" />
-          <h2 className="font-semibold">Pacientes ({pacientes.length})</h2>
+          <h2 className="font-semibold">{t("seguimiento.tablaPacientes.title", { count: pacientes.length })}</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/50">
-                <th className="text-left px-5 py-3 font-medium text-muted-foreground">Paciente</th>
-                <th className="text-left px-5 py-3 font-medium text-muted-foreground hidden sm:table-cell">Email</th>
-                <th className="text-left px-5 py-3 font-medium text-muted-foreground hidden md:table-cell">Dietista</th>
-                <th className="text-left px-5 py-3 font-medium text-muted-foreground">Último acceso</th>
-                <th className="text-left px-5 py-3 font-medium text-muted-foreground hidden lg:table-cell">Fecha exacta</th>
-                <th className="text-left px-5 py-3 font-medium text-muted-foreground">Estado</th>
+                <th className="text-left px-5 py-3 font-medium text-muted-foreground">{t("seguimiento.tablaPacientes.columns.paciente")}</th>
+                <th className="text-left px-5 py-3 font-medium text-muted-foreground hidden sm:table-cell">{t("seguimiento.tablaPacientes.columns.email")}</th>
+                <th className="text-left px-5 py-3 font-medium text-muted-foreground hidden md:table-cell">{t("seguimiento.tablaPacientes.columns.dietista")}</th>
+                <th className="text-left px-5 py-3 font-medium text-muted-foreground">{t("seguimiento.tablaPacientes.columns.ultimoAcceso")}</th>
+                <th className="text-left px-5 py-3 font-medium text-muted-foreground hidden lg:table-cell">{t("seguimiento.tablaPacientes.columns.fechaExacta")}</th>
+                <th className="text-left px-5 py-3 font-medium text-muted-foreground">{t("seguimiento.tablaPacientes.columns.estado")}</th>
               </tr>
             </thead>
             <tbody>
@@ -236,7 +244,7 @@ export default async function SeguimientoPage() {
               {pacientes.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-5 py-8 text-center text-muted-foreground">
-                    No hay pacientes registrados
+                    {t("seguimiento.tablaPacientes.empty")}
                   </td>
                 </tr>
               )}

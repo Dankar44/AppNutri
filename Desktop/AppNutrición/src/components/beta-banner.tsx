@@ -3,10 +3,12 @@
 import { useState, useEffect } from "react";
 import { X, MessageSquare, AlertTriangle } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 const STORAGE_KEY = "annonia-beta-banner-dismissed";
 
 export function BetaBanner() {
+  const t = useTranslations("common");
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -28,22 +30,22 @@ export function BetaBanner() {
         <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
           <p className="text-sm text-amber-900 dark:text-amber-200">
-            <span className="font-semibold">Annonia está en versión beta.</span>{" "}
-            Si encuentras algún error o tienes sugerencias de mejora, escríbenos a través de{" "}
+            <span className="font-semibold">{t("beta.message")}</span>{" "}
+            {t("beta.feedback")}{" "}
             <Link
               href="/mensajes?c=soporte"
               className="font-semibold underline underline-offset-2 hover:text-amber-700 dark:hover:text-amber-100 inline-flex items-center gap-1"
             >
               <MessageSquare className="w-3.5 h-3.5" />
-              Mensajes → Soporte Annonia
+              {t("beta.supportLink")}
             </Link>
-            . ¡Tu feedback nos ayuda a mejorar!
+            . {t("beta.encouragement")}
           </p>
         </div>
         <button
           onClick={dismiss}
           className="p-1 rounded-md hover:bg-amber-200/50 dark:hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 shrink-0"
-          aria-label="Cerrar aviso"
+          aria-label={t("beta.closeAriaLabel")}
         >
           <X className="w-4 h-4" />
         </button>

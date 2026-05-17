@@ -1,26 +1,27 @@
 import { Calendar as CalendarIcon } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { getCitasPaciente } from "@/app/actions/citas-flujo";
 import { getIntegracionPaciente } from "@/app/actions/google-integracion";
 import { CitasPortalClient } from "./citas-client";
 import { IntegracionesCardPaciente } from "./integraciones-card";
 import { PageHeader } from "@/components/page-header";
 
-function googleErrorMessagePaciente(reason?: string): string {
+function googleErrorKeyPaciente(reason?: string): string {
   switch (reason) {
     case "no_configurado":
-      return "Google aún no está disponible. Tu nutricionista debe terminar la configuración.";
+      return "integraciones.googleCalendar.errors.noConfigurado";
     case "state_mismatch":
-      return "La conexión con Google se canceló o expiró. Inténtalo de nuevo.";
+      return "integraciones.googleCalendar.errors.stateMismatch";
     case "missing_params":
-      return "No se recibió la respuesta de Google. Inténtalo de nuevo.";
+      return "integraciones.googleCalendar.errors.missingParams";
     case "no_tokens":
-      return "Google no concedió los permisos necesarios. Asegúrate de aceptar todos los permisos.";
+      return "integraciones.googleCalendar.errors.noTokens";
     case "exchange_failed":
-      return "Error al conectar con Google. Inténtalo de nuevo en unos minutos.";
+      return "integraciones.googleCalendar.errors.exchangeFailed";
     case "access_denied":
-      return "Se denegó el acceso a Google. Inténtalo de nuevo y acepta los permisos.";
+      return "integraciones.googleCalendar.errors.accessDenied";
     default:
-      return "No se pudo conectar con Google. Inténtalo de nuevo.";
+      return "integraciones.googleCalendar.errors.default";
   }
 }
 
@@ -29,6 +30,7 @@ export default async function CitasPortalPage({
 }: {
   searchParams: Promise<{ google?: string; reason?: string }>;
 }) {
+  const t = await getTranslations("patient-portal");
   const [citas, integracion, sp] = await Promise.all([
     getCitasPaciente(),
     getIntegracionPaciente(),
@@ -37,11 +39,11 @@ export default async function CitasPortalPage({
 
   const googleFlash =
     sp.google === "ok"
-      ? { type: "ok" as const, message: "Google Calendar conectado correctamente." }
+      ? { type: "ok" as const, message: t("integraciones.googleCalendar.flashOk") }
       : sp.google === "error"
         ? {
             type: "error" as const,
-            message: googleErrorMessagePaciente(sp.reason),
+            message: t(googleErrorKeyPaciente(sp.reason) as never),
           }
         : null;
 
@@ -49,8 +51,8 @@ export default async function CitasPortalPage({
     <div className="space-y-5">
       <PageHeader
         icon={CalendarIcon}
-        title="Mis citas"
-        subtitle="Solicita nuevas citas con tu nutricionista y gestiona las que ya tienes."
+        title={t("citas.title")}
+        subtitle={t("citas.subtitle")}
       />
       <CitasPortalClient citasIniciales={citas} />
       <IntegracionesCardPaciente integracion={integracion} flash={googleFlash} />

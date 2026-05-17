@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
 interface MacroBadgeProps {
@@ -56,14 +57,15 @@ export function MacroBadges({
   fibra?: number;
   size?: "sm" | "md";
 }) {
+  const t = useTranslations("common.macros");
   return (
     <div className="flex flex-wrap gap-1.5">
-      <MacroBadge label="Cal" value={calorias} color="cal" size={size} />
-      <MacroBadge label="Prot" value={proteinas} color="prot" size={size} />
-      <MacroBadge label="Carb" value={carbohidratos} color="carb" size={size} />
-      <MacroBadge label="Gras" value={grasas} color="gras" size={size} />
+      <MacroBadge label={t("cal")} value={calorias} color="cal" size={size} />
+      <MacroBadge label={t("prot")} value={proteinas} color="prot" size={size} />
+      <MacroBadge label={t("carb")} value={carbohidratos} color="carb" size={size} />
+      <MacroBadge label={t("gras")} value={grasas} color="gras" size={size} />
       {fibra !== undefined && fibra > 0 && (
-        <MacroBadge label="Fibra" value={fibra} color="fibra" size={size} />
+        <MacroBadge label={t("fibra")} value={fibra} color="fibra" size={size} />
       )}
     </div>
   );

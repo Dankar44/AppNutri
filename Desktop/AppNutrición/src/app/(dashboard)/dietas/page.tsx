@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Plus, UtensilsCrossed, BookCopy } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { getPlanes } from "@/app/actions/planes";
 import { getPlantillas } from "@/app/actions/plantillas";
 import { formatDate, capitalizarNombre } from "@/lib/utils";
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default async function DietasPage({ searchParams }: Props) {
+  const t = await getTranslations("diets");
   const { busqueda } = await searchParams;
   const [planes, plantillas] = await Promise.all([
     getPlanes(busqueda),
@@ -43,8 +45,8 @@ export default async function DietasPage({ searchParams }: Props) {
     <div>
       <PageHeader
         icon={UtensilsCrossed}
-        title="Planes alimenticios"
-        subtitle={`${planes.length} plan${planes.length !== 1 ? "es" : ""} · ${grupos.length} paciente${grupos.length !== 1 ? "s" : ""}`}
+        title={t("list.pageTitle")}
+        subtitle={t("list.subtitle", { count: planes.length, groups: grupos.length })}
       />
 
       <div className="mb-6 flex items-center gap-2">
@@ -56,20 +58,20 @@ export default async function DietasPage({ searchParams }: Props) {
             <Link
               href="/dietas/plantillas"
               className="inline-flex items-center justify-center gap-2 w-10 h-10 sm:w-auto sm:h-auto sm:px-4 sm:py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
-              aria-label={`Plantillas (${plantillas.length})`}
+              aria-label={t("list.templatesLink", { count: plantillas.length })}
             >
               <BookCopy className="w-4 h-4" />
-              <span className="hidden sm:inline">Plantillas ({plantillas.length})</span>
+              <span className="hidden sm:inline">{t("list.templatesLink", { count: plantillas.length })}</span>
             </Link>
           )}
           <Link
             href="/dietas/nuevo"
             data-tour="nuevo-plan-btn"
             className="inline-flex items-center justify-center gap-2 w-10 h-10 sm:w-auto sm:h-auto sm:px-4 sm:py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium"
-            aria-label="Nuevo plan"
+            aria-label={t("list.newPlan")}
           >
             <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Nuevo plan</span>
+            <span className="hidden sm:inline">{t("list.newPlan")}</span>
           </Link>
         </div>
       </div>
@@ -78,12 +80,12 @@ export default async function DietasPage({ searchParams }: Props) {
         <div className="bg-card rounded-xl border border-border p-12 text-center">
           <UtensilsCrossed className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="font-medium text-lg mb-1">
-            {busqueda ? "Sin resultados" : "Sin planes"}
+            {busqueda ? t("list.noResultsTitle") : t("list.noPlansTitle")}
           </h3>
           <p className="text-muted-foreground mb-4">
             {busqueda
-              ? `No se encontraron planes para "${busqueda}"`
-              : "Crea un plan alimenticio semanal para tus pacientes"}
+              ? t("list.noResultsMessage", { query: busqueda })
+              : t("list.emptyMessage")}
           </p>
           {!busqueda && (
             <Link
@@ -91,7 +93,7 @@ export default async function DietasPage({ searchParams }: Props) {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium"
             >
               <Plus className="w-4 h-4" />
-              Crear plan
+              {t("list.createPlan")}
             </Link>
           )}
         </div>
@@ -116,14 +118,14 @@ export default async function DietasPage({ searchParams }: Props) {
                   </h2>
                   <div className="mt-0.5 flex items-center gap-2 text-xs">
                     <p className="text-muted-foreground">
-                      {grupo.planes.length} plan{grupo.planes.length !== 1 ? "es" : ""}
+                      {t("list.planCount", { count: grupo.planes.length })}
                     </p>
                     {grupo.planes.length > 1 && (
                       <Link
                         href={`/pacientes/${grupo.pacienteId}?pestana=plan-alimentacion`}
                         className="font-medium text-primary hover:underline"
                       >
-                        Ver historial
+                        {t("list.viewHistory")}
                       </Link>
                     )}
                   </div>
@@ -145,7 +147,7 @@ export default async function DietasPage({ searchParams }: Props) {
                     >
                       <div className="min-w-0">
                         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                          Receta activa
+                          {t("list.activePlan")}
                         </p>
                         <h3 className="mt-1 font-medium truncate group-hover:text-primary transition-colors">
                           {planActivo.nombre}

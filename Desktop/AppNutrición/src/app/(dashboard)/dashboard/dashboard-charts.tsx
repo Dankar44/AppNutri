@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { EvolucionChart } from "@/components/evolucion-chart";
 
 interface ActividadData {
@@ -26,6 +27,7 @@ export function DashboardCharts({
 }: {
   data: ActividadData[];
 }) {
+  const t = useTranslations("dashboard");
   const isMobile = useIsMobile();
   const height = isMobile ? 250 : 400;
   if (data.every((d) => d.consultas === 0 && d.pacientesTotales === 0)) {
@@ -34,7 +36,7 @@ export function DashboardCharts({
         className="flex items-center justify-center text-sm text-muted-foreground"
         style={{ height }}
       >
-        Sin datos de actividad aún
+        {t("actividad.sinDatos")}
       </div>
     );
   }
@@ -43,8 +45,8 @@ export function DashboardCharts({
     <EvolucionChart
       data={data.map((d) => ({ fecha: d.mes, consultas: d.consultas, pacientes: d.pacientesTotales }))}
       lines={[
-        { key: "consultas", label: "Consultas", color: "#3b82f6", decimals: 0 },
-        { key: "pacientes", label: "Pacientes totales", color: "#22c55e", decimals: 0 },
+        { key: "consultas", label: t("actividad.consultas"), color: "#3b82f6", decimals: 0 },
+        { key: "pacientes", label: t("actividad.pacientesTotales"), color: "#22c55e", decimals: 0 },
       ]}
       height={height}
     />

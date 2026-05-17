@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Trash2, GripVertical, ListFilter, ExternalLink, Image as ImageLinkIcon } from "lucide-react";
 import { useState, useRef } from "react";
 import { useDraggable } from "@dnd-kit/core";
@@ -59,6 +60,7 @@ export function AlimentoCard({
   onCantidadChange,
   onBuscarEquivalente,
 }: AlimentoCardProps) {
+  const t = useTranslations("diets");
   const [tempCantidad, setTempCantidad] = useState(cantidad);
   const debounceRef = useRef<NodeJS.Timeout>(null);
 
@@ -123,7 +125,7 @@ export function AlimentoCard({
             {cantidad}
           </span>
           <span className="text-muted-foreground text-sm shrink-0">
-            {unidadLabel} de
+            {unidadLabel} {t("alimentoCard.unitConnector")}
           </span>
           <FoodHoverCard {...foodHoverProps}>
             <span className={cn("truncate font-medium", nameColor, interactionMode === "dashboard" && "hover:underline")}>{nombre}</span>
@@ -173,7 +175,7 @@ export function AlimentoCard({
           max={10000}
         />
         <span className="text-muted-foreground text-sm shrink-0">
-          {unidadLabel} de
+          {unidadLabel} {t("alimentoCard.unitConnector")}
         </span>
         <FoodHoverCard {...foodHoverProps}>
           <span className={cn("truncate font-medium", nameColor, interactionMode === "dashboard" && "hover:underline")}>{nombre}</span>
@@ -194,7 +196,7 @@ export function AlimentoCard({
         <button
           onClick={() => onBuscarEquivalente(id, nombre, calorias, proteinas, carbohidratos, grasas, convertirAGramos(cantidad, unidad || "GRAMOS", porcion || 100))}
           className="p-1.5 rounded border border-border/60 hover:bg-primary/10 hover:border-primary/30 text-muted-foreground/50 hover:text-primary transition-all shrink-0"
-          title="Buscar alimento equivalente"
+          title={t("alimentoCard.searchEquivalent")}
         >
           <ListFilter className="w-4 h-4" />
         </button>
@@ -203,7 +205,7 @@ export function AlimentoCard({
       <button
         onClick={() => onRemove(id)}
         className="p-1.5 rounded border border-border/60 hover:bg-red-50 dark:hover:bg-red-500/15 hover:border-red-200 text-muted-foreground/50 hover:text-red-500 transition-all shrink-0"
-        title="Eliminar"
+        title={t("alimentoCard.delete")}
       >
         <Trash2 className="w-4 h-4" />
       </button>

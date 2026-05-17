@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { UtensilsCrossed, ShoppingCart } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { getCurrentPaciente } from "@/lib/patient-auth";
 import { prisma } from "@/lib/prisma";
 import { capitalizarNombre } from "@/lib/utils";
@@ -8,6 +9,7 @@ import { PageHeader } from "@/components/page-header";
 import { PlanVisual } from "@/components/paciente/plan-visual";
 
 export default async function PatientDietPage() {
+  const t = await getTranslations("patient-portal");
   const session = await getCurrentPaciente();
   if (!session) redirect("/paciente/login");
 
@@ -47,12 +49,12 @@ export default async function PatientDietPage() {
   if (!plan) {
     return (
       <div>
-        <PageHeader icon={UtensilsCrossed} title="Mi dieta" subtitle="Plan alimenticio activo" />
+        <PageHeader icon={UtensilsCrossed} title={t("dieta.title")} subtitle={t("dieta.subtitle")} />
         <div className="lg:rounded-xl lg:border lg:border-border sm:bg-muted/30 p-12 text-center">
           <UtensilsCrossed className="w-12 h-12 text-muted-foreground mx-auto mb-4" strokeWidth={1.5} />
-          <h2 className="text-lg font-semibold mb-1">Sin plan activo</h2>
+          <h2 className="text-lg font-semibold mb-1">{t("dieta.sinPlan.title")}</h2>
           <p className="text-muted-foreground">
-            Tu nutricionista aún no te ha asignado un plan alimenticio
+            {t("dieta.sinPlan.description")}
           </p>
         </div>
       </div>
@@ -98,7 +100,7 @@ export default async function PatientDietPage() {
     <div>
       <PageHeader
         icon={UtensilsCrossed}
-        title="Mi dieta"
+        title={t("dieta.title")}
         subtitle={plan.nombre}
         action={
           <Link
@@ -107,7 +109,7 @@ export default async function PatientDietPage() {
             className="hidden lg:inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
           >
             <ShoppingCart className="w-4 h-4" />
-            Lista de la compra
+            {t("dieta.listaCompra")}
           </Link>
         }
       />

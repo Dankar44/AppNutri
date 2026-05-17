@@ -23,7 +23,9 @@ import {
   Area,
   ComposedChart,
 } from "recharts";
+import { useTranslations, useLocale } from "next-intl";
 import { toast } from "sonner";
+import { intlTag, type Locale } from "@/i18n/config";
 import { crearMedida, type MedidaFormData } from "@/app/actions/medidas";
 import { formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -78,74 +80,74 @@ type MetricaDb =
 
 type VistaMedicion = MetricaDb | "pliegues" | "analiticos";
 
-const PLIEGUES_KEYS: { key: MetricaDb; label: string }[] = [
-  { key: "pliegueAbdominal", label: "Pliegue cutáneo abdominal" },
-  { key: "pliegueAxilar", label: "Pliegue cutáneo axilar medio" },
-  { key: "plieguePectoral", label: "Pliegue cutáneo pectoral" },
-  { key: "pliegueSubescapular", label: "Pliegue cutáneo subescapular" },
-  { key: "pliegueSuprailiaco", label: "Pliegue cutáneo suprailíaco" },
-  { key: "pliegueTricipital", label: "Pliegue cutáneo tricipital" },
-  { key: "pliegueMuslo", label: "Pliegue del muslo anterior" },
+const PLIEGUES_KEYS: { key: MetricaDb; labelKey: string }[] = [
+  { key: "pliegueAbdominal", labelKey: "metricaPliegueAbdominal" },
+  { key: "pliegueAxilar", labelKey: "metricaPliegueAxilar" },
+  { key: "plieguePectoral", labelKey: "metricaPlieguePectoral" },
+  { key: "pliegueSubescapular", labelKey: "metricaPliegueSubescapular" },
+  { key: "pliegueSuprailiaco", labelKey: "metricaPliegueSuprailiaco" },
+  { key: "pliegueTricipital", labelKey: "metricaPliegueTricipital" },
+  { key: "pliegueMuslo", labelKey: "metricaPliegueMuslo" },
 ];
 
-const ANALITICOS_KEYS: { key: MetricaDb; label: string }[] = [
-  { key: "colesterolHDL", label: "Colesterol HDL" },
-  { key: "colesterolLDL", label: "Colesterol LDL" },
-  { key: "colesterolTotal", label: "Colesterol total" },
-  { key: "presionDiastolica", label: "Presión arterial diastólica" },
-  { key: "presionSistolica", label: "Presión arterial sistólica" },
-  { key: "trigliceridos", label: "Triglicéridos" },
+const ANALITICOS_KEYS: { key: MetricaDb; labelKey: string }[] = [
+  { key: "colesterolHDL", labelKey: "metricaColesterolHdl" },
+  { key: "colesterolLDL", labelKey: "metricaColesterolLdl" },
+  { key: "colesterolTotal", labelKey: "metricaColesterolTotal" },
+  { key: "presionDiastolica", labelKey: "metricaPresionDiastolica" },
+  { key: "presionSistolica", labelKey: "metricaPresionSistolica" },
+  { key: "trigliceridos", labelKey: "metricaTrigliceridos" },
 ];
 
 const METRIC_META: Record<
   MetricaDb,
-  { label: string; unit: string; inputStep: string; inputMax: number }
+  { labelKey: string; unit: string; inputStep: string; inputMax: number }
 > = {
-  peso: { label: "Peso", unit: "kg", inputStep: "0.1", inputMax: 500 },
-  altura: { label: "Altura", unit: "cm", inputStep: "0.1", inputMax: 300 },
+  peso: { labelKey: "metricaPeso", unit: "kg", inputStep: "0.1", inputMax: 500 },
+  altura: { labelKey: "metricaAltura", unit: "cm", inputStep: "0.1", inputMax: 300 },
   perimetroCintura: {
-    label: "Perímetro de la cintura",
+    labelKey: "metricaCintura",
     unit: "cm",
     inputStep: "0.1",
     inputMax: 300,
   },
   perimetroCadera: {
-    label: "Perímetro de la cadera",
+    labelKey: "metricaCadera",
     unit: "cm",
     inputStep: "0.1",
     inputMax: 300,
   },
   perimetroBrazo: {
-    label: "Perímetro del brazo",
+    labelKey: "metricaBrazo",
     unit: "cm",
     inputStep: "0.1",
     inputMax: 300,
   },
   grasaCorporal: {
-    label: "Porcentaje de masa grasa",
+    labelKey: "metricaGrasaCorporal",
     unit: "%",
     inputStep: "0.1",
     inputMax: 100,
   },
   masaMuscular: {
-    label: "Masa muscular",
+    labelKey: "metricaMasaMuscular",
     unit: "kg",
     inputStep: "0.1",
     inputMax: 200,
   },
-  pliegueAbdominal: { label: "Pliegue abdominal", unit: "mm", inputStep: "0.1", inputMax: 100 },
-  pliegueAxilar: { label: "Pliegue axilar medio", unit: "mm", inputStep: "0.1", inputMax: 100 },
-  plieguePectoral: { label: "Pliegue pectoral", unit: "mm", inputStep: "0.1", inputMax: 100 },
-  pliegueSubescapular: { label: "Pliegue subescapular", unit: "mm", inputStep: "0.1", inputMax: 100 },
-  pliegueSuprailiaco: { label: "Pliegue suprailíaco", unit: "mm", inputStep: "0.1", inputMax: 100 },
-  pliegueTricipital: { label: "Pliegue tricipital", unit: "mm", inputStep: "0.1", inputMax: 100 },
-  pliegueMuslo: { label: "Pliegue muslo anterior", unit: "mm", inputStep: "0.1", inputMax: 100 },
-  colesterolHDL: { label: "Colesterol HDL", unit: "mg/dL", inputStep: "1", inputMax: 500 },
-  colesterolLDL: { label: "Colesterol LDL", unit: "mg/dL", inputStep: "1", inputMax: 500 },
-  colesterolTotal: { label: "Colesterol total", unit: "mg/dL", inputStep: "1", inputMax: 500 },
-  presionDiastolica: { label: "Presión diastólica", unit: "mmHg", inputStep: "1", inputMax: 300 },
-  presionSistolica: { label: "Presión sistólica", unit: "mmHg", inputStep: "1", inputMax: 300 },
-  trigliceridos: { label: "Triglicéridos", unit: "mg/dL", inputStep: "1", inputMax: 1000 },
+  pliegueAbdominal: { labelKey: "metricaPliegueAbdominal", unit: "mm", inputStep: "0.1", inputMax: 100 },
+  pliegueAxilar: { labelKey: "metricaPliegueAxilar", unit: "mm", inputStep: "0.1", inputMax: 100 },
+  plieguePectoral: { labelKey: "metricaPlieguePectoral", unit: "mm", inputStep: "0.1", inputMax: 100 },
+  pliegueSubescapular: { labelKey: "metricaPliegueSubescapular", unit: "mm", inputStep: "0.1", inputMax: 100 },
+  pliegueSuprailiaco: { labelKey: "metricaPliegueSuprailiaco", unit: "mm", inputStep: "0.1", inputMax: 100 },
+  pliegueTricipital: { labelKey: "metricaPliegueTricipital", unit: "mm", inputStep: "0.1", inputMax: 100 },
+  pliegueMuslo: { labelKey: "metricaPliegueMuslo", unit: "mm", inputStep: "0.1", inputMax: 100 },
+  colesterolHDL: { labelKey: "metricaColesterolHdl", unit: "mg/dL", inputStep: "1", inputMax: 500 },
+  colesterolLDL: { labelKey: "metricaColesterolLdl", unit: "mg/dL", inputStep: "1", inputMax: 500 },
+  colesterolTotal: { labelKey: "metricaColesterolTotal", unit: "mg/dL", inputStep: "1", inputMax: 500 },
+  presionDiastolica: { labelKey: "metricaPresionDiastolica", unit: "mmHg", inputStep: "1", inputMax: 300 },
+  presionSistolica: { labelKey: "metricaPresionSistolica", unit: "mmHg", inputStep: "1", inputMax: 300 },
+  trigliceridos: { labelKey: "metricaTrigliceridos", unit: "mg/dL", inputStep: "1", inputMax: 1000 },
 };
 
 function fmt(v: number | null | undefined, unit: string, digits = 1): string {
@@ -194,6 +196,9 @@ export function PacienteFichaMedicionesTab({
   pacientePeso: number | null;
   pacienteAltura: number | null;
 }) {
+  const t = useTranslations("patients.mediciones");
+  const locale = useLocale() as Locale;
+  const tag = intlTag(locale);
   const router = useRouter();
   const [vista, setVista] = useState<VistaMedicion>("peso");
   const [valorNuevo, setValorNuevo] = useState("");
@@ -225,12 +230,12 @@ export function PacienteFichaMedicionesTab({
   function registrarUna() {
     const v = parseFloat(valorNuevo.replace(",", "."));
     if (Number.isNaN(v) || !METRIC_META[vista as MetricaDb]) {
-      toast.error("Introduce un valor válido");
+      toast.error(t("introduceValorValido"));
       return;
     }
     const meta = METRIC_META[vista as MetricaDb];
     if (v < 0 || v > meta.inputMax) {
-      toast.error("Valor fuera de rango");
+      toast.error(t("valorFueraRango"));
       return;
     }
 
@@ -263,11 +268,11 @@ export function PacienteFichaMedicionesTab({
             return;
         }
         await crearMedida(payload);
-        toast.success("Medición registrada");
+        toast.success(t("medicionRegistrada"));
         setValorNuevo("");
         router.refresh();
       } catch {
-        toast.error("No se pudo registrar");
+        toast.error(t("noSePudoRegistrar"));
       }
     });
   }
@@ -287,7 +292,7 @@ export function PacienteFichaMedicionesTab({
       .filter((m) => m[key] !== null && typeof m[key] === "number")
       .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
       .map((m) => ({
-        fecha: new Date(m.fecha).toLocaleDateString("es-ES", {
+        fecha: new Date(m.fecha).toLocaleDateString(tag, {
           day: "numeric",
           month: "short",
         }),
@@ -297,10 +302,10 @@ export function PacienteFichaMedicionesTab({
 
   const tituloPrincipal =
     vista === "pliegues"
-      ? "Pliegues cutáneos"
+      ? t("plieguesCutaneos")
       : vista === "analiticos"
-        ? "Datos analíticos"
-        : METRIC_META[vista as MetricaDb]?.label ?? vista;
+        ? t("datosAnaliticos")
+        : METRIC_META[vista as MetricaDb] ? t(METRIC_META[vista as MetricaDb].labelKey) : vista;
 
   return (
     <div className="space-y-4">
@@ -309,19 +314,19 @@ export function PacienteFichaMedicionesTab({
           href={`/pacientes/${pacienteId}/medidas`}
           className="inline-flex items-center justify-center rounded-lg bg-primary px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors flex-1 sm:flex-none"
         >
-          <span className="sm:hidden">Registrar mediciones múltiples</span>
-          <span className="hidden sm:inline">Registrar varias mediciones simultáneamente</span>
+          <span className="sm:hidden">{t("registrarMedicionesMultiples")}</span>
+          <span className="hidden sm:inline">{t("registrarVariasSimultaneamente")}</span>
         </Link>
         <div className="flex items-center gap-1 shrink-0">
           <button
             type="button"
             onClick={() =>
-              toast.message("Próximamente", {
-                description: "Exportación de mediciones.",
+              toast.message(t("proximamente"), {
+                description: t("exportacionMediciones"),
               })
             }
             className="p-2 rounded-lg border border-border hover:bg-muted text-muted-foreground"
-            title="Descargar"
+            title={t("descargar")}
           >
             <Download className="w-4 h-4" />
           </button>
@@ -329,14 +334,14 @@ export function PacienteFichaMedicionesTab({
             type="button"
             onClick={() => window.print()}
             className="p-2 rounded-lg border border-border hover:bg-muted text-muted-foreground"
-            title="Imprimir"
+            title={t("imprimir")}
           >
             <Printer className="w-4 h-4" />
           </button>
           <Link
             href={`/pacientes/${pacienteId}/medidas`}
             className="p-2 rounded-lg border border-border hover:bg-muted text-muted-foreground"
-            title="Vista detallada / historial"
+            title={t("vistaDetalladaHistorial")}
           >
             <Settings className="w-4 h-4" />
           </Link>
@@ -345,56 +350,56 @@ export function PacienteFichaMedicionesTab({
 
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] xl:grid-cols-[min(100%,320px)_1fr] gap-3 sm:gap-4 lg:gap-6 items-start">
         <aside className="space-y-4 shrink-0">
-          <SidebarCard title="Mediciones básicas">
+          <SidebarCard title={t("medicionesBasicas")}>
             <SidebarRow
-              label="Peso"
+              label={t("metricaPeso")}
               value={fmt(ultimoPeso, "kg")}
               active={vista === "peso"}
               onClick={() => setVista("peso")}
             />
             <SidebarRow
-              label="Altura"
+              label={t("metricaAltura")}
               value={fmt(ultimaAltura, "cm", 0)}
               active={vista === "altura"}
               onClick={() => setVista("altura")}
             />
             <SidebarRow
-              label="Perímetro de la cadera"
+              label={t("metricaCadera")}
               value={fmt(ultCadera, "cm")}
               active={vista === "perimetroCadera"}
               onClick={() => setVista("perimetroCadera")}
             />
             <SidebarRow
-              label="Perímetro de la cintura"
+              label={t("metricaCintura")}
               value={fmt(ultCintura, "cm")}
               active={vista === "perimetroCintura"}
               onClick={() => setVista("perimetroCintura")}
             />
           </SidebarCard>
 
-          <SidebarCard title="Composición corporal">
+          <SidebarCard title={t("composicionCorporal")}>
             <SidebarRow
-              label="Masa grasa"
+              label={t("metricaMasaGrasa")}
               value={masaGrasaKgVal != null ? fmt(masaGrasaKgVal, "kg") : "—"}
               suffix={<Calculator className="w-3.5 h-3.5 text-muted-foreground" />}
               active={false}
               onClick={() => setVista("grasaCorporal")}
             />
             <SidebarRow
-              label="Masa muscular"
+              label={t("metricaMasaMuscular")}
               value={fmt(ultMasaMusc, "kg")}
               active={vista === "masaMuscular"}
               onClick={() => setVista("masaMuscular")}
             />
             <SidebarRow
-              label="Porcentaje de masa grasa"
+              label={t("metricaGrasaCorporal")}
               value={fmt(ultGrasa, "%")}
               suffix={<Calculator className="w-3.5 h-3.5 text-muted-foreground" />}
               active={vista === "grasaCorporal"}
               onClick={() => setVista("grasaCorporal")}
             />
             <SidebarRow
-              label="Porcentaje de masa muscular"
+              label={t("metricaMasaMuscularPct")}
               value={pctMusculoVal != null ? fmt(pctMusculoVal, "%") : "—"}
               active={vista === "masaMuscular"}
               onClick={() => setVista("masaMuscular")}
@@ -402,37 +407,37 @@ export function PacienteFichaMedicionesTab({
           </SidebarCard>
 
           <SidebarCard
-            title="Pliegues cutáneos"
+            title={t("plieguesCutaneos")}
             footer={
               <button
                 type="button"
                 onClick={() => setVista("pliegues")}
                 className="w-full text-center text-xs font-medium text-primary py-2 hover:bg-muted/50"
               >
-                Información sobre pliegues
+                {t("infoPliegues")}
               </button>
             }
           >
-            {PLIEGUES_KEYS.map(({ key, label }) => (
-              <SidebarRowStatic key={key} label={label} value={fmt(latestValue(medidas, key), "mm")} />
+            {PLIEGUES_KEYS.map(({ key, labelKey }) => (
+              <SidebarRowStatic key={key} label={t(labelKey)} value={fmt(latestValue(medidas, key), "mm")} />
             ))}
           </SidebarCard>
 
           <SidebarCard
-            title="Datos analíticos"
+            title={t("datosAnaliticos")}
             footer={
               <button
                 type="button"
                 onClick={() => setVista("analiticos")}
                 className="w-full text-center text-xs font-medium text-primary py-2 hover:bg-muted/50"
               >
-                Información analítica
+                {t("infoAnalitica")}
               </button>
             }
           >
-            {ANALITICOS_KEYS.map(({ key, label }) => {
+            {ANALITICOS_KEYS.map(({ key, labelKey }) => {
               const unit = key.startsWith("presion") ? "mmHg" : "mg/dL";
-              return <SidebarRowStatic key={key} label={label} value={fmt(latestValue(medidas, key), unit)} />;
+              return <SidebarRowStatic key={key} label={t(labelKey)} value={fmt(latestValue(medidas, key), unit)} />;
             })}
           </SidebarCard>
         </aside>
@@ -442,9 +447,9 @@ export function PacienteFichaMedicionesTab({
 
           {vista === "pliegues" && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {PLIEGUES_KEYS.map(({ key, label }) => (
+              {PLIEGUES_KEYS.map(({ key, labelKey }) => (
                 <button key={key} type="button" onClick={() => setVista(key)} className="flex items-center justify-between rounded-lg border border-border px-4 py-3 hover:bg-muted/40 text-left text-sm">
-                  <span>{label}</span>
+                  <span>{t(labelKey)}</span>
                   <span className="font-medium text-muted-foreground">{fmt(latestValue(medidas, key), "mm")}</span>
                 </button>
               ))}
@@ -452,11 +457,11 @@ export function PacienteFichaMedicionesTab({
           )}
           {vista === "analiticos" && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {ANALITICOS_KEYS.map(({ key, label }) => {
+              {ANALITICOS_KEYS.map(({ key, labelKey }) => {
                 const unit = key.startsWith("presion") ? "mmHg" : "mg/dL";
                 return (
                   <button key={key} type="button" onClick={() => setVista(key)} className="flex items-center justify-between rounded-lg border border-border px-4 py-3 hover:bg-muted/40 text-left text-sm">
-                    <span>{label}</span>
+                    <span>{t(labelKey)}</span>
                     <span className="font-medium text-muted-foreground">{fmt(latestValue(medidas, key), unit)}</span>
                   </button>
                 );
@@ -468,12 +473,12 @@ export function PacienteFichaMedicionesTab({
             <>
               <div className="rounded-xl border border-[#c5efd4] bg-[#DEF7E5] p-4 space-y-3 dark:border-emerald-800/45 dark:bg-emerald-950/35">
                 <h3 className="text-sm font-semibold text-foreground">
-                  Nueva medición de {METRIC_META[vista].label.toLowerCase()}
+                  {t("nuevaMedicion", { label: t(METRIC_META[vista].labelKey).toLowerCase() })}
                 </h3>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                   <div className="flex-1 min-w-[8rem]">
                     <label className="text-xs font-medium text-muted-foreground block mb-1">
-                      Fecha
+                      {t("fecha")}
                     </label>
                     <input
                       type="date"
@@ -484,7 +489,7 @@ export function PacienteFichaMedicionesTab({
                   </div>
                   <div className="flex-1 min-w-[6rem]">
                     <label className="text-xs font-medium text-muted-foreground block mb-1">
-                      Valor
+                      {t("valor")}
                     </label>
                     <input
                       type="number" inputMode="decimal"
@@ -499,14 +504,14 @@ export function PacienteFichaMedicionesTab({
                   </div>
                   <div className="w-full sm:w-40">
                     <label className="text-xs font-medium text-muted-foreground block mb-1">
-                      Unidad
+                      {t("unidad")}
                     </label>
                     <div className="h-10 flex items-center px-3 rounded-lg border border-input bg-background text-sm">
                       {METRIC_META[vista].unit === "kg"
-                        ? "kilogramo"
+                        ? t("unidadKilogramo")
                         : METRIC_META[vista].unit === "cm"
-                          ? "centímetro"
-                          : "porcentaje"}
+                          ? t("unidadCentimetro")
+                          : t("unidadPorcentaje")}
                     </div>
                   </div>
                   <button
@@ -515,7 +520,7 @@ export function PacienteFichaMedicionesTab({
                     disabled={pending}
                     className="h-10 px-5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 disabled:opacity-50 shrink-0"
                   >
-                    {pending ? "…" : "Registrar"}
+                    {pending ? "..." : t("registrar")}
                   </button>
                 </div>
               </div>
@@ -524,7 +529,7 @@ export function PacienteFichaMedicionesTab({
                 <div className="divide-y divide-border">
                   {filtradasMetrica.length === 0 ? (
                     <p className="p-6 text-sm text-muted-foreground text-center">
-                      Sin registros de esta medición.
+                      {t("sinRegistros")}
                     </p>
                   ) : (
                     filtradasMetrica.map((m, i) => {
@@ -571,7 +576,7 @@ export function PacienteFichaMedicionesTab({
                 <div className="rounded-xl border border-border bg-card p-5">
                   <h3 className="text-sm font-semibold flex items-center gap-2 mb-4">
                     <span className="text-emerald-600 dark:text-emerald-400">▲</span>
-                    Progreso
+                    {t("progreso")}
                   </h3>
                   <div className="h-[180px] sm:h-[220px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
@@ -607,7 +612,7 @@ export function PacienteFichaMedicionesTab({
                         <Area
                           type="monotone"
                           dataKey="valor"
-                          name={METRIC_META[vista].label}
+                          name={t(METRIC_META[vista].labelKey)}
                           stroke="transparent"
                           fill="url(#colorMed)"
                         />

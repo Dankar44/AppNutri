@@ -10,6 +10,7 @@ import type { MacroObjetivos } from "@/lib/ai/types";
 import { DiaSemana, TipoComida } from "@/generated/prisma/client";
 import { normalizarNombreAlimento, redondearMacros } from "@/lib/alimento-utils";
 import { sanitizeString, validateNumber, LIMITS } from "@/lib/validation";
+import { getTranslations } from "next-intl/server";
 
 export async function checkAIConfigured() {
   return isAIConfigured();
@@ -21,6 +22,7 @@ export async function generarPlanIA(
   instrucciones: string
 ): Promise<{ generacionId: string; plan: unknown } | { error: string }> {
   try {
+    const t = await getTranslations("validation");
     // Validar y sanitizar inputs
     instrucciones = sanitizeString(instrucciones, LIMITS.INSTRUCCIONES_IA);
     objetivos = {
@@ -31,14 +33,14 @@ export async function generarPlanIA(
     };
 
     const dietista = await getCurrentDietista();
-    if (!dietista) return { error: "No autorizado" };
-    if (dietista.isDemo) return { error: "No disponible en modo demo" };
-    if (!isAIConfigured()) return { error: "API keys de Groq no configuradas. Ve a Ajustes." };
+    if (!dietista) return { error: t("auth.noAutorizado") };
+    if (dietista.isDemo) return { error: t("general.noDisponibleDemo") };
+    if (!isAIConfigured()) return { error: t("generacionIA.apiKeysNoConfiguradas") };
 
     const paciente = await prisma.paciente.findFirst({
       where: { id: pacienteId, dietistaId: dietista.id },
     });
-    if (!paciente) return { error: "Paciente no encontrado" };
+    if (!paciente) return { error: t("paciente.pacienteNoEncontrado") };
 
     const [alimentosGlobales, alimentosDietista, recetas] = await Promise.all([
       prisma.alimento.findMany({
@@ -143,8 +145,9 @@ export async function generarPlanIA(
 
     return { generacionId: generacion.id, plan };
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "Error desconocido";
-    return { error: `Error al generar: ${msg}` };
+    const t = await getTranslations("validation");
+    const msg = err instanceof Error ? err.message : t("general.errorDesconocido");
+    return { error: t("generacionIA.errorAlGenerar", { msg }) };
   }
 }
 
@@ -225,14 +228,15 @@ export async function aceptarPlanIA(
   planId: string,
   objetivos: MacroObjetivos
 ) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const generacion = await prisma.generacionIA.findFirst({
     where: { id: generacionId, dietistaId: dietista.id },
   });
-  if (!generacion) throw new Error("Generación no encontrada");
+  if (!generacion) throw new Error(t("generacionIA.generacionNoEncontrada"));
 
   // Obtener el plan existente con sus días y comidas
   const planExistente = await prisma.planAlimenticio.findUnique({
@@ -247,7 +251,7 @@ export async function aceptarPlanIA(
       },
     },
   });
-  if (!planExistente) throw new Error("Plan no encontrado");
+  if (!planExistente) throw new Error(t("plan.planNoEncontrado"));
 
   const planIA = generacion.respuesta as unknown as {
     dias: {
@@ -265,7 +269,7 @@ export async function aceptarPlanIA(
   } | null;
 
   if (!planIA?.dias || !Array.isArray(planIA.dias)) {
-    throw new Error("La respuesta de la IA no tiene el formato esperado");
+    throw new Error(t("generacionIA.respuestaFormatoInvalido"));
   }
 
   // Resolver todos los alimentos (buscar el más parecido, NUNCA crear nuevos)

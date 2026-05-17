@@ -14,6 +14,9 @@ import {
   SELECT_INGESTA_AGUA,
 } from "@/lib/ficha-informacion-types";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type TFunc = (key: string, values?: Record<string, any>) => string;
+
 function esc(s: string): string {
   return s
     .replace(/&/g, "&amp;")
@@ -43,6 +46,7 @@ export interface AnamnesisPDFData {
   theme: PdfColorTheme;
   logoUrl?: string | null;
   brandName?: string | null;
+  locale?: string;
 }
 
 function fila(label: string, value: string | undefined | null): string {
@@ -66,7 +70,13 @@ function seccion(title: string, rows: string, theme: PdfColorTheme): string {
     </div>`;
 }
 
-export function generateAnamnesisPDF(data: AnamnesisPDFData): string {
+export function generateAnamnesisPDF(data: AnamnesisPDFData, t?: TFunc): string {
+  const tt = t ?? ((key: string) => {
+    // Fallback: return the last segment of the key as readable label
+    const parts = key.split(".");
+    return parts[parts.length - 1];
+  });
+
   const { ficha, theme, camposCustom = [] } = data;
   const c = ficha.consulta ?? {};
   const ps = ficha.personalSocial ?? {};
@@ -75,7 +85,8 @@ export function generateAnamnesisPDF(data: AnamnesisPDFData): string {
   const cp = ficha.camposPersonalizados ?? {};
 
   const brand = data.brandName || "Annonia";
-  const fecha = new Date().toLocaleDateString("es-ES", {
+  const locale = data.locale || "es-ES";
+  const fecha = new Date().toLocaleDateString(locale, {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -87,13 +98,13 @@ export function generateAnamnesisPDF(data: AnamnesisPDFData): string {
     : `<span style="font-size:20px;font-weight:700;color:${theme.primary}">${esc(brand)}</span>`;
 
   const secConsulta = seccion(
-    "Informaciones de consulta",
+    tt("pdf.anamnesis.secciones.consulta"),
     [
-      fila("Motivo de consulta", c.motivo),
-      fila("Expectativas", c.expectativas),
-      fila("Objetivos clínicos", labelFor(SELECT_OBJETIVOS_CLINICOS, c.objetivosClinicos)),
-      fila("Detalle objetivos", c.objetivosClinicosDetalle),
-      fila("Otras informaciones", c.otras),
+      fila(tt("pdf.anamnesis.labels.motivoConsulta"), c.motivo),
+      fila(tt("pdf.anamnesis.labels.expectativas"), c.expectativas),
+      fila(tt("pdf.anamnesis.labels.objetivosClinicos"), labelFor(SELECT_OBJETIVOS_CLINICOS, c.objetivosClinicos)),
+      fila(tt("pdf.anamnesis.labels.detalleObjetivos"), c.objetivosClinicosDetalle),
+      fila(tt("pdf.anamnesis.labels.otrasInformaciones"), c.otras),
       ...camposCustom
         .filter((f) => f.seccion === "consulta")
         .map((f) => fila(f.label, cp[f.id])),
@@ -102,21 +113,21 @@ export function generateAnamnesisPDF(data: AnamnesisPDFData): string {
   );
 
   const secPersonal = seccion(
-    "Historia personal y social",
+    tt("pdf.anamnesis.secciones.personalSocial"),
     [
-      fila("Función intestinal", labelFor(SELECT_FUNCION_INTESTINAL, ps.funcionIntestinal)),
-      fila("Detalle", ps.funcionIntestinalDetalle),
-      fila("Calidad del sueño", labelFor(SELECT_CALIDAD_SUENO, ps.calidadSueno)),
-      fila("Detalle", ps.calidadSuenoDetalle),
-      fila("Fumador", labelFor(SELECT_SI_NO_OCASION, ps.fumador)),
-      fila("Detalle", ps.fumadorDetalle),
-      fila("Bebe alcohol", labelFor(SELECT_SI_NO_OCASION, ps.alcohol)),
-      fila("Detalle", ps.alcoholDetalle),
-      fila("Estado civil", labelFor(SELECT_ESTADO_CIVIL, ps.estadoCivil)),
-      fila("Detalle", ps.estadoCivilDetalle),
-      fila("Actividad física", ps.actividadFisica),
-      fila("Raza / etnia", ps.raza === "no_indica" ? "Prefiere no indicar" : ps.razaDetalle),
-      fila("Otras informaciones", ps.otrasPersonal),
+      fila(tt("pdf.anamnesis.labels.funcionIntestinal"), labelFor(SELECT_FUNCION_INTESTINAL, ps.funcionIntestinal)),
+      fila(tt("pdf.anamnesis.labels.detalle"), ps.funcionIntestinalDetalle),
+      fila(tt("pdf.anamnesis.labels.calidadSueno"), labelFor(SELECT_CALIDAD_SUENO, ps.calidadSueno)),
+      fila(tt("pdf.anamnesis.labels.detalle"), ps.calidadSuenoDetalle),
+      fila(tt("pdf.anamnesis.labels.fumador"), labelFor(SELECT_SI_NO_OCASION, ps.fumador)),
+      fila(tt("pdf.anamnesis.labels.detalle"), ps.fumadorDetalle),
+      fila(tt("pdf.anamnesis.labels.bebeAlcohol"), labelFor(SELECT_SI_NO_OCASION, ps.alcohol)),
+      fila(tt("pdf.anamnesis.labels.detalle"), ps.alcoholDetalle),
+      fila(tt("pdf.anamnesis.labels.estadoCivil"), labelFor(SELECT_ESTADO_CIVIL, ps.estadoCivil)),
+      fila(tt("pdf.anamnesis.labels.detalle"), ps.estadoCivilDetalle),
+      fila(tt("pdf.anamnesis.labels.actividadFisica"), ps.actividadFisica),
+      fila(tt("pdf.anamnesis.labels.razaEtnia"), ps.raza === "no_indica" ? tt("pdf.anamnesis.labels.prefiereNoIndicar") : ps.razaDetalle),
+      fila(tt("pdf.anamnesis.labels.otrasInformaciones"), ps.otrasPersonal),
       ...camposCustom
         .filter((f) => f.seccion === "personalSocial")
         .map((f) => fila(f.label, cp[f.id])),
@@ -128,15 +139,15 @@ export function generateAnamnesisPDF(data: AnamnesisPDFData): string {
     tags.length > 0 ? tags.join(", ") : null;
 
   const secClinica = seccion(
-    "Historia clínica",
+    tt("pdf.anamnesis.secciones.clinica"),
     [
-      fila("Patologías", tagList(data.patologias ?? [])),
-      fila("Detalle patologías / evolución", cl.patologiasDetalle),
-      fila("Medicamentos", tagList(data.medicamentos ?? [])),
-      fila("Medicación (texto libre)", cl.medicacion),
-      fila("Antecedentes personales", cl.antecedentesPersonales),
-      fila("Antecedentes familiares", cl.antecedentesFamiliares),
-      fila("Otras informaciones", cl.otrasClinicas),
+      fila(tt("pdf.anamnesis.labels.patologias"), tagList(data.patologias ?? [])),
+      fila(tt("pdf.anamnesis.labels.detallePatologias"), cl.patologiasDetalle),
+      fila(tt("pdf.anamnesis.labels.medicamentos"), tagList(data.medicamentos ?? [])),
+      fila(tt("pdf.anamnesis.labels.medicacion"), cl.medicacion),
+      fila(tt("pdf.anamnesis.labels.antecedentesPersonales"), cl.antecedentesPersonales),
+      fila(tt("pdf.anamnesis.labels.antecedentesFamiliares"), cl.antecedentesFamiliares),
+      fila(tt("pdf.anamnesis.labels.otrasClinicas"), cl.otrasClinicas),
       ...camposCustom
         .filter((f) => f.seccion === "clinica")
         .map((f) => fila(f.label, cp[f.id])),
@@ -145,21 +156,21 @@ export function generateAnamnesisPDF(data: AnamnesisPDFData): string {
   );
 
   const secAlimentaria = seccion(
-    "Historia alimentaria",
+    tt("pdf.anamnesis.secciones.alimentaria"),
     [
-      fila("Alergias", tagList(data.alergias ?? [])),
-      fila("Intolerancias", tagList(data.intolerancias ?? [])),
-      fila("Hora habitual para levantarse", al.horaLevantarse),
-      fila("Hora habitual para acostarse", al.horaAcostarse),
-      fila("Tipo de dieta", labelFor(SELECT_TIPOS_DIETA, al.tiposDieta)),
-      fila("Detalle dieta", al.tiposDietaDetalle),
-      fila("Alimentos favoritos", al.alimentosFavoritos),
-      fila("Alimentos rechazados", al.alimentosRechazados),
-      fila("Alergias (detalle)", al.alergiasDetalle),
-      fila("Intolerancias (detalle)", al.intoleranciasDetalle),
-      fila("Deficiencias nutricionales", al.deficienciasDetalle),
-      fila("Ingesta de agua", labelFor(SELECT_INGESTA_AGUA, al.ingestaAgua)),
-      fila("Otras informaciones", al.otrasAlimentaria),
+      fila(tt("pdf.anamnesis.labels.alergias"), tagList(data.alergias ?? [])),
+      fila(tt("pdf.anamnesis.labels.intolerancias"), tagList(data.intolerancias ?? [])),
+      fila(tt("pdf.anamnesis.labels.horaLevantarse"), al.horaLevantarse),
+      fila(tt("pdf.anamnesis.labels.horaAcostarse"), al.horaAcostarse),
+      fila(tt("pdf.anamnesis.labels.tipoDieta"), labelFor(SELECT_TIPOS_DIETA, al.tiposDieta)),
+      fila(tt("pdf.anamnesis.labels.detalleDieta"), al.tiposDietaDetalle),
+      fila(tt("pdf.anamnesis.labels.alimentosFavoritos"), al.alimentosFavoritos),
+      fila(tt("pdf.anamnesis.labels.alimentosRechazados"), al.alimentosRechazados),
+      fila(tt("pdf.anamnesis.labels.alergiasDetalle"), al.alergiasDetalle),
+      fila(tt("pdf.anamnesis.labels.intoleranciasDetalle"), al.intoleranciasDetalle),
+      fila(tt("pdf.anamnesis.labels.deficienciasNutricionales"), al.deficienciasDetalle),
+      fila(tt("pdf.anamnesis.labels.ingestaAgua"), labelFor(SELECT_INGESTA_AGUA, al.ingestaAgua)),
+      fila(tt("pdf.anamnesis.labels.otrasAlimentaria"), al.otrasAlimentaria),
       ...camposCustom
         .filter((f) => f.seccion === "alimentaria")
         .map((f) => fila(f.label, cp[f.id])),
@@ -171,17 +182,19 @@ export function generateAnamnesisPDF(data: AnamnesisPDFData): string {
   const secPersonalizado =
     camposPers.length > 0
       ? seccion(
-          "Campos personalizados",
+          tt("pdf.anamnesis.secciones.camposPersonalizados"),
           camposPers.map((f) => fila(f.label, cp[f.id])).join(""),
           theme
         )
       : "";
 
+  const langAttr = locale.startsWith("pt") ? "pt" : "es";
+
   return `<!DOCTYPE html>
-<html lang="es">
+<html lang="${langAttr}">
 <head>
 <meta charset="utf-8">
-<title>Anamnesis — ${esc(data.pacienteNombre)}</title>
+<title>${esc(tt("pdf.anamnesis.titulo"))} — ${esc(data.pacienteNombre)}</title>
 <style>
   @page { size: A4; margin: 0; }
   * { box-sizing: border-box; }
@@ -210,10 +223,10 @@ export function generateAnamnesisPDF(data: AnamnesisPDFData): string {
 
     <!-- Título -->
     <div style="margin-bottom:24px">
-      <h1 style="margin:0 0 4px;font-size:22px;color:${theme.primary}">Anamnesis nutricional</h1>
+      <h1 style="margin:0 0 4px;font-size:22px;color:${theme.primary}">${esc(tt("pdf.anamnesis.titulo"))}</h1>
       <p style="margin:0;font-size:14px;color:${theme.textLight}">
-        Paciente: <strong style="color:${theme.textDark}">${esc(data.pacienteNombre)}</strong>
-        &nbsp;·&nbsp; Nutricionista: <strong style="color:${theme.textDark}">${esc(data.dietistaNombre)}</strong>
+        ${esc(tt("pdf.anamnesis.pacienteLabel"))} <strong style="color:${theme.textDark}">${esc(data.pacienteNombre)}</strong>
+        &nbsp;·&nbsp; ${esc(tt("pdf.anamnesis.nutricionistaLabel"))} <strong style="color:${theme.textDark}">${esc(data.dietistaNombre)}</strong>
       </p>
     </div>
 
@@ -225,8 +238,8 @@ export function generateAnamnesisPDF(data: AnamnesisPDFData): string {
 
     <!-- Footer -->
     <div style="margin-top:32px;padding-top:12px;border-top:1px solid ${theme.border};text-align:center;color:${theme.textLight};font-size:11px">
-      ${esc(brand)} · Generado el ${esc(fecha)}
-      <div style="color:#c0c8c3;font-size:8px;margin-top:2px">annonia.com</div>
+      ${esc(tt("pdf.anamnesis.footer.texto", { brand, fecha }))}
+      <div style="color:#c0c8c3;font-size:8px;margin-top:2px">${esc(tt("pdf.anamnesis.footer.plataforma"))}</div>
     </div>
   </div>
 

@@ -5,10 +5,9 @@ import { getPacientes } from "@/app/actions/pacientes";
 import { getStripeAccountStatus } from "@/app/actions/stripe";
 import { PagosClient } from "./pagos-client";
 import { PageHeader } from "@/components/page-header";
-
-function formatEuro(value: number) {
-  return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(value);
-}
+import { getTranslations } from "next-intl/server";
+import { getLocale } from "@/i18n/locale";
+import { intlTag } from "@/i18n/config";
 
 type StatVariant = "neutral" | "success" | "warning";
 
@@ -79,6 +78,14 @@ function StatCard({
 }
 
 export default async function PagosPage() {
+  const t = await getTranslations("payments");
+  const locale = await getLocale();
+  const tag = intlTag(locale);
+
+  function formatEuro(value: number) {
+    return new Intl.NumberFormat(tag, { style: "currency", currency: "EUR" }).format(value);
+  }
+
   const [pagos, stats, pacientes, stripeStatus] = await Promise.all([
     getPagos(),
     getEstadisticasPagos(),
@@ -93,32 +100,32 @@ export default async function PagosPage() {
     <div>
       <PageHeader
         icon={Wallet}
-        title="Pagos"
-        subtitle="Gestiona los cobros de tus pacientes"
+        title={t("page.title")}
+        subtitle={t("page.subtitle")}
       />
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
         <StatCard
-          label="Total pagos"
+          label={t("stats.totalPagos")}
           value={String(stats.pagosCount)}
           icon={Receipt}
           variant="neutral"
         />
         <StatCard
-          label="Cobrado"
+          label={t("stats.cobrado")}
           value={formatEuro(stats.cobrado)}
           icon={CircleDollarSign}
           variant="success"
         />
         <StatCard
-          label="Pendiente"
+          label={t("stats.pendiente")}
           value={formatEuro(stats.pendiente)}
           icon={Clock}
           variant="warning"
         />
         <StatCard
-          label="Balance"
+          label={t("stats.balance")}
           value={formatEuro(stats.cobrado - stats.pendiente)}
           icon={CreditCard}
           variant="neutral"

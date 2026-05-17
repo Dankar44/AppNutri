@@ -21,6 +21,7 @@ import {
   CalendarDays,
   Loader2,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import {
   getSeguimientoMes,
@@ -41,46 +42,22 @@ interface SeguimientoTabProps {
 
 // ─── Constants ───
 
-const DIAS_SEMANA = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
-const DIAS_SEMANA_CORTO = ["D", "L", "M", "X", "J", "V", "S"];
+const DIAS_SEMANA_KEYS = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"] as const;
 
-const MESES = [
-  "Enero",
-  "Febrero",
-  "Marzo",
-  "Abril",
-  "Mayo",
-  "Junio",
-  "Julio",
-  "Agosto",
-  "Septiembre",
-  "Octubre",
-  "Noviembre",
-  "Diciembre",
-];
+const MESES_KEYS = [
+  "enero", "febrero", "marzo", "abril", "mayo", "junio",
+  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+] as const;
 
-const MESES_CORTOS = [
-  "ene",
-  "feb",
-  "mar",
-  "abr",
-  "may",
-  "jun",
-  "jul",
-  "ago",
-  "sep",
-  "oct",
-  "nov",
-  "dic",
-];
+const MESES_CORTOS_KEYS = MESES_KEYS;
 
 const COMIDAS = [
-  { key: "desayuno", label: "Desayuno", icon: Coffee },
-  { key: "media-manana", label: "Media mañana", icon: Apple },
-  { key: "comida", label: "Comida", icon: UtensilsCrossed },
-  { key: "merienda", label: "Merienda", icon: Cookie },
-  { key: "cena", label: "Cena", icon: Moon },
-  { key: "recena", label: "Recena", icon: Moon },
+  { key: "desayuno", labelKey: "tipoDesayuno", icon: Coffee },
+  { key: "media-manana", labelKey: "tipoMediaManana", icon: Apple },
+  { key: "comida", labelKey: "tipoComida", icon: UtensilsCrossed },
+  { key: "merienda", labelKey: "tipoMerienda", icon: Cookie },
+  { key: "cena", labelKey: "tipoCena", icon: Moon },
+  { key: "recena", labelKey: "tipoRecena", icon: Moon },
 ] as const;
 
 const HORAS_DEFAULT: Record<string, string> = {
@@ -93,37 +70,37 @@ const HORAS_DEFAULT: Record<string, string> = {
 };
 
 const MICRO_DDR = [
-  { key: "acidoPantotenico", label: "Ác. Pantoténico", ddr: 5 },
-  { key: "calcio", label: "Calcio", ddr: 1000 },
-  { key: "cinc", label: "Cinc", ddr: 8 },
-  { key: "cobre", label: "Cobre", ddr: 0.9 },
-  { key: "colina", label: "Colina", ddr: 425 },
-  { key: "fluor", label: "Flúor", ddr: 3000 },
-  { key: "folato", label: "Folato", ddr: 400 },
-  { key: "fosforo", label: "Fósforo", ddr: 700 },
-  { key: "hierro", label: "Hierro", ddr: 18 },
-  { key: "magnesio", label: "Magnesio", ddr: 320 },
-  { key: "manganeso", label: "Manganeso", ddr: 1.8 },
-  { key: "niacina", label: "Niacina", ddr: 14 },
-  { key: "potasio", label: "Potasio", ddr: 4700 },
-  { key: "riboflavina", label: "Riboflavina", ddr: 1.1 },
-  { key: "selenio", label: "Selenio", ddr: 55 },
-  { key: "sodio", label: "Sodio", ddr: 1500 },
-  { key: "tiamina", label: "Tiamina", ddr: 1.1 },
-  { key: "vitaminaA", label: "Vitamina A", ddr: 700 },
-  { key: "vitaminaB12", label: "Vitamina B12", ddr: 2.4 },
-  { key: "vitaminaB6", label: "Vitamina B6", ddr: 1.3 },
-  { key: "vitaminaC", label: "Vitamina C", ddr: 75 },
-  { key: "vitaminaD", label: "Vitamina D", ddr: 15 },
-  { key: "vitaminaE", label: "Vitamina E", ddr: 15 },
-  { key: "vitaminaK", label: "Vitamina K", ddr: 90 },
+  { key: "acidoPantotenico", labelKey: "acidoPantotenico", ddr: 5 },
+  { key: "calcio", labelKey: "calcio", ddr: 1000 },
+  { key: "cinc", labelKey: "cinc", ddr: 8 },
+  { key: "cobre", labelKey: "cobre", ddr: 0.9 },
+  { key: "colina", labelKey: "colina", ddr: 425 },
+  { key: "fluor", labelKey: "fluor", ddr: 3000 },
+  { key: "folato", labelKey: "folato", ddr: 400 },
+  { key: "fosforo", labelKey: "fosforo", ddr: 700 },
+  { key: "hierro", labelKey: "hierro", ddr: 18 },
+  { key: "magnesio", labelKey: "magnesio", ddr: 320 },
+  { key: "manganeso", labelKey: "manganeso", ddr: 1.8 },
+  { key: "niacina", labelKey: "niacina", ddr: 14 },
+  { key: "potasio", labelKey: "potasio", ddr: 4700 },
+  { key: "riboflavina", labelKey: "riboflavina", ddr: 1.1 },
+  { key: "selenio", labelKey: "selenio", ddr: 55 },
+  { key: "sodio", labelKey: "sodio", ddr: 1500 },
+  { key: "tiamina", labelKey: "tiamina", ddr: 1.1 },
+  { key: "vitaminaA", labelKey: "vitaminaA", ddr: 700 },
+  { key: "vitaminaB12", labelKey: "vitaminaB12", ddr: 2.4 },
+  { key: "vitaminaB6", labelKey: "vitaminaB6", ddr: 1.3 },
+  { key: "vitaminaC", labelKey: "vitaminaC", ddr: 75 },
+  { key: "vitaminaD", labelKey: "vitaminaD", ddr: 15 },
+  { key: "vitaminaE", labelKey: "vitaminaE", ddr: 15 },
+  { key: "vitaminaK", labelKey: "vitaminaK", ddr: 90 },
 ];
 
 const FILTROS_ACTIVIDAD = [
-  { value: "", label: "Todas las actividades" },
-  { value: "consulta", label: "Consultas" },
-  { value: "diario", label: "Diario alimentario" },
-  { value: "ejercicio", label: "Actividad física" },
+  { value: "", labelKey: "filtroTodasActividades" },
+  { value: "consulta", labelKey: "filtroConsultas" },
+  { value: "diario", labelKey: "filtroDiarioAlimentario" },
+  { value: "ejercicio", labelKey: "filtroActividadFisica" },
 ] as const;
 
 const AGUA_OBJETIVO_ML = 2000;
@@ -145,18 +122,19 @@ function toDateStr(y: number, m: number, d: number): string {
   return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 }
 
-function formatFechaLarga(dateStr: string): string {
+function formatFechaLarga(dateStr: string, t: (key: string) => string): string {
   const d = new Date(dateStr + "T00:00:00");
   const day = String(d.getDate()).padStart(2, "0");
-  const mes = MESES_CORTOS[d.getMonth()];
+  const mes = t(`mesesCortos.${MESES_CORTOS_KEYS[d.getMonth()]}`);
+  const de = t("de");
   const anio = d.getFullYear();
-  return `${day} de ${mes} de ${anio}`;
+  return `${day} ${de} ${mes} ${de} ${anio}`;
 }
 
-function formatFechaActividad(fecha: Date | string): string {
+function formatFechaActividad(fecha: Date | string, t: (key: string) => string): string {
   const d = typeof fecha === "string" ? new Date(fecha) : fecha;
   const day = d.getDate();
-  const mes = MESES_CORTOS[d.getMonth()];
+  const mes = t(`mesesCortos.${MESES_CORTOS_KEYS[d.getMonth()]}`);
   const anio = d.getFullYear();
   return `${day} ${mes} ${anio}`;
 }
@@ -181,6 +159,7 @@ export function SeguimientoTab({
   pacienteNombre,
   pacientePeso,
 }: SeguimientoTabProps) {
+  const t = useTranslations("patients.seguimiento");
   const today = new Date();
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(today.getMonth() + 1);
@@ -330,7 +309,7 @@ export function SeguimientoTab({
     calendarCells.push(null);
   }
 
-  const monthLabel = `${MESES[currentMonth - 1]} de ${currentYear}`;
+  const monthLabel = `${t(`meses${MESES_KEYS[currentMonth - 1].charAt(0).toUpperCase()}${MESES_KEYS[currentMonth - 1].slice(1)}`)} ${t("de")} ${currentYear}`;
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-6 items-start">
@@ -348,7 +327,7 @@ export function SeguimientoTab({
                 type="button"
                 onClick={goToPrevMonth}
                 className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                title="Mes anterior"
+                title={t("mesAnterior")}
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -357,13 +336,13 @@ export function SeguimientoTab({
                 onClick={goToToday}
                 className="px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
               >
-                Hoy
+                {t("hoy")}
               </button>
               <button
                 type="button"
                 onClick={goToNextMonth}
                 className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                title="Mes siguiente"
+                title={t("mesSiguiente")}
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -373,13 +352,13 @@ export function SeguimientoTab({
           {/* Calendar grid with outer border */}
           <div className="border border-border rounded-xl">
           <div className="grid grid-cols-7 border-b border-border bg-muted/20">
-            {DIAS_SEMANA.map((d, i) => (
+            {DIAS_SEMANA_KEYS.map((dayKey) => (
               <div
-                key={d}
+                key={dayKey}
                 className="text-center text-[11px] sm:text-xs font-bold text-muted-foreground py-2 border-r border-border last:border-r-0 italic"
               >
-                <span className="sm:hidden">{DIAS_SEMANA_CORTO[i]}</span>
-                <span className="hidden sm:inline">{d}</span>
+                <span className="sm:hidden">{t(`diasSemanaCorto.${dayKey}`)}</span>
+                <span className="hidden sm:inline">{t(`diasSemana.${dayKey}`)}</span>
               </div>
             ))}
           </div>
@@ -445,7 +424,7 @@ export function SeguimientoTab({
                       {hasData && (
                         <div className="hidden group-hover/bar:block absolute -top-8 left-1/2 -translate-x-1/2 z-50">
                           <div className="bg-gray-700 text-white text-[11px] font-medium px-3 py-1 rounded-lg whitespace-nowrap shadow-lg">
-                            {cumplido ? "Cumplido" : "Cambios"}
+                            {cumplido ? t("cumplido") : t("cambios")}
                           </div>
                           <div className="w-2 h-2 bg-gray-700 rotate-45 mx-auto -mt-1" />
                         </div>
@@ -462,7 +441,7 @@ export function SeguimientoTab({
                         {aguaML > 0 && (
                           <div className="hidden group-hover/water:block absolute -top-8 left-1/2 -translate-x-1/2 z-50">
                             <div className="bg-gray-700 text-white text-[11px] font-medium px-3 py-1 rounded-lg whitespace-nowrap shadow-lg">
-                              Ingesta de agua: {Math.round(aguaPct)}% del objetivo
+                              {t("ingestaAgua", { pct: Math.round(aguaPct) })}
                             </div>
                             <div className="w-2 h-2 bg-gray-700 rotate-45 mx-auto -mt-1" />
                           </div>
@@ -477,7 +456,7 @@ export function SeguimientoTab({
                         {hasEjercicio && (
                           <div className="hidden group-hover/exercise:block absolute -top-8 left-1/2 -translate-x-1/2 z-50">
                             <div className="bg-gray-700 text-white text-[11px] font-medium px-3 py-1 rounded-lg whitespace-nowrap shadow-lg">
-                              Hizo ejercicio físico en este día
+                              {t("hizoEjercicio")}
                             </div>
                             <div className="w-2 h-2 bg-gray-700 rotate-45 mx-auto -mt-1" />
                           </div>
@@ -496,29 +475,29 @@ export function SeguimientoTab({
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-1.5 rounded-full bg-emerald-400" />
               <span className="text-[10px] text-muted-foreground">
-                Cumplido
+                {t("cumplido")}
               </span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-1.5 rounded-full bg-amber-400" />
               <span className="text-[10px] text-muted-foreground">
-                Con datos
+                {t("conDatos")}
               </span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-1.5 rounded-full bg-muted" />
               <span className="text-[10px] text-muted-foreground">
-                Sin datos
+                {t("sinDatos")}
               </span>
             </div>
             <div className="flex items-center gap-1.5">
               <Droplets className="w-2.5 h-2.5 text-blue-500" />
-              <span className="text-[10px] text-muted-foreground">Agua</span>
+              <span className="text-[10px] text-muted-foreground">{t("agua")}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Dumbbell className="w-2.5 h-2.5 text-emerald-500" />
               <span className="text-[10px] text-muted-foreground">
-                Ejercicio
+                {t("ejercicio")}
               </span>
             </div>
           </div>
@@ -540,7 +519,7 @@ export function SeguimientoTab({
       <aside>
         {/* Sidebar Header — sin tarjeta */}
         <div className="flex items-center justify-between gap-3 mb-4">
-          <h3 className="text-base font-semibold text-foreground">Actividades</h3>
+          <h3 className="text-base font-semibold text-foreground">{t("actividades")}</h3>
           <div className="relative">
             <select
               value={actividadFilter}
@@ -548,7 +527,7 @@ export function SeguimientoTab({
               className="appearance-none pl-3 pr-7 py-1.5 rounded-full border border-border bg-background text-xs font-medium cursor-pointer hover:bg-muted/40 transition-colors"
             >
               {FILTROS_ACTIVIDAD.map((f) => (
-                <option key={f.value} value={f.value}>{f.label}</option>
+                <option key={f.value} value={f.value}>{t(f.labelKey)}</option>
               ))}
             </select>
             <Filter className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
@@ -565,7 +544,7 @@ export function SeguimientoTab({
               <div className="py-12 text-center">
                 <CalendarDays className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
                 <p className="text-sm text-muted-foreground">
-                  Sin actividades registradas
+                  {t("sinActividadesRegistradas")}
                 </p>
               </div>
             ) : (
@@ -594,6 +573,7 @@ function DayDetail({
   pacienteId: string;
   macrosData: { macros: { calorias: number; proteinas: number; carbohidratos: number; grasas: number; fibra: number }; micro: Record<string, number> } | null;
 }) {
+  const t = useTranslations("patients.seguimiento");
   const aguaML = dayData?.aguaML ?? 0;
   const aguaPct = Math.min((aguaML / AGUA_OBJETIVO_ML) * 100, 100);
 
@@ -618,7 +598,7 @@ function DayDetail({
       {/* Date Header */}
       <div className="px-5 py-3 border-b border-border bg-muted/20">
         <h3 className="text-sm font-semibold text-foreground">
-          {formatFechaLarga(dateStr)}
+          {formatFechaLarga(dateStr, t)}
         </h3>
       </div>
 
@@ -632,10 +612,10 @@ function DayDetail({
           <section>
             <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
               <UtensilsCrossed className="w-4 h-4 text-primary" />
-              Diario alimentario
+              {t("diarioAlimentario")}
             </h4>
             <div className="grid grid-cols-2 gap-3">
-              {COMIDAS.map(({ key, label, icon: Icon }) => {
+              {COMIDAS.map(({ key, labelKey, icon: Icon }) => {
                 const mealEntry = comidasMap.get(key);
                 const allDone = mealEntry?.alimentos?.every(a => a.cumplido) ?? false;
                 const someDone = mealEntry?.alimentos?.some(a => a.cumplido) ?? false;
@@ -669,7 +649,7 @@ function DayDetail({
 
                     {/* Meal info */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground">{label}</p>
+                      <p className="text-sm font-semibold text-foreground">{t(labelKey)}</p>
                       <p className="text-xs text-muted-foreground">{hora}</p>
                     </div>
 
@@ -685,7 +665,7 @@ function DayDetail({
           <section>
             <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
               <Flame className="w-4 h-4 text-primary" />
-              Análisis global diario
+              {t("analisisGlobalDiario")}
             </h4>
             {(() => {
               // Use real macros from calcularMacrosDia
@@ -697,11 +677,11 @@ function DayDetail({
               const fib = m?.fibra ?? 0;
 
               const macros = [
-                { label: "Energía", icon: "🔥", value: cal, obj: 2100, unit: "kcal", color: "bg-amber-400", bgColor: "bg-amber-100 dark:bg-amber-500/15" },
-                { label: "Grasa", icon: "💧", value: gras, obj: 70, unit: "g", color: "bg-amber-400", bgColor: "bg-amber-50 dark:bg-amber-500/10" },
-                { label: "H. Carbono", icon: "○", value: carb, obj: 260, unit: "g", color: "bg-orange-400", bgColor: "bg-orange-50 dark:bg-orange-500/10" },
-                { label: "Proteína", icon: "◇", value: prot, obj: 100, unit: "g", color: "bg-blue-400", bgColor: "bg-blue-50 dark:bg-blue-500/10" },
-                { label: "Fibra alimentaria", icon: "△", value: fib, obj: 30, unit: "g", color: "bg-emerald-400", bgColor: "bg-emerald-50 dark:bg-emerald-500/10" },
+                { label: t("energia"), icon: "🔥", value: cal, obj: 2100, unit: "kcal", color: "bg-amber-400", bgColor: "bg-amber-100 dark:bg-amber-500/15" },
+                { label: t("grasa"), icon: "💧", value: gras, obj: 70, unit: "g", color: "bg-amber-400", bgColor: "bg-amber-50 dark:bg-amber-500/10" },
+                { label: t("hCarbono"), icon: "○", value: carb, obj: 260, unit: "g", color: "bg-orange-400", bgColor: "bg-orange-50 dark:bg-orange-500/10" },
+                { label: t("proteina"), icon: "◇", value: prot, obj: 100, unit: "g", color: "bg-blue-400", bgColor: "bg-blue-50 dark:bg-blue-500/10" },
+                { label: t("fibraAlimentaria"), icon: "△", value: fib, obj: 30, unit: "g", color: "bg-emerald-400", bgColor: "bg-emerald-50 dark:bg-emerald-500/10" },
               ];
               return (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
@@ -727,7 +707,7 @@ function DayDetail({
 
           {/* Micronutrientes — barras horizontales */}
           <section>
-            <h4 className="text-sm font-semibold text-foreground mb-3">Micronutrientes</h4>
+            <h4 className="text-sm font-semibold text-foreground mb-3">{t("micronutrientes")}</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">
               {MICRO_DDR.map((row) => {
                 const actual = macrosData?.micro?.[row.key] ?? 0;
@@ -735,7 +715,7 @@ function DayDetail({
                 const barW = Math.min((pct / 110) * 100, 100);
                 return (
                   <div key={row.key} className="flex items-center gap-2 py-1">
-                    <span className="text-[11px] text-muted-foreground w-24 shrink-0 text-right">{row.label}</span>
+                    <span className="text-[11px] text-muted-foreground w-24 shrink-0 text-right">{t(`micros.${row.labelKey}`)}</span>
                     <div className="flex-1 relative h-3 bg-muted/40 rounded overflow-hidden">
                       <div className="absolute left-[90.9%] top-0 h-full w-px border-l border-dashed border-muted-foreground/30 z-10" />
                       <div className="h-full rounded bg-indigo-300/70" style={{ width: `${barW}%` }} />
@@ -750,7 +730,7 @@ function DayDetail({
           <section>
             <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
               <Droplets className="w-4 h-4 text-blue-500" />
-              Ingesta de agua
+              {t("ingestaAguaLabel")}
             </h4>
             <div className="rounded-lg border border-border bg-muted/20 p-4">
               <div className="flex items-center justify-between mb-2">
@@ -758,7 +738,7 @@ function DayDetail({
                   {aguaML} ml
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  Objetivo: {AGUA_OBJETIVO_ML} ml
+                  {t("objetivoMl", { ml: AGUA_OBJETIVO_ML })}
                 </span>
               </div>
               <div className="h-4 rounded-full bg-blue-100 dark:bg-blue-500/15 overflow-hidden">
@@ -769,8 +749,8 @@ function DayDetail({
               </div>
               <p className="text-xs text-muted-foreground mt-1.5">
                 {aguaPct > 0
-                  ? `${Math.round(aguaPct)}% del objetivo diario`
-                  : "Sin registro de agua para este dia"}
+                  ? t("porcentajeObjetivo", { pct: Math.round(aguaPct) })
+                  : t("sinRegistroAgua")}
               </p>
             </div>
           </section>
@@ -780,7 +760,7 @@ function DayDetail({
             <section>
               <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
                 <Dumbbell className="w-4 h-4 text-emerald-500" />
-                Ejercicio
+                {t("ejercicio")}
               </h4>
               <div className="rounded-lg border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50/50 dark:border-emerald-800/40 dark:bg-emerald-950/20 p-4">
                 <div className="flex flex-wrap gap-2">
@@ -817,7 +797,7 @@ function DayDetail({
           {dayData?.notas && (
             <section>
               <h4 className="text-sm font-semibold text-foreground mb-2">
-                Notas
+                {t("notas")}
               </h4>
               <p className="text-sm text-muted-foreground bg-muted/30 rounded-lg p-3 border border-border">
                 {dayData.notas}
@@ -829,7 +809,7 @@ function DayDetail({
           {!dayData && (
             <div className="text-center py-4">
               <p className="text-sm text-muted-foreground">
-                Sin datos registrados para este dia
+                {t("sinDatosRegistrados")}
               </p>
             </div>
           )}
@@ -842,6 +822,7 @@ function DayDetail({
 // ─── Activity Card Component ───
 
 function ActividadCard({ actividad }: { actividad: ActividadPaciente }) {
+  const t = useTranslations("patients.seguimiento");
   const tipoConfig: Record<string, { icon: typeof Check; color: string }> = {
     diario: { icon: UtensilsCrossed, color: "text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/15" },
     consulta: { icon: CalendarDays, color: "text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-500/15" },
@@ -870,7 +851,7 @@ function ActividadCard({ actividad }: { actividad: ActividadPaciente }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
             <p className="text-xs text-muted-foreground">
-              {formatFechaActividad(actividad.fecha)}
+              {formatFechaActividad(actividad.fecha, t)}
             </p>
           </div>
           <p className="text-sm font-medium text-foreground mt-0.5 pr-20">
@@ -917,7 +898,7 @@ function ActividadCard({ actividad }: { actividad: ActividadPaciente }) {
           {(actividad.tipo === "comida_cumplida" || actividad.tipo === "comida_cambios" || actividad.tipo === "ejercicio") && (
             <div className="absolute top-3 right-3">
               <button className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-border text-xs text-muted-foreground hover:bg-muted transition-colors">
-                Me gusta <Heart className="w-3 h-3" />
+                {t("meGusta")} <Heart className="w-3 h-3" />
               </button>
             </div>
           )}

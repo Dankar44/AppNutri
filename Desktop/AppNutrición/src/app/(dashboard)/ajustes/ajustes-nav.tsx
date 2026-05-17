@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   User,
   Lock,
+  Globe,
   Briefcase,
   ClipboardList,
   FileText,
@@ -19,7 +21,7 @@ import { cn } from "@/lib/utils";
 
 interface NavSection {
   id: string;
-  label: string;
+  labelKey: string;
   icon: LucideIcon;
 }
 
@@ -28,17 +30,18 @@ interface NavSection {
  * para que los iconos Lucide (React components) no crucen la frontera server/client.
  */
 const SECTIONS: NavSection[] = [
-  { id: "perfil", label: "Perfil", icon: User },
-  { id: "contrasena", label: "Contraseña", icon: Lock },
-  { id: "profesional", label: "Profesional", icon: Briefcase },
-  { id: "documentos", label: "Documentos", icon: FileText },
-  { id: "anamnesis", label: "Anamnesis", icon: ClipboardList },
-  { id: "integraciones", label: "Integraciones", icon: Plug },
-  { id: "paciente-demo", label: "Paciente de ejemplo", icon: Sparkles },
-  { id: "suscripcion", label: "Suscripción", icon: CreditCard },
-  { id: "cobros", label: "Cobros", icon: Wallet },
-  { id: "guias", label: "Guías", icon: GraduationCap },
-  { id: "peligroso", label: "Zona peligrosa", icon: AlertTriangle },
+  { id: "perfil", labelKey: "nav.perfil", icon: User },
+  { id: "contrasena", labelKey: "nav.contrasena", icon: Lock },
+  { id: "idioma", labelKey: "nav.idioma", icon: Globe },
+  { id: "profesional", labelKey: "nav.profesional", icon: Briefcase },
+  { id: "documentos", labelKey: "nav.documentos", icon: FileText },
+  { id: "anamnesis", labelKey: "nav.anamnesis", icon: ClipboardList },
+  { id: "integraciones", labelKey: "nav.integraciones", icon: Plug },
+  { id: "paciente-demo", labelKey: "nav.pacienteDemo", icon: Sparkles },
+  { id: "suscripcion", labelKey: "nav.suscripcion", icon: CreditCard },
+  { id: "cobros", labelKey: "nav.cobros", icon: Wallet },
+  { id: "guias", labelKey: "nav.guias", icon: GraduationCap },
+  { id: "peligroso", labelKey: "nav.zonaPeligrosa", icon: AlertTriangle },
 ];
 
 /**
@@ -46,6 +49,7 @@ const SECTIONS: NavSection[] = [
  * (sticky) y el item activo cambia cuando el scroll atraviesa cada sección.
  */
 export function AjustesNav() {
+  const t = useTranslations("settings");
   const [activeId, setActiveId] = useState<string>(SECTIONS[0]?.id ?? "");
   const clickLockRef = useRef<number>(0);
 
@@ -104,7 +108,7 @@ export function AjustesNav() {
       )}
     >
       <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/90 leading-snug px-3 mb-2 hidden lg:block">
-        Ajustes
+        {t("nav.title")}
       </p>
       <ul className="flex flex-row lg:flex-col gap-1 overflow-x-auto lg:overflow-visible scrollbar-thin pb-1 lg:pb-0 -mx-1 px-1 lg:mx-0">
         {SECTIONS.map((s) => {
@@ -123,7 +127,7 @@ export function AjustesNav() {
                 )}
               >
                 <Icon className="w-4 h-4 shrink-0" />
-                <span>{s.label}</span>
+                <span>{t(s.labelKey as Parameters<typeof t>[0])}</span>
               </a>
             </li>
           );

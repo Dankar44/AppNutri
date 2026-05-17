@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 
 export type DiaLaboralKey =
   | "LUNES" | "MARTES" | "MIERCOLES" | "JUEVES" | "VIERNES" | "SABADO" | "DOMINGO";
@@ -141,8 +142,9 @@ function sanitizarHorario(input: HorarioLaboral): HorarioLaboral {
 }
 
 export async function guardarHorarioLaboral(data: HorarioLaboral) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return sanitizarHorario(data);
 
   const limpio = sanitizarHorario(data);

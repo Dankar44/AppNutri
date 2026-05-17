@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useCallback } from "react";
 import { Search, List, LayoutGrid, Plus } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 interface Props {
   busquedaInicial: string;
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export function PacientesFilter({ busquedaInicial, activosInicial, vista }: Props) {
+  const t = useTranslations("patients");
   const router = useRouter();
   const [busqueda, setBusqueda] = useState(busquedaInicial);
   const [soloActivos, setSoloActivos] = useState(activosInicial);
@@ -37,7 +39,7 @@ export function PacientesFilter({ busquedaInicial, activosInicial, vista }: Prop
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <input
           type="text"
-          placeholder="Buscar por nombre o email..."
+          placeholder={t("filter.buscarPlaceholder")}
           value={busqueda}
           maxLength={100}
           onChange={(e) => {
@@ -53,7 +55,7 @@ export function PacientesFilter({ busquedaInicial, activosInicial, vista }: Prop
         className="sm:hidden inline-flex items-center justify-center gap-1.5 flex-1 py-2.5 rounded-lg border border-border hover:bg-muted/50 transition-colors text-sm font-medium"
       >
         <Plus className="w-4 h-4" />
-        Nuevo
+        {t("filter.nuevo")}
       </Link>
       <label className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-input bg-card cursor-pointer hover:bg-muted/50 transition-colors shrink-0">
         <input
@@ -65,20 +67,20 @@ export function PacientesFilter({ busquedaInicial, activosInicial, vista }: Prop
           }}
           className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
         />
-        <span className="text-sm whitespace-nowrap">Solo activos</span>
+        <span className="text-sm whitespace-nowrap">{t("filter.soloActivos")}</span>
       </label>
       <div className="flex border border-input rounded-lg overflow-hidden shrink-0">
         <button
           onClick={() => router.push(buildUrl(busqueda, soloActivos, "tabla"))}
           className={`px-3 py-2.5 transition-colors ${vista === "tabla" ? "bg-muted text-foreground" : "bg-card text-muted-foreground hover:bg-muted/50"}`}
-          title="Vista tabla"
+          title={t("filter.vistaTabla")}
         >
           <List className="w-4 h-4" />
         </button>
         <button
           onClick={() => router.push(buildUrl(busqueda, soloActivos, "cards"))}
           className={`px-3 py-2.5 transition-colors ${vista === "cards" ? "bg-muted text-foreground" : "bg-card text-muted-foreground hover:bg-muted/50"}`}
-          title="Vista tarjetas"
+          title={t("filter.vistaTarjetas")}
         >
           <LayoutGrid className="w-4 h-4" />
         </button>

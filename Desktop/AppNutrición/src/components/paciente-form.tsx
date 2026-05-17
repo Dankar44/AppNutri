@@ -7,21 +7,26 @@ import { DatePicker } from "@/components/date-picker";
 import { toast } from "sonner";
 import type { PacienteFormData } from "@/app/actions/pacientes";
 import type { Paciente } from "@/generated/prisma/client";
+import { useTranslations } from "next-intl";
 
-const OBJETIVOS = [
-  { value: "PERDER_PESO", label: "Perder peso" },
-  { value: "GANAR_MASA", label: "Ganar masa muscular" },
-  { value: "MANTENIMIENTO", label: "Mantenimiento" },
-  { value: "PATOLOGIA", label: "Patología" },
-  { value: "DEPORTIVO", label: "Rendimiento deportivo" },
-  { value: "OTRO", label: "Otro" },
-];
+function getObjetivos(t: (key: string) => string) {
+  return [
+    { value: "PERDER_PESO", label: t("form.objetivoPerderPeso") },
+    { value: "GANAR_MASA", label: t("form.objetivoGanarMasa") },
+    { value: "MANTENIMIENTO", label: t("form.objetivoMantenimiento") },
+    { value: "PATOLOGIA", label: t("form.objetivoPatologia") },
+    { value: "DEPORTIVO", label: t("form.objetivoRendimiento") },
+    { value: "OTRO", label: t("form.objetivoOtro") },
+  ];
+}
 
-const SEXOS = [
-  { value: "MASCULINO", label: "Masculino" },
-  { value: "FEMENINO", label: "Femenino" },
-  { value: "OTRO", label: "Otro" },
-];
+function getSexos(t: (key: string) => string) {
+  return [
+    { value: "MASCULINO", label: t("form.sexoMasculino") },
+    { value: "FEMENINO", label: t("form.sexoFemenino") },
+    { value: "OTRO", label: t("form.sexoOtro") },
+  ];
+}
 
 interface Props {
   paciente?: Paciente | null;
@@ -34,11 +39,13 @@ function TagInput({
   placeholder,
   tags,
   onChange,
+  ariaPrefix,
 }: {
   label: string;
   placeholder: string;
   tags: string[];
   onChange: (tags: string[]) => void;
+  ariaPrefix: string;
 }) {
   const [input, setInput] = useState("");
 
@@ -71,7 +78,7 @@ function TagInput({
         <button
           type="button"
           onClick={addTag}
-          aria-label={`Añadir ${label.toLowerCase()}`}
+          aria-label={`${ariaPrefix} ${label.toLowerCase()}`}
           className="px-3 py-2 rounded-lg border border-input hover:bg-muted transition-colors min-h-11 min-w-11 shrink-0 flex items-center justify-center"
         >
           <Plus className="w-4 h-4" />
@@ -102,7 +109,10 @@ function TagInput({
 
 export function PacienteForm({ paciente, action, submitLabel }: Props) {
   const router = useRouter();
+  const t = useTranslations("patients");
   const [loading, setLoading] = useState(false);
+  const OBJETIVOS = getObjetivos(t);
+  const SEXOS = getSexos(t);
   const [showUnsavedModal, setShowUnsavedModal] = useState(false);
   const pendingHrefRef = useRef<string | null>(null);
   const [form, setForm] = useState<PacienteFormData>({
@@ -192,15 +202,15 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.nombre.trim() || !form.apellidos.trim()) {
-      toast.error("Nombre y apellidos son obligatorios.");
+      toast.error(t("form.nombreApellidosObligatorios"));
       return;
     }
     if (form.email && form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      toast.error("El formato del email no es válido.");
+      toast.error(t("form.emailInvalido"));
       return;
     }
     if (!form.fechaNacimiento) {
-      toast.error("La fecha de nacimiento es obligatoria.");
+      toast.error(t("form.fechaNacimientoObligatoria"));
       return;
     }
     setLoading(true);
@@ -213,7 +223,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
         throw error;
       }
       savedRef.current = false;
-      const msg = error instanceof Error ? error.message : "Error al guardar el paciente.";
+      const msg = error instanceof Error ? error.message : t("form.errorGuardarPaciente");
       toast.error(msg);
       setLoading(false);
     }
@@ -224,11 +234,11 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
     <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
       {/* Datos personales */}
       <section className="bg-card rounded-xl border border-border p-6">
-        <h2 className="text-lg font-semibold mb-4">Datos personales</h2>
+        <h2 className="text-lg font-semibold mb-4">{t("form.datosPersonales")}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1.5">
-              Nombre <span className="text-destructive">*</span>
+              {t("form.nombre")} <span className="text-destructive">*</span>
             </label>
             <input
               type="text"
@@ -241,7 +251,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1.5">
-              Apellidos <span className="text-destructive">*</span>
+              {t("form.apellidos")} <span className="text-destructive">*</span>
             </label>
             <input
               type="text"
@@ -254,23 +264,23 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1.5">
-              Email
+              {t("form.email")}
             </label>
             <input
               type="email"
               value={form.email}
               onChange={(e) => update("email", e.target.value)}
               maxLength={200}
-              placeholder="Opcional"
+              placeholder={t("form.opcional")}
               className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
             <p className="text-xs text-muted-foreground mt-1">
-              Necesario solo para el portal del paciente y envío de emails
+              {t("form.emailHint")}
             </p>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1.5">
-              Teléfono
+              {t("form.telefono")}
             </label>
             <input
               type="tel"
@@ -282,7 +292,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1.5">
-              Fecha de nacimiento <span className="text-destructive">*</span>
+              {t("form.fechaNacimiento")} <span className="text-destructive">*</span>
             </label>
             <DatePicker
               value={form.fechaNacimiento ?? ""}
@@ -292,13 +302,13 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5">Sexo</label>
+            <label className="block text-sm font-medium mb-1.5">{t("form.sexo")}</label>
             <select
               value={form.sexo || ""}
               onChange={(e) => update("sexo", e.target.value || undefined)}
               className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             >
-              <option value="">Seleccionar...</option>
+              <option value="">{t("form.seleccionar")}</option>
               {SEXOS.map((s) => (
                 <option key={s.value} value={s.value}>
                   {s.label}
@@ -311,11 +321,11 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
 
       {/* Medidas */}
       <section className="bg-card rounded-xl border border-border p-6">
-        <h2 className="text-lg font-semibold mb-4">Medidas corporales</h2>
+        <h2 className="text-lg font-semibold mb-4">{t("form.medidasCorporales")}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1.5">
-              Peso (kg)
+              {t("form.pesoKg")}
             </label>
             <input
               type="number" inputMode="decimal"
@@ -326,13 +336,13 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
               onChange={(e) =>
                 update("peso", e.target.value ? parseFloat(e.target.value) : undefined)
               }
-              placeholder="Ej: 70.5"
+              placeholder={t("form.pesoPlaceholder")}
               className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1.5">
-              Altura (cm)
+              {t("form.alturaCm")}
             </label>
             <input
               type="number" inputMode="decimal"
@@ -346,7 +356,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
                   e.target.value ? parseFloat(e.target.value) : undefined
                 )
               }
-              placeholder="Ej: 170"
+              placeholder={t("form.alturaPlaceholder")}
               className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
           </div>
@@ -354,7 +364,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
         {form.peso && form.altura && (
           <div className="mt-4 p-3 rounded-lg bg-muted">
             <p className="text-sm">
-              <span className="font-medium">IMC calculado: </span>
+              <span className="font-medium">{t("form.imcCalculado")} </span>
               {(
                 form.peso /
                 ((form.altura / 100) * (form.altura / 100))
@@ -366,11 +376,11 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
 
       {/* Objetivo */}
       <section className="bg-card rounded-xl border border-border p-6">
-        <h2 className="text-lg font-semibold mb-4">Objetivo nutricional</h2>
+        <h2 className="text-lg font-semibold mb-4">{t("form.objetivoNutricional")}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1.5">
-              Objetivo principal
+              {t("form.objetivoPrincipal")}
             </label>
             <select
               value={form.objetivo}
@@ -386,13 +396,13 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1.5">
-              Detalle del objetivo
+              {t("form.detalleObjetivo")}
             </label>
             <input
               type="text"
               value={form.objetivoDetalle}
               onChange={(e) => update("objetivoDetalle", e.target.value)}
-              placeholder="Ej: Bajar 5kg en 3 meses"
+              placeholder={t("form.detalleObjetivoPlaceholder")}
               maxLength={200}
               className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
@@ -402,122 +412,127 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
 
       {/* Historial médico */}
       <section className="bg-card rounded-xl border border-border p-6">
-        <h2 className="text-lg font-semibold mb-4">Historial médico</h2>
+        <h2 className="text-lg font-semibold mb-4">{t("form.historialMedico")}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <TagInput
-            label="Alergias alimentarias"
-            placeholder="Ej: Cacahuetes"
+            label={t("form.alergias")}
+            placeholder={t("form.alergiasPlaceholder")}
             tags={form.alergias}
             onChange={(tags) => update("alergias", tags)}
+            ariaPrefix={t("form.anadir")}
           />
           <TagInput
-            label="Intolerancias"
-            placeholder="Ej: Lactosa"
+            label={t("form.intolerancias")}
+            placeholder={t("form.intoleranciasPlaceholder")}
             tags={form.intolerancias}
             onChange={(tags) => update("intolerancias", tags)}
+            ariaPrefix={t("form.anadir")}
           />
           <TagInput
-            label="Patologías"
-            placeholder="Ej: Diabetes tipo 2"
+            label={t("form.patologias")}
+            placeholder={t("form.patologiasPlaceholder")}
             tags={form.patologias}
             onChange={(tags) => update("patologias", tags)}
+            ariaPrefix={t("form.anadir")}
           />
           <TagInput
-            label="Medicamentos"
-            placeholder="Ej: Metformina"
+            label={t("form.medicamentos")}
+            placeholder={t("form.medicamentosPlaceholder")}
             tags={form.medicamentos}
             onChange={(tags) => update("medicamentos", tags)}
+            ariaPrefix={t("form.anadir")}
           />
           <TagInput
-            label="Suplementos"
-            placeholder="Ej: Proteína whey, Creatina, Vitamina D..."
+            label={t("form.suplementos")}
+            placeholder={t("form.suplementosPlaceholder")}
             tags={form.suplementos}
             onChange={(tags) => update("suplementos", tags)}
+            ariaPrefix={t("form.anadir")}
           />
         </div>
       </section>
 
       {/* Actividad física y estilo de vida */}
       <section className="bg-card rounded-xl border border-border p-6">
-        <h2 className="text-lg font-semibold mb-4">Actividad física y estilo de vida</h2>
+        <h2 className="text-lg font-semibold mb-4">{t("form.actividadFisica")}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1.5">Ocupación</label>
+            <label className="block text-sm font-medium mb-1.5">{t("form.ocupacion")}</label>
             <input
               type="text"
               value={form.ocupacion}
               onChange={(e) => update("ocupacion", e.target.value)}
-              placeholder="Ej: Oficinista, Profesor, Camarero..."
+              placeholder={t("form.ocupacionPlaceholder")}
               maxLength={200}
               className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5">Nivel de actividad</label>
+            <label className="block text-sm font-medium mb-1.5">{t("form.nivelActividad")}</label>
             <select
               value={form.nivelActividad}
               onChange={(e) => update("nivelActividad", e.target.value)}
               className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             >
-              <option value="">Seleccionar...</option>
-              <option value="SEDENTARIO">Sedentario (poco o nada de ejercicio)</option>
-              <option value="LIGERO">Ligero (1-2 días/semana)</option>
-              <option value="MODERADO">Moderado (3-4 días/semana)</option>
-              <option value="ACTIVO">Activo (5-6 días/semana)</option>
-              <option value="MUY_ACTIVO">Muy activo (ejercicio diario intenso)</option>
+              <option value="">{t("form.seleccionar")}</option>
+              <option value="SEDENTARIO">{t("form.actividadSedentarioDesc")}</option>
+              <option value="LIGERO">{t("form.actividadLigeroDesc")}</option>
+              <option value="MODERADO">{t("form.actividadModeradoDesc")}</option>
+              <option value="ACTIVO">{t("form.actividadActivoDesc")}</option>
+              <option value="MUY_ACTIVO">{t("form.actividadMuyActivoDesc")}</option>
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5">Frecuencia de ejercicio</label>
+            <label className="block text-sm font-medium mb-1.5">{t("form.frecuenciaEjercicio")}</label>
             <input
               type="text"
               value={form.frecuenciaEjercicio}
               onChange={(e) => update("frecuenciaEjercicio", e.target.value)}
-              placeholder="Ej: 4 veces por semana, 1h cada sesión"
+              placeholder={t("form.frecuenciaEjercicioPlaceholder")}
               maxLength={100}
               className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5">Tipo de ejercicio</label>
+            <label className="block text-sm font-medium mb-1.5">{t("form.tipoEjercicio")}</label>
             <input
               type="text"
               value={form.tipoEjercicio}
               onChange={(e) => update("tipoEjercicio", e.target.value)}
-              placeholder="Ej: Musculación, Cardio, CrossFit, Natación..."
+              placeholder={t("form.tipoEjercicioPlaceholder")}
               maxLength={200}
               className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5">Horario de trabajo</label>
+            <label className="block text-sm font-medium mb-1.5">{t("form.horarioTrabajo")}</label>
             <input
               type="text"
               value={form.horarioTrabajo}
               onChange={(e) => update("horarioTrabajo", e.target.value)}
-              placeholder="Ej: 9:00 - 18:00, turnos rotativos..."
+              placeholder={t("form.horarioTrabajoPlaceholder")}
               maxLength={100}
               className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5">Horario de ejercicio</label>
+            <label className="block text-sm font-medium mb-1.5">{t("form.horarioEjercicio")}</label>
             <input
               type="text"
               value={form.horarioEjercicio}
               onChange={(e) => update("horarioEjercicio", e.target.value)}
-              placeholder="Ej: 7:00 - 8:00, después del trabajo..."
+              placeholder={t("form.horarioEjercicioPlaceholder")}
               maxLength={100}
               className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5">Horas de descanso</label>
+            <label className="block text-sm font-medium mb-1.5">{t("form.horasDescanso")}</label>
             <input
               type="text"
               value={form.horasDescanso}
               onChange={(e) => update("horasDescanso", e.target.value)}
-              placeholder="Ej: 7-8 horas, duerme de 23:00 a 7:00"
+              placeholder={t("form.horasDescansoPlaceholder")}
               maxLength={100}
               className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
@@ -527,24 +542,25 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
 
       {/* Preferencias */}
       <section className="bg-card rounded-xl border border-border p-6">
-        <h2 className="text-lg font-semibold mb-4">Preferencias alimentarias</h2>
+        <h2 className="text-lg font-semibold mb-4">{t("form.preferenciasAlimentarias")}</h2>
         <TagInput
-          label="Preferencias"
-          placeholder="Ej: Vegetariano, Sin gluten, Mediterránea..."
+          label={t("form.preferencias")}
+          placeholder={t("form.preferenciasPlaceholder")}
           tags={form.preferencias}
           onChange={(tags) => update("preferencias", tags)}
+          ariaPrefix={t("form.anadir")}
         />
       </section>
 
       {/* Notas */}
       <section className="bg-card rounded-xl border border-border p-6">
-        <h2 className="text-lg font-semibold mb-4">Notas adicionales</h2>
+        <h2 className="text-lg font-semibold mb-4">{t("form.notasAdicionales")}</h2>
         <textarea
           value={form.notas}
           onChange={(e) => update("notas", e.target.value)}
           rows={4}
           maxLength={2000}
-          placeholder="Notas, observaciones, comentarios..."
+          placeholder={t("form.notasPlaceholder")}
           className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow resize-none"
         />
       </section>
@@ -557,7 +573,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
           className="bg-primary text-primary-foreground px-6 py-2.5 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center gap-2"
         >
           {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-          {loading ? "Guardando..." : submitLabel}
+          {loading ? t("form.guardando") : submitLabel}
         </button>
       </div>
     </form>
@@ -575,11 +591,10 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
             <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-500/15 flex items-center justify-center shrink-0">
               <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
             </div>
-            <h3 className="text-base sm:text-lg font-semibold">Cambios sin guardar</h3>
+            <h3 className="text-base sm:text-lg font-semibold">{t("form.cambiosSinGuardar")}</h3>
           </div>
           <p className="text-sm text-muted-foreground mb-5 sm:mb-6 sm:pl-[52px]">
-            Has modificado datos del paciente que aún no se han guardado.
-            Si sales ahora, perderás los cambios.
+            {t("form.cambiosSinGuardarDescripcionLarga")}
           </p>
           <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3">
             <button
@@ -587,14 +602,14 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
               onClick={handleCancelLeave}
               className="px-4 py-3 sm:py-2.5 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors min-h-11 sm:min-h-0"
             >
-              Seguir editando
+              {t("form.seguirEditando")}
             </button>
             <button
               type="button"
               onClick={handleConfirmLeave}
               className="px-4 py-3 sm:py-2.5 rounded-lg bg-destructive text-destructive-foreground text-sm font-medium hover:bg-destructive/90 transition-colors min-h-11 sm:min-h-0"
             >
-              Salir sin guardar
+              {t("form.salirSinGuardar")}
             </button>
           </div>
         </div>

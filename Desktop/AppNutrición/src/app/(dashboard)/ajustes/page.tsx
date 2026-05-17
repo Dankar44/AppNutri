@@ -10,7 +10,9 @@ import {
   Sparkles as SparklesIcon,
   GraduationCap,
   Lock,
+  Globe,
 } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { TourSettings } from "@/components/tour/tour-settings";
 import { getCurrentDietista, getGoogleIdentityLinked } from "@/app/actions/auth";
 import { getSuscripcion } from "@/app/actions/suscripcion";
@@ -31,6 +33,7 @@ import { GoogleLoginCard } from "./google-login-card";
 import { DocumentosPdfSection } from "./documentos-pdf-section";
 import { CambiarPasswordForm } from "./cambiar-password-form";
 import { CamposAnamnesisForm } from "./campos-anamnesis-form";
+import { IdiomaCard } from "./idioma-card";
 import { getCamposAnamnesis } from "@/app/actions/perfil";
 
 /** Encabezado común de cada bloque: icono + título + descripción. */
@@ -62,22 +65,22 @@ function SectionHeader({
   );
 }
 
-function googleErrorMessage(reason?: string): string {
+function googleErrorMessage(reason: string | undefined, t: Awaited<ReturnType<typeof getTranslations<"settings">>>): string {
   switch (reason) {
     case "no_configurado":
-      return "Google no está configurado en este entorno.";
+      return t("googleErrors.noConfigurado");
     case "state_mismatch":
-      return "La conexión con Google se canceló o expiró. Inténtalo de nuevo.";
+      return t("googleErrors.stateMismatch");
     case "missing_params":
-      return "No se recibió la respuesta de Google. Inténtalo de nuevo.";
+      return t("googleErrors.missingParams");
     case "no_tokens":
-      return "Google no concedió los permisos necesarios. Asegúrate de aceptar todos los permisos.";
+      return t("googleErrors.noTokens");
     case "exchange_failed":
-      return "Error al conectar con Google. Inténtalo de nuevo en unos minutos.";
+      return t("googleErrors.exchangeFailed");
     case "access_denied":
-      return "Se denegó el acceso a Google. Inténtalo de nuevo y acepta los permisos.";
+      return t("googleErrors.accessDenied");
     default:
-      return "No se pudo conectar con Google. Inténtalo de nuevo.";
+      return t("googleErrors.default");
   }
 }
 
@@ -86,6 +89,7 @@ export default async function AjustesPage({
 }: {
   searchParams: Promise<{ google?: string; reason?: string; backfill?: string }>;
 }) {
+  const t = await getTranslations("settings");
   const dietista = await getCurrentDietista();
   if (!dietista) redirect("/login");
 
@@ -101,11 +105,11 @@ export default async function AjustesPage({
 
   const googleFlash =
     sp.google === "ok"
-      ? { type: "ok" as const, message: "Google Calendar conectado correctamente." }
+      ? { type: "ok" as const, message: t("googleFlash.ok") }
       : sp.google === "error"
         ? {
             type: "error" as const,
-            message: googleErrorMessage(sp.reason),
+            message: googleErrorMessage(sp.reason, t),
           }
         : null;
 
@@ -113,8 +117,8 @@ export default async function AjustesPage({
     <div>
       <PageHeader
         icon={Settings}
-        title="Ajustes"
-        subtitle="Configura tu perfil, integraciones y preferencias"
+        title={t("page.title")}
+        subtitle={t("page.subtitle")}
       />
 
       {/* Resumen de la cuenta */}
@@ -137,7 +141,7 @@ export default async function AjustesPage({
             )}
             {suscripcion && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-muted text-[11px] font-medium text-muted-foreground">
-                Plan {suscripcion.plan}
+                {t("page.plan", { plan: suscripcion.plan })}
               </span>
             )}
           </div>
@@ -154,8 +158,8 @@ export default async function AjustesPage({
             <SectionHeader
               id="perfil"
               icon={User}
-              title="Perfil personal"
-              description="Datos básicos que se mostrarán en tu cuenta y en comunicaciones con pacientes."
+              title={t("sections.perfil.title")}
+              description={t("sections.perfil.description")}
             />
             <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
               <PerfilForm
@@ -176,11 +180,24 @@ export default async function AjustesPage({
             <SectionHeader
               id="contrasena"
               icon={Lock}
-              title="Contraseña"
-              description="Cambia la contraseña de acceso a tu cuenta."
+              title={t("sections.contrasena.title")}
+              description={t("sections.contrasena.description")}
             />
             <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
               <CambiarPasswordForm />
+            </div>
+          </section>
+
+          {/* IDIOMA */}
+          <section>
+            <SectionHeader
+              id="idioma"
+              icon={Globe}
+              title={t("sections.idioma.title")}
+              description={t("sections.idioma.description")}
+            />
+            <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
+              <IdiomaCard />
             </div>
           </section>
 
@@ -189,13 +206,13 @@ export default async function AjustesPage({
             <SectionHeader
               id="profesional"
               icon={Briefcase}
-              title="Información profesional"
-              description="Número de colegiado, especialidad y clínica (se editan desde la sección de Perfil)."
+              title={t("sections.profesional.title")}
+              description={t("sections.profesional.description")}
             />
             <div className="bg-card rounded-xl border border-border p-5 sm:p-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <InfoItem label="Especialidad" value={dietista.especialidad || "—"} />
-              <InfoItem label="Nº colegiado" value={dietista.numColegiado || "—"} />
-              <InfoItem label="Clínica" value={dietista.clinica || "—"} />
+              <InfoItem label={t("profesionalInfo.especialidadLabel")} value={dietista.especialidad || t("profesionalInfo.emptyValue")} />
+              <InfoItem label={t("profesionalInfo.numColegiadoLabel")} value={dietista.numColegiado || t("profesionalInfo.emptyValue")} />
+              <InfoItem label={t("profesionalInfo.clinicaLabel")} value={dietista.clinica || t("profesionalInfo.emptyValue")} />
             </div>
           </section>
 
@@ -204,8 +221,8 @@ export default async function AjustesPage({
             <SectionHeader
               id="documentos"
               icon={Briefcase}
-              title="Personalizar documentos"
-              description="Elige los colores, logo y nombre de marca de tus entregables PDF."
+              title={t("sections.documentos.title")}
+              description={t("sections.documentos.description")}
             />
             <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
               <DocumentosPdfSection
@@ -222,8 +239,8 @@ export default async function AjustesPage({
             <SectionHeader
               id="anamnesis"
               icon={ClipboardList}
-              title="Campos de la anamnesis"
-              description="Añade campos personalizados que aparecerán en la ficha de información de todos tus pacientes."
+              title={t("sections.anamnesis.title")}
+              description={t("sections.anamnesis.description")}
             />
             <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
               <CamposAnamnesisForm initialCampos={camposAnamnesis} />
@@ -235,8 +252,8 @@ export default async function AjustesPage({
             <SectionHeader
               id="integraciones"
               icon={Plug}
-              title="Integraciones"
-              description="Conecta servicios externos para automatizar tu día a día."
+              title={t("sections.integraciones.title")}
+              description={t("sections.integraciones.description")}
             />
             <div className="space-y-4">
               <IntegracionesCard integracion={googleIntegracion} flash={googleFlash} />
@@ -249,8 +266,8 @@ export default async function AjustesPage({
             <SectionHeader
               id="paciente-demo"
               icon={SparklesIcon}
-              title="Paciente de ejemplo"
-              description="Paciente con datos precargados para probar todas las funciones sin afectar a tus pacientes reales."
+              title={t("sections.pacienteDemo.title")}
+              description={t("sections.pacienteDemo.description")}
             />
             <PacienteDemoCard demoEliminado={demoEliminado} />
           </section>
@@ -261,8 +278,8 @@ export default async function AjustesPage({
               <SectionHeader
                 id="suscripcion"
                 icon={CreditCard}
-                title="Suscripción"
-                description="Plan actual, estado y fechas de renovación."
+                title={t("sections.suscripcion.title")}
+                description={t("sections.suscripcion.description")}
               />
               <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
                 <SuscripcionCard
@@ -280,8 +297,8 @@ export default async function AjustesPage({
             <SectionHeader
               id="cobros"
               icon={Wallet}
-              title="Cobros con Stripe"
-              description="Conecta tu cuenta de Stripe para cobrar consultas a través de la plataforma."
+              title={t("sections.cobros.title")}
+              description={t("sections.cobros.description")}
             />
             <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
               <StripeConnectCard status={stripeStatus} />
@@ -293,8 +310,8 @@ export default async function AjustesPage({
             <SectionHeader
               id="guias"
               icon={GraduationCap}
-              title="Guías interactivas"
-              description="Tours paso a paso para aprender cada sección de la aplicación."
+              title={t("sections.guias.title")}
+              description={t("sections.guias.description")}
             />
             <TourSettings />
           </section>
@@ -304,17 +321,17 @@ export default async function AjustesPage({
             <SectionHeader
               id="peligroso"
               icon={AlertTriangle}
-              title="Zona peligrosa"
-              description="Acciones irreversibles sobre tu cuenta. Úsalas con precaución."
+              title={t("sections.zonaPeligrosa.title")}
+              description={t("sections.zonaPeligrosa.description")}
               tone="danger"
             />
             <div className="rounded-xl border border-red-200 dark:border-red-500/30 bg-red-50/30 dark:bg-red-500/5 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold text-red-700 dark:text-red-300">
-                  Eliminar cuenta
+                  {t("eliminarCuenta.titulo")}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Todos tus datos (pacientes, consultas, medidas, dietas, mensajes…) se borrarán permanentemente.
+                  {t("eliminarCuenta.descripcion")}
                 </p>
               </div>
               <EliminarCuentaButton />

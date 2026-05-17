@@ -11,16 +11,11 @@ import {
   type HorarioLaboral,
   type IntervaloHorario,
 } from "@/app/actions/horario-laboral";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
-const DIAS: { key: DiaLaboralKey; label: string; corto: string }[] = [
-  { key: "LUNES", label: "Lunes", corto: "Lun" },
-  { key: "MARTES", label: "Martes", corto: "Mar" },
-  { key: "MIERCOLES", label: "Miércoles", corto: "Mié" },
-  { key: "JUEVES", label: "Jueves", corto: "Jue" },
-  { key: "VIERNES", label: "Viernes", corto: "Vie" },
-  { key: "SABADO", label: "Sábado", corto: "Sáb" },
-  { key: "DOMINGO", label: "Domingo", corto: "Dom" },
+const DIA_KEYS: DiaLaboralKey[] = [
+  "LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO",
 ];
 
 const SLOT_MIN = 30;               // 30 min por celda
@@ -62,7 +57,7 @@ function slotsAHorario(
   slots: Set<SlotKey>,
   duracion: number,
 ): HorarioLaboral {
-  const dias: DiaLaboral[] = DIAS.map(({ key }) => {
+  const dias: DiaLaboral[] = DIA_KEYS.map((key) => {
     const seleccionados: number[] = [];
     for (let s = 0; s < SLOTS_COUNT; s++) {
       if (slots.has(keyOf(key, s))) seleccionados.push(s);
@@ -101,6 +96,7 @@ function formatoHoras(m: number): string {
 
 export function HorarioLaboralEditor({ inicial }: { inicial: HorarioLaboral }) {
   const router = useRouter();
+  const t = useTranslations("agenda");
   const [slots, setSlots] = useState<Set<SlotKey>>(() => horarioASlots(inicial));
   const [duracion, setDuracion] = useState<number>(inicial.duracionCitaDefault);
   const [pending, startTransition] = useTransition();
@@ -166,12 +162,12 @@ export function HorarioLaboralEditor({ inicial }: { inicial: HorarioLaboral }) {
 
   const resumenPorDia = useMemo(() => {
     const map = new Map<DiaLaboralKey, number>();
-    for (const d of DIAS) {
+    for (const key of DIA_KEYS) {
       let mins = 0;
       for (let s = 0; s < SLOTS_COUNT; s++) {
-        if (slots.has(keyOf(d.key, s))) mins += SLOT_MIN;
+        if (slots.has(keyOf(key, s))) mins += SLOT_MIN;
       }
-      map.set(d.key, mins);
+      map.set(key, mins);
     }
     return map;
   }, [slots]);
@@ -179,8 +175,8 @@ export function HorarioLaboralEditor({ inicial }: { inicial: HorarioLaboral }) {
   const resumenTotal = useMemo(() => {
     let min = 0;
     let diasActivos = 0;
-    for (const d of DIAS) {
-      const m = resumenPorDia.get(d.key) ?? 0;
+    for (const key of DIA_KEYS) {
+      const m = resumenPorDia.get(key) ?? 0;
       if (m > 0) {
         diasActivos++;
         min += m;
@@ -197,10 +193,10 @@ export function HorarioLaboralEditor({ inicial }: { inicial: HorarioLaboral }) {
         setSlots(horarioASlots(saved));
         setDuracion(saved.duracionCitaDefault);
         setDirty(false);
-        toast.success("Horario guardado");
+        toast.success(t("horario.toastSaved"));
         router.refresh();
       } catch {
-        toast.error("No se pudo guardar el horario");
+        toast.error(t("horario.toastSaveError"));
       }
     });
   }
@@ -225,7 +221,7 @@ export function HorarioLaboralEditor({ inicial }: { inicial: HorarioLaboral }) {
         <div className="flex items-center gap-3 flex-wrap">
           <label className="text-sm font-medium inline-flex items-center gap-2">
             <Clock className="w-4 h-4 text-muted-foreground" />
-            Duración cita por defecto
+            {t("horario.defaultAppointmentDuration")}
           </label>
           <input
             type="number"
@@ -243,12 +239,12 @@ export function HorarioLaboralEditor({ inicial }: { inicial: HorarioLaboral }) {
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1">
-            <span className="w-3 h-3 rounded bg-primary/70 border border-primary" /> Disponible
+            <span className="w-3 h-3 rounded bg-primary/70 border border-primary" /> {t("horario.available")}
           </span>
           <span className="inline-flex items-center gap-1">
-            <span className="w-3 h-3 rounded bg-muted border border-border" /> No laboral
+            <span className="w-3 h-3 rounded bg-muted border border-border" /> {t("horario.nonWorking")}
           </span>
-          <span className="hidden sm:inline">· Pulsa o arrastra sobre las celdas</span>
+          <span className="hidden sm:inline">· {t("horario.pressOrDrag")}</span>
         </div>
       </div>
 
@@ -256,17 +252,17 @@ export function HorarioLaboralEditor({ inicial }: { inicial: HorarioLaboral }) {
         <div className="grid grid-cols-[60px_repeat(7,minmax(0,1fr))] select-none">
           {/* Header */}
           <div className="bg-muted/40 border-b border-r border-border" />
-          {DIAS.map((d) => {
-            const totalMin = resumenPorDia.get(d.key) ?? 0;
+          {DIA_KEYS.map((key) => {
+            const totalMin = resumenPorDia.get(key) ?? 0;
             return (
               <div
-                key={d.key}
+                key={key}
                 className="bg-muted/40 border-b border-r last:border-r-0 border-border px-2 py-2 flex items-center justify-between gap-1"
               >
                 <div className="flex items-baseline gap-1.5 min-w-0">
                   <span className="text-sm font-semibold">
-                    <span className="sm:hidden">{d.corto}</span>
-                    <span className="hidden sm:inline">{d.label}</span>
+                    <span className="sm:hidden">{t(`horario.dayLabelsShort.${key}`)}</span>
+                    <span className="hidden sm:inline">{t(`horario.dayLabelsFull.${key}`)}</span>
                   </span>
                   <span className="text-[11px] text-muted-foreground tabular-nums">
                     {totalMin > 0 ? formatoHoras(totalMin) : "—"}
@@ -275,9 +271,9 @@ export function HorarioLaboralEditor({ inicial }: { inicial: HorarioLaboral }) {
                 {totalMin > 0 && (
                   <button
                     type="button"
-                    onClick={() => limpiarDia(d.key)}
+                    onClick={() => limpiarDia(key)}
                     className="text-muted-foreground hover:text-rose-600 transition-colors shrink-0"
-                    title="Limpiar día"
+                    title={t("horario.clearDay")}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -306,14 +302,14 @@ export function HorarioLaboralEditor({ inicial }: { inicial: HorarioLaboral }) {
 
       <div className="sticky bottom-4 bg-card/95 backdrop-blur-sm rounded-xl border border-border shadow-md p-4 flex items-center justify-between flex-wrap gap-3">
         <div className="text-sm text-muted-foreground">
-          {resumenTotal.diasActivos} día{resumenTotal.diasActivos !== 1 ? "s" : ""} activos ·{" "}
+          {t("horario.activeDays", { count: resumenTotal.diasActivos })} ·{" "}
           <span className="font-semibold text-foreground tabular-nums">
             {formatoHoras(resumenTotal.min)}
           </span>{" "}
-          a la semana
+          {t("horario.perWeek")}
           {dirty && (
             <span className="ml-3 text-amber-700 dark:text-amber-400 text-xs font-medium">
-              Cambios sin guardar
+              {t("horario.unsavedChanges")}
             </span>
           )}
         </div>
@@ -324,7 +320,7 @@ export function HorarioLaboralEditor({ inicial }: { inicial: HorarioLaboral }) {
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors"
           >
             <Trash2 className="w-4 h-4" />
-            Limpiar todo
+            {t("horario.clearAll")}
           </button>
           <button
             type="button"
@@ -333,7 +329,7 @@ export function HorarioLaboralEditor({ inicial }: { inicial: HorarioLaboral }) {
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors disabled:opacity-40"
           >
             <Undo2 className="w-4 h-4" />
-            Descartar
+            {t("horario.discard")}
           </button>
           <button
             type="button"
@@ -346,7 +342,7 @@ export function HorarioLaboralEditor({ inicial }: { inicial: HorarioLaboral }) {
             ) : (
               <Save className="w-4 h-4" />
             )}
-            Guardar cambios
+            {t("horario.saveChanges")}
           </button>
         </div>
       </div>
@@ -375,19 +371,19 @@ function FilaHora({
       >
         {hora}
       </div>
-      {DIAS.map((d) => {
+      {DIA_KEYS.map((key) => {
         const sA = slotsDeEstaHora[0];
         const sB = slotsDeEstaHora[1];
-        const filledA = slots.has(keyOf(d.key, sA));
-        const filledB = slots.has(keyOf(d.key, sB));
+        const filledA = slots.has(keyOf(key, sA));
+        const filledB = slots.has(keyOf(key, sB));
         return (
           <div
-            key={d.key}
+            key={key}
             className="border-r last:border-r-0 border-b border-border relative"
             style={{ height: SLOT_HEIGHT_PX * 2 }}
           >
             <Cell
-              dia={d.key}
+              dia={key}
               slot={sA}
               filled={filledA}
               neighborFilled={filledB}
@@ -396,7 +392,7 @@ function FilaHora({
               onEnter={onCellEnter}
             />
             <Cell
-              dia={d.key}
+              dia={key}
               slot={sB}
               filled={filledB}
               neighborFilled={filledA}

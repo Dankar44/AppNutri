@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { asignarPlanComoActual } from "@/app/actions/planes";
 import {
@@ -121,16 +122,6 @@ export type PlanVisualDetalle = {
   dias: PlanVisualDia[];
 };
 
-const DIA_LABELS: Record<string, string> = {
-  LUNES: "Lunes",
-  MARTES: "Martes",
-  MIERCOLES: "Miércoles",
-  JUEVES: "Jueves",
-  VIERNES: "Viernes",
-  SABADO: "Sábado",
-  DOMINGO: "Domingo",
-};
-
 const DIA_KEYS = ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"] as const;
 
 const MACRO_COLORS = {
@@ -178,6 +169,7 @@ export function PlanVisual({
     onMove: (alimentoEnComidaId: string, comidaId: string) => void;
   };
 }) {
+  const t = useTranslations("patients.planVisual");
   const router = useRouter();
   const [isPendingAssign, startAssign] = useTransition();
 
@@ -202,10 +194,10 @@ export function PlanVisual({
     startAssign(async () => {
       try {
         await asignarPlanComoActual(selectedPlan.id);
-        toast.success("Dieta asignada como actual");
+        toast.success(t("toastDietaAsignada"));
         router.refresh();
       } catch {
-        toast.error("No se pudo asignar como actual");
+        toast.error(t("toastDietaAsignadaError"));
       }
     });
   }
@@ -287,7 +279,7 @@ export function PlanVisual({
     }
 
     const tRaw = sumarMacros(macroList);
-    const t = {
+    const totals = {
       calorias: Math.round((tRaw.calorias / avgDivisor) * 10) / 10,
       proteinas: Math.round((tRaw.proteinas / avgDivisor) * 10) / 10,
       carbohidratos: Math.round((tRaw.carbohidratos / avgDivisor) * 10) / 10,
@@ -317,15 +309,15 @@ export function PlanVisual({
     }
     for (const key of MICRO_KEYS) microTotals[key] = Math.round((microTotals[key] / avgDivisor) * 10) / 10;
 
-    const grasaKcal = t.grasas * 9;
-    const carbKcal = t.carbohidratos * 4;
-    const protKcal = t.proteinas * 4;
-    const fibraKcal = t.fibra * 2;
+    const grasaKcal = totals.grasas * 9;
+    const carbKcal = totals.carbohidratos * 4;
+    const protKcal = totals.proteinas * 4;
+    const fibraKcal = totals.fibra * 2;
     const energyTotal = grasaKcal + carbKcal + protKcal + fibraKcal;
 
     const TIPO_LABELS: Record<string, string> = {
-      DESAYUNO: "Desayuno", MEDIA_MANANA: "Media mañana", ALMUERZO: "Comida",
-      MERIENDA: "Merienda", CENA: "Cena", RECENA: "Recena",
+      DESAYUNO: t("comidas.DESAYUNO"), MEDIA_MANANA: t("comidas.MEDIA_MANANA"), ALMUERZO: t("comidas.ALMUERZO"),
+      MERIENDA: t("comidas.MERIENDA"), CENA: t("comidas.CENA"), RECENA: t("comidas.RECENA"),
     };
     const comidasAgg = new Map<string, { gF: number; cF: number; pF: number }>();
     for (const comida of diaVista.comidas) {
@@ -367,7 +359,7 @@ export function PlanVisual({
     });
 
     return {
-      macros: t,
+      macros: totals,
       micro: microTotals,
       comidasMacros,
       energy: {
@@ -385,9 +377,9 @@ export function PlanVisual({
       <section className="space-y-4">
         <div className="bg-card rounded-xl border border-border p-10 text-center">
           <UtensilsCrossed className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-          <p className="font-medium">Sin plan</p>
+          <p className="font-medium">{t("sinPlan")}</p>
           <p className="text-sm text-muted-foreground mt-1">
-            No hay datos para mostrar.
+            {t("sinDatos")}
           </p>
         </div>
       </section>
@@ -415,7 +407,7 @@ export function PlanVisual({
             )}
           >
             <LayoutGrid className="w-4 h-4" />
-            Resumen
+            {t("vistaResumen")}
           </button>
           <button
             type="button"
@@ -428,7 +420,7 @@ export function PlanVisual({
             )}
           >
             <ClipboardList className="w-4 h-4" />
-            Plan
+            {t("vistaPlan")}
           </button>
           <button
             type="button"
@@ -441,7 +433,7 @@ export function PlanVisual({
             )}
           >
             <PieChartIcon className="w-4 h-4" />
-            Análisis
+            {t("vistaAnalisis")}
           </button>
         </div>
 
@@ -471,7 +463,7 @@ export function PlanVisual({
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
               )}
             >
-              Todas
+              {t("todas")}
             </button>
             {DIA_KEYS.map((key) => {
               const exists = diasDisponibles.some((d) => d.dia === key);
@@ -495,7 +487,7 @@ export function PlanVisual({
                     !exists && "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-muted-foreground"
                   )}
                 >
-                  {DIA_LABELS[key]}
+                  {t(`dias.${key}`)}
                 </button>
               );
             })}
@@ -508,7 +500,7 @@ export function PlanVisual({
               <Link
                 href={`/dietas/nuevo?pacienteId=${pacienteId}`}
                 className="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-border hover:bg-muted transition-colors"
-                title="Crear nueva dieta"
+                title={t("crearNuevaDieta")}
               >
                 <Plus className="w-4 h-4" />
               </Link>
@@ -525,7 +517,7 @@ export function PlanVisual({
                     ? "border-border bg-muted/30 text-muted-foreground cursor-not-allowed"
                     : "border-border bg-card hover:bg-muted transition-colors"
                 )}
-                title={selectedPlan?.activo ? "Asignada como actual" : "Asignar como actual"}
+                title={selectedPlan?.activo ? t("asignadaComoActual") : t("asignarComoActual")}
               >
                 <Check className="w-4 h-4" />
               </button>
@@ -541,7 +533,7 @@ export function PlanVisual({
                   "inline-flex items-center justify-center w-9 h-9 rounded-lg border border-border hover:bg-muted transition-colors",
                   !selectedPlan && "pointer-events-none opacity-50"
                 )}
-                title="Crear PDF"
+                title={t("crearPdf")}
               >
                 <FileDown className="w-4 h-4" />
               </Link>
@@ -558,7 +550,7 @@ export function PlanVisual({
         if (!hayObjetivos) return null;
         return (
           <div className="hidden sm:flex items-center gap-3 flex-wrap text-xs">
-            <span className="font-semibold text-muted-foreground uppercase tracking-wide">Objetivos</span>
+            <span className="font-semibold text-muted-foreground uppercase tracking-wide">{t("objetivos")}</span>
             {co != null && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 font-medium">
                 <Flame className="w-3 h-3" />{co} kcal
@@ -566,17 +558,17 @@ export function PlanVisual({
             )}
             {po != null && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium">
-                {po}g proteínas
+                {po}g {t("macros.proteinas")}
               </span>
             )}
             {cho != null && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 font-medium">
-                {cho}g carbos
+                {cho}g {t("macros.carbos")}
               </span>
             )}
             {go != null && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 font-medium">
-                {go}g grasas
+                {go}g {t("macros.grasas")}
               </span>
             )}
           </div>
@@ -598,7 +590,7 @@ export function PlanVisual({
               {showPlanSelector && (
                 <div className="flex items-center justify-between gap-3 mb-3">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-muted-foreground mb-1.5">Dieta del paciente</p>
+                    <p className="text-sm font-medium text-muted-foreground mb-1.5">{t("dietaDelPaciente")}</p>
                     <div ref={planSelectWrapRef} className="relative">
                       <button
                         type="button"
@@ -638,7 +630,7 @@ export function PlanVisual({
                     href={`/dietas/${selectedPlan.id}`}
                     className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium shrink-0 self-end"
                   >
-                    Abrir
+                    {t("abrir")}
                   </Link>
                 </div>
               )}
@@ -651,7 +643,7 @@ export function PlanVisual({
                       <div key={dia.id}>
                         <h2 className="text-base font-semibold text-foreground mb-3 flex items-center gap-2">
                           <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                          {DIA_LABELS[dia.dia] || dia.dia}
+                          {t(`dias.${dia.dia}`)}
                         </h2>
                         <PlanEditor
                           showHeader={false}
@@ -694,14 +686,14 @@ export function PlanVisual({
                     />
                   )
                 ) : (
-                  <div className="text-sm text-muted-foreground">No hay días para mostrar.</div>
+                  <div className="text-sm text-muted-foreground">{t("sinDias")}</div>
                 )}
               </div>
             </div>
 
             <div className="space-y-4">
             <div className="bg-card rounded-xl border border-border p-5">
-              <h4 className="text-base font-semibold mb-4">Análisis global</h4>
+              <h4 className="text-base font-semibold mb-4">{t("analisisGlobal")}</h4>
 
               {(() => {
                 const calObj = selectedPlan.caloriasObjetivo;
@@ -711,7 +703,7 @@ export function PlanVisual({
                 return (
                   <div className="mb-4">
                     <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="text-foreground font-medium flex items-center gap-1.5"><Flame className="w-3.5 h-3.5" /> Energía</span>
+                      <span className="text-foreground font-medium flex items-center gap-1.5"><Flame className="w-3.5 h-3.5" /> {t("energia")}</span>
                       <span className="font-bold tabular-nums text-sm">
                         <span className={overCal ? "text-red-500" : ""}>{Math.round(calActual)}</span>
                         {calObj != null ? <span className="text-muted-foreground font-normal text-xs"> / {calObj} kcal</span> : <span className="text-muted-foreground font-normal text-xs"> kcal</span>}
@@ -727,9 +719,9 @@ export function PlanVisual({
               {(() => {
                 const energySinFibra = totals.energy.grasasKcal + totals.energy.carbKcal + totals.energy.protKcal || 1;
                 const pieData = [
-                  { name: "Grasa", value: totals.energy.grasasKcal, color: MACRO_COLORS.grasas, actualG: totals.macros.grasas, actualKcal: Math.round(totals.energy.grasasKcal), pctActual: Math.round((totals.energy.grasasKcal / energySinFibra) * 100), planG: selectedPlan.grasasObjetivo, planKcal: selectedPlan.grasasObjetivo ? Math.round(selectedPlan.grasasObjetivo * 9) : null, pctPlan: selectedPlan.grasasObjetivo && selectedPlan.caloriasObjetivo ? Math.round((selectedPlan.grasasObjetivo * 9 / selectedPlan.caloriasObjetivo) * 100) : null },
-                  { name: "Hidratos", value: totals.energy.carbKcal, color: MACRO_COLORS.carbohidratos, actualG: totals.macros.carbohidratos, actualKcal: Math.round(totals.energy.carbKcal), pctActual: Math.round((totals.energy.carbKcal / energySinFibra) * 100), planG: selectedPlan.carbohidratosObjetivo, planKcal: selectedPlan.carbohidratosObjetivo ? Math.round(selectedPlan.carbohidratosObjetivo * 4) : null, pctPlan: selectedPlan.carbohidratosObjetivo && selectedPlan.caloriasObjetivo ? Math.round((selectedPlan.carbohidratosObjetivo * 4 / selectedPlan.caloriasObjetivo) * 100) : null },
-                  { name: "Proteína", value: totals.energy.protKcal, color: MACRO_COLORS.proteinas, actualG: totals.macros.proteinas, actualKcal: Math.round(totals.energy.protKcal), pctActual: Math.round((totals.energy.protKcal / energySinFibra) * 100), planG: selectedPlan.proteinasObjetivo, planKcal: selectedPlan.proteinasObjetivo ? Math.round(selectedPlan.proteinasObjetivo * 4) : null, pctPlan: selectedPlan.proteinasObjetivo && selectedPlan.caloriasObjetivo ? Math.round((selectedPlan.proteinasObjetivo * 4 / selectedPlan.caloriasObjetivo) * 100) : null },
+                  { name: t("macros.grasa"), value: totals.energy.grasasKcal, color: MACRO_COLORS.grasas, actualG: totals.macros.grasas, actualKcal: Math.round(totals.energy.grasasKcal), pctActual: Math.round((totals.energy.grasasKcal / energySinFibra) * 100), planG: selectedPlan.grasasObjetivo, planKcal: selectedPlan.grasasObjetivo ? Math.round(selectedPlan.grasasObjetivo * 9) : null, pctPlan: selectedPlan.grasasObjetivo && selectedPlan.caloriasObjetivo ? Math.round((selectedPlan.grasasObjetivo * 9 / selectedPlan.caloriasObjetivo) * 100) : null },
+                  { name: t("macros.hidratos"), value: totals.energy.carbKcal, color: MACRO_COLORS.carbohidratos, actualG: totals.macros.carbohidratos, actualKcal: Math.round(totals.energy.carbKcal), pctActual: Math.round((totals.energy.carbKcal / energySinFibra) * 100), planG: selectedPlan.carbohidratosObjetivo, planKcal: selectedPlan.carbohidratosObjetivo ? Math.round(selectedPlan.carbohidratosObjetivo * 4) : null, pctPlan: selectedPlan.carbohidratosObjetivo && selectedPlan.caloriasObjetivo ? Math.round((selectedPlan.carbohidratosObjetivo * 4 / selectedPlan.caloriasObjetivo) * 100) : null },
+                  { name: t("macros.proteina"), value: totals.energy.protKcal, color: MACRO_COLORS.proteinas, actualG: totals.macros.proteinas, actualKcal: Math.round(totals.energy.protKcal), pctActual: Math.round((totals.energy.protKcal / energySinFibra) * 100), planG: selectedPlan.proteinasObjetivo, planKcal: selectedPlan.proteinasObjetivo ? Math.round(selectedPlan.proteinasObjetivo * 4) : null, pctPlan: selectedPlan.proteinasObjetivo && selectedPlan.caloriasObjetivo ? Math.round((selectedPlan.proteinasObjetivo * 4 / selectedPlan.caloriasObjetivo) * 100) : null },
                 ];
                 return (
               <div className="flex items-start gap-4">
@@ -778,7 +770,7 @@ export function PlanVisual({
                             <div className="bg-card border border-border/30 rounded-2xl shadow-xl py-2.5 px-4 text-xs whitespace-nowrap space-y-1.5">
                               <div className="flex items-center gap-2.5">
                                 <span className="w-5 h-5 rounded-full border-2 shrink-0" style={{ borderColor: d.color }} />
-                                <span className="font-semibold px-2 py-0.5 rounded-full text-[11px]" style={{ color: d.color, background: d.color + "22" }}>Actual</span>
+                                <span className="font-semibold px-2 py-0.5 rounded-full text-[11px]" style={{ color: d.color, background: d.color + "22" }}>{t("actual")}</span>
                                 <span className="tabular-nums font-semibold">{d.pctActual}%</span>
                                 <span className="tabular-nums">{d.actualKcal} kcal</span>
                                 <span className="tabular-nums">{Math.round(d.actualG)} g</span>
@@ -786,7 +778,7 @@ export function PlanVisual({
                               {d.planG != null && (
                                 <div className="flex items-center gap-2.5">
                                   <span className="w-5 h-5 rounded-full border-2 opacity-30 shrink-0" style={{ borderColor: d.color }} />
-                                  <span className="font-semibold text-muted-foreground text-[11px]">Planeado</span>
+                                  <span className="font-semibold text-muted-foreground text-[11px]">{t("planeado")}</span>
                                   <span className="tabular-nums font-semibold text-muted-foreground">{d.pctPlan ?? "—"}%</span>
                                   <span className="tabular-nums text-muted-foreground">{d.planKcal ?? "—"} kcal</span>
                                   <span className="tabular-nums text-muted-foreground">{d.planG} g</span>
@@ -802,10 +794,10 @@ export function PlanVisual({
 
                 <div className="flex-1 space-y-3 pt-1">
                   {[
-                    { key: "grasas", label: "Grasa", value: totals.macros.grasas, kcal: totals.energy.grasasKcal, color: MACRO_COLORS.grasas, bgColor: "bg-yellow-50 dark:bg-yellow-500/10", objetivo: selectedPlan.grasasObjetivo },
-                    { key: "carbohidratos", label: "H. Carbono", value: totals.macros.carbohidratos, kcal: totals.energy.carbKcal, color: MACRO_COLORS.carbohidratos, bgColor: "bg-orange-50 dark:bg-orange-500/10", objetivo: selectedPlan.carbohidratosObjetivo },
-                    { key: "proteinas", label: "Proteína", value: totals.macros.proteinas, kcal: totals.energy.protKcal, color: MACRO_COLORS.proteinas, bgColor: "bg-blue-50 dark:bg-blue-500/10", objetivo: selectedPlan.proteinasObjetivo },
-                    { key: "fibra", label: "Fibra", value: totals.macros.fibra, kcal: totals.energy.fibraKcal, color: MACRO_COLORS.fibra, bgColor: "bg-emerald-50 dark:bg-emerald-500/10", objetivo: null },
+                    { key: "grasas", label: t("macros.grasa"), value: totals.macros.grasas, kcal: totals.energy.grasasKcal, color: MACRO_COLORS.grasas, bgColor: "bg-yellow-50 dark:bg-yellow-500/10", objetivo: selectedPlan.grasasObjetivo },
+                    { key: "carbohidratos", label: t("macros.hCarbono"), value: totals.macros.carbohidratos, kcal: totals.energy.carbKcal, color: MACRO_COLORS.carbohidratos, bgColor: "bg-orange-50 dark:bg-orange-500/10", objetivo: selectedPlan.carbohidratosObjetivo },
+                    { key: "proteinas", label: t("macros.proteina"), value: totals.macros.proteinas, kcal: totals.energy.protKcal, color: MACRO_COLORS.proteinas, bgColor: "bg-blue-50 dark:bg-blue-500/10", objetivo: selectedPlan.proteinasObjetivo },
+                    { key: "fibra", label: t("macros.fibra"), value: totals.macros.fibra, kcal: totals.energy.fibraKcal, color: MACRO_COLORS.fibra, bgColor: "bg-emerald-50 dark:bg-emerald-500/10", objetivo: null },
                   ].map((row, rowIdx) => {
                     const hasObj = row.objetivo != null && row.objetivo > 0;
                     const overObj = hasObj && row.value > row.objetivo!;
@@ -853,7 +845,7 @@ export function PlanVisual({
               return meals.length > 0 ? (
                 <div className="bg-card rounded-xl border border-border p-4 mt-4">
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-sm font-semibold">Comidas</h4>
+                    <h4 className="text-sm font-semibold">{t("comidas.titulo")}</h4>
                     {meals.length > VISIBLE && (
                       <div className="flex items-center gap-1">
                         <button
@@ -905,23 +897,23 @@ export function PlanVisual({
                         <div className="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50">
                           <div className="bg-card border border-border/30 rounded-2xl shadow-xl p-3 whitespace-nowrap text-[11px]">
                             <div className="grid grid-cols-[auto_auto_auto_auto] gap-x-3 gap-y-1.5 items-center">
-                              <span className="font-semibold px-2 py-0.5 rounded-full" style={{ color: MACRO_COLORS.grasas, background: MACRO_COLORS.grasas + "22" }}>Grasa</span>
+                              <span className="font-semibold px-2 py-0.5 rounded-full" style={{ color: MACRO_COLORS.grasas, background: MACRO_COLORS.grasas + "22" }}>{t("macros.grasa")}</span>
                               <span className="tabular-nums text-right">{meal.grasasKcal} kcal</span>
                               <span className="tabular-nums text-right">{meal.grasasPct}%</span>
                               <span className="tabular-nums text-right">{meal.grasasG} g</span>
 
-                              <span className="font-semibold px-2 py-0.5 rounded-full" style={{ color: MACRO_COLORS.carbohidratos, background: MACRO_COLORS.carbohidratos + "22" }}>H. Carbono</span>
+                              <span className="font-semibold px-2 py-0.5 rounded-full" style={{ color: MACRO_COLORS.carbohidratos, background: MACRO_COLORS.carbohidratos + "22" }}>{t("macros.hCarbono")}</span>
                               <span className="tabular-nums text-right">{meal.carbKcal} kcal</span>
                               <span className="tabular-nums text-right">{meal.carbPct}%</span>
                               <span className="tabular-nums text-right">{meal.carbG} g</span>
 
-                              <span className="font-semibold px-2 py-0.5 rounded-full" style={{ color: MACRO_COLORS.proteinas, background: MACRO_COLORS.proteinas + "22" }}>Proteína</span>
+                              <span className="font-semibold px-2 py-0.5 rounded-full" style={{ color: MACRO_COLORS.proteinas, background: MACRO_COLORS.proteinas + "22" }}>{t("macros.proteina")}</span>
                               <span className="tabular-nums text-right">{meal.protKcal} kcal</span>
                               <span className="tabular-nums text-right">{meal.protPct}%</span>
                               <span className="tabular-nums text-right">{meal.protG} g</span>
                             </div>
                             <div className="flex items-center gap-3 pt-2 mt-2 border-t border-border/30">
-                              <span className="font-semibold text-muted-foreground">Energía</span>
+                              <span className="font-semibold text-muted-foreground">{t("energia")}</span>
                               <span className="tabular-nums font-semibold">{meal.calTotal} kcal</span>
                             </div>
                           </div>
@@ -941,30 +933,30 @@ export function PlanVisual({
               </div>
               <div className="space-y-0">
                 {[
-                  { key: "acidoPantotenico", label: "Ác. Pantoténico", ddr: 5, unit: "mg" },
-                  { key: "calcio", label: "Calcio", ddr: 1000, unit: "mg" },
-                  { key: "cinc", label: "Cinc", ddr: 8, unit: "mg" },
-                  { key: "cobre", label: "Cobre", ddr: 0.9, unit: "mg" },
-                  { key: "colina", label: "Colina", ddr: 425, unit: "mg" },
-                  { key: "fluor", label: "Flúor", ddr: 3000, unit: "ug" },
-                  { key: "folato", label: "Folato", ddr: 400, unit: "ug" },
-                  { key: "fosforo", label: "Fósforo", ddr: 700, unit: "mg" },
-                  { key: "hierro", label: "Hierro", ddr: 18, unit: "mg" },
-                  { key: "magnesio", label: "Magnesio", ddr: 320, unit: "mg" },
-                  { key: "manganeso", label: "Manganeso", ddr: 1.8, unit: "mg" },
-                  { key: "niacina", label: "Niacina", ddr: 14, unit: "mg" },
-                  { key: "potasio", label: "Potasio", ddr: 4700, unit: "mg" },
-                  { key: "riboflavina", label: "Riboflavina", ddr: 1.1, unit: "mg" },
-                  { key: "selenio", label: "Selenio", ddr: 55, unit: "ug" },
-                  { key: "sodio", label: "Sodio", ddr: 1500, unit: "mg" },
-                  { key: "tiamina", label: "Tiamina", ddr: 1.1, unit: "mg" },
-                  { key: "vitaminaA", label: "Vitamina A", ddr: 700, unit: "ug" },
-                  { key: "vitaminaB12", label: "Vitamina B12", ddr: 2.4, unit: "ug" },
-                  { key: "vitaminaB6", label: "Vitamina B6", ddr: 1.3, unit: "mg" },
-                  { key: "vitaminaC", label: "Vitamina C", ddr: 75, unit: "mg" },
-                  { key: "vitaminaD", label: "Vitamina D", ddr: 15, unit: "ug" },
-                  { key: "vitaminaE", label: "Vitamina E", ddr: 15, unit: "mg" },
-                  { key: "vitaminaK", label: "Vitamina K", ddr: 90, unit: "ug" },
+                  { key: "acidoPantotenico", labelKey: "micro.acidoPantotenico", ddr: 5, unit: "mg" },
+                  { key: "calcio", labelKey: "micro.calcio", ddr: 1000, unit: "mg" },
+                  { key: "cinc", labelKey: "micro.cinc", ddr: 8, unit: "mg" },
+                  { key: "cobre", labelKey: "micro.cobre", ddr: 0.9, unit: "mg" },
+                  { key: "colina", labelKey: "micro.colina", ddr: 425, unit: "mg" },
+                  { key: "fluor", labelKey: "micro.fluor", ddr: 3000, unit: "ug" },
+                  { key: "folato", labelKey: "micro.folato", ddr: 400, unit: "ug" },
+                  { key: "fosforo", labelKey: "micro.fosforo", ddr: 700, unit: "mg" },
+                  { key: "hierro", labelKey: "micro.hierro", ddr: 18, unit: "mg" },
+                  { key: "magnesio", labelKey: "micro.magnesio", ddr: 320, unit: "mg" },
+                  { key: "manganeso", labelKey: "micro.manganeso", ddr: 1.8, unit: "mg" },
+                  { key: "niacina", labelKey: "micro.niacina", ddr: 14, unit: "mg" },
+                  { key: "potasio", labelKey: "micro.potasio", ddr: 4700, unit: "mg" },
+                  { key: "riboflavina", labelKey: "micro.riboflavina", ddr: 1.1, unit: "mg" },
+                  { key: "selenio", labelKey: "micro.selenio", ddr: 55, unit: "ug" },
+                  { key: "sodio", labelKey: "micro.sodio", ddr: 1500, unit: "mg" },
+                  { key: "tiamina", labelKey: "micro.tiamina", ddr: 1.1, unit: "mg" },
+                  { key: "vitaminaA", labelKey: "micro.vitaminaA", ddr: 700, unit: "ug" },
+                  { key: "vitaminaB12", labelKey: "micro.vitaminaB12", ddr: 2.4, unit: "ug" },
+                  { key: "vitaminaB6", labelKey: "micro.vitaminaB6", ddr: 1.3, unit: "mg" },
+                  { key: "vitaminaC", labelKey: "micro.vitaminaC", ddr: 75, unit: "mg" },
+                  { key: "vitaminaD", labelKey: "micro.vitaminaD", ddr: 15, unit: "ug" },
+                  { key: "vitaminaE", labelKey: "micro.vitaminaE", ddr: 15, unit: "mg" },
+                  { key: "vitaminaK", labelKey: "micro.vitaminaK", ddr: 90, unit: "ug" },
                 ].map((row) => {
                   const actual = totals.micro[row.key] || 0;
                   const pct = row.ddr > 0 ? Math.min((actual / row.ddr) * 100, 200) : 0;
@@ -973,7 +965,7 @@ export function PlanVisual({
                       key={row.key}
                       className="flex items-center gap-1.5 px-2 py-2.5 border-b border-border/40 last:border-0"
                     >
-                      <span className="text-xs text-muted-foreground w-20 shrink-0">{row.label}</span>
+                      <span className="text-xs text-muted-foreground w-20 shrink-0">{t(row.labelKey)}</span>
                       <span className="text-xs font-bold tabular-nums w-10 text-right shrink-0">
                         {actual.toFixed(1)}
                       </span>
@@ -994,7 +986,7 @@ export function PlanVisual({
             </div>
             {isTodos && (
               <p className="hidden sm:block text-xs italic text-muted-foreground text-center">
-                Mostrando media diaria
+                {t("mediaDiaria")}
               </p>
             )}
             </div>
@@ -1012,17 +1004,17 @@ export function PlanVisual({
 
             const energySinFibra = totals.energy.grasasKcal + totals.energy.carbKcal + totals.energy.protKcal || 1;
             const macroPieData = [
-              { name: "Grasa", value: totals.energy.grasasKcal, color: MACRO_COLORS.grasas },
-              { name: "Hidratos", value: totals.energy.carbKcal, color: MACRO_COLORS.carbohidratos },
-              { name: "Proteína", value: totals.energy.protKcal, color: MACRO_COLORS.proteinas },
+              { name: t("macros.grasa"), value: totals.energy.grasasKcal, color: MACRO_COLORS.grasas },
+              { name: t("macros.hidratos"), value: totals.energy.carbKcal, color: MACRO_COLORS.carbohidratos },
+              { name: t("macros.proteina"), value: totals.energy.protKcal, color: MACRO_COLORS.proteinas },
             ];
 
             const CATEGORIA_LABELS: Record<string, string> = {
-              FRUTAS: "Frutas", VERDURAS: "Verduras", CEREALES: "Cereales",
-              LEGUMBRES: "Legumbres", CARNES: "Carnes", PESCADOS: "Pescados",
-              LACTEOS: "Lácteos y derivados", HUEVOS: "Huevos y derivados", FRUTOS_SECOS: "Nueces y semillas",
-              ACEITES: "Aceites y grasas", BEBIDAS: "Bebidas", CONDIMENTOS: "Condimentos y salsas",
-              DULCES: "Dulces y repostería", OTROS: "Otros alimentos",
+              FRUTAS: t("categorias.FRUTAS"), VERDURAS: t("categorias.VERDURAS"), CEREALES: t("categorias.CEREALES"),
+              LEGUMBRES: t("categorias.LEGUMBRES"), CARNES: t("categorias.CARNES"), PESCADOS: t("categorias.PESCADOS"),
+              LACTEOS: t("categorias.LACTEOS"), HUEVOS: t("categorias.HUEVOS"), FRUTOS_SECOS: t("categorias.FRUTOS_SECOS"),
+              ACEITES: t("categorias.ACEITES"), BEBIDAS: t("categorias.BEBIDAS"), CONDIMENTOS: t("categorias.CONDIMENTOS"),
+              DULCES: t("categorias.DULCES"), PANADERIA: t("categorias.PANADERIA"), OTROS: t("categorias.OTROS"),
             };
             const CAT_COLORS = ["#93c5fd","#bfdbfe","#fbbf24","#fde68a","#10b981","#6ee7b7","#c4b5fd","#fdba74","#f9a8d4","#86efac","#67e8f9","#a78bfa","#fb923c","#fca5a5"];
             const catMap = new Map<string, number>();
@@ -1041,8 +1033,8 @@ export function PlanVisual({
               .sort((a, b) => b.value - a.value);
 
             const TIPO_LABELS_TABLE: Record<string, string> = {
-              DESAYUNO: "Desayuno", MEDIA_MANANA: "Media mañana", ALMUERZO: "Comida",
-              MERIENDA: "Merienda", CENA: "Cena", RECENA: "Recena",
+              DESAYUNO: t("comidas.DESAYUNO"), MEDIA_MANANA: t("comidas.MEDIA_MANANA"), ALMUERZO: t("comidas.ALMUERZO"),
+              MERIENDA: t("comidas.MERIENDA"), CENA: t("comidas.CENA"), RECENA: t("comidas.RECENA"),
             };
             type FoodRow = {
               nombre: string; calorias: number; comida: string;
@@ -1087,30 +1079,30 @@ export function PlanVisual({
             const foodsVisible = allFoods.slice(foodTablePage * FOODS_PER_PAGE, (foodTablePage + 1) * FOODS_PER_PAGE);
 
             const DDR_TABLE = [
-              { key: "acidoPantotenico", label: "Ác. Pantoténico", ddr: 5, unit: "mg" },
-              { key: "calcio", label: "Calcio", ddr: 1000, unit: "mg" },
-              { key: "cinc", label: "Cinc", ddr: 8, unit: "mg" },
-              { key: "cobre", label: "Cobre", ddr: 0.9, unit: "mg" },
-              { key: "colina", label: "Colina", ddr: 425, unit: "mg" },
-              { key: "fluor", label: "Flúor", ddr: 3000, unit: "ug" },
-              { key: "folato", label: "Folato", ddr: 400, unit: "ug" },
-              { key: "fosforo", label: "Fósforo", ddr: 700, unit: "mg" },
-              { key: "hierro", label: "Hierro", ddr: 18, unit: "mg" },
-              { key: "magnesio", label: "Magnesio", ddr: 320, unit: "mg" },
-              { key: "manganeso", label: "Manganeso", ddr: 1.8, unit: "mg" },
-              { key: "niacina", label: "Niacina", ddr: 14, unit: "mg" },
-              { key: "potasio", label: "Potasio", ddr: 4700, unit: "mg" },
-              { key: "riboflavina", label: "Riboflavina", ddr: 1.1, unit: "mg" },
-              { key: "selenio", label: "Selenio", ddr: 55, unit: "ug" },
-              { key: "sodio", label: "Sodio", ddr: 1500, unit: "mg" },
-              { key: "tiamina", label: "Tiamina", ddr: 1.1, unit: "mg" },
-              { key: "vitaminaA", label: "Vitamina A", ddr: 700, unit: "ug" },
-              { key: "vitaminaB12", label: "Vitamina B12", ddr: 2.4, unit: "ug" },
-              { key: "vitaminaB6", label: "Vitamina B6", ddr: 1.3, unit: "mg" },
-              { key: "vitaminaC", label: "Vitamina C", ddr: 75, unit: "mg" },
-              { key: "vitaminaD", label: "Vitamina D", ddr: 15, unit: "ug" },
-              { key: "vitaminaE", label: "Vitamina E", ddr: 15, unit: "mg" },
-              { key: "vitaminaK", label: "Vitamina K", ddr: 90, unit: "ug" },
+              { key: "acidoPantotenico", labelKey: "micro.acidoPantotenico" as const, ddr: 5, unit: "mg" },
+              { key: "calcio", labelKey: "micro.calcio" as const, ddr: 1000, unit: "mg" },
+              { key: "cinc", labelKey: "micro.cinc" as const, ddr: 8, unit: "mg" },
+              { key: "cobre", labelKey: "micro.cobre" as const, ddr: 0.9, unit: "mg" },
+              { key: "colina", labelKey: "micro.colina" as const, ddr: 425, unit: "mg" },
+              { key: "fluor", labelKey: "micro.fluor" as const, ddr: 3000, unit: "ug" },
+              { key: "folato", labelKey: "micro.folato" as const, ddr: 400, unit: "ug" },
+              { key: "fosforo", labelKey: "micro.fosforo" as const, ddr: 700, unit: "mg" },
+              { key: "hierro", labelKey: "micro.hierro" as const, ddr: 18, unit: "mg" },
+              { key: "magnesio", labelKey: "micro.magnesio" as const, ddr: 320, unit: "mg" },
+              { key: "manganeso", labelKey: "micro.manganeso" as const, ddr: 1.8, unit: "mg" },
+              { key: "niacina", labelKey: "micro.niacina" as const, ddr: 14, unit: "mg" },
+              { key: "potasio", labelKey: "micro.potasio" as const, ddr: 4700, unit: "mg" },
+              { key: "riboflavina", labelKey: "micro.riboflavina" as const, ddr: 1.1, unit: "mg" },
+              { key: "selenio", labelKey: "micro.selenio" as const, ddr: 55, unit: "ug" },
+              { key: "sodio", labelKey: "micro.sodio" as const, ddr: 1500, unit: "mg" },
+              { key: "tiamina", labelKey: "micro.tiamina" as const, ddr: 1.1, unit: "mg" },
+              { key: "vitaminaA", labelKey: "micro.vitaminaA" as const, ddr: 700, unit: "ug" },
+              { key: "vitaminaB12", labelKey: "micro.vitaminaB12" as const, ddr: 2.4, unit: "ug" },
+              { key: "vitaminaB6", labelKey: "micro.vitaminaB6" as const, ddr: 1.3, unit: "mg" },
+              { key: "vitaminaC", labelKey: "micro.vitaminaC" as const, ddr: 75, unit: "mg" },
+              { key: "vitaminaD", labelKey: "micro.vitaminaD" as const, ddr: 15, unit: "ug" },
+              { key: "vitaminaE", labelKey: "micro.vitaminaE" as const, ddr: 15, unit: "mg" },
+              { key: "vitaminaK", labelKey: "micro.vitaminaK" as const, ddr: 90, unit: "ug" },
             ];
             const microLeft = DDR_TABLE.slice(0, 12);
             const microRight = DDR_TABLE.slice(12);
@@ -1119,18 +1111,18 @@ export function PlanVisual({
           <div className="space-y-4">
             {isTodos && (
               <p className="hidden sm:block text-xs italic text-muted-foreground text-right">
-                Mostrando media diaria
+                {t("mediaDiaria")}
               </p>
             )}
             <div className="bg-card rounded-xl border border-border p-5">
-              <h4 className="text-base font-semibold mb-4">Análisis global</h4>
+              <h4 className="text-base font-semibold mb-4">{t("analisisGlobal")}</h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                 {[
-                  { icon: <Flame className="w-4 h-4" />, label: "Energía", value: Math.round(totals.macros.calorias), obj: calObj != null ? Math.round(calObj) : null, unit: "kcal", color: "#b197fc", bg: "bg-purple-50 dark:bg-purple-500/10" },
-                  { icon: <Droplets className="w-4 h-4" />, label: "Grasa", value: Math.round(totals.macros.grasas * 10) / 10, obj: grasObj != null ? Math.round(grasObj * 10) / 10 : null, unit: "g", color: MACRO_COLORS.grasas, bg: "bg-yellow-50 dark:bg-yellow-500/10" },
-                  { icon: <Circle className="w-4 h-4" />, label: "H. Carbono", value: Math.round(totals.macros.carbohidratos * 10) / 10, obj: carbObj != null ? Math.round(carbObj * 10) / 10 : null, unit: "g", color: MACRO_COLORS.carbohidratos, bg: "bg-orange-50 dark:bg-orange-500/10" },
-                  { icon: <Diamond className="w-4 h-4" />, label: "Proteína", value: Math.round(totals.macros.proteinas * 10) / 10, obj: protObj != null ? Math.round(protObj * 10) / 10 : null, unit: "g", color: MACRO_COLORS.proteinas, bg: "bg-blue-50 dark:bg-blue-500/10" },
-                  { icon: <Triangle className="w-4 h-4" />, label: "Fibra", value: Math.round(totals.macros.fibra * 10) / 10, obj: null, unit: "g", color: MACRO_COLORS.fibra, bg: "bg-emerald-50 dark:bg-emerald-500/10" },
+                  { icon: <Flame className="w-4 h-4" />, label: t("energia"), value: Math.round(totals.macros.calorias), obj: calObj != null ? Math.round(calObj) : null, unit: "kcal", color: "#b197fc", bg: "bg-purple-50 dark:bg-purple-500/10" },
+                  { icon: <Droplets className="w-4 h-4" />, label: t("macros.grasa"), value: Math.round(totals.macros.grasas * 10) / 10, obj: grasObj != null ? Math.round(grasObj * 10) / 10 : null, unit: "g", color: MACRO_COLORS.grasas, bg: "bg-yellow-50 dark:bg-yellow-500/10" },
+                  { icon: <Circle className="w-4 h-4" />, label: t("macros.hCarbono"), value: Math.round(totals.macros.carbohidratos * 10) / 10, obj: carbObj != null ? Math.round(carbObj * 10) / 10 : null, unit: "g", color: MACRO_COLORS.carbohidratos, bg: "bg-orange-50 dark:bg-orange-500/10" },
+                  { icon: <Diamond className="w-4 h-4" />, label: t("macros.proteina"), value: Math.round(totals.macros.proteinas * 10) / 10, obj: protObj != null ? Math.round(protObj * 10) / 10 : null, unit: "g", color: MACRO_COLORS.proteinas, bg: "bg-blue-50 dark:bg-blue-500/10" },
+                  { icon: <Triangle className="w-4 h-4" />, label: t("macros.fibra"), value: Math.round(totals.macros.fibra * 10) / 10, obj: null, unit: "g", color: MACRO_COLORS.fibra, bg: "bg-emerald-50 dark:bg-emerald-500/10" },
                 ].map((m) => {
                   const hasObj = m.obj != null && m.obj > 0;
                   const over = hasObj && m.value > m.obj!;
@@ -1155,7 +1147,7 @@ export function PlanVisual({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-card rounded-xl border border-border p-5">
-                <h4 className="text-sm font-semibold mb-3">Distribución de macronutrientes</h4>
+                <h4 className="text-sm font-semibold mb-3">{t("distMacronutrientes")}</h4>
                 <div className="flex items-center gap-4">
                   <div className="w-[120px] h-[120px] shrink-0">
                     <ResponsiveContainer width="100%" height="100%">
@@ -1185,7 +1177,7 @@ export function PlanVisual({
               </div>
 
               <div className="bg-card rounded-xl border border-border p-5">
-                <h4 className="text-sm font-semibold mb-3">Distribución energética</h4>
+                <h4 className="text-sm font-semibold mb-3">{t("distEnergetica")}</h4>
                 <div className="flex items-center gap-4">
                   <div className="w-[120px] h-[120px] shrink-0">
                     <ResponsiveContainer width="100%" height="100%">
@@ -1216,7 +1208,7 @@ export function PlanVisual({
               </div>
 
               <div className="bg-card rounded-xl border border-border p-5">
-                <h4 className="text-sm font-semibold mb-3">Distribución proteica</h4>
+                <h4 className="text-sm font-semibold mb-3">{t("distProteica")}</h4>
                 <div className="flex items-center gap-4">
                   <div className="w-[120px] h-[120px] shrink-0">
                     <ResponsiveContainer width="100%" height="100%">
@@ -1249,7 +1241,7 @@ export function PlanVisual({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-card rounded-xl border border-border p-5">
-                <h4 className="text-sm font-semibold mb-3">Distribución de las grasas</h4>
+                <h4 className="text-sm font-semibold mb-3">{t("distGrasas")}</h4>
                 <div className="flex items-center gap-4">
                   <div className="w-[100px] h-[100px] shrink-0">
                     <ResponsiveContainer width="100%" height="100%">
@@ -1282,7 +1274,7 @@ export function PlanVisual({
               </div>
 
               <div className="bg-card rounded-xl border border-border p-5">
-                <h4 className="text-sm font-semibold mb-3">Distribución de los hidratos</h4>
+                <h4 className="text-sm font-semibold mb-3">{t("distHidratos")}</h4>
                 <div className="flex items-center gap-4">
                   <div className="w-[100px] h-[100px] shrink-0">
                     <ResponsiveContainer width="100%" height="100%">
@@ -1315,7 +1307,7 @@ export function PlanVisual({
               </div>
 
               <div className="bg-card rounded-xl border border-border p-5">
-                <h4 className="text-sm font-semibold mb-3">Grupos de alimentos</h4>
+                <h4 className="text-sm font-semibold mb-3">{t("gruposAlimentos")}</h4>
                 {catPieData.length > 0 ? (
                   <div className="flex items-start gap-5">
                     <div className="w-[130px] h-[130px] shrink-0">
@@ -1339,13 +1331,13 @@ export function PlanVisual({
                     </div>
                   </div>
                 ) : (
-                  <p className="text-xs text-muted-foreground">Sin datos de categorías.</p>
+                  <p className="text-xs text-muted-foreground">{t("sinDatosCategorias")}</p>
                 )}
               </div>
             </div>
 
             <div className="bg-card rounded-xl border border-border p-5">
-              <h4 className="text-base font-semibold mb-4">Micronutrientes</h4>
+              <h4 className="text-base font-semibold mb-4">{t("micronutrientes")}</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-0">
                 {[microLeft, microRight].map((col, colIdx) => (
                   <div key={colIdx} className="space-y-0">
@@ -1357,7 +1349,7 @@ export function PlanVisual({
                       const ddrLinePos = (100 / maxScale) * 100;
                       return (
                         <div key={row.key} className="flex items-center gap-2 py-1.5 border-b border-border/30 last:border-0">
-                          <span className="text-[11px] text-muted-foreground w-28 shrink-0 truncate">{row.label}</span>
+                          <span className="text-[11px] text-muted-foreground w-28 shrink-0 truncate">{t(row.labelKey)}</span>
                           <div className="flex-1 relative h-3 bg-muted/30 rounded-full overflow-hidden">
                             <div
                               className="h-full rounded-full"
@@ -1379,7 +1371,7 @@ export function PlanVisual({
 
             <div className={showAguaEjercicio ? "grid grid-cols-1 md:grid-cols-[1.2fr_1fr] gap-4" : "grid grid-cols-1 gap-4"}>
               <div className="bg-card rounded-xl border border-border p-5">
-                <h4 className="text-sm font-semibold mb-4">Distribución de macronutrientes por comida</h4>
+                <h4 className="text-sm font-semibold mb-4">{t("distMacrosPorComida")}</h4>
                 <div className={showAguaEjercicio ? "grid grid-cols-2 sm:grid-cols-3 gap-4" : "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6"}>
                   {totals.comidasMacros.filter(m => m.calTotal > 0).map((meal) => {
                     const big = !showAguaEjercicio;
@@ -1422,7 +1414,7 @@ export function PlanVisual({
               {showAguaEjercicio && (
               <div className="space-y-4">
                 <div className="bg-card rounded-xl border border-border p-5">
-                  <h4 className="text-sm font-semibold mb-4">Agua</h4>
+                  <h4 className="text-sm font-semibold mb-4">{t("agua.titulo")}</h4>
                   {(() => {
                     const pesoKg = pacientePeso || 70;
                     const aguaTotal = Math.round((pesoKg * 35) / 10) / 100;
@@ -1443,15 +1435,15 @@ export function PlanVisual({
                         <div className="flex-1 flex items-center justify-between gap-3 text-center">
                           <div>
                             <p className="text-lg font-bold">{aguaEntre} L</p>
-                            <p className="text-[10px] text-muted-foreground">Entre comidas</p>
+                            <p className="text-[10px] text-muted-foreground">{t("agua.entreComidas")}</p>
                           </div>
                           <div>
                             <p className="text-lg font-bold">{aguaComidas} L</p>
-                            <p className="text-[10px] text-muted-foreground">En las comidas</p>
+                            <p className="text-[10px] text-muted-foreground">{t("agua.enComidas")}</p>
                           </div>
                           <div>
                             <p className="text-lg font-bold">{aguaTotal} L</p>
-                            <p className="text-[10px] text-muted-foreground">Total</p>
+                            <p className="text-[10px] text-muted-foreground">{t("agua.total")}</p>
                           </div>
                         </div>
                       </div>
@@ -1460,7 +1452,7 @@ export function PlanVisual({
                 </div>
 
                 <div className="bg-card rounded-xl border border-border p-5">
-                  <h4 className="text-sm font-semibold mb-4">Ejercicio físico</h4>
+                  <h4 className="text-sm font-semibold mb-4">{t("ejercicio.titulo")}</h4>
                   {(() => {
                     const pesoKg = pacientePeso || 70;
                     const objetivo = pacienteObjetivo || "MANTENIMIENTO";
@@ -1482,12 +1474,12 @@ export function PlanVisual({
                         </div>
                         <div className="flex-1 flex items-center justify-between gap-3">
                           <div className="text-center">
-                            <p className="text-lg font-bold">{minutos} minutos</p>
-                            <p className="text-[10px] text-muted-foreground">Actividad física</p>
+                            <p className="text-lg font-bold">{minutos} {t("ejercicio.minutos")}</p>
+                            <p className="text-[10px] text-muted-foreground">{t("ejercicio.actividadFisica")}</p>
                           </div>
                           <div className="text-center">
                             <p className="text-lg font-bold">{gastoTotal} kcal</p>
-                            <p className="text-[10px] text-muted-foreground">Gasto energético diario</p>
+                            <p className="text-[10px] text-muted-foreground">{t("ejercicio.gastoEnergetico")}</p>
                           </div>
                         </div>
                       </div>
@@ -1500,15 +1492,15 @@ export function PlanVisual({
 
             {showFoodTable && (
             <div className="bg-card rounded-xl border border-border p-5">
-              <h4 className="text-sm font-semibold mb-4">Alimentos ordenados por Energía</h4>
+              <h4 className="text-sm font-semibold mb-4">{t("alimentosPorEnergia")}</h4>
               {allFoods.length > 0 ? (
                 <>
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="border-b border-border text-muted-foreground">
-                        <th className="text-left py-2 font-medium">Nombre</th>
-                        <th className="text-right py-2 font-medium pr-3">Energía (kcal)</th>
-                        <th className="text-left py-2 font-medium">Comida</th>
+                        <th className="text-left py-2 font-medium">{t("tabla.nombre")}</th>
+                        <th className="text-right py-2 font-medium pr-3">{t("tabla.energiaKcal")}</th>
+                        <th className="text-left py-2 font-medium">{t("tabla.comida")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1547,7 +1539,7 @@ export function PlanVisual({
                   )}
                 </>
               ) : (
-                <p className="text-xs text-muted-foreground">No hay alimentos en este día.</p>
+                <p className="text-xs text-muted-foreground">{t("sinAlimentosDia")}</p>
               )}
             </div>
             )}
@@ -1560,14 +1552,7 @@ export function PlanVisual({
   );
 }
 
-const TIPO_LABELS: Record<string, string> = {
-  DESAYUNO: "Desayuno",
-  MEDIA_MANANA: "M. mañana",
-  ALMUERZO: "Almuerzo",
-  MERIENDA: "Merienda",
-  CENA: "Cena",
-  RECENA: "Recena",
-};
+// TIPO_LABELS removed — now derived from t() inside ResumenSemanal
 
 function macrosDeItem(a: PlanVisualItem) {
   if (a.receta) {
@@ -1601,10 +1586,20 @@ function ResumenSemanal({
   plan: PlanVisualDetalle;
   onSelectDay: (dayKey: string) => void;
 }) {
+  const t = useTranslations("patients.planVisual");
   const diasOrdenados = useMemo(
     () => [...plan.dias].sort((a, b) => DIA_KEYS.indexOf(a.dia as typeof DIA_KEYS[number]) - DIA_KEYS.indexOf(b.dia as typeof DIA_KEYS[number])),
     [plan.dias]
   );
+
+  const TIPO_LABELS: Record<string, string> = {
+    DESAYUNO: t("comidasCorto.DESAYUNO"),
+    MEDIA_MANANA: t("comidasCorto.MEDIA_MANANA"),
+    ALMUERZO: t("comidasCorto.ALMUERZO"),
+    MERIENDA: t("comidasCorto.MERIENDA"),
+    CENA: t("comidasCorto.CENA"),
+    RECENA: t("comidasCorto.RECENA"),
+  };
 
   const semanal = useMemo(() => {
     const allMacros = diasOrdenados.flatMap((d) => d.comidas.flatMap((c) => c.alimentos.map(macrosDeItem)));
@@ -1623,7 +1618,7 @@ function ResumenSemanal({
       {/* Banner de media semanal */}
       <div className="rounded-2xl border border-border bg-gradient-to-br from-primary/5 via-card to-card p-3 sm:p-5">
         <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-          Media diaria de la semana
+          {t("mediaDiariaSemana")}
         </p>
         <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
           <div className="flex items-baseline gap-1">
@@ -1667,18 +1662,18 @@ function ResumenSemanal({
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-primary" />
                   <h3 className="font-semibold text-foreground">
-                    {DIA_LABELS[dia.dia] || dia.dia}
+                    {t(`dias.${dia.dia}`)}
                   </h3>
                 </div>
                 <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors">
-                  Ver día →
+                  {t("verDia")} →
                 </span>
               </div>
 
               <div className="px-5 py-4 space-y-3">
                 <div>
                   <div className="flex items-baseline justify-between mb-1">
-                    <span className="text-xs font-medium text-muted-foreground">Energía</span>
+                    <span className="text-xs font-medium text-muted-foreground">{t("energia")}</span>
                     <span className="text-sm font-bold tabular-nums">
                       {Math.round(diaTotales.calorias)}
                       <span className="text-xs font-normal text-muted-foreground ml-1">kcal</span>
@@ -1699,19 +1694,19 @@ function ResumenSemanal({
 
                 <div className="grid grid-cols-3 gap-1.5">
                   <div className="rounded-lg bg-yellow-50 dark:bg-yellow-500/10 px-2 py-1.5 text-center">
-                    <p className="text-[10px] font-medium text-yellow-700 dark:text-yellow-400 uppercase">Grasa</p>
+                    <p className="text-[10px] font-medium text-yellow-700 dark:text-yellow-400 uppercase">{t("macros.grasa")}</p>
                     <p className="text-sm font-bold text-yellow-700 dark:text-yellow-400 tabular-nums">
                       {diaTotales.grasas.toFixed(0)}g
                     </p>
                   </div>
                   <div className="rounded-lg bg-orange-50 dark:bg-orange-500/10 px-2 py-1.5 text-center">
-                    <p className="text-[10px] font-medium text-orange-700 dark:text-orange-400 uppercase">H. C.</p>
+                    <p className="text-[10px] font-medium text-orange-700 dark:text-orange-400 uppercase">{t("macros.hc")}</p>
                     <p className="text-sm font-bold text-orange-700 dark:text-orange-400 tabular-nums">
                       {diaTotales.carbohidratos.toFixed(0)}g
                     </p>
                   </div>
                   <div className="rounded-lg bg-blue-50 dark:bg-blue-500/10 px-2 py-1.5 text-center">
-                    <p className="text-[10px] font-medium text-blue-700 dark:text-blue-400 uppercase">Prot.</p>
+                    <p className="text-[10px] font-medium text-blue-700 dark:text-blue-400 uppercase">{t("macros.prot")}</p>
                     <p className="text-sm font-bold text-blue-700 dark:text-blue-400 tabular-nums">
                       {diaTotales.proteinas.toFixed(0)}g
                     </p>
@@ -1736,7 +1731,7 @@ function ResumenSemanal({
                   })}
                   {dia.comidas.filter((c) => c.alimentos.length === 0).length > 0 && (
                     <p className="text-[10px] text-muted-foreground italic">
-                      {dia.comidas.filter((c) => c.alimentos.length === 0).length} comida(s) sin alimentos
+                      {t("comidasSinAlimentos", { count: dia.comidas.filter((c) => c.alimentos.length === 0).length })}
                     </p>
                   )}
                 </div>

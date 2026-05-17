@@ -12,6 +12,7 @@ import {
   Legend,
   ReferenceArea,
 } from "recharts";
+import { useTranslations } from "next-intl";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DataPoint = Record<string, any>;
@@ -47,6 +48,7 @@ export function EvolucionChart({
   fill = "gradient",
 }: EvolucionChartProps) {
   const idBase = useId().replace(/:/g, "");
+  const t = useTranslations("patients.evolucion");
 
   if (data.length === 0) {
     return (
@@ -54,7 +56,7 @@ export function EvolucionChart({
         className="flex items-center justify-center text-muted-foreground text-sm"
         style={{ height }}
       >
-        No hay datos suficientes para mostrar el gráfico
+        {t("sinDatosSuficientes")}
       </div>
     );
   }

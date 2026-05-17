@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { getTranslations } from "next-intl/server";
 
 function getBaseUrl(req: NextRequest): string {
   const proto = req.headers.get("x-forwarded-proto") || "https";
@@ -17,6 +18,7 @@ export async function GET(req: NextRequest) {
   const origin = getBaseUrl(req);
 
   const supabase = await createClient();
+  const t = await getTranslations("validation");
 
   if (error) {
     const { data: { user } } = await supabase.auth.getUser();
@@ -53,7 +55,7 @@ export async function GET(req: NextRequest) {
       if (process.env.REGISTRATION_OPEN !== "true") {
         await supabase.auth.signOut();
         return NextResponse.redirect(
-          `${origin}/login?error=${encodeURIComponent("Los registros están cerrados. Si ya tienes cuenta de dietista, inicia sesión con email y contraseña.")}`,
+          `${origin}/login?error=${encodeURIComponent(t("auth.registrosCerrados"))}`,
         );
       }
 
@@ -64,7 +66,7 @@ export async function GET(req: NextRequest) {
         if (paciente) {
           await supabase.auth.signOut();
           return NextResponse.redirect(
-            `${origin}/login?error=${encodeURIComponent("Este email está registrado como paciente. No es posible crear una cuenta de dietista con el mismo email.")}`,
+            `${origin}/login?error=${encodeURIComponent(t("auth.emailRegistradoComoPaciente"))}`,
           );
         }
       }

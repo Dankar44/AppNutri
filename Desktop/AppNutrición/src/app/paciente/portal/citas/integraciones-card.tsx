@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { CalendarCheck2, CheckCircle2, Loader2, AlertCircle, Link2Off } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
   conectarGooglePaciente,
   desconectarGooglePaciente,
@@ -18,6 +19,7 @@ type Props = {
 };
 
 export function IntegracionesCardPaciente({ integracion, flash }: Props) {
+  const t = useTranslations("patient-portal.integraciones.googleCalendar");
   const [pending, startTransition] = useTransition();
   const [showDisconnect, setShowDisconnect] = useState(false);
 
@@ -42,7 +44,7 @@ export function IntegracionesCardPaciente({ integracion, flash }: Props) {
         <div className="min-w-0">
           <h2 className="text-base font-semibold">Google Calendar</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Conecta tu cuenta de Google para que tus citas aparezcan automáticamente en tu calendario personal.
+            {t("description")}
           </p>
         </div>
       </header>
@@ -72,22 +74,22 @@ export function IntegracionesCardPaciente({ integracion, flash }: Props) {
           className="w-full flex items-center justify-center gap-2 rounded-lg bg-primary text-white px-4 py-2.5 text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
         >
           {pending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-          {pending ? "Conectando…" : "Conectar con Google"}
+          {pending ? t("conectando") : t("conectar")}
         </button>
       ) : (
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-xs bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30 rounded-lg px-3 py-2">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span className="truncate">
-              Conectado como <strong className="font-semibold">{integracion.email}</strong>
+              {t("conectadoComo", { email: integracion.email })}
             </span>
           </div>
 
           <label className="flex items-center justify-between gap-3 cursor-pointer">
             <div className="min-w-0">
-              <p className="text-sm font-medium">Sincronizar automáticamente</p>
+              <p className="text-sm font-medium">{t("sincronizarAutomaticamente")}</p>
               <p className="text-xs text-muted-foreground">
-                Cuando tu nutricionista cree o modifique una cita, también aparecerá en tu Google Calendar.
+                {t("sincronizarDesc")}
               </p>
             </div>
             <Toggle
@@ -103,7 +105,7 @@ export function IntegracionesCardPaciente({ integracion, flash }: Props) {
             className="w-full flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors disabled:opacity-50"
           >
             <Link2Off className="w-4 h-4" />
-            Desconectar
+            {t("desconectar")}
           </button>
         </div>
       )}
@@ -111,10 +113,9 @@ export function IntegracionesCardPaciente({ integracion, flash }: Props) {
       {showDisconnect && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-card rounded-xl border border-border max-w-md w-full p-5">
-            <h3 className="text-lg font-semibold">Desconectar Google Calendar</h3>
+            <h3 className="text-lg font-semibold">{t("desconectarTitle")}</h3>
             <p className="text-sm text-muted-foreground mt-2">
-              Ya no se añadirán nuevas citas a tu calendario. Los eventos ya creados
-              permanecerán en Google hasta que los borres manualmente.
+              {t("desconectarDesc")}
             </p>
             <div className="mt-4 flex justify-end gap-2">
               <button
@@ -122,7 +123,7 @@ export function IntegracionesCardPaciente({ integracion, flash }: Props) {
                 disabled={pending}
                 className="text-sm text-muted-foreground hover:text-foreground px-3 py-2 disabled:opacity-50"
               >
-                Cancelar
+                {t("cancelar")}
               </button>
               <button
                 onClick={() => {
@@ -134,7 +135,7 @@ export function IntegracionesCardPaciente({ integracion, flash }: Props) {
                 disabled={pending}
                 className="rounded-lg bg-red-600 text-white px-4 py-2 text-sm font-medium hover:bg-red-700 disabled:opacity-50"
               >
-                Sí, desconectar
+                {t("confirmarDesconectar")}
               </button>
             </div>
           </div>

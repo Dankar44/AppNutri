@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { Plus, CalendarDays } from "lucide-react";
 import {
@@ -94,12 +95,14 @@ export default async function AgendaPage({ searchParams }: Props) {
       }
     : null;
 
+  const t = await getTranslations("agenda");
+
   return (
     <div>
       {params.cita && <AutoMarkLeidasCita citaId={params.cita} />}
       <PageHeader
         icon={CalendarDays}
-        title="Agenda"
+        title={t("page.title")}
         action={
           <Link
             href="/agenda/nueva"
@@ -107,7 +110,7 @@ export default async function AgendaPage({ searchParams }: Props) {
             className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium shrink-0"
           >
             <Plus className="w-4 h-4" />
-            Nueva cita
+            {t("page.newAppointment")}
           </Link>
         }
       />

@@ -17,6 +17,7 @@ import {
   Timer,
   X,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
@@ -26,6 +27,10 @@ import {
   SUGERENCIAS_ALIMENTOS_EVITAR,
   calcularGastoActividad,
   calcularPromedioDiario,
+  getEjercicioNombre,
+  getAguaLabel,
+  getFrecuenciaLabel,
+  getAlimentoEvitarLabel,
   type EjercicioBase,
 } from "@/lib/ejercicios-db";
 import {
@@ -52,6 +57,7 @@ export function RecomendacionesTab({
   pacienteId,
   pacientePeso,
 }: RecomendacionesTabProps) {
+  const t = useTranslations("patients.recomendaciones");
   const [data, setData] = useState<RecomendacionesData>({
     agua: "",
     ejercicios: [],
@@ -94,7 +100,7 @@ export function RecomendacionesTab({
         try {
           await guardarRecomendacionesEstructuradas(pacienteId, newData);
         } catch {
-          toast.error("Error al guardar recomendaciones");
+          toast.error(t("errorGuardarRecomendaciones"));
         } finally {
           setSaving(false);
         }
@@ -111,7 +117,7 @@ export function RecomendacionesTab({
       try {
         await guardarRecomendacionesEstructuradas(pacienteId, newData);
       } catch {
-        toast.error("Error al guardar recomendaciones");
+        toast.error(t("errorGuardarRecomendaciones"));
       } finally {
         setSaving(false);
       }
@@ -171,11 +177,12 @@ export function RecomendacionesTab({
 // ─── Save indicator ───
 
 function SaveIndicator({ saving }: { saving: boolean }) {
+  const t = useTranslations("patients.recomendaciones");
   if (!saving) return null;
   return (
     <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
       <Loader2 className="w-3 h-3 animate-spin" />
-      Guardando...
+      {t("guardando")}
     </span>
   );
 }
@@ -191,12 +198,13 @@ function AguaCard({
   onChange: (v: string) => void;
   saving: boolean;
 }) {
+  const t = useTranslations("patients.recomendaciones");
   return (
     <section className="bg-card rounded-xl border border-border p-5">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-base font-semibold flex items-center gap-2">
           <Droplets className="w-5 h-5 text-blue-500" />
-          Ingesta de agua entre las comidas
+          {t("ingestaAgua")}
         </h2>
         <SaveIndicator saving={saving} />
       </div>
@@ -205,10 +213,10 @@ function AguaCard({
         onChange={(e) => onChange(e.target.value)}
         className="w-full px-4 py-2.5 rounded-full border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
       >
-        <option value="">Seleccionar...</option>
+        <option value="">{t("seleccionar")}</option>
         {OPCIONES_AGUA.map((opt) => (
-          <option key={opt} value={opt}>
-            {opt}
+          <option key={opt.key} value={opt.label}>
+            {opt.label}
           </option>
         ))}
       </select>
@@ -229,6 +237,7 @@ function EjercicioCard({
   onChange: (v: EjercicioGuardado[]) => void;
   saving: boolean;
 }) {
+  const t = useTranslations("patients.recomendaciones");
   const [panelOpen, setPanelOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
@@ -262,7 +271,7 @@ function EjercicioCard({
     const freq = getFrecuencia(ej.nombre);
     // Avoid duplicates
     if (ejercicios.some((e) => e.nombre === ej.nombre)) {
-      toast.info("Este ejercicio ya está añadido");
+      toast.info(t("ejercicioYaAnadido"));
       return;
     }
     onChange([
@@ -290,7 +299,7 @@ function EjercicioCard({
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-base font-semibold flex items-center gap-2">
           <Dumbbell className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-          Ejercicio fisico
+          {t("ejercicioFisico")}
         </h2>
         <SaveIndicator saving={saving} />
       </div>
@@ -303,8 +312,8 @@ function EjercicioCard({
             const promedio = calcularPromedioDiario(gasto, ej.frecuencia);
             const freqLabel =
               ej.frecuencia === 7
-                ? "Todos los dias"
-                : `${ej.frecuencia} veces/semana`;
+                ? t("todosLosDias")
+                : t("vecesSemanales", { freq: ej.frecuencia });
             return (
               <div
                 key={ej.nombre}
@@ -319,11 +328,11 @@ function EjercicioCard({
                 <div className="flex items-center gap-3 text-xs text-muted-foreground shrink-0">
                   <span className="inline-flex items-center gap-1">
                     <Flame className="w-3.5 h-3.5 text-orange-500" />
-                    {gasto} kcal/sesion
+                    {gasto} {t("kcalSesion")}
                   </span>
                   <span className="inline-flex items-center gap-1">
                     <Timer className="w-3.5 h-3.5 text-primary" />
-                    {promedio} kcal/dia
+                    {promedio} {t("kcalDia")}
                   </span>
                 </div>
                 <button
@@ -347,14 +356,14 @@ function EjercicioCard({
           className="w-full flex items-center justify-center gap-2 rounded-lg bg-primary/10 text-primary font-medium text-sm px-4 py-2.5 hover:bg-primary/20 transition-colors"
         >
           <Plus className="w-4 h-4" />
-          Anadir nueva componente de actividad fisica
+          {t("anadirComponente")}
         </button>
       ) : (
         <div className="rounded-lg border border-primary/30 bg-primary/5 overflow-hidden">
           {/* Panel header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-primary/20">
             <span className="text-sm font-medium text-primary">
-              Anadir nueva componente de actividad fisica
+              {t("anadirComponente")}
             </span>
             <button
               type="button"
@@ -371,7 +380,7 @@ function EjercicioCard({
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Buscar actividad fisica"
+                placeholder={t("buscarActividad")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
@@ -434,22 +443,22 @@ function EjercicioCard({
                   {/* Exercise name — stacked */}
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm">{ej.nombre}</p>
-                    <p className="text-xs text-muted-foreground">Compendio de actividades físicas</p>
+                    <p className="text-xs text-muted-foreground">{t("compendioActividades")}</p>
                   </div>
 
                   {/* Stats — larger */}
                   <div className="flex items-center gap-6 shrink-0">
                     <div className="text-center">
                       <p className="text-base font-bold tabular-nums">{ej.met}</p>
-                      <p className="text-[10px] text-muted-foreground">MET</p>
+                      <p className="text-[10px] text-muted-foreground">{t("met")}</p>
                     </div>
                     <div className="text-center">
                       <p className="text-base font-bold tabular-nums">{gasto} kcal</p>
-                      <p className="text-[10px] text-muted-foreground">Gasto por actividad</p>
+                      <p className="text-[10px] text-muted-foreground">{t("gastoPorActividad")}</p>
                     </div>
                     <div className="text-center">
                       <p className="text-base font-bold tabular-nums">{promedio} kcal</p>
-                      <p className="text-[10px] text-muted-foreground">Promedio diaria</p>
+                      <p className="text-[10px] text-muted-foreground">{t("promedioDiaria")}</p>
                     </div>
                   </div>
 
@@ -478,7 +487,7 @@ function EjercicioCard({
 
             {paginated.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-4">
-                No se encontraron actividades
+                {t("sinActividadesEncontradas")}
               </p>
             )}
           </div>
@@ -486,13 +495,13 @@ function EjercicioCard({
           {/* Pagination */}
           {/* Crear ejercicio personalizado — dentro del panel */}
           <div className="mx-4 my-3 rounded-xl border border-dashed border-primary/30 bg-card p-3">
-            <p className="text-xs font-medium text-primary mb-2">¿No encuentras tu ejercicio? Créalo:</p>
+            <p className="text-xs font-medium text-primary mb-2">{t("noEncuentrasEjercicio")}</p>
             <div className="flex flex-wrap items-end gap-2">
               <div className="flex-1 min-w-[140px]">
-                <label className="text-[10px] text-muted-foreground">Nombre *</label>
+                <label className="text-[10px] text-muted-foreground">{t("nombreObligatorio")}</label>
                 <input
                   type="text"
-                  placeholder="Ej: Padel adaptado..."
+                  placeholder={t("customPlaceholder")}
                   value={customNombre}
                   onChange={(e) => setCustomNombre(e.target.value)}
                   maxLength={100}
@@ -500,7 +509,7 @@ function EjercicioCard({
                 />
               </div>
               <div className="w-20">
-                <label className="text-[10px] text-muted-foreground">MET *</label>
+                <label className="text-[10px] text-muted-foreground">{t("metObligatorio")}</label>
                 <input
                   type="number" inputMode="decimal"
                   step="0.1"
@@ -519,14 +528,14 @@ function EjercicioCard({
                   const met = parseFloat(customMet);
                   if (!nombre || isNaN(met) || met < 1) return;
                   if (ejercicios.some((e) => e.nombre === nombre)) return;
-                  addEjercicio({ nombre, met });
+                  addEjercicio({ nombreKey: nombre, nombre, met });
                   setCustomNombre("");
                   setCustomMet("");
                 }}
                 disabled={!customNombre.trim() || !customMet}
                 className="px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-40"
               >
-                Añadir
+                {t("anadir")}
               </button>
             </div>
           </div>
@@ -562,12 +571,11 @@ function EjercicioCard({
         <div className="mt-4 flex flex-wrap gap-2">
           <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary rounded-full px-3 py-1 text-sm">
             <Clock className="w-3.5 h-3.5" />
-            Tiempo promedio de actividad diaria:{" "}
-            {Math.round(totalMinutosDiarios)} minutos
+            {t("tiempoPromedioActividad", { min: Math.round(totalMinutosDiarios) })}
           </span>
           <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary rounded-full px-3 py-1 text-sm">
             <Flame className="w-3.5 h-3.5" />
-            Promedio energetico diario: {Math.round(totalKcalDiarias)} kcal/dia
+            {t("promedioEnergeticoDiario", { kcal: Math.round(totalKcalDiarias) })}
           </span>
         </div>
       )}
@@ -586,13 +594,14 @@ function AlimentosEvitarCard({
   onChange: (v: string[]) => void;
   saving: boolean;
 }) {
+  const t = useTranslations("patients.recomendaciones");
   const [inputValue, setInputValue] = useState("");
 
   const addItem = (value: string) => {
     const trimmed = value.trim();
     if (!trimmed) return;
     if (items.some((i) => i.toLowerCase() === trimmed.toLowerCase())) {
-      toast.info("Este alimento ya esta en la lista");
+      toast.info(t("alimentoYaEnLista"));
       return;
     }
     onChange([...items, trimmed]);
@@ -604,7 +613,7 @@ function AlimentosEvitarCard({
   };
 
   const suggestionsLeft = SUGERENCIAS_ALIMENTOS_EVITAR.filter(
-    (s) => !items.some((i) => i.toLowerCase() === s.toLowerCase())
+    (s) => !items.some((i) => i.toLowerCase() === s.label.toLowerCase())
   );
 
   return (
@@ -612,7 +621,7 @@ function AlimentosEvitarCard({
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-base font-semibold flex items-center gap-2">
           <ShieldBan className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-          Alimentos a evitar
+          {t("alimentosEvitar")}
         </h2>
         <SaveIndicator saving={saving} />
       </div>
@@ -629,7 +638,7 @@ function AlimentosEvitarCard({
               addItem(inputValue);
             }
           }}
-          placeholder="Escribir alimento a evitar..."
+          placeholder={t("escribirAlimentoEvitar")}
           className="flex-1 px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
         />
         <button
@@ -665,16 +674,16 @@ function AlimentosEvitarCard({
       {/* Suggestions */}
       {suggestionsLeft.length > 0 && (
         <div>
-          <p className="text-xs text-muted-foreground mb-2">Sugerencias:</p>
+          <p className="text-xs text-muted-foreground mb-2">{t("sugerencias")}</p>
           <div className="flex flex-wrap gap-1.5">
             {suggestionsLeft.map((sug) => (
               <button
-                key={sug}
+                key={sug.key}
                 type="button"
-                onClick={() => addItem(sug)}
+                onClick={() => addItem(sug.label)}
                 className="text-xs px-2.5 py-1 rounded-full border border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-colors"
               >
-                + {sug}
+                + {sug.label}
               </button>
             ))}
           </div>
@@ -697,6 +706,7 @@ function OtrasRecomendacionesCard({
   onBlur: (v: string) => void;
   saving: boolean;
 }) {
+  const t = useTranslations("patients.recomendaciones");
   const [local, setLocal] = useState(text);
   const initializedRef = useRef(false);
 
@@ -715,13 +725,12 @@ function OtrasRecomendacionesCard({
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-base font-semibold flex items-center gap-2">
           <MessageSquareText className="w-5 h-5 text-teal-500" />
-          Otras recomendaciones
+          {t("otrasRecomendaciones")}
         </h2>
         <SaveIndicator saving={saving} />
       </div>
       <p className="text-xs text-muted-foreground mb-3">
-        Escribe recomendaciones personalizadas para el paciente. Se guardan
-        automaticamente.
+        {t("escribirRecomendacionesDetalle")}
       </p>
       <textarea
         value={local}
@@ -732,7 +741,7 @@ function OtrasRecomendacionesCard({
         onBlur={() => onBlur(local)}
         rows={12}
         maxLength={5000}
-        placeholder={`Ej:\nReducir el consumo de sal, utilizando hierbas aromaticas y especias;\nAnalizar las etiquetas de los productos alimenticios;\nComer lentamente, masticando cuidadosamente;\nEvitar comer o picar entre las comidas;\nBeber agua;\nControlar la grasa de las comidas.`}
+        placeholder={t("escribirRecomendaciones")}
         className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-y leading-relaxed"
       />
       <div className="mt-2 text-xs text-muted-foreground text-right">

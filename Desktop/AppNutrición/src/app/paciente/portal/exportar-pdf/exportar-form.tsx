@@ -9,6 +9,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 import { generatePlanPDF, type PlanPDFData, type PDFSectionOptions } from "@/lib/pdf/generate-plan-pdf";
 import type { PdfColorTheme } from "@/lib/pdf/pdf-themes";
 
@@ -56,18 +57,18 @@ const DEFAULT_OPTIONS: PDFOptions = {
   horarioPaciente: false,
 };
 
-const OPTION_LABELS: {
+const OPTION_KEYS: {
   key: keyof PDFOptions;
-  label: string;
-  description: string;
+  labelKey: string;
+  descKey: string;
   disabled?: boolean;
 }[] = [
-  { key: "portada", label: "Portada", description: "Página de presentación con tu nombre", disabled: true },
-  { key: "planSemanal", label: "Plan semanal completo", description: "Tabla resumen con todas las comidas de la semana" },
-  { key: "detalleDiario", label: "Detalle diario de comidas", description: "Desglose de cada día con ingredientes y cantidades" },
-  { key: "recomendaciones", label: "Recomendaciones", description: "Consejos y recomendaciones personalizadas" },
-  { key: "listaCompra", label: "Lista de la compra", description: "Ingredientes agrupados por categoría" },
-  { key: "horarioPaciente", label: "Horario semanal", description: "Tu horario habitual de actividades" },
+  { key: "portada", labelKey: "portada", descKey: "portadaDesc", disabled: true },
+  { key: "planSemanal", labelKey: "planSemanal", descKey: "planSemanalDesc" },
+  { key: "detalleDiario", labelKey: "detalleDiario", descKey: "detalleDiarioDesc" },
+  { key: "recomendaciones", labelKey: "recomendaciones", descKey: "recomendacionesDesc" },
+  { key: "listaCompra", labelKey: "listaCompra", descKey: "listaCompraDesc" },
+  { key: "horarioPaciente", labelKey: "horarioSemanal", descKey: "horarioSemanalDesc" },
 ];
 
 const HORAS = [
@@ -84,13 +85,13 @@ const COLOR_LABELS: Record<string, { bg: string; text: string }> = {
   otro: { bg: "#f3f4f6", text: "#374151" },
 };
 
-function generateHorarioHTML(horario: HorarioEntry[], pacienteNombre: string, brand = "Annonia") {
-  const dias = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
+function generateHorarioHTML(horario: HorarioEntry[], pacienteNombre: string, brand = "Annonia", diasLabels: string[], horarioTitle?: string, planTitle?: string, horaLabel = "Hora") {
+  const dias = diasLabels;
   const horasConDatos = HORAS.filter((h) => horario.some((e) => e.hora === h));
   if (horasConDatos.length === 0) return "";
 
   let tabla = `<table style="width:100%;border-collapse:collapse;font-size:9px;margin-top:12px;">`;
-  tabla += `<tr><th style="background:#16a34a;color:white;padding:6px;">Hora</th>`;
+  tabla += `<tr><th style="background:#16a34a;color:white;padding:6px;">${escapeHtml(horaLabel)}</th>`;
   for (const d of dias) tabla += `<th style="background:#16a34a;color:white;padding:6px;">${d}</th>`;
   tabla += `</tr>`;
   for (const hora of horasConDatos) {
@@ -108,7 +109,9 @@ function generateHorarioHTML(horario: HorarioEntry[], pacienteNombre: string, br
   }
   tabla += `</table>`;
 
-  return `<div class="page"><div class="header"><div><span class="header-name">${escapeHtml(pacienteNombre).toUpperCase()}</span><br><span class="header-sub">PLAN DIETÉTICO SEMANAL</span></div><div class="header-logo">${escapeHtml(brand)}</div></div><div class="section-title">MI HORARIO SEMANAL</div>${tabla}<div class="footer">${escapeHtml(brand)}<div style="color:#c0c8c3;font-size:8px;margin-top:2px;">annonia.com</div></div></div>`;
+  const safePlanTitle = planTitle ?? "PLAN DIETÉTICO SEMANAL";
+  const safeHorarioTitle = horarioTitle ?? "MI HORARIO SEMANAL";
+  return `<div class="page"><div class="header"><div><span class="header-name">${escapeHtml(pacienteNombre).toUpperCase()}</span><br><span class="header-sub">${escapeHtml(safePlanTitle)}</span></div><div class="header-logo">${escapeHtml(brand)}</div></div><div class="section-title">${escapeHtml(safeHorarioTitle)}</div>${tabla}<div class="footer">${escapeHtml(brand)}<div style="color:#c0c8c3;font-size:8px;margin-top:2px;">annonia.com</div></div></div>`;
 }
 
 function toSections(options: PDFOptions): PDFSectionOptions {
@@ -139,6 +142,17 @@ export function ExportarPDFPaciente({
   logoDataUrl,
   clinica,
 }: Props) {
+  const t = useTranslations("patient-portal.exportarPdf");
+  const tEntregables = useTranslations("patients.entregables");
+  const horarioDias = [
+    tEntregables("diaLunes"),
+    tEntregables("diaMartes"),
+    tEntregables("diaMiercoles"),
+    tEntregables("diaJueves"),
+    tEntregables("diaViernes"),
+    tEntregables("diaSabado"),
+    tEntregables("diaDomingo"),
+  ];
   const safeHorario = Array.isArray(horario) ? horario : [];
   const [options, setOptions] = useState<PDFOptions>(() => ({
     ...DEFAULT_OPTIONS,
@@ -147,9 +161,12 @@ export function ExportarPDFPaciente({
   }));
   const [applied, setApplied] = useState<PDFOptions>(options);
 
+  const pdfPlanTitle = t("horarioHtmlSubtitle");
+  const pdfHorarioTitle = t("horarioHtmlTitle");
+  const pdfHoraLabel = t("horaLabel");
   const horarioHtml = useMemo(
-    () => generateHorarioHTML(safeHorario, pacienteNombre, brandName || "Annonia"),
-    [safeHorario, pacienteNombre, brandName]
+    () => generateHorarioHTML(safeHorario, pacienteNombre, brandName || "Annonia", horarioDias, pdfHorarioTitle, pdfPlanTitle, pdfHoraLabel),
+    [safeHorario, pacienteNombre, brandName, horarioDias, pdfHorarioTitle, pdfPlanTitle, pdfHoraLabel]
   );
 
   const previewHtml = useMemo(() => {
@@ -221,16 +238,16 @@ export function ExportarPDFPaciente({
       <div className="rounded-xl border border-border bg-card p-5 lg:order-2">
         <div className="mb-5 pb-5 border-b border-border">
           <label className="block text-sm font-semibold text-foreground mb-2">
-            Plan alimenticio
+            {t("planAlimenticio")}
           </label>
           <div className="w-full px-3 py-2.5 rounded-lg border border-border bg-muted/30 text-sm">
-            {plan.nombre} <span className="text-muted-foreground">(actual)</span>
+            {plan.nombre} <span className="text-muted-foreground">{t("planActual")}</span>
           </div>
         </div>
 
-        <h3 className="text-sm font-semibold text-foreground mb-4">Contenido del PDF</h3>
+        <h3 className="text-sm font-semibold text-foreground mb-4">{t("contenidoPdf")}</h3>
         <div className="space-y-1">
-          {OPTION_LABELS.map((opt) => {
+          {OPTION_KEYS.map((opt) => {
             const noData =
               (opt.key === "horarioPaciente" && safeHorario.length === 0) ||
               (opt.key === "recomendaciones" && !recomendaciones);
@@ -251,8 +268,8 @@ export function ExportarPDFPaciente({
                   className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary/20 shrink-0 accent-primary"
                 />
                 <div className="min-w-0">
-                  <span className="text-sm font-medium text-foreground">{opt.label}</span>
-                  <p className="text-xs text-muted-foreground mt-0.5">{opt.description}</p>
+                  <span className="text-sm font-medium text-foreground">{t(`opciones.${opt.labelKey}`)}</span>
+                  <p className="text-xs text-muted-foreground mt-0.5">{t(`opciones.${opt.descKey}`)}</p>
                 </div>
               </label>
             );
@@ -272,7 +289,7 @@ export function ExportarPDFPaciente({
             )}
           >
             <Sparkles className="w-4 h-4" />
-            {hasUnappliedChanges ? "Generar vista previa" : "Vista previa actualizada"}
+            {hasUnappliedChanges ? t("generarVistaPrevia") : t("vistaPreviaActualizada")}
           </button>
           <button
             type="button"
@@ -280,7 +297,7 @@ export function ExportarPDFPaciente({
             className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 text-white hover:bg-green-700 px-4 py-2.5 text-sm font-semibold transition-colors"
           >
             <Download className="w-4 h-4" />
-            Descargar PDF
+            {t("descargarPdf")}
           </button>
         </div>
       </div>
@@ -290,7 +307,7 @@ export function ExportarPDFPaciente({
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
             <Eye className="w-4 h-4 text-muted-foreground" />
-            Vista previa
+            {t("vistaPrevia")}
           </h3>
         </div>
         <div className="flex-1 flex flex-col items-center">
@@ -325,7 +342,7 @@ export function ExportarPDFPaciente({
                   <iframe
                     ref={iframeRef}
                     srcDoc={previewHtml}
-                    title="Vista previa del PDF"
+                    title={t("vistaPreviaTitle")}
                     className="border-0 block"
                     sandbox="allow-same-origin"
                     scrolling="no"

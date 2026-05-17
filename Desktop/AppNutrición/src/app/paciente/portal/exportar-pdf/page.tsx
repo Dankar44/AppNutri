@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { FileDown } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { getCurrentPaciente } from "@/lib/patient-auth";
 import { prisma } from "@/lib/prisma";
 import { capitalizarNombre } from "@/lib/utils";
@@ -8,6 +9,7 @@ import { PageHeader } from "@/components/page-header";
 import { getTheme } from "@/lib/pdf/pdf-themes";
 
 export default async function ExportarPDFPage() {
+  const t = await getTranslations("patient-portal.exportarPdf");
   const session = await getCurrentPaciente();
   if (!session) redirect("/paciente/login");
 
@@ -73,15 +75,15 @@ export default async function ExportarPDFPage() {
     <div>
       <PageHeader
         icon={FileDown}
-        title="Generar PDF"
-        subtitle="Elige qué incluir en tu documento personalizado"
+        title={t("title")}
+        subtitle={t("subtitle")}
       />
 
       {!plan ? (
         <div className="bg-card rounded-xl border border-border p-12 text-center">
           <FileDown className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="font-medium text-lg mb-1">Sin plan activo</h3>
-          <p className="text-muted-foreground">Necesitas un plan alimenticio para generar el PDF.</p>
+          <h3 className="font-medium text-lg mb-1">{t("sinPlan.title")}</h3>
+          <p className="text-muted-foreground">{t("sinPlan.description")}</p>
         </div>
       ) : (
         <ExportarPDFPaciente

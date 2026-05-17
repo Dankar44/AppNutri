@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
 import { revalidatePath } from "next/cache";
 import type { FichaSidebarData } from "@/lib/ficha-sidebar-types";
+import { getTranslations } from "next-intl/server";
 
 export async function getFichaSidebar(pacienteId: string): Promise<FichaSidebarData> {
   const dietista = await getCurrentDietista();
@@ -23,8 +24,9 @@ export async function guardarFichaSidebar(
   pacienteId: string,
   data: FichaSidebarData
 ): Promise<void> {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   await prisma.$queryRawUnsafe(

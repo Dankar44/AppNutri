@@ -15,6 +15,7 @@ import {
   FileDown,
 } from "lucide-react";
 import Link from "next/link";
+import { useTranslations, useLocale } from "next-intl";
 import { toast } from "sonner";
 import type { FichaInformacionData, CampoPersonalizadoDefinicion, SeccionAnamnesis } from "@/lib/ficha-informacion-types";
 import {
@@ -142,6 +143,10 @@ export function PacienteFichaInformacionTab({
   camposAnamnesis?: CampoPersonalizadoDefinicion[];
   resumen: PacienteResumen;
 }) {
+  const t = useTranslations("patients.informacion");
+  const tExtra = useTranslations("patients.informacionExtra");
+  const tPdf = useTranslations();
+  const locale = useLocale();
   const [data, setData] = useState(() => mergeInitial(initialFicha, resumen));
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
   const [showEnviarModal, setShowEnviarModal] = useState(false);
@@ -170,7 +175,7 @@ export function PacienteFichaInformacionTab({
           setSaveStatus("unsaved");
         }
       } catch {
-        toast.error("No se pudo guardar");
+        toast.error(tExtra("noSePudoGuardar"));
         setSaveStatus("unsaved");
       } finally {
         savingRef.current = false;
@@ -254,7 +259,7 @@ export function PacienteFichaInformacionTab({
 
   async function handleEnviarCuestionario() {
     if (!pacienteEmail) {
-      toast.error("El paciente no tiene email registrado");
+      toast.error(t("sinEmailParaCuestionario"));
       return;
     }
     // Guardar primero si hay cambios pendientes
@@ -265,15 +270,15 @@ export function PacienteFichaInformacionTab({
     try {
       const result = await enviarCuestionarioPaciente(pacienteId, data);
       if (result.ok) {
-        toast.success("Cuestionario enviado", {
-          description: `Se ha enviado a ${pacienteEmail}`,
+        toast.success(t("cuestionarioEnviado"), {
+          description: t("cuestionarioEnviadoA", { email: pacienteEmail }),
         });
         setShowEnviarModal(false);
       } else {
-        toast.error(result.error || "No se pudo enviar");
+        toast.error(result.error || tExtra("noSePudoEnviar"));
       }
     } catch {
-      toast.error("Error al enviar el cuestionario");
+      toast.error(t("errorEnviarCuestionario"));
     } finally {
       setEnviando(false);
     }
@@ -285,7 +290,7 @@ export function PacienteFichaInformacionTab({
     }
     const branding = await getBrandingDietista();
     if (!branding) {
-      toast.error("No se pudo obtener el branding");
+      toast.error(tExtra("noSePudoObtenerBranding"));
       return;
     }
     const theme = getTheme(branding.temaPdf, branding.colorPrimarioPdf);
@@ -302,10 +307,11 @@ export function PacienteFichaInformacionTab({
       theme,
       logoUrl: branding.pdfLogoUrl,
       brandName: branding.marcaPdf,
-    });
+      locale,
+    }, tPdf);
     const ventana = window.open("", "_blank");
     if (!ventana) {
-      toast.error("Permite las ventanas emergentes para exportar el PDF");
+      toast.error(tExtra("permiteVentanasEmergentes"));
       return;
     }
     ventana.document.write(html);
@@ -325,7 +331,7 @@ export function PacienteFichaInformacionTab({
             type="button"
             onClick={() => {
               if (!pacienteEmail) {
-                toast.error("Registra un email para este paciente antes de enviar");
+                toast.error(tExtra("registraEmailAntes"));
                 return;
               }
               setShowEnviarModal(true);
@@ -333,7 +339,7 @@ export function PacienteFichaInformacionTab({
             className="inline-flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors w-fit"
           >
             <ClipboardList className="w-4 h-4" />
-            Enviar cuestionario
+            {t("enviarCuestionario")}
           </button>
           <button
             type="button"
@@ -341,7 +347,7 @@ export function PacienteFichaInformacionTab({
             className="inline-flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors w-fit"
           >
             <FileDown className="w-4 h-4" />
-            Exportar PDF
+            {t("exportarPdf")}
           </button>
         </div>
         <div className="flex items-center gap-3">
@@ -351,7 +357,7 @@ export function PacienteFichaInformacionTab({
             onClick={guardarManual}
             disabled={saveStatus === "saving"}
             className="p-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50"
-            title="Guardar ahora"
+            title={t("guardarAhora")}
           >
             <Save className="w-4 h-4" />
           </button>
@@ -360,9 +366,9 @@ export function PacienteFichaInformacionTab({
 
       <div className="space-y-1">
         {/* ── Informaciones de consulta ── */}
-        <FichaAccordion title="Informaciones de consulta" icon={Calendar}>
+        <FichaAccordion title={t("informacionesConsulta")} icon={Calendar}>
           <div>
-            <FichaLabel>Motivo de consulta</FichaLabel>
+            <FichaLabel>{t("motivoConsulta")}</FichaLabel>
             <FichaTextarea
               value={c.motivo ?? ""}
               onChange={(v) => setField("consulta", "motivo", v)}
@@ -370,7 +376,7 @@ export function PacienteFichaInformacionTab({
             />
           </div>
           <div>
-            <FichaLabel>Expectativas</FichaLabel>
+            <FichaLabel>{t("expectativas")}</FichaLabel>
             <FichaTextarea
               value={c.expectativas ?? ""}
               onChange={(v) => setField("consulta", "expectativas", v)}
@@ -378,7 +384,7 @@ export function PacienteFichaInformacionTab({
             />
           </div>
           <div>
-            <FichaLabel>Objetivos clínicos</FichaLabel>
+            <FichaLabel>{t("objetivosClinicos")}</FichaLabel>
             <FichaSelect
               value={c.objetivosClinicos || OPCION_VACIA}
               onChange={(v) => setField("consulta", "objetivosClinicos", v)}
@@ -392,13 +398,13 @@ export function PacienteFichaInformacionTab({
                     setField("consulta", "objetivosClinicosDetalle", v)
                   }
                   rows={2}
-                  placeholder="Detalla el objetivo..."
+                  placeholder={t("detallaObjetivo")}
                 />
               </div>
             )}
           </div>
           <div>
-            <FichaLabel>Otras informaciones</FichaLabel>
+            <FichaLabel>{t("otrasInformaciones")}</FichaLabel>
             <FichaTextarea
               value={c.otras ?? ""}
               onChange={(v) => setField("consulta", "otras", v)}
@@ -409,9 +415,9 @@ export function PacienteFichaInformacionTab({
         </FichaAccordion>
 
         {/* ── Historia personal y social ── */}
-        <FichaAccordion title="Historia personal y social" icon={User}>
+        <FichaAccordion title={t("historiaPersonalSocial")} icon={User}>
           <div>
-            <FichaLabel>Función intestinal</FichaLabel>
+            <FichaLabel>{t("funcionIntestinal")}</FichaLabel>
             <FichaSelect
               value={ps.funcionIntestinal || OPCION_VACIA}
               onChange={(v) => setField("personalSocial", "funcionIntestinal", v)}
@@ -425,13 +431,13 @@ export function PacienteFichaInformacionTab({
                     setField("personalSocial", "funcionIntestinalDetalle", v)
                   }
                   rows={2}
-                  placeholder="Especifica..."
+                  placeholder={t("especifica")}
                 />
               </div>
             )}
           </div>
           <div>
-            <FichaLabel>Calidad del sueño</FichaLabel>
+            <FichaLabel>{t("calidadSueno")}</FichaLabel>
             <FichaSelect
               value={ps.calidadSueno || OPCION_VACIA}
               onChange={(v) => setField("personalSocial", "calidadSueno", v)}
@@ -445,13 +451,13 @@ export function PacienteFichaInformacionTab({
                     setField("personalSocial", "calidadSuenoDetalle", v)
                   }
                   rows={2}
-                  placeholder="Describe el problema de sueño..."
+                  placeholder={t("describeProblemaSueno")}
                 />
               </div>
             )}
           </div>
           <div>
-            <FichaLabel>Fumador</FichaLabel>
+            <FichaLabel>{t("fumador")}</FichaLabel>
             <FichaSelect
               value={ps.fumador || OPCION_VACIA}
               onChange={(v) => setField("personalSocial", "fumador", v)}
@@ -463,13 +469,13 @@ export function PacienteFichaInformacionTab({
                   value={ps.fumadorDetalle ?? ""}
                   onChange={(v) => setField("personalSocial", "fumadorDetalle", v)}
                   rows={2}
-                  placeholder="Frecuencia, cantidad..."
+                  placeholder={t("frecuenciaCantidad")}
                 />
               </div>
             )}
           </div>
           <div>
-            <FichaLabel>Bebe alcohol</FichaLabel>
+            <FichaLabel>{t("bebeAlcohol")}</FichaLabel>
             <FichaSelect
               value={ps.alcohol || OPCION_VACIA}
               onChange={(v) => setField("personalSocial", "alcohol", v)}
@@ -481,13 +487,13 @@ export function PacienteFichaInformacionTab({
                   value={ps.alcoholDetalle ?? ""}
                   onChange={(v) => setField("personalSocial", "alcoholDetalle", v)}
                   rows={2}
-                  placeholder="Frecuencia, tipo de bebida..."
+                  placeholder={tExtra("frecuenciaTipoBebida")}
                 />
               </div>
             )}
           </div>
           <div>
-            <FichaLabel>Estado civil</FichaLabel>
+            <FichaLabel>{t("estadoCivil")}</FichaLabel>
             <FichaSelect
               value={ps.estadoCivil || OPCION_VACIA}
               onChange={(v) => setField("personalSocial", "estadoCivil", v)}
@@ -501,13 +507,13 @@ export function PacienteFichaInformacionTab({
                     setField("personalSocial", "estadoCivilDetalle", v)
                   }
                   rows={2}
-                  placeholder="Especifica..."
+                  placeholder={t("especifica")}
                 />
               </div>
             )}
           </div>
           <div>
-            <FichaLabel>Actividad física</FichaLabel>
+            <FichaLabel>{t("actividadFisica")}</FichaLabel>
             <FichaTextarea
               value={ps.actividadFisica ?? ""}
               onChange={(v) => setField("personalSocial", "actividadFisica", v)}
@@ -515,21 +521,21 @@ export function PacienteFichaInformacionTab({
             />
           </div>
           <div>
-            <FichaLabel>Raza / etnia</FichaLabel>
+            <FichaLabel>{t("razaEtnia")}</FichaLabel>
             <FichaSelect
               value={ps.raza || OPCION_VACIA}
               onChange={(v) => setField("personalSocial", "raza", v)}
               options={[
-                { value: OPCION_VACIA, label: "Selecciona una opción" },
-                { value: "caucasica", label: "Caucásica" },
-                { value: "hispana", label: "Hispana / Latina" },
-                { value: "afrodescendiente", label: "Afrodescendiente" },
-                { value: "asiatica", label: "Asiática" },
-                { value: "arabe", label: "Árabe / Norteafricana" },
-                { value: "indigena", label: "Indígena" },
-                { value: "mestiza", label: "Mestiza" },
-                { value: "no_indica", label: "Prefiere no indicar" },
-                { value: "otra", label: "Otra" },
+                { value: OPCION_VACIA, label: t("seleccionaOpcion") },
+                { value: "caucasica", label: t("razaCaucasica") },
+                { value: "hispana", label: t("razaHispana") },
+                { value: "afrodescendiente", label: t("razaAfrodescendiente") },
+                { value: "asiatica", label: t("razaAsiatica") },
+                { value: "arabe", label: t("razaArabe") },
+                { value: "indigena", label: t("razaIndigena") },
+                { value: "mestiza", label: t("razaMestiza") },
+                { value: "no_indica", label: t("razaOtra") },
+                { value: "otra", label: t("razaOtra") },
               ]}
             />
             {ps.raza === "otra" && (
@@ -537,13 +543,13 @@ export function PacienteFichaInformacionTab({
                 <FichaInput
                   value={ps.razaDetalle ?? ""}
                   onChange={(v) => setField("personalSocial", "razaDetalle", v)}
-                  placeholder="Especifica..."
+                  placeholder={t("especifica")}
                 />
               </div>
             )}
           </div>
           <div>
-            <FichaLabel>Otras informaciones</FichaLabel>
+            <FichaLabel>{t("otrasInformaciones")}</FichaLabel>
             <FichaTextarea
               value={ps.otrasPersonal ?? ""}
               onChange={(v) => setField("personalSocial", "otrasPersonal", v)}
@@ -554,20 +560,20 @@ export function PacienteFichaInformacionTab({
         </FichaAccordion>
 
         {/* ── Historia clínica ── */}
-        <FichaAccordion title="Historia clínica" icon={Link2}>
+        <FichaAccordion title={tExtra("historiaClinica")} icon={Link2}>
           <div className="rounded-lg bg-muted/40 border border-border/60 p-3 mb-3 text-sm">
             <p className="font-medium text-foreground mb-2">
-              Registrado en la ficha del paciente
+              {tExtra("registradoFicha")}
             </p>
-            <TagLine label="Patologías" tags={resumen.patologias} />
-            <TagLine label="Medicación" tags={resumen.medicamentos} />
+            <TagLine label={tExtra("patologias")} tags={resumen.patologias} />
+            <TagLine label={tExtra("medicacion")} tags={resumen.medicamentos} />
             <p className="text-xs text-muted-foreground mt-2">
-              Para editar listas completas usa{" "}
-              <span className="font-medium text-foreground">Editar paciente</span>.
+              {tExtra("editarListasCompletas")}{" "}
+              <span className="font-medium text-foreground">{tExtra("editarPaciente")}</span>.
             </p>
           </div>
           <div>
-            <FichaLabel>Detalle patologías / evolución</FichaLabel>
+            <FichaLabel>{tExtra("detallePatologias")}</FichaLabel>
             <FichaTextarea
               value={cl.patologiasDetalle ?? ""}
               onChange={(v) => setField("clinica", "patologiasDetalle", v)}
@@ -575,42 +581,42 @@ export function PacienteFichaInformacionTab({
             />
           </div>
           <div>
-            <FichaLabel>Medicación (texto libre)</FichaLabel>
+            <FichaLabel>{tExtra("medicacionTextoLibre")}</FichaLabel>
             <FichaTextarea
               value={cl.medicacion ?? ""}
               onChange={(v) => setField("clinica", "medicacion", v)}
               rows={2}
-              placeholder="Ninguna"
+              placeholder={tExtra("ninguna")}
             />
           </div>
           <FichaTwoCol
             left={
               <div>
-                <FichaLabel>Antecedentes personales</FichaLabel>
+                <FichaLabel>{tExtra("antecedentesPersonales")}</FichaLabel>
                 <FichaInput
                   value={cl.antecedentesPersonales ?? ""}
                   onChange={(v) =>
                     setField("clinica", "antecedentesPersonales", v)
                   }
-                  placeholder="Ninguno"
+                  placeholder={tExtra("ninguno")}
                 />
               </div>
             }
             right={
               <div>
-                <FichaLabel>Antecedentes familiares</FichaLabel>
+                <FichaLabel>{tExtra("antecedentesFamiliares")}</FichaLabel>
                 <FichaInput
                   value={cl.antecedentesFamiliares ?? ""}
                   onChange={(v) =>
                     setField("clinica", "antecedentesFamiliares", v)
                   }
-                  placeholder="Ninguno"
+                  placeholder={tExtra("ninguno")}
                 />
               </div>
             }
           />
           <div>
-            <FichaLabel>Otras informaciones</FichaLabel>
+            <FichaLabel>{t("otrasInformaciones")}</FichaLabel>
             <FichaTextarea
               value={cl.otrasClinicas ?? ""}
               onChange={(v) => setField("clinica", "otrasClinicas", v)}
@@ -621,15 +627,15 @@ export function PacienteFichaInformacionTab({
         </FichaAccordion>
 
         {/* ── Historia alimentaria ── */}
-        <FichaAccordion title="Historia alimentaria" icon={UtensilsCrossed}>
+        <FichaAccordion title={tExtra("historiaAlimentaria")} icon={UtensilsCrossed}>
           <div className="rounded-lg bg-muted/40 border border-border/60 p-3 mb-3 text-sm">
-            <TagLine label="Alergias" tags={resumen.alergias} />
-            <TagLine label="Intolerancias" tags={resumen.intolerancias} />
+            <TagLine label={tExtra("alergias")} tags={resumen.alergias} />
+            <TagLine label={tExtra("intolerancias")} tags={resumen.intolerancias} />
           </div>
           <FichaTwoCol
             left={
               <div>
-                <FichaLabel>Hora habitual para levantarse</FichaLabel>
+                <FichaLabel>{tExtra("horaLevantarse")}</FichaLabel>
                 <FichaInput
                   value={al.horaLevantarse ?? ""}
                   onChange={(v) => setField("alimentaria", "horaLevantarse", v)}
@@ -639,7 +645,7 @@ export function PacienteFichaInformacionTab({
             }
             right={
               <div>
-                <FichaLabel>Hora habitual para acostarse</FichaLabel>
+                <FichaLabel>{tExtra("horaAcostarse")}</FichaLabel>
                 <FichaInput
                   value={al.horaAcostarse ?? ""}
                   onChange={(v) => setField("alimentaria", "horaAcostarse", v)}
@@ -649,7 +655,7 @@ export function PacienteFichaInformacionTab({
             }
           />
           <div>
-            <FichaLabel>Tipos de dieta</FichaLabel>
+            <FichaLabel>{tExtra("tiposDieta")}</FichaLabel>
             <FichaSelect
               value={al.tiposDieta || OPCION_VACIA}
               onChange={(v) => setField("alimentaria", "tiposDieta", v)}
@@ -661,37 +667,37 @@ export function PacienteFichaInformacionTab({
                   value={al.tiposDietaDetalle ?? ""}
                   onChange={(v) => setField("alimentaria", "tiposDietaDetalle", v)}
                   rows={2}
-                  placeholder="Describe el tipo de dieta..."
+                  placeholder={tExtra("describeTipoDieta")}
                 />
               </div>
             )}
           </div>
           <div>
-            <FichaLabel>Alimentos favoritos</FichaLabel>
+            <FichaLabel>{tExtra("alimentosFavoritos")}</FichaLabel>
             <FichaInput
               value={al.alimentosFavoritos ?? ""}
               onChange={(v) => setField("alimentaria", "alimentosFavoritos", v)}
-              placeholder="Ninguno"
+              placeholder={tExtra("ninguno")}
             />
           </div>
           <div>
-            <FichaLabel>Alimentos rechazados</FichaLabel>
+            <FichaLabel>{tExtra("alimentosRechazados")}</FichaLabel>
             <FichaInput
               value={al.alimentosRechazados ?? ""}
               onChange={(v) =>
                 setField("alimentaria", "alimentosRechazados", v)
               }
-              placeholder="Ninguno"
+              placeholder={tExtra("ninguno")}
             />
           </div>
           <div>
-            <FichaLabel>Alergias</FichaLabel>
+            <FichaLabel>{tExtra("alergias")}</FichaLabel>
             <FichaSelect
               value={al.alergiasResumen || OPCION_VACIA}
               onChange={(v) => setField("alimentaria", "alergiasResumen", v)}
               options={[
-                { value: OPCION_VACIA, label: "Ninguna" },
-                { value: "si", label: "Sí (detallar)" },
+                { value: OPCION_VACIA, label: tExtra("ninguna") },
+                { value: "si", label: tExtra("siDetallar") },
               ]}
             />
             {al.alergiasResumen === "si" && (
@@ -700,19 +706,19 @@ export function PacienteFichaInformacionTab({
                   value={al.alergiasDetalle ?? ""}
                   onChange={(v) => setField("alimentaria", "alergiasDetalle", v)}
                   rows={2}
-                  placeholder="Detalla las alergias..."
+                  placeholder={tExtra("detallaAlergias")}
                 />
               </div>
             )}
           </div>
           <div>
-            <FichaLabel>Intolerancias alimentarias</FichaLabel>
+            <FichaLabel>{tExtra("intoleranciasAlimentarias")}</FichaLabel>
             <FichaSelect
               value={al.intoleranciasResumen || OPCION_VACIA}
               onChange={(v) => setField("alimentaria", "intoleranciasResumen", v)}
               options={[
-                { value: OPCION_VACIA, label: "Ninguna" },
-                { value: "si", label: "Sí (detallar)" },
+                { value: OPCION_VACIA, label: tExtra("ninguna") },
+                { value: "si", label: tExtra("siDetallar") },
               ]}
             />
             {al.intoleranciasResumen === "si" && (
@@ -723,19 +729,19 @@ export function PacienteFichaInformacionTab({
                     setField("alimentaria", "intoleranciasDetalle", v)
                   }
                   rows={2}
-                  placeholder="Detalla las intolerancias..."
+                  placeholder={tExtra("detallaIntolerancias")}
                 />
               </div>
             )}
           </div>
           <div>
-            <FichaLabel>Deficiencias nutricionales</FichaLabel>
+            <FichaLabel>{tExtra("deficienciasNutricionales")}</FichaLabel>
             <FichaSelect
               value={al.deficiencias || OPCION_VACIA}
               onChange={(v) => setField("alimentaria", "deficiencias", v)}
               options={[
-                { value: OPCION_VACIA, label: "Ninguna" },
-                { value: "si", label: "Sí (detallar)" },
+                { value: OPCION_VACIA, label: tExtra("ninguna") },
+                { value: "si", label: tExtra("siDetallar") },
               ]}
             />
             {al.deficiencias === "si" && (
@@ -746,13 +752,13 @@ export function PacienteFichaInformacionTab({
                     setField("alimentaria", "deficienciasDetalle", v)
                   }
                   rows={2}
-                  placeholder="Detalla las deficiencias..."
+                  placeholder={tExtra("detallaDeficiencias")}
                 />
               </div>
             )}
           </div>
           <div>
-            <FichaLabel>Ingesta de agua</FichaLabel>
+            <FichaLabel>{tExtra("ingestaAgua")}</FichaLabel>
             <FichaSelect
               value={al.ingestaAgua || OPCION_VACIA}
               onChange={(v) => setField("alimentaria", "ingestaAgua", v)}
@@ -760,7 +766,7 @@ export function PacienteFichaInformacionTab({
             />
           </div>
           <div>
-            <FichaLabel>Otras informaciones</FichaLabel>
+            <FichaLabel>{t("otrasInformaciones")}</FichaLabel>
             <FichaTextarea
               value={al.otrasAlimentaria ?? ""}
               onChange={(v) => setField("alimentaria", "otrasAlimentaria", v)}
@@ -771,7 +777,7 @@ export function PacienteFichaInformacionTab({
         </FichaAccordion>
 
         {camposPorSeccion.personalizado.length > 0 && (
-          <FichaAccordion title="Campos personalizados" icon={ClipboardList}>
+          <FichaAccordion title={tExtra("camposPersonalizados")} icon={ClipboardList}>
             <CamposCustomRender campos={camposPorSeccion.personalizado} valores={cp} onChange={setCustomField} />
           </FichaAccordion>
         )}
@@ -783,23 +789,22 @@ export function PacienteFichaInformacionTab({
         className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors px-1 py-2"
       >
         <Settings className="w-4 h-4" />
-        Personalizar campos de la anamnesis
+        {tExtra("personalizarCamposAnamnesis")}
       </Link>
 
 
       {showEnviarModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-background rounded-xl border border-border shadow-lg max-w-md w-full p-6 space-y-4">
-            <h3 className="text-lg font-semibold">Enviar cuestionario</h3>
+            <h3 className="text-lg font-semibold">{tExtra("enviarCuestionarioTitulo")}</h3>
             <p className="text-sm text-muted-foreground">
-              Se enviará un resumen del cuestionario al correo del paciente:
+              {tExtra("enviarResumenCuestionario")}
             </p>
             <p className="text-sm font-medium bg-muted rounded-lg px-3 py-2">
               {pacienteEmail}
             </p>
             <p className="text-xs text-muted-foreground">
-              El paciente podrá revisar los datos y contactarte si necesita
-              corregir algo.
+              {tExtra("pacienteRevisarDatos")}
             </p>
             <div className="flex justify-end gap-2 pt-2">
               <button
@@ -808,7 +813,7 @@ export function PacienteFichaInformacionTab({
                 disabled={enviando}
                 className="px-4 py-2 text-sm rounded-lg border border-border hover:bg-muted transition-colors"
               >
-                Cancelar
+                {tExtra("cancelar")}
               </button>
               <button
                 type="button"
@@ -817,7 +822,7 @@ export function PacienteFichaInformacionTab({
                 className="px-4 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 inline-flex items-center gap-2"
               >
                 {enviando && <Loader2 className="w-4 h-4 animate-spin" />}
-                {enviando ? "Enviando..." : "Enviar"}
+                {enviando ? tExtra("enviando") : tExtra("enviar")}
               </button>
             </div>
           </div>
@@ -836,6 +841,7 @@ function CamposCustomRender({
   valores: Record<string, string>;
   onChange: (id: string, value: string) => void;
 }) {
+  const tExtra = useTranslations("patients.informacionExtra");
   if (campos.length === 0) return null;
   return (
     <>
@@ -853,7 +859,7 @@ function CamposCustomRender({
               value={valores[campo.id] || OPCION_VACIA}
               onChange={(v) => onChange(campo.id, v)}
               options={[
-                { value: OPCION_VACIA, label: "Selecciona una opción" },
+                { value: OPCION_VACIA, label: tExtra("seleccionaOpcion") },
                 ...campo.opciones.map((o) => ({ value: o, label: o })),
               ]}
             />
@@ -870,10 +876,11 @@ function CamposCustomRender({
 }
 
 function TagLine({ label, tags }: { label: string; tags: string[] }) {
+  const tExtra = useTranslations("patients.informacionExtra");
   if (!tags.length) {
     return (
       <p className="text-muted-foreground">
-        <span className="font-medium text-foreground">{label}:</span> ninguna
+        <span className="font-medium text-foreground">{label}:</span> {tExtra("ninguna").toLowerCase()}
       </p>
     );
   }
@@ -886,11 +893,12 @@ function TagLine({ label, tags }: { label: string; tags: string[] }) {
 }
 
 function SaveStatusBadge({ status }: { status: SaveStatus }) {
+  const tExtra = useTranslations("patients.informacionExtra");
   if (status === "saving") {
     return (
       <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
         <Loader2 className="w-3.5 h-3.5 animate-spin" />
-        Guardando...
+        {tExtra("guardando")}
       </span>
     );
   }
@@ -898,14 +906,14 @@ function SaveStatusBadge({ status }: { status: SaveStatus }) {
     return (
       <span className="inline-flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
         <AlertCircle className="w-3.5 h-3.5" />
-        Sin guardar
+        {tExtra("sinGuardar")}
       </span>
     );
   }
   return (
     <span className="inline-flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
       <Check className="w-3.5 h-3.5" />
-      Guardado
+      {tExtra("guardado")}
     </span>
   );
 }

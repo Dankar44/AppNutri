@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import Link from "next/link";
 import { CheckCircle2, Loader2, ArrowRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { conectarGoogleNutri } from "@/app/actions/google-integracion";
 
 type Props = {
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export function GoogleCalendarSidebar({ integracion }: Props) {
+  const t = useTranslations("agenda.googleCalendarSidebar");
   const [pending, startTransition] = useTransition();
 
   const handleConectar = () => {
@@ -33,7 +35,7 @@ export function GoogleCalendarSidebar({ integracion }: Props) {
             </div>
             {!integracion.sincronizar && (
               <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1">
-                Sincronización pausada
+                {t("syncPaused")}
               </p>
             )}
           </div>
@@ -42,7 +44,7 @@ export function GoogleCalendarSidebar({ integracion }: Props) {
           href="/ajustes"
           className="inline-flex items-center gap-1 mt-3 text-xs font-medium text-primary hover:underline"
         >
-          Gestionar en Ajustes
+          {t("manageInSettings")}
           <ArrowRight className="w-3.5 h-3.5" />
         </Link>
       </div>
@@ -57,7 +59,7 @@ export function GoogleCalendarSidebar({ integracion }: Props) {
             Google Calendar
           </h3>
           <p className="text-sm text-muted-foreground mt-2 leading-snug">
-            Sincroniza tus citas automáticamente con tu calendario de Google.
+            {t("syncDescription")}
           </p>
           <button
             onClick={handleConectar}
@@ -67,7 +69,7 @@ export function GoogleCalendarSidebar({ integracion }: Props) {
             {pending ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : null}
-            {pending ? "Conectando…" : "Conectar con Google →"}
+            {pending ? t("connecting") : t("connectButton")}
           </button>
         </div>
         <div className="shrink-0 rounded-lg bg-primary/10 p-3">

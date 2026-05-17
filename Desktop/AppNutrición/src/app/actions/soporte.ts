@@ -5,6 +5,7 @@ import { getCurrentDietista } from "./auth";
 import { publicarBroadcast } from "@/lib/realtime-publish";
 import { checkRateLimit, LIMITES } from "@/lib/rate-limit";
 import { randomUUID } from "crypto";
+import { getTranslations } from "next-intl/server";
 
 export interface MensajeSoporteData {
   id: string;
@@ -47,8 +48,9 @@ export async function getMensajesSoporte(limit = 100): Promise<MensajeSoporteDat
 }
 
 export async function enviarMensajeSoporte(texto: string): Promise<MensajeSoporteData> {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return { id: "", dietistaId: dietista.id, autor: "DIETISTA", texto: texto.trim().slice(0, 5000), leidoEn: null, createdAt: new Date() };
 
   const rl = checkRateLimit({
@@ -56,11 +58,11 @@ export async function enviarMensajeSoporte(texto: string): Promise<MensajeSoport
     ...LIMITES.enviarMensaje,
   });
   if (!rl.ok) {
-    throw new Error(`Demasiados mensajes. Espera ${rl.retryAfter}s`);
+    throw new Error(t("mensajes.demasiadosMensajes", { retryAfter: rl.retryAfter }));
   }
 
   const textoLimpio = texto.trim().slice(0, 5000);
-  if (!textoLimpio) throw new Error("Mensaje vacío");
+  if (!textoLimpio) throw new Error(t("mensajes.mensajeVacio"));
 
   const id = cuid();
   const rows = await prisma.$queryRawUnsafe<MensajeSoporteData[]>(

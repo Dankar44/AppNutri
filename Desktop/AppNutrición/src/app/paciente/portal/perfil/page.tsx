@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/page-header";
 import { getCurrentPaciente } from "@/lib/patient-auth";
 import { prisma } from "@/lib/prisma";
 import { TourSettings } from "@/components/tour/tour-settings";
+import { getTranslations } from "next-intl/server";
 import { PerfilPacienteForm } from "./perfil-form";
 
 export default async function PerfilPacientePage() {
@@ -22,13 +23,14 @@ export default async function PerfilPacientePage() {
   });
 
   if (!paciente) redirect("/paciente/login");
+  const t = await getTranslations("patient-portal");
 
   return (
     <div className="space-y-8">
       <PageHeader
         icon={User}
-        title="Mi perfil"
-        subtitle="Gestiona tu información personal"
+        title={t("perfil.title")}
+        subtitle={t("perfil.subtitle")}
       />
 
       <PerfilPacienteForm

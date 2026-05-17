@@ -7,6 +7,8 @@ import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
 import { Leaf, Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 export default function LoginPage() {
   return (
@@ -17,6 +19,7 @@ export default function LoginPage() {
 }
 
 function LoginContent() {
+  const t = useTranslations("auth");
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -44,12 +47,12 @@ function LoginContent() {
     });
 
     if (error) {
-      toast.error("Credenciales incorrectas. Inténtalo de nuevo.");
+      toast.error(t("login.errorInvalidCredentials"));
       setLoading(false);
       return;
     }
 
-    toast.success("¡Bienvenido de nuevo!");
+    toast.success(t("login.successWelcome"));
     window.location.href = "/dashboard";
   }
 
@@ -63,7 +66,7 @@ function LoginContent() {
       },
     });
     if (error) {
-      toast.error("No se pudo iniciar sesión con Google.");
+      toast.error(t("login.errorGoogleLogin"));
       setGoogleLoading(false);
     }
   }
@@ -82,29 +85,28 @@ function LoginContent() {
         <div className="absolute inset-0 bg-gradient-to-br from-green-600/90 to-green-700/90" />
         <div className="relative z-10 flex flex-col justify-center px-16 text-white">
           <Leaf className="w-16 h-16 mb-8" />
-          <h1 className="text-5xl font-bold mb-4">Annonia</h1>
+          <h1 className="text-5xl font-bold mb-4">{t("login.heroTitle")}</h1>
           <p className="text-xl text-green-100 max-w-md">
-            La plataforma profesional para dietistas. Crea dietas
-            personalizadas, gestiona tus pacientes y optimiza tu consulta.
+            {t("login.heroSubtitle")}
           </p>
           <div className="mt-12 space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
                 ✓
               </div>
-              <span>Dietas personalizadas en minutos</span>
+              <span>{t("login.heroFeature1")}</span>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
                 ✓
               </div>
-              <span>Base de datos de +2000 alimentos</span>
+              <span>{t("login.heroFeature2")}</span>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
                 ✓
               </div>
-              <span>Seguimiento completo de pacientes</span>
+              <span>{t("login.heroFeature3")}</span>
             </div>
           </div>
         </div>
@@ -118,9 +120,9 @@ function LoginContent() {
             <span className="text-xl sm:text-2xl font-bold">Annonia</span>
           </div>
 
-          <h2 className="text-2xl sm:text-3xl font-bold mb-2">Iniciar sesión</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-2">{t("login.title")}</h2>
           <p className="text-muted-foreground text-sm sm:text-base mb-6 sm:mb-8">
-            Accede a tu cuenta de dietista
+            {t("login.subtitle")}
           </p>
 
           <button
@@ -134,12 +136,12 @@ function LoginContent() {
             ) : (
               <GoogleGlyph />
             )}
-            Continuar con Google
+            {t("login.continueWithGoogle")}
           </button>
 
           <div className="flex items-center gap-3 text-xs text-muted-foreground mb-5">
             <div className="flex-1 h-px bg-border" />
-            o con tu email
+            {t("login.orWithEmail")}
             <div className="flex-1 h-px bg-border" />
           </div>
 
@@ -149,14 +151,14 @@ function LoginContent() {
                 htmlFor="email"
                 className="block text-sm font-medium mb-1.5"
               >
-                Email
+                {t("login.emailLabel")}
               </label>
               <input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="tu@email.com"
+                placeholder={t("login.emailPlaceholder")}
                 required
                 maxLength={200}
                 className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
@@ -168,7 +170,7 @@ function LoginContent() {
                 htmlFor="password"
                 className="block text-sm font-medium mb-1.5"
               >
-                Contraseña
+                {t("login.passwordLabel")}
               </label>
               <div className="relative">
                 <input
@@ -176,7 +178,7 @@ function LoginContent() {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder={t("login.passwordPlaceholder")}
                   required
                   maxLength={128}
                   className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow pr-12"
@@ -201,30 +203,34 @@ function LoginContent() {
               className="w-full bg-primary text-primary-foreground py-2.5 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-              {loading ? "Entrando..." : "Iniciar sesión"}
+              {loading ? t("login.submitting") : t("login.submitButton")}
             </button>
           </form>
 
           <p className="text-center mt-6 text-muted-foreground">
-            ¿No tienes cuenta?{" "}
+            {t("login.noAccountPrompt")}{" "}
             <Link
               href="/registro"
               className="text-primary font-medium hover:underline"
             >
-              Regístrate gratis
+              {t("login.registerLink")}
             </Link>
           </p>
 
           <div className="mt-4 pt-4 border-t border-border text-center">
             <p className="text-xs text-muted-foreground">
-              ¿Eres paciente?{" "}
+              {t("login.patientPrompt")}{" "}
               <Link
                 href="/paciente/login"
                 className="text-primary font-medium hover:underline"
               >
-                Accede al portal de pacientes
+                {t("login.patientLink")}
               </Link>
             </p>
+          </div>
+
+          <div className="mt-6 flex justify-center">
+            <LanguageSwitcher dropDirection="up" />
           </div>
         </div>
       </div>

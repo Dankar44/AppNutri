@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Send, Loader2, Leaf } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useTranslations, useLocale } from "next-intl";
+import { intlTag, type Locale } from "@/i18n/config";
 import { ConversacionesList } from "./conversaciones-list";
 import { ChatView } from "./chat-view";
 import type { ConversacionConPaciente, Mensaje } from "@/app/actions/mensajes";
@@ -37,6 +39,7 @@ export function MensajesClient({
   soporteResumen,
   soporteMensajesIniciales,
 }: Props) {
+  const t = useTranslations("chat");
   const router = useRouter();
   const searchParams = useSearchParams();
   const [mensajes, setMensajes] = useState<Mensaje[]>(mensajesIniciales);
@@ -278,6 +281,7 @@ export function MensajesClient({
                 if (prev.some((existing) => existing.id === m.id)) return prev;
                 return [...prev, m];
               })}
+              t={t}
             />
           </>
         ) : conversacionActiva ? (
@@ -291,7 +295,7 @@ export function MensajesClient({
             />
           </>
         ) : (
-          <EmptyChat />
+          <EmptyChat t={t} />
         )}
       </div>
     </div>
@@ -303,12 +307,16 @@ function SoporteChatView({
   cargando,
   onMensajeEnviado,
   onVolver,
+  t,
 }: {
   mensajes: MensajeSoporteData[];
   cargando: boolean;
   onMensajeEnviado: (m: MensajeSoporteData) => void;
   onVolver?: () => void;
+  t: ReturnType<typeof useTranslations<"chat">>;
 }) {
+  const locale = useLocale() as Locale;
+  const tag = intlTag(locale);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -338,7 +346,7 @@ function SoporteChatView({
       setTexto("");
       onMensajeEnviado(m);
     } catch {
-      toast.error("No se pudo enviar");
+      toast.error(t("soporte.toastSendError"));
     } finally {
       enviandoRef.current = false;
       setEnviando(false);
@@ -354,7 +362,7 @@ function SoporteChatView({
             type="button"
             onClick={onVolver}
             className="md:hidden p-1 -ml-1 rounded-lg hover:bg-muted transition-colors shrink-0"
-            aria-label="Volver"
+            aria-label={t("soporte.backLabel")}
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -363,8 +371,8 @@ function SoporteChatView({
           <Leaf className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold truncate">Soporte Annonia</p>
-          <p className="text-[11px] text-muted-foreground">Equipo Annonia</p>
+          <p className="text-sm font-semibold truncate">{t("soporte.name")}</p>
+          <p className="text-[11px] text-muted-foreground">{t("soporte.team")}</p>
         </div>
       </div>
 
@@ -378,17 +386,16 @@ function SoporteChatView({
           <div className="w-14 h-14 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center mb-4">
             <Leaf className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <p className="text-sm font-semibold mb-1">¡Hola! 👋</p>
+          <p className="text-sm font-semibold mb-1">{t("soporte.greeting")}</p>
           <p className="text-xs text-muted-foreground max-w-xs">
-            Escríbenos cualquier duda, sugerencia o error que encuentres.
-            Estamos aquí para ayudarte.
+            {t("soporte.greetingMessage")}
           </p>
         </div>
       ) : (
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-1 bg-muted/20">
           {mensajes.map((m) => {
             const esMio = m.autor === "DIETISTA";
-            const hora = new Date(m.createdAt).toLocaleTimeString("es-ES", {
+            const hora = new Date(m.createdAt).toLocaleTimeString(tag, {
               hour: "2-digit",
               minute: "2-digit",
               timeZone: "Europe/Madrid",
@@ -432,7 +439,7 @@ function SoporteChatView({
                 handleEnviar();
               }
             }}
-            placeholder="Escribe a soporte..."
+            placeholder={t("soporte.inputPlaceholder")}
             rows={1}
             disabled={enviando}
             className="flex-1 resize-none px-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 max-h-[120px]"
@@ -441,7 +448,7 @@ function SoporteChatView({
             type="submit"
             disabled={enviando || !texto.trim()}
             className="p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
-            aria-label="Enviar mensaje"
+            aria-label={t("soporte.sendLabel")}
           >
             {enviando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
@@ -460,7 +467,7 @@ function normalizarFechas(m: Mensaje): Mensaje {
   };
 }
 
-function EmptyChat() {
+function EmptyChat({ t }: { t: ReturnType<typeof useTranslations<"chat">> }) {
   return (
     <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
       <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
@@ -478,9 +485,9 @@ function EmptyChat() {
           />
         </svg>
       </div>
-      <p className="text-sm font-semibold">Selecciona una conversación</p>
+      <p className="text-sm font-semibold">{t("emptyChat.selectConversation")}</p>
       <p className="text-xs text-muted-foreground mt-1">
-        Elige un paciente de la lista para empezar a chatear
+        {t("emptyChat.selectPatientHint")}
       </p>
     </div>
   );

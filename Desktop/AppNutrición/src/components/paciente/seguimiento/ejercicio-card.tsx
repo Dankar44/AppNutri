@@ -10,9 +10,11 @@ import {
   Plus,
   Search,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
   EJERCICIOS_DB,
   calcularGastoActividad,
+  getEjercicioNombre,
   type EjercicioBase,
 } from "@/lib/ejercicios-db";
 
@@ -45,6 +47,8 @@ export function EjercicioCard({
   onDistancia,
   onKcal,
 }: Props) {
+  const t = useTranslations("patient-portal");
+  const tRoot = useTranslations();
   const peso = pesoKg && pesoKg > 0 ? pesoKg : 70;
   const duracion = minutos > 0 ? minutos : 30;
 
@@ -53,11 +57,15 @@ export function EjercicioCard({
   const [customNombre, setCustomNombre] = useState("");
   const [customMet, setCustomMet] = useState("");
 
+  const displayName = (ej: EjercicioBase) => getEjercicioNombre(ej, tRoot);
+
   const filtrados = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return EJERCICIOS_DB;
-    return EJERCICIOS_DB.filter((e) => e.nombre.toLowerCase().includes(q));
-  }, [search]);
+    return EJERCICIOS_DB.filter((e) =>
+      e.nombre.toLowerCase().includes(q) || getEjercicioNombre(e, tRoot).toLowerCase().includes(q)
+    );
+  }, [search, tRoot]);
 
   const totalPages = Math.max(1, Math.ceil(filtrados.length / EJ_POR_PAGINA));
   const pageSafe = Math.min(page, totalPages - 1);
@@ -103,7 +111,7 @@ export function EjercicioCard({
 
   return (
     <section
-      aria-label="Ejercicio"
+      aria-label={t("seguimiento.ejercicioCard.title")}
       className="rounded-2xl border border-border bg-card overflow-hidden"
     >
       <header className="flex items-center justify-between p-5 pb-3">
@@ -112,9 +120,9 @@ export function EjercicioCard({
             <Dumbbell className="w-5 h-5" strokeWidth={1.75} />
           </span>
           <div>
-            <h2 className="text-base font-semibold">Ejercicio</h2>
+            <h2 className="text-base font-semibold">{t("seguimiento.ejercicioCard.title")}</h2>
             <p className="text-[11px] text-muted-foreground">
-              {ejercicio ? tipo || "Selecciona una actividad" : "¿Te has movido hoy?"}
+              {ejercicio ? tipo || t("seguimiento.ejercicioCard.seleccionaActividad") : t("seguimiento.ejercicioCard.teHasMovido")}
             </p>
           </div>
         </div>
@@ -124,7 +132,7 @@ export function EjercicioCard({
             ejercicio ? "bg-emerald-600" : "bg-muted-foreground/30"
           }`}
           aria-pressed={ejercicio}
-          aria-label={ejercicio ? "Desactivar ejercicio" : "Activar ejercicio"}
+          aria-label={ejercicio ? t("seguimiento.ejercicioCard.desactivarEjercicio") : t("seguimiento.ejercicioCard.activarEjercicio")}
         >
           <span
             className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
@@ -136,30 +144,30 @@ export function EjercicioCard({
 
       {!ejercicio ? (
         <p className="px-5 pb-5 text-sm text-muted-foreground">
-          Activa el toggle si hoy has hecho ejercicio para registrarlo.
+          {t("seguimiento.ejercicioCard.toggleHint")}
         </p>
       ) : (
         <>
           {/* Duración + distancia + kcal */}
           <div className="px-5 pb-3 grid grid-cols-3 gap-3">
             <NumberField
-              label="Duración (min)"
+              label={t("seguimiento.ejercicioCard.duracion")}
               value={minutos}
               onChange={cambiarDuracion}
               max={1440}
               placeholder="45"
             />
             <NumberField
-              label="Distancia (km)"
+              label={t("seguimiento.ejercicioCard.distancia")}
               value={distanciaKm}
               onChange={(v) => onDistancia(Math.min(500, Math.max(0, v)))}
               max={500}
               step={0.1}
-              placeholder="Opc."
+              placeholder={t("seguimiento.ejercicioCard.distanciaPlaceholder")}
             />
             <div>
               <span className="text-xs font-medium text-muted-foreground mb-1 block">
-                Kcal
+                {t("seguimiento.ejercicioCard.kcalLabel")}
               </span>
               <div className="relative">
                 <Flame className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
@@ -172,9 +180,9 @@ export function EjercicioCard({
                   onChange={(e) =>
                     onKcal(Math.min(20000, Math.max(0, Number(e.target.value))))
                   }
-                  placeholder="Auto"
+                  placeholder={t("seguimiento.ejercicioCard.autoPlaceholder")}
                   className="w-full h-9 pl-8 pr-3 rounded-lg border border-border bg-background text-sm font-semibold tabular-nums focus:outline-none focus:ring-1 focus:ring-emerald-500/30"
-                  aria-label="Kcal (editable)"
+                  aria-label={t("seguimiento.ejercicioCard.kcalEditable")}
                 />
               </div>
             </div>
@@ -191,7 +199,7 @@ export function EjercicioCard({
                   setSearch(e.target.value);
                   setPage(0);
                 }}
-                placeholder="Buscar actividad..."
+                placeholder={t("seguimiento.ejercicioCard.buscarActividad")}
                 className="w-full pl-9 pr-3 h-10 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50"
               />
             </div>
@@ -201,7 +209,7 @@ export function EjercicioCard({
           <div className="px-3 pb-3 space-y-2">
             {paginados.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-6">
-                No se encontraron actividades
+                {t("seguimiento.ejercicioCard.sinActividades")}
               </p>
             ) : (
               paginados.map((ej) => {
@@ -219,9 +227,9 @@ export function EjercicioCard({
                     }`}
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold truncate">{ej.nombre}</p>
+                      <p className="text-sm font-semibold truncate">{displayName(ej)}</p>
                       <p className="text-[10px] text-muted-foreground">
-                        Compendio de actividades físicas
+                        {t("seguimiento.ejercicioCard.compendioParagraph")}
                       </p>
                     </div>
                     <div className="hidden sm:flex items-center gap-4 shrink-0">
@@ -255,7 +263,7 @@ export function EjercicioCard({
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={pageSafe === 0}
                 className="p-1.5 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                aria-label="Página anterior"
+                aria-label={t("seguimiento.ejercicioCard.prevPage")}
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -267,7 +275,7 @@ export function EjercicioCard({
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={pageSafe >= totalPages - 1}
                 className="p-1.5 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                aria-label="Página siguiente"
+                aria-label={t("seguimiento.ejercicioCard.nextPage")}
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -277,16 +285,16 @@ export function EjercicioCard({
           {/* Custom */}
           <div className="mx-4 mb-4 rounded-xl border border-dashed border-border bg-muted/30 p-3">
             <p className="text-[11px] font-medium text-muted-foreground mb-2">
-              ¿No encuentras tu ejercicio? Créalo:
+              {t("seguimiento.ejercicioCard.customTitle")}
             </p>
             <div className="flex flex-wrap items-end gap-2">
               <div className="flex-1 min-w-[140px]">
                 <label className="text-[10px] text-muted-foreground block mb-0.5">
-                  Nombre
+                  {t("seguimiento.ejercicioCard.customNombre")}
                 </label>
                 <input
                   type="text"
-                  placeholder="Ej: Pádel adaptado"
+                  placeholder={t("seguimiento.ejercicioCard.customNombrePlaceholder")}
                   value={customNombre}
                   onChange={(e) => setCustomNombre(e.target.value)}
                   maxLength={100}
@@ -295,7 +303,7 @@ export function EjercicioCard({
               </div>
               <div className="w-20">
                 <label className="text-[10px] text-muted-foreground block mb-0.5">
-                  MET
+                  {t("seguimiento.ejercicioCard.customMet")}
                 </label>
                 <input
                   type="number"
@@ -315,7 +323,7 @@ export function EjercicioCard({
                 disabled={!customNombre.trim() || !customMet}
                 className="h-9 px-4 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors disabled:opacity-40"
               >
-                Añadir
+                {t("seguimiento.ejercicioCard.customAnadir")}
               </button>
             </div>
           </div>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Key, Check, AlertTriangle, Shield } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { crearAccesoPaciente } from "@/app/actions/paciente-auth";
 import { toast } from "sonner";
 
@@ -23,6 +24,7 @@ function generarPin(): string {
 
 export function PortalConfig({ pacienteId, emailDefault, accesoExistente }: Props) {
   const router = useRouter();
+  const t = useTranslations("patients");
   const [loading, setLoading] = useState(false);
   const [pinGenerado, setPinGenerado] = useState<string | null>(null);
   const [confirmando, setConfirmando] = useState(false);
@@ -38,10 +40,10 @@ export function PortalConfig({ pacienteId, emailDefault, accesoExistente }: Prop
       await crearAccesoPaciente(pacienteId, emailForm, pin);
       setPinGenerado(pin);
       setConfirmando(false);
-      toast.success("PIN generado correctamente");
+      toast.success(t("portal.pinGenerado"));
       router.refresh();
     } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
-      toast.error("Error al configurar acceso");
+      toast.error(t("portal.errorConfigurarAcceso"));
     } finally {
       setLoading(false);
     }
@@ -64,29 +66,29 @@ export function PortalConfig({ pacienteId, emailDefault, accesoExistente }: Prop
         <div className="bg-card rounded-xl border border-border p-5">
           <div className="flex items-center gap-2 mb-3">
             <Shield className="w-5 h-5 text-primary" />
-            <h3 className="font-semibold">Estado del acceso</h3>
+            <h3 className="font-semibold">{t("portal.estadoAcceso")}</h3>
           </div>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Email</span>
+              <span className="text-muted-foreground">{t("portal.email")}</span>
               <span className="font-medium">{accesoExistente.email}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Estado</span>
+              <span className="text-muted-foreground">{t("portal.estado")}</span>
               <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${accesoExistente.activo ? "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400" : "bg-muted text-muted-foreground"}`}>
-                {accesoExistente.activo ? "Activo" : "Inactivo"}
+                {accesoExistente.activo ? t("list.activo") : t("list.inactivo")}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Contraseña</span>
+              <span className="text-muted-foreground">{t("portal.contrasena")}</span>
               <span className="text-xs font-medium">
-                {accesoExistente.tienePassword ? "Configurada" : "Solo PIN"}
+                {accesoExistente.tienePassword ? t("portal.configurada") : t("portal.soloPIN")}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Perfil</span>
+              <span className="text-muted-foreground">{t("portal.perfil")}</span>
               <span className="text-xs font-medium">
-                {accesoExistente.perfilCompleto ? "Completado" : "Pendiente"}
+                {accesoExistente.perfilCompleto ? t("portal.completado") : t("portal.pendiente")}
               </span>
             </div>
           </div>
@@ -97,14 +99,12 @@ export function PortalConfig({ pacienteId, emailDefault, accesoExistente }: Prop
       {pinGenerado && (
         <div className="bg-primary/5 border-2 border-primary rounded-lg p-6 text-center">
           <Key className="w-8 h-8 text-primary mx-auto mb-3" />
-          <p className="text-sm font-medium mb-2">Nuevo PIN generado</p>
+          <p className="text-sm font-medium mb-2">{t("portal.nuevoPinGenerado")}</p>
           <p className="text-3xl font-bold tracking-[0.3em] text-primary mb-3">
             {pinGenerado}
           </p>
           <p className="text-xs text-muted-foreground">
-            Comparte este PIN con el paciente. Solo se muestra una vez.
-            <br />
-            Al entrar se le pedirá crear una nueva contraseña.
+            {t("portal.compartePinConPaciente")}
           </p>
         </div>
       )}
@@ -116,10 +116,10 @@ export function PortalConfig({ pacienteId, emailDefault, accesoExistente }: Prop
             <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
-                Este paciente ya tiene contraseña configurada
+                {t("portal.pacienteConContrasena")}
               </p>
               <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
-                Al generar un nuevo PIN, el paciente perderá su contraseña actual y tendrá que crear una nueva al iniciar sesión con el PIN. Sus dietas, medidas, foto y demás datos NO se verán afectados.
+                {t("portal.generarNuevoPinAviso")}
               </p>
               <div className="flex gap-2 mt-3">
                 <button
@@ -127,13 +127,13 @@ export function PortalConfig({ pacienteId, emailDefault, accesoExistente }: Prop
                   disabled={loading}
                   className="px-4 py-2 rounded-lg bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 transition-colors disabled:opacity-50"
                 >
-                  {loading ? "Generando..." : "Sí, generar nuevo PIN"}
+                  {loading ? t("portal.generando") : t("portal.siGenerarNuevoPin")}
                 </button>
                 <button
                   onClick={() => setConfirmando(false)}
                   className="px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors"
                 >
-                  Cancelar
+                  {t("portal.cancelar")}
                 </button>
               </div>
             </div>
@@ -145,10 +145,10 @@ export function PortalConfig({ pacienteId, emailDefault, accesoExistente }: Prop
       {!confirmando && (
         <form onSubmit={handleSubmit} className="bg-card rounded-xl border border-border p-6 space-y-4">
           <h2 className="text-lg font-semibold">
-            {accesoExistente ? "Regenerar PIN" : "Crear acceso"}
+            {accesoExistente ? t("portal.regenerarPin") : t("portal.crearAcceso")}
           </h2>
           <div>
-            <label className="block text-sm font-medium mb-1">Email del paciente *</label>
+            <label className="block text-sm font-medium mb-1">{t("portal.emailPacienteLabel")}</label>
             <input
               name="email"
               type="email"
@@ -159,7 +159,7 @@ export function PortalConfig({ pacienteId, emailDefault, accesoExistente }: Prop
               className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
             />
             <p className="text-xs text-muted-foreground mt-1">
-              El paciente usará este email para hacer login
+              {t("portal.emailLoginHint")}
             </p>
           </div>
           <button
@@ -167,7 +167,7 @@ export function PortalConfig({ pacienteId, emailDefault, accesoExistente }: Prop
             disabled={loading}
             className="w-full px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium disabled:opacity-50"
           >
-            {loading ? "Generando..." : accesoExistente ? "Regenerar PIN" : "Generar PIN y crear acceso"}
+            {loading ? t("portal.generando") : accesoExistente ? t("portal.regenerarPin") : t("portal.generarPinCrearAcceso")}
           </button>
         </form>
       )}

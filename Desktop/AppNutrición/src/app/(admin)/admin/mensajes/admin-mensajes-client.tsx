@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Send, Loader2, ArrowLeft, Search } from "lucide-react";
+import { useTranslations, useLocale } from "next-intl";
+import { intlTag, type Locale } from "@/i18n/config";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
@@ -29,6 +31,7 @@ export function AdminMensajesClient({
 }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useTranslations("admin");
   const [mensajes, setMensajes] = useState<MensajeSoporteData[]>(mensajesIniciales);
   const [cargando, setCargando] = useState(false);
   const [busqueda, setBusqueda] = useState("");
@@ -152,7 +155,7 @@ export function AdminMensajesClient({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Buscar dietista..."
+              placeholder={t("mensajes.buscarPlaceholder")}
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
@@ -163,7 +166,7 @@ export function AdminMensajesClient({
           {filtradas.length === 0 ? (
             <div className="p-6 text-center">
               <p className="text-sm text-muted-foreground">
-                {q ? "No hay resultados" : "No hay conversaciones de soporte"}
+                {q ? t("mensajes.sinResultados") : t("mensajes.sinConversaciones")}
               </p>
             </div>
           ) : (
@@ -197,7 +200,7 @@ export function AdminMensajesClient({
               className="md:hidden flex items-center gap-2 px-4 py-3 border-b border-border text-sm font-medium hover:bg-muted/40 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              Volver
+              {t("mensajes.volver")}
             </button>
             <AdminChatView
               dietista={dietistaActiva}
@@ -214,9 +217,9 @@ export function AdminMensajesClient({
             <div className="w-16 h-16 rounded-full bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center mb-4">
               <Send className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
             </div>
-            <p className="text-sm font-semibold">Selecciona una conversación</p>
+            <p className="text-sm font-semibold">{t("mensajes.seleccionaConversacion")}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Elige un dietista de la lista para ver sus mensajes
+              {t("mensajes.seleccionaSubtitle")}
             </p>
           </div>
         )}
@@ -234,9 +237,10 @@ function DietistaItem({
   activa: boolean;
   onClick: () => void;
 }) {
+  const t = useTranslations("admin");
   const iniciales = `${c.nombre.charAt(0)}${c.apellidos.charAt(0)}`.toUpperCase();
   const preview = c.ultimoMensaje
-    ? `${c.ultimoAutor === "ADMIN" ? "Tú: " : ""}${c.ultimoMensaje.slice(0, 80)}`
+    ? `${c.ultimoAutor === "ADMIN" ? t("mensajes.tuPrefix") : ""}${c.ultimoMensaje.slice(0, 80)}`
     : "";
   const tiempo = c.ultimoAt
     ? formatDistanceToNow(new Date(c.ultimoAt), { addSuffix: false, locale: es })
@@ -302,6 +306,9 @@ function AdminChatView({
   cargando: boolean;
   onMensajeEnviado: (m: MensajeSoporteData) => void;
 }) {
+  const t = useTranslations("admin");
+  const locale = useLocale() as Locale;
+  const tag = intlTag(locale);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -336,7 +343,7 @@ function AdminChatView({
       setTexto("");
       onMensajeEnviado(m);
     } catch {
-      toast.error("No se pudo enviar");
+      toast.error(t("mensajes.errorEnviar"));
     } finally {
       enviandoRef.current = false;
       setEnviando(false);
@@ -369,13 +376,13 @@ function AdminChatView({
         </div>
       ) : mensajes.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-muted/20">
-          <p className="text-sm text-muted-foreground">Sin mensajes todavía</p>
+          <p className="text-sm text-muted-foreground">{t("mensajes.sinMensajes")}</p>
         </div>
       ) : (
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-1 bg-muted/20">
           {mensajes.map((m) => {
             const esAdmin = m.autor === "ADMIN";
-            const hora = new Date(m.createdAt).toLocaleTimeString("es-ES", {
+            const hora = new Date(m.createdAt).toLocaleTimeString(tag, {
               hour: "2-digit",
               minute: "2-digit",
               timeZone: "Europe/Madrid",
@@ -431,7 +438,7 @@ function AdminChatView({
                 handleEnviar();
               }
             }}
-            placeholder={`Responder a ${dietista.nombre}...`}
+            placeholder={t("mensajes.responderPlaceholder", { nombre: dietista.nombre })}
             rows={1}
             disabled={enviando}
             className="flex-1 resize-none px-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-indigo-500/30 max-h-[120px]"
@@ -440,7 +447,7 @@ function AdminChatView({
             type="submit"
             disabled={enviando || !texto.trim()}
             className="p-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
-            aria-label="Enviar mensaje"
+            aria-label={t("mensajes.enviarAriaLabel")}
           >
             {enviando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>

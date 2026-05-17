@@ -6,6 +6,8 @@ import Link from "next/link";
 import {
   X, Clock, User, Check, Calendar, CalendarClock, Trash2, Loader2, ExternalLink, Video,
 } from "lucide-react";
+import { useTranslations, useLocale } from "next-intl";
+import { intlTag, type Locale } from "@/i18n/config";
 import { toast } from "sonner";
 import { actualizarEstadoCita, eliminarCita } from "@/app/actions/citas";
 import {
@@ -24,13 +26,7 @@ const ESTADO_STYLES: Record<string, string> = {
   CONTRAPROPUESTA: "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/30",
 };
 
-const ESTADO_LABELS: Record<string, string> = {
-  PENDIENTE: "Pendiente",
-  CONFIRMADA: "Confirmada",
-  COMPLETADA: "Completada",
-  CANCELADA: "Cancelada",
-  CONTRAPROPUESTA: "Esperando paciente",
-};
+const ESTADO_KEYS = ["PENDIENTE", "CONFIRMADA", "COMPLETADA", "CANCELADA", "CONTRAPROPUESTA"] as const;
 
 export interface CitaDetalle {
   id: string;
@@ -46,21 +42,27 @@ export interface CitaDetalle {
   paciente: { id: string; nombre: string; apellidos: string; fotoUrl?: string | null };
 }
 
-function formatFechaLarga(iso: string): string {
+function formatFechaLarga(iso: string, t: (key: string) => string): string {
   const d = new Date(iso);
-  const dias = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
-  const meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+  const dayKeys = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"] as const;
+  const monthKeys = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"] as const;
   const hh = String(d.getHours()).padStart(2, "0");
   const mm = String(d.getMinutes()).padStart(2, "0");
-  return `${dias[d.getDay()]}, ${d.getDate()} de ${meses[d.getMonth()]} a las ${hh}:${mm}`;
+  const dayName = t(`citaDetalleModal.dias.${dayKeys[d.getDay()]}`);
+  const monthName = t(`citaDetalleModal.meses.${monthKeys[d.getMonth()]}`);
+  return t("citaDetalleModal.fechaLargaFormat")
+    .replace("{dia}", dayName)
+    .replace("{numero}", String(d.getDate()))
+    .replace("{mes}", monthName)
+    .replace("{hora}", `${hh}:${mm}`);
 }
 
 function googleCalendarUrl(cita: CitaDetalle) {
   const start = new Date(cita.fechaHora);
   const end = new Date(start.getTime() + cita.duracion * 60000);
   const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
-  const title = encodeURIComponent(`Consulta: ${cita.paciente.nombre} ${cita.paciente.apellidos}`);
-  const details = encodeURIComponent(cita.motivo || "Consulta de nutrición");
+  const title = encodeURIComponent(cita.motivo || `${cita.paciente.nombre} ${cita.paciente.apellidos}`);
+  const details = encodeURIComponent(cita.motivo || "");
   return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${fmt(start)}/${fmt(end)}&details=${details}`;
 }
 
@@ -71,14 +73,16 @@ interface Props {
 
 export function CitaDetalleModal({ cita, onClose }: Props) {
   const router = useRouter();
+  const t = useTranslations("agenda");
+  const tag = intlTag(useLocale() as Locale);
   const [pending, startTransition] = useTransition();
   const [showContraponer, setShowContraponer] = useState(false);
   const [confirmEliminar, setConfirmEliminar] = useState(false);
 
   const horaFin = new Date(
     new Date(cita.fechaHora).getTime() + cita.duracion * 60000,
-  ).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
-  const horaInicio = new Date(cita.fechaHora).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+  ).toLocaleTimeString(tag, { hour: "2-digit", minute: "2-digit" });
+  const horaInicio = new Date(cita.fechaHora).toLocaleTimeString(tag, { hour: "2-digit", minute: "2-digit" });
 
   function refrescar() {
     router.refresh();
@@ -88,7 +92,7 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
   function run(fn: () => Promise<unknown>, okMsg: string) {
     startTransition(async () => {
       try { await fn(); toast.success(okMsg); refrescar(); }
-      catch (e) { toast.error(e instanceof Error ? e.message : "Error"); }
+      catch (e) { toast.error(e instanceof Error ? e.message : t("citaDetalleModal.error")); }
     });
   }
 
@@ -109,7 +113,7 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
         >
           {/* Header */}
           <div className="flex items-center justify-between p-5 border-b border-border">
-            <h2 className="text-lg font-semibold">Detalle de la cita</h2>
+            <h2 className="text-lg font-semibold">{t("citaDetalleModal.title")}</h2>
             <button type="button" onClick={onClose} className="p-1 rounded-lg hover:bg-muted transition-colors">
               <X className="w-5 h-5 text-muted-foreground" />
             </button>
@@ -134,7 +138,7 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
                   href={`/pacientes/${cita.paciente.id}`}
                   className="text-xs text-primary hover:underline inline-flex items-center gap-1"
                 >
-                  Ver ficha del paciente <ExternalLink className="w-3 h-3" />
+                  {t("citaDetalleModal.viewPatientFile")} <ExternalLink className="w-3 h-3" />
                 </Link>
               </div>
             </div>
@@ -142,26 +146,26 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
             {/* Estado + badges */}
             <div className="flex items-center gap-2 flex-wrap">
               <span className={`text-xs px-2.5 py-1 rounded-full border font-medium ${ESTADO_STYLES[cita.estado]}`}>
-                {ESTADO_LABELS[cita.estado] ?? cita.estado}
+                {ESTADO_KEYS.includes(cita.estado as typeof ESTADO_KEYS[number]) ? t(`citaDetalleModal.estadoLabels.${cita.estado}`) : cita.estado}
               </span>
               {esSolicitudPaciente && (
                 <span className="text-xs px-2.5 py-1 rounded-full bg-purple-100 dark:bg-purple-500/15 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-500/30 font-medium">
-                  Solicitada por el paciente
+                  {t("citaDetalleModal.requestedByPatient")}
                 </span>
               )}
               {esContrapropuestaPaciente && (
                 <span className="text-xs px-2.5 py-1 rounded-full bg-purple-100 dark:bg-purple-500/15 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-500/30 font-medium">
-                  Contrapropuesta del paciente
+                  {t("citaDetalleModal.counterproposalByPatient")}
                 </span>
               )}
               {cita.estado === "CONTRAPROPUESTA" && cita.propuestoPor === "DIETISTA" && (
                 <span className="text-xs px-2.5 py-1 rounded-full bg-indigo-100 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30 font-medium">
-                  Esperando respuesta del paciente
+                  {t("citaDetalleModal.waitingForPatientResponse")}
                 </span>
               )}
               {cita.estado === "PENDIENTE" && cita.origen === "DIETISTA" && (
                 <span className="text-xs px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30 font-medium">
-                  Propuesta al paciente
+                  {t("citaDetalleModal.proposedToPatient")}
                 </span>
               )}
             </div>
@@ -170,7 +174,7 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
             <div className="rounded-lg bg-muted/40 p-3 space-y-1.5">
               <div className="flex items-center gap-2 text-sm">
                 <Calendar className="w-4 h-4 text-muted-foreground" />
-                <span className="capitalize">{formatFechaLarga(cita.fechaHora)}</span>
+                <span className="capitalize">{formatFechaLarga(cita.fechaHora, t)}</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <Clock className="w-4 h-4 text-muted-foreground" />
@@ -186,11 +190,11 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
                       rel="noopener noreferrer"
                       className="font-medium hover:underline truncate"
                     >
-                      Unirse a Google Meet
+                      {t("citaDetalleModal.joinGoogleMeet")}
                     </a>
                   ) : (
                     <span className="text-muted-foreground">
-                      Cita online — el enlace se generará al sincronizar con Google
+                      {t("citaDetalleModal.onlineAppointmentNote")}
                     </span>
                   )}
                 </div>
@@ -200,13 +204,13 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
             {/* Motivo + notas */}
             {cita.motivo && (
               <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Motivo</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">{t("citaDetalleModal.reason")}</p>
                 <p className="text-sm">{cita.motivo}</p>
               </div>
             )}
             {cita.notas && (
               <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Notas internas</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">{t("citaDetalleModal.internalNotes")}</p>
                 <p className="text-sm italic text-muted-foreground">{cita.notas}</p>
               </div>
             )}
@@ -219,11 +223,11 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
               <div className="flex items-center gap-2 flex-wrap">
                 <button
                   type="button"
-                  onClick={() => run(() => aceptarSolicitudCita(cita.id), "Cita aceptada")}
+                  onClick={() => run(() => aceptarSolicitudCita(cita.id), t("citaDetalleModal.toastAccepted"))}
                   disabled={pending}
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-60 transition-colors"
                 >
-                  <Check className="w-4 h-4" /> Aceptar
+                  <Check className="w-4 h-4" /> {t("citaDetalleModal.accept")}
                 </button>
                 <button
                   type="button"
@@ -231,15 +235,15 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
                   disabled={pending}
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 disabled:opacity-60 transition-colors"
                 >
-                  <CalendarClock className="w-4 h-4" /> Proponer otra fecha
+                  <CalendarClock className="w-4 h-4" /> {t("citaDetalleModal.proposeAnotherDate")}
                 </button>
                 <button
                   type="button"
-                  onClick={() => run(() => rechazarSolicitudCita(cita.id), "Solicitud rechazada")}
+                  onClick={() => run(() => rechazarSolicitudCita(cita.id), t("citaDetalleModal.toastRequestRejected"))}
                   disabled={pending}
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-red-300 dark:border-red-500/40 text-red-600 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-500/15 disabled:opacity-60 transition-colors"
                 >
-                  <X className="w-4 h-4" /> Rechazar
+                  <X className="w-4 h-4" /> {t("citaDetalleModal.reject")}
                 </button>
               </div>
             ) : esContrapropuestaPaciente ? (
@@ -247,11 +251,11 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
               <div className="flex items-center gap-2 flex-wrap">
                 <button
                   type="button"
-                  onClick={() => run(() => aceptarContrapropuestaDietista(cita.id), "Contrapropuesta aceptada")}
+                  onClick={() => run(() => aceptarContrapropuestaDietista(cita.id), t("citaDetalleModal.toastCounterproposalAccepted"))}
                   disabled={pending}
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-60 transition-colors"
                 >
-                  <Check className="w-4 h-4" /> Aceptar
+                  <Check className="w-4 h-4" /> {t("citaDetalleModal.accept")}
                 </button>
                 <button
                   type="button"
@@ -259,15 +263,15 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
                   disabled={pending}
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 disabled:opacity-60 transition-colors"
                 >
-                  <CalendarClock className="w-4 h-4" /> Proponer otra fecha
+                  <CalendarClock className="w-4 h-4" /> {t("citaDetalleModal.proposeAnotherDate")}
                 </button>
                 <button
                   type="button"
-                  onClick={() => run(() => rechazarContrapropuestaDietista(cita.id), "Contrapropuesta rechazada")}
+                  onClick={() => run(() => rechazarContrapropuestaDietista(cita.id), t("citaDetalleModal.toastCounterproposalRejected"))}
                   disabled={pending}
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-red-300 dark:border-red-500/40 text-red-600 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-500/15 disabled:opacity-60 transition-colors"
                 >
-                  <X className="w-4 h-4" /> Rechazar
+                  <X className="w-4 h-4" /> {t("citaDetalleModal.reject")}
                 </button>
               </div>
             ) : esPendiente ? (
@@ -275,38 +279,38 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
               <div className="flex items-center gap-2 flex-wrap">
                 <button
                   type="button"
-                  onClick={() => run(() => actualizarEstadoCita(cita.id, "CONFIRMADA"), "Cita confirmada")}
+                  onClick={() => run(() => actualizarEstadoCita(cita.id, "CONFIRMADA"), t("citaDetalleModal.toastConfirmed"))}
                   disabled={pending}
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-60 transition-colors"
                 >
-                  <Check className="w-4 h-4" /> Confirmar
+                  <Check className="w-4 h-4" /> {t("citaDetalleModal.confirm")}
                 </button>
                 <button
                   type="button"
-                  onClick={() => run(() => actualizarEstadoCita(cita.id, "CANCELADA"), "Cita cancelada")}
+                  onClick={() => run(() => actualizarEstadoCita(cita.id, "CANCELADA"), t("citaDetalleModal.toastCancelled"))}
                   disabled={pending}
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-muted disabled:opacity-60 transition-colors"
                 >
-                  <X className="w-4 h-4" /> Cancelar
+                  <X className="w-4 h-4" /> {t("citaDetalleModal.cancel")}
                 </button>
               </div>
             ) : esConfirmada ? (
               <div className="flex items-center gap-2 flex-wrap">
                 <button
                   type="button"
-                  onClick={() => run(() => actualizarEstadoCita(cita.id, "COMPLETADA"), "Cita completada")}
+                  onClick={() => run(() => actualizarEstadoCita(cita.id, "COMPLETADA"), t("citaDetalleModal.toastCompleted"))}
                   disabled={pending}
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 disabled:opacity-60 transition-colors"
                 >
-                  <Check className="w-4 h-4" /> Marcar como completada
+                  <Check className="w-4 h-4" /> {t("citaDetalleModal.markAsCompleted")}
                 </button>
                 <button
                   type="button"
-                  onClick={() => run(() => actualizarEstadoCita(cita.id, "CANCELADA"), "Cita cancelada")}
+                  onClick={() => run(() => actualizarEstadoCita(cita.id, "CANCELADA"), t("citaDetalleModal.toastCancelled"))}
                   disabled={pending}
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-muted disabled:opacity-60 transition-colors"
                 >
-                  <X className="w-4 h-4" /> Cancelar
+                  <X className="w-4 h-4" /> {t("citaDetalleModal.cancel")}
                 </button>
               </div>
             ) : null}
@@ -319,14 +323,14 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground font-medium"
               >
-                <Calendar className="w-3.5 h-3.5" /> Abrir en Google Calendar
+                <Calendar className="w-3.5 h-3.5" /> {t("citaDetalleModal.openInGoogleCalendar")}
               </a>
               <button
                 type="button"
                 onClick={() => setConfirmEliminar(true)}
                 className="inline-flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400 hover:text-red-700 font-medium"
               >
-                <Trash2 className="w-3.5 h-3.5" /> Eliminar cita
+                <Trash2 className="w-3.5 h-3.5" /> {t("citaDetalleModal.deleteAppointment")}
               </button>
             </div>
 
@@ -362,9 +366,9 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
             className="bg-card rounded-2xl border border-border shadow-2xl max-w-md w-full p-5"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-semibold mb-2">¿Eliminar esta cita?</h3>
+            <h3 className="text-lg font-semibold mb-2">{t("citaDetalleModal.confirmDeleteTitle")}</h3>
             <p className="text-sm text-muted-foreground mb-5">
-              Esta acción no se puede deshacer. La cita se borrará de tu agenda.
+              {t("citaDetalleModal.confirmDeleteMessage")}
             </p>
             <div className="flex items-center justify-end gap-2">
               <button
@@ -372,15 +376,15 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
                 onClick={() => setConfirmEliminar(false)}
                 className="px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors"
               >
-                Cancelar
+                {t("citaDetalleModal.cancel")}
               </button>
               <button
                 type="button"
-                onClick={() => run(() => eliminarCita(cita.id), "Cita eliminada")}
+                onClick={() => run(() => eliminarCita(cita.id), t("citaDetalleModal.toastDeleted"))}
                 disabled={pending}
                 className="px-4 py-2 rounded-lg bg-destructive text-destructive-foreground text-sm font-medium hover:bg-destructive/90 disabled:opacity-60 transition-colors"
               >
-                Sí, eliminar
+                {t("citaDetalleModal.confirmDeleteButton")}
               </button>
             </div>
           </div>

@@ -1,0 +1,48 @@
+{
+  "greeting": {
+    "buenosDias": "Bom dia",
+    "buenasTardes": "Boa tarde",
+    "buenasNoches": "Boa noite",
+    "title": "{saludo}, {nombre}!"
+  },
+  "quickAccess": {
+    "sectionTitle": "Acessos rápidos",
+    "sectionSubtitle": "Crie em um clique",
+    "nuevoPaciente": "Novo paciente",
+    "nuevoPacienteDesc": "Cadastro rápido",
+    "nuevoPlan": "Novo plano",
+    "nuevoPlanDesc": "Criar dieta",
+    "nuevaCita": "Nova consulta",
+    "nuevaCitaDesc": "Agendar consulta",
+    "nuevaReceta": "Nova receita",
+    "nuevaRecetaDesc": "Ao catálogo"
+  },
+  "proximaConsulta": {
+    "sectionTitle": "Próxima consulta",
+    "sinCitasPendientes": "Sem consultas pendentes",
+    "sinCitasProgramadas": "Sem consultas agendadas",
+    "verAgenda": "Ver agenda",
+    "agendarCita": "Agendar consulta",
+    "duracionMin": "{duracion} min"
+  },
+  "ultimaNotificacion": {
+    "sectionTitle": "Última notificação",
+    "sinNotificaciones": "Sem notificações",
+    "verTodas": "Ver todas",
+    "todoAlDia": "Tudo em dia",
+    "sinNotificacionesPendientes": "Sem notificações pendentes"
+  },
+  "actividad": {
+    "sectionTitle": "Sua atividade",
+    "sectionSubtitle": "Últimos 6 meses",
+    "sinDatos": "Sem dados de atividade ainda",
+    "consultas": "Consultas",
+    "pacientesTotales": "Pacientes totais"
+  },
+  "pacientesAtencion": {
+    "todosAlDia": "Todos os seus pacientes estão em dia",
+    "sinConsulta": "Sem consulta há +30 dias",
+    "sinMedidas": "Sem medidas há +30 dias",
+    "planSinActualizar": "Plano sem atualizar há +30 dias"
+  }
+}

@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { actualizarLogoPdf, eliminarLogoPdf, actualizarMarcaPdf } from "@/app/actions/perfil";
 import { validateImageDataUrl } from "@/lib/validation";
 import { compressImage, IMAGE_PRESETS } from "@/lib/image-compress";
+import { useTranslations } from "next-intl";
 
 interface Props {
   logoUrlInicial: string | null;
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export function LogoPdfForm({ logoUrlInicial, marcaPdfInicial, onBrandChange }: Props) {
+  const t = useTranslations("settings.logoPdf");
   const [logoPreview, setLogoPreview] = useState<string | null>(logoUrlInicial);
   const [marca, setMarca] = useState(marcaPdfInicial || "");
   const [isPending, startTransition] = useTransition();
@@ -28,7 +30,7 @@ export function LogoPdfForm({ logoUrlInicial, marcaPdfInicial, onBrandChange }: 
     reader.onload = () => {
       const raw = reader.result as string;
       if (!validateImageDataUrl(raw)) {
-        toast.error("Imagen no válida (solo JPEG, PNG, WebP o GIF, máx ~2MB)");
+        toast.error(t("errorImagenInvalida"));
         return;
       }
 
@@ -38,9 +40,9 @@ export function LogoPdfForm({ logoUrlInicial, marcaPdfInicial, onBrandChange }: 
           setLogoPreview(dataUrl);
           onBrandChange?.(marca || "Annonia", dataUrl);
           await actualizarLogoPdf(dataUrl);
-          toast.success("Logo actualizado");
+          toast.success(t("toastLogoActualizado"));
         } catch (err) {
-          toast.error(err instanceof Error ? err.message : "Error al subir logo");
+          toast.error(err instanceof Error ? err.message : t("toastErrorSubirLogo"));
           setLogoPreview(logoUrlInicial);
         }
       });
@@ -55,9 +57,9 @@ export function LogoPdfForm({ logoUrlInicial, marcaPdfInicial, onBrandChange }: 
         await eliminarLogoPdf();
         setLogoPreview(null);
         onBrandChange?.(marca || "Annonia", null);
-        toast.success("Logo eliminado");
+        toast.success(t("toastLogoEliminado"));
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Error al eliminar");
+        toast.error(err instanceof Error ? err.message : t("toastErrorEliminar"));
       }
     });
   }
@@ -67,9 +69,9 @@ export function LogoPdfForm({ logoUrlInicial, marcaPdfInicial, onBrandChange }: 
       try {
         await actualizarMarcaPdf(marca);
         onBrandChange?.(marca || "Annonia", logoPreview);
-        toast.success("Nombre de marca actualizado");
+        toast.success(t("toastMarcaActualizada"));
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Error al guardar");
+        toast.error(err instanceof Error ? err.message : t("toastErrorGuardar"));
       }
     });
   }
@@ -81,10 +83,10 @@ export function LogoPdfForm({ logoUrlInicial, marcaPdfInicial, onBrandChange }: 
       <div>
         <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
           <ImagePlus className="w-4 h-4 text-muted-foreground" />
-          Logo para documentos
+          {t("titulo")}
         </h4>
         <p className="text-xs text-muted-foreground mb-3">
-          Aparecerá en la portada, cabecera y contraportada de tus PDFs. Recomendado: 400×100px, PNG con fondo transparente.
+          {t("descripcion")}
         </p>
 
         <div className="flex items-center gap-4">
@@ -96,7 +98,7 @@ export function LogoPdfForm({ logoUrlInicial, marcaPdfInicial, onBrandChange }: 
                 className="max-w-full max-h-full object-contain"
               />
             ) : (
-              <span className="text-xs text-muted-foreground">Sin logo</span>
+              <span className="text-xs text-muted-foreground">{t("sinLogo")}</span>
             )}
           </div>
           <div className="flex flex-col gap-2">
@@ -107,7 +109,7 @@ export function LogoPdfForm({ logoUrlInicial, marcaPdfInicial, onBrandChange }: 
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-colors"
             >
               <Upload className="w-3.5 h-3.5" />
-              {logoPreview ? "Cambiar" : "Subir logo"}
+              {logoPreview ? t("cambiar") : t("subirLogo")}
             </button>
             {logoPreview && (
               <button
@@ -117,7 +119,7 @@ export function LogoPdfForm({ logoUrlInicial, marcaPdfInicial, onBrandChange }: 
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-destructive/30 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                Eliminar
+                {t("eliminar")}
               </button>
             )}
           </div>
@@ -132,16 +134,16 @@ export function LogoPdfForm({ logoUrlInicial, marcaPdfInicial, onBrandChange }: 
       </div>
 
       <div>
-        <h4 className="text-sm font-semibold mb-3">Nombre de marca</h4>
+        <h4 className="text-sm font-semibold mb-3">{t("nombreMarcaTitulo")}</h4>
         <p className="text-xs text-muted-foreground mb-3">
-          Reemplaza &quot;Annonia&quot; en cabeceras y footers de tus documentos PDF.
+          {t("nombreMarcaDescripcion")}
         </p>
         <div className="flex gap-2">
           <input
             type="text"
             value={marca}
             onChange={(e) => setMarca(e.target.value)}
-            placeholder="Annonia (por defecto)"
+            placeholder={t("nombreMarcaPlaceholder")}
             maxLength={200}
             className="flex-1 px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
@@ -156,7 +158,7 @@ export function LogoPdfForm({ logoUrlInicial, marcaPdfInicial, onBrandChange }: 
                 : "bg-muted text-muted-foreground cursor-not-allowed"
             )}
           >
-            {isPending ? "..." : "Guardar"}
+            {isPending ? "..." : t("guardar")}
           </button>
         </div>
       </div>

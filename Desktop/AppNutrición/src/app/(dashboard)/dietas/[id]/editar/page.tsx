@@ -4,10 +4,12 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { getPlan, actualizarPlan } from "@/app/actions/planes";
 
 export default function EditarPlanPage() {
+  const t = useTranslations("diets");
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
@@ -47,15 +49,15 @@ export default function EditarPlanPage() {
         carbohidratosObjetivo: parseFloat(form.get("carbohidratosObjetivo") as string) || undefined,
         grasasObjetivo: parseFloat(form.get("grasasObjetivo") as string) || undefined,
       });
-      toast.success("Plan actualizado");
+      toast.success(t("editar.toastUpdated"));
       router.push(`/dietas/${id}`);
     } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
-      toast.error("Error al actualizar");
+      toast.error(t("editar.toastUpdateError"));
       setLoading(false);
     }
   }
 
-  if (!plan) return <p className="text-muted-foreground">Cargando...</p>;
+  if (!plan) return <p className="text-muted-foreground">{t("editar.loading")}</p>;
 
   return (
     <div>
@@ -65,15 +67,15 @@ export default function EditarPlanPage() {
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3 py-2 sm:py-0 -my-2 sm:my-0"
         >
           <ArrowLeft className="w-4 h-4" />
-          Volver al plan
+          {t("editar.backToPlan")}
         </Link>
-        <h1 className="text-2xl sm:text-3xl font-bold">Editar plan</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">{t("editar.pageTitle")}</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6 max-w-xl">
         <section className="bg-card rounded-xl border border-border p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Nombre *</label>
+            <label className="block text-sm font-medium mb-1">{t("editar.nameLabel")}</label>
             <input
               name="nombre"
               required
@@ -85,10 +87,10 @@ export default function EditarPlanPage() {
         </section>
 
         <section className="bg-card rounded-xl border border-border p-6 space-y-4">
-          <h2 className="text-lg font-semibold">Objetivos de macros</h2>
+          <h2 className="text-lg font-semibold">{t("editar.macroGoals")}</h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Calorías (kcal)</label>
+              <label className="block text-sm font-medium mb-1">{t("editar.calories")}</label>
               <input
                 name="caloriasObjetivo"
                 type="number"
@@ -99,7 +101,7 @@ export default function EditarPlanPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Proteínas (g)</label>
+              <label className="block text-sm font-medium mb-1">{t("editar.proteins")}</label>
               <input
                 name="proteinasObjetivo"
                 type="number"
@@ -110,7 +112,7 @@ export default function EditarPlanPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Carbohidratos (g)</label>
+              <label className="block text-sm font-medium mb-1">{t("editar.carbs")}</label>
               <input
                 name="carbohidratosObjetivo"
                 type="number"
@@ -121,7 +123,7 @@ export default function EditarPlanPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Grasas (g)</label>
+              <label className="block text-sm font-medium mb-1">{t("editar.fats")}</label>
               <input
                 name="grasasObjetivo"
                 type="number"
@@ -139,14 +141,14 @@ export default function EditarPlanPage() {
             href={`/dietas/${id}`}
             className="px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
           >
-            Cancelar
+            {t("editar.cancel")}
           </Link>
           <button
             type="submit"
             disabled={loading}
             className="px-6 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium disabled:opacity-50"
           >
-            {loading ? "Guardando..." : "Guardar cambios"}
+            {loading ? t("editar.saving") : t("editar.saveChanges")}
           </button>
         </div>
       </form>

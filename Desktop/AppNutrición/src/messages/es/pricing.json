@@ -1,0 +1,85 @@
+{
+  "metadata": {
+    "title": "Precios — Software para Dietistas desde 9,99€/mes",
+    "description": "Planes de Annonia, software de nutrición para dietistas: Plan Básico (25 pacientes, 9,99€/mes) o Profesional (ilimitados + IA, 11,99€/mes). Prueba gratis 14 días sin tarjeta.",
+    "ogTitle": "Precios de Annonia — Software para Dietistas desde 9,99€/mes",
+    "ogDescription": "Software de nutrición profesional. Plan Básico o Profesional con IA. 14 días gratis sin tarjeta.",
+    "twitterTitle": "Precios de Annonia — Software para Dietistas desde 9,99€/mes"
+  },
+  "header": {
+    "iniciarSesion": "Iniciar sesión",
+    "empezarGratis": "Empezar gratis"
+  },
+  "hero": {
+    "badge": "14 días de prueba gratuita",
+    "titulo": "El plan perfecto para tu consulta de nutrición",
+    "descripcion": "Elige el software de nutrición que mejor se adapte a tu práctica como dietista. Sin compromisos, cancela cuando quieras."
+  },
+  "planes": {
+    "masPopular": "Más popular",
+    "incluye": "Incluye:",
+    "noIncluido": "No incluido:",
+    "empezarPrueba": "Empezar 14 días gratis",
+    "periodo": "mes",
+    "basico": {
+      "nombre": "Básico",
+      "precio": "9,99",
+      "descripcion": "Ideal para nutricionistas que empiezan o tienen una consulta pequeña.",
+      "features": {
+        "pacientesActivos": "Hasta 25 pacientes activos",
+        "planesIlimitados": "Planes alimenticios ilimitados",
+        "baseAlimentos": "Base de datos de 2.600+ alimentos",
+        "recetas": "Recetas personalizadas",
+        "portalPaciente": "Portal del paciente",
+        "seguimientoMedidas": "Seguimiento de medidas",
+        "soporteEmail": "Soporte por email"
+      },
+      "noIncluye": {
+        "dietasIA": "Generación de dietas con IA",
+        "pacientesIlimitados": "Pacientes ilimitados",
+        "informesPdf": "Exportación de informes PDF",
+        "soportePrioritario": "Soporte prioritario"
+      }
+    },
+    "profesional": {
+      "nombre": "Profesional",
+      "precio": "11,99",
+      "descripcion": "Para dietistas-nutricionistas con consultas establecidas que quieren escalar.",
+      "features": {
+        "pacientesIlimitados": "Pacientes ilimitados",
+        "planesIlimitados": "Planes alimenticios ilimitados",
+        "baseAlimentos": "Base de datos de 2.600+ alimentos",
+        "recetas": "Recetas personalizadas",
+        "portalPaciente": "Portal del paciente",
+        "seguimientoMedidas": "Seguimiento de medidas",
+        "dietasIA": "Generación de dietas con IA",
+        "informesPdf": "Exportación de informes PDF",
+        "plantillas": "Plantillas de planes",
+        "soportePrioritario": "Soporte prioritario 24/7"
+      }
+    }
+  },
+  "faq": {
+    "titulo": "Preguntas frecuentes",
+    "cambiarPlan": {
+      "pregunta": "¿Puedo cambiar de plan en cualquier momento?",
+      "respuesta": "Sí, puedes subir o bajar de plan cuando quieras. El cambio se aplica en el siguiente ciclo de facturación."
+    },
+    "despuesPrueba": {
+      "pregunta": "¿Qué pasa después de los 14 días de prueba?",
+      "respuesta": "Al finalizar la prueba, se activará tu plan seleccionado. Si no has añadido un método de pago, tu cuenta pasará a modo lectura."
+    },
+    "cancelar": {
+      "pregunta": "¿Puedo cancelar en cualquier momento?",
+      "respuesta": "Sí, sin preguntas. Puedes cancelar desde Ajustes y seguirás teniendo acceso hasta el final de tu periodo pagado."
+    },
+    "datosSeguridad": {
+      "pregunta": "¿Mis datos están seguros?",
+      "respuesta": "Absolutamente. Usamos encriptación de extremo a extremo, servidores en la UE y cumplimos con el RGPD. Tus datos y los de tus pacientes están protegidos."
+    }
+  },
+  "footer": {
+    "iniciarSesion": "Iniciar sesión",
+    "portalPacientes": "Portal pacientes"
+  }
+}

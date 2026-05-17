@@ -22,8 +22,10 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { NotificationBell } from "@/components/notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
+
 
 type NavItem = {
   href: string;
@@ -35,36 +37,36 @@ type NavItem = {
 
 type NavSection = { title: string; items: NavItem[] };
 
-function getNavSections(isAdmin?: boolean): NavSection[] {
+function getNavSections(t: (key: string) => string, isAdmin?: boolean): NavSection[] {
   return [
     {
-      title: "Gestión",
+      title: t("nav.gestion"),
       items: [
-        { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-        { href: "/pacientes", label: "Pacientes", icon: Users },
-        { href: "/agenda", label: "Agenda", icon: CalendarDays },
-        { href: "/pagos", label: "Pagos", icon: Wallet },
+        { href: "/dashboard", label: t("navItems.dashboard"), icon: LayoutDashboard },
+        { href: "/pacientes", label: t("navItems.pacientes"), icon: Users },
+        { href: "/agenda", label: t("navItems.agenda"), icon: CalendarDays },
+        { href: "/pagos", label: t("navItems.pagos"), icon: Wallet },
       ],
     },
     {
-      title: "Dietas",
+      title: t("nav.dietas"),
       items: [
-        { href: "/dietas", label: "Dietas", icon: UtensilsCrossed },
-        { href: "/alimentos", label: "Alimentos", icon: Apple },
-        { href: "/recetas", label: "Recetas", icon: CookingPot },
+        { href: "/dietas", label: t("navItems.dietas"), icon: UtensilsCrossed },
+        { href: "/alimentos", label: t("navItems.alimentos"), icon: Apple },
+        { href: "/recetas", label: t("navItems.recetas"), icon: CookingPot },
       ],
     },
     {
-      title: "Acompañamiento",
-      items: [{ href: "/mensajes", label: "Mensajes", icon: MessageSquare }],
+      title: t("nav.acompanamiento"),
+      items: [{ href: "/mensajes", label: t("navItems.mensajes"), icon: MessageSquare }],
     },
     {
-      title: "Centro de control",
+      title: t("nav.centroDeControl"),
       items: [
-        { href: "/reportes", label: "Reportes", icon: FileBarChart },
-        { href: "/ajustes", label: "Ajustes", icon: Settings },
+        { href: "/reportes", label: t("navItems.reportes"), icon: FileBarChart },
+        { href: "/ajustes", label: t("navItems.ajustes"), icon: Settings },
         ...(isAdmin
-          ? [{ href: "/admin-login", label: "Admin", icon: ShieldCheck, admin: true as const }]
+          ? [{ href: "/admin-login", label: t("navItems.admin"), icon: ShieldCheck, admin: true as const }]
           : []),
       ],
     },
@@ -82,6 +84,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCount: mensajesCountInit = 0, badges: badgesInit = {}, isAdmin }: SidebarProps) {
+  const t = useTranslations("common");
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -176,7 +179,7 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
 
       {/* Nav */}
       <nav className="flex-1 py-4 px-3 overflow-y-auto">
-        {getNavSections(isAdmin).map((section, sectionIndex) => (
+        {getNavSections(t, isAdmin).map((section, sectionIndex) => (
           <div
             key={section.title}
             className={cn(sectionIndex > 0 && "mt-6")}
@@ -250,7 +253,7 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
           {(!collapsed || mobileOpen) && (
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium truncate">{dietistaNombre}</p>
-              <p className="text-xs text-muted-foreground">Dietista</p>
+              <p className="text-xs text-muted-foreground">{t("sidebar.dietista")}</p>
             </div>
           )}
           <div className="flex items-center gap-1 shrink-0">
@@ -261,10 +264,10 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
         <button
           onClick={onSignOut}
           className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors w-full"
-          title="Cerrar sesión"
+          title={t("sidebar.cerrarSesionTitle")}
         >
           <LogOut className="w-5 h-5 shrink-0" />
-          {(!collapsed || mobileOpen) && <span>Cerrar sesión</span>}
+          {(!collapsed || mobileOpen) && <span>{t("sidebar.cerrarSesion")}</span>}
         </button>
       </div>
     </>
@@ -277,7 +280,7 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
         <div className="min-w-20 shrink-0">
           <button
             onClick={() => setMobileOpen(true)}
-            aria-label="Abrir menú"
+            aria-label={t("sidebar.abrirMenu")}
             className="p-2.5 -ml-1 rounded-lg hover:bg-muted transition-colors min-h-11 min-w-11 flex items-center justify-center"
           >
             <Menu className="w-5 h-5" />

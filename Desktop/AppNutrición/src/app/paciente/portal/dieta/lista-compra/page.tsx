@@ -5,10 +5,12 @@ import { prisma } from "@/lib/prisma";
 import { generarListaCompra } from "@/lib/shopping-list";
 import { ShoppingList } from "@/components/paciente/shopping-list";
 import { PageHeader } from "@/components/page-header";
+import { getTranslations } from "next-intl/server";
 
 export default async function PatientShoppingListPage() {
   const session = await getCurrentPaciente();
   if (!session) redirect("/paciente/login");
+  const t = await getTranslations("patient-portal");
 
   const plan = await prisma.planAlimenticio.findFirst({
     where: { pacienteId: session.pacienteId, activo: true },
@@ -34,12 +36,12 @@ export default async function PatientShoppingListPage() {
   if (!plan) {
     return (
       <div>
-        <PageHeader icon={ShoppingCart} title="Lista de la compra" />
+        <PageHeader icon={ShoppingCart} title={t("listaCompra.title")} />
         <div className="lg:rounded-xl lg:border lg:border-border sm:bg-muted/30 p-12 text-center">
           <ShoppingCart className="w-12 h-12 text-muted-foreground mx-auto mb-4" strokeWidth={1.5} />
-          <h2 className="text-lg font-semibold mb-1">Sin plan activo</h2>
+          <h2 className="text-lg font-semibold mb-1">{t("listaCompra.sinPlan.title")}</h2>
           <p className="text-muted-foreground">
-            Tu nutricionista aún no te ha asignado un plan alimenticio.
+            {t("listaCompra.sinPlan.description")}
           </p>
         </div>
       </div>
@@ -50,7 +52,7 @@ export default async function PatientShoppingListPage() {
 
   return (
     <div>
-      <PageHeader icon={ShoppingCart} title="Lista de la compra" />
+      <PageHeader icon={ShoppingCart} title={t("listaCompra.title")} />
       <ShoppingList
         planId={plan.id}
         planNombre={plan.nombre}

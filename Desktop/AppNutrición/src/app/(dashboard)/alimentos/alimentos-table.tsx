@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { MacroBadges } from "@/components/macro-badge";
 import { cargarMasAlimentos } from "@/app/actions/alimentos";
 import { UNIDAD_LABELS } from "@/lib/units";
@@ -20,21 +21,21 @@ type Alimento = {
   origen: string;
 };
 
-const CATEGORIA_LABELS: Record<string, string> = {
-  FRUTAS: "Frutas",
-  VERDURAS: "Verduras",
-  CEREALES: "Cereales",
-  LEGUMBRES: "Legumbres",
-  CARNES: "Carnes",
-  PESCADOS: "Pescados",
-  LACTEOS: "Lácteos",
-  HUEVOS: "Huevos",
-  FRUTOS_SECOS: "Frutos secos",
-  ACEITES: "Aceites",
-  BEBIDAS: "Bebidas",
-  CONDIMENTOS: "Condimentos",
-  DULCES: "Dulces",
-  OTROS: "Otros",
+const CATEGORIA_KEY_MAP: Record<string, string> = {
+  FRUTAS: "frutas",
+  VERDURAS: "verduras",
+  CEREALES: "cereales",
+  LEGUMBRES: "legumbres",
+  CARNES: "carnes",
+  PESCADOS: "pescados",
+  LACTEOS: "lacteos",
+  HUEVOS: "huevos",
+  FRUTOS_SECOS: "frutosSecos",
+  ACEITES: "aceites",
+  BEBIDAS: "bebidas",
+  CONDIMENTOS: "condimentos",
+  DULCES: "dulces",
+  OTROS: "otros",
 };
 
 interface Props {
@@ -46,6 +47,7 @@ interface Props {
 }
 
 export function AlimentosTable({ initial, initialCursor, busqueda, categoria, propios }: Props) {
+  const t = useTranslations("foods");
   const [alimentos, setAlimentos] = useState(initial);
   const [cursor, setCursor] = useState(initialCursor);
   const [isPending, startTransition] = useTransition();
@@ -94,7 +96,7 @@ export function AlimentosTable({ initial, initialCursor, busqueda, categoria, pr
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium truncate">{alimento.nombre}</span>
                 <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted font-medium shrink-0">
-                  {CATEGORIA_LABELS[alimento.categoria] || alimento.categoria}
+                  {CATEGORIA_KEY_MAP[alimento.categoria] ? t(`categorias.${CATEGORIA_KEY_MAP[alimento.categoria]}`) : alimento.categoria}
                 </span>
               </div>
               <div className="flex flex-wrap gap-1 mt-1.5">
@@ -114,11 +116,11 @@ export function AlimentosTable({ initial, initialCursor, busqueda, categoria, pr
       <table className="w-full hidden sm:table">
         <thead>
           <tr className="border-b border-border text-left text-sm text-muted-foreground">
-            <th className="px-4 py-3 font-medium">Nombre</th>
-            <th className="px-4 py-3 font-medium">Categoría</th>
-            <th className="px-4 py-3 font-medium hidden md:table-cell">Porción</th>
-            <th className="px-4 py-3 font-medium">Macros / 100g</th>
-            <th className="px-4 py-3 font-medium hidden lg:table-cell">Origen</th>
+            <th className="px-4 py-3 font-medium">{t("table.headerNombre")}</th>
+            <th className="px-4 py-3 font-medium">{t("table.headerCategoria")}</th>
+            <th className="px-4 py-3 font-medium hidden md:table-cell">{t("table.headerPorcion")}</th>
+            <th className="px-4 py-3 font-medium">{t("table.headerMacros")}</th>
+            <th className="px-4 py-3 font-medium hidden lg:table-cell">{t("table.headerOrigen")}</th>
           </tr>
         </thead>
         <tbody>
@@ -137,7 +139,7 @@ export function AlimentosTable({ initial, initialCursor, busqueda, categoria, pr
               </td>
               <td className="px-4 py-3">
                 <span className="text-xs px-2 py-0.5 rounded-full bg-muted font-medium">
-                  {CATEGORIA_LABELS[alimento.categoria] || alimento.categoria}
+                  {CATEGORIA_KEY_MAP[alimento.categoria] ? t(`categorias.${CATEGORIA_KEY_MAP[alimento.categoria]}`) : alimento.categoria}
                 </span>
               </td>
               <td className="px-4 py-3 text-sm text-muted-foreground hidden md:table-cell">
@@ -161,7 +163,7 @@ export function AlimentosTable({ initial, initialCursor, busqueda, categoria, pr
                       : "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400"
                   }`}
                 >
-                  {alimento.origen === "API" ? "Importado" : "Personalizado"}
+                  {alimento.origen === "API" ? t("table.importado") : t("table.personalizado")}
                 </span>
               </td>
             </tr>
@@ -175,13 +177,13 @@ export function AlimentosTable({ initial, initialCursor, busqueda, categoria, pr
       {isPending && (
         <div className="flex items-center justify-center py-4 text-muted-foreground text-sm gap-2">
           <Loader2 className="w-4 h-4 animate-spin" />
-          Cargando más alimentos...
+          {t("list.cargandoMas")}
         </div>
       )}
 
       {!cursor && alimentos.length > 0 && (
         <div className="text-center py-3 text-xs text-muted-foreground">
-          {alimentos.length} alimentos mostrados
+          {t("list.alimentosMostrados", { count: alimentos.length })}
         </div>
       )}
     </div>

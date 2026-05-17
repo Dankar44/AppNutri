@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Shield } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { getPaciente } from "@/app/actions/pacientes";
 import { getAccesoPaciente } from "@/app/actions/paciente-auth";
 import { PortalConfig } from "./portal-config";
@@ -15,6 +16,7 @@ export default async function PortalConfigPage({ params }: Props) {
   if (!paciente) notFound();
 
   const acceso = await getAccesoPaciente(id);
+  const t = await getTranslations("patients");
 
   return (
     <div>
@@ -24,14 +26,14 @@ export default async function PortalConfigPage({ params }: Props) {
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3 py-2 sm:py-0 -my-2 sm:my-0"
         >
           <ArrowLeft className="w-4 h-4" />
-          Volver a {paciente.nombre}
+          {t("portal.volverAPaciente", { nombre: paciente.nombre })}
         </Link>
         <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
           <Shield className="w-6 h-6 text-primary" />
-          Portal del paciente
+          {t("portal.portalPaciente")}
         </h1>
         <p className="text-muted-foreground mt-1">
-          Configura el acceso de {paciente.nombre} {paciente.apellidos} a su portal
+          {t("portal.configuraAcceso", { nombre: paciente.nombre, apellidos: paciente.apellidos })}
         </p>
       </div>
 

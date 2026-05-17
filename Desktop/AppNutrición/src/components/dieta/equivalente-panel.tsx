@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState, useEffect, useCallback } from "react";
 import { X, Search, ArrowUp, ArrowDown, Minus, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { buscarEquivalentes } from "@/app/actions/alimentos";
@@ -63,6 +64,7 @@ export function EquivalentePanel({
   onSelect,
   onClose,
 }: EquivalentePanelProps) {
+  const t = useTranslations("diets");
   const [busqueda, setBusqueda] = useState("");
   const [allResults, setAllResults] = useState<Equivalente[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,7 +112,7 @@ export function EquivalentePanel({
     <div className="border border-primary/20 rounded-xl bg-card shadow-lg overflow-hidden my-2">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-primary/5 border-b border-primary/10">
-        <h4 className="text-sm font-semibold">Añadir nuevo alimento equivalente</h4>
+        <h4 className="text-sm font-semibold">{t("equivalentePanel.addTitle")}</h4>
         <button onClick={onClose} className="p-1 rounded hover:bg-muted transition-colors">
           <X className="w-4 h-4" />
         </button>
@@ -122,7 +124,7 @@ export function EquivalentePanel({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Buscar alimento"
+            placeholder={t("equivalentePanel.searchFood")}
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             maxLength={100}
@@ -134,14 +136,14 @@ export function EquivalentePanel({
       {/* Reference info + column headers */}
       <div className="px-4 pt-3 pb-2 border-b border-border/50 bg-muted/10">
         <p className="text-xs text-primary font-medium mb-2">
-          Cálculo de equivalentes según el alimento de referencia:
+          {t("equivalentePanel.calculationNote")}
         </p>
         <div className="grid grid-cols-[1fr_75px_60px_60px_60px_36px] gap-1 text-[10px] font-semibold text-muted-foreground">
-          <span>Alimento</span>
-          <span className="text-center bg-primary/10 text-primary rounded px-1 py-0.5">Energía</span>
-          <span className="text-center">Grasa</span>
-          <span className="text-center">H. Carb.</span>
-          <span className="text-center">Proteína</span>
+          <span>{t("equivalentePanel.columnFood")}</span>
+          <span className="text-center bg-primary/10 text-primary rounded px-1 py-0.5">{t("equivalentePanel.columnEnergy")}</span>
+          <span className="text-center">{t("equivalentePanel.columnFat")}</span>
+          <span className="text-center">{t("equivalentePanel.columnCarbs")}</span>
+          <span className="text-center">{t("equivalentePanel.columnProtein")}</span>
           <span></span>
         </div>
       </div>
@@ -150,7 +152,7 @@ export function EquivalentePanel({
       <div className="grid grid-cols-[1fr_75px_60px_60px_60px_36px] gap-1 items-center px-4 py-2 bg-primary/5 border-b border-primary/10 text-xs">
         <div className="min-w-0">
           <p className="font-semibold truncate text-primary">{nombre}</p>
-          <p className="text-[10px] text-muted-foreground">{cantidad}g · referencia</p>
+          <p className="text-[10px] text-muted-foreground">{cantidad}g · {t("equivalentePanel.reference")}</p>
         </div>
         <p className="text-center font-bold tabular-nums">{Math.round(calRef)} kcal</p>
         <p className="text-center tabular-nums">{Math.round(grasRef)} g</p>
@@ -162,9 +164,9 @@ export function EquivalentePanel({
       {/* Results */}
       <div className="divide-y divide-border/40">
         {loading ? (
-          <div className="px-4 py-8 text-center text-sm text-muted-foreground">Buscando equivalentes...</div>
+          <div className="px-4 py-8 text-center text-sm text-muted-foreground">{t("equivalentePanel.searching")}</div>
         ) : visible.length === 0 ? (
-          <div className="px-4 py-8 text-center text-sm text-muted-foreground">No se encontraron equivalentes</div>
+          <div className="px-4 py-8 text-center text-sm text-muted-foreground">{t("equivalentePanel.noResults")}</div>
         ) : (
           visible.map((eq) => (
             <div
@@ -196,7 +198,7 @@ export function EquivalentePanel({
                   type="button"
                   onClick={() => onSelect(eq.id, eq.nombre, eq.cantidadG)}
                   className="p-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                  title="Usar este equivalente"
+                  title={t("equivalentePanel.useEquivalent")}
                 >
                   <Plus className="w-3.5 h-3.5" />
                 </button>

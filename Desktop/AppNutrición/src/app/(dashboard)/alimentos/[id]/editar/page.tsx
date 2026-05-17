@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { getAlimento } from "@/app/actions/alimentos";
 import { AlimentoForm } from "@/components/alimento-form";
 import { MICRO_KEYS } from "@/lib/micronutrientes";
@@ -15,6 +16,8 @@ export default async function EditarAlimentoPage({ params }: Props) {
   if (!alimento) notFound();
   if (!alimento.dietistaId) notFound();
 
+  const t = await getTranslations("foods");
+
   return (
     <div>
       <div className="mb-6">
@@ -23,9 +26,9 @@ export default async function EditarAlimentoPage({ params }: Props) {
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3 py-2 sm:py-0 -my-2 sm:my-0"
         >
           <ArrowLeft className="w-4 h-4" />
-          Volver al alimento
+          {t("editar.volverAlAlimento")}
         </Link>
-        <h1 className="text-2xl sm:text-3xl font-bold">Editar {alimento.nombre}</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">{t("editar.titulo", { nombre: alimento.nombre })}</h1>
       </div>
       <AlimentoForm
         alimentoId={alimento.id}

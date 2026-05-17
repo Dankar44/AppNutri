@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { validateNumberOptional, sanitizeStringOptional } from "@/lib/validation";
 
 export interface MedidaFormData {
@@ -38,14 +39,15 @@ function calcularIMC(peso?: number, altura?: number): number | null {
 }
 
 export async function crearMedida(data: MedidaFormData) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const paciente = await prisma.paciente.findFirst({
     where: { id: data.pacienteId, dietistaId: dietista.id },
   });
-  if (!paciente) throw new Error("Paciente no encontrado");
+  if (!paciente) throw new Error(t("paciente.pacienteNoEncontrado"));
 
   // Validar y sanitizar inputs
   const peso = validateNumberOptional(data.peso, 0.1, 500);
@@ -185,8 +187,9 @@ export async function getMedidasEvolucion(pacienteId: string) {
 }
 
 export async function eliminarMedida(id: string) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const medida = await prisma.medidaAntropometrica.findFirst({
@@ -194,7 +197,7 @@ export async function eliminarMedida(id: string) {
     include: { paciente: { select: { dietistaId: true, id: true } } },
   });
   if (!medida || medida.paciente.dietistaId !== dietista.id) {
-    throw new Error("No autorizado");
+    throw new Error(t("auth.noAutorizado"));
   }
 
   await prisma.medidaAntropometrica.delete({ where: { id } });
@@ -206,14 +209,15 @@ export async function crearMedidaRapida(
   pacienteId: string,
   data: { peso?: number; altura?: number; grasaCorporal?: number }
 ) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const paciente = await prisma.paciente.findFirst({
     where: { id: pacienteId, dietistaId: dietista.id },
   });
-  if (!paciente) throw new Error("Paciente no encontrado");
+  if (!paciente) throw new Error(t("paciente.pacienteNoEncontrado"));
 
   const peso = data.peso || paciente.peso || null;
   const altura = data.altura || paciente.altura || null;

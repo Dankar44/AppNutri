@@ -6,13 +6,14 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { actualizarTemaPdf } from "@/app/actions/perfil";
 import { TEMAS_PDF, getTheme, type PdfColorTheme } from "@/lib/pdf/pdf-themes";
+import { useTranslations } from "next-intl";
 
 const TEMAS_LISTA = [
-  { id: "verde", label: "Verde", color: "#6b9e80" },
-  { id: "azul", label: "Azul", color: "#5b8fb9" },
-  { id: "morado", label: "Morado", color: "#8b6baa" },
-  { id: "naranja", label: "Naranja", color: "#c28550" },
-  { id: "oscuro", label: "Oscuro", color: "#4a5568" },
+  { id: "verde", key: "verde" as const, color: "#6b9e80" },
+  { id: "azul", key: "azul" as const, color: "#5b8fb9" },
+  { id: "morado", key: "morado" as const, color: "#8b6baa" },
+  { id: "naranja", key: "naranja" as const, color: "#c28550" },
+  { id: "oscuro", key: "oscuro" as const, color: "#4a5568" },
 ] as const;
 
 interface Props {
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export function TemaPdfForm({ temaPdfInicial, colorPrimarioInicial, onThemeChange }: Props) {
+  const t = useTranslations("settings.temaPdf");
   const [selected, setSelected] = useState(temaPdfInicial || "verde");
   const [customColor, setCustomColor] = useState(colorPrimarioInicial || "#6b9e80");
   const [isPending, startTransition] = useTransition();
@@ -48,9 +50,9 @@ export function TemaPdfForm({ temaPdfInicial, colorPrimarioInicial, onThemeChang
     startTransition(async () => {
       try {
         await actualizarTemaPdf(selected, selected === "personalizado" ? customColor : null);
-        toast.success("Tema actualizado");
+        toast.success(t("toastSuccess"));
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Error al guardar");
+        toast.error(e instanceof Error ? e.message : t("toastErrorGenerico"));
       }
     });
   }
@@ -62,32 +64,32 @@ export function TemaPdfForm({ temaPdfInicial, colorPrimarioInicial, onThemeChang
     <div>
       <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
         <Palette className="w-4 h-4 text-muted-foreground" />
-        Tema de color
+        {t("titulo")}
       </h4>
       <p className="text-xs text-muted-foreground mb-4">
-        Elige los colores de tus documentos PDF (plan alimenticio, reportes, lista de la compra).
+        {t("descripcion")}
       </p>
 
       <div className="flex flex-wrap gap-3 mb-4">
-        {TEMAS_LISTA.map((t) => (
+        {TEMAS_LISTA.map((tema) => (
           <button
-            key={t.id}
+            key={tema.id}
             type="button"
-            onClick={() => handleSelectTheme(t.id)}
+            onClick={() => handleSelectTheme(tema.id)}
             className={cn(
               "flex flex-col items-center gap-1.5 p-2 rounded-lg border-2 transition-all min-w-[64px]",
-              selected === t.id
+              selected === tema.id
                 ? "border-primary bg-primary/5"
                 : "border-transparent hover:border-border"
             )}
           >
             <div
               className="w-8 h-8 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: t.color }}
+              style={{ backgroundColor: tema.color }}
             >
-              {selected === t.id && <Check className="w-4 h-4 text-white" />}
+              {selected === tema.id && <Check className="w-4 h-4 text-white" />}
             </div>
-            <span className="text-[11px] font-medium">{t.label}</span>
+            <span className="text-[11px] font-medium">{t(`temas.${tema.key}`)}</span>
           </button>
         ))}
 
@@ -107,7 +109,7 @@ export function TemaPdfForm({ temaPdfInicial, colorPrimarioInicial, onThemeChang
           >
             {selected === "personalizado" && <Check className="w-4 h-4 text-white" />}
           </div>
-          <span className="text-[11px] font-medium">Custom</span>
+          <span className="text-[11px] font-medium">{t("temas.custom")}</span>
         </button>
       </div>
 
@@ -120,7 +122,7 @@ export function TemaPdfForm({ temaPdfInicial, colorPrimarioInicial, onThemeChang
             className="w-10 h-10 rounded-lg cursor-pointer border-0 p-0"
           />
           <div>
-            <p className="text-sm font-medium">Color personalizado</p>
+            <p className="text-sm font-medium">{t("colorPersonalizado")}</p>
             <p className="text-xs text-muted-foreground font-mono">{customColor}</p>
           </div>
         </div>
@@ -128,12 +130,12 @@ export function TemaPdfForm({ temaPdfInicial, colorPrimarioInicial, onThemeChang
 
       <div className="flex items-center gap-3 mb-4">
         <div className="flex gap-1">
-          <div className="w-6 h-6 rounded" style={{ backgroundColor: currentTheme.primary }} title="Primario" />
-          <div className="w-6 h-6 rounded" style={{ backgroundColor: currentTheme.accent }} title="Acento" />
-          <div className="w-6 h-6 rounded" style={{ backgroundColor: currentTheme.sectionBg }} title="Fondo sección" />
-          <div className="w-6 h-6 rounded border border-border" style={{ backgroundColor: currentTheme.lightBg }} title="Fondo claro" />
+          <div className="w-6 h-6 rounded" style={{ backgroundColor: currentTheme.primary }} title={t("colorPrimario")} />
+          <div className="w-6 h-6 rounded" style={{ backgroundColor: currentTheme.accent }} title={t("colorAcento")} />
+          <div className="w-6 h-6 rounded" style={{ backgroundColor: currentTheme.sectionBg }} title={t("colorFondoSeccion")} />
+          <div className="w-6 h-6 rounded border border-border" style={{ backgroundColor: currentTheme.lightBg }} title={t("colorFondoClaro")} />
         </div>
-        <span className="text-xs text-muted-foreground">Vista previa de la paleta</span>
+        <span className="text-xs text-muted-foreground">{t("vistaPreviaPaleta")}</span>
       </div>
 
       <button
@@ -147,7 +149,7 @@ export function TemaPdfForm({ temaPdfInicial, colorPrimarioInicial, onThemeChang
             : "bg-muted text-muted-foreground cursor-not-allowed"
         )}
       >
-        {isPending ? "Guardando..." : "Guardar tema"}
+        {isPending ? t("guardando") : t("guardarTema")}
       </button>
     </div>
   );

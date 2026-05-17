@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import {
   sanitizeString,
   sanitizeStringOptional,
@@ -26,14 +27,15 @@ export interface PerfilFormData {
 }
 
 export async function actualizarPerfil(data: PerfilFormData) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const nombre = sanitizeString(data.nombre, LIMITS.NOMBRE_CORTO);
-  if (!nombre) throw new Error("El nombre es obligatorio");
+  if (!nombre) throw new Error(t("perfil.nombreObligatorio"));
   const apellidos = sanitizeString(data.apellidos, LIMITS.NOMBRE_CORTO);
-  if (!apellidos) throw new Error("Los apellidos son obligatorios");
+  if (!apellidos) throw new Error(t("perfil.apellidosObligatorios"));
   const telefono = validatePhone(data.telefono) || null;
   const especialidad = sanitizeStringOptional(data.especialidad, LIMITS.ESPECIALIDAD);
   const numColegiado = sanitizeStringOptional(data.numColegiado, LIMITS.COLEGIADO);
@@ -56,8 +58,9 @@ export async function actualizarPerfil(data: PerfilFormData) {
 }
 
 export async function eliminarCuenta() {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   // Cascade borra pacientes, planes, recetas, etc.
@@ -72,12 +75,13 @@ export async function eliminarCuenta() {
 }
 
 export async function actualizarFotoDietista(fotoUrl: string) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const validatedUrl = validateImageDataUrl(fotoUrl);
-  if (!validatedUrl) throw new Error("Imagen inválida");
+  if (!validatedUrl) throw new Error(t("perfil.imagenInvalida"));
 
   await prisma.dietista.update({
     where: { id: dietista.id },
@@ -89,15 +93,16 @@ export async function actualizarFotoDietista(fotoUrl: string) {
 }
 
 export async function actualizarTemaPdf(tema: string, colorPrimario: string | null) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const temaValido = validateEnum(tema, TEMA_PDF_OPCIONES);
-  if (!temaValido) throw new Error("Tema no válido");
+  if (!temaValido) throw new Error(t("perfil.temaNoValido"));
 
   const color = temaValido === "personalizado" ? validateHexColor(colorPrimario) : null;
-  if (temaValido === "personalizado" && !color) throw new Error("Color no válido");
+  if (temaValido === "personalizado" && !color) throw new Error(t("perfil.colorNoValido"));
 
   await prisma.dietista.update({
     where: { id: dietista.id },
@@ -108,12 +113,13 @@ export async function actualizarTemaPdf(tema: string, colorPrimario: string | nu
 }
 
 export async function actualizarLogoPdf(logoDataUrl: string) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const validatedUrl = validateImageDataUrl(logoDataUrl);
-  if (!validatedUrl) throw new Error("Imagen inválida");
+  if (!validatedUrl) throw new Error(t("perfil.imagenInvalida"));
 
   await prisma.dietista.update({
     where: { id: dietista.id },
@@ -124,8 +130,9 @@ export async function actualizarLogoPdf(logoDataUrl: string) {
 }
 
 export async function eliminarLogoPdf() {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   await prisma.dietista.update({
@@ -140,14 +147,15 @@ export async function cambiarPassword(data: {
   actual: string;
   nueva: string;
 }): Promise<{ ok: boolean; error?: string }> {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
-  if (dietista.isDemo) return { ok: false, error: "No disponible en modo demo" };
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
+  if (dietista.isDemo) return { ok: false, error: t("password.noDisponibleDemo") };
 
   const { actual, nueva } = data;
-  if (!actual || !nueva) return { ok: false, error: "Todos los campos son obligatorios" };
-  if (nueva.length < 6) return { ok: false, error: "La nueva contraseña debe tener al menos 6 caracteres" };
-  if (actual === nueva) return { ok: false, error: "La nueva contraseña debe ser diferente a la actual" };
+  if (!actual || !nueva) return { ok: false, error: t("password.camposObligatorios") };
+  if (nueva.length < 6) return { ok: false, error: t("password.longitudMinima") };
+  if (actual === nueva) return { ok: false, error: t("password.debeSerDiferente") };
 
   const authId = dietista.authId;
 
@@ -156,7 +164,7 @@ export async function cambiarPassword(data: {
     actual, authId
   );
 
-  if (!verify[0]?.valid) return { ok: false, error: "La contraseña actual no es correcta" };
+  if (!verify[0]?.valid) return { ok: false, error: t("password.actualIncorrecta") };
 
   await prisma.$queryRawUnsafe(
     `UPDATE auth.users SET encrypted_password = crypt($1, gen_salt('bf')), updated_at = NOW() WHERE id = $2::uuid`,
@@ -167,8 +175,9 @@ export async function cambiarPassword(data: {
 }
 
 export async function actualizarMarcaPdf(marca: string) {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error("No autorizado");
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
   const cleaned = sanitizeStringOptional(marca, LIMITS.MARCA_PDF);
@@ -277,9 +286,10 @@ export async function getCamposAnamnesis(): Promise<
 export async function guardarCamposAnamnesis(
   campos: CampoPersonalizadoDefinicion[]
 ): Promise<{ ok: boolean; error?: string }> {
+  const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) return { ok: false, error: "No autorizado" };
-  if (dietista.isDemo) return { ok: false, error: "No disponible en modo demo" };
+  if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
+  if (dietista.isDemo) return { ok: false, error: t("general.noDisponibleDemo") };
 
   const sanitized = sanitizeCamposAnamnesis(campos);
 

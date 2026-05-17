@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -25,16 +26,6 @@ import {
 } from "@/app/actions/planes";
 import type { UnidadMedida } from "@/generated/prisma/client";
 import { cn } from "@/lib/utils";
-
-const DIA_LABELS: Record<string, string> = {
-  LUNES: "Lunes",
-  MARTES: "Martes",
-  MIERCOLES: "Miércoles",
-  JUEVES: "Jueves",
-  VIERNES: "Viernes",
-  SABADO: "Sábado",
-  DOMINGO: "Domingo",
-};
 
 const DIA_ORDER = ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"];
 
@@ -136,6 +127,7 @@ export function PlanEditor({
   interactionMode = "dashboard",
   localCallbacks,
 }: PlanEditorProps) {
+  const t = useTranslations("diets");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [selectorOpen, setSelectorOpen] = useState(false);
@@ -161,7 +153,7 @@ export function PlanEditor({
             return {
               id: a.id,
               alimentoRealId: a.alimento?.id || a.receta?.id || null,
-              nombre: item?.nombre || "Sin nombre",
+              nombre: item?.nombre || t("editor.sinNombre"),
               cantidad: a.cantidad,
               unidad: a.unidad || "GRAMOS",
               porcion: a.alimento?.porcion || 100,
@@ -269,7 +261,7 @@ export function PlanEditor({
         router.refresh();
       } catch (error) {
         if (error && typeof error === "object" && "digest" in error) throw error;
-        toast.error("Error al mover alimento");
+        toast.error(t("editor.toastMoveError"));
       }
     });
   }
@@ -307,7 +299,7 @@ export function PlanEditor({
         router.refresh();
       } catch (error) {
         if (error && typeof error === "object" && "digest" in error) throw error;
-        toast.error("Error al añadir alimento");
+        toast.error(t("editor.toastAddError"));
       }
     });
   }
@@ -321,7 +313,7 @@ export function PlanEditor({
       await removeAlimentoDeComida(alimentoEnComidaId);
     } catch (error) {
       if (error && typeof error === "object" && "digest" in error) throw error;
-      toast.error("Error al eliminar");
+      toast.error(t("editor.toastDeleteError"));
     }
     router.refresh();
   }
@@ -339,7 +331,7 @@ export function PlanEditor({
       if (!comidaId) return;
       localCallbacks.onRemove(alimentoEnComidaId);
       localCallbacks.onAdd(comidaId, { alimentoId: nuevoAlimentoId, recetaId: null, nombre: _nombre, cantidad, unidad: "GRAMOS", calorias: 0, proteinas: 0, carbohidratos: 0, grasas: 0 });
-      toast.success("Alimento reemplazado");
+      toast.success(t("editor.toastReplaced"));
       return;
     }
     startTransition(async () => {
@@ -356,10 +348,10 @@ export function PlanEditor({
         await removeAlimentoDeComida(alimentoEnComidaId);
         await addAlimentoAComida(comidaId, nuevoAlimentoId, null, cantidad);
         router.refresh();
-        toast.success("Alimento reemplazado");
+        toast.success(t("editor.toastReplaced"));
       } catch (error) {
         if (error && typeof error === "object" && "digest" in error) throw error;
-        toast.error("Error al reemplazar");
+        toast.error(t("editor.toastReplaceError"));
       }
     });
   }
@@ -375,7 +367,7 @@ export function PlanEditor({
         router.refresh();
       } catch (error) {
         if (error && typeof error === "object" && "digest" in error) throw error;
-        toast.error("Error al actualizar cantidad");
+        toast.error(t("editor.toastUpdateQuantityError"));
       }
     });
   }
@@ -405,7 +397,7 @@ export function PlanEditor({
             <div>
               <h1 className="text-xl font-bold">{planNombre}</h1>
               {isPending && (
-                <p className="text-xs text-muted-foreground">Guardando...</p>
+                <p className="text-xs text-muted-foreground">{t("editor.saving")}</p>
               )}
             </div>
           </div>
@@ -427,7 +419,7 @@ export function PlanEditor({
               </button>
               <div className="flex-1 bg-primary rounded-xl py-3 text-center">
                 <span className="text-primary-foreground font-semibold">
-                  {selectedDay === "TODOS" ? "Todos los días" : DIA_LABELS[selectedDay] || selectedDay}
+                  {selectedDay === "TODOS" ? t("editor.allDays") : t(`editor.dayLabels.${selectedDay}` as any) || selectedDay}
                 </span>
               </div>
               <button
@@ -449,7 +441,7 @@ export function PlanEditor({
                   selectedDay === "TODOS" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
                 )}
               >
-                Todos
+                {t("editor.allDaysShort")}
               </button>
               {availableDays.map((dia) => (
                 <button
@@ -460,7 +452,7 @@ export function PlanEditor({
                     selectedDay === dia ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  {DIA_LABELS[dia]?.slice(0, 3) || dia.slice(0, 3)}
+                  {(t(`editor.dayLabels.${dia}` as any) || dia).slice(0, 3)}
                 </button>
               ))}
             </div>
@@ -477,7 +469,7 @@ export function PlanEditor({
                 {selectedDay === "TODOS" && availableDays.length > 1 && (
                   <h2 className="text-base font-semibold text-foreground mb-3 flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    {DIA_LABELS[dia.dia] || dia.dia}
+                    {t(`editor.dayLabels.${dia.dia}` as any) || dia.dia}
                   </h2>
                 )}
 
@@ -518,7 +510,7 @@ export function PlanEditor({
             />
             {selectedDay === "TODOS" && availableDays.length > 1 && (
               <p className="text-xs text-muted-foreground mt-2 text-center italic">
-                Mostrando media diaria
+                {t("editor.showingDailyAvg")}
               </p>
             )}
           </div>}

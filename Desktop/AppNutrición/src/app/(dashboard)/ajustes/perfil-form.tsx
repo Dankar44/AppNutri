@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { actualizarPerfil, type PerfilFormData } from "@/app/actions/perfil";
 
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function PerfilForm({ defaultValues }: Props) {
+  const t = useTranslations("settings");
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -29,10 +31,10 @@ export function PerfilForm({ defaultValues }: Props) {
 
     try {
       await actualizarPerfil(data);
-      toast.success("Perfil actualizado");
+      toast.success(t("perfilForm.toastSuccess"));
       router.refresh();
     } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
-      toast.error("Error al actualizar el perfil");
+      toast.error(t("perfilForm.toastError"));
     } finally {
       setLoading(false);
     }
@@ -42,41 +44,41 @@ export function PerfilForm({ defaultValues }: Props) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Nombre *</label>
+          <label className="block text-sm font-medium mb-1">{t("perfilForm.nombreLabel")}</label>
           <input name="nombre" required maxLength={100} defaultValue={defaultValues.nombre}
             className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm" />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Apellidos *</label>
+          <label className="block text-sm font-medium mb-1">{t("perfilForm.apellidosLabel")}</label>
           <input name="apellidos" required maxLength={100} defaultValue={defaultValues.apellidos}
             className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm" />
         </div>
       </div>
       <div>
-        <label className="block text-sm font-medium mb-1">Teléfono</label>
+        <label className="block text-sm font-medium mb-1">{t("perfilForm.telefonoLabel")}</label>
         <input name="telefono" maxLength={20} defaultValue={defaultValues.telefono || ""}
           className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm" />
       </div>
       <div>
-        <label className="block text-sm font-medium mb-1">Especialidad</label>
+        <label className="block text-sm font-medium mb-1">{t("perfilForm.especialidadLabel")}</label>
         <input name="especialidad" maxLength={200} defaultValue={defaultValues.especialidad || ""}
           className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm" />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Nº Colegiado</label>
+          <label className="block text-sm font-medium mb-1">{t("perfilForm.numColegiadoLabel")}</label>
           <input name="numColegiado" maxLength={50} defaultValue={defaultValues.numColegiado || ""}
             className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm" />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Clínica</label>
+          <label className="block text-sm font-medium mb-1">{t("perfilForm.clinicaLabel")}</label>
           <input name="clinica" maxLength={200} defaultValue={defaultValues.clinica || ""}
             className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm" />
         </div>
       </div>
       <button type="submit" disabled={loading}
         className="px-6 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium disabled:opacity-50">
-        {loading ? "Guardando..." : "Guardar cambios"}
+        {loading ? t("perfilForm.guardando") : t("perfilForm.guardarCambios")}
       </button>
     </form>
   );

@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+import { useTranslations } from "next-intl";
 
 interface DataPoint {
   fecha: string;
@@ -20,17 +21,18 @@ interface DataPoint {
 }
 
 export function EvolucionMiniChart({ data }: { data: DataPoint[] }) {
+  const t = useTranslations("patients.evolucion");
   const hasPeso = data.some((d) => d.peso !== null);
   const hasGrasa = data.some((d) => d.grasa !== null);
   const hasCintura = data.some((d) => d.cintura !== null);
 
   const lines: { key: string; label: string; color: string }[] = [];
-  if (hasPeso) lines.push({ key: "peso", label: "Peso (kg)", color: "#3b82f6" });
-  if (hasGrasa) lines.push({ key: "grasa", label: "% Grasa", color: "#ef4444" });
-  if (hasCintura) lines.push({ key: "cintura", label: "Cintura (cm)", color: "#8b5cf6" });
+  if (hasPeso) lines.push({ key: "peso", label: t("pesoKg"), color: "#3b82f6" });
+  if (hasGrasa) lines.push({ key: "grasa", label: t("grasaPorcentaje"), color: "#ef4444" });
+  if (hasCintura) lines.push({ key: "cintura", label: t("cinturaCm"), color: "#8b5cf6" });
 
   if (lines.length === 0) {
-    return <p className="text-sm text-muted-foreground text-center py-4">Sin datos de evolución</p>;
+    return <p className="text-sm text-muted-foreground text-center py-4">{t("sinDatosEvolucion")}</p>;
   }
 
   return (

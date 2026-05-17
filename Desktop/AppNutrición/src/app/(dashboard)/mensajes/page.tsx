@@ -5,6 +5,7 @@ import { getSoporteResumen, getMensajesSoporte, getNoLeidosSoporteCount } from "
 import { redirect } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { MensajesClient } from "./mensajes-client";
+import { getTranslations } from "next-intl/server";
 
 export default async function MensajesPage({
   searchParams,
@@ -17,6 +18,8 @@ export default async function MensajesPage({
 
   const archivadas = params.archivadas === "1";
   const esSoporte = params.c === "soporte";
+
+  const t = await getTranslations("chat");
 
   const [conversaciones, soporteResumen, soporteNoLeidos, soporteMensajes] = await Promise.all([
     getConversaciones({ archivadas }),
@@ -48,9 +51,9 @@ export default async function MensajesPage({
           className="w-7 h-7 sm:w-9 sm:h-9 text-foreground shrink-0 mt-1 sm:mt-1.5"
         />
         <div className="min-w-0 flex-1">
-          <h1 className="text-xl sm:text-3xl font-bold leading-tight">Mensajes</h1>
+          <h1 className="text-xl sm:text-3xl font-bold leading-tight">{t("page.title")}</h1>
           <p className="text-muted-foreground text-xs sm:text-sm mt-0.5">
-            Comunicación directa con tus pacientes
+            {t("page.subtitle")}
           </p>
         </div>
       </div>

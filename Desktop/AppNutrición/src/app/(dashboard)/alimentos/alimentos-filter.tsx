@@ -4,62 +4,64 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Search, SlidersHorizontal, X, Sparkles, ChevronDown, Download, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
-const CATEGORIAS = [
-  { value: "", label: "Todas las categorías" },
-  { value: "FRUTAS", label: "Frutas" },
-  { value: "VERDURAS", label: "Verduras" },
-  { value: "CEREALES", label: "Cereales" },
-  { value: "LEGUMBRES", label: "Legumbres" },
-  { value: "CARNES", label: "Carnes" },
-  { value: "PESCADOS", label: "Pescados" },
-  { value: "LACTEOS", label: "Lácteos" },
-  { value: "HUEVOS", label: "Huevos" },
-  { value: "FRUTOS_SECOS", label: "Frutos secos" },
-  { value: "ACEITES", label: "Aceites" },
-  { value: "BEBIDAS", label: "Bebidas" },
-  { value: "CONDIMENTOS", label: "Condimentos" },
-  { value: "DULCES", label: "Dulces" },
-  { value: "OTROS", label: "Otros" },
-];
+const CATEGORIA_KEYS = [
+  { value: "", key: "todasCategorias" },
+  { value: "FRUTAS", key: "frutas" },
+  { value: "VERDURAS", key: "verduras" },
+  { value: "CEREALES", key: "cereales" },
+  { value: "LEGUMBRES", key: "legumbres" },
+  { value: "CARNES", key: "carnes" },
+  { value: "PESCADOS", key: "pescados" },
+  { value: "LACTEOS", key: "lacteos" },
+  { value: "HUEVOS", key: "huevos" },
+  { value: "FRUTOS_SECOS", key: "frutosSecos" },
+  { value: "ACEITES", key: "aceites" },
+  { value: "BEBIDAS", key: "bebidas" },
+  { value: "CONDIMENTOS", key: "condimentos" },
+  { value: "DULCES", key: "dulces" },
+  { value: "OTROS", key: "otros" },
+] as const;
 
-const ORIGENES = [
-  { value: "", label: "Todos los orígenes" },
-  { value: "PERSONALIZADO", label: "Personalizado" },
-  { value: "API", label: "Importado" },
-];
+const ORIGEN_KEYS = [
+  { value: "", key: "todosOrigenes" },
+  { value: "PERSONALIZADO", key: "origenPersonalizado" },
+  { value: "API", key: "origenImportado" },
+] as const;
 
 const VITAMINAS_FILTER = [
-  { key: "vitaminaA", label: "Vitamina A", unit: "ug" },
-  { key: "vitaminaB6", label: "Vitamina B6", unit: "mg" },
-  { key: "vitaminaB12", label: "Vitamina B12", unit: "ug" },
-  { key: "vitaminaC", label: "Vitamina C", unit: "mg" },
-  { key: "vitaminaD", label: "Vitamina D", unit: "ug" },
-  { key: "vitaminaE", label: "Vitamina E", unit: "mg" },
-  { key: "vitaminaK", label: "Vitamina K", unit: "ug" },
-  { key: "tiamina", label: "Tiamina (B1)", unit: "mg" },
-  { key: "riboflavina", label: "Riboflavina (B2)", unit: "mg" },
-  { key: "niacina", label: "Niacina (B3)", unit: "mg" },
-  { key: "folato", label: "Folato (B9)", unit: "ug" },
-  { key: "acidoPantotenico", label: "Ác. Pantoténico", unit: "mg" },
-  { key: "colina", label: "Colina", unit: "mg" },
+  { key: "vitaminaA", unit: "ug" },
+  { key: "vitaminaB6", unit: "mg" },
+  { key: "vitaminaB12", unit: "ug" },
+  { key: "vitaminaC", unit: "mg" },
+  { key: "vitaminaD", unit: "ug" },
+  { key: "vitaminaE", unit: "mg" },
+  { key: "vitaminaK", unit: "ug" },
+  { key: "tiamina", unit: "mg" },
+  { key: "riboflavina", unit: "mg" },
+  { key: "niacina", unit: "mg" },
+  { key: "folato", unit: "ug" },
+  { key: "acidoPantotenico", unit: "mg" },
+  { key: "colina", unit: "mg" },
 ];
 const MINERALES_FILTER = [
-  { key: "calcio", label: "Calcio", unit: "mg" },
-  { key: "hierro", label: "Hierro", unit: "mg" },
-  { key: "magnesio", label: "Magnesio", unit: "mg" },
-  { key: "fosforo", label: "Fósforo", unit: "mg" },
-  { key: "potasio", label: "Potasio", unit: "mg" },
-  { key: "sodio", label: "Sodio", unit: "mg" },
-  { key: "cinc", label: "Cinc", unit: "mg" },
-  { key: "cobre", label: "Cobre", unit: "mg" },
-  { key: "manganeso", label: "Manganeso", unit: "mg" },
-  { key: "selenio", label: "Selenio", unit: "ug" },
-  { key: "fluor", label: "Flúor", unit: "ug" },
+  { key: "calcio", unit: "mg" },
+  { key: "hierro", unit: "mg" },
+  { key: "magnesio", unit: "mg" },
+  { key: "fosforo", unit: "mg" },
+  { key: "potasio", unit: "mg" },
+  { key: "sodio", unit: "mg" },
+  { key: "cinc", unit: "mg" },
+  { key: "cobre", unit: "mg" },
+  { key: "manganeso", unit: "mg" },
+  { key: "selenio", unit: "ug" },
+  { key: "fluor", unit: "ug" },
 ];
 const ALL_MICRO_FILTERS = [...VITAMINAS_FILTER, ...MINERALES_FILTER];
 
 export function AlimentosFilter({ misAlimentosCount }: { misAlimentosCount: number }) {
+  const t = useTranslations("foods");
   const router = useRouter();
   const searchParams = useSearchParams();
   const propios = searchParams.get("propios") === "true";
@@ -122,7 +124,7 @@ export function AlimentosFilter({ misAlimentosCount }: { misAlimentosCount: numb
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
-              placeholder={propios ? "Buscar en mis alimentos..." : "Buscar alimento..."}
+              placeholder={propios ? t("filter.buscarPropiosPlaceholder") : t("filter.buscarPlaceholder")}
               defaultValue={searchParams.get("busqueda") || ""}
               onChange={(e) => handleSearch(e.target.value)}
               maxLength={100}
@@ -146,14 +148,14 @@ export function AlimentosFilter({ misAlimentosCount }: { misAlimentosCount: numb
             href="/alimentos/importar"
             data-tour="import-btn"
             className="sm:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-border hover:bg-muted transition-colors shrink-0"
-            aria-label="Importar"
+            aria-label={t("list.importar")}
           >
             <Download className="w-4 h-4" />
           </Link>
           <Link
             href="/alimentos/nuevo"
             className="sm:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
-            aria-label="Nuevo alimento"
+            aria-label={t("list.nuevoAlimento")}
           >
             <Plus className="w-4 h-4" />
           </Link>
@@ -166,16 +168,16 @@ export function AlimentosFilter({ misAlimentosCount }: { misAlimentosCount: numb
             aria-pressed={!propios}
             className={`flex-1 sm:flex-none px-3 py-2 text-sm font-medium transition-colors ${!propios ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
           >
-            Todos
+            {t("filter.todos")}
           </button>
           <button
             onClick={() => togglePropios(true)}
             aria-pressed={propios}
-            title="Ver solo alimentos creados o importados por ti"
+            title={t("filter.verSoloPropios")}
             className={`flex-1 sm:flex-none px-3 py-2 text-sm font-medium transition-colors ${propios ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
           >
-            <span className="hidden sm:inline">Mis alimentos</span>
-            <span className="sm:hidden">Míos</span>
+            <span className="hidden sm:inline">{t("filter.misAlimentos")}</span>
+            <span className="sm:hidden">{t("filter.mios")}</span>
             {misAlimentosCount > 0 && (
               <span className="ml-1 text-xs opacity-80">({misAlimentosCount})</span>
             )}
@@ -188,8 +190,8 @@ export function AlimentosFilter({ misAlimentosCount }: { misAlimentosCount: numb
           onChange={(e) => updateParams({ categoria: e.target.value })}
           className="hidden sm:block sm:flex-none px-3 py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
         >
-          {CATEGORIAS.map((c) => (
-            <option key={c.value} value={c.value}>{c.label}</option>
+          {CATEGORIA_KEYS.map((c) => (
+            <option key={c.value} value={c.value}>{t(`filter.${c.key}`)}</option>
           ))}
         </select>
         <button
@@ -201,7 +203,7 @@ export function AlimentosFilter({ misAlimentosCount }: { misAlimentosCount: numb
           }`}
         >
           <SlidersHorizontal className="w-4 h-4" />
-          Filtros
+          {t("filter.filtros")}
           {hasFilters && <span className="w-2 h-2 rounded-full bg-primary" />}
         </button>
       </div>
@@ -210,39 +212,39 @@ export function AlimentosFilter({ misAlimentosCount }: { misAlimentosCount: numb
       {showAdvanced && (
         <div data-tour="food-filters" className="bg-card rounded-xl border border-border p-3 sm:p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold">Filtros</h3>
+            <h3 className="text-sm font-semibold">{t("filter.filtros")}</h3>
             {hasFilters && (
               <button onClick={clearFilters} className="text-xs text-primary hover:underline flex items-center gap-1">
-                <X className="w-3 h-3" /> Limpiar filtros
+                <X className="w-3 h-3" /> {t("filter.limpiarFiltros")}
               </button>
             )}
           </div>
 
           <div className={`grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 ${propios ? "lg:grid-cols-4" : "lg:grid-cols-5"} gap-3 sm:gap-4`}>
             <div className="sm:hidden">
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Categoría</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("filter.categoria")}</label>
               <select
                 defaultValue={searchParams.get("categoria") || ""}
                 onChange={(e) => updateParams({ categoria: e.target.value })}
                 className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
               >
-                <option value="">Todas</option>
-                {CATEGORIAS.filter((c) => c.value).map((c) => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
+                <option value="">{t("filter.todas")}</option>
+                {CATEGORIA_KEYS.filter((c) => c.value).map((c) => (
+                  <option key={c.value} value={c.value}>{t(`filter.${c.key}`)}</option>
                 ))}
               </select>
             </div>
             {!propios && (
               <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Origen</label>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("filter.origen")}</label>
                 <select
                   defaultValue={searchParams.get("origen") || ""}
                   onChange={(e) => updateParams({ origen: e.target.value })}
                   className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
                 >
-                  <option value="">Todos</option>
-                  {ORIGENES.filter((o) => o.value).map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
+                  <option value="">{t("filter.todos")}</option>
+                  {ORIGEN_KEYS.filter((o) => o.value).map((o) => (
+                    <option key={o.value} value={o.value}>{t(`filter.${o.key}`)}</option>
                   ))}
                 </select>
               </div>
@@ -250,18 +252,18 @@ export function AlimentosFilter({ misAlimentosCount }: { misAlimentosCount: numb
 
             {/* Calorías */}
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Calorías /100g</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("filter.caloriasPor100g")}</label>
               <div className="flex gap-1">
                 <input
                   type="number"
-                  placeholder="Mín"
+                  placeholder={t("filter.min")}
                   defaultValue={searchParams.get("calMin") || ""}
                   onChange={(e) => handleMacroChange("calMin", e.target.value)}
                   className="w-full px-2 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
                 />
                 <input
                   type="number"
-                  placeholder="Máx"
+                  placeholder={t("filter.max")}
                   defaultValue={searchParams.get("calMax") || ""}
                   onChange={(e) => handleMacroChange("calMax", e.target.value)}
                   className="w-full px-2 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
@@ -269,20 +271,19 @@ export function AlimentosFilter({ misAlimentosCount }: { misAlimentosCount: numb
               </div>
             </div>
 
-            {/* Proteínas */}
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Proteínas /100g</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("filter.proteinasPor100g")}</label>
               <div className="flex gap-1">
                 <input
                   type="number"
-                  placeholder="Mín"
+                  placeholder={t("filter.min")}
                   defaultValue={searchParams.get("protMin") || ""}
                   onChange={(e) => handleMacroChange("protMin", e.target.value)}
                   className="w-full px-2 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
                 />
                 <input
                   type="number"
-                  placeholder="Máx"
+                  placeholder={t("filter.max")}
                   defaultValue={searchParams.get("protMax") || ""}
                   onChange={(e) => handleMacroChange("protMax", e.target.value)}
                   className="w-full px-2 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
@@ -290,20 +291,19 @@ export function AlimentosFilter({ misAlimentosCount }: { misAlimentosCount: numb
               </div>
             </div>
 
-            {/* Carbohidratos */}
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Carbos /100g</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("filter.carbosPor100g")}</label>
               <div className="flex gap-1">
                 <input
                   type="number"
-                  placeholder="Mín"
+                  placeholder={t("filter.min")}
                   defaultValue={searchParams.get("carbMin") || ""}
                   onChange={(e) => handleMacroChange("carbMin", e.target.value)}
                   className="w-full px-2 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
                 />
                 <input
                   type="number"
-                  placeholder="Máx"
+                  placeholder={t("filter.max")}
                   defaultValue={searchParams.get("carbMax") || ""}
                   onChange={(e) => handleMacroChange("carbMax", e.target.value)}
                   className="w-full px-2 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
@@ -311,20 +311,19 @@ export function AlimentosFilter({ misAlimentosCount }: { misAlimentosCount: numb
               </div>
             </div>
 
-            {/* Grasas */}
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Grasas /100g</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("filter.grasasPor100g")}</label>
               <div className="flex gap-1">
                 <input
                   type="number"
-                  placeholder="Mín"
+                  placeholder={t("filter.min")}
                   defaultValue={searchParams.get("grasaMin") || ""}
                   onChange={(e) => handleMacroChange("grasaMin", e.target.value)}
                   className="w-full px-2 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
                 />
                 <input
                   type="number"
-                  placeholder="Máx"
+                  placeholder={t("filter.max")}
                   defaultValue={searchParams.get("grasaMax") || ""}
                   onChange={(e) => handleMacroChange("grasaMax", e.target.value)}
                   className="w-full px-2 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
@@ -343,8 +342,8 @@ export function AlimentosFilter({ misAlimentosCount }: { misAlimentosCount: numb
           >
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-primary" />
-              <h3 className="text-sm font-semibold">Filtros avanzados</h3>
-              <span className="text-xs text-muted-foreground hidden sm:inline">· Mínimos de vitaminas y minerales por 100g</span>
+              <h3 className="text-sm font-semibold">{t("filter.filtrosAvanzados")}</h3>
+              <span className="text-xs text-muted-foreground hidden sm:inline">· {t("filter.minimosMicros")}</span>
               {hasMicroFilters && <span className="w-2 h-2 rounded-full bg-primary ml-1" />}
             </div>
             <div className="flex items-center gap-3">
@@ -356,7 +355,7 @@ export function AlimentosFilter({ misAlimentosCount }: { misAlimentosCount: numb
                   onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); clearMicroFilters(); } }}
                   className="text-xs text-primary hover:underline flex items-center gap-1"
                 >
-                  <X className="w-3 h-3" /> Limpiar
+                  <X className="w-3 h-3" /> {t("filter.limpiar")}
                 </span>
               )}
               <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${showMicros ? "rotate-180" : ""}`} />
@@ -366,18 +365,18 @@ export function AlimentosFilter({ misAlimentosCount }: { misAlimentosCount: numb
           {showMicros && (
             <div className="px-3 sm:px-5 pb-3 sm:pb-5 space-y-4 sm:space-y-5 border-t border-border/60 pt-3 sm:pt-5">
               <div>
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Vitaminas</h4>
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">{t("filter.vitaminas")}</h4>
                 <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                   {VITAMINAS_FILTER.map((m) => (
-                    <MicroInput key={m.key} micro={m} searchParams={searchParams} onChange={handleMacroChange} />
+                    <MicroInput key={m.key} micro={m} label={t(`micronutrientes.${m.key}`)} searchParams={searchParams} onChange={handleMacroChange} minPlaceholder={t("filter.min")} />
                   ))}
                 </div>
               </div>
               <div>
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Minerales</h4>
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">{t("filter.minerales")}</h4>
                 <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                   {MINERALES_FILTER.map((m) => (
-                    <MicroInput key={m.key} micro={m} searchParams={searchParams} onChange={handleMacroChange} />
+                    <MicroInput key={m.key} micro={m} label={t(`micronutrientes.${m.key}`)} searchParams={searchParams} onChange={handleMacroChange} minPlaceholder={t("filter.min")} />
                   ))}
                 </div>
               </div>
@@ -391,24 +390,28 @@ export function AlimentosFilter({ misAlimentosCount }: { misAlimentosCount: numb
 
 function MicroInput({
   micro,
+  label,
   searchParams,
   onChange,
+  minPlaceholder,
 }: {
-  micro: { key: string; label: string; unit: string };
+  micro: { key: string; unit: string };
+  label: string;
   searchParams: { get(key: string): string | null };
   onChange: (key: string, value: string) => void;
+  minPlaceholder: string;
 }) {
   return (
     <div>
       <label className="text-xs font-medium text-muted-foreground mb-1 block truncate">
-        {micro.label} <span className="opacity-60">({micro.unit})</span>
+        {label} <span className="opacity-60">({micro.unit})</span>
       </label>
       <div className="relative">
         <input
           type="number"
           min={0}
           step="0.01"
-          placeholder="Mín"
+          placeholder={minPlaceholder}
           defaultValue={searchParams.get(`m_${micro.key}`) || ""}
           onChange={(e) => onChange(`m_${micro.key}`, e.target.value)}
           className="w-full pl-3 pr-10 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"

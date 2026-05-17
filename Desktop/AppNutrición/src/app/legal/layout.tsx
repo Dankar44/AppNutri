@@ -1,14 +1,16 @@
 import Link from "next/link";
 import { Leaf, ArrowLeft, FileText, Shield, Cookie } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { ThemeToggle } from "@/components/theme-toggle";
 
-const NAV_ITEMS = [
-  { href: "/legal/terminos", label: "Términos y condiciones", icon: FileText },
-  { href: "/legal/privacidad", label: "Política de privacidad", icon: Shield },
-  { href: "/legal/cookies", label: "Política de cookies", icon: Cookie },
-];
+export default async function LegalLayout({ children }: { children: React.ReactNode }) {
+  const t = await getTranslations("legal.layout");
 
-export default function LegalLayout({ children }: { children: React.ReactNode }) {
+  const NAV_ITEMS = [
+    { href: "/legal/terminos", label: t("navTerminos"), icon: FileText },
+    { href: "/legal/privacidad", label: t("navPrivacidad"), icon: Shield },
+    { href: "/legal/cookies", label: t("navCookies"), icon: Cookie },
+  ];
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-[#101117] dark:to-[#101117] text-gray-900 dark:text-gray-100">
       <header className="sticky top-0 z-50 bg-white/80 dark:bg-[#101117]/80 backdrop-blur-md border-b border-gray-200/60 dark:border-gray-800/60">
@@ -35,7 +37,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
               className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Volver</span>
+              <span className="hidden sm:inline">{t("volver")}</span>
             </Link>
           </div>
         </div>

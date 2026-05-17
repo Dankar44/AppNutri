@@ -5,8 +5,10 @@ import { Leaf, Eye, EyeOff, Camera } from "lucide-react";
 import { completarPerfilPaciente } from "@/app/actions/paciente-auth";
 import { toast } from "sonner";
 import { compressImage, IMAGE_PRESETS } from "@/lib/image-compress";
+import { useTranslations } from "next-intl";
 
 export default function CompletarPerfilPage() {
+  const t = useTranslations("patient-portal");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
@@ -15,7 +17,7 @@ export default function CompletarPerfilPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
-      toast.error("La imagen no puede superar 2MB");
+      toast.error(t("completarPerfil.toast.imagenGrande"));
       return;
     }
 
@@ -40,23 +42,23 @@ export default function CompletarPerfilPage() {
     const confirmPassword = form.get("confirmPassword") as string;
 
     if (password.length < 6) {
-      toast.error("La contraseña debe tener al menos 6 caracteres");
+      toast.error(t("completarPerfil.toast.passwordCorta"));
       setLoading(false);
       return;
     }
 
     if (password !== confirmPassword) {
-      toast.error("Las contraseñas no coinciden");
+      toast.error(t("completarPerfil.toast.passwordNoCoincide"));
       setLoading(false);
       return;
     }
 
     try {
       await completarPerfilPaciente(password, fotoPreview || undefined);
-      toast.success("Perfil completado");
+      toast.success(t("completarPerfil.toast.perfilCompletado"));
     } catch (error) {
       if (error && typeof error === "object" && "digest" in error) throw error;
-      toast.error("Error al completar el perfil");
+      toast.error(t("completarPerfil.toast.errorCompletar"));
       setLoading(false);
     }
   }
@@ -66,9 +68,9 @@ export default function CompletarPerfilPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Leaf className="w-10 h-10 text-primary mx-auto mb-3" />
-          <h1 className="text-xl sm:text-2xl font-bold">Completa tu perfil</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">{t("completarPerfil.title")}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Configura tu contraseña para acceder en el futuro sin necesitar el PIN
+            {t("completarPerfil.subtitle")}
           </p>
         </div>
 
@@ -91,14 +93,14 @@ export default function CompletarPerfilPage() {
               />
             </label>
             <p className="text-xs text-muted-foreground mt-2">
-              {fotoPreview ? "Click para cambiar" : "Añadir foto de perfil (opcional)"}
+              {fotoPreview ? t("completarPerfil.fotoClickCambiar") : t("completarPerfil.fotoLabel")}
             </p>
           </div>
 
           {/* Contraseña */}
           <div>
             <label className="block text-sm font-medium mb-1.5">
-              Nueva contraseña *
+              {t("completarPerfil.passwordLabel")}
             </label>
             <div className="relative">
               <input
@@ -107,7 +109,7 @@ export default function CompletarPerfilPage() {
                 required
                 minLength={6}
                 maxLength={128}
-                placeholder="Mínimo 6 caracteres"
+                placeholder={t("completarPerfil.passwordPlaceholder")}
                 className="w-full px-4 py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 pr-12"
               />
               <button
@@ -122,7 +124,7 @@ export default function CompletarPerfilPage() {
 
           <div>
             <label className="block text-sm font-medium mb-1.5">
-              Repetir contraseña *
+              {t("completarPerfil.confirmPasswordLabel")}
             </label>
             <input
               name="confirmPassword"
@@ -130,7 +132,7 @@ export default function CompletarPerfilPage() {
               required
               minLength={6}
               maxLength={128}
-              placeholder="Repite la contraseña"
+              placeholder={t("completarPerfil.confirmPasswordPlaceholder")}
               className="w-full px-4 py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
@@ -140,11 +142,11 @@ export default function CompletarPerfilPage() {
             disabled={loading}
             className="w-full px-4 py-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium disabled:opacity-50"
           >
-            {loading ? "Guardando..." : "Completar perfil"}
+            {loading ? t("completarPerfil.submitting") : t("completarPerfil.submit")}
           </button>
 
           <p className="text-xs text-muted-foreground text-center">
-            A partir de ahora podrás acceder con tu email y esta contraseña
+            {t("completarPerfil.futuroAcceso")}
           </p>
         </form>
       </div>

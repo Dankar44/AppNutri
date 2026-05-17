@@ -4,12 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Search, Download } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { buscarAlimentosAPI, importarAlimentoAPI } from "@/app/actions/alimentos";
 import { MacroBadges } from "@/components/macro-badge";
 import { toast } from "sonner";
 import type { AlimentoAPIResult } from "@/lib/openfoodfacts";
 
 export default function ImportarAlimentoPage() {
+  const t = useTranslations("foods");
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<AlimentoAPIResult[]>([]);
@@ -24,7 +26,7 @@ export default function ImportarAlimentoPage() {
       const data = await buscarAlimentosAPI(query);
       setResults(data);
     } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
-      toast.error("Error al buscar alimentos");
+      toast.error(t("importar.errorBuscar"));
     } finally {
       setLoading(false);
     }
@@ -34,10 +36,10 @@ export default function ImportarAlimentoPage() {
     setImporting(alimento.codigoBarras);
     try {
       const imported = await importarAlimentoAPI(alimento);
-      toast.success(`${alimento.nombre} importado correctamente`);
+      toast.success(t("importar.importadoCorrectamente", { nombre: alimento.nombre }));
       if (imported?.id) router.push(`/alimentos/${imported.id}`);
     } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
-      toast.error("Error al importar el alimento");
+      toast.error(t("importar.errorImportar"));
       setImporting(null);
     }
   }
@@ -50,11 +52,11 @@ export default function ImportarAlimentoPage() {
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3 py-2 sm:py-0 -my-2 sm:my-0"
         >
           <ArrowLeft className="w-4 h-4" />
-          Volver a alimentos
+          {t("importar.volverAAlimentos")}
         </Link>
-        <h1 className="text-2xl sm:text-3xl font-bold">Importar desde Open Food Facts</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">{t("importar.titulo")}</h1>
         <p className="text-muted-foreground mt-1">
-          Busca alimentos en la base de datos abierta y añádelos a tu colección
+          {t("importar.descripcion")}
         </p>
       </div>
 
@@ -65,7 +67,7 @@ export default function ImportarAlimentoPage() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar alimento (ej: arroz, pollo, manzana)..."
+            placeholder={t("importar.buscarPlaceholder")}
             maxLength={100}
             className="w-full pl-9 pr-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
           />
@@ -75,7 +77,7 @@ export default function ImportarAlimentoPage() {
           disabled={loading || query.length < 2}
           className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium disabled:opacity-50"
         >
-          {loading ? "Buscando..." : "Buscar"}
+          {loading ? t("importar.buscando") : t("importar.buscar")}
         </button>
       </form>
 
@@ -104,7 +106,7 @@ export default function ImportarAlimentoPage() {
                 className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium shrink-0 disabled:opacity-50"
               >
                 <Download className="w-4 h-4" />
-                {importing === alimento.codigoBarras ? "Importando..." : "Importar"}
+                {importing === alimento.codigoBarras ? t("importar.importando") : t("importar.importar")}
               </button>
             </div>
           ))}
@@ -114,7 +116,7 @@ export default function ImportarAlimentoPage() {
       {!loading && results.length === 0 && query.length >= 2 && (
         <div className="bg-card rounded-xl border border-border p-12 text-center">
           <p className="text-muted-foreground">
-            No se encontraron resultados. Intenta con otro término de búsqueda.
+            {t("importar.sinResultados")}
           </p>
         </div>
       )}

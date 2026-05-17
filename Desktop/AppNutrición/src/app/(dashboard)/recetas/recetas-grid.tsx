@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Carrot, Clock, Sparkles } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { MacroBadges } from "@/components/macro-badge";
 import { FavoritoButton } from "./favorito-button";
 
@@ -24,6 +25,7 @@ type Receta = {
 };
 
 export function RecetasGrid({ recetas }: { recetas: Receta[] }) {
+  const t = useTranslations("recipes");
   const total = recetas.length;
   const [visibles, setVisibles] = useState(Math.min(PAGE_SIZE, total));
 
@@ -66,7 +68,7 @@ export function RecetasGrid({ recetas }: { recetas: Receta[] }) {
               <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
                 <span className="inline-flex items-center gap-1">
                   <Carrot className="w-3.5 h-3.5" />
-                  {receta.numIngredientes} ing.
+                  {receta.numIngredientes} {t("grid.ing")}
                 </span>
                 {receta.tiempoPreparacion !== null && (
                   <span className="inline-flex items-center gap-1">
@@ -75,7 +77,7 @@ export function RecetasGrid({ recetas }: { recetas: Receta[] }) {
                   </span>
                 )}
                 <span>·</span>
-                <span>{receta.porciones} porc.</span>
+                <span>{receta.porciones} {t("grid.porc")}</span>
               </div>
               <MacroBadges
                 calorias={receta.calorias}
@@ -91,7 +93,7 @@ export function RecetasGrid({ recetas }: { recetas: Receta[] }) {
       {quedan > 0 && (
         <div className="flex flex-col items-center gap-2 mt-6">
           <p className="text-xs text-muted-foreground">
-            Mostrando {visibles} de {total}
+            {t("list.mostrandoDe", { visibles, total })}
           </p>
           <div className="flex flex-col xs:flex-row gap-2 w-full xs:w-auto">
             <button
@@ -99,7 +101,7 @@ export function RecetasGrid({ recetas }: { recetas: Receta[] }) {
               onClick={() => setVisibles((v) => Math.min(v + PAGE_SIZE, total))}
               className="inline-flex items-center justify-center gap-2 px-5 py-3 sm:py-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium min-h-11"
             >
-              Ver {Math.min(PAGE_SIZE, quedan)} más
+              {t("list.verMas", { count: Math.min(PAGE_SIZE, quedan) })}
             </button>
             {quedan > PAGE_SIZE && (
               <button
@@ -107,7 +109,7 @@ export function RecetasGrid({ recetas }: { recetas: Receta[] }) {
                 onClick={() => setVisibles(total)}
                 className="inline-flex items-center justify-center gap-2 px-4 py-3 sm:py-2.5 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium min-h-11"
               >
-                Ver todas ({quedan})
+                {t("list.verTodas", { count: quedan })}
               </button>
             )}
           </div>
@@ -116,7 +118,7 @@ export function RecetasGrid({ recetas }: { recetas: Receta[] }) {
 
       {quedan === 0 && total > PAGE_SIZE && (
         <p className="text-center text-xs text-muted-foreground mt-6">
-          Mostrando las {total} recetas
+          {t("list.mostrandoTodas", { total })}
         </p>
       )}
     </>

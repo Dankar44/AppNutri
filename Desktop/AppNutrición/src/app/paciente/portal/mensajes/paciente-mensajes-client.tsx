@@ -4,6 +4,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Send, Loader2, Paperclip, X, FileText, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useTranslations, useLocale } from "next-intl";
+import { intlTag, type Locale } from "@/i18n/config";
 import {
   enviarMensajePaciente,
   getMensajesPaciente,
@@ -132,6 +134,7 @@ export function PacienteMensajesClient({
 }
 
 function ChatHeader({ dietista }: { dietista: Dietista }) {
+  const t = useTranslations("patient-portal");
   const initials = `${dietista.nombre[0] || ""}${dietista.apellidos[0] || ""}`.toUpperCase();
   return (
     <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card shrink-0">
@@ -143,7 +146,7 @@ function ChatHeader({ dietista }: { dietista: Dietista }) {
           {dietista.nombre} {dietista.apellidos}
         </p>
         <p className="text-[11px] text-muted-foreground">
-          {dietista.especialidad || "Nutricionista"}
+          {dietista.especialidad || t("mensajes.fallbackEspecialidad")}
         </p>
       </div>
     </div>
@@ -151,6 +154,9 @@ function ChatHeader({ dietista }: { dietista: Dietista }) {
 }
 
 function MensajesListPaciente({ mensajes }: { mensajes: Mensaje[] }) {
+  const t = useTranslations("patient-portal");
+  const locale = useLocale() as Locale;
+  const tag = intlTag(locale);
   const scrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -159,15 +165,18 @@ function MensajesListPaciente({ mensajes }: { mensajes: Mensaje[] }) {
   if (mensajes.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-        <p className="text-sm font-medium">Escríbele a tu nutricionista</p>
+        <p className="text-sm font-medium">{t("mensajes.escribele")}</p>
         <p className="text-xs text-muted-foreground mt-1">
-          Resuelve dudas sobre tu dieta o envía fotos de comidas
+          {t("mensajes.resuelve")}
         </p>
       </div>
     );
   }
 
-  const grupos = agruparPorDia(mensajes);
+  const grupos = agruparPorDia(mensajes, {
+    hoy: t("mensajes.diasLabel.hoy"),
+    ayer: t("mensajes.diasLabel.ayer"),
+  }, tag);
 
   return (
     <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/20">
@@ -179,7 +188,7 @@ function MensajesListPaciente({ mensajes }: { mensajes: Mensaje[] }) {
             </span>
           </div>
           {g.mensajes.map((m) => (
-            <MensajeBubblePaciente key={m.id} mensaje={m} />
+            <MensajeBubblePaciente key={m.id} mensaje={m} tag={tag} />
           ))}
         </div>
       ))}
@@ -187,9 +196,9 @@ function MensajesListPaciente({ mensajes }: { mensajes: Mensaje[] }) {
   );
 }
 
-function MensajeBubblePaciente({ mensaje }: { mensaje: Mensaje }) {
+function MensajeBubblePaciente({ mensaje, tag }: { mensaje: Mensaje; tag: string }) {
   const esMio = mensaje.autor === "PACIENTE";
-  const hora = new Date(mensaje.createdAt).toLocaleTimeString("es-ES", {
+  const hora = new Date(mensaje.createdAt).toLocaleTimeString(tag, {
     hour: "2-digit",
     minute: "2-digit",
     timeZone: "Europe/Madrid",
@@ -227,6 +236,7 @@ function MensajeBubblePaciente({ mensaje }: { mensaje: Mensaje }) {
 }
 
 function AdjuntoPreviewPaciente({ mensaje, esMio }: { mensaje: Mensaje; esMio: boolean }) {
+  const t = useTranslations("patient-portal");
   const esImagen = mensaje.adjuntoTipo?.startsWith("image/");
   if (esImagen) {
     return (
@@ -239,7 +249,7 @@ function AdjuntoPreviewPaciente({ mensaje, esMio }: { mensaje: Mensaje; esMio: b
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={mensaje.adjuntoUrl!}
-          alt={mensaje.adjuntoNombre || "adjunto"}
+          alt={mensaje.adjuntoNombre || t("mensajes.adjuntoLabel")}
           className="max-h-60 w-auto rounded-xl object-cover"
         />
       </a>
@@ -256,12 +266,13 @@ function AdjuntoPreviewPaciente({ mensaje, esMio }: { mensaje: Mensaje; esMio: b
       )}
     >
       <FileText className="w-4 h-4 shrink-0" />
-      <span className="text-xs truncate">{mensaje.adjuntoNombre || "Archivo"}</span>
+      <span className="text-xs truncate">{mensaje.adjuntoNombre || t("mensajes.archivoLabel")}</span>
     </a>
   );
 }
 
 function MensajeInputPaciente({ onEnviado }: { onEnviado: (m: Mensaje) => void }) {
+  const t = useTranslations("patient-portal");
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [adjunto, setAdjunto] = useState<{ file: File; url: string; tipo: string } | null>(null);
@@ -281,7 +292,7 @@ function MensajeInputPaciente({ onEnviado }: { onEnviado: (m: Mensaje) => void }
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
-      toast.error("El archivo no puede superar los 10 MB");
+      toast.error(t("mensajes.toast.archivoGrande"));
       return;
     }
     setSubiendo(true);
@@ -291,7 +302,7 @@ function MensajeInputPaciente({ onEnviado }: { onEnviado: (m: Mensaje) => void }
       const res = await subirAdjuntoMensaje(formData);
       setAdjunto({ file, url: res.url, tipo: file.type });
     } catch {
-      toast.error("No se pudo subir el archivo");
+      toast.error(t("mensajes.toast.errorSubirArchivo"));
     } finally {
       setSubiendo(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -314,7 +325,7 @@ function MensajeInputPaciente({ onEnviado }: { onEnviado: (m: Mensaje) => void }
       setAdjunto(null);
       onEnviado(m);
     } catch {
-      toast.error("No se pudo enviar");
+      toast.error(t("mensajes.toast.errorEnviar"));
     } finally {
       enviandoRef.current = false;
       setEnviando(false);
@@ -361,7 +372,7 @@ function MensajeInputPaciente({ onEnviado }: { onEnviado: (m: Mensaje) => void }
           onClick={() => fileInputRef.current?.click()}
           disabled={subiendo || enviando}
           className="p-2 rounded-lg hover:bg-muted transition-colors shrink-0 disabled:opacity-50"
-          aria-label="Adjuntar archivo"
+          aria-label={t("mensajes.adjuntarAriaLabel")}
         >
           {subiendo ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -374,7 +385,7 @@ function MensajeInputPaciente({ onEnviado }: { onEnviado: (m: Mensaje) => void }
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Escribe un mensaje..."
+          placeholder={t("mensajes.placeholder")}
           rows={1}
           disabled={enviando}
           className="flex-1 resize-none px-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 max-h-[120px]"
@@ -383,7 +394,7 @@ function MensajeInputPaciente({ onEnviado }: { onEnviado: (m: Mensaje) => void }
           type="submit"
           disabled={enviando || subiendo || (!texto.trim() && !adjunto)}
           className="p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
-          aria-label="Enviar mensaje"
+          aria-label={t("mensajes.enviarAriaLabel")}
         >
           {enviando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
         </button>
@@ -400,14 +411,14 @@ function normalizarFechas(m: Mensaje): Mensaje {
   };
 }
 
-function agruparPorDia(mensajes: Mensaje[]) {
+function agruparPorDia(mensajes: Mensaje[], labels: { hoy: string; ayer: string }, tag: string) {
   const grupos: { key: string; label: string; mensajes: Mensaje[] }[] = [];
   for (const m of mensajes) {
     const d = new Date(m.createdAt);
     const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
     let grupo = grupos.find((g) => g.key === key);
     if (!grupo) {
-      grupo = { key, label: formatLabelDia(d), mensajes: [] };
+      grupo = { key, label: formatLabelDia(d, labels, tag), mensajes: [] };
       grupos.push(grupo);
     }
     grupo.mensajes.push(m);
@@ -415,16 +426,16 @@ function agruparPorDia(mensajes: Mensaje[]) {
   return grupos;
 }
 
-function formatLabelDia(d: Date): string {
+function formatLabelDia(d: Date, labels: { hoy: string; ayer: string }, tag: string): string {
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
   const ayer = new Date(hoy);
   ayer.setDate(ayer.getDate() - 1);
   const fecha = new Date(d);
   fecha.setHours(0, 0, 0, 0);
-  if (fecha.getTime() === hoy.getTime()) return "Hoy";
-  if (fecha.getTime() === ayer.getTime()) return "Ayer";
-  const formato = fecha.toLocaleDateString("es-ES", {
+  if (fecha.getTime() === hoy.getTime()) return labels.hoy;
+  if (fecha.getTime() === ayer.getTime()) return labels.ayer;
+  const formato = fecha.toLocaleDateString(tag, {
     weekday: "long",
     day: "numeric",
     month: "long",

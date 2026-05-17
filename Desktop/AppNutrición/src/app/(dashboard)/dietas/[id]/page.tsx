@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Pencil, Share2, Sparkles, Plus } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { AvatarPaciente } from "@/components/avatar-paciente";
 import { getPlan, getPlanesPaciente } from "@/app/actions/planes";
 import { capitalizarNombre } from "@/lib/utils";
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export default async function PlanDetailPage({ params }: Props) {
+  const t = await getTranslations("diets");
   const { id } = await params;
   const plan = await getPlan(id);
   if (!plan) notFound();
@@ -61,7 +63,7 @@ export default async function PlanDetailPage({ params }: Props) {
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3 sm:mb-4 py-2 sm:py-0 -my-2 sm:my-0"
         >
           <ArrowLeft className="w-4 h-4" />
-          Volver a planes
+          {t("detail.backToPlans")}
         </Link>
 
         <div className="flex items-center gap-4 flex-wrap">
@@ -89,7 +91,7 @@ export default async function PlanDetailPage({ params }: Props) {
             <Link
               href={`/dietas/${plan.id}/generar-ia`}
               className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/15 transition-colors text-sm font-medium"
-              aria-label="Generar con IA"
+              aria-label={t("detail.generateWithAi")}
             >
               <Sparkles className="w-3.5 h-3.5" />
               IA
@@ -98,18 +100,18 @@ export default async function PlanDetailPage({ params }: Props) {
             <Link
               href={`/dietas/${plan.id}/compartir`}
               className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-muted transition-colors text-sm font-medium"
-              aria-label="Compartir plan"
+              aria-label={t("detail.share")}
             >
               <Share2 className="w-3.5 h-3.5" />
-              Compartir
+              {t("detail.share")}
             </Link>
             <Link
               href={`/dietas/${plan.id}/editar`}
               className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-muted transition-colors text-sm font-medium"
-              aria-label="Editar plan"
+              aria-label={t("detail.edit")}
             >
               <Pencil className="w-3.5 h-3.5" />
-              Editar
+              {t("detail.edit")}
             </Link>
             <PlanActions planId={plan.id} />
           </div>

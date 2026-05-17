@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { getTranslations } from "next-intl/server";
 
 // Groq usa la misma API que OpenAI, solo cambia la baseURL
 const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
@@ -51,14 +52,15 @@ export async function callWithRetry<T>(
   fn: (client: OpenAI) => Promise<T>,
 ): Promise<T> {
   const keys = getApiKeys();
-  if (keys.length === 0) throw new Error("No hay API keys de Groq configuradas");
+  const tv = await getTranslations("validation.ai");
+  if (keys.length === 0) throw new Error(tv("noApiKeys"));
 
   let consecutiveRateLimits = 0;
   const startTime = Date.now();
 
   while (consecutiveRateLimits < MAX_RETRIES) {
     if (Date.now() - startTime > MAX_TOTAL_MS) {
-      throw new Error("Tiempo máximo de espera agotado. Inténtalo de nuevo más tarde.");
+      throw new Error(tv("timeout"));
     }
 
     const client = getNextClient();
@@ -88,5 +90,5 @@ export async function callWithRetry<T>(
     }
   }
 
-  throw new Error("Demasiados reintentos por rate limit. Inténtalo de nuevo más tarde.");
+  throw new Error(tv("rateLimitExhausted"));
 }

@@ -663,6 +663,9 @@ model Notificacion {
   tipo        TipoNotificacion
   titulo      String
   mensaje     String
+  tituloKey   String?
+  mensajeKey  String?
+  params      Json?
   leida       Boolean           @default(false)
   enlace      String?
   createdAt   DateTime          @default(now())

@@ -1,0 +1,65 @@
+{
+  "page": {
+    "title": "Mensagens",
+    "subtitle": "Comunicação direta com seus pacientes"
+  },
+  "emptyChat": {
+    "selectConversation": "Selecione uma conversa",
+    "selectPatientHint": "Escolha um paciente da lista para começar a conversar"
+  },
+  "soporte": {
+    "name": "Suporte Annonia",
+    "team": "Equipe Annonia",
+    "greeting": "Olá!",
+    "greetingMessage": "Escreva para nós qualquer dúvida, sugestão ou erro que encontrar. Estamos aqui para ajudar.",
+    "inputPlaceholder": "Escreva para o suporte...",
+    "sendLabel": "Enviar mensagem",
+    "backLabel": "Voltar",
+    "toastSendError": "Não foi possível enviar"
+  },
+  "chatView": {
+    "patientLabel": "Paciente",
+    "viewFile": "Ver ficha",
+    "moreOptions": "Mais opções",
+    "archive": "Arquivar",
+    "unarchive": "Desarquivar",
+    "toastArchived": "Arquivada",
+    "toastUnarchived": "Desarquivada",
+    "toastUpdateError": "Não foi possível atualizar",
+    "noMessages": "Ainda não há mensagens",
+    "sendFirst": "Envie a primeira para iniciar a conversa",
+    "inputPlaceholder": "Escreva uma mensagem...",
+    "attachFile": "Anexar arquivo",
+    "sendMessage": "Enviar mensagem",
+    "toastSendError": "Não foi possível enviar",
+    "toastFileTooLarge": "O arquivo não pode ultrapassar 10 MB",
+    "toastUploadError": "Não foi possível enviar o arquivo",
+    "fileLabel": "Arquivo",
+    "attachmentAlt": "anexo"
+  },
+  "dateLabels": {
+    "today": "Hoje",
+    "yesterday": "Ontem"
+  },
+  "conversationsList": {
+    "searchPlaceholder": "Buscar paciente…",
+    "newConversation": "Nova conversa",
+    "inboxTab": "Caixa de entrada",
+    "archivedTab": "Arquivadas",
+    "supportPrompt": "Algo não funciona? Tem alguma sugestão?",
+    "writeToSupport": "Escreva para o Suporte",
+    "defaultSupportPreview": "Escreva para nós qualquer dúvida ou sugestão",
+    "youPrefix": "Você: ",
+    "startConversationWith": "Iniciar conversa com",
+    "patients": "Pacientes",
+    "noPatientsByName": "Nenhum paciente com esse nome",
+    "noActivePatients": "Sem pacientes ativos",
+    "noConversationsArchived": "Sem conversas arquivadas",
+    "noConversations": "Sem conversas",
+    "startConversation": "Inicie uma conversa com um paciente",
+    "noMessagesYet": "Sem mensagens ainda",
+    "openConversation": "Abrir conversa",
+    "startNewConversation": "Iniciar conversa",
+    "toastOpenError": "Não foi possível abrir a conversa"
+  }
+}

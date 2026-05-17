@@ -6,8 +6,11 @@ import { useState, useEffect, useTransition } from "react";
 import { Search, Archive, Inbox, Plus, MessageSquarePlus, Loader2, Leaf } from "lucide-react";
 import { AvatarPaciente } from "@/components/avatar-paciente";
 import { formatDistanceToNow } from "date-fns";
-import { es } from "date-fns/locale";
+import type { Locale as DateFnsLocale } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
+import { useLocale } from "@/components/locale-provider";
+import { getDateLocale } from "@/i18n/date-locale";
 import {
   getOrCrearConversacion,
   getPacientesParaConversacion,
@@ -34,6 +37,9 @@ export function ConversacionesList({
   soporteNoLeidos,
   soporteResumen,
 }: Props) {
+  const t = useTranslations("chat");
+  const { locale } = useLocale();
+  const dateFnsLocale = getDateLocale(locale);
   const router = useRouter();
   const [busqueda, setBusqueda] = useState("");
   const [mostrarPicker, setMostrarPicker] = useState(false);
@@ -83,7 +89,7 @@ export function ConversacionesList({
         onSeleccionar(conv.id);
         router.refresh();
       } catch {
-        toast.error("No se pudo abrir la conversación");
+        toast.error(t("conversationsList.toastOpenError"));
       } finally {
         setPacienteEnCurso(null);
       }
@@ -99,7 +105,7 @@ export function ConversacionesList({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Buscar paciente..."
+              placeholder={t("conversationsList.searchPlaceholder")}
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -114,8 +120,8 @@ export function ConversacionesList({
                 ? "bg-primary text-primary-foreground"
                 : "bg-primary/10 text-primary hover:bg-primary/15",
             )}
-            title="Nueva conversación"
-            aria-label="Nueva conversación"
+            title={t("conversationsList.newConversation")}
+            aria-label={t("conversationsList.newConversation")}
           >
             <Plus className="w-4 h-4" />
           </button>
@@ -133,7 +139,7 @@ export function ConversacionesList({
             )}
           >
             <Inbox className="w-3.5 h-3.5" />
-            Bandeja
+            {t("conversationsList.inboxTab")}
           </Link>
           <Link
             href="/mensajes?archivadas=1"
@@ -145,7 +151,7 @@ export function ConversacionesList({
             )}
           >
             <Archive className="w-3.5 h-3.5" />
-            Archivadas
+            {t("conversationsList.archivedTab")}
           </Link>
         </div>
       </div>
@@ -169,14 +175,14 @@ export function ConversacionesList({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2 mb-0.5">
                   <p className={cn("text-sm truncate", soporteNoLeidos > 0 ? "font-bold" : "font-semibold")}>
-                    Soporte Annonia
+                    {t("soporte.name")}
                   </p>
                   {soporteResumen && (
                     <span className={cn(
                       "text-[10px] tabular-nums shrink-0",
                       soporteNoLeidos > 0 ? "text-primary font-semibold" : "text-muted-foreground",
                     )}>
-                      {formatDistanceToNow(new Date(soporteResumen.createdAt), { addSuffix: false, locale: es })}
+                      {formatDistanceToNow(new Date(soporteResumen.createdAt), { addSuffix: false, locale: dateFnsLocale })}
                     </span>
                   )}
                 </div>
@@ -186,8 +192,8 @@ export function ConversacionesList({
                     soporteNoLeidos > 0 ? "text-foreground font-medium" : "text-muted-foreground",
                   )}>
                     {soporteResumen
-                      ? `${soporteResumen.autor === "DIETISTA" ? "Tú: " : ""}${soporteResumen.texto.slice(0, 80)}`
-                      : "Escríbenos cualquier duda o sugerencia"}
+                      ? `${soporteResumen.autor === "DIETISTA" ? t("conversationsList.youPrefix") : ""}${soporteResumen.texto.slice(0, 80)}`
+                      : t("conversationsList.defaultSupportPreview")}
                   </p>
                   {soporteNoLeidos > 0 && (
                     <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold shrink-0">
@@ -203,8 +209,8 @@ export function ConversacionesList({
                 onClick={() => onSeleccionar("soporte")}
                 className="w-full px-3 py-2 text-[11px] text-muted-foreground hover:text-foreground transition-colors text-center border-b border-border bg-muted/20"
               >
-                ¿Algo no funciona? ¿Tienes alguna sugerencia?{" "}
-                <span className="font-medium text-primary">Escríbenos a Soporte</span>
+                {t("conversationsList.supportPrompt")}{" "}
+                <span className="font-medium text-primary">{t("conversationsList.writeToSupport")}</span>
               </button>
             )}
           </>
@@ -219,6 +225,8 @@ export function ConversacionesList({
                   conversacion={c}
                   activa={c.id === conversacionActivaId}
                   onClick={() => onSeleccionar(c.id)}
+                  t={t}
+                  dateFnsLocale={dateFnsLocale}
                 />
               </li>
             ))}
@@ -231,7 +239,7 @@ export function ConversacionesList({
             <div className="px-3 pt-3 pb-1.5 flex items-center gap-2">
               <MessageSquarePlus className="w-3.5 h-3.5 text-muted-foreground" />
               <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                {q ? "Empezar conversación con" : "Pacientes"}
+                {q ? t("conversationsList.startConversationWith") : t("conversationsList.patients")}
               </p>
             </div>
 
@@ -241,7 +249,7 @@ export function ConversacionesList({
               </div>
             ) : pacientesParaIniciar.length === 0 ? (
               <p className="px-3 py-4 text-xs text-muted-foreground text-center">
-                {q ? "No hay pacientes con ese nombre" : "Sin pacientes activos"}
+                {q ? t("conversationsList.noPatientsByName") : t("conversationsList.noActivePatients")}
               </p>
             ) : (
               <ul className="divide-y divide-border">
@@ -251,6 +259,7 @@ export function ConversacionesList({
                       paciente={p}
                       cargando={iniciando && pacienteEnCurso === p.id}
                       onClick={() => abrirConversacionPaciente(p)}
+                      t={t}
                     />
                   </li>
                 ))}
@@ -266,12 +275,12 @@ export function ConversacionesList({
               <MessageSquarePlus className="w-6 h-6 text-primary" />
             </div>
             <p className="text-sm font-medium">
-              {archivadas ? "Sin conversaciones archivadas" : "Sin conversaciones"}
+              {archivadas ? t("conversationsList.noConversationsArchived") : t("conversationsList.noConversations")}
             </p>
             {!archivadas && (
               <>
                 <p className="text-xs text-muted-foreground mt-1 mb-4">
-                  Empieza una conversación con un paciente
+                  {t("conversationsList.startConversation")}
                 </p>
                 <button
                   type="button"
@@ -279,7 +288,7 @@ export function ConversacionesList({
                   className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  Nueva conversación
+                  {t("conversationsList.newConversation")}
                 </button>
               </>
             )}
@@ -294,20 +303,24 @@ function ConversacionItem({
   conversacion: c,
   activa,
   onClick,
+  t,
+  dateFnsLocale,
 }: {
   conversacion: ConversacionConPaciente;
   activa: boolean;
   onClick: () => void;
+  t: ReturnType<typeof useTranslations<"chat">>;
+  dateFnsLocale: DateFnsLocale;
 }) {
   const tieneNoLeidos = c.noLeidosDietista > 0;
   const ultimo = c.ultimoMensaje;
   const preview = ultimo
-    ? `${ultimo.autor === "DIETISTA" ? "Tú: " : ""}${ultimo.texto.slice(0, 80)}`
-    : "Sin mensajes todavía";
+    ? `${ultimo.autor === "DIETISTA" ? t("conversationsList.youPrefix") : ""}${ultimo.texto.slice(0, 80)}`
+    : t("conversationsList.noMessagesYet");
   const tiempo = c.ultimoMensajeAt
     ? formatDistanceToNow(new Date(c.ultimoMensajeAt), {
         addSuffix: false,
-        locale: es,
+        locale: dateFnsLocale,
       })
     : "";
 
@@ -371,10 +384,12 @@ function PacienteIniciarItem({
   paciente: p,
   cargando,
   onClick,
+  t,
 }: {
   paciente: PacienteParaConversacion;
   cargando: boolean;
   onClick: () => void;
+  t: ReturnType<typeof useTranslations<"chat">>;
 }) {
   const tieneConversacion = !!p.conversacionId;
   return (
@@ -397,7 +412,7 @@ function PacienteIniciarItem({
           {p.nombre} {p.apellidos}
         </p>
         <p className="text-xs text-muted-foreground truncate">
-          {tieneConversacion ? "Abrir conversación" : "Empezar conversación"}
+          {tieneConversacion ? t("conversationsList.openConversation") : t("conversationsList.startNewConversation")}
         </p>
       </div>
       {cargando ? (

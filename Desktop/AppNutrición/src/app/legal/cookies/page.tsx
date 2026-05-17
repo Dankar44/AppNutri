@@ -2,12 +2,16 @@ import type { Metadata } from "next";
 import {
   Cookie, HelpCircle, ShieldCheck, Settings, Globe, RefreshCcw, Mail, Monitor,
 } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
-export const metadata: Metadata = {
-  title: "Política de cookies — Annonia",
-  description: "Política de cookies de la plataforma Annonia.",
-  alternates: { canonical: "/legal/cookies" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("legal");
+  return {
+    title: t("cookies.metadata.title"),
+    description: t("cookies.metadata.description"),
+    alternates: { canonical: "/legal/cookies" },
+  };
+}
 
 function Section({
   icon: Icon, title, id, children,
@@ -30,9 +34,10 @@ function Section({
 }
 
 function CookieCard({
-  name, purpose, duration, type,
+  name, purpose, duration, type, typeLabel, durationPrefix,
 }: {
   name: string; purpose: string; duration: string; type: "necesaria" | "preferencia" | "tercero";
+  typeLabel: string; durationPrefix: string;
 }) {
   const colors = {
     necesaria: "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20",
@@ -44,54 +49,51 @@ function CookieCard({
     preferencia: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400",
     tercero: "bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400",
   };
-  const labels = {
-    necesaria: "Necesaria",
-    preferencia: "Preferencia",
-    tercero: "Tercero",
-  };
 
   return (
     <div className={`rounded-xl border p-4 ${colors[type]}`}>
       <div className="flex items-center justify-between mb-2">
         <code className="text-sm font-semibold text-gray-900 dark:text-gray-100">{name}</code>
         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badges[type]}`}>
-          {labels[type]}
+          {typeLabel}
         </span>
       </div>
       <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{purpose}</p>
-      <p className="text-xs text-gray-400">Duración: {duration}</p>
+      <p className="text-xs text-gray-400">{durationPrefix} {duration}</p>
     </div>
   );
 }
 
-const TOC = [
-  { id: "que-son", label: "¿Qué son las cookies?" },
-  { id: "necesarias", label: "Cookies necesarias" },
-  { id: "preferencias", label: "Cookies de preferencias" },
-  { id: "terceros", label: "Cookies de terceros" },
-  { id: "gestion", label: "Gestión de cookies" },
-  { id: "actualizaciones", label: "Actualizaciones" },
-  { id: "contacto", label: "Contacto" },
-];
+export default async function CookiesPage() {
+  const t = await getTranslations("legal");
 
-export default function CookiesPage() {
+  const TOC = [
+    { id: "que-son", label: t("cookies.toc.queSon") },
+    { id: "necesarias", label: t("cookies.toc.necesarias") },
+    { id: "preferencias", label: t("cookies.toc.preferencias") },
+    { id: "terceros", label: t("cookies.toc.terceros") },
+    { id: "gestion", label: t("cookies.toc.gestion") },
+    { id: "actualizaciones", label: t("cookies.toc.actualizaciones") },
+    { id: "contacto", label: t("cookies.toc.contacto") },
+  ];
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
       {/* Hero */}
       <div className="text-center mb-12">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 text-sm font-medium mb-4">
           <Cookie className="w-4 h-4" />
-          Cookies
+          {t("cookies.badge")}
         </div>
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">Política de cookies</h1>
-        <p className="text-gray-400 text-sm">Última actualización: 24 de abril de 2026</p>
+        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">{t("cookies.titulo")}</h1>
+        <p className="text-gray-400 text-sm">{t("cookies.ultimaActualizacion")}</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-10">
         {/* TOC sidebar */}
         <aside className="lg:w-64 shrink-0">
           <div className="lg:sticky lg:top-24">
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">Contenido</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">{t("layout.tocLabel")}</p>
             <nav className="space-y-0.5">
               {TOC.map((item) => (
                 <a
@@ -106,23 +108,23 @@ export default function CookiesPage() {
 
             {/* Quick summary card */}
             <div className="mt-6 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 p-4">
-              <p className="text-xs font-semibold text-green-800 dark:text-green-300 mb-2">Resumen rápido</p>
+              <p className="text-xs font-semibold text-green-800 dark:text-green-300 mb-2">{t("cookies.resumenRapido.titulo")}</p>
               <ul className="text-xs text-green-700 dark:text-green-400 space-y-1.5">
                 <li className="flex items-start gap-1.5">
-                  <span className="mt-0.5">✓</span>
-                  <span>Solo cookies necesarias y de preferencias</span>
+                  <span className="mt-0.5">&#10003;</span>
+                  <span>{t("cookies.resumenRapido.soloCookiesNecesarias")}</span>
                 </li>
                 <li className="flex items-start gap-1.5">
-                  <span className="mt-0.5">✓</span>
-                  <span>Sin tracking publicitario</span>
+                  <span className="mt-0.5">&#10003;</span>
+                  <span>{t("cookies.resumenRapido.sinTracking")}</span>
                 </li>
                 <li className="flex items-start gap-1.5">
-                  <span className="mt-0.5">✓</span>
-                  <span>Google Analytics solo con consentimiento</span>
+                  <span className="mt-0.5">&#10003;</span>
+                  <span>{t("cookies.resumenRapido.gaConConsentimiento")}</span>
                 </li>
                 <li className="flex items-start gap-1.5">
-                  <span className="mt-0.5">✓</span>
-                  <span>Puedes gestionar tu consentimiento</span>
+                  <span className="mt-0.5">&#10003;</span>
+                  <span>{t("cookies.resumenRapido.gestionConsentimiento")}</span>
                 </li>
               </ul>
             </div>
@@ -133,132 +135,155 @@ export default function CookiesPage() {
         <div className="flex-1 min-w-0 space-y-10">
           <div className="bg-white dark:bg-[#17181e] rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 sm:p-8 text-[15px] text-gray-600 dark:text-gray-400 leading-relaxed">
             <p>
-              Esta Política de Cookies explica qué cookies utiliza <strong className="text-gray-900 dark:text-gray-100">Annonia</strong> y cómo puede el usuario
-              gestionarlas. Cumple con la <strong className="text-gray-900 dark:text-gray-100">Ley 34/2002 (LSSI-CE)</strong> y las directrices de la Agencia
-              Española de Protección de Datos (AEPD).
+              {t.rich("cookies.intro", {
+                strong: (chunks) => <strong className="text-gray-900 dark:text-gray-100">{chunks}</strong>,
+              })}
             </p>
           </div>
 
-          <Section icon={HelpCircle} title="1. ¿Qué son las cookies?" id="que-son">
+          <Section icon={HelpCircle} title={t("cookies.queSon.titulo")} id="que-son">
             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
               <p className="text-sm">
-                Las cookies son pequeños archivos de texto que se almacenan en tu dispositivo cuando visitas un sitio web. Permiten
-                recordar preferencias como el idioma, inicio de sesión y configuraciones, facilitando tu experiencia en futuras visitas.
+                {t("cookies.queSon.contenido")}
               </p>
             </div>
           </Section>
 
-          <Section icon={ShieldCheck} title="2. Cookies estrictamente necesarias" id="necesarias">
+          <Section icon={ShieldCheck} title={t("cookies.necesarias.titulo")} id="necesarias">
             <p>
-              Imprescindibles para el funcionamiento de la Plataforma. Sin ellas, no podríamos prestar el servicio.{" "}
-              <strong className="text-gray-900 dark:text-gray-100">No requieren consentimiento</strong> (art. 22.2 LSSI-CE).
+              {t.rich("cookies.necesarias.descripcion", {
+                strong: (chunks) => <strong className="text-gray-900 dark:text-gray-100">{chunks}</strong>,
+              })}
             </p>
             <div className="space-y-3">
               <CookieCard
-                name="sb-*-auth-token"
-                purpose="Sesión de autenticación del dietista (Supabase Auth). Mantiene tu sesión iniciada."
-                duration="Sesión / 30 días"
+                name={t("cookies.necesarias.cookies.supabaseAuth.nombre")}
+                purpose={t("cookies.necesarias.cookies.supabaseAuth.proposito")}
+                duration={t("cookies.necesarias.cookies.supabaseAuth.duracion")}
                 type="necesaria"
+                typeLabel={t("cookies.tipoLabels.necesaria")}
+                durationPrefix={t("cookies.duracionPrefix")}
               />
               <CookieCard
-                name="annonia-admin-session"
-                purpose="Sesión del panel de administración. JWT cifrado con HS256."
-                duration="7 días"
+                name={t("cookies.necesarias.cookies.adminSession.nombre")}
+                purpose={t("cookies.necesarias.cookies.adminSession.proposito")}
+                duration={t("cookies.necesarias.cookies.adminSession.duracion")}
                 type="necesaria"
+                typeLabel={t("cookies.tipoLabels.necesaria")}
+                durationPrefix={t("cookies.duracionPrefix")}
               />
               <CookieCard
-                name="annonia-paciente-session"
-                purpose="Sesión del portal del paciente. JWT cifrado con HS256."
-                duration="30 días"
+                name={t("cookies.necesarias.cookies.pacienteSession.nombre")}
+                purpose={t("cookies.necesarias.cookies.pacienteSession.proposito")}
+                duration={t("cookies.necesarias.cookies.pacienteSession.duracion")}
                 type="necesaria"
+                typeLabel={t("cookies.tipoLabels.necesaria")}
+                durationPrefix={t("cookies.duracionPrefix")}
               />
             </div>
           </Section>
 
-          <Section icon={Settings} title="3. Cookies de preferencias" id="preferencias">
+          <Section icon={Settings} title={t("cookies.preferencias.titulo")} id="preferencias">
             <p>
-              Recuerdan tus preferencias para personalizar la experiencia. Se almacenan en el <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-sm">localStorage</code> del navegador.
+              {t.rich("cookies.preferencias.descripcion", {
+                code: (chunks) => <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-sm">{chunks}</code>,
+              })}
             </p>
             <div className="space-y-3">
               <CookieCard
-                name="annonia-theme"
-                purpose="Tu preferencia de tema visual (claro u oscuro)."
-                duration="Persistente"
+                name={t("cookies.preferencias.cookies.theme.nombre")}
+                purpose={t("cookies.preferencias.cookies.theme.proposito")}
+                duration={t("cookies.preferencias.cookies.theme.duracion")}
                 type="preferencia"
+                typeLabel={t("cookies.tipoLabels.preferencia")}
+                durationPrefix={t("cookies.duracionPrefix")}
               />
               <CookieCard
-                name="annonia-tours-*"
-                purpose="Registro de qué tours guiados has completado, para no volver a mostrarlos."
-                duration="Persistente"
+                name={t("cookies.preferencias.cookies.tours.nombre")}
+                purpose={t("cookies.preferencias.cookies.tours.proposito")}
+                duration={t("cookies.preferencias.cookies.tours.duracion")}
                 type="preferencia"
+                typeLabel={t("cookies.tipoLabels.preferencia")}
+                durationPrefix={t("cookies.duracionPrefix")}
               />
               <CookieCard
-                name="annonia-welcome-*"
-                purpose="Marca de que ya se ha mostrado la pantalla de bienvenida."
-                duration="Persistente"
+                name={t("cookies.preferencias.cookies.welcome.nombre")}
+                purpose={t("cookies.preferencias.cookies.welcome.proposito")}
+                duration={t("cookies.preferencias.cookies.welcome.duracion")}
                 type="preferencia"
+                typeLabel={t("cookies.tipoLabels.preferencia")}
+                durationPrefix={t("cookies.duracionPrefix")}
               />
               <CookieCard
-                name="annonia-cookie-consent"
-                purpose="Registro de tu elección sobre cookies (aceptar/rechazar)."
-                duration="365 días"
+                name={t("cookies.preferencias.cookies.consent.nombre")}
+                purpose={t("cookies.preferencias.cookies.consent.proposito")}
+                duration={t("cookies.preferencias.cookies.consent.duracion")}
                 type="preferencia"
+                typeLabel={t("cookies.tipoLabels.preferencia")}
+                durationPrefix={t("cookies.duracionPrefix")}
               />
             </div>
           </Section>
 
-          <Section icon={Globe} title="4. Cookies de terceros" id="terceros">
+          <Section icon={Globe} title={t("cookies.terceros.titulo")} id="terceros">
             <div className="bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 p-5 mb-4">
               <p className="text-sm text-green-800 dark:text-green-300 font-medium mb-1">
-                Annonia utiliza Google Analytics 4 para mejorar la experiencia del usuario.
+                {t("cookies.terceros.ga4Info")}
               </p>
               <p className="text-sm text-green-700 dark:text-green-400">
-                Solo se activa si aceptas las cookies. No usamos Facebook Pixel ni ningún servicio de tracking publicitario.
+                {t("cookies.terceros.ga4Condicion")}
               </p>
             </div>
-            <p>Los únicos servicios de terceros que pueden establecer cookies son:</p>
+            <p>{t("cookies.terceros.descripcion")}</p>
             <div className="space-y-3">
               <CookieCard
-                name="Supabase"
-                purpose="Cookies de autenticación necesarias para el funcionamiento del servicio de login."
-                duration="Variable"
+                name={t("cookies.terceros.cookies.supabase.nombre")}
+                purpose={t("cookies.terceros.cookies.supabase.proposito")}
+                duration={t("cookies.terceros.cookies.supabase.duracion")}
                 type="tercero"
+                typeLabel={t("cookies.tipoLabels.tercero")}
+                durationPrefix={t("cookies.duracionPrefix")}
               />
               <CookieCard
-                name="Stripe"
-                purpose="Cookies de prevención de fraude durante el proceso de pago. Solo cuando accedes a la pasarela."
-                duration="Variable"
+                name={t("cookies.terceros.cookies.stripe.nombre")}
+                purpose={t("cookies.terceros.cookies.stripe.proposito")}
+                duration={t("cookies.terceros.cookies.stripe.duracion")}
                 type="tercero"
+                typeLabel={t("cookies.tipoLabels.tercero")}
+                durationPrefix={t("cookies.duracionPrefix")}
               />
               <CookieCard
-                name="Google (Calendar)"
-                purpose="Cuando conectas voluntariamente tu Google Calendar, Google puede establecer cookies de sesión propias."
-                duration="Variable"
+                name={t("cookies.terceros.cookies.googleCalendar.nombre")}
+                purpose={t("cookies.terceros.cookies.googleCalendar.proposito")}
+                duration={t("cookies.terceros.cookies.googleCalendar.duracion")}
                 type="tercero"
+                typeLabel={t("cookies.tipoLabels.tercero")}
+                durationPrefix={t("cookies.duracionPrefix")}
               />
               <CookieCard
-                name="_ga, _ga_* (Google Analytics 4)"
-                purpose="Cookies de análisis anónimo de uso. Solo se cargan si aceptas las cookies al visitar la web."
-                duration="Hasta 2 años"
+                name={t("cookies.terceros.cookies.ga4.nombre")}
+                purpose={t("cookies.terceros.cookies.ga4.proposito")}
+                duration={t("cookies.terceros.cookies.ga4.duracion")}
                 type="tercero"
+                typeLabel={t("cookies.tipoLabels.tercero")}
+                durationPrefix={t("cookies.duracionPrefix")}
               />
             </div>
           </Section>
 
-          <Section icon={Monitor} title="5. Gestión de cookies" id="gestion">
+          <Section icon={Monitor} title={t("cookies.gestion.titulo")} id="gestion">
             <div className="space-y-4">
               <div className="bg-white dark:bg-[#17181e] rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-                <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm mb-2">Banner de consentimiento</p>
+                <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm mb-2">{t("cookies.gestion.banner.subtitulo")}</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Al visitar Annonia por primera vez, verás un banner donde puedes aceptar o rechazar cookies no esenciales.
-                  Puedes cambiar tu elección en cualquier momento desde &quot;Cookies&quot; en el pie de página.
+                  {t("cookies.gestion.banner.contenido")}
                 </p>
               </div>
 
               <div className="bg-white dark:bg-[#17181e] rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-                <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm mb-3">Configuración del navegador</p>
+                <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm mb-3">{t("cookies.gestion.navegador.subtitulo")}</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                  También puedes bloquear o eliminar cookies desde tu navegador:
+                  {t("cookies.gestion.navegador.contenido")}
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   {[
@@ -282,23 +307,23 @@ export default function CookiesPage() {
               </div>
 
               <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800 p-4 text-sm text-amber-800 dark:text-amber-400">
-                Desactivar cookies estrictamente necesarias puede impedir el funcionamiento correcto de la Plataforma (por ejemplo, no
-                podrás iniciar sesión).
+                {t("cookies.gestion.aviso")}
               </div>
             </div>
           </Section>
 
-          <Section icon={RefreshCcw} title="6. Actualizaciones" id="actualizaciones">
+          <Section icon={RefreshCcw} title={t("cookies.actualizaciones.titulo")} id="actualizaciones">
             <p>
-              Esta Política puede actualizarse para reflejar cambios en los servicios o en la normativa. Se notificará a los usuarios
-              de cambios sustanciales.
+              {t("cookies.actualizaciones.contenido")}
             </p>
           </Section>
 
-          <Section icon={Mail} title="7. Contacto" id="contacto">
+          <Section icon={Mail} title={t("cookies.contacto.titulo")} id="contacto">
             <div className="bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 p-5 text-center">
               <p className="text-sm text-green-800 dark:text-green-300">
-                Para cualquier consulta sobre cookies: <strong>privacidad@annonia.com</strong>
+                {t.rich("cookies.contacto.contenido", {
+                  strong: (chunks) => <strong>{chunks}</strong>,
+                })}
               </p>
             </div>
           </Section>

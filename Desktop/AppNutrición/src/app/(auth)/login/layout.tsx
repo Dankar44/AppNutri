@@ -1,19 +1,22 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
-export const metadata: Metadata = {
-  title: "Iniciar sesión — Annonia Software de Nutrición",
-  description:
-    "Accede a tu cuenta de Annonia. Gestiona dietas personalizadas, pacientes y tu consulta de nutrición desde cualquier dispositivo.",
-  alternates: { canonical: "/login" },
-  openGraph: {
-    title: "Iniciar sesión en Annonia",
-    description: "Accede a tu software de nutrición profesional.",
-  },
-  twitter: {
-    card: "summary",
-    title: "Iniciar sesión en Annonia",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("auth");
+  return {
+    title: t("loginLayout.metaTitle"),
+    description: t("loginLayout.metaDescription"),
+    alternates: { canonical: "/login" },
+    openGraph: {
+      title: t("loginLayout.ogTitle"),
+      description: t("loginLayout.ogDescription"),
+    },
+    twitter: {
+      card: "summary",
+      title: t("loginLayout.twitterTitle"),
+    },
+  };
+}
 
 export default function LoginLayout({ children }: { children: React.ReactNode }) {
   return <>{children}</>;

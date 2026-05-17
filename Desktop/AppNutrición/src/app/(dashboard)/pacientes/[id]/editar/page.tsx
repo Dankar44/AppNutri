@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { PacienteForm } from "@/components/paciente-form";
 import { getPaciente, actualizarPaciente } from "@/app/actions/pacientes";
 
@@ -18,6 +19,8 @@ export default async function EditarPacientePage({ params }: Props) {
     await actualizarPaciente(id, data);
   }
 
+  const t = await getTranslations("patients");
+
   return (
     <div>
       <div className="mb-6">
@@ -26,20 +29,20 @@ export default async function EditarPacientePage({ params }: Props) {
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3 py-2 sm:py-0 -my-2 sm:my-0"
         >
           <ArrowLeft className="w-4 h-4" />
-          Volver al paciente
+          {t("actions.volverAlPaciente")}
         </Link>
         <h1 className="text-2xl sm:text-3xl font-bold">
-          Editar: {paciente.nombre} {paciente.apellidos}
+          {t("actions.editarTitulo", { nombre: paciente.nombre, apellidos: paciente.apellidos })}
         </h1>
         <p className="text-muted-foreground mt-1">
-          Modifica los datos del paciente
+          {t("actions.modificaDatos")}
         </p>
       </div>
 
       <PacienteForm
         paciente={paciente}
         action={handleUpdate}
-        submitLabel="Guardar cambios"
+        submitLabel={t("actions.guardarCambios")}
       />
     </div>
   );

@@ -1,5 +1,7 @@
 import { PulseLoader } from "@/components/pulse-loader";
+import { getTranslations } from "next-intl/server";
 
-export default function Loading() {
-  return <PulseLoader text="Cargando alimentos" />;
+export default async function Loading() {
+  const t = await getTranslations("common");
+  return <PulseLoader text={t("loading.alimentos")} />;
 }

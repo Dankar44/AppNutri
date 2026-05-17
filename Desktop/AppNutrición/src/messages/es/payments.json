@@ -1,0 +1,80 @@
+{
+  "page": {
+    "title": "Pagos",
+    "subtitle": "Gestiona los cobros de tus pacientes"
+  },
+  "stats": {
+    "totalPagos": "Total pagos",
+    "cobrado": "Cobrado",
+    "pendiente": "Pendiente",
+    "balance": "Balance"
+  },
+  "stripeNotConnected": {
+    "titulo": "Stripe no conectado",
+    "descripcion": "Conecta tu cuenta de Stripe en <linkAjustes>Ajustes</linkAjustes> para generar links de pago automáticos y cobrar a tus pacientes online."
+  },
+  "buttons": {
+    "nuevoCobro": "Nuevo cobro",
+    "crearCobro": "Crear cobro",
+    "cancelar": "Cancelar"
+  },
+  "form": {
+    "titulo": "Crear solicitud de cobro",
+    "stripeLinkAuto": "Se generará un link de pago de Stripe automáticamente",
+    "pacienteLabel": "Paciente",
+    "sinPacienteAsignado": "Sin paciente asignado",
+    "importeLabel": "Importe (EUR) *",
+    "importePlaceholder": "35.00",
+    "conceptoLabel": "Concepto *",
+    "conceptoPlaceholder": "Ej: Consulta mensual, Plan nutricional...",
+    "notasLabel": "Notas",
+    "notasPlaceholder": "Opcional"
+  },
+  "manualPayment": {
+    "titulo": "Marcar como pagado",
+    "descripcion": "Registra un pago recibido fuera de Stripe (efectivo, transferencia, etc.)",
+    "metodoLabel": "Método de pago",
+    "metodoPlaceholder": "Ej: Efectivo, Transferencia, Bizum...",
+    "guardando": "Guardando...",
+    "confirmarPago": "Confirmar pago"
+  },
+  "emptyState": {
+    "titulo": "Sin cobros",
+    "descripcion": "Crea tu primera solicitud de cobro"
+  },
+  "table": {
+    "concepto": "Concepto",
+    "paciente": "Paciente",
+    "importe": "Importe",
+    "estado": "Estado",
+    "fecha": "Fecha",
+    "acciones": "Acciones"
+  },
+  "estados": {
+    "pagado": "Pagado",
+    "pendiente": "Pendiente"
+  },
+  "actions": {
+    "copiado": "Copiado",
+    "link": "Link",
+    "pagado": "Pagado",
+    "copiarLinkTitle": "Copiar link de pago",
+    "abrirPaginaPagoTitle": "Abrir página de pago",
+    "generarLinkTitle": "Generar link de pago",
+    "marcarPagadoTitle": "Marcar como pagado manualmente"
+  },
+  "toasts": {
+    "completaConceptoImporte": "Completa concepto e importe",
+    "cobroCreado": "Cobro creado",
+    "cobroCreadoConLink": "Cobro creado con link de pago",
+    "errorCrearCobro": "Error al crear cobro",
+    "linkGeneradoCopiado": "Link de pago generado y copiado al portapapeles",
+    "errorGenerarLink": "Error al generar link",
+    "linkCopiado": "Link copiado al portapapeles",
+    "indicaMetodoPago": "Indica el método de pago",
+    "pagoMarcadoPagado": "Pago marcado como pagado",
+    "errorMarcarPagado": "Error al marcar como pagado",
+    "cobroEliminado": "Cobro eliminado",
+    "errorEliminar": "Error al eliminar"
+  }
+}
