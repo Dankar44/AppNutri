@@ -13,7 +13,10 @@ export async function GET() {
       getBadgesNavegacion(),
     ]);
     const mensajesCount = convNoLeidas + (soporteNoLeidos > 0 ? 1 : 0);
-    return NextResponse.json({ mensajesCount, badges });
+    return NextResponse.json(
+      { mensajesCount, badges },
+      { headers: { "Cache-Control": "private, max-age=15" } },
+    );
   } catch (e) {
     console.error("[sidebar-counts]", e);
     return NextResponse.json({ mensajesCount: 0, badges: {} });
