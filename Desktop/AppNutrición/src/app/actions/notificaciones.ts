@@ -10,8 +10,6 @@ import { getLocale } from "@/i18n/locale";
 const generacionEnCurso = new Map<string, number>();
 
 export async function generarNotificaciones() {
-  const t = await getTranslations("validation");
-  const locale = await getLocale();
   const dietista = await getCurrentDietista();
   if (!dietista) return;
   if (dietista.isDemo) return;
@@ -20,6 +18,9 @@ export async function generarNotificaciones() {
   const ultima = generacionEnCurso.get(dietista.id) ?? 0;
   if (ahora - ultima < 300_000) return;
   generacionEnCurso.set(dietista.id, ahora);
+
+  const t = await getTranslations("validation");
+  const locale = await getLocale();
 
   const hace24h = new Date();
   hace24h.setHours(hace24h.getHours() - 24);
