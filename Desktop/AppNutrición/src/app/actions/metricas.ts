@@ -65,49 +65,40 @@ export async function getActividadMensual() {
   const locale = await getLocale();
   const tag = intlTag(locale);
 
-  // Calcular rango de 6 meses
-  const ahora = new Date();
-  const inicio6Meses = new Date(ahora.getFullYear(), ahora.getMonth() - 5, 1);
+  interface MesRow { mes_inicio: Date; consultas_mes: bigint; pacientes_acumulados: bigint }
 
-  // Para "pacientes totales" (acumulado hasta fin de mes) necesitamos TODOS
-  // los pacientes del dietista, no solo los recientes.
-  // Excluimos el paciente demo (nombre='Paciente' + apellidos='Prueba') para no
-  // inflar la gráfica con datos de ejemplo.
-  const [consultas, pacientes] = await Promise.all([
-    prisma.consulta.findMany({
-      where: { dietistaId: dietista.id, fecha: { gte: inicio6Meses } },
-      select: { fecha: true },
-    }),
-    prisma.paciente.findMany({
-      where: {
-        dietistaId: dietista.id,
-        NOT: { AND: [{ nombre: "Paciente" }, { apellidos: "Prueba" }] },
-      },
-      select: { createdAt: true },
-    }),
-  ]);
+  const rows = await prisma.$queryRaw<MesRow[]>`
+    WITH meses AS (
+      SELECT generate_series(
+        date_trunc('month', NOW()) - '5 months'::interval,
+        date_trunc('month', NOW()),
+        '1 month'::interval
+      )::date AS mes_inicio
+    )
+    SELECT
+      m.mes_inicio,
+      (SELECT COUNT(*) FROM consultas c
+       WHERE c."dietistaId" = ${dietista.id}
+         AND c.fecha >= m.mes_inicio
+         AND c.fecha < (m.mes_inicio + '1 month'::interval)
+      ) AS consultas_mes,
+      (SELECT COUNT(*) FROM pacientes p
+       WHERE p."dietistaId" = ${dietista.id}
+         AND p."createdAt" < (m.mes_inicio + '1 month'::interval)
+         AND NOT (p.nombre = 'Paciente' AND p.apellidos = 'Prueba')
+      ) AS pacientes_acumulados
+    FROM meses m
+    ORDER BY m.mes_inicio
+  `;
 
-  // Agrupar en cliente
-  const meses: { mes: string; consultas: number; pacientesTotales: number }[] = [];
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
-    const fin = new Date(d.getFullYear(), d.getMonth() + 1, 1);
-    const label = d.toLocaleDateString(tag, { month: "short", year: "2-digit" });
-
-    const consultasMes = consultas.filter((c) => {
-      const f = new Date(c.fecha);
-      return f >= d && f < fin;
-    }).length;
-
-    // Pacientes totales = acumulado hasta el fin del mes
-    const pacientesTotales = pacientes.filter((p) => {
-      return new Date(p.createdAt) < fin;
-    }).length;
-
-    meses.push({ mes: label, consultas: consultasMes, pacientesTotales });
-  }
-
-  return meses;
+  return rows.map((r) => {
+    const d = new Date(r.mes_inicio);
+    return {
+      mes: d.toLocaleDateString(tag, { month: "short", year: "2-digit" }),
+      consultas: Number(r.consultas_mes),
+      pacientesTotales: Number(r.pacientes_acumulados),
+    };
+  });
 }
 
 export async function getPacientesAtencion() {
