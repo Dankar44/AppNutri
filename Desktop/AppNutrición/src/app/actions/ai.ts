@@ -11,6 +11,7 @@ import { DiaSemana, TipoComida } from "@/generated/prisma/client";
 import { normalizarNombreAlimento, redondearMacros } from "@/lib/alimento-utils";
 import { sanitizeString, validateNumber, LIMITS } from "@/lib/validation";
 import { getTranslations } from "next-intl/server";
+import { getAlimentosGlobales } from "@/lib/alimentos-cache";
 
 export async function checkAIConfigured() {
   return isAIConfigured();
@@ -43,11 +44,7 @@ export async function generarPlanIA(
     if (!paciente) return { error: t("paciente.pacienteNoEncontrado") };
 
     const [alimentosGlobales, alimentosDietista, recetas] = await Promise.all([
-      prisma.alimento.findMany({
-        where: { dietistaId: null },
-        select: { nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true },
-        orderBy: { nombre: "asc" },
-      }),
+      getAlimentosGlobales(),
       prisma.alimento.findMany({
         where: { dietistaId: dietista.id, origen: "PERSONALIZADO" },
         select: { nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true },
