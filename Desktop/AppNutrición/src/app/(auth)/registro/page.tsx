@@ -57,10 +57,10 @@ export default async function RegistroPage() {
         <p className="text-xs text-muted-foreground mt-10">
           {t("registro.cerrado.contactPrompt")}{" "}
           <a
-            href="mailto:hola@annonia.com"
+            href="mailto:info@annonia.com"
             className="underline hover:text-foreground"
           >
-            hola@annonia.com
+            info@annonia.com
           </a>
         </p>
       </div>

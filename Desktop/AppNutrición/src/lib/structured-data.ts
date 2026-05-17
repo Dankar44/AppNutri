@@ -12,7 +12,7 @@ export function getOrganizationJsonLd(t?: TFunc) {
     contactPoint: [
       {
         "@type": "ContactPoint",
-        email: "hola@annonia.com",
+        email: "info@annonia.com",
         contactType: "customer service",
         availableLanguage: t ? t("organization.availableLanguage") : "Spanish",
       },
