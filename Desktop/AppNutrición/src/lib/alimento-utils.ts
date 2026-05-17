@@ -16,3 +16,42 @@ export function normalizarNombreAlimento(nombre: string): string {
 export function redondearMacros(valor: number): number {
   return Math.round(valor * 10) / 10;
 }
+
+export function findAlimentoEnLista<T extends { nombre: string }>(
+  lista: T[],
+  nombre: string,
+): T | null {
+  const nombreNorm = normalizarNombreAlimento(nombre);
+  const normLower = nombreNorm.toLowerCase();
+  const sinTildes = nombreNorm.normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const sinTildesLower = sinTildes.toLowerCase();
+
+  const exacto = lista.find((a) => a.nombre.toLowerCase() === normLower);
+  if (exacto) return exacto;
+
+  const variantes = [normLower];
+  if (sinTildesLower !== normLower) variantes.push(sinTildesLower);
+
+  for (const v of variantes) {
+    const matches = lista.filter((a) => a.nombre.toLowerCase().startsWith(v));
+    if (matches.length > 0) {
+      matches.sort((a, b) => a.nombre.length - b.nombre.length);
+      return matches[0];
+    }
+  }
+
+  const primera = nombreNorm.split(" ")[0];
+  if (primera && primera.length >= 4) {
+    const pLower = primera.toLowerCase();
+    const exactaPrimera = lista.find((a) => a.nombre.toLowerCase() === pLower);
+    if (exactaPrimera) return exactaPrimera;
+
+    const startPrimera = lista.filter((a) => a.nombre.toLowerCase().startsWith(pLower));
+    if (startPrimera.length > 0) {
+      startPrimera.sort((a, b) => a.nombre.length - b.nombre.length);
+      return startPrimera[0];
+    }
+  }
+
+  return null;
+}
