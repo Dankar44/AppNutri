@@ -19,6 +19,24 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
+  const publicSpanishRoutes = ["/demo", "/landing", "/precios", "/legal"];
+  const isPublicRoute = publicSpanishRoutes.some(
+    (r) => pathname === r || pathname.startsWith(r + "/"),
+  );
+  if (isPublicRoute) {
+    const currentLocale = request.cookies.get("NEXT_LOCALE")?.value;
+    if (currentLocale && currentLocale !== "es") {
+      const url = request.nextUrl.clone();
+      const response = NextResponse.redirect(url);
+      response.cookies.set("NEXT_LOCALE", "es", {
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365,
+        sameSite: "lax",
+      });
+      return response;
+    }
+  }
+
   if (pathname.startsWith("/admin") && !pathname.startsWith("/admin-login")) {
     const token = request.cookies.get(ADMIN_COOKIE)?.value;
     if (token) {
