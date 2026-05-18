@@ -6,7 +6,7 @@ export function getOrganizationJsonLd(t?: TFunc) {
     "@type": "Organization",
     name: "Annonia Software S.L.",
     alternateName: "Annonia",
-    description: t ? t("organization.description") : "Empresa española de software de nutrición para dietistas-nutricionistas. Plataforma de gestión de consultas, dietas personalizadas e inteligencia artificial.",
+    description: t ? t("organization.description") : "Empresa española de software de nutrición para nutricionistas. Plataforma de gestión de consultas, dietas personalizadas e inteligencia artificial.",
     url: "https://annonia.com",
     logo: "https://annonia.com/icon.svg",
     contactPoint: [
@@ -34,7 +34,7 @@ export function getWebsiteJsonLd(t?: TFunc) {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: "Annonia",
-    alternateName: t ? t("website.alternateName") : "Annonia — Software para Dietistas y Nutricionistas",
+    alternateName: t ? t("website.alternateName") : "Annonia — Software para Nutricionistas",
     url: "https://annonia.com",
     inLanguage: t ? t("website.inLanguage") : "es",
     potentialAction: {
@@ -53,7 +53,7 @@ export function getSoftwareApplicationJsonLd(t?: TFunc) {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     name: "Annonia",
-    description: t ? t("software.description") : "Software de nutrición para dietistas: crea dietas personalizadas, gestiona pacientes, agenda citas online y genera planes alimenticios con inteligencia artificial.",
+    description: t ? t("software.description") : "Software de nutrición para nutricionistas: crea dietas personalizadas, gestiona pacientes, agenda citas online y genera planes alimenticios con inteligencia artificial.",
     applicationCategory: "HealthApplication",
     applicationSubCategory: "Nutrition Software",
     operatingSystem: "Web",

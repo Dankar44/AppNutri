@@ -6,8 +6,8 @@
     "emailNoEncontrado": "Email no encontrado o cuenta inactiva",
     "contrasenaOPinIncorrectos": "Contraseña o PIN incorrectos",
     "emailNoValido": "Email no válido",
-    "registrosCerrados": "Los registros están cerrados. Si ya tienes cuenta de dietista, inicia sesión con email y contraseña.",
-    "emailRegistradoComoPaciente": "Este email está registrado como paciente. No es posible crear una cuenta de dietista con el mismo email."
+    "registrosCerrados": "Los registros están cerrados. Si ya tienes cuenta de nutricionista, inicia sesión con email y contraseña.",
+    "emailRegistradoComoPaciente": "Este email está registrado como paciente. No es posible crear una cuenta de nutricionista con el mismo email."
   },
   "perfil": {
     "nombreObligatorio": "El nombre es obligatorio",
@@ -37,7 +37,7 @@
     "fechaNacimientoFutura": "La fecha de nacimiento no puede ser futura",
     "pacienteNoEncontrado": "Paciente no encontrado",
     "sinEmailRegistrado": "El paciente no tiene email registrado",
-    "emailPerteneceADietista": "Este email pertenece a una cuenta de dietista. Una persona no puede ser dietista y paciente a la vez."
+    "emailPerteneceADietista": "Este email pertenece a una cuenta de nutricionista. Una persona no puede ser nutricionista y paciente a la vez."
   },
   "plan": {
     "planNoEncontrado": "Plan no encontrado",
@@ -113,13 +113,13 @@
     "noSePudoGenerarUrl": "No se pudo generar URL"
   },
   "admin": {
-    "yaExisteDietistaEmail": "Ya existe un dietista con ese email",
+    "yaExisteDietistaEmail": "Ya existe un nutricionista con ese email",
     "yaExisteUsuarioEmail": "Ya existe un usuario con ese email",
     "emailOContrasenaIncorrectos": "Email o contraseña incorrectos",
     "emailNoValido": "Email no válido",
     "contrasenaMinima": "La contraseña debe tener al menos 6 caracteres",
     "nombreObligatorio": "El nombre es obligatorio",
-    "dietistaNoEncontrado": "Dietista no encontrado"
+    "dietistaNoEncontrado": "Nutricionista no encontrado"
   },
   "stripe": {
     "sinCuentaStripe": "No tienes cuenta de Stripe conectada"

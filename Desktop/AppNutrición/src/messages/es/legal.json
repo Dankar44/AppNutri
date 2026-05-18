@@ -49,7 +49,7 @@
     "datosRecogemos": {
       "titulo": "2. Datos que recogemos",
       "dietistas": {
-        "subtitulo": "Dietistas-nutricionistas",
+        "subtitulo": "Nutricionistas",
         "identificativos": "Identificativos: nombre, apellidos, email, nº colegiado",
         "acceso": "Acceso: credenciales gestionadas por Supabase Auth (email/contraseña o Google OAuth)",
         "facturacion": "Facturación: procesados por Stripe — Annonia no almacena datos de tarjetas",
@@ -61,7 +61,7 @@
         "datosSalud": "Datos de salud (art. 9 RGPD): peso, altura, medidas, patologías, alergias, intolerancias, medicación, antecedentes, hábitos, seguimiento diario, planes alimenticios",
         "portal": "Portal: email y PIN cifrado"
       },
-      "importante": "Importante: el dietista actúa como responsable del tratamiento de los datos de salud. Annonia actúa como encargado del tratamiento (art. 28 RGPD).",
+      "importante": "Importante: el nutricionista actúa como responsable del tratamiento de los datos de salud. Annonia actúa como encargado del tratamiento (art. 28 RGPD).",
       "datosAutomaticos": {
         "subtitulo": "Datos recogidos automáticamente",
         "descripcion": "Dirección IP, datos de navegación, tipo de dispositivo/navegador, y cookies técnicas (ver Política de Cookies)."
@@ -99,7 +99,7 @@
       "filas": {
         "cuenta": { "tipo": "Datos de cuenta", "plazo": "Mientras esté activa + 30 días tras baja" },
         "facturacion": { "tipo": "Facturación", "plazo": "5 años (Ley General Tributaria)" },
-        "pacientes": { "tipo": "Datos de pacientes", "plazo": "Mientras el dietista tenga cuenta activa; máx. 90 días tras baja" },
+        "pacientes": { "tipo": "Datos de pacientes", "plazo": "Mientras el nutricionista tenga cuenta activa; máx. 90 días tras baja" },
         "adjuntos": { "tipo": "Adjuntos de mensajes", "plazo": "30 días (limpieza automática)" },
         "mensajes": { "tipo": "Mensajes de texto", "plazo": "60 días (limpieza automática)" },
         "logs": { "tipo": "Logs de actividad", "plazo": "Máximo 12 meses" }
@@ -131,7 +131,7 @@
     },
     "menores": {
       "titulo": "8. Datos de menores",
-      "contenido": "La Plataforma no está dirigida a menores de 16 años como usuarios directos. Los datos de menores solo podrán tratarse cuando el paciente sea atendido por un dietista con consentimiento de padres o tutores (art. 7 LOPDGDD)."
+      "contenido": "La Plataforma no está dirigida a menores de 16 años como usuarios directos. Los datos de menores solo podrán tratarse cuando el paciente sea atendido por un nutricionista con consentimiento de padres o tutores (art. 7 LOPDGDD)."
     },
     "modificaciones": {
       "titulo": "9. Modificaciones",
@@ -198,12 +198,12 @@
     "acceso": {
       "titulo": "3. Condiciones de acceso y registro",
       "dietistas": {
-        "subtitulo": "Dietistas-nutricionistas",
+        "subtitulo": "Nutricionistas",
         "contenido": "Deberán estar en posesión de la titulación habilitante y colegiados. Annonia se reserva el derecho de verificar el número de colegiado y denegar el acceso en caso de datos incorrectos."
       },
       "pacientes": {
         "subtitulo": "Pacientes",
-        "contenido": "Acceden al portal mediante credenciales proporcionadas por su dietista. No se requiere registro independiente."
+        "contenido": "Acceden al portal mediante credenciales proporcionadas por su nutricionista. No se requiere registro independiente."
       },
       "edadMinima": {
         "subtitulo": "Edad mínima: 16 años",
@@ -245,9 +245,9 @@
     "responsabilidadSanitaria": {
       "titulo": "8. Responsabilidad del profesional sanitario",
       "puntos": [
-        "<strong>Annonia es una herramienta de gestión</strong> y no sustituye el criterio profesional del dietista-nutricionista.",
+        "<strong>Annonia es una herramienta de gestión</strong> y no sustituye el criterio profesional del nutricionista.",
         "Las recomendaciones de IA son orientativas y deben ser revisadas y validadas por el profesional antes de su aplicación.",
-        "El dietista es el único responsable de las decisiones clínicas tomadas con respecto a sus pacientes."
+        "El nutricionista es el único responsable de las decisiones clínicas tomadas con respecto a sus pacientes."
       ]
     },
     "limitacion": {
@@ -309,7 +309,7 @@
       "titulo": "2. Cookies estrictamente necesarias",
       "descripcion": "Imprescindibles para el funcionamiento de la Plataforma. Sin ellas, no podríamos prestar el servicio. <strong>No requieren consentimiento</strong> (art. 22.2 LSSI-CE).",
       "cookies": {
-        "supabaseAuth": { "nombre": "sb-*-auth-token", "proposito": "Sesión de autenticación del dietista (Supabase Auth). Mantiene tu sesión iniciada.", "duracion": "Sesión / 30 días" },
+        "supabaseAuth": { "nombre": "sb-*-auth-token", "proposito": "Sesión de autenticación del nutricionista (Supabase Auth). Mantiene tu sesión iniciada.", "duracion": "Sesión / 30 días" },
         "adminSession": { "nombre": "annonia-admin-session", "proposito": "Sesión del panel de administración. JWT cifrado con HS256.", "duracion": "7 días" },
         "pacienteSession": { "nombre": "annonia-paciente-session", "proposito": "Sesión del portal del paciente. JWT cifrado con HS256.", "duracion": "30 días" }
       }

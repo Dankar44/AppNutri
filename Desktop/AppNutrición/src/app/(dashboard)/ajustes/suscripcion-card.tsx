@@ -33,6 +33,7 @@ export function SuscripcionCard({ plan, estado, fechaInicio, fechaFin }: Props) 
   const estadoKey = (estado in ESTADO_COLORS) ? estado : "PRUEBA";
   const estadoColor = ESTADO_COLORS[estadoKey];
   const otroPlan = plan === "BASICO" ? "PROFESIONAL" : "BASICO";
+  const esLicenciaCompleta = plan === "PROFESIONAL" && estado === "ACTIVA" && !fechaFin;
 
   // Calcular días restantes
   let diasRestantes: number | null = null;
@@ -64,16 +65,21 @@ export function SuscripcionCard({ plan, estado, fechaInicio, fechaFin }: Props) 
           </div>
           <div>
             <p className="font-semibold">{t("planLabel", { nombre: t(`planes.${planKey}.nombre`) })}</p>
-            <p className="text-sm text-muted-foreground">{t(`planes.${planKey}.precio`)}</p>
+            <p className="text-sm text-muted-foreground">{esLicenciaCompleta ? t("precioGratis") : t(`planes.${planKey}.precio`)}</p>
           </div>
         </div>
-        <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${estadoColor}`}>
-          {t(`estados.${estadoKey}`)}
+        <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${esLicenciaCompleta ? "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400" : estadoColor}`}>
+          {esLicenciaCompleta ? t("estadoPermanente") : t(`estados.${estadoKey}`)}
         </span>
       </div>
 
-      {/* Días restantes (prueba o suscripción) */}
-      {diasRestantes !== null && (
+      {/* Licencia completa o días restantes */}
+      {esLicenciaCompleta ? (
+        <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400">
+          <Check className="w-4 h-4 flex-shrink-0" />
+          <span className="text-sm font-medium">{t("licenciaCompleta")}</span>
+        </div>
+      ) : diasRestantes !== null ? (
         <div className={`flex items-center gap-2 px-4 py-3 rounded-lg ${
           diasRestantes <= 3 ? "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400" : "bg-muted/50"
         }`}>
@@ -88,7 +94,7 @@ export function SuscripcionCard({ plan, estado, fechaInicio, fechaFin }: Props) 
                 : t("diasRenovacion", { dias: diasRestantes, plural: diasRestantes !== 1 ? "s" : "" })}
           </span>
         </div>
-      )}
+      ) : null}
 
       {/* Info de fechas */}
       <div className="grid grid-cols-2 gap-4 text-sm">
@@ -119,6 +125,7 @@ export function SuscripcionCard({ plan, estado, fechaInicio, fechaFin }: Props) 
       </div>
 
       {/* Comparativa + cambiar plan */}
+      {!esLicenciaCompleta && (
       <div className="border-t border-border pt-4">
         <div className="flex items-center justify-between">
           <div>
@@ -151,8 +158,10 @@ export function SuscripcionCard({ plan, estado, fechaInicio, fechaFin }: Props) 
           </button>
         </div>
       </div>
+      )}
 
       {/* Comparativa rápida */}
+      {!esLicenciaCompleta && (
       <div className="bg-muted/30 rounded-lg p-3 text-xs space-y-1.5">
         <div className="grid grid-cols-3 gap-2 font-semibold text-muted-foreground">
           <span></span>
@@ -188,6 +197,7 @@ export function SuscripcionCard({ plan, estado, fechaInicio, fechaFin }: Props) 
           </div>
         ))}
       </div>
+      )}
     </div>
   );
 }

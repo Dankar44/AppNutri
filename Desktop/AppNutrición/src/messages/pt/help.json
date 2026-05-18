@@ -114,12 +114,12 @@
   },
   "ac-12": {
     "question": "¿Qué diferencia hay entre modo \"directa\" y \"proponer\"?",
-    "answer": "El modo \"directa\" crea la cita ya confirmada (estado CONFIRMADA), como si tú y el paciente ya hubierais acordado el horario. El modo \"proponer\" crea una cita pendiente (estado PENDIENTE con origen DIETISTA) y envía una notificación al paciente para que la acepte, rechace o contraproponga desde su portal. Usa \"directa\" cuando ya has hablado con el paciente o cuando reprogramas algo acordado; usa \"proponer\" cuando sugieres un hueco que el paciente aún no ha validado. La diferencia afecta al flujo, no al contenido.",
+    "answer": "El modo \"directa\" crea la cita ya confirmada (estado CONFIRMADA), como si tú y el paciente ya hubierais acordado el horario. El modo \"proponer\" crea una cita pendiente (estado PENDIENTE con origen NUTRICIONISTA) y envía una notificación al paciente para que la acepte, rechace o contraproponga desde su portal. Usa \"directa\" cuando ya has hablado con el paciente o cuando reprogramas algo acordado; usa \"proponer\" cuando sugieres un hueco que el paciente aún no ha validado. La diferencia afecta al flujo, no al contenido.",
     "keywords": "modo, directa, proponer, diferencia"
   },
   "ac-13": {
     "question": "¿Qué pasa cuando uso el modo \"proponer\"?",
-    "answer": "Al usar el modo \"proponer\", la cita se crea en estado PENDIENTE con origen DIETISTA, lo que la distingue de una solicitud hecha por el paciente. El paciente recibe una notificación de tipo CITA_SOLICITADA en su portal con el detalle de tu propuesta y tres opciones: aceptar, rechazar o contraproponer otro horario. Hasta que responda, la cita figura como pendiente en tu Agenda pero no bloquea definitivamente el slot. Si no responde en un plazo razonable, puedes enviarle un mensaje recordatorio o cancelar la propuesta.",
+    "answer": "Al usar el modo \"proponer\", la cita se crea en estado PENDIENTE con origen NUTRICIONISTA, lo que la distingue de una solicitud hecha por el paciente. El paciente recibe una notificación de tipo CITA_SOLICITADA en su portal con el detalle de tu propuesta y tres opciones: aceptar, rechazar o contraproponer otro horario. Hasta que responda, la cita figura como pendiente en tu Agenda pero no bloquea definitivamente el slot. Si no responde en un plazo razonable, puedes enviarle un mensaje recordatorio o cancelar la propuesta.",
     "keywords": "proponer, pendiente, notificación, paciente"
   },
   "ac-14": {
@@ -223,9 +223,9 @@
     "keywords": "ciclo, estados, flujo, cita"
   },
   "ac-34": {
-    "question": "¿Qué significa PENDIENTE con origen PACIENTE frente a origen DIETISTA?",
-    "answer": "Cuando una cita está en estado PENDIENTE, su origen indica quién la inició. Origen PACIENTE significa que el paciente te la solicitó desde su portal y tú debes aceptar, rechazar o contraponer. Origen DIETISTA significa que tú se la propusiste con el modo \"proponer\" y es el paciente quien debe responder. La Agenda distingue ambos con iconos y etiquetas diferentes, para que identifiques rápidamente qué acción esperas de quién. Esta distinción es clave para no perder solicitudes ni dejar propuestas sin respuesta.",
-    "keywords": "pendiente, origen, paciente, dietista"
+    "question": "¿Qué significa PENDIENTE con origen PACIENTE frente a origen NUTRICIONISTA?",
+    "answer": "Cuando una cita está en estado PENDIENTE, su origen indica quién la inició. Origen PACIENTE significa que el paciente te la solicitó desde su portal y tú debes aceptar, rechazar o contraponer. Origen NUTRICIONISTA significa que tú se la propusiste con el modo \"proponer\" y es el paciente quien debe responder. La Agenda distingue ambos con iconos y etiquetas diferentes, para que identifiques rápidamente qué acción esperas de quién. Esta distinción es clave para no perder solicitudes ni dejar propuestas sin respuesta.",
+    "keywords": "pendiente, origen, paciente, nutricionista"
   },
   "ac-35": {
     "question": "¿Puedo editar una cita completada o cancelada?",
@@ -484,7 +484,7 @@
   },
   "ah-1": {
     "question": "¿Qué es el horario laboral en Annonia?",
-    "answer": "El horario laboral es la configuración de los días y franjas horarias en los que atiendes a pacientes, accesible desde la ruta `/agenda/horario`. Define cuándo estás disponible para recibir solicitudes de cita y sirve como base para que el portal del paciente sepa qué huecos ofrecer. Se guarda en el campo `horarioLaboral` (JSONB) de tu ficha de dietista y se aplica automáticamente a todos tus pacientes. Sin un horario configurado, los pacientes no pueden solicitar cita a través del portal.",
+    "answer": "El horario laboral es la configuración de los días y franjas horarias en los que atiendes a pacientes, accesible desde la ruta `/agenda/horario`. Define cuándo estás disponible para recibir solicitudes de cita y sirve como base para que el portal del paciente sepa qué huecos ofrecer. Se guarda en el campo `horarioLaboral` (JSONB) de tu ficha de nutricionista y se aplica automáticamente a todos tus pacientes. Sin un horario configurado, los pacientes no pueden solicitar cita a través del portal.",
     "keywords": "horario, laboral, configuración, disponibilidad"
   },
   "ah-2": {
@@ -544,7 +544,7 @@
   },
   "ah-13": {
     "question": "¿Cómo guardo los cambios del horario?",
-    "answer": "Al pie de la pantalla verás un botón `Guardar cambios` que persiste toda la configuración en el campo `horarioLaboral` de tu ficha de dietista. Los cambios no se aplican hasta que pulsas guardar, por lo que puedes editar con tranquilidad sin afectar a tus pacientes. Una vez guardados, surten efecto de inmediato en el portal de reserva. Si navegas fuera sin guardar, perderás los cambios pendientes y la aplicación suele avisarte antes de abandonar.",
+    "answer": "Al pie de la pantalla verás un botón `Guardar cambios` que persiste toda la configuración en el campo `horarioLaboral` de tu ficha de nutricionista. Los cambios no se aplican hasta que pulsas guardar, por lo que puedes editar con tranquilidad sin afectar a tus pacientes. Una vez guardados, surten efecto de inmediato en el portal de reserva. Si navegas fuera sin guardar, perderás los cambios pendientes y la aplicación suele avisarte antes de abandonar.",
     "keywords": "guardar, cambios, persistir, botón"
   },
   "ah-14": {
@@ -734,7 +734,7 @@
   },
   "ag-11": {
     "question": "¿Cómo creo una nueva cita?",
-    "answer": "Pulsa el botón \"+ Nueva cita\" que aparece en la parte superior derecha de la Agenda y se abrirá un formulario modal. Rellena el paciente, la fecha, la hora de inicio, la duración, el motivo y, opcionalmente, notas internas y si la cita es online. Al guardar, la cita se crea con estado CONFIRMADA si la creas tú (origen DIETISTA) y aparece inmediatamente en el calendario. Si tienes Google Calendar conectado, también se sincroniza automáticamente.",
+    "answer": "Pulsa el botón \"+ Nueva cita\" que aparece en la parte superior derecha de la Agenda y se abrirá un formulario modal. Rellena el paciente, la fecha, la hora de inicio, la duración, el motivo y, opcionalmente, notas internas y si la cita es online. Al guardar, la cita se crea con estado CONFIRMADA si la creas tú (origen NUTRICIONISTA) y aparece inmediatamente en el calendario. Si tienes Google Calendar conectado, también se sincroniza automáticamente.",
     "keywords": "crear, nueva, cita, formulario"
   },
   "ag-12": {
@@ -764,7 +764,7 @@
   },
   "ag-17": {
     "question": "¿Qué significa que una cita esté PENDIENTE?",
-    "answer": "PENDIENTE significa que la cita está propuesta pero aún no ha sido confirmada. Si el origen es DIETISTA (la has creado tú), significa que estás esperando que el paciente la acepte desde su portal. Si el origen es PACIENTE (la ha solicitado él), significa que tú tienes que responder aceptando, proponiendo otra fecha o rechazando. Las citas pendientes generan notificaciones y badges en la Agenda para que no se te pasen.",
+    "answer": "PENDIENTE significa que la cita está propuesta pero aún no ha sido confirmada. Si el origen es NUTRICIONISTA (la has creado tú), significa que estás esperando que el paciente la acepte desde su portal. Si el origen es PACIENTE (la ha solicitado él), significa que tú tienes que responder aceptando, proponiendo otra fecha o rechazando. Las citas pendientes generan notificaciones y badges en la Agenda para que no se te pasen.",
     "keywords": "pendiente, estado, solicitud, respuesta"
   },
   "ag-18": {
@@ -774,8 +774,8 @@
   },
   "ag-19": {
     "question": "¿Qué hago con una cita pendiente que he creado yo?",
-    "answer": "Si la cita pendiente tiene origen DIETISTA, lo que debes hacer es esperar a que el paciente la acepte desde su portal. El paciente recibe una notificación y un correo con la propuesta y puede aceptarla, rechazarla o contraproponer otra fecha. Mientras tanto, verás la cita marcada como PENDIENTE en tu Agenda. Si el paciente no responde en un tiempo razonable puedes contactarlo por mensajes o cancelar la cita para liberar el hueco.",
-    "keywords": "pendiente, dietista, esperar, paciente"
+    "answer": "Si la cita pendiente tiene origen NUTRICIONISTA, lo que debes hacer es esperar a que el paciente la acepte desde su portal. El paciente recibe una notificación y un correo con la propuesta y puede aceptarla, rechazarla o contraproponer otra fecha. Mientras tanto, verás la cita marcada como PENDIENTE en tu Agenda. Si el paciente no responde en un tiempo razonable puedes contactarlo por mensajes o cancelar la cita para liberar el hueco.",
+    "keywords": "pendiente, nutricionista, esperar, paciente"
   },
   "ag-20": {
     "question": "¿Qué hago con una solicitud de cita del paciente?",
@@ -1179,7 +1179,7 @@
   },
   "ajd-15": {
     "question": "¿Puedo tener más de un paciente de ejemplo por cuenta?",
-    "answer": "No, el sistema está diseñado para que exista como máximo un paciente de ejemplo por cuenta de dietista. La acción `restaurarPacienteDemo` comprueba antes si ya existe un `Paciente Prueba` asociado a tu usuario y, si lo hay, no crea un duplicado. Si necesitas trabajar con más casos ficticios, lo recomendable es crear pacientes reales con nombres inventados y tratarlos como tus propios \"demos\" personalizados. Así podrás tener tantos como quieras sin chocar con el límite del paciente de ejemplo oficial.",
+    "answer": "No, el sistema está diseñado para que exista como máximo un paciente de ejemplo por cuenta de nutricionista. La acción `restaurarPacienteDemo` comprueba antes si ya existe un `Paciente Prueba` asociado a tu usuario y, si lo hay, no crea un duplicado. Si necesitas trabajar con más casos ficticios, lo recomendable es crear pacientes reales con nombres inventados y tratarlos como tus propios \"demos\" personalizados. Así podrás tener tantos como quieras sin chocar con el límite del paciente de ejemplo oficial.",
     "keywords": "límite, uno, único, duplicado"
   },
   "ajg-1": {
@@ -1234,7 +1234,7 @@
   },
   "ajg-11": {
     "question": "¿Hay tours para el portal del paciente?",
-    "answer": "Sí, el portal del paciente tiene sus propios tours pensados para que la persona que accede desde su cuenta aprenda a moverse por su zona: ver su plan de alimentación, registrar seguimiento diario, consultar mensajes con el nutricionista y demás. Estos tours están marcados con una audiencia distinta (paciente) y se muestran dentro del portal, no en el panel del nutricionista. Como dietista no los verás en tu listado de Ajustes, pero puedes contarle al paciente que tiene guías interactivas disponibles cuando entre a su portal.",
+    "answer": "Sí, el portal del paciente tiene sus propios tours pensados para que la persona que accede desde su cuenta aprenda a moverse por su zona: ver su plan de alimentación, registrar seguimiento diario, consultar mensajes con el nutricionista y demás. Estos tours están marcados con una audiencia distinta (paciente) y se muestran dentro del portal, no en el panel del nutricionista. Como nutricionista no los verás en tu listado de Ajustes, pero puedes contarle al paciente que tiene guías interactivas disponibles cuando entre a su portal.",
     "keywords": "portal, paciente, audience, tours paciente"
   },
   "ajg-12": {
@@ -1434,8 +1434,8 @@
   },
   "ajp-1": {
     "question": "¿Qué es la sección Perfil de Ajustes?",
-    "answer": "La sección Perfil dentro de Ajustes es donde gestionas tus datos profesionales como dietista: nombre, apellidos, teléfono, especialidad, número de colegiado y clínica. También es el lugar para subir o cambiar tu foto de perfil. Todo lo que configuras aquí afecta a cómo te identifica la aplicación y a cómo te ven tus pacientes en mensajes, enlaces compartidos y en el portal. Los cambios se guardan en tu ficha de dietista y se aplican al instante en cuanto pulsas el botón de guardar.",
-    "keywords": "perfil, ajustes, datos personales, dietista, cuenta"
+    "answer": "La sección Perfil dentro de Ajustes es donde gestionas tus datos profesionales como nutricionista: nombre, apellidos, teléfono, especialidad, número de colegiado y clínica. También es el lugar para subir o cambiar tu foto de perfil. Todo lo que configuras aquí afecta a cómo te identifica la aplicación y a cómo te ven tus pacientes en mensajes, enlaces compartidos y en el portal. Los cambios se guardan en tu ficha de nutricionista y se aplican al instante en cuanto pulsas el botón de guardar.",
+    "keywords": "perfil, ajustes, datos personales, nutricionista, cuenta"
   },
   "ajp-2": {
     "question": "¿Cómo edito mis datos en Perfil?",
@@ -1454,12 +1454,12 @@
   },
   "ajp-5": {
     "question": "¿Qué pongo en el campo Especialidad?",
-    "answer": "En Especialidad describe tu área de trabajo como dietista-nutricionista, por ejemplo nutrición clínica, deportiva, pediátrica, oncológica, vegetariana o trastornos de la conducta alimentaria. Es un campo de texto libre, puedes escribir varias especialidades separadas por comas. Esta información te ayuda a identificarte profesionalmente y puede mostrarse junto a tu nombre en ciertas vistas. Si aún no tienes claro qué poner, puedes dejarlo vacío y completarlo más adelante.",
+    "answer": "En Especialidad describe tu área de trabajo como nutricionista, por ejemplo nutrición clínica, deportiva, pediátrica, oncológica, vegetariana o trastornos de la conducta alimentaria. Es un campo de texto libre, puedes escribir varias especialidades separadas por comas. Esta información te ayuda a identificarte profesionalmente y puede mostrarse junto a tu nombre en ciertas vistas. Si aún no tienes claro qué poner, puedes dejarlo vacío y completarlo más adelante.",
     "keywords": "especialidad, área, nutrición, clínica, deportiva"
   },
   "ajp-6": {
     "question": "¿Para qué sirve el número de colegiado?",
-    "answer": "El número de colegiado es tu identificador oficial como dietista-nutricionista en tu colegio profesional. Rellenarlo sirve para aparecer correctamente identificado en documentos, informes y en tu perfil profesional. Aunque no es obligatorio dentro de la aplicación, sí suele ser recomendable incluirlo por transparencia con el paciente y por cumplimiento profesional. Si trabajas en varios colegios o jurisdicciones, puedes poner el que uses habitualmente.",
+    "answer": "El número de colegiado es tu identificador oficial como nutricionista en tu colegio profesional. Rellenarlo sirve para aparecer correctamente identificado en documentos, informes y en tu perfil profesional. Aunque no es obligatorio dentro de la aplicación, sí suele ser recomendable incluirlo por transparencia con el paciente y por cumplimiento profesional. Si trabajas en varios colegios o jurisdicciones, puedes poner el que uses habitualmente.",
     "keywords": "colegiado, número, colegio, profesional, oficial"
   },
   "ajp-7": {
@@ -1469,7 +1469,7 @@
   },
   "ajp-8": {
     "question": "¿Cómo guardo los cambios del Perfil?",
-    "answer": "Al final del formulario hay un botón Guardar cambios. Pulsa ese botón cuando hayas terminado de editar para enviar los cambios al servidor. Si todo es correcto, verás una confirmación y los cambios quedan aplicados en tu ficha de dietista. Si algún campo obligatorio está vacío o tiene un valor inválido, el botón puede quedar deshabilitado o mostrarte un error con la razón. Mientras no pulses guardar, nada se aplica de forma definitiva.",
+    "answer": "Al final del formulario hay un botón Guardar cambios. Pulsa ese botón cuando hayas terminado de editar para enviar los cambios al servidor. Si todo es correcto, verás una confirmación y los cambios quedan aplicados en tu ficha de nutricionista. Si algún campo obligatorio está vacío o tiene un valor inválido, el botón puede quedar deshabilitado o mostrarte un error con la razón. Mientras no pulses guardar, nada se aplica de forma definitiva.",
     "keywords": "guardar, cambios, botón, confirmar, enviar"
   },
   "ajp-9": {
@@ -1764,7 +1764,7 @@
   },
   "aj-22": {
     "question": "¿En qué idioma está la página de Ajustes?",
-    "answer": "La interfaz de Ajustes está en castellano peninsular con tildes y terminología propia de España. Las etiquetas, descripciones y mensajes de confirmación se han redactado buscando claridad y cercanía con dietistas y nutricionistas españoles. Por ahora no hay selector de idioma; si se añaden más en el futuro, el selector aparecería en una nueva sección dentro del propio panel.",
+    "answer": "La interfaz de Ajustes está en castellano peninsular con tildes y terminología propia de España. Las etiquetas, descripciones y mensajes de confirmación se han redactado buscando claridad y cercanía con nutricionistas españoles. Por ahora no hay selector de idioma; si se añaden más en el futuro, el selector aparecería en una nueva sección dentro del propio panel.",
     "keywords": "idioma, castellano, español, traducción"
   },
   "aj-23": {
@@ -1809,7 +1809,7 @@
   },
   "al-1": {
     "question": "¿Qué es la sección de alimentos de Annonia?",
-    "answer": "La sección `/alimentos` es tu base de datos nutricional personal dentro de Annonia. Aquí se almacenan todos los alimentos que usarás después para construir planes de alimentación en `/dietas` y recetas en `/recetas`. Cada alimento guarda su información nutricional completa: macronutrientes, fibra y hasta 24 micronutrientes opcionales. Funciona como un catálogo mixto entre alimentos globales disponibles para todos los dietistas y alimentos propios que tú creas o importas.",
+    "answer": "La sección `/alimentos` es tu base de datos nutricional personal dentro de Annonia. Aquí se almacenan todos los alimentos que usarás después para construir planes de alimentación en `/dietas` y recetas en `/recetas`. Cada alimento guarda su información nutricional completa: macronutrientes, fibra y hasta 24 micronutrientes opcionales. Funciona como un catálogo mixto entre alimentos globales disponibles para todos los nutricionistas y alimentos propios que tú creas o importas.",
     "keywords": "alimentos, base de datos, sección, nutricional"
   },
   "al-2": {
@@ -1819,7 +1819,7 @@
   },
   "al-3": {
     "question": "¿Qué diferencia hay entre un alimento global y uno propio?",
-    "answer": "Los alimentos globales forman parte de la base de datos común de Annonia y están disponibles para todos los dietistas de la plataforma. Los alimentos propios los has creado o importado tú y solo tú los ves en tu cuenta. Los globales se identifican con una etiqueta o icono distintivo en el listado. No puedes editar ni eliminar los globales, pero sí puedes duplicarlos para crear una versión propia con ajustes personalizados.",
+    "answer": "Los alimentos globales forman parte de la base de datos común de Annonia y están disponibles para todos los nutricionistas de la plataforma. Los alimentos propios los has creado o importado tú y solo tú los ves en tu cuenta. Los globales se identifican con una etiqueta o icono distintivo en el listado. No puedes editar ni eliminar los globales, pero sí puedes duplicarlos para crear una versión propia con ajustes personalizados.",
     "keywords": "global, propio, diferencia, privado"
   },
   "al-4": {
@@ -1904,7 +1904,7 @@
   },
   "al-20": {
     "question": "¿Puedo eliminar un alimento?",
-    "answer": "Solo puedes eliminar los alimentos propios de tu cuenta. Los globales no se pueden borrar porque se comparten con toda la comunidad de dietistas. En el listado, abre el menú de acciones de un alimento propio y elige \"Eliminar\". Se pedirá confirmación. Si el alimento está siendo usado en alguna dieta o receta, recibirás un aviso antes de borrar y podrás decidir cómo proceder.",
+    "answer": "Solo puedes eliminar los alimentos propios de tu cuenta. Los globales no se pueden borrar porque se comparten con toda la comunidad de nutricionistas. En el listado, abre el menú de acciones de un alimento propio y elige \"Eliminar\". Se pedirá confirmación. Si el alimento está siendo usado en alguna dieta o receta, recibirás un aviso antes de borrar y podrás decidir cómo proceder.",
     "keywords": "eliminar, borrar, quitar, propio"
   },
   "al-21": {
@@ -1914,7 +1914,7 @@
   },
   "al-22": {
     "question": "¿Puedo borrar un alimento global?",
-    "answer": "No. Los alimentos globales de Annonia no se pueden borrar ni editar desde tu cuenta. Están protegidos para garantizar que otros dietistas sigan teniendo acceso a los mismos datos. Si encuentras un error en un global, lo ideal es crear una copia propia corregida. Si crees que el error es grave y afecta a muchos, puedes reportarlo por el canal de soporte para que el equipo de Annonia revise el dato.",
+    "answer": "No. Los alimentos globales de Annonia no se pueden borrar ni editar desde tu cuenta. Están protegidos para garantizar que otros nutricionistas sigan teniendo acceso a los mismos datos. Si encuentras un error en un global, lo ideal es crear una copia propia corregida. Si crees que el error es grave y afecta a muchos, puedes reportarlo por el canal de soporte para que el equipo de Annonia revise el dato.",
     "keywords": "global, borrar, bloqueado, protegido"
   },
   "al-23": {
@@ -1979,7 +1979,7 @@
   },
   "al-35": {
     "question": "¿Puedo exportar mis alimentos a CSV o Excel?",
-    "answer": "De momento Annonia no soporta exportar la base de alimentos a CSV o Excel desde la sección `/alimentos`. Si necesitas un listado, puedes imprimir la pantalla o hacer una captura. Esta funcionalidad está en el roadmap para futuras versiones, sobre todo para dietistas que quieran hacer copias de seguridad o análisis fuera de la app. Si te urge, contáctanos por soporte y valoramos la prioridad.",
+    "answer": "De momento Annonia no soporta exportar la base de alimentos a CSV o Excel desde la sección `/alimentos`. Si necesitas un listado, puedes imprimir la pantalla o hacer una captura. Esta funcionalidad está en el roadmap para futuras versiones, sobre todo para nutricionistas que quieran hacer copias de seguridad o análisis fuera de la app. Si te urge, contáctanos por soporte y valoramos la prioridad.",
     "keywords": "exportar, csv, excel, descarga"
   },
   "al-36": {
@@ -2028,13 +2028,13 @@
     "keywords": "ia, inteligencia artificial, generar, estimar"
   },
   "al-45": {
-    "question": "¿Puedo compartir mis alimentos propios con otros dietistas?",
-    "answer": "No, actualmente los alimentos propios son privados de tu cuenta y no hay función de compartir directo entre dietistas. Solo los alimentos globales de la base de Annonia son comunes a todos. Si trabajas en un equipo y queréis compartir, cada miembro puede crear los mismos alimentos en su cuenta o, si tenéis una cuenta multiusuario, se comparten dentro de esa organización. Esta funcionalidad está en estudio para versiones futuras.",
-    "keywords": "compartir, equipo, colaborar, dietistas"
+    "question": "¿Puedo compartir mis alimentos propios con otros nutricionistas?",
+    "answer": "No, actualmente los alimentos propios son privados de tu cuenta y no hay función de compartir directo entre nutricionistas. Solo los alimentos globales de la base de Annonia son comunes a todos. Si trabajas en un equipo y queréis compartir, cada miembro puede crear los mismos alimentos en su cuenta o, si tenéis una cuenta multiusuario, se comparten dentro de esa organización. Esta funcionalidad está en estudio para versiones futuras.",
+    "keywords": "compartir, equipo, colaborar, nutricionistas"
   },
   "al-46": {
     "question": "¿Puedo aportar mis alimentos a la base global?",
-    "answer": "De momento no hay un flujo directo para que los dietistas aporten sus alimentos propios a la base global de Annonia. Si creas un alimento que crees que sería útil para toda la comunidad, contáctanos por soporte y el equipo lo valorará para incluirlo. Esta vía manual asegura que los datos globales pasen una revisión de calidad antes de publicarse, manteniendo el estándar de la base compartida.",
+    "answer": "De momento no hay un flujo directo para que los nutricionistas aporten sus alimentos propios a la base global de Annonia. Si creas un alimento que crees que sería útil para toda la comunidad, contáctanos por soporte y el equipo lo valorará para incluirlo. Esta vía manual asegura que los datos globales pasen una revisión de calidad antes de publicarse, manteniendo el estándar de la base compartida.",
     "keywords": "aportar, contribuir, global, comunidad"
   },
   "al-47": {
@@ -2054,7 +2054,7 @@
   },
   "al-50": {
     "question": "¿Cómo valoro la calidad de los datos de un alimento?",
-    "answer": "Mira la fuente: alimentos de BEDCA o de la base global curada tienen la máxima fiabilidad. Los importados de Open Food Facts son variables porque dependen de lo que haya aportado la comunidad (productos populares están bien, productos de nicho pueden tener huecos). Los creados por ti u otros dietistas dependen del cuidado en la introducción. Fíjate en si tiene micros completos: suele correlacionar con una fuente más rigurosa.",
+    "answer": "Mira la fuente: alimentos de BEDCA o de la base global curada tienen la máxima fiabilidad. Los importados de Open Food Facts son variables porque dependen de lo que haya aportado la comunidad (productos populares están bien, productos de nicho pueden tener huecos). Los creados por ti u otros nutricionistas dependen del cuidado en la introducción. Fíjate en si tiene micros completos: suele correlacionar con una fuente más rigurosa.",
     "keywords": "calidad, datos, fiabilidad, fuente"
   },
   "al-51": {
@@ -2064,7 +2064,7 @@
   },
   "al-52": {
     "question": "¿Cómo reporto un error en un alimento global?",
-    "answer": "Usa el canal de soporte de Annonia (chat, email o formulario de contacto en `/ajustes`). Indica el nombre exacto del alimento, qué consideras incorrecto (categoría, calorías, micros...) y, si puedes, una fuente fiable con el valor correcto. El equipo revisa los reportes y, si procede, corrige el dato en la base global para que todos los dietistas se beneficien de la corrección.",
+    "answer": "Usa el canal de soporte de Annonia (chat, email o formulario de contacto en `/ajustes`). Indica el nombre exacto del alimento, qué consideras incorrecto (categoría, calorías, micros...) y, si puedes, una fuente fiable con el valor correcto. El equipo revisa los reportes y, si procede, corrige el dato en la base global para que todos los nutricionistas se beneficien de la corrección.",
     "keywords": "reportar, error, global, soporte"
   },
   "al-53": {
@@ -2079,7 +2079,7 @@
   },
   "al-55": {
     "question": "¿Son privados mis alimentos propios?",
-    "answer": "Sí, totalmente. Tus alimentos propios solo los ves tú dentro de tu cuenta de Annonia. No son visibles para otros dietistas ni para tus pacientes, aunque sí aparecerán en los planes que compartas con ellos como nombres e ingredientes. Los datos se almacenan cifrados en la base de datos y cumplen con la normativa de protección de datos. Solo el personal de Annonia con permisos técnicos puede acceder por soporte si lo autorizas.",
+    "answer": "Sí, totalmente. Tus alimentos propios solo los ves tú dentro de tu cuenta de Annonia. No son visibles para otros nutricionistas ni para tus pacientes, aunque sí aparecerán en los planes que compartas con ellos como nombres e ingredientes. Los datos se almacenan cifrados en la base de datos y cumplen con la normativa de protección de datos. Solo el personal de Annonia con permisos técnicos puede acceder por soporte si lo autorizas.",
     "keywords": "privacidad, propios, privado, solo yo"
   },
   "al-56": {
@@ -3004,7 +3004,7 @@
   },
   "dia-1": {
     "question": "¿Qué es la generación de planes con IA?",
-    "answer": "La generación con IA es una funcionalidad de Annonia que permite crear un plan semanal completo de manera automática a partir de la ficha del paciente y de tus indicaciones. En lugar de montar la dieta comida a comida desde cero, describes los objetivos calóricos, los macros y cualquier preferencia adicional, y un modelo de lenguaje se encarga de proponer un plan coherente usando los alimentos de tu base de datos. El resultado se guarda como borrador para que tú lo revises y decidas si lo aplicas al plan del paciente. Es una herramienta de apoyo, no un sustituto del criterio del dietista.",
+    "answer": "La generación con IA es una funcionalidad de Annonia que permite crear un plan semanal completo de manera automática a partir de la ficha del paciente y de tus indicaciones. En lugar de montar la dieta comida a comida desde cero, describes los objetivos calóricos, los macros y cualquier preferencia adicional, y un modelo de lenguaje se encarga de proponer un plan coherente usando los alimentos de tu base de datos. El resultado se guarda como borrador para que tú lo revises y decidas si lo aplicas al plan del paciente. Es una herramienta de apoyo, no un sustituto del criterio del nutricionista.",
     "keywords": "ia, inteligencia artificial, generación, plan, automático"
   },
   "dia-2": {
@@ -3173,7 +3173,7 @@
     "keywords": "cantidades, gramos, raciones"
   },
   "dia-35": {
-    "question": "¿Se usan las recetas propias del dietista?",
+    "question": "¿Se usan las recetas propias del nutricionista?",
     "answer": "No de manera automática. La generación actual trabaja con alimentos individuales del catálogo, no con recetas compuestas guardadas en tu biblioteca. Si quieres incluir una receta concreta, tendrás que añadirla manualmente al plan tras generar, sustituyendo una comida sugerida por tu receta. Integrar recetas propias en la generación con IA es una mejora en estudio, pero hoy el modelo no las conoce. Puedes mencionar ingredientes clave de tus recetas en las instrucciones para orientar al modelo.",
     "keywords": "recetas, propias, biblioteca"
   },
@@ -3303,9 +3303,9 @@
     "keywords": "categorías, etiquetas, carpetas, organizar, clasificar"
   },
   "dpl-11": {
-    "question": "¿Puedo compartir una plantilla con otro dietista?",
-    "answer": "No. Las plantillas están vinculadas a tu cuenta y solo tú puedes verlas y usarlas. No existe una opción de compartir plantillas entre dietistas, ni un marketplace, ni un enlace público. Si colaboras con otra persona y queréis usar la misma plantilla, la única alternativa a día de hoy es reproducirla manualmente en cada cuenta, creando un plan idéntico y guardándolo como plantilla.",
-    "keywords": "compartir, otro dietista, colaborar, enviar, exportar"
+    "question": "¿Puedo compartir una plantilla con otro nutricionista?",
+    "answer": "No. Las plantillas están vinculadas a tu cuenta y solo tú puedes verlas y usarlas. No existe una opción de compartir plantillas entre nutricionistas, ni un marketplace, ni un enlace público. Si colaboras con otra persona y queréis usar la misma plantilla, la única alternativa a día de hoy es reproducirla manualmente en cada cuenta, creando un plan idéntico y guardándolo como plantilla.",
+    "keywords": "compartir, otro nutricionista, colaborar, enviar, exportar"
   },
   "dpl-12": {
     "question": "¿Cuántas plantillas puedo tener guardadas?",
@@ -3324,7 +3324,7 @@
   },
   "dpl-15": {
     "question": "¿Hay plantillas preinstaladas o de ejemplo?",
-    "answer": "No. Al crear tu cuenta no se instala ningún catálogo de plantillas por defecto: la lista empieza vacía y la vas construyendo tú a partir de los planes que diseñas. Es una decisión deliberada: cada dietista tiene un estilo propio y cada paciente necesita personalización, así que preferimos que las plantillas nazcan de tu trabajo real y no de modelos genéricos.",
+    "answer": "No. Al crear tu cuenta no se instala ningún catálogo de plantillas por defecto: la lista empieza vacía y la vas construyendo tú a partir de los planes que diseñas. Es una decisión deliberada: cada nutricionista tiene un estilo propio y cada paciente necesita personalización, así que preferimos que las plantillas nazcan de tu trabajo real y no de modelos genéricos.",
     "keywords": "preinstaladas, ejemplos, por defecto, catálogo, iniciales"
   },
   "dpl-16": {
@@ -3389,7 +3389,7 @@
   },
   "dpl-28": {
     "question": "¿Quién puede ver mis plantillas?",
-    "answer": "Solo tú. Las plantillas están vinculadas a tu cuenta de dietista mediante el campo dietistaId y todas las consultas filtran por ese identificador, así que ningún otro dietista ni ningún paciente puede acceder a ellas. Los pacientes tampoco ven la lista desde su portal: ni siquiera saben que existe ese concepto. Es un espacio privado pensado para tu trabajo interno.",
+    "answer": "Solo tú. Las plantillas están vinculadas a tu cuenta de nutricionista mediante el campo dietistaId y todas las consultas filtran por ese identificador, así que ningún otro nutricionista ni ningún paciente puede acceder a ellas. Los pacientes tampoco ven la lista desde su portal: ni siquiera saben que existe ese concepto. Es un espacio privado pensado para tu trabajo interno.",
     "keywords": "privacidad, ver, quién, privadas, acceso"
   },
   "dpl-29": {
@@ -3399,7 +3399,7 @@
   },
   "dpl-30": {
     "question": "¿Puedo importar una plantilla desde un archivo externo?",
-    "answer": "No. No existe un importador de plantillas: ni desde archivo, ni desde enlace, ni desde la cuenta de otro dietista. La única forma de introducir una plantilla es crear un plan en la aplicación y guardarlo como plantilla. Si tienes una estructura detallada en un documento externo, tendrás que reproducirla manualmente en el editor la primera vez; una vez guardada, ya podrás reutilizarla todas las veces que quieras.",
+    "answer": "No. No existe un importador de plantillas: ni desde archivo, ni desde enlace, ni desde la cuenta de otro nutricionista. La única forma de introducir una plantilla es crear un plan en la aplicación y guardarlo como plantilla. Si tienes una estructura detallada en un documento externo, tendrás que reproducirla manualmente en el editor la primera vez; una vez guardada, ya podrás reutilizarla todas las veces que quieras.",
     "keywords": "importar, archivo, subir, cargar, migrar"
   },
   "di-1": {
@@ -3629,8 +3629,8 @@
   },
   "gen-1": {
     "question": "¿Qué es Annonia y para quién está pensada?",
-    "answer": "Annonia es una aplicación web profesional diseñada específicamente para dietistas-nutricionistas que quieren digitalizar toda su consulta. Integra gestión de pacientes, diseño de dietas con ayuda de inteligencia artificial, agenda con videollamadas, mensajería, recetas, cobros online y un portal para el paciente. Está pensada tanto para profesionales autónomos como para clínicas pequeñas que buscan centralizar su trabajo en una sola herramienta. No es apta para uso directo del paciente sin un nutricionista asociado.",
-    "keywords": "app, aplicación, nutricionista, dietista, qué es, para quién"
+    "answer": "Annonia es una aplicación web profesional diseñada específicamente para nutricionistas que quieren digitalizar toda su consulta. Integra gestión de pacientes, diseño de dietas con ayuda de inteligencia artificial, agenda con videollamadas, mensajería, recetas, cobros online y un portal para el paciente. Está pensada tanto para profesionales autónomos como para clínicas pequeñas que buscan centralizar su trabajo en una sola herramienta. No es apta para uso directo del paciente sin un nutricionista asociado.",
+    "keywords": "app, aplicación, nutricionista, qué es, para quién"
   },
   "gen-2": {
     "question": "¿Cómo empiezo a usar la app por primera vez?",
@@ -3849,7 +3849,7 @@
   },
   "gen-45": {
     "question": "¿La app sirve también para entrenadores o coaches no nutricionistas?",
-    "answer": "El núcleo del producto está diseñado para dietistas-nutricionistas titulados, pero muchas funciones (agenda, mensajes, planificaciones, seguimiento diario, cobros, portal del paciente) son perfectamente aprovechables por entrenadores personales, coaches de hábitos o profesionales de salud afines. Ten en cuenta que la IA está especializada en nutrición, así que su valor para otras disciplinas es limitado. Si no haces dietas, puedes usar la app como CRM de acompañamiento.",
+    "answer": "El núcleo del producto está diseñado para nutricionistas titulados, pero muchas funciones (agenda, mensajes, planificaciones, seguimiento diario, cobros, portal del paciente) son perfectamente aprovechables por entrenadores personales, coaches de hábitos o profesionales de salud afines. Ten en cuenta que la IA está especializada en nutrición, así que su valor para otras disciplinas es limitado. Si no haces dietas, puedes usar la app como CRM de acompañamiento.",
     "keywords": "entrenador, coach, profesionales, uso, afines"
   },
   "gen-46": {
@@ -4844,7 +4844,7 @@
   },
   "pd-49": {
     "question": "¿Puedo compartir la ficha con otro nutricionista de mi cuenta?",
-    "answer": "La ficha del paciente pertenece al dietista que lo ha creado. Si en tu cuenta hay varios profesionales, debes gestionar el acceso y la compartición desde Ajustes y el módulo de compartir de la dieta o el paciente, no desde la cabecera de la ficha. En la ficha en sí no hay un botón Compartir paciente.",
+    "answer": "La ficha del paciente pertenece al nutricionista que lo ha creado. Si en tu cuenta hay varios profesionales, debes gestionar el acceso y la compartición desde Ajustes y el módulo de compartir de la dieta o el paciente, no desde la cabecera de la ficha. En la ficha en sí no hay un botón Compartir paciente.",
     "keywords": "compartir, equipo, nutricionistas, acceso"
   },
   "pd-50": {
@@ -7574,7 +7574,7 @@
   },
   "pc-15": {
     "question": "¿Cómo acepto una propuesta de cita de mi nutri?",
-    "answer": "Cuando tu nutricionista te propone una cita, aparece en Mis citas con estado PENDIENTE y el aviso de que la propuesta viene del DIETISTA. Pulsa el botón Aceptar para confirmar esa fecha y hora. La cita pasará a CONFIRMADA inmediatamente y tu nutri verá que has aceptado. Ya no tendrás que hacer nada más hasta el día de la visita.",
+    "answer": "Cuando tu nutricionista te propone una cita, aparece en Mis citas con estado PENDIENTE y el aviso de que la propuesta viene del NUTRICIONISTA. Pulsa el botón Aceptar para confirmar esa fecha y hora. La cita pasará a CONFIRMADA inmediatamente y tu nutri verá que has aceptado. Ya no tendrás que hacer nada más hasta el día de la visita.",
     "keywords": "aceptar, propuesta, confirmar"
   },
   "pc-16": {
@@ -7709,7 +7709,7 @@
   },
   "pc-42": {
     "question": "¿Cómo se gestiona la primera cita con el nutri?",
-    "answer": "La primera cita suele proponerla tu nutricionista al darte de alta, normalmente con un motivo como primera consulta o valoración inicial. La verás en Mis citas con estado PENDIENTE y la propuesta partiendo del DIETISTA. Solo tienes que aceptar, rechazar o contraponer otra fecha. A partir de ahí todo funciona igual que cualquier cita.",
+    "answer": "La primera cita suele proponerla tu nutricionista al darte de alta, normalmente con un motivo como primera consulta o valoración inicial. La verás en Mis citas con estado PENDIENTE y la propuesta partiendo del NUTRICIONISTA. Solo tienes que aceptar, rechazar o contraponer otra fecha. A partir de ahí todo funciona igual que cualquier cita.",
     "keywords": "primera cita, inicial, valoración"
   },
   "pc-43": {
@@ -9029,7 +9029,7 @@
   },
   "rc-1": {
     "question": "¿Qué es la sección Recetas de Annonia?",
-    "answer": "La sección Recetas, accesible en `/recetas`, es el catálogo gastronómico de la aplicación, pensado para que tengas a mano un repertorio organizado de preparaciones culinarias listas para incluir en los planes de tus pacientes. Cada receta agrupa ingredientes, instrucciones, tiempos, dificultad y macros calculados automáticamente. Conviven recetas globales, compartidas con todos los dietistas de la plataforma, y recetas propias que tú mismo creas. Es una pieza clave para ahorrar tiempo y dar variedad a tus planes sin partir de cero cada vez.",
+    "answer": "La sección Recetas, accesible en `/recetas`, es el catálogo gastronómico de la aplicación, pensado para que tengas a mano un repertorio organizado de preparaciones culinarias listas para incluir en los planes de tus pacientes. Cada receta agrupa ingredientes, instrucciones, tiempos, dificultad y macros calculados automáticamente. Conviven recetas globales, compartidas con todos los nutricionistas de la plataforma, y recetas propias que tú mismo creas. Es una pieza clave para ahorrar tiempo y dar variedad a tus planes sin partir de cero cada vez.",
     "keywords": "recetas, catálogo, qué es, introducción"
   },
   "rc-2": {
@@ -9039,7 +9039,7 @@
   },
   "rc-3": {
     "question": "¿Cuál es la diferencia entre recetas globales y propias?",
-    "answer": "Las recetas globales son las que ofrece la plataforma a todos los dietistas por igual, previamente revisadas y con foto y datos completos. No puedes editarlas ni eliminarlas, solo usarlas o duplicarlas. Las recetas propias son las que tú creas desde cero o duplicando una global: aparecen solo en tu cuenta, puedes modificarlas libremente y se muestran marcadas como tuyas. En el listado se distinguen con una etiqueta o un color diferente para que sepas de un vistazo cuáles puedes tocar.",
+    "answer": "Las recetas globales son las que ofrece la plataforma a todos los nutricionistas por igual, previamente revisadas y con foto y datos completos. No puedes editarlas ni eliminarlas, solo usarlas o duplicarlas. Las recetas propias son las que tú creas desde cero o duplicando una global: aparecen solo en tu cuenta, puedes modificarlas libremente y se muestran marcadas como tuyas. En el listado se distinguen con una etiqueta o un color diferente para que sepas de un vistazo cuáles puedes tocar.",
     "keywords": "global, propia, diferencia, origen"
   },
   "rc-4": {
@@ -9124,7 +9124,7 @@
   },
   "rc-20": {
     "question": "¿Cómo marco una receta como favorita?",
-    "answer": "Cada card y cada ficha de receta tiene un icono de corazón o estrella para marcarla como favorita. Un clic la añade a favoritos; otro clic la desmarca. Puedes marcar tanto recetas propias como globales. Esta acción es personal: tus favoritos no se comparten con otros dietistas de la plataforma. Es una forma rápida de curar tu selección de recetas usadas más a menudo sin tener que duplicarlas.",
+    "answer": "Cada card y cada ficha de receta tiene un icono de corazón o estrella para marcarla como favorita. Un clic la añade a favoritos; otro clic la desmarca. Puedes marcar tanto recetas propias como globales. Esta acción es personal: tus favoritos no se comparten con otros nutricionistas de la plataforma. Es una forma rápida de curar tu selección de recetas usadas más a menudo sin tener que duplicarlas.",
     "keywords": "favorita, corazón, estrella, marcar"
   },
   "rc-21": {
@@ -9419,7 +9419,7 @@
   },
   "rep-9": {
     "question": "¿Dónde veo las cancelaciones?",
-    "answer": "Reportes muestra el número total de cancelaciones y el porcentaje sobre el total de citas programadas. También hay un gráfico temporal para detectar si las cancelaciones aumentan con el tiempo. Una tasa elevada (>15%) suele indicar problemas de recordatorios o compromiso. Incluye las cancelaciones tanto del dietista como del paciente.",
+    "answer": "Reportes muestra el número total de cancelaciones y el porcentaje sobre el total de citas programadas. También hay un gráfico temporal para detectar si las cancelaciones aumentan con el tiempo. Una tasa elevada (>15%) suele indicar problemas de recordatorios o compromiso. Incluye las cancelaciones tanto del nutricionista como del paciente.",
     "keywords": "cancelaciones, canceladas, tasa cancelación"
   },
   "rep-10": {
@@ -9529,7 +9529,7 @@
   },
   "rep-31": {
     "question": "¿Mis reportes son privados?",
-    "answer": "Sí, los reportes son 100% privados para cada dietista. Ningún otro profesional ni ningún paciente tiene acceso a tus estadísticas agregadas. Annonia no comparte datos entre cuentas ni los usa para benchmarks externos. Solo tú ves tus propios números.",
+    "answer": "Sí, los reportes son 100% privados para cada nutricionista. Ningún otro profesional ni ningún paciente tiene acceso a tus estadísticas agregadas. Annonia no comparte datos entre cuentas ni los usa para benchmarks externos. Solo tú ves tus propios números.",
     "keywords": "privacidad, privados, confidencial"
   },
   "rep-32": {

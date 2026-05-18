@@ -5,11 +5,11 @@
     "emailLabel": "Email",
     "passwordLabel": "Contraseña o PIN",
     "passwordPlaceholder": "Tu contraseña o PIN de 6 dígitos",
-    "pinHint": "Primera vez: usa el PIN que te dio tu dietista",
+    "pinHint": "Primera vez: usa el PIN que te dio tu nutricionista",
     "submit": "Acceder",
     "submitting": "Entrando...",
     "errorGenerico": "Error al iniciar sesión",
-    "esDietista": "¿Eres dietista?",
+    "esDietista": "¿Eres nutricionista?",
     "accedeProfesional": "Accede como profesional"
   },
   "completarPerfil": {

@@ -16,14 +16,12 @@ import { getTranslations } from "next-intl/server";
 import { TourSettings } from "@/components/tour/tour-settings";
 import { getCurrentDietista, getGoogleIdentityLinked } from "@/app/actions/auth";
 import { getSuscripcion } from "@/app/actions/suscripcion";
-import { getStripeAccountStatus } from "@/app/actions/stripe";
 import { getIntegracionNutri } from "@/app/actions/google-integracion";
 import { isDemoEliminado } from "@/app/actions/pacientes";
 import { redirect } from "next/navigation";
 import { PerfilForm } from "./perfil-form";
 import { FotoPerfil } from "./foto-perfil";
 import { SuscripcionCard } from "./suscripcion-card";
-import { StripeConnectCard } from "./stripe-connect-card";
 import { IntegracionesCard } from "./integraciones-card";
 import { EliminarCuentaButton } from "./eliminar-cuenta-button";
 import { PageHeader } from "@/components/page-header";
@@ -93,9 +91,8 @@ export default async function AjustesPage({
   const dietista = await getCurrentDietista();
   if (!dietista) redirect("/login");
 
-  const [suscripcion, stripeStatus, googleIntegracion, googleLinked, demoEliminado, camposAnamnesis, sp] = await Promise.all([
+  const [suscripcion, googleIntegracion, googleLinked, demoEliminado, camposAnamnesis, sp] = await Promise.all([
     getSuscripcion(),
-    getStripeAccountStatus(),
     getIntegracionNutri(),
     getGoogleIdentityLinked(),
     isDemoEliminado(),
@@ -301,7 +298,13 @@ export default async function AjustesPage({
               description={t("sections.cobros.description")}
             />
             <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
-              <StripeConnectCard status={stripeStatus} />
+              <div className="flex items-start gap-3 bg-muted/50 rounded-lg p-4">
+                <Wallet className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-muted-foreground">
+                  <p className="font-medium text-foreground mb-1">{t("sections.cobros.proximamente")}</p>
+                  <p>{t("sections.cobros.proximamenteDesc")}</p>
+                </div>
+              </div>
             </div>
           </section>
 

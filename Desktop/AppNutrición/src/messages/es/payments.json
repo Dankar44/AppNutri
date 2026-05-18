@@ -9,6 +9,10 @@
     "pendiente": "Pendiente",
     "balance": "Balance"
   },
+  "proximamente": {
+    "titulo": "Próximamente",
+    "descripcion": "Estamos trabajando en el sistema de cobros. Pronto podrás gestionar pagos de tus pacientes directamente desde Annonia con Stripe."
+  },
   "stripeNotConnected": {
     "titulo": "Stripe no conectado",
     "descripcion": "Conecta tu cuenta de Stripe en <linkAjustes>Ajustes</linkAjustes> para generar links de pago automáticos y cobrar a tus pacientes online."

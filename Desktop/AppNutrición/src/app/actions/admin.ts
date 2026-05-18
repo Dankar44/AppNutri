@@ -146,6 +146,7 @@ export interface DietistaAdminItem {
   apellidos: string;
   especialidad: string | null;
   clinica: string | null;
+  creadoPor: string | null;
   createdAt: Date;
   lastAccessAt: Date | null;
   lastSignIn: Date | null;
@@ -178,6 +179,7 @@ export async function getDietistasAdmin(busqueda?: string): Promise<DietistaAdmi
       apellidos: true,
       especialidad: true,
       clinica: true,
+      creadoPor: true,
       createdAt: true,
       lastAccessAt: true,
       _count: {
@@ -558,8 +560,15 @@ export async function crearCuentaNutricionista(data: {
           nombre,
           apellidos,
           verificado: true,
+          creadoPor: admin.email,
         },
       });
+
+      await prisma.$queryRawUnsafe(
+        `INSERT INTO suscripciones (id, "dietistaId", plan, estado, "fechaInicio", "createdAt", "updatedAt")
+         VALUES (gen_random_uuid()::text, $1, 'PROFESIONAL', 'ACTIVA', NOW(), NOW(), NOW())`,
+        dietista.id
+      );
 
       revalidatePath("/admin/dietistas");
       revalidatePath("/admin");

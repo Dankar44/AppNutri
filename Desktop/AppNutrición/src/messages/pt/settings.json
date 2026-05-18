@@ -54,7 +54,9 @@
     },
     "cobros": {
       "title": "Cobranças com Stripe",
-      "description": "Conecte sua conta Stripe para cobrar consultas através da plataforma."
+      "description": "Conecte sua conta Stripe para cobrar consultas através da plataforma.",
+      "proximamente": "Em breve",
+      "proximamenteDesc": "Estamos trabalhando na integração de pagamentos com Stripe. Em breve você poderá cobrar consultas diretamente pela plataforma."
     },
     "guias": {
       "title": "Guias interativos",
@@ -272,6 +274,9 @@
       "EXPIRADA": "Expirada"
     },
     "planLabel": "Plano {nombre}",
+    "precioGratis": "Gratuito",
+    "estadoPermanente": "Permanente",
+    "licenciaCompleta": "Licença Profissional permanente — todas as funcionalidades ativadas",
     "pruebaExpirada": "Seu período de teste gratuito expirou",
     "suscripcionExpirada": "Sua assinatura expirou",
     "diasPruebaRestantes": "Restam {dias} dia{plural} de teste gratuito",

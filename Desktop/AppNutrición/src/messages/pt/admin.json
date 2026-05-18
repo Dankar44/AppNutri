@@ -87,6 +87,7 @@
       "planes": "planos",
       "consultas": "consultas",
       "recetas": "{count} receitas",
+      "creadoPor": "Criado por {admin}",
       "registro": "Cadastro: {date}",
       "ultimoAcceso": "Último acesso: {date}",
       "clinica": "Clínica/Consultório: {name}",

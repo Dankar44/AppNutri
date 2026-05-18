@@ -29,6 +29,16 @@ const OBJETIVO_KEYS: Record<string, string> = {
   OTRO: "objetivoLabel.otro",
 };
 
+const ADMIN_NAMES: Record<string, string> = {
+  "guillermoprieto17@gmail.com": "Guillermo",
+  "daniel.karimi.alvarez@gmail.com": "Daniel",
+  "i.dellibardavarela@gmail.com": "Iñaki",
+};
+
+function adminDisplayName(email: string): string {
+  return ADMIN_NAMES[email.toLowerCase()] ?? email.split("@")[0];
+}
+
 type SortKey = "reciente" | "pacientes" | "actividad" | "nombre";
 
 const SORT_OPTIONS: { key: SortKey; labelKey: string }[] = [
@@ -202,6 +212,12 @@ export function DietistasList({ dietistas }: Props) {
                     {lastActivity && <span>{t("list.ultimoAcceso", { date: formatDate(lastActivity) })}</span>}
                     {d.clinica && <span>{t("list.clinica", { name: d.clinica })}</span>}
                     <span>{t("list.recetas", { count: d._count.recetas })}</span>
+                    {d.creadoPor && (
+                      <span className="inline-flex items-center gap-1">
+                        <User className="w-3 h-3" />
+                        {t("list.creadoPor", { admin: adminDisplayName(d.creadoPor) })}
+                      </span>
+                    )}
                   </div>
 
                   {d.pacientes.length === 0 ? (

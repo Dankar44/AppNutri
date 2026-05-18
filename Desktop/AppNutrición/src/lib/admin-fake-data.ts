@@ -278,6 +278,7 @@ export function getFakeDietistas(busqueda?: string): DietistaAdminItem[] {
       apellidos: d.apellidos,
       especialidad: d.especialidad,
       clinica: d.clinica,
+      creadoPor: null,
       createdAt,
       lastAccessAt: lastAccess,
       lastSignIn: lastAccess,

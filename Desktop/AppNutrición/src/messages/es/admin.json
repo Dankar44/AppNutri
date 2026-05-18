@@ -17,7 +17,7 @@
     "brandName": "Annonia",
     "nav": {
       "panel": "Panel",
-      "dietistas": "Dietistas",
+      "dietistas": "Nutricionistas",
       "verificaciones": "Verificaciones",
       "seguimiento": "Seguimiento",
       "mensajes": "Mensajes",
@@ -36,7 +36,7 @@
     "title": "Panel de administración",
     "subtitle": "Vista general de la plataforma",
     "stats": {
-      "totalDietistas": "Total dietistas",
+      "totalDietistas": "Total nutricionistas",
       "totalPacientes": "Total pacientes",
       "planesActivos": "Planes activos",
       "consultasEsteMes": "Consultas este mes",
@@ -44,37 +44,37 @@
     },
     "charts": {
       "registrosMensuales": "Registros mensuales",
-      "chartLegendDietistas": "Dietistas",
+      "chartLegendDietistas": "Nutricionistas",
       "chartLegendPacientes": "Pacientes"
     },
     "resumenRapido": {
       "title": "Resumen rápido",
-      "dietistasRegistrados": "Dietistas registrados",
-      "mediaPacientesDietista": "Media pacientes/dietista",
-      "planesPorDietista": "Planes por dietista"
+      "dietistasRegistrados": "Nutricionistas registrados",
+      "mediaPacientesDietista": "Media pacientes/nutricionista",
+      "planesPorDietista": "Planes por nutricionista"
     },
     "topDietistas": {
-      "title": "Dietistas con más pacientes",
+      "title": "Nutricionistas con más pacientes",
       "columns": {
-        "dietista": "Dietista",
+        "dietista": "Nutricionista",
         "email": "Email",
         "pacientes": "Pacientes",
         "planes": "Planes",
         "consultas": "Consultas",
         "registro": "Registro"
       },
-      "empty": "No hay dietistas registrados"
+      "empty": "No hay nutricionistas registrados"
     }
   },
   "dietistas": {
-    "title": "Dietistas registrados",
-    "subtitle": "{count} dietista{countPlural} · {totalPacientes} paciente{pacientesPlural} en total",
+    "title": "Nutricionistas registrados",
+    "subtitle": "{count} nutricionista{countPlural} · {totalPacientes} paciente{pacientesPlural} en total",
     "searchPlaceholder": "Buscar por nombre o email...",
     "empty": {
       "sinResultados": "Sin resultados",
-      "sinDietistas": "Sin dietistas",
-      "noEncontrados": "No se encontraron dietistas para \"{query}\"",
-      "noRegistrados": "No hay dietistas registrados en la plataforma"
+      "sinDietistas": "Sin nutricionistas",
+      "noEncontrados": "No se encontraron nutricionistas para \"{query}\"",
+      "noRegistrados": "No hay nutricionistas registrados en la plataforma"
     },
     "sort": {
       "masRecientes": "Más recientes",
@@ -87,10 +87,11 @@
       "planes": "planes",
       "consultas": "consultas",
       "recetas": "{count} recetas",
+      "creadoPor": "Creado por {admin}",
       "registro": "Registro: {date}",
       "ultimoAcceso": "Último acceso: {date}",
       "clinica": "Clínica: {name}",
-      "sinPacientes": "Este dietista no tiene pacientes",
+      "sinPacientes": "Este nutricionista no tiene pacientes",
       "verDetalle": "Ver detalle completo",
       "columnas": {
         "paciente": "Paciente",
@@ -130,7 +131,7 @@
     }
   },
   "dietistaDetalle": {
-    "volverDietistas": "Volver a dietistas",
+    "volverDietistas": "Volver a nutricionistas",
     "registradoEl": "Registrado el {date}",
     "numColegiado": "N.Col: {number}",
     "suscripcion": {
@@ -161,7 +162,7 @@
     },
     "pacientesSection": {
       "title": "Pacientes ({count})",
-      "empty": "Este dietista no tiene pacientes",
+      "empty": "Este nutricionista no tiene pacientes",
       "columns": {
         "paciente": "Paciente",
         "email": "Email",
@@ -236,7 +237,7 @@
       "description": "No hay suscripciones registradas"
     },
     "columns": {
-      "dietista": "Dietista",
+      "dietista": "Nutricionista",
       "email": "Email",
       "plan": "Plan",
       "estado": "Estado",
@@ -256,18 +257,18 @@
   },
   "seguimiento": {
     "title": "Seguimiento de accesos",
-    "subtitle": "Último acceso de dietistas y pacientes a la plataforma",
+    "subtitle": "Último acceso de nutricionistas y pacientes a la plataforma",
     "stats": {
-      "dietistasActivosHoy": "Dietistas activos hoy",
+      "dietistasActivosHoy": "Nutricionistas activos hoy",
       "pacientesActivosHoy": "Pacientes activos hoy",
-      "dietistasSinAcceso": "Dietistas sin acceso",
+      "dietistasSinAcceso": "Nutricionistas sin acceso",
       "pacientesSinAcceso": "Pacientes sin acceso",
       "deTotales": "de {total} totales"
     },
     "tablaDietistas": {
-      "title": "Dietistas ({count})",
+      "title": "Nutricionistas ({count})",
       "columns": {
-        "dietista": "Dietista",
+        "dietista": "Nutricionista",
         "email": "Email",
         "pacientes": "Pacientes",
         "ultimoAcceso": "Último acceso",
@@ -281,7 +282,7 @@
       "columns": {
         "paciente": "Paciente",
         "email": "Email",
-        "dietista": "Dietista",
+        "dietista": "Nutricionista",
         "ultimoAcceso": "Último acceso",
         "fechaExacta": "Fecha exacta",
         "estado": "Estado"
@@ -316,27 +317,27 @@
       "generacionesIAMes": "Generaciones IA mes"
     },
     "dietistasActivos": {
-      "title": "Dietistas más activos este mes",
+      "title": "Nutricionistas más activos este mes",
       "empty": "Sin actividad este mes",
       "columns": {
-        "dietista": "Dietista",
+        "dietista": "Nutricionista",
         "consultasMes": "Consultas mes",
         "pacientes": "Pacientes"
       }
     },
     "ultimosRegistros": {
-      "title": "Últimos dietistas registrados",
+      "title": "Últimos nutricionistas registrados",
       "empty": "Sin registros"
     }
   },
   "mensajes": {
     "title": "Mensajes Soporte",
-    "subtitle": "Conversaciones con dietistas",
-    "buscarPlaceholder": "Buscar dietista...",
+    "subtitle": "Conversaciones con nutricionistas",
+    "buscarPlaceholder": "Buscar nutricionista...",
     "sinResultados": "No hay resultados",
     "sinConversaciones": "No hay conversaciones de soporte",
     "seleccionaConversacion": "Selecciona una conversación",
-    "seleccionaSubtitle": "Elige un dietista de la lista para ver sus mensajes",
+    "seleccionaSubtitle": "Elige un nutricionista de la lista para ver sus mensajes",
     "volver": "Volver",
     "sinMensajes": "Sin mensajes todavía",
     "responderPlaceholder": "Responder a {nombre}...",

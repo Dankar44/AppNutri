@@ -19,6 +19,7 @@ model Dietista {
   clinica         String?
   logoUrl         String?
   verificado      Boolean   @default(false)
+  creadoPor       String?
   demoEliminado   Boolean   @default(false)
   notifPreferencias Json?
   lastAccessAt    DateTime?

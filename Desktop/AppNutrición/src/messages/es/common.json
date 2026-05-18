@@ -19,7 +19,7 @@
     "admin": "Admin"
   },
   "sidebar": {
-    "dietista": "Dietista",
+    "dietista": "Nutricionista",
     "cerrarSesion": "Cerrar sesión",
     "cerrarSesionTitle": "Cerrar sesión",
     "abrirMenu": "Abrir menú"
@@ -51,7 +51,7 @@
   },
   "adminNav": {
     "panel": "Panel",
-    "dietistas": "Dietistas",
+    "dietistas": "Nutricionistas",
     "verificaciones": "Verificaciones",
     "seguimiento": "Seguimiento",
     "mensajes": "Mensajes",
@@ -224,13 +224,13 @@
     "cerrar": "Cerrar"
   },
   "metadata": {
-    "title": "Annonia — Software para Dietistas y Nutricionistas",
+    "title": "Annonia — Software para Nutricionistas",
     "titleTemplate": "%s | Annonia",
-    "description": "Software de nutrición para dietistas: crea dietas personalizadas, gestiona pacientes, agenda citas y genera planes alimenticios con inteligencia artificial. Prueba gratis 14 días.",
-    "ogTitle": "Annonia — Software para Dietistas y Nutricionistas",
+    "description": "Software de nutrición para nutricionistas: crea dietas personalizadas, gestiona pacientes, agenda citas y genera planes alimenticios con inteligencia artificial. Prueba gratis 14 días.",
+    "ogTitle": "Annonia — Software para Nutricionistas",
     "ogDescription": "Software de nutrición profesional: dietas personalizadas, gestión de pacientes y agenda con IA. Desde 9,99€/mes.",
-    "ogImageAlt": "Annonia - Plataforma profesional para dietistas",
-    "twitterTitle": "Annonia — Software para Dietistas y Nutricionistas",
+    "ogImageAlt": "Annonia - Plataforma profesional para nutricionistas",
+    "twitterTitle": "Annonia — Software para Nutricionistas",
     "twitterDescription": "Software de nutrición profesional: dietas personalizadas, gestión de pacientes y agenda con IA. Prueba gratis 14 días."
   }
 }

@@ -54,7 +54,9 @@
     },
     "cobros": {
       "title": "Cobros con Stripe",
-      "description": "Conecta tu cuenta de Stripe para cobrar consultas a través de la plataforma."
+      "description": "Conecta tu cuenta de Stripe para cobrar consultas a través de la plataforma.",
+      "proximamente": "Próximamente",
+      "proximamenteDesc": "Estamos trabajando en la integración de pagos con Stripe. Pronto podrás cobrar consultas directamente desde la plataforma."
     },
     "guias": {
       "title": "Guías interactivas",
@@ -272,6 +274,9 @@
       "EXPIRADA": "Expirada"
     },
     "planLabel": "Plan {nombre}",
+    "precioGratis": "Gratuito",
+    "estadoPermanente": "Permanente",
+    "licenciaCompleta": "Licencia Profesional permanente — todas las funciones activadas",
     "pruebaExpirada": "Tu prueba gratuita ha expirado",
     "suscripcionExpirada": "Tu suscripción ha expirado",
     "diasPruebaRestantes": "Te quedan {dias} día{plural} de prueba gratuita",
@@ -375,7 +380,7 @@
     "exerciseSchedule": "Horario ejercicio",
     "rest": "Descanso",
     "weeklySchedule": "Horario semanal",
-    "weeklyScheduleDescription": "Compartido entre dietista y paciente. Ambos pueden editarlo.",
+    "weeklyScheduleDescription": "Compartido entre nutricionista y paciente. Ambos pueden editarlo.",
     "mealPlans": "Planes alimenticios",
     "newPlan": "Nuevo plan",
     "viewAllPlans": "Ver todos los planes ({count})",
@@ -522,7 +527,7 @@
           "d2b-2": { "title": "Datos personales", "description": "Aquí verás email, teléfono, fecha de nacimiento y sexo del paciente. Se rellena al crear el paciente." },
           "d2b-3": { "title": "Historial médico", "description": "Alergias, intolerancias, patologías, medicamentos y suplementos. Todo con etiquetas de colores para verlo de un vistazo." },
           "d2b-4": { "title": "Actividad y estilo de vida", "description": "Ocupación, nivel de actividad, tipo de ejercicio, horarios de trabajo, ejercicio y descanso. Información clave para personalizar la dieta." },
-          "d2b-5": { "title": "Horario semanal", "description": "Calendario compartido entre dietista y paciente. Ambos podéis añadir actividades (trabajo, ejercicio, comidas, descanso) y se sincroniza automáticamente." },
+          "d2b-5": { "title": "Horario semanal", "description": "Calendario compartido entre nutricionista y paciente. Ambos podéis añadir actividades (trabajo, ejercicio, comidas, descanso) y se sincroniza automáticamente." },
           "d2b-6": { "title": "Medidas y registro rápido", "description": "Peso, altura e IMC actuales. El botón 'Registro rápido' te permite apuntar nuevas medidas directamente durante la consulta." },
           "d2b-7": { "title": "Recomendaciones", "description": "Escribe recomendaciones personalizadas. El paciente las verá desde su portal. Se guardan automáticamente cada 5 segundos." },
           "d2b-8": { "title": "Planes alimenticios", "description": "Los planes dietéticos del paciente. Máximo 3 visibles, con enlace a 'Ver todos'. Desde aquí creas nuevos planes o accedes a los existentes." }

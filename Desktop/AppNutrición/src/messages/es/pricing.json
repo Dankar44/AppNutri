@@ -1,10 +1,10 @@
 {
   "metadata": {
-    "title": "Precios — Software para Dietistas desde 9,99€/mes",
-    "description": "Planes de Annonia, software de nutrición para dietistas: Plan Básico (25 pacientes, 9,99€/mes) o Profesional (ilimitados + IA, 11,99€/mes). Prueba gratis 14 días sin tarjeta.",
-    "ogTitle": "Precios de Annonia — Software para Dietistas desde 9,99€/mes",
+    "title": "Precios — Software para Nutricionistas desde 9,99€/mes",
+    "description": "Planes de Annonia, software de nutrición para nutricionistas: Plan Básico (25 pacientes, 9,99€/mes) o Profesional (ilimitados + IA, 11,99€/mes). Prueba gratis 14 días sin tarjeta.",
+    "ogTitle": "Precios de Annonia — Software para Nutricionistas desde 9,99€/mes",
     "ogDescription": "Software de nutrición profesional. Plan Básico o Profesional con IA. 14 días gratis sin tarjeta.",
-    "twitterTitle": "Precios de Annonia — Software para Dietistas desde 9,99€/mes"
+    "twitterTitle": "Precios de Annonia — Software para Nutricionistas desde 9,99€/mes"
   },
   "header": {
     "iniciarSesion": "Iniciar sesión",
@@ -13,7 +13,7 @@
   "hero": {
     "badge": "14 días de prueba gratuita",
     "titulo": "El plan perfecto para tu consulta de nutrición",
-    "descripcion": "Elige el software de nutrición que mejor se adapte a tu práctica como dietista. Sin compromisos, cancela cuando quieras."
+    "descripcion": "Elige el software de nutrición que mejor se adapte a tu práctica como nutricionista. Sin compromisos, cancela cuando quieras."
   },
   "planes": {
     "masPopular": "Más popular",
@@ -44,7 +44,7 @@
     "profesional": {
       "nombre": "Profesional",
       "precio": "11,99",
-      "descripcion": "Para dietistas-nutricionistas con consultas establecidas que quieren escalar.",
+      "descripcion": "Para nutricionistas con consultas establecidas que quieren escalar.",
       "features": {
         "pacientesIlimitados": "Pacientes ilimitados",
         "planesIlimitados": "Planes alimenticios ilimitados",

@@ -1,12 +1,12 @@
 {
   "metadata": {
     "title": "Annonia — Software de Nutrição para Nutricionistas | Dietas Personalizadas com IA",
-    "description": "Software para nutricionistas e dietistas: crie dietas personalizadas, gerencie pacientes, agende consultas online e gere planos alimentares com inteligência artificial. Teste grátis por 14 dias.",
+    "description": "Software para nutricionistas: crie dietas personalizadas, gerencie pacientes, agende consultas online e gere planos alimentares com inteligência artificial. Teste grátis por 14 dias.",
     "ogTitle": "Annonia — Software de Nutrição para Nutricionistas",
     "ogDescription": "Software para nutricionistas: dietas personalizadas com IA, gestão de pacientes, agenda e portal do paciente. A partir de 9,99€/mês.",
     "twitterTitle": "Annonia — Software de Nutrição para Nutricionistas",
     "twitterDescription": "Dietas personalizadas com IA, gestão de pacientes e agenda online. Teste grátis por 14 dias.",
-    "ogImageAlt": "Annonia — Software de nutrição para dietistas e nutricionistas"
+    "ogImageAlt": "Annonia — Software de nutrição para nutricionistas"
   },
   "navbar": {
     "comoFunciona": "Como funciona",
@@ -115,7 +115,7 @@
     "mensaje": "Muito bem Carmen, já vejo mais cores no prato! 👏"
   },
   "footer": {
-    "descripcion": "Software de nutrição profissional para nutricionistas e dietistas. Gestão de consultório, dietas personalizadas e acompanhamento de pacientes.",
+    "descripcion": "Software de nutrição profissional para nutricionistas. Gestão de consultório, dietas personalizadas e acompanhamento de pacientes.",
     "producto": "Produto",
     "acceso": "Acesso",
     "legal": "Legal",
@@ -128,11 +128,11 @@
   },
   "structuredData": {
     "organization": {
-      "description": "Empresa espanhola de software de nutrição para nutricionistas-dietistas. Plataforma de gestão de consultas, dietas personalizadas e inteligência artificial.",
+      "description": "Empresa espanhola de software de nutrição para nutricionistas. Plataforma de gestão de consultas, dietas personalizadas e inteligência artificial.",
       "availableLanguage": "Portuguese"
     },
     "website": {
-      "alternateName": "Annonia — Software para Nutricionistas e Dietistas",
+      "alternateName": "Annonia — Software para Nutricionistas",
       "inLanguage": "pt"
     },
     "software": {

@@ -1,12 +1,12 @@
 {
   "metadata": {
-    "title": "Annonia — Software de Nutrición para Dietistas | Dietas Personalizadas con IA",
-    "description": "Software para nutricionistas y dietistas: crea dietas personalizadas, gestiona pacientes, agenda citas online y genera planes alimenticios con inteligencia artificial. Prueba gratis 14 días.",
-    "ogTitle": "Annonia — Software de Nutrición para Dietistas",
+    "title": "Annonia — Software de Nutrición para Nutricionistas | Dietas Personalizadas con IA",
+    "description": "Software para nutricionistas: crea dietas personalizadas, gestiona pacientes, agenda citas online y genera planes alimenticios con inteligencia artificial. Prueba gratis 14 días.",
+    "ogTitle": "Annonia — Software de Nutrición para Nutricionistas",
     "ogDescription": "Software para nutricionistas: dietas personalizadas con IA, gestión de pacientes, agenda y portal del paciente. Desde 9,99€/mes.",
-    "twitterTitle": "Annonia — Software de Nutrición para Dietistas",
+    "twitterTitle": "Annonia — Software de Nutrición para Nutricionistas",
     "twitterDescription": "Dietas personalizadas con IA, gestión de pacientes y agenda online. Prueba gratis 14 días.",
-    "ogImageAlt": "Annonia — Software de nutrición para dietistas y nutricionistas"
+    "ogImageAlt": "Annonia — Software de nutrición para nutricionistas"
   },
   "navbar": {
     "comoFunciona": "Cómo funciona",
@@ -32,9 +32,9 @@
   },
   "showcase": {
     "dietistas": {
-      "tag": "Para dietistas:",
+      "tag": "Para nutricionistas:",
       "titulo": "Software de gestión para tu consulta de nutrición",
-      "descripcion": "Dedica más tiempo a tus pacientes y menos a tareas administrativas. Annonia centraliza fichas, planes alimenticios, citas y mensajería en un software de nutrición diseñado por y para dietistas.",
+      "descripcion": "Dedica más tiempo a tus pacientes y menos a tareas administrativas. Annonia centraliza fichas, planes alimenticios, citas y mensajería en un software de nutrición diseñado por y para nutricionistas.",
       "cta": "Empieza gratis",
       "imageAlt": "Software de gestión Annonia"
     },
@@ -106,7 +106,7 @@
     "tituloPart1": "Empieza a digitalizar",
     "tituloPart2": "tu consulta",
     "tituloPart3": "de nutrición",
-    "descripcion": "Únete a los dietistas-nutricionistas que confían en Annonia para ofrecer dietas personalizadas y un seguimiento nutricional excepcional.",
+    "descripcion": "Únete a los nutricionistas que confían en Annonia para ofrecer dietas personalizadas y un seguimiento nutricional excepcional.",
     "boton": "Crear cuenta gratis",
     "garantia": "14 días gratis · Sin tarjeta · Cancela cuando quieras"
   },
@@ -115,7 +115,7 @@
     "mensaje": "¡Muy bien Carmen, ya veo más colores en el plato! 👏"
   },
   "footer": {
-    "descripcion": "Software de nutrición profesional para dietistas-nutricionistas. Gestión de consulta, dietas personalizadas y seguimiento de pacientes.",
+    "descripcion": "Software de nutrición profesional para nutricionistas. Gestión de consulta, dietas personalizadas y seguimiento de pacientes.",
     "producto": "Producto",
     "acceso": "Acceso",
     "legal": "Legal",
@@ -128,15 +128,15 @@
   },
   "structuredData": {
     "organization": {
-      "description": "Empresa española de software de nutrición para dietistas-nutricionistas. Plataforma de gestión de consultas, dietas personalizadas e inteligencia artificial.",
+      "description": "Empresa española de software de nutrición para nutricionistas. Plataforma de gestión de consultas, dietas personalizadas e inteligencia artificial.",
       "availableLanguage": "Spanish"
     },
     "website": {
-      "alternateName": "Annonia — Software para Dietistas y Nutricionistas",
+      "alternateName": "Annonia — Software para Nutricionistas",
       "inLanguage": "es"
     },
     "software": {
-      "description": "Software de nutrición para dietistas: crea dietas personalizadas, gestiona pacientes, agenda citas online y genera planes alimenticios con inteligencia artificial.",
+      "description": "Software de nutrición para nutricionistas: crea dietas personalizadas, gestiona pacientes, agenda citas online y genera planes alimenticios con inteligencia artificial.",
       "offerBasico": "Básico",
       "offerProfesional": "Profesional",
       "offerPrueba": "Prueba gratuita",
