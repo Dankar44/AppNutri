@@ -41,6 +41,12 @@ export type MedidaSerializada = {
   perimetroCintura: number | null;
   perimetroCadera: number | null;
   perimetroBrazo: number | null;
+  grasaSubcutanea: number | null;
+  musculoEsqueletico: number | null;
+  agua: number | null;
+  masaOsea: number | null;
+  perimetroAbdomen: number | null;
+  grasaVisceral: number | null;
   pliegueAbdominal: number | null;
   pliegueAxilar: number | null;
   plieguePectoral: number | null;
@@ -62,6 +68,12 @@ type MetricaDb =
   | "perimetroCintura"
   | "perimetroCadera"
   | "perimetroBrazo"
+  | "grasaSubcutanea"
+  | "musculoEsqueletico"
+  | "agua"
+  | "masaOsea"
+  | "perimetroAbdomen"
+  | "grasaVisceral"
   | "grasaCorporal"
   | "masaMuscular"
   | "pliegueAbdominal"
@@ -135,6 +147,42 @@ const METRIC_META: Record<
     inputStep: "0.1",
     inputMax: 200,
   },
+  grasaSubcutanea: {
+    labelKey: "metricaGrasaSubcutanea",
+    unit: "%",
+    inputStep: "0.1",
+    inputMax: 100,
+  },
+  musculoEsqueletico: {
+    labelKey: "metricaMusculoEsqueletico",
+    unit: "%",
+    inputStep: "0.1",
+    inputMax: 100,
+  },
+  agua: {
+    labelKey: "metricaAgua",
+    unit: "%",
+    inputStep: "0.1",
+    inputMax: 100,
+  },
+  masaOsea: {
+    labelKey: "metricaMasaOsea",
+    unit: "kg",
+    inputStep: "0.1",
+    inputMax: 50,
+  },
+  perimetroAbdomen: {
+    labelKey: "metricaAbdomen",
+    unit: "cm",
+    inputStep: "0.1",
+    inputMax: 300,
+  },
+  grasaVisceral: {
+    labelKey: "metricaGrasaVisceral",
+    unit: "",
+    inputStep: "1",
+    inputMax: 60,
+  },
   pliegueAbdominal: { labelKey: "metricaPliegueAbdominal", unit: "mm", inputStep: "0.1", inputMax: 100 },
   pliegueAxilar: { labelKey: "metricaPliegueAxilar", unit: "mm", inputStep: "0.1", inputMax: 100 },
   plieguePectoral: { labelKey: "metricaPlieguePectoral", unit: "mm", inputStep: "0.1", inputMax: 100 },
@@ -161,7 +209,7 @@ function fmt(v: number | null | undefined, unit: string, digits = 1): string {
           ? String(Math.round(n))
           : n.toFixed(digits)
         : n.toFixed(digits);
-  return `${s} ${unit}`;
+  return unit ? `${s} ${unit}` : s;
 }
 
 function latestValue(
@@ -222,7 +270,13 @@ export function PacienteFichaMedicionesTab({
   const ultMasaMusc = latestValue(ordenadas, "masaMuscular");
   const ultCintura = latestValue(ordenadas, "perimetroCintura");
   const ultCadera = latestValue(ordenadas, "perimetroCadera");
+  const ultAbdomen = latestValue(ordenadas, "perimetroAbdomen");
   const ultBrazo = latestValue(ordenadas, "perimetroBrazo");
+  const ultGrasaSubcutanea = latestValue(ordenadas, "grasaSubcutanea");
+  const ultMusculoEsqueletico = latestValue(ordenadas, "musculoEsqueletico");
+  const ultAgua = latestValue(ordenadas, "agua");
+  const ultMasaOsea = latestValue(ordenadas, "masaOsea");
+  const ultGrasaVisceral = latestValue(ordenadas, "grasaVisceral");
 
   const masaGrasaKgVal = masaGrasaKg(ultimoPeso, ultGrasa);
   const pctMusculoVal = pctMuscular(ultimoPeso, ultMasaMusc);
@@ -263,6 +317,24 @@ export function PacienteFichaMedicionesTab({
             break;
           case "masaMuscular":
             payload.masaMuscular = v;
+            break;
+          case "grasaSubcutanea":
+            payload.grasaSubcutanea = v;
+            break;
+          case "musculoEsqueletico":
+            payload.musculoEsqueletico = v;
+            break;
+          case "agua":
+            payload.agua = v;
+            break;
+          case "masaOsea":
+            payload.masaOsea = v;
+            break;
+          case "perimetroAbdomen":
+            payload.perimetroAbdomen = v;
+            break;
+          case "grasaVisceral":
+            payload.grasaVisceral = v;
             break;
           default:
             return;
@@ -364,26 +436,37 @@ export function PacienteFichaMedicionesTab({
               onClick={() => setVista("altura")}
             />
             <SidebarRow
-              label={t("metricaCadera")}
-              value={fmt(ultCadera, "cm")}
-              active={vista === "perimetroCadera"}
-              onClick={() => setVista("perimetroCadera")}
-            />
-            <SidebarRow
               label={t("metricaCintura")}
               value={fmt(ultCintura, "cm")}
               active={vista === "perimetroCintura"}
               onClick={() => setVista("perimetroCintura")}
             />
+            <SidebarRow
+              label={t("metricaAbdomen")}
+              value={fmt(ultAbdomen, "cm")}
+              active={vista === "perimetroAbdomen"}
+              onClick={() => setVista("perimetroAbdomen")}
+            />
+            <SidebarRow
+              label={t("metricaCadera")}
+              value={fmt(ultCadera, "cm")}
+              active={vista === "perimetroCadera"}
+              onClick={() => setVista("perimetroCadera")}
+            />
           </SidebarCard>
 
           <SidebarCard title={t("composicionCorporal")}>
             <SidebarRow
-              label={t("metricaMasaGrasa")}
-              value={masaGrasaKgVal != null ? fmt(masaGrasaKgVal, "kg") : "—"}
-              suffix={<Calculator className="w-3.5 h-3.5 text-muted-foreground" />}
-              active={false}
-              onClick={() => setVista("grasaCorporal")}
+              label={t("metricaGrasaSubcutanea")}
+              value={fmt(ultGrasaSubcutanea, "%")}
+              active={vista === "grasaSubcutanea"}
+              onClick={() => setVista("grasaSubcutanea")}
+            />
+            <SidebarRow
+              label={t("metricaMusculoEsqueletico")}
+              value={fmt(ultMusculoEsqueletico, "%")}
+              active={vista === "musculoEsqueletico"}
+              onClick={() => setVista("musculoEsqueletico")}
             />
             <SidebarRow
               label={t("metricaMasaMuscular")}
@@ -392,17 +475,28 @@ export function PacienteFichaMedicionesTab({
               onClick={() => setVista("masaMuscular")}
             />
             <SidebarRow
+              label={t("metricaAgua")}
+              value={fmt(ultAgua, "%")}
+              active={vista === "agua"}
+              onClick={() => setVista("agua")}
+            />
+            <SidebarRow
+              label={t("metricaMasaOsea")}
+              value={fmt(ultMasaOsea, "kg")}
+              active={vista === "masaOsea"}
+              onClick={() => setVista("masaOsea")}
+            />
+            <SidebarRow
               label={t("metricaGrasaCorporal")}
               value={fmt(ultGrasa, "%")}
-              suffix={<Calculator className="w-3.5 h-3.5 text-muted-foreground" />}
               active={vista === "grasaCorporal"}
               onClick={() => setVista("grasaCorporal")}
             />
             <SidebarRow
-              label={t("metricaMasaMuscularPct")}
-              value={pctMusculoVal != null ? fmt(pctMusculoVal, "%") : "—"}
-              active={vista === "masaMuscular"}
-              onClick={() => setVista("masaMuscular")}
+              label={t("metricaGrasaVisceral")}
+              value={fmt(ultGrasaVisceral, "", 0)}
+              active={vista === "grasaVisceral"}
+              onClick={() => setVista("grasaVisceral")}
             />
           </SidebarCard>
 
@@ -511,7 +605,9 @@ export function PacienteFichaMedicionesTab({
                         ? t("unidadKilogramo")
                         : METRIC_META[vista].unit === "cm"
                           ? t("unidadCentimetro")
-                          : t("unidadPorcentaje")}
+                          : METRIC_META[vista].unit === "%"
+                            ? t("unidadPorcentaje")
+                            : t("unidadNivel")}
                     </div>
                   </div>
                   <button

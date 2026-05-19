@@ -84,6 +84,12 @@ export function MedidasForm({
       perimetroCintura: num("perimetroCintura"),
       perimetroCadera: num("perimetroCadera"),
       perimetroBrazo: num("perimetroBrazo"),
+      grasaSubcutanea: num("grasaSubcutanea"),
+      musculoEsqueletico: num("musculoEsqueletico"),
+      agua: num("agua"),
+      masaOsea: num("masaOsea"),
+      perimetroAbdomen: num("perimetroAbdomen"),
+      grasaVisceral: num("grasaVisceral"),
       pliegueAbdominal: num("pliegueAbdominal"),
       pliegueAxilar: num("pliegueAxilar"),
       plieguePectoral: num("plieguePectoral"),
@@ -126,12 +132,18 @@ export function MedidasForm({
         <NumField name="altura" label={t("altura")} unit="cm" min={30} max={300} defaultValue={defaultAltura} />
         <NumField name="perimetroCadera" label={t("perimetroCadera")} unit="cm" min={0} max={300} />
         <NumField name="perimetroCintura" label={t("perimetroCintura")} unit="cm" min={0} max={300} />
+        <NumField name="perimetroAbdomen" label={t("perimetroAbdomen")} unit="cm" min={0} max={300} />
       </div>
 
       <SectionTitle>{t("composicionCorporal")}</SectionTitle>
       <div className="grid grid-cols-2 gap-4">
         <NumField name="grasaCorporal" label={t("grasaCorporal")} unit="%" min={0} max={100} />
         <NumField name="masaMuscular" label={t("masaMuscular")} unit="kg" min={0} max={200} />
+        <NumField name="grasaSubcutanea" label={t("grasaSubcutanea")} unit="%" min={0} max={100} />
+        <NumField name="musculoEsqueletico" label={t("musculoEsqueletico")} unit="%" min={0} max={100} />
+        <NumField name="agua" label={t("agua")} unit="%" min={0} max={100} />
+        <NumField name="masaOsea" label={t("masaOsea")} unit="kg" min={0} max={50} />
+        <NumField name="grasaVisceral" label={t("grasaVisceral")} unit="" step="1" min={0} max={60} />
         <NumField name="perimetroBrazo" label={t("perimetroBrazo")} unit="cm" min={0} max={100} />
       </div>
 

@@ -16,6 +16,12 @@ export interface MedidaFormData {
   perimetroCintura?: number;
   perimetroCadera?: number;
   perimetroBrazo?: number;
+  grasaSubcutanea?: number;
+  musculoEsqueletico?: number;
+  agua?: number;
+  masaOsea?: number;
+  perimetroAbdomen?: number;
+  grasaVisceral?: number;
   pliegueAbdominal?: number;
   pliegueAxilar?: number;
   plieguePectoral?: number;
@@ -57,6 +63,12 @@ export async function crearMedida(data: MedidaFormData) {
   const perimetroCintura = validateNumberOptional(data.perimetroCintura, 0, 300);
   const perimetroCadera = validateNumberOptional(data.perimetroCadera, 0, 300);
   const perimetroBrazo = validateNumberOptional(data.perimetroBrazo, 0, 300);
+  const grasaSubcutanea = validateNumberOptional(data.grasaSubcutanea, 0, 100);
+  const musculoEsqueletico = validateNumberOptional(data.musculoEsqueletico, 0, 100);
+  const agua = validateNumberOptional(data.agua, 0, 100);
+  const masaOsea = validateNumberOptional(data.masaOsea, 0, 50);
+  const perimetroAbdomen = validateNumberOptional(data.perimetroAbdomen, 0, 300);
+  const grasaVisceral = validateNumberOptional(data.grasaVisceral, 0, 60);
   const notas = sanitizeStringOptional(data.notas, 1000);
 
   const imc = calcularIMC(peso ?? undefined, altura || paciente.altura || undefined);
@@ -73,6 +85,12 @@ export async function crearMedida(data: MedidaFormData) {
       perimetroCintura,
       perimetroCadera,
       perimetroBrazo,
+      grasaSubcutanea,
+      musculoEsqueletico,
+      agua,
+      masaOsea,
+      perimetroAbdomen,
+      grasaVisceral,
       notas,
     },
   });
@@ -134,6 +152,12 @@ export interface MedidaRow {
   perimetroCintura: number | null;
   perimetroCadera: number | null;
   perimetroBrazo: number | null;
+  grasaSubcutanea: number | null;
+  musculoEsqueletico: number | null;
+  agua: number | null;
+  masaOsea: number | null;
+  perimetroAbdomen: number | null;
+  grasaVisceral: number | null;
   pliegueAbdominal: number | null;
   pliegueAxilar: number | null;
   plieguePectoral: number | null;

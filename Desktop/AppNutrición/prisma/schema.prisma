@@ -471,6 +471,12 @@ model MedidaAntropometrica {
   perimetroCintura    Float?
   perimetroCadera     Float?
   perimetroBrazo      Float?
+  grasaSubcutanea     Float?
+  musculoEsqueletico  Float?
+  agua                Float?
+  masaOsea            Float?
+  perimetroAbdomen    Float?
+  grasaVisceral       Float?
   notas               String?
   createdAt           DateTime  @default(now())
 
