@@ -19,7 +19,7 @@ import {
   type MedidaSerializada,
 } from "./paciente-ficha-mediciones-tab";
 import { PacienteActions } from "@/app/(dashboard)/pacientes/[id]/paciente-actions";
-import { FICHA_TABS, type PestanaFicha } from "@/lib/paciente-ficha-pestanas";
+import { getFichaTabs, type PestanaFicha } from "@/lib/paciente-ficha-pestanas";
 import { PlanificacionPorDefectoTab } from "./planificacion-por-defecto-tab";
 import type { Planificacion } from "@/app/actions/planificaciones";
 import { PlanDeAlimentacionTab } from "./plan-de-alimentacion-tab";
@@ -161,6 +161,8 @@ export function PacienteFichaClient({
   notifsDetalle?: NotifDetalle[];
 }) {
   const t = useTranslations("patients.ficha");
+  const tTabs = useTranslations("patients.fichaTabs");
+  const fichaTabs = getFichaTabs(tTabs);
   const router = useRouter();
   const nombre = capitalizarNombre(paciente.nombre);
   const apellidos = capitalizarNombre(paciente.apellidos);
@@ -243,7 +245,7 @@ export function PacienteFichaClient({
           onChange={(e) => router.push(`/pacientes/${paciente.id}?pestana=${e.target.value}`, { scroll: false })}
           className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-sm font-medium text-foreground appearance-none pr-8"
         >
-          {FICHA_TABS.map((t) => {
+          {fichaTabs.map((t) => {
             const n = notifsPorTipoPestana(t.id, notifsPorTipo);
             return (
               <option key={t.id} value={t.id}>
@@ -259,7 +261,7 @@ export function PacienteFichaClient({
 
       {/* Desktop: tabs */}
       <nav className="hidden sm:flex gap-1 overflow-x-auto pb-px mb-6 -mx-1 px-1 scrollbar-thin">
-        {FICHA_TABS.map((t) => {
+        {fichaTabs.map((t) => {
           const notifCount = notifsPorTipoPestana(t.id, notifsPorTipo);
           return (
             <Link
@@ -416,7 +418,7 @@ export function PacienteFichaClient({
         pestana !== "portal-paciente" && (
         <div className="rounded-xl border border-dashed border-border bg-muted/20 p-10 text-center">
           <p className="text-muted-foreground text-sm max-w-md mx-auto">
-            {t("seccionEnConstruccion", { seccion: FICHA_TABS.find((x) => x.id === pestana)?.label ?? "" })}{" "}
+            {t("seccionEnConstruccion", { seccion: fichaTabs.find((x) => x.id === pestana)?.label ?? "" })}{" "}
             <Link
               href={`/pacientes/${paciente.id}/editar`}
               className="text-primary font-medium hover:underline"
