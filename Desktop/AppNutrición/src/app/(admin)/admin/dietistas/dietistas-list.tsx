@@ -166,6 +166,12 @@ export function DietistasList({ dietistas }: Props) {
                         {d.suscripcion.estado === "TRIAL" ? t("estadoBadge.prueba") : d.suscripcion.estado === "PRUEBA" ? t("estadoBadge.prueba") : d.suscripcion.estado === "ACTIVA" ? t("estadoBadge.activa") : d.suscripcion.estado === "CANCELADA" ? t("estadoBadge.cancelada") : t("estadoBadge.expirada")}
                       </span>
                     )}
+                    {d.creadoPor && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium shrink-0 bg-muted text-muted-foreground">
+                        <User className="w-2.5 h-2.5" />
+                        {adminDisplayName(d.creadoPor)}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5 flex-wrap">
                     <span className="truncate">{d.email}</span>
@@ -212,12 +218,6 @@ export function DietistasList({ dietistas }: Props) {
                     {lastActivity && <span>{t("list.ultimoAcceso", { date: formatDate(lastActivity) })}</span>}
                     {d.clinica && <span>{t("list.clinica", { name: d.clinica })}</span>}
                     <span>{t("list.recetas", { count: d._count.recetas })}</span>
-                    {d.creadoPor && (
-                      <span className="inline-flex items-center gap-1">
-                        <User className="w-3 h-3" />
-                        {t("list.creadoPor", { admin: adminDisplayName(d.creadoPor) })}
-                      </span>
-                    )}
                   </div>
 
                   {d.pacientes.length === 0 ? (
