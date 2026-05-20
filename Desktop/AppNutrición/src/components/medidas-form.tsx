@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { crearMedida, type MedidaFormData } from "@/app/actions/medidas";
 import { DatePicker } from "@/components/date-picker";
 import { useTranslations } from "next-intl";
+import { useUncontrolledFormPersist } from "@/lib/form-persist";
+import { withTimeout } from "@/lib/utils";
 
 interface MedidasFormProps {
   pacienteId: string;
@@ -66,6 +68,16 @@ export function MedidasForm({
   const [loading, setLoading] = useState(false);
   const [fecha, setFecha] = useState(new Date().toISOString().split("T")[0]);
   const t = useTranslations("patients.medidasForm");
+  const tc = useTranslations("common.deploy");
+  const formRef = useRef<HTMLFormElement>(null);
+  const { wasRestored, clear: clearDraft } = useUncontrolledFormPersist(
+    `medidas-${pacienteId}`,
+    formRef,
+  );
+
+  useEffect(() => {
+    if (wasRestored) toast.success(tc("datosRestaurados"));
+  }, [wasRestored, tc]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -107,8 +119,9 @@ export function MedidasForm({
     };
 
     try {
-      await crearMedida(data);
+      await withTimeout(crearMedida(data));
       toast.success(t("medidasRegistradas"));
+      clearDraft();
       e.currentTarget.reset();
       onSuccess?.();
     } catch (error) {
@@ -120,7 +133,7 @@ export function MedidasForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-2">
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-2">
       <div>
         <label className="block text-sm font-semibold mb-1.5">{t("fechaMediciones")}</label>
         <DatePicker value={fecha} onChange={setFecha} />

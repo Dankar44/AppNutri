@@ -121,7 +121,7 @@ export async function getConversaciones(options?: {
       m.texto AS ultimo_texto, m.autor AS ultimo_autor,
       m."createdAt" AS "ultimo_createdAt"
     FROM conversaciones c
-    INNER JOIN pacientes p ON p.id = c."pacienteId"
+    INNER JOIN pacientes p ON p.id = c."pacienteId" AND p."esDemo" = false
     LEFT JOIN LATERAL (
       SELECT texto, autor, "createdAt"
       FROM mensajes
@@ -390,8 +390,9 @@ export async function getConversacionesNoLeidasCount(): Promise<number> {
   if (!dietista) return 0;
 
   const rows = await prisma.$queryRawUnsafe<{ count: bigint }[]>(
-    `SELECT COUNT(*) as count FROM conversaciones
-     WHERE "dietistaId" = $1 AND "noLeidosDietista" > 0 AND "archivadaDietista" = false`,
+    `SELECT COUNT(*) as count FROM conversaciones c
+     INNER JOIN pacientes p ON p.id = c."pacienteId" AND p."esDemo" = false
+     WHERE c."dietistaId" = $1 AND c."noLeidosDietista" > 0 AND c."archivadaDietista" = false`,
     dietista.id,
   );
 
@@ -435,6 +436,7 @@ export async function getPacientesParaConversacion(
       ON c."pacienteId" = p.id AND c."dietistaId" = $1
     WHERE p."dietistaId" = $1
       AND p.activo = true
+      AND p."esDemo" = false
       ${q ? `AND (LOWER(p.nombre) LIKE $2 OR LOWER(p.apellidos) LIKE $2 OR LOWER(p.nombre || ' ' || p.apellidos) LIKE $2)` : ""}
     ORDER BY p.nombre ASC, p.apellidos ASC
     LIMIT 100

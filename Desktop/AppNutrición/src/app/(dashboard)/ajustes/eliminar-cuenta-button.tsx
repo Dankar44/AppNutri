@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { eliminarCuenta } from "@/app/actions/perfil";
+import { withTimeout } from "@/lib/utils";
 
 export function EliminarCuentaButton() {
   const t = useTranslations("settings.eliminarCuenta");
@@ -13,7 +14,7 @@ export function EliminarCuentaButton() {
   async function handleDelete() {
     setLoading(true);
     try {
-      await eliminarCuenta();
+      await withTimeout(eliminarCuenta());
     } catch {
       setLoading(false);
       setShowConfirm(false);

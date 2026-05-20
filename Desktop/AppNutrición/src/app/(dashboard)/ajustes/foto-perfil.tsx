@@ -7,6 +7,7 @@ import { Camera } from "lucide-react";
 import { actualizarFotoDietista } from "@/app/actions/perfil";
 import { toast } from "sonner";
 import { compressImage, IMAGE_PRESETS } from "@/lib/image-compress";
+import { withTimeout } from "@/lib/utils";
 
 interface Props {
   nombre: string;
@@ -35,7 +36,7 @@ export function FotoPerfil({ nombre, apellidos, fotoUrl }: Props) {
       try {
         const dataUrl = await compressImage(raw, IMAGE_PRESETS.PROFILE_PHOTO);
         setPreview(dataUrl);
-        await actualizarFotoDietista(dataUrl);
+        await withTimeout(actualizarFotoDietista(dataUrl));
         toast.success(t("fotoPerfil.toastSuccess"));
         router.refresh();
       } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;

@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, CreditCard, Loader2, X, Link2, Copy, Check, ExternalLink, RefreshCw, Banknote } from "lucide-react";
 import { crearPago, marcarPagado, eliminarPago, generarLinkPago } from "@/app/actions/pagos";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { useFormPersist } from "@/lib/form-persist";
 import { useLocale } from "next-intl";
 import { intlTag, type Locale } from "@/i18n/config";
+import { withTimeout } from "@/lib/utils";
 
 interface Pago {
   id: string;
@@ -53,6 +55,30 @@ export function PagosClient({ pagos, pacientes, stripeConnected }: Props) {
   const [importe, setImporte] = useState("");
   const [notas, setNotas] = useState("");
 
+  const tc = useTranslations("common.deploy");
+  const pagoFormState = useMemo(
+    () => ({ pacienteId, concepto, importe, notas }),
+    [pacienteId, concepto, importe, notas],
+  );
+  const { wasRestored, clear: clearDraft } = useFormPersist(
+    "pago-nuevo",
+    pagoFormState,
+    (val) => {
+      setPacienteId(String(val.pacienteId ?? ""));
+      setConcepto(String(val.concepto ?? ""));
+      setImporte(String(val.importe ?? ""));
+      setNotas(String(val.notas ?? ""));
+    },
+    { enabled: showForm },
+  );
+
+  useEffect(() => {
+    if (wasRestored) {
+      setShowForm(true);
+      toast.success(tc("datosRestaurados"));
+    }
+  }, [wasRestored, tc]);
+
   // Manual payment state
   const [metodoPago, setMetodoPago] = useState("");
 
@@ -61,7 +87,8 @@ export function PagosClient({ pagos, pacientes, stripeConnected }: Props) {
     if (!concepto.trim() || !importe) { toast.error(t("toasts.completaConceptoImporte")); return; }
     setLoading(true);
     try {
-      await crearPago({ pacienteId: pacienteId || undefined, concepto, importe: parseFloat(importe), notas });
+      await withTimeout(crearPago({ pacienteId: pacienteId || undefined, concepto, importe: parseFloat(importe), notas }));
+      clearDraft();
       toast.success(stripeConnected ? t("toasts.cobroCreadoConLink") : t("toasts.cobroCreado"));
       setShowForm(false);
       setConcepto(""); setImporte(""); setNotas(""); setPacienteId("");
@@ -75,7 +102,7 @@ export function PagosClient({ pagos, pacientes, stripeConnected }: Props) {
   async function handleGenerarLink(pagoId: string) {
     setGeneratingLink(pagoId);
     try {
-      const { url } = await generarLinkPago(pagoId);
+      const { url } = await withTimeout(generarLinkPago(pagoId));
       if (url) {
         await navigator.clipboard.writeText(url);
         toast.success(t("toasts.linkGeneradoCopiado"));
@@ -98,7 +125,7 @@ export function PagosClient({ pagos, pacientes, stripeConnected }: Props) {
     if (!metodoPago.trim()) { toast.error(t("toasts.indicaMetodoPago")); return; }
     setLoading(true);
     try {
-      await marcarPagado(pagoId, metodoPago.trim());
+      await withTimeout(marcarPagado(pagoId, metodoPago.trim()));
       toast.success(t("toasts.pagoMarcadoPagado"));
       setShowManualPago(null);
       setMetodoPago("");
@@ -111,7 +138,7 @@ export function PagosClient({ pagos, pacientes, stripeConnected }: Props) {
 
   async function handleEliminar(pagoId: string) {
     try {
-      await eliminarPago(pagoId);
+      await withTimeout(eliminarPago(pagoId));
       toast.success(t("toasts.cobroEliminado"));
       router.refresh();
     } catch (err) {

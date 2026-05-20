@@ -115,6 +115,7 @@
     "emailInvalido": "El formato del email no es válido.",
     "fechaNacimientoObligatoria": "La fecha de nacimiento es obligatoria.",
     "errorGuardarPaciente": "Error al guardar el paciente.",
+    "errorTimeout": "La operación está tardando demasiado. Recarga la página y comprueba si se guardó correctamente.",
     "cambiosSinGuardarDescripcionLarga": "Has modificado datos del paciente que aún no se han guardado. Si sales ahora, perderás los cambios.",
     "anadir": "Añadir",
     "actividadSedentarioDesc": "Sedentario (poco o nada de ejercicio)",

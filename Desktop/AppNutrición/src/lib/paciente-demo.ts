@@ -454,7 +454,7 @@ export async function crearPacienteDemoSiNoExiste(
 
   // Raw SQL también para el findFirst — defensivo por si el cliente Prisma está desactualizado
   const existentes = await prisma.$queryRawUnsafe<{ id: string }[]>(
-    `SELECT id FROM pacientes WHERE "dietistaId" = $1 AND nombre = 'Paciente' AND apellidos = 'Prueba' LIMIT 1`,
+    `SELECT id FROM pacientes WHERE "dietistaId" = $1 AND ("esDemo" = true OR (nombre = 'Paciente' AND apellidos = 'Prueba')) LIMIT 1`,
     dietistaId,
   );
   const existente = existentes[0] ?? null;
@@ -528,14 +528,14 @@ export async function crearPacienteDemoSiNoExiste(
       "nivelActividad", "frecuenciaEjercicio", "tipoEjercicio",
       "horarioTrabajo", "horarioEjercicio", "horasDescanso", ocupacion,
       preferencias, alergias, intolerancias, patologias, medicamentos, suplementos,
-      "fichaInformacion", horario, recomendaciones, notas, activo, "createdAt", "updatedAt"
+      "fichaInformacion", horario, recomendaciones, notas, activo, "esDemo", "createdAt", "updatedAt"
     ) VALUES (
       gen_random_uuid()::text, $1, 'Paciente', 'Prueba', $2, $3, $4, 'MASCULINO',
       $5, 175, 78, 'PERDER_PESO', $6,
       'moderado', '3 veces por semana', 'Entrenamiento de fuerza y cardio',
       '09:00 – 18:00', 'L/X/V 19:00', '7-8 horas', 'Oficina',
       $7::text[], $8::text[], $9::text[], $10::text[], $11::text[], $12::text[],
-      $13::jsonb, $14::jsonb, $15, $16, true, NOW(), NOW()
+      $13::jsonb, $14::jsonb, $15, $16, true, true, NOW(), NOW()
     ) RETURNING id`,
     dietistaId,
     "paciente.prueba@demo.annonia.com",

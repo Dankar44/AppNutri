@@ -223,6 +223,12 @@
   "dialog": {
     "cerrar": "Fechar"
   },
+  "deploy": {
+    "nuevaVersion": "Há uma nova versão disponível",
+    "datosGuardados": "Os dados do formulário foram salvos",
+    "datosRestaurados": "Os dados do formulário foram restaurados",
+    "recargar": "Recarregar agora"
+  },
   "metadata": {
     "title": "Annonia — Software para Nutricionistas",
     "titleTemplate": "%s | Annonia",

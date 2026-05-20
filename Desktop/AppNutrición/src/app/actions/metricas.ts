@@ -31,14 +31,14 @@ export async function getMetricasDashboard() {
         planesActivos,
         citasSemana,
       ] = await Promise.all([
-        prisma.paciente.count({ where: { dietistaId: dietista.id } }),
-        prisma.paciente.count({ where: { dietistaId: dietista.id, activo: true } }),
-        prisma.paciente.count({ where: { dietistaId: dietista.id, createdAt: { gte: inicioMesActual } } }),
-        prisma.paciente.count({ where: { dietistaId: dietista.id, createdAt: { gte: inicioMesAnterior, lt: inicioMesActual } } }),
-        prisma.consulta.count({ where: { dietistaId: dietista.id, fecha: { gte: inicioMesActual } } }),
-        prisma.consulta.count({ where: { dietistaId: dietista.id, fecha: { gte: inicioMesAnterior, lt: inicioMesActual } } }),
-        prisma.planAlimenticio.count({ where: { dietistaId: dietista.id, activo: true } }),
-        prisma.cita.count({ where: { dietistaId: dietista.id, fechaHora: { gte: inicioSemana, lt: finSemana } } }),
+        prisma.paciente.count({ where: { dietistaId: dietista.id, esDemo: false } }),
+        prisma.paciente.count({ where: { dietistaId: dietista.id, activo: true, esDemo: false } }),
+        prisma.paciente.count({ where: { dietistaId: dietista.id, createdAt: { gte: inicioMesActual }, esDemo: false } }),
+        prisma.paciente.count({ where: { dietistaId: dietista.id, createdAt: { gte: inicioMesAnterior, lt: inicioMesActual }, esDemo: false } }),
+        prisma.consulta.count({ where: { dietistaId: dietista.id, fecha: { gte: inicioMesActual }, paciente: { esDemo: false } } }),
+        prisma.consulta.count({ where: { dietistaId: dietista.id, fecha: { gte: inicioMesAnterior, lt: inicioMesActual }, paciente: { esDemo: false } } }),
+        prisma.planAlimenticio.count({ where: { dietistaId: dietista.id, activo: true, paciente: { esDemo: false } } }),
+        prisma.cita.count({ where: { dietistaId: dietista.id, fechaHora: { gte: inicioSemana, lt: finSemana }, paciente: { esDemo: false } } }),
       ]);
 
       const cambioPacientes = pacientesMesAnterior > 0
@@ -94,7 +94,7 @@ export async function getActividadMensual() {
           (SELECT COUNT(*) FROM pacientes p
            WHERE p."dietistaId" = ${dietista.id}
              AND p."createdAt" < (m.mes_inicio + '1 month'::interval)
-             AND NOT (p.nombre = 'Paciente' AND p.apellidos = 'Prueba')
+             AND p."esDemo" = false
           ) AS pacientes_acumulados
         FROM meses m
         ORDER BY m.mes_inicio
@@ -124,7 +124,7 @@ export async function getPacientesAtencion() {
       hace30Dias.setDate(hace30Dias.getDate() - 30);
 
       const pacientes = await prisma.paciente.findMany({
-        where: { dietistaId: dietista.id, activo: true },
+        where: { dietistaId: dietista.id, activo: true, esDemo: false },
         select: {
           id: true,
           nombre: true,

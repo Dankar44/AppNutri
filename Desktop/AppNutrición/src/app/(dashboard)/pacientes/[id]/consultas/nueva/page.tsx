@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
@@ -8,13 +8,25 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { crearConsulta } from "@/app/actions/consultas";
 import { crearMedida } from "@/app/actions/medidas";
+import { useUncontrolledFormPersist } from "@/lib/form-persist";
+import { withTimeout } from "@/lib/utils";
 
 export default function NuevaConsultaPage() {
   const params = useParams();
   const pacienteId = params.id as string;
   const t = useTranslations("patients");
+  const tc = useTranslations("common.deploy");
   const [loading, setLoading] = useState(false);
   const [incluirMedidas, setIncluirMedidas] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const { wasRestored, clear: clearDraft } = useUncontrolledFormPersist(
+    `consulta-nueva-${pacienteId}`,
+    formRef,
+  );
+
+  useEffect(() => {
+    if (wasRestored) toast.success(tc("datosRestaurados"));
+  }, [wasRestored, tc]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -32,26 +44,27 @@ export default function NuevaConsultaPage() {
         const grasaCorporal = parseFloat(form.get("grasaCorporal") as string) || undefined;
 
         if (peso || altura || grasaCorporal) {
-          const medida = await crearMedida({
+          const medida = await withTimeout(crearMedida({
             pacienteId,
             fecha,
             peso,
             altura,
             grasaCorporal,
             perimetroCintura: parseFloat(form.get("perimetroCintura") as string) || undefined,
-          });
+          }));
           medidaId = medida?.id;
         }
       }
 
-      await crearConsulta({
+      await withTimeout(crearConsulta({
         pacienteId,
         fecha,
         motivo: (form.get("motivo") as string) || undefined,
         notas: (form.get("notas") as string) || undefined,
         medidaId,
-      });
+      }));
 
+      clearDraft();
       toast.success(t("consultas.consultaRegistrada"));
     } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
       toast.error(t("consultas.errorCrearConsulta"));
@@ -72,7 +85,7 @@ export default function NuevaConsultaPage() {
         <h1 className="text-2xl sm:text-3xl font-bold">{t("consultas.titulo")}</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
+      <form ref={formRef} onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
         <section className="bg-card rounded-xl border border-border p-6 space-y-4">
           <h2 className="text-lg font-semibold">{t("consultas.datosConsulta")}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -23,6 +23,7 @@ import { AguaTracker } from "@/components/paciente/seguimiento/agua-tracker";
 import { EjercicioCard } from "@/components/paciente/seguimiento/ejercicio-card";
 import { NotasCard } from "@/components/paciente/seguimiento/notas-card";
 import { useAutosave } from "@/components/paciente/seguimiento/use-autosave";
+import { withTimeout } from "@/lib/utils";
 
 const SENSACION_MARKER = /^⟦sensacion:([a-z]+)⟧\n?/;
 
@@ -139,7 +140,7 @@ export default function SeguimientoPage() {
   const { status } = useAutosave(
     autosaveValue,
     async (v) => {
-      await guardarSeguimientoPaciente(v.fecha, {
+      await withTimeout(guardarSeguimientoPaciente(v.fecha, {
         aguaML: v.aguaML,
         ejercicio: v.ejercicio,
         ejercicioMinutos: v.ejercicioMinutos,
@@ -148,7 +149,7 @@ export default function SeguimientoPage() {
         ejercicioDistanciaKm: v.ejercicioDistanciaKm || undefined,
         notas: combinarSensacion(v.sensacion, v.notasTexto) || undefined,
         comidasData: v.comidasData,
-      });
+      }));
     },
     { delayMs: 900, enabled: !loading }
   );
@@ -207,7 +208,7 @@ export default function SeguimientoPage() {
   async function guardarManual() {
     setManualSaving(true);
     try {
-      await guardarSeguimientoPaciente(fecha, {
+      await withTimeout(guardarSeguimientoPaciente(fecha, {
         aguaML,
         ejercicio,
         ejercicioMinutos,
@@ -216,7 +217,7 @@ export default function SeguimientoPage() {
         ejercicioDistanciaKm: ejercicioDistanciaKm || undefined,
         notas: combinarSensacion(sensacion, notasTexto) || undefined,
         comidasData,
-      });
+      }));
       toast.success(t("seguimiento.toast.seguimientoGuardado"));
     } catch {
       toast.error(t("seguimiento.toast.errorGuardar"));

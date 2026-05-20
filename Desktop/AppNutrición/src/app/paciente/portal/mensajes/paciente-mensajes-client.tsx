@@ -14,12 +14,14 @@ import {
 } from "@/app/actions/mensajes";
 import { subirAdjuntoMensaje } from "@/app/actions/mensajes-adjuntos";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
+import { EarlyAdopterBadgePatient } from "@/components/early-adopter-badge";
 
 interface Dietista {
   id: string;
   nombre: string;
   apellidos: string;
   especialidad: string | null;
+  earlyAdopter: boolean;
 }
 
 interface Props {
@@ -142,9 +144,12 @@ function ChatHeader({ dietista }: { dietista: Dietista }) {
         {initials}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold truncate">
-          {dietista.nombre} {dietista.apellidos}
-        </p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-sm font-semibold truncate">
+            {dietista.nombre} {dietista.apellidos}
+          </p>
+          {dietista.earlyAdopter && <EarlyAdopterBadgePatient size="sm" />}
+        </div>
         <p className="text-[11px] text-muted-foreground">
           {dietista.especialidad || t("mensajes.fallbackEspecialidad")}
         </p>

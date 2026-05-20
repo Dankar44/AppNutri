@@ -15,6 +15,7 @@ import {
 import { getSeguimientoDia, type SeguimientoDia } from "@/app/actions/seguimiento";
 import { formatQuantity } from "@/lib/units";
 import { useTranslations } from "next-intl";
+import { withTimeout } from "@/lib/utils";
 
 const TIPOS = ["DESAYUNO", "MEDIA_MANANA", "ALMUERZO", "MERIENDA", "CENA", "RECENA"];
 
@@ -26,7 +27,7 @@ export function SeguimientoDietistaView({ pacienteId }: { pacienteId: string }) 
 
   useEffect(() => {
     setLoading(true);
-    getSeguimientoDia(pacienteId, fecha)
+    withTimeout(getSeguimientoDia(pacienteId, fecha))
       .then((res) => setData(res))
       .finally(() => setLoading(false));
   }, [pacienteId, fecha]);

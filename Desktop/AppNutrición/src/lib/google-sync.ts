@@ -12,7 +12,7 @@ async function loadCitaFull(citaId: string) {
   return prisma.cita.findUnique({
     where: { id: citaId },
     include: {
-      paciente: { select: { nombre: true, apellidos: true, email: true } },
+      paciente: { select: { nombre: true, apellidos: true, email: true, esDemo: true } },
       dietista: { select: { nombre: true, apellidos: true, email: true } },
     },
   });
@@ -44,6 +44,7 @@ export async function syncCitaNutri(citaId: string): Promise<void> {
   try {
     const cita = await loadCitaFull(citaId);
     if (!cita) return;
+    if (cita.paciente.esDemo) return;
 
     const integracion = await prisma.googleIntegracion.findUnique({
       where: { dietistaId: cita.dietistaId },
@@ -105,6 +106,7 @@ export async function syncCitaPaciente(citaId: string): Promise<void> {
   try {
     const cita = await loadCitaFull(citaId);
     if (!cita) return;
+    if (cita.paciente.esDemo) return;
 
     const integracion = await prisma.googleIntegracionPaciente.findUnique({
       where: { pacienteId: cita.pacienteId },
@@ -218,9 +220,10 @@ export async function backfillCitasNutri(dietistaId: string): Promise<{ creadas:
       dietistaId,
       googleEventId: null,
       estado: { in: ["PENDIENTE", "CONFIRMADA", "COMPLETADA"] },
+      paciente: { esDemo: false },
     },
     include: {
-      paciente: { select: { nombre: true, apellidos: true, email: true } },
+      paciente: { select: { nombre: true, apellidos: true, email: true, esDemo: true } },
       dietista: { select: { nombre: true, apellidos: true, email: true } },
     },
     orderBy: { fechaHora: "asc" },
@@ -264,9 +267,10 @@ export async function backfillCitasPaciente(pacienteId: string): Promise<{ cread
       pacienteId,
       googleEventIdPaciente: null,
       estado: { in: ["PENDIENTE", "CONFIRMADA", "COMPLETADA"] },
+      paciente: { esDemo: false },
     },
     include: {
-      paciente: { select: { nombre: true, apellidos: true, email: true } },
+      paciente: { select: { nombre: true, apellidos: true, email: true, esDemo: true } },
       dietista: { select: { nombre: true, apellidos: true, email: true } },
     },
     orderBy: { fechaHora: "asc" },

@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { actualizarPerfil, type PerfilFormData } from "@/app/actions/perfil";
+import { useUncontrolledFormPersist } from "@/lib/form-persist";
+import { withTimeout } from "@/lib/utils";
 
 interface Props {
   defaultValues: PerfilFormData;
@@ -12,8 +14,18 @@ interface Props {
 
 export function PerfilForm({ defaultValues }: Props) {
   const t = useTranslations("settings");
+  const tc = useTranslations("common.deploy");
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const { wasRestored, clear: clearDraft } = useUncontrolledFormPersist(
+    "perfil-dietista",
+    formRef,
+  );
+
+  useEffect(() => {
+    if (wasRestored) toast.success(tc("datosRestaurados"));
+  }, [wasRestored, tc]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -30,7 +42,8 @@ export function PerfilForm({ defaultValues }: Props) {
     };
 
     try {
-      await actualizarPerfil(data);
+      clearDraft();
+      await withTimeout(actualizarPerfil(data));
       toast.success(t("perfilForm.toastSuccess"));
       router.refresh();
     } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
@@ -41,7 +54,7 @@ export function PerfilForm({ defaultValues }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <div>
           <label className="block text-sm font-medium mb-1">{t("perfilForm.nombreLabel")}</label>

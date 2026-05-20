@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
 import { cambiarPassword } from "@/app/actions/perfil";
+import { withTimeout } from "@/lib/utils";
 
 export function CambiarPasswordForm() {
   const t = useTranslations("settings");
@@ -26,7 +27,7 @@ export function CambiarPasswordForm() {
 
     setLoading(true);
     try {
-      const res = await cambiarPassword({ actual, nueva });
+      const res = await withTimeout(cambiarPassword({ actual, nueva }));
       if (res.ok) {
         toast.success(t("cambiarPassword.toastSuccess"));
         (e.target as HTMLFormElement).reset();

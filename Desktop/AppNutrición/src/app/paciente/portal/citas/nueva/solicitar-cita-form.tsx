@@ -20,6 +20,7 @@ import {
   type DiaDisponibilidad,
   type DisponibilidadSemanal,
 } from "@/app/actions/citas-flujo";
+import { withTimeout } from "@/lib/utils";
 
 const MESES_KEYS = [
   "january", "february", "march", "april", "may", "june",
@@ -135,7 +136,7 @@ export function SolicitarCitaForm() {
     if (!slotSeleccionado) return;
     startSubmit(async () => {
       try {
-        await solicitarCitaPaciente(slotSeleccionado, motivo.trim() || undefined);
+        await withTimeout(solicitarCitaPaciente(slotSeleccionado, motivo.trim() || undefined));
         toast.success(t("nuevaCita.toast.solicitudEnviada"));
         router.push("/paciente/portal/citas");
         router.refresh();

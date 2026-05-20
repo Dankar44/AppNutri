@@ -131,6 +131,7 @@ export async function getCitasSemana(fechaInicio: string) {
     where: {
       dietistaId: dietista.id,
       fechaHora: { gte: inicio, lt: fin },
+      paciente: { esDemo: false },
     },
     include: { paciente: { select: { id: true, nombre: true, apellidos: true } } },
     orderBy: { fechaHora: "asc" },
@@ -148,6 +149,7 @@ export async function getCitasMes(anio: number, mes: number) {
     where: {
       dietistaId: dietista.id,
       fechaHora: { gte: inicio, lt: fin },
+      paciente: { esDemo: false },
     },
     include: { paciente: { select: { id: true, nombre: true, apellidos: true } } },
     orderBy: { fechaHora: "asc" },
@@ -167,6 +169,7 @@ export async function getCitasHoy() {
     where: {
       dietistaId: dietista.id,
       fechaHora: { gte: hoy, lt: manana },
+      paciente: { esDemo: false },
     },
     include: { paciente: { select: { nombre: true, apellidos: true } } },
     orderBy: { fechaHora: "asc" },
@@ -188,6 +191,7 @@ export async function getCitasDia(fechaYYYYMMDD: string) {
     where: {
       dietistaId: dietista.id,
       fechaHora: { gte: inicio, lt: fin },
+      paciente: { esDemo: false },
     },
     include: {
       paciente: {
@@ -210,6 +214,7 @@ export async function getProximasCitas(take = 8) {
       dietistaId: dietista.id,
       fechaHora: { gte: ahora },
       estado: { in: [EstadoCita.PENDIENTE, EstadoCita.CONFIRMADA] },
+      paciente: { esDemo: false },
     },
     include: {
       paciente: {
@@ -226,7 +231,7 @@ export async function getPacientesParaCita() {
   if (!dietista) return [];
 
   return prisma.paciente.findMany({
-    where: { dietistaId: dietista.id, activo: true },
+    where: { dietistaId: dietista.id, activo: true, esDemo: false },
     select: {
       id: true,
       nombre: true,

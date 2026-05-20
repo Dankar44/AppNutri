@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -21,13 +21,14 @@ import {
 import { useTranslations, useLocale } from "next-intl";
 import { intlTag, type Locale } from "@/i18n/config";
 import { toast } from "sonner";
+import { useUncontrolledFormPersist } from "@/lib/form-persist";
 import {
   crearCita,
   getPacientesParaCita,
   getPacienteContextoCita,
 } from "@/app/actions/citas";
 import { AvatarPaciente } from "@/components/avatar-paciente";
-import { capitalizarNombre, formatDate } from "@/lib/utils";
+import { capitalizarNombre, formatDate, withTimeout } from "@/lib/utils";
 
 type PacienteListItem = {
   id: string;
@@ -59,7 +60,18 @@ export default function NuevaCitaPage() {
   const router = useRouter();
   const t = useTranslations("agenda");
   const tag = intlTag(useLocale() as Locale);
+  const tc = useTranslations("common.deploy");
   const [loading, setLoading] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const { wasRestored, clear: clearDraft } = useUncontrolledFormPersist(
+    "cita-nueva",
+    formRef,
+  );
+
+  useEffect(() => {
+    if (wasRestored) toast.success(tc("datosRestaurados"));
+  }, [wasRestored, tc]);
+
   const [pacientes, setPacientes] = useState<PacienteListItem[]>([]);
   const [pacienteId, setPacienteId] = useState("");
   const [contexto, setContexto] = useState<ContextoCita>(null);
@@ -99,7 +111,7 @@ export default function NuevaCitaPage() {
     const isOnline = form.get("isOnline") === "on";
 
     try {
-      await crearCita({
+      await withTimeout(crearCita({
         pacienteId: form.get("pacienteId") as string,
         fechaHora: `${fecha}T${hora}:00`,
         duracion: parseInt(form.get("duracion") as string) || 30,
@@ -107,7 +119,8 @@ export default function NuevaCitaPage() {
         notas: (form.get("notas") as string) || undefined,
         isOnline,
         modo,
-      });
+      }));
+      clearDraft();
       toast.success(
         modo === "proponer"
           ? t("nueva.toastProposed")
@@ -141,7 +154,7 @@ export default function NuevaCitaPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_minmax(280px,360px)] gap-4 lg:gap-6 items-start">
         {/* Form principal */}
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 min-w-0">
+        <form ref={formRef} onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 min-w-0">
           <section className="bg-card rounded-xl border border-border p-4 sm:p-6 space-y-4">
             <h2 className="text-base sm:text-lg font-semibold inline-flex items-center gap-2">
               <User className="w-5 h-5 text-primary" />

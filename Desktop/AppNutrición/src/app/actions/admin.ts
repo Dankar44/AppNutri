@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { getLocale } from "@/i18n/locale";
 import { intlTag } from "@/i18n/config";
 import { getTranslations } from "next-intl/server";
+import { crearPacienteDemoSiNoExiste } from "@/lib/paciente-demo";
 export async function loginAdmin(email: string, password: string): Promise<{ error?: string }> {
   const t = await getTranslations("validation");
   const result = verifyAdminCredentials(email, password);
@@ -41,13 +42,13 @@ export async function getAdminStats() {
     pacientesMesAnterior,
   ] = await Promise.all([
     prisma.dietista.count(),
-    prisma.paciente.count(),
-    prisma.planAlimenticio.count({ where: { activo: true } }),
-    prisma.consulta.count({ where: { fecha: { gte: inicioMesActual } } }),
+    prisma.paciente.count({ where: { esDemo: false } }),
+    prisma.planAlimenticio.count({ where: { activo: true, paciente: { esDemo: false } } }),
+    prisma.consulta.count({ where: { fecha: { gte: inicioMesActual }, paciente: { esDemo: false } } }),
     prisma.dietista.count({ where: { createdAt: { gte: inicioMesActual } } }),
     prisma.dietista.count({ where: { createdAt: { gte: inicioMesAnterior, lt: inicioMesActual } } }),
-    prisma.paciente.count({ where: { createdAt: { gte: inicioMesActual } } }),
-    prisma.paciente.count({ where: { createdAt: { gte: inicioMesAnterior, lt: inicioMesActual } } }),
+    prisma.paciente.count({ where: { createdAt: { gte: inicioMesActual }, esDemo: false } }),
+    prisma.paciente.count({ where: { createdAt: { gte: inicioMesAnterior, lt: inicioMesActual }, esDemo: false } }),
   ]);
 
   const cambioDietistas = dietistasMesAnterior > 0
@@ -85,7 +86,7 @@ export async function getRegistrosMensuales() {
       select: { createdAt: true },
     }),
     prisma.paciente.findMany({
-      where: { createdAt: { gte: inicio6Meses } },
+      where: { createdAt: { gte: inicio6Meses }, esDemo: false },
       select: { createdAt: true },
     }),
   ]);
@@ -183,9 +184,15 @@ export async function getDietistasAdmin(busqueda?: string): Promise<DietistaAdmi
       createdAt: true,
       lastAccessAt: true,
       _count: {
-        select: { pacientes: true, planes: true, consultas: true, recetas: true },
+        select: {
+          pacientes: { where: { esDemo: false } },
+          planes: true,
+          consultas: true,
+          recetas: true,
+        },
       },
       pacientes: {
+        where: { esDemo: false },
         select: {
           id: true,
           nombre: true,
@@ -272,6 +279,7 @@ export async function getDietistaDetalle(dietistaId: string): Promise<DietistaDe
     where: { id: dietistaId },
     include: {
       pacientes: {
+        where: { esDemo: false },
         select: {
           id: true,
           nombre: true,
@@ -286,7 +294,7 @@ export async function getDietistaDetalle(dietistaId: string): Promise<DietistaDe
       },
       _count: {
         select: {
-          pacientes: true,
+          pacientes: { where: { esDemo: false } },
           planes: true,
           consultas: true,
           recetas: true,
@@ -310,7 +318,7 @@ export async function getDietistaDetalle(dietistaId: string): Promise<DietistaDe
   } catch { /* tabla puede no existir */ }
 
   const ultimasConsultas = await prisma.consulta.findMany({
-    where: { dietistaId },
+    where: { dietistaId, paciente: { esDemo: false } },
     orderBy: { fecha: "desc" },
     take: 5,
     include: { paciente: { select: { nombre: true, apellidos: true } } },
@@ -340,10 +348,10 @@ export async function getActividadGlobal() {
     ultimosDietistas,
     dietistasActivos,
   ] = await Promise.all([
-    prisma.consulta.count({ where: { fecha: { gte: hoy } } }),
-    prisma.cita.count({ where: { fechaHora: { gte: hoy } } }),
-    prisma.entradaDiario.count({ where: { createdAt: { gte: hoy } } }),
-    prisma.consulta.count({ where: { fecha: { gte: inicioMes } } }),
+    prisma.consulta.count({ where: { fecha: { gte: hoy }, paciente: { esDemo: false } } }),
+    prisma.cita.count({ where: { fechaHora: { gte: hoy }, paciente: { esDemo: false } } }),
+    prisma.entradaDiario.count({ where: { createdAt: { gte: hoy }, paciente: { esDemo: false } } }),
+    prisma.consulta.count({ where: { fecha: { gte: inicioMes }, paciente: { esDemo: false } } }),
     prisma.generacionIA.count({ where: { createdAt: { gte: inicioMes } } }),
     prisma.dietista.findMany({
       orderBy: { createdAt: "desc" },
@@ -358,7 +366,7 @@ export async function getActividadGlobal() {
         _count: {
           select: {
             consultas: { where: { fecha: { gte: inicioMes } } },
-            pacientes: true,
+            pacientes: { where: { esDemo: false } },
           },
         },
       },
@@ -569,6 +577,10 @@ export async function crearCuentaNutricionista(data: {
          VALUES (gen_random_uuid()::text, $1, 'PROFESIONAL', 'ACTIVA', NOW(), NOW(), NOW())`,
         dietista.id
       );
+
+      crearPacienteDemoSiNoExiste(prisma, dietista.id, "es").catch((err) => {
+        console.error("[admin] Error creando paciente demo:", err);
+      });
 
       revalidatePath("/admin/dietistas");
       revalidatePath("/admin");

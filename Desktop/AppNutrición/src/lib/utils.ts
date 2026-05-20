@@ -2,6 +2,17 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { intlTag, type Locale } from "@/i18n/config";
 
+export class ActionTimeoutError extends Error {
+  constructor() { super("TIMEOUT"); this.name = "ActionTimeoutError"; }
+}
+
+export function withTimeout<T>(promise: Promise<T>, ms = 30_000): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => setTimeout(() => reject(new ActionTimeoutError()), ms)),
+  ]);
+}
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }

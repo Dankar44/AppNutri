@@ -21,6 +21,7 @@ export default async function MensajesPacientePage() {
           nombre: true,
           apellidos: true,
           especialidad: true,
+          earlyAdopter: true,
         },
       },
     },

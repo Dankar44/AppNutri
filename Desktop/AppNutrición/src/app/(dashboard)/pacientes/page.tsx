@@ -83,7 +83,7 @@ export default async function PacientesPage({ searchParams }: Props) {
               <h3 className="font-semibold">
                 {capitalizarNombre(p.nombre)} {capitalizarNombre(p.apellidos)}
               </h3>
-              {p.nombre === "Paciente" && p.apellidos === "Prueba" && (
+              {p.esDemo && (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 text-[10px] font-medium border border-amber-200 dark:border-amber-500/30 mt-1">
                   {t("list.pacienteEjemplo")}
                 </span>
@@ -139,7 +139,7 @@ export default async function PacientesPage({ searchParams }: Props) {
                           <p className="font-medium truncate hover:text-primary transition-colors">
                             {capitalizarNombre(p.nombre)} {capitalizarNombre(p.apellidos)}
                           </p>
-                          {p.nombre === "Paciente" && p.apellidos === "Prueba" && (
+                          {p.esDemo && (
                             <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 text-[10px] font-medium border border-amber-200 dark:border-amber-500/30 shrink-0">
                               {t("list.ejemplo")}
                             </span>

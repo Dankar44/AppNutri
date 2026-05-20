@@ -25,6 +25,7 @@ model Dietista {
   lastAccessAt    DateTime?
   stripeAccountId String?
   stripeOnboarded Boolean   @default(false)
+  earlyAdopter    Boolean   @default(false)
   horarioLaboral  Json?
   duracionCitaDefault Int?
   pdfLogoUrl      String?
@@ -218,6 +219,7 @@ model Paciente {
   recomendaciones     String?
 
   fichaSidebar        Json?
+  esDemo              Boolean           @default(false)
   activo              Boolean           @default(true)
   lastAccessAt        DateTime?
   createdAt           DateTime          @default(now())

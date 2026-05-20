@@ -18,13 +18,13 @@ export async function getEstadisticasDietista() {
     planesIA,
     pacientesConPortal,
   ] = await Promise.all([
-    prisma.paciente.count({ where: { dietistaId: dietista.id } }),
-    prisma.paciente.count({ where: { dietistaId: dietista.id, activo: true } }),
-    prisma.consulta.count({ where: { dietistaId: dietista.id } }),
-    prisma.planAlimenticio.count({ where: { dietistaId: dietista.id } }),
+    prisma.paciente.count({ where: { dietistaId: dietista.id, esDemo: false } }),
+    prisma.paciente.count({ where: { dietistaId: dietista.id, activo: true, esDemo: false } }),
+    prisma.consulta.count({ where: { dietistaId: dietista.id, paciente: { esDemo: false } } }),
+    prisma.planAlimenticio.count({ where: { dietistaId: dietista.id, paciente: { esDemo: false } } }),
     prisma.generacionIA.count({ where: { dietistaId: dietista.id, estado: "APLICADO" } }),
     prisma.accesoPaciente.count({
-      where: { activo: true, paciente: { dietistaId: dietista.id } },
+      where: { activo: true, paciente: { dietistaId: dietista.id, esDemo: false } },
     }),
   ]);
 
@@ -55,7 +55,7 @@ export async function getDistribucionObjetivos() {
 
   const pacientes = await prisma.paciente.groupBy({
     by: ["objetivo"],
-    where: { dietistaId: dietista.id },
+    where: { dietistaId: dietista.id, esDemo: false },
     _count: true,
   });
 
@@ -91,8 +91,8 @@ export async function getConsultasPorMes() {
     const label = inicio.toLocaleDateString(tag, { month: "short", year: "2-digit" });
 
     const [consultas, pacientes] = await Promise.all([
-      prisma.consulta.count({ where: { dietistaId: dietista.id, fecha: { gte: inicio, lt: fin } } }),
-      prisma.paciente.count({ where: { dietistaId: dietista.id, createdAt: { gte: inicio, lt: fin } } }),
+      prisma.consulta.count({ where: { dietistaId: dietista.id, fecha: { gte: inicio, lt: fin }, paciente: { esDemo: false } } }),
+      prisma.paciente.count({ where: { dietistaId: dietista.id, createdAt: { gte: inicio, lt: fin }, esDemo: false } }),
     ]);
 
     meses.push({ mes: label, consultas, pacientes });

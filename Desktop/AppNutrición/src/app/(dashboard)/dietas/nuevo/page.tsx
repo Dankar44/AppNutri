@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -11,6 +11,7 @@ import {
 import { useTranslations, useLocale } from "next-intl";
 import { intlTag, type Locale } from "@/i18n/config";
 import { toast } from "sonner";
+import { useUncontrolledFormPersist } from "@/lib/form-persist";
 import {
   crearPlan,
   getPacientesParaPlan,
@@ -19,6 +20,7 @@ import {
 } from "@/app/actions/planes";
 import { getPlantillas, crearPlanDesdePlantilla } from "@/app/actions/plantillas";
 import { PlantillaSelector } from "@/components/dieta/plantilla-selector";
+import { withTimeout } from "@/lib/utils";
 
 type Paciente = {
   id: string;
@@ -62,7 +64,18 @@ export default function NuevoPlanPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const plantillaParam = searchParams.get("plantilla") || "";
+  const tc = useTranslations("common.deploy");
   const [loading, setLoading] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const { wasRestored, clear: clearDraft } = useUncontrolledFormPersist(
+    "plan-nuevo",
+    formRef,
+  );
+
+  useEffect(() => {
+    if (wasRestored) toast.success(tc("datosRestaurados"));
+  }, [wasRestored, tc]);
+
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [plantillas, setPlantillas] = useState<{ id: string; nombre: string }[]>([]);
   const [plantillaId, setPlantillaId] = useState(plantillaParam);
@@ -100,8 +113,9 @@ export default function NuevoPlanPage() {
     const nombre = form.get("nombre") as string;
 
     try {
+      clearDraft();
       if (plantillaId) {
-        await crearPlanDesdePlantilla(plantillaId, pId, nombre);
+        await withTimeout(crearPlanDesdePlantilla(plantillaId, pId, nombre));
         toast.success(t("nuevo.toastPlanCreatedFromTemplate"));
       } else {
         const data: PlanFormData = {
@@ -112,7 +126,7 @@ export default function NuevoPlanPage() {
           carbohidratosObjetivo: parseFloat(form.get("carbohidratosObjetivo") as string) || undefined,
           grasasObjetivo: parseFloat(form.get("grasasObjetivo") as string) || undefined,
         };
-        await crearPlan(data);
+        await withTimeout(crearPlan(data));
         toast.success(t("nuevo.toastPlanCreated"));
       }
     } catch (error) {
@@ -145,7 +159,7 @@ export default function NuevoPlanPage() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-[1fr_minmax(300px,380px)]">
+      <form ref={formRef} onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-[1fr_minmax(300px,380px)]">
         {/* COLUMNA IZQUIERDA - FORMULARIO */}
         <div className="space-y-6 min-w-0">
           {/* Selector paciente con preview integrado */}

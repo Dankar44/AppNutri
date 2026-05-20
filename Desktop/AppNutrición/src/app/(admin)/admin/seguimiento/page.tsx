@@ -57,12 +57,12 @@ export default async function SeguimientoPage() {
         lastAccessAt: true,
         createdAt: true,
         verificado: true,
-        _count: { select: { pacientes: true } },
+        _count: { select: { pacientes: { where: { esDemo: false } } } },
       },
       orderBy: { lastAccessAt: "desc" },
     }),
     prisma.paciente.findMany({
-      where: { activo: true },
+      where: { activo: true, esDemo: false },
       select: {
         id: true,
         nombre: true,

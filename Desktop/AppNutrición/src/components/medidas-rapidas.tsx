@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { crearMedidaRapida } from "@/app/actions/medidas";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { useFormPersist } from "@/lib/form-persist";
+import { withTimeout } from "@/lib/utils";
 
 interface Props {
   pacienteId: string;
@@ -19,6 +21,25 @@ export function MedidasRapidas({ pacienteId }: Props) {
   const [altura, setAltura] = useState("");
   const [grasa, setGrasa] = useState("");
   const t = useTranslations("patients.medidasRapidas");
+  const tc = useTranslations("common.deploy");
+
+  const formState = useMemo(() => ({ peso, altura, grasa }), [peso, altura, grasa]);
+  const { wasRestored, clear: clearDraft } = useFormPersist(
+    `medidas-rapidas-${pacienteId}`,
+    formState,
+    (val) => {
+      setPeso(String(val.peso ?? ""));
+      setAltura(String(val.altura ?? ""));
+      setGrasa(String(val.grasa ?? ""));
+    },
+  );
+
+  useEffect(() => {
+    if (wasRestored) {
+      setOpen(true);
+      toast.success(tc("datosRestaurados"));
+    }
+  }, [wasRestored, tc]);
 
   const pesoNum = parseFloat(peso);
   const alturaNum = parseFloat(altura);
@@ -34,12 +55,13 @@ export function MedidasRapidas({ pacienteId }: Props) {
     }
     setLoading(true);
     try {
-      await crearMedidaRapida(pacienteId, {
+      await withTimeout(crearMedidaRapida(pacienteId, {
         peso: pesoNum || undefined,
         altura: alturaNum || undefined,
         grasaCorporal: parseFloat(grasa) || undefined,
-      });
+      }));
       toast.success(t("medidaRegistrada"));
+      clearDraft();
       setPeso("");
       setAltura("");
       setGrasa("");

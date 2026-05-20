@@ -6,6 +6,7 @@ import { Trash2, Power, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { eliminarPaciente, toggleActivoPaciente } from "@/app/actions/pacientes";
 import { useTranslations } from "next-intl";
+import { withTimeout } from "@/lib/utils";
 
 interface Props {
   pacienteId: string;
@@ -21,7 +22,7 @@ export function PacienteActions({ pacienteId, activo }: Props) {
   async function handleToggleActivo() {
     setLoading(true);
     try {
-      await toggleActivoPaciente(pacienteId);
+      await withTimeout(toggleActivoPaciente(pacienteId));
       toast.success(
         activo ? t("actions.marcadoInactivo") : t("actions.marcadoActivo")
       );
@@ -35,7 +36,7 @@ export function PacienteActions({ pacienteId, activo }: Props) {
   async function handleDelete() {
     setLoading(true);
     try {
-      await eliminarPaciente(pacienteId);
+      await withTimeout(eliminarPaciente(pacienteId));
       toast.success(t("actions.eliminadoCorrectamente"));
       await new Promise((r) => setTimeout(r, 800)); window.location.href = "/pacientes";
     } catch (error) {

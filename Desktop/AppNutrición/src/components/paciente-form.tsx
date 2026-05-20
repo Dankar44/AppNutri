@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import type { PacienteFormData } from "@/app/actions/pacientes";
 import type { Paciente } from "@/generated/prisma/client";
 import { useTranslations } from "next-intl";
+import { useFormPersist } from "@/lib/form-persist";
+import { withTimeout, ActionTimeoutError } from "@/lib/utils";
 
 function getObjetivos(t: (key: string) => string) {
   return [
@@ -110,6 +112,7 @@ function TagInput({
 export function PacienteForm({ paciente, action, submitLabel }: Props) {
   const router = useRouter();
   const t = useTranslations("patients");
+  const tc = useTranslations("common.deploy");
   const [loading, setLoading] = useState(false);
   const OBJETIVOS = getObjetivos(t);
   const SEXOS = getSexos(t);
@@ -143,6 +146,16 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
     preferencias: paciente?.preferencias || [],
     notas: paciente?.notas || "",
   });
+
+  const { wasRestored, clear: clearDraft } = useFormPersist(
+    `paciente-${paciente?.id ?? "nuevo"}`,
+    form as unknown as Record<string, unknown>,
+    (val) => setForm(val as unknown as PacienteFormData),
+  );
+
+  useEffect(() => {
+    if (wasRestored) toast.success(tc("datosRestaurados"));
+  }, [wasRestored, tc]);
 
   function update(field: string, value: unknown) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -215,15 +228,17 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
     }
     setLoading(true);
     savedRef.current = true;
+    clearDraft();
     try {
-      await action(form);
+      await withTimeout(action(form));
     } catch (error) {
-      // redirect() de Next.js lanza un error con digest "NEXT_REDIRECT" - no es un error real
       if (error && typeof error === "object" && "digest" in error) {
         throw error;
       }
       savedRef.current = false;
-      const msg = error instanceof Error ? error.message : t("form.errorGuardarPaciente");
+      const msg = error instanceof ActionTimeoutError
+        ? t("form.errorTimeout")
+        : (error instanceof Error ? error.message : t("form.errorGuardarPaciente"));
       toast.error(msg);
       setLoading(false);
     }

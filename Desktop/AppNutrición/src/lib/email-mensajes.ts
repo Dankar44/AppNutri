@@ -66,11 +66,12 @@ export async function notificarPacienteNuevoMensaje(
       id: true,
       nombre: true,
       email: true,
+      esDemo: true,
       dietista: { select: { nombre: true, apellidos: true } },
     },
   });
 
-  if (!paciente?.email) return;
+  if (!paciente?.email || paciente.esDemo) return;
 
   const key = `paciente:${paciente.id}`;
   if (!puedeEnviar(key)) return;
@@ -118,11 +119,11 @@ export async function notificarDietistaNuevoMensaje(
     }),
     prisma.paciente.findUnique({
       where: { id: pacienteId },
-      select: { nombre: true, apellidos: true },
+      select: { nombre: true, apellidos: true, esDemo: true },
     }),
   ]);
 
-  if (!dietista?.email || !paciente) return;
+  if (!dietista?.email || !paciente || paciente.esDemo) return;
 
   const key = `dietista:${dietista.id}:${pacienteId}`;
   if (!puedeEnviar(key)) return;

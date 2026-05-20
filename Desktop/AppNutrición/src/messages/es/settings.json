@@ -344,6 +344,12 @@
     "toastDesconectada": "Cuenta de Stripe desconectada",
     "toastErrorDesconectar": "Error al desconectar"
   },
+  "earlyAdopter": {
+    "label": "Founding 50",
+    "tooltip": "Eres uno de los 50 primeros nutricionistas de Annonia. Gracias por confiar desde el inicio.",
+    "title": "Founding 50",
+    "description": "Formas parte de los 50 primeros nutricionistas que confiaron en Annonia. Esta insignia es permanente y exclusiva."
+  },
   "eliminarCuenta": {
     "titulo": "Eliminar cuenta",
     "descripcion": "Todos tus datos (pacientes, consultas, medidas, dietas, mensajes…) se borrarán permanentemente.",

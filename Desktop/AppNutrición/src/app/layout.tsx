@@ -7,7 +7,7 @@ import { LocaleProvider } from "@/components/locale-provider";
 import { ThemeAwareToaster } from "@/components/theme-aware-toaster";
 import { CookieBanner } from "@/components/cookie-banner";
 import { GoogleAnalytics } from "@/components/google-analytics";
-import { DeployReloader } from "@/components/deploy-reloader";
+import { VersionChecker } from "@/components/deploy-reloader";
 import type { Locale } from "@/i18n/config";
 import "./globals.css";
 
@@ -125,7 +125,7 @@ export default async function RootLayout({
               {children}
               <ThemeAwareToaster />
               <CookieBanner />
-              <DeployReloader />
+              <VersionChecker />
             </LocaleProvider>
           </ThemeProvider>
         </NextIntlClientProvider>

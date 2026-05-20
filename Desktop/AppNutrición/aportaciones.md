@@ -608,3 +608,91 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 | 23 | Comidas reutilizables (grupo de alimentos) | Media-Alta | Media |
 | 24 | Cambiar "dietista" → "nutricionista" | Media | Baja |
 | 25 | Disclaimer legal al generar con IA | Media-Alta | Baja |
+| 26 | Ordenar resultados de búsqueda por relevancia | Alta | Baja |
+| 27 | Reordenar alimentos dentro de una comida (drag & drop) | Media-Alta | Media |
+| 28 | Informe de composición nutricional de la dieta | Alta | Media |
+
+---
+
+## 26. Ordenar resultados de búsqueda de alimentos por relevancia
+
+**Estado actual:** Al buscar alimentos (en el editor de dietas, recetas, y la lista de alimentos), los resultados se devuelven por orden de BD (normalmente por ID o nombre alfabético). Si buscas "tomate", puede aparecer "Tomate cherry" o "Salsa de tomate" antes que "Tomate". Lo mismo con "plátano" — el resultado exacto no se prioriza.
+
+**Petición (Anabel Segura, mayo 2025):** Que al buscar un alimento, el resultado más relevante (coincidencia exacta o más cercana) aparezca primero. Si escribes "tomate", lo primero debe ser "Tomate", y después "Tomate cherry", "Salsa de tomate", etc. Si escribes "plátano", lo primero debe ser "Plátano".
+
+**Tareas:**
+- [ ] Implementar ordenación por relevancia en los resultados de búsqueda de alimentos:
+  1. **Coincidencia exacta** (nombre = búsqueda) → primero
+  2. **Empieza por la búsqueda** (nombre starts with búsqueda) → segundo, ordenados por longitud de nombre (más corto = más relevante)
+  3. **Contiene la búsqueda** (nombre contains búsqueda) → tercero
+- [ ] Aplicar la misma lógica en todos los puntos de búsqueda: `getAlimentosPaginados()`, `buscarAlimentosYRecetas()`, `buscarAlimentosParaReceta()`
+- [ ] La ordenación debe ser case-insensitive y accent-insensitive (complementa tarea #19)
+- [ ] Considerar hacer la ordenación en el servidor (SQL `ORDER BY CASE WHEN...`) o en el cliente tras recibir resultados
+
+**Archivos a modificar:**
+- `src/app/actions/alimentos.ts` — `getAlimentosPaginados()`, `buscarAlimentosParaReceta()`
+- `src/app/actions/recetas.ts` — `buscarAlimentosYRecetas()`
+- Alternativa: ordenar en el componente cliente que recibe los resultados
+
+**Relacionado con:** Tarea #19 (búsqueda sin tildes)
+**Prioridad:** Alta (afecta a la velocidad de trabajo diaria — el nutri pierde tiempo buscando entre resultados desordenados)
+**Complejidad:** Baja
+
+---
+
+## 27. Reordenar alimentos dentro de una comida (drag & drop)
+
+**Estado actual:** En el editor de dietas, cada comida (Desayuno, Almuerzo, etc.) muestra los alimentos en el orden en que se añadieron. Existen botones para mover un alimento a otra comida o a otro día, pero NO se puede cambiar el orden de los alimentos dentro de la misma comida. El modelo `AlimentoEnComida` no tiene campo de orden.
+
+**Petición (Anabel Segura, mayo 2025):** Poder reordenar los alimentos dentro de una comida para que el orden tenga sentido lógico (ej: primero el plato principal, luego la guarnición, luego el postre). Idealmente con drag & drop, o con flechas arriba/abajo.
+
+**Tareas:**
+- [ ] Añadir campo `orden` (Int, default 0) al modelo `AlimentoEnComida` en schema.prisma
+- [ ] Migración: asignar orden secuencial a los alimentos existentes según su posición actual (por createdAt o ID)
+- [ ] Implementar drag & drop dentro de cada comida (usar librería como `@dnd-kit/core` o reordenar con botones ▲/▼)
+- [ ] Server action para actualizar el orden de los alimentos al reordenar (batch update de `orden`)
+- [ ] Asegurar que al añadir un nuevo alimento se le asigne `orden = max + 1` de la comida
+- [ ] Actualizar las queries que cargan alimentos de una comida para ordenar por `orden`
+- [ ] El orden debe reflejarse también en: PDF del plan, vista del paciente en portal, link compartido
+
+**Archivos a modificar:**
+- `prisma/schema.prisma` — campo `orden` en `AlimentoEnComida`
+- `src/components/dieta/comida-slot.tsx` — UI de drag & drop o flechas de reordenar
+- `src/app/actions/planes.ts` — action para reordenar, actualizar queries con `orderBy: { orden: 'asc' }`
+- `src/lib/pdf/generate-plan-pdf.ts` — respetar orden en PDF
+- `src/app/paciente/portal/dieta/page.tsx` — respetar orden en portal
+
+**Prioridad:** Media-Alta (mejora la presentación y el sentido lógico de las comidas)
+**Complejidad:** Media
+
+---
+
+## 28. Informe de composición nutricional de la dieta
+
+**Estado actual:** El PDF del plan alimenticio muestra QUÉ comer (alimentos, cantidades, comidas por día), y opcionalmente los macros por comida. Pero no existe un informe dedicado que analice la composición nutricional global de la dieta: distribución de macronutrientes, comparación con objetivos, micronutrientes, adecuación nutricional, etc. El análisis parcial se ve en el sidebar del editor de dietas (macros por día), pero no es imprimible ni exportable.
+
+**Petición (mayo 2025):** Informe imprimible de composición nutricional de la dieta. Que el profesional pueda entregar al paciente o guardar en su historial un documento que muestre el análisis nutricional completo del plan.
+
+**Contenido del informe:**
+- [ ] **Resumen energético** — Kcal totales por día y media semanal
+- [ ] **Distribución de macronutrientes** — Gramos y % de kcal de proteínas, carbohidratos y grasas (por día y media semanal)
+- [ ] **Gráfico de distribución** — Gráfico circular (pie chart) con % de macros
+- [ ] **Comparación con objetivos** — Si el paciente tiene objetivos configurados (kcal, macros), mostrar cumplimiento (% de adecuación)
+- [ ] **Desglose por comida** — Macros por comida del día (Desayuno, Almuerzo, Cena, etc.)
+- [ ] **Fibra y micronutrientes** — Si los datos están disponibles, incluir fibra, vitaminas y minerales con % de ingesta recomendada
+- [ ] **Tabla resumen semanal** — Tabla con los 7 días, macros por día, y media
+
+**Tareas técnicas:**
+- [ ] Crear función `generateNutritionReportPdf()` en `src/lib/pdf/`
+- [ ] Reutilizar los cálculos de macros que ya existen en el editor de dietas (analisis-sidebar)
+- [ ] Generar gráficos como SVG inline (sin dependencias externas) para el pie chart de macros
+- [ ] Añadir botón "Informe nutricional" en la vista del plan y en entregables del paciente
+- [ ] Aplicar el mismo sistema de temas/colores/logo que el PDF del plan
+
+**Archivos a crear/modificar:**
+- `src/lib/pdf/generate-nutrition-report-pdf.ts` (nuevo)
+- `src/components/paciente/entregables-tab.tsx` — añadir botón de informe nutricional
+- `src/components/dieta/exportar-pdf-button.tsx` — opción adicional de exportar informe nutricional
+
+**Prioridad:** Alta (petición directa de nutricionistas — necesitan documentar el análisis nutricional)
+**Complejidad:** Media

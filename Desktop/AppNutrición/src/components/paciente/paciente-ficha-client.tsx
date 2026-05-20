@@ -73,6 +73,7 @@ type PacienteSerializado = {
   intolerancias: string[];
   suplementos: string[];
   fichaInformacion: unknown;
+  esDemo?: boolean;
 };
 
 type PlanResumen = {
@@ -190,7 +191,7 @@ export function PacienteFichaClient({
               <h1 className="text-lg sm:text-2xl font-bold truncate">
                 {nombre} {apellidos}
               </h1>
-              {paciente.nombre === "Paciente" && paciente.apellidos === "Prueba" && (
+              {paciente.esDemo && (
                 <span
                   title={t("pacienteEjemploHint")}
                   className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 text-[10px] sm:text-xs font-medium border border-amber-200 dark:border-amber-500/30 shrink-0"
@@ -403,7 +404,7 @@ export function PacienteFichaClient({
         <PortalPacienteTab
           pacienteId={paciente.id}
           pacienteEmail={paciente.email}
-          esDemo={paciente.nombre === "Paciente" && paciente.apellidos === "Prueba"}
+          esDemo={paciente.esDemo === true}
         />
       )}
 

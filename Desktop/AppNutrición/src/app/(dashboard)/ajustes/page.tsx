@@ -33,6 +33,7 @@ import { CambiarPasswordForm } from "./cambiar-password-form";
 import { CamposAnamnesisForm } from "./campos-anamnesis-form";
 import { IdiomaCard } from "./idioma-card";
 import { getCamposAnamnesis } from "@/app/actions/perfil";
+import { EarlyAdopterBadge } from "@/components/early-adopter-badge";
 
 /** Encabezado común de cada bloque: icono + título + descripción. */
 function SectionHeader({
@@ -131,6 +132,7 @@ export default async function AjustesPage({
           </p>
           <p className="text-sm text-muted-foreground truncate">{dietista.email}</p>
           <div className="flex flex-wrap items-center gap-2 mt-1.5">
+            {dietista.earlyAdopter && <EarlyAdopterBadge size="sm" />}
             {dietista.especialidad && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-medium">
                 {dietista.especialidad}
@@ -171,6 +173,42 @@ export default async function AjustesPage({
               />
             </div>
           </section>
+
+          {/* EARLY ADOPTER */}
+          {dietista.earlyAdopter && (
+            <section>
+              <div id="founding" className="scroll-mt-6 flex items-start gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center shrink-0">
+                  <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5 text-violet-600 dark:text-violet-400">
+                    <path d="M8 13L5 21l3.5-1.5L12 21l3.5-1.5L19 21l-3-8" fill="currentColor" opacity="0.4" />
+                    <circle cx="12" cy="9" r="7" fill="currentColor" opacity="0.25" />
+                    <circle cx="12" cy="9" r="5.5" fill="currentColor" opacity="0.35" />
+                    <path d="M12 5.5l1.09 2.21 2.44.35-1.77 1.72.42 2.43L12 11.15l-2.18 1.06.42-2.43-1.77-1.72 2.44-.35L12 5.5z" fill="currentColor" />
+                  </svg>
+                </div>
+                <div className="min-w-0">
+                  <h2 className="text-base sm:text-lg font-semibold leading-tight">{t("earlyAdopter.title")}</h2>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">{t("earlyAdopter.description")}</p>
+                </div>
+              </div>
+              <div className="rounded-xl border border-violet-400/30 dark:border-violet-500/20 bg-gradient-to-br from-violet-50/60 via-purple-50/40 to-violet-50/60 dark:from-violet-500/5 dark:via-purple-500/5 dark:to-violet-500/5 p-5 sm:p-6 flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0 shadow-sm">
+                  <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7 text-white">
+                    <path d="M8 13L5 21l3.5-1.5L12 21l3.5-1.5L19 21l-3-8" fill="currentColor" opacity="0.5" />
+                    <circle cx="12" cy="9" r="7" fill="currentColor" opacity="0.3" />
+                    <circle cx="12" cy="9" r="5.5" fill="currentColor" opacity="0.4" />
+                    <path d="M12 5.5l1.09 2.21 2.44.35-1.77 1.72.42 2.43L12 11.15l-2.18 1.06.42-2.43-1.77-1.72 2.44-.35L12 5.5z" fill="currentColor" />
+                  </svg>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <EarlyAdopterBadge size="md" />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1.5">{t("earlyAdopter.description")}</p>
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* CONTRASEÑA */}
           <section>

@@ -264,9 +264,9 @@ export async function eliminarPaciente(id: string) {
   // Si borra el paciente demo, marcar la flag para que NO se re-cree al recargar
   const paciente = await prisma.paciente.findUnique({
     where: { id },
-    select: { nombre: true, apellidos: true },
+    select: { esDemo: true },
   });
-  const esDemo = paciente?.nombre === "Paciente" && paciente?.apellidos === "Prueba";
+  const esDemo = paciente?.esDemo === true;
 
   // Borrar pagos ANTES de eliminar el paciente: el modelo Pago usa onDelete: SetNull,
   // así que si borramos primero el paciente, los pagos quedan huérfanos (pacienteId = NULL).
@@ -376,7 +376,7 @@ export async function getPacientes(
     select: {
       id: true, nombre: true, apellidos: true, email: true, telefono: true,
       fotoUrl: true, objetivo: true, activo: true, createdAt: true,
-      peso: true, altura: true,
+      peso: true, altura: true, esDemo: true,
     },
     orderBy: { createdAt: "desc" },
   });

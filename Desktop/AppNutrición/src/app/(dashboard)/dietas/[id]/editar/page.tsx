@@ -1,19 +1,32 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { getPlan, actualizarPlan } from "@/app/actions/planes";
+import { useUncontrolledFormPersist } from "@/lib/form-persist";
+import { withTimeout } from "@/lib/utils";
 
 export default function EditarPlanPage() {
   const t = useTranslations("diets");
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
+  const tc = useTranslations("common.deploy");
   const [loading, setLoading] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const { wasRestored, clear: clearDraft } = useUncontrolledFormPersist(
+    `plan-editar-${id}`,
+    formRef,
+  );
+
+  useEffect(() => {
+    if (wasRestored) toast.success(tc("datosRestaurados"));
+  }, [wasRestored, tc]);
+
   const [plan, setPlan] = useState<{
     nombre: string;
     caloriasObjetivo: number | null;
@@ -42,13 +55,14 @@ export default function EditarPlanPage() {
 
     const form = new FormData(e.currentTarget);
     try {
-      await actualizarPlan(id, {
+      await withTimeout(actualizarPlan(id, {
         nombre: form.get("nombre") as string,
         caloriasObjetivo: parseFloat(form.get("caloriasObjetivo") as string) || undefined,
         proteinasObjetivo: parseFloat(form.get("proteinasObjetivo") as string) || undefined,
         carbohidratosObjetivo: parseFloat(form.get("carbohidratosObjetivo") as string) || undefined,
         grasasObjetivo: parseFloat(form.get("grasasObjetivo") as string) || undefined,
-      });
+      }));
+      clearDraft();
       toast.success(t("editar.toastUpdated"));
       router.push(`/dietas/${id}`);
     } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
@@ -72,7 +86,7 @@ export default function EditarPlanPage() {
         <h1 className="text-2xl sm:text-3xl font-bold">{t("editar.pageTitle")}</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6 max-w-xl">
+      <form ref={formRef} onSubmit={handleSubmit} className="space-y-6 max-w-xl">
         <section className="bg-card rounded-xl border border-border p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">{t("editar.nameLabel")}</label>

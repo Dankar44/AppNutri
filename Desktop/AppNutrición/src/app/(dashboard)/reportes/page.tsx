@@ -21,7 +21,7 @@ export default async function ReportesPage() {
     getDistribucionObjetivos(),
     getConsultasPorMes(),
     prisma.paciente.findMany({
-      where: { dietistaId: dietista.id, activo: true },
+      where: { dietistaId: dietista.id, activo: true, esDemo: false },
       select: {
         id: true,
         nombre: true,

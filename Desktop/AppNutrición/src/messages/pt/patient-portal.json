@@ -728,5 +728,9 @@
     "horarioHtmlTitle": "MEU HORÁRIO SEMANAL",
     "horarioHtmlSubtitle": "PLANO DIETÉTICO SEMANAL",
     "horaLabel": "Hora"
+  },
+  "earlyAdopter": {
+    "label": "Founding 50",
+    "tooltip": "O seu nutricionista é um dos 50 primeiros da Annonia."
   }
 }

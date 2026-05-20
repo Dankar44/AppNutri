@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ChevronDown, ChevronUp, ImageIcon } from "lucide-react";
@@ -8,6 +8,8 @@ import { crearAlimento, actualizarAlimento, type AlimentoFormData } from "@/app/
 import { VITAMINAS, MINERALES, type MicroKey } from "@/lib/micronutrientes";
 import { UNIDAD_LABELS_FULL } from "@/lib/units";
 import { useTranslations } from "next-intl";
+import { useUncontrolledFormPersist } from "@/lib/form-persist";
+import { withTimeout } from "@/lib/utils";
 
 const CATEGORIA_VALUES = [
   "FRUTAS", "VERDURAS", "CEREALES", "LEGUMBRES", "CARNES", "PESCADOS",
@@ -56,8 +58,18 @@ interface AlimentoFormProps {
 export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
   const router = useRouter();
   const t = useTranslations("foods");
+  const tc = useTranslations("common.deploy");
   const [loading, setLoading] = useState(false);
   const isEdit = !!alimentoId;
+  const formRef = useRef<HTMLFormElement>(null);
+  const { wasRestored, clear: clearDraft } = useUncontrolledFormPersist(
+    `alimento-${alimentoId ?? "nuevo"}`,
+    formRef,
+  );
+
+  useEffect(() => {
+    if (wasRestored) toast.success(tc("datosRestaurados"));
+  }, [wasRestored, tc]);
 
   const [selectedUnidad, setSelectedUnidad] = useState<string>(defaultValues?.unidad || "GRAMOS");
   const [imagenPreview, setImagenPreview] = useState<string | null>(defaultValues?.imagenUrl || null);
@@ -111,11 +123,12 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
     };
 
     try {
+      clearDraft();
       if (isEdit) {
-        await actualizarAlimento(alimentoId, data);
+        await withTimeout(actualizarAlimento(alimentoId, data));
         toast.success(t("form.alimentoActualizado"));
       } else {
-        await crearAlimento(data);
+        await withTimeout(crearAlimento(data));
         toast.success(t("form.alimentoCreado"));
       }
     } catch (error) {
@@ -129,7 +142,7 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
       <section className="bg-card rounded-xl border border-border p-6 space-y-4">
         <h2 className="text-lg font-semibold">{t("form.informacionGeneral")}</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

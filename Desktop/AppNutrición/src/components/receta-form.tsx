@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -13,6 +13,8 @@ import { IngredienteList, type IngredienteItem } from "./ingrediente-list";
 import { MacroAnalysisCard } from "./alimento/macro-analysis-card";
 import { calcularMacrosPorcion, sumarMacros, convertirAGramos } from "@/lib/macros";
 import { useTranslations } from "next-intl";
+import { withTimeout } from "@/lib/utils";
+import { useUncontrolledFormPersist } from "@/lib/form-persist";
 
 interface RecetaFormProps {
   recetaId?: string;
@@ -27,8 +29,18 @@ export function RecetaForm({
 }: RecetaFormProps) {
   const router = useRouter();
   const t = useTranslations("recipes");
+  const tc = useTranslations("common.deploy");
   const [loading, setLoading] = useState(false);
   const [ingredientes, setIngredientes] = useState<IngredienteItem[]>(defaultIngredientes);
+  const formRef = useRef<HTMLFormElement>(null);
+  const { wasRestored, clear: clearDraft } = useUncontrolledFormPersist(
+    `receta-${recetaId ?? "nueva"}`,
+    formRef,
+  );
+
+  useEffect(() => {
+    if (wasRestored) toast.success(tc("datosRestaurados"));
+  }, [wasRestored, tc]);
   const porciones = 1;
   const isEdit = !!recetaId;
 
@@ -61,11 +73,12 @@ export function RecetaForm({
     }));
 
     try {
+      clearDraft();
       if (isEdit) {
-        await actualizarReceta(recetaId, data, ingredientesData);
+        await withTimeout(actualizarReceta(recetaId, data, ingredientesData));
         toast.success(t("form.recetaActualizada"));
       } else {
-        await crearReceta(data, ingredientesData);
+        await withTimeout(crearReceta(data, ingredientesData));
         toast.success(t("form.recetaCreada"));
       }
     } catch (error) {
@@ -92,7 +105,7 @@ export function RecetaForm({
   const pesoTotal = ingredientes.reduce((sum, ing) => sum + convertirAGramos(ing.cantidad || 0, ing.unidad, ing.porcion || 100), 0);
 
   return (
-    <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-6 items-start">
+    <form ref={formRef} onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-6 items-start">
       <div className="space-y-6 min-w-0">
       <section className="bg-card rounded-xl border border-border p-6 space-y-4">
         <h2 className="text-lg font-semibold">{t("form.informacionReceta")}</h2>
