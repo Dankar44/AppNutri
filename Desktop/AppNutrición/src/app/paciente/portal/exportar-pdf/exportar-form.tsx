@@ -143,6 +143,7 @@ export function ExportarPDFPaciente({
   clinica,
 }: Props) {
   const t = useTranslations("patient-portal.exportarPdf");
+  const tPdf = useTranslations("pdf");
   const tEntregables = useTranslations("patients.entregables");
   const horarioDias = [
     tEntregables("diaLunes"),
@@ -182,10 +183,10 @@ export function ExportarPDFPaciente({
       logoDataUrl,
       clinica,
       sections: toSections(applied),
-    });
+    }, tPdf);
     const withHorario = applyHorario(html, applied, horarioHtml);
     return withHorario.replace(/<script[\s\S]*?<\/script>/gi, "");
-  }, [plan, pacienteNombre, dietistaNombre, recomendaciones, tema, brandName, logoDataUrl, clinica, applied, horarioHtml]);
+  }, [plan, pacienteNombre, dietistaNombre, recomendaciones, tema, brandName, logoDataUrl, clinica, applied, horarioHtml, tPdf]);
 
   const totalPages = Math.max(1, (previewHtml.match(/class="page/g) || []).length);
   const [previewPage, setPreviewPage] = useState(0);
@@ -224,7 +225,7 @@ export function ExportarPDFPaciente({
       logoDataUrl,
       clinica,
       sections: toSections(applied),
-    });
+    }, tPdf);
     const withHorario = applyHorario(html, applied, horarioHtml);
     const ventana = window.open("", "_blank");
     if (!ventana) return;

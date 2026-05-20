@@ -170,6 +170,7 @@ export function useUncontrolledFormPersist(
 
     requestAnimationFrame(() => {
       for (const [name, value] of Object.entries(saved)) {
+        if (value === "" || value === null || value === undefined) continue;
         const el = form.elements.namedItem(name);
         if (!el) continue;
         if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement) {

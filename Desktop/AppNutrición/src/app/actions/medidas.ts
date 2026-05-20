@@ -73,6 +73,20 @@ export async function crearMedida(data: MedidaFormData) {
 
   const imc = calcularIMC(peso ?? undefined, altura || paciente.altura || undefined);
 
+  const pliegueAbdominal = validateNumberOptional(data.pliegueAbdominal, 0, 100);
+  const pliegueAxilar = validateNumberOptional(data.pliegueAxilar, 0, 100);
+  const plieguePectoral = validateNumberOptional(data.plieguePectoral, 0, 100);
+  const pliegueSubescapular = validateNumberOptional(data.pliegueSubescapular, 0, 100);
+  const pliegueSuprailiaco = validateNumberOptional(data.pliegueSuprailiaco, 0, 100);
+  const pliegueTricipital = validateNumberOptional(data.pliegueTricipital, 0, 100);
+  const pliegueMuslo = validateNumberOptional(data.pliegueMuslo, 0, 100);
+  const colesterolHDL = validateNumberOptional(data.colesterolHDL, 0, 500);
+  const colesterolLDL = validateNumberOptional(data.colesterolLDL, 0, 500);
+  const colesterolTotal = validateNumberOptional(data.colesterolTotal, 0, 500);
+  const presionDiastolica = validateNumberOptional(data.presionDiastolica, 0, 300);
+  const presionSistolica = validateNumberOptional(data.presionSistolica, 0, 300);
+  const trigliceridos = validateNumberOptional(data.trigliceridos, 0, 1000);
+
   const medida = await prisma.medidaAntropometrica.create({
     data: {
       pacienteId: data.pacienteId,
@@ -91,39 +105,22 @@ export async function crearMedida(data: MedidaFormData) {
       masaOsea,
       perimetroAbdomen,
       grasaVisceral,
+      pliegueAbdominal,
+      pliegueAxilar,
+      plieguePectoral,
+      pliegueSubescapular,
+      pliegueSuprailiaco,
+      pliegueTricipital,
+      pliegueMuslo,
+      colesterolHDL,
+      colesterolLDL,
+      colesterolTotal,
+      presionDiastolica,
+      presionSistolica,
+      trigliceridos,
       notas,
     },
   });
-
-  // Campos extra no conocidos por Prisma local (pliegues + analíticos)
-  const pliegueAbdominal = validateNumberOptional(data.pliegueAbdominal, 0, 100);
-  const pliegueAxilar = validateNumberOptional(data.pliegueAxilar, 0, 100);
-  const plieguePectoral = validateNumberOptional(data.plieguePectoral, 0, 100);
-  const pliegueSubescapular = validateNumberOptional(data.pliegueSubescapular, 0, 100);
-  const pliegueSuprailiaco = validateNumberOptional(data.pliegueSuprailiaco, 0, 100);
-  const pliegueTricipital = validateNumberOptional(data.pliegueTricipital, 0, 100);
-  const pliegueMuslo = validateNumberOptional(data.pliegueMuslo, 0, 100);
-  const colesterolHDL = validateNumberOptional(data.colesterolHDL, 0, 500);
-  const colesterolLDL = validateNumberOptional(data.colesterolLDL, 0, 500);
-  const colesterolTotal = validateNumberOptional(data.colesterolTotal, 0, 500);
-  const presionDiastolica = validateNumberOptional(data.presionDiastolica, 0, 300);
-  const presionSistolica = validateNumberOptional(data.presionSistolica, 0, 300);
-  const trigliceridos = validateNumberOptional(data.trigliceridos, 0, 1000);
-
-  await prisma.$queryRawUnsafe(
-    `UPDATE medidas_antropometricas SET
-      "pliegueAbdominal" = $1, "pliegueAxilar" = $2, "plieguePectoral" = $3,
-      "pliegueSubescapular" = $4, "pliegueSuprailiaco" = $5, "pliegueTricipital" = $6,
-      "pliegueMuslo" = $7, "colesterolHDL" = $8, "colesterolLDL" = $9,
-      "colesterolTotal" = $10, "presionDiastolica" = $11, "presionSistolica" = $12,
-      trigliceridos = $13
-    WHERE id = $14`,
-    pliegueAbdominal, pliegueAxilar, plieguePectoral,
-    pliegueSubescapular, pliegueSuprailiaco, pliegueTricipital,
-    pliegueMuslo, colesterolHDL, colesterolLDL,
-    colesterolTotal, presionDiastolica, presionSistolica,
-    trigliceridos, medida.id
-  );
 
   if (peso) {
     await prisma.paciente.update({
@@ -179,13 +176,14 @@ export async function getMedidas(pacienteId: string): Promise<MedidaRow[]> {
   const dietista = await getCurrentDietista();
   if (!dietista) return [];
 
-  return prisma.$queryRawUnsafe<MedidaRow[]>(
-    `SELECT m.* FROM medidas_antropometricas m
-     JOIN pacientes p ON m."pacienteId" = p.id
-     WHERE m."pacienteId" = $1 AND p."dietistaId" = $2
-     ORDER BY m.fecha DESC`,
-    pacienteId, dietista.id
-  );
+  const rows = await prisma.medidaAntropometrica.findMany({
+    where: {
+      pacienteId,
+      paciente: { dietistaId: dietista.id },
+    },
+    orderBy: { fecha: "desc" },
+  });
+  return rows as MedidaRow[];
 }
 
 export async function getMedidasEvolucion(pacienteId: string) {

@@ -121,7 +121,7 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
         // silencioso
       }
     }
-    const id = setInterval(fetchCounts, 45_000);
+    const id = setInterval(fetchCounts, 90_000);
     return () => {
       cancelled = true;
       clearInterval(id);

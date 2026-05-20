@@ -7,9 +7,10 @@ interface Props {
   pacienteId: string;
   defaultPeso?: number | null;
   defaultAltura?: number | null;
+  defaults?: Partial<Record<string, number | null>>;
 }
 
-export function MedidasFormWrapper({ pacienteId, defaultPeso, defaultAltura }: Props) {
+export function MedidasFormWrapper({ pacienteId, defaultPeso, defaultAltura, defaults }: Props) {
   const router = useRouter();
 
   return (
@@ -17,7 +18,8 @@ export function MedidasFormWrapper({ pacienteId, defaultPeso, defaultAltura }: P
       pacienteId={pacienteId}
       defaultPeso={defaultPeso}
       defaultAltura={defaultAltura}
-      onSuccess={() => router.refresh()}
+      defaults={defaults}
+      onSuccess={() => router.push(`/pacientes/${pacienteId}?pestana=mediciones`)}
     />
   );
 }

@@ -298,6 +298,7 @@ export function EntregablesTab({
   planActivo,
 }: EntregablesTabProps) {
   const t = useTranslations("patients.entregables");
+  const tPdf = useTranslations("pdf");
   const [sendingPlan, startSendingPlan] = useTransition();
 
   // PDF configurator state
@@ -371,7 +372,7 @@ export function EntregablesTab({
   // Regenerate PDF HTML when data o opciones aplicadas cambian (no cuando cambia pdfOptions/overrides en edición)
   useEffect(() => {
     if (!pdfData) { setPdfHtml(null); return; }
-    const html = generatePlanPDF({ ...pdfData, sections: toSections(appliedOptions), displayOverrides: appliedOverrides });
+    const html = generatePlanPDF({ ...pdfData, sections: toSections(appliedOptions), displayOverrides: appliedOverrides }, tPdf);
     const previewHtml = html.replace(/<script[\s\S]*?<\/script>/gi, "");
     setPdfHtml(previewHtml);
     const count = (previewHtml.match(/class="page/g) || []).length;
@@ -394,7 +395,7 @@ export function EntregablesTab({
       toast.error(t("sinPlanActivoSeleccionado"));
       return;
     }
-    const printHtml = generatePlanPDF({ ...pdfData, sections: toSections(appliedOptions), displayOverrides: appliedOverrides });
+    const printHtml = generatePlanPDF({ ...pdfData, sections: toSections(appliedOptions), displayOverrides: appliedOverrides }, tPdf);
     const ventana = window.open("", "_blank");
     if (!ventana) return;
     ventana.document.write(printHtml);

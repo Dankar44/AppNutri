@@ -479,6 +479,19 @@ model MedidaAntropometrica {
   masaOsea            Float?
   perimetroAbdomen    Float?
   grasaVisceral       Float?
+  pliegueAbdominal    Float?
+  pliegueAxilar       Float?
+  plieguePectoral     Float?
+  pliegueSubescapular Float?
+  pliegueSuprailiaco  Float?
+  pliegueTricipital   Float?
+  pliegueMuslo        Float?
+  colesterolHDL       Float?
+  colesterolLDL       Float?
+  colesterolTotal     Float?
+  presionDiastolica   Float?
+  presionSistolica    Float?
+  trigliceridos       Float?
   notas               String?
   createdAt           DateTime  @default(now())
 

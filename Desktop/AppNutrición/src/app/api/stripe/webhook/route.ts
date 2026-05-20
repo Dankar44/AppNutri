@@ -1,13 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
-import pg from "pg";
-
-// Pool directa para el webhook (no pasa por Prisma para evitar problemas con server actions)
-const pool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL!,
-  ssl: { rejectUnauthorized: false },
-  max: 1,
-});
+import { prisma } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -29,49 +22,40 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  const client = await pool.connect();
-  try {
-    switch (event.type) {
-      // ─── Pago completado via Checkout ──────────────────────
-      case "checkout.session.completed": {
-        const session = event.data.object;
-        if (session.payment_status === "paid" && session.metadata?.pagoId) {
-          await client.query(
-            `UPDATE pagos SET estado = 'PAGADO', "metodoPago" = 'Stripe', "fechaPago" = NOW(), "updatedAt" = NOW()
-             WHERE id = $1`,
-            [session.metadata.pagoId]
-          );
-        }
-        break;
-      }
-
-      // ─── Checkout expirado ─────────────────────────────────
-      case "checkout.session.expired": {
-        const session = event.data.object;
-        if (session.metadata?.pagoId) {
-          // Limpiar la URL de pago expirada
-          await client.query(
-            `UPDATE pagos SET "stripeSessionId" = NULL, "stripePaymentUrl" = NULL, "updatedAt" = NOW()
-             WHERE id = $1 AND estado = 'PENDIENTE'`,
-            [session.metadata.pagoId]
-          );
-        }
-        break;
-      }
-
-      // ─── Cuenta Connect actualizada ────────────────────────
-      case "account.updated": {
-        const account = event.data.object;
-        const onboarded = account.charges_enabled && account.details_submitted;
-        await client.query(
-          `UPDATE dietistas SET "stripeOnboarded" = $1 WHERE "stripeAccountId" = $2`,
-          [onboarded, account.id]
+  switch (event.type) {
+    case "checkout.session.completed": {
+      const session = event.data.object;
+      if (session.payment_status === "paid" && session.metadata?.pagoId) {
+        await prisma.$queryRawUnsafe(
+          `UPDATE pagos SET estado = 'PAGADO', "metodoPago" = 'Stripe', "fechaPago" = NOW(), "updatedAt" = NOW()
+           WHERE id = $1`,
+          session.metadata.pagoId
         );
-        break;
       }
+      break;
     }
-  } finally {
-    client.release();
+
+    case "checkout.session.expired": {
+      const session = event.data.object;
+      if (session.metadata?.pagoId) {
+        await prisma.$queryRawUnsafe(
+          `UPDATE pagos SET "stripeSessionId" = NULL, "stripePaymentUrl" = NULL, "updatedAt" = NOW()
+           WHERE id = $1 AND estado = 'PENDIENTE'`,
+          session.metadata.pagoId
+        );
+      }
+      break;
+    }
+
+    case "account.updated": {
+      const account = event.data.object;
+      const onboarded = account.charges_enabled && account.details_submitted;
+      await prisma.$queryRawUnsafe(
+        `UPDATE dietistas SET "stripeOnboarded" = $1 WHERE "stripeAccountId" = $2`,
+        onboarded, account.id
+      );
+      break;
+    }
   }
 
   return NextResponse.json({ received: true });

@@ -64,7 +64,7 @@ export function ProgresoCard({ peso, imc, grasa, sparkData, className = "" }: Pr
 
       <div className="px-5 pb-2 flex-1 flex flex-col justify-end">
         {chartData.length >= 2 && mounted ? (
-          <div className="h-20 -mx-2">
+          <div className="h-20 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData} margin={{ top: 4, right: 8, left: 8, bottom: 0 }}>
                 <defs>

@@ -295,50 +295,9 @@ export function PacienteFichaMedicionesTab({
 
     startTransition(async () => {
       try {
-        const payload: MedidaFormData = { pacienteId, fecha: fechaNueva };
-        switch (vista) {
-          case "peso":
-            payload.peso = v;
-            break;
-          case "altura":
-            payload.altura = v;
-            break;
-          case "perimetroCintura":
-            payload.perimetroCintura = v;
-            break;
-          case "perimetroCadera":
-            payload.perimetroCadera = v;
-            break;
-          case "perimetroBrazo":
-            payload.perimetroBrazo = v;
-            break;
-          case "grasaCorporal":
-            payload.grasaCorporal = v;
-            break;
-          case "masaMuscular":
-            payload.masaMuscular = v;
-            break;
-          case "grasaSubcutanea":
-            payload.grasaSubcutanea = v;
-            break;
-          case "musculoEsqueletico":
-            payload.musculoEsqueletico = v;
-            break;
-          case "agua":
-            payload.agua = v;
-            break;
-          case "masaOsea":
-            payload.masaOsea = v;
-            break;
-          case "perimetroAbdomen":
-            payload.perimetroAbdomen = v;
-            break;
-          case "grasaVisceral":
-            payload.grasaVisceral = v;
-            break;
-          default:
-            return;
-        }
+        const key = vista as keyof MedidaFormData;
+        if (!(key in METRIC_META)) return;
+        const payload: MedidaFormData = { pacienteId, fecha: fechaNueva, [key]: v };
         await crearMedida(payload);
         toast.success(t("medicionRegistrada"));
         setValorNuevo("");
@@ -453,6 +412,12 @@ export function PacienteFichaMedicionesTab({
               active={vista === "perimetroCadera"}
               onClick={() => setVista("perimetroCadera")}
             />
+            <SidebarRow
+              label={t("metricaBrazo")}
+              value={fmt(ultBrazo, "cm")}
+              active={vista === "perimetroBrazo"}
+              onClick={() => setVista("perimetroBrazo")}
+            />
           </SidebarCard>
 
           <SidebarCard title={t("composicionCorporal")}>
@@ -513,7 +478,7 @@ export function PacienteFichaMedicionesTab({
             }
           >
             {PLIEGUES_KEYS.map(({ key, labelKey }) => (
-              <SidebarRowStatic key={key} label={t(labelKey)} value={fmt(latestValue(medidas, key), "mm")} />
+              <SidebarRow key={key} label={t(labelKey)} value={fmt(latestValue(medidas, key), "mm")} active={vista === key} onClick={() => setVista(key)} />
             ))}
           </SidebarCard>
 
@@ -531,7 +496,7 @@ export function PacienteFichaMedicionesTab({
           >
             {ANALITICOS_KEYS.map(({ key, labelKey }) => {
               const unit = key.startsWith("presion") ? "mmHg" : "mg/dL";
-              return <SidebarRowStatic key={key} label={t(labelKey)} value={fmt(latestValue(medidas, key), unit)} />;
+              return <SidebarRow key={key} label={t(labelKey)} value={fmt(latestValue(medidas, key), unit)} active={vista === key} onClick={() => setVista(key)} />;
             })}
           </SidebarCard>
         </aside>
@@ -601,13 +566,7 @@ export function PacienteFichaMedicionesTab({
                       {t("unidad")}
                     </label>
                     <div className="h-10 flex items-center px-3 rounded-lg border border-input bg-background text-sm">
-                      {METRIC_META[vista].unit === "kg"
-                        ? t("unidadKilogramo")
-                        : METRIC_META[vista].unit === "cm"
-                          ? t("unidadCentimetro")
-                          : METRIC_META[vista].unit === "%"
-                            ? t("unidadPorcentaje")
-                            : t("unidadNivel")}
+                      {METRIC_META[vista].unit || t("unidadNivel")}
                     </div>
                   </div>
                   <button
@@ -678,7 +637,7 @@ export function PacienteFichaMedicionesTab({
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart
                         data={chartData}
-                        margin={{ top: 8, right: 8, left: -16, bottom: 0 }}
+                        margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
                       >
                         <defs>
                           <linearGradient id="colorMed" x1="0" y1="0" x2="0" y2="1">
@@ -812,14 +771,6 @@ function SidebarRow({
   );
 }
 
-function SidebarRowStatic({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm border border-border/60 bg-background/50">
-      <span className="text-foreground">{label}</span>
-      <span className="text-muted-foreground tabular-nums">{value}</span>
-    </div>
-  );
-}
 
 function PlaceholderPanel({ text }: { text: string }) {
   return (

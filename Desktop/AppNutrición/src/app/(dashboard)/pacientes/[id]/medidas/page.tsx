@@ -44,7 +44,7 @@ export default async function MedidasPage({ params }: Props) {
     <div>
       <div className="mb-6">
         <Link
-          href={`/pacientes/${id}`}
+          href={`/pacientes/${id}?pestana=mediciones`}
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3 py-2 sm:py-0 -my-2 sm:my-0"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -63,6 +63,15 @@ export default async function MedidasPage({ params }: Props) {
             pacienteId={id}
             defaultPeso={paciente.peso}
             defaultAltura={paciente.altura}
+            defaults={(() => {
+              const d: Record<string, number> = {};
+              for (const m of medidas) {
+                for (const [k, v] of Object.entries(m)) {
+                  if (typeof v === "number" && !(k in d)) d[k] = v;
+                }
+              }
+              return Object.keys(d).length > 0 ? d : undefined;
+            })()}
           />
         </section>
 

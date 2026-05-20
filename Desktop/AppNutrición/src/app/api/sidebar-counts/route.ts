@@ -15,7 +15,7 @@ export async function GET() {
     const mensajesCount = convNoLeidas + (soporteNoLeidos > 0 ? 1 : 0);
     return NextResponse.json(
       { mensajesCount, badges },
-      { headers: { "Cache-Control": "private, max-age=15" } },
+      { headers: { "Cache-Control": "private, max-age=30" } },
     );
   } catch (e) {
     console.error("[sidebar-counts]", e);
