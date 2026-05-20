@@ -231,7 +231,7 @@ export async function getPacientesParaCita() {
   if (!dietista) return [];
 
   return prisma.paciente.findMany({
-    where: { dietistaId: dietista.id, activo: true, esDemo: false },
+    where: { dietistaId: dietista.id, activo: true },
     select: {
       id: true,
       nombre: true,
