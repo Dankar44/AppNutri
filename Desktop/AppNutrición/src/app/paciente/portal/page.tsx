@@ -4,11 +4,6 @@ import {
   Calendar,
   ArrowRight,
   LayoutDashboard,
-  Trophy,
-  TrendingDown,
-  Heart,
-  Flame,
-  type LucideIcon,
 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { getLocale } from "@/i18n/locale";
@@ -24,7 +19,7 @@ import { HoyCard } from "@/components/paciente/dashboard/hoy-card";
 import { ComidaActualCard } from "@/components/paciente/dashboard/comida-actual-card";
 import { ProgresoCard, type SparkPoint } from "@/components/paciente/dashboard/progreso-card";
 import { MensajesPreviewCard } from "@/components/paciente/dashboard/mensajes-preview-card";
-import { HitoRecienteCard } from "@/components/paciente/dashboard/hito-reciente-card";
+import { HitoRecienteCard, type HitoIconName } from "@/components/paciente/dashboard/hito-reciente-card";
 
 const DIAS_SEMANA_MAP: Record<number, string> = {
   0: "DOMINGO",
@@ -356,7 +351,7 @@ export default async function PatientPortalPage() {
               titulo={hitoReciente.titulo}
               descripcion={hitoReciente.descripcion}
               fecha={hitoReciente.fecha}
-              Icon={hitoReciente.Icon}
+              iconName={hitoReciente.iconName}
               color={hitoReciente.color}
               className="h-full"
             />
@@ -461,21 +456,21 @@ function calcularHitoReciente(
   imcs: { fecha: Date; v: number }[],
   t: Awaited<ReturnType<typeof getTranslations<"patient-portal">>>,
   intlLocale: string,
-): { titulo: string; descripcion: string; fecha: string; Icon: LucideIcon; color: string } | null {
+): { titulo: string; descripcion: string; fecha: string; iconName: HitoIconName; color: string } | null {
   const candidatos: {
     titulo: string;
     descripcion: string;
     fecha: Date;
-    Icon: LucideIcon;
+    iconName: HitoIconName;
     color: string;
   }[] = [];
 
   if (pesos.length >= 2) {
     const inicial = pesos[0].v;
     for (const u of [
-      { kg: 1, tituloKey: "portal.hitos.primerKilo" as const, Icon: TrendingDown, color: "#10b981" },
-      { kg: 5, tituloKey: "portal.hitos.cincoKilosMenos" as const, Icon: Trophy, color: "#f59e0b" },
-      { kg: 10, tituloKey: "portal.hitos.diezKilosMenos" as const, Icon: Trophy, color: "#ef4444" },
+      { kg: 1, tituloKey: "portal.hitos.primerKilo" as const, iconName: "TrendingDown" as const, color: "#10b981" },
+      { kg: 5, tituloKey: "portal.hitos.cincoKilosMenos" as const, iconName: "Trophy" as const, color: "#f59e0b" },
+      { kg: 10, tituloKey: "portal.hitos.diezKilosMenos" as const, iconName: "Trophy" as const, color: "#ef4444" },
     ]) {
       const punto = pesos.find((m) => inicial - m.v >= u.kg);
       if (punto)
@@ -483,7 +478,7 @@ function calcularHitoReciente(
           titulo: t(u.tituloKey),
           descripcion: t("portal.hitos.hasBajado", { kg: u.kg }),
           fecha: punto.fecha,
-          Icon: u.Icon,
+          iconName: u.iconName,
           color: u.color,
         });
     }
@@ -496,7 +491,7 @@ function calcularHitoReciente(
         titulo: t("portal.hitos.imcSaludable"),
         descripcion: t("portal.hitos.imcBajoDe25"),
         fecha: saludable.fecha,
-        Icon: Heart,
+        iconName: "Heart",
         color: "#ec4899",
       });
   }
@@ -517,7 +512,7 @@ function calcularHitoReciente(
         titulo: t("portal.hitos.enRacha"),
         descripcion: t("portal.hitos.tresMedicionesBajando"),
         fecha,
-        Icon: Flame,
+        iconName: "Flame",
         color: "#f97316",
       });
   }

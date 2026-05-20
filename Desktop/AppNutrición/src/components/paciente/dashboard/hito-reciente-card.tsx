@@ -1,19 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Trophy, type LucideIcon } from "lucide-react";
+import { ArrowRight, Trophy, TrendingDown, Heart, Flame } from "lucide-react";
 import { useTranslations } from "next-intl";
+
+const ICON_MAP = {
+  TrendingDown,
+  Trophy,
+  Heart,
+  Flame,
+} as const;
+
+export type HitoIconName = keyof typeof ICON_MAP;
 
 interface Props {
   titulo: string;
   descripcion: string;
   fecha: string;
-  Icon: LucideIcon;
+  iconName: HitoIconName;
   color: string;
   className?: string;
 }
 
-export function HitoRecienteCard({ titulo, descripcion, fecha, Icon, color, className = "" }: Props) {
+export function HitoRecienteCard({ titulo, descripcion, fecha, iconName, color, className = "" }: Props) {
+  const Icon = ICON_MAP[iconName];
   const t = useTranslations("patient-portal.dashboard.hitoRecienteCard");
   return (
     <Link
