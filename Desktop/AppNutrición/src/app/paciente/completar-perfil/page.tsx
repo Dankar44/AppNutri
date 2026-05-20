@@ -6,6 +6,7 @@ import { completarPerfilPaciente } from "@/app/actions/paciente-auth";
 import { toast } from "sonner";
 import { compressImage, IMAGE_PRESETS } from "@/lib/image-compress";
 import { useTranslations } from "next-intl";
+import { isNextNavigation } from "@/lib/utils";
 
 export default function CompletarPerfilPage() {
   const t = useTranslations("patient-portal");
@@ -57,7 +58,7 @@ export default function CompletarPerfilPage() {
       await completarPerfilPaciente(password, fotoPreview || undefined);
       toast.success(t("completarPerfil.toast.perfilCompletado"));
     } catch (error) {
-      if (error && typeof error === "object" && "digest" in error) throw error;
+      if (isNextNavigation(error)) throw error;
       toast.error(t("completarPerfil.toast.errorCompletar"));
       setLoading(false);
     }

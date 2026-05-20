@@ -7,7 +7,7 @@ import { crearMedidaRapida } from "@/app/actions/medidas";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { useFormPersist } from "@/lib/form-persist";
-import { withTimeout } from "@/lib/utils";
+import { isNextNavigation, withTimeout } from "@/lib/utils";
 
 interface Props {
   pacienteId: string;
@@ -68,7 +68,7 @@ export function MedidasRapidas({ pacienteId }: Props) {
       setOpen(false);
       router.refresh();
     } catch (err) {
-      if (err && typeof err === "object" && "digest" in err) throw err;
+      if (isNextNavigation(err)) throw err;
       toast.error(t("errorRegistrar"));
     } finally {
       setLoading(false);

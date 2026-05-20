@@ -9,7 +9,7 @@ import type { PacienteFormData } from "@/app/actions/pacientes";
 import type { Paciente } from "@/generated/prisma/client";
 import { useTranslations } from "next-intl";
 import { useFormPersist } from "@/lib/form-persist";
-import { withTimeout, ActionTimeoutError } from "@/lib/utils";
+import { withTimeout, ActionTimeoutError, isNextNavigation } from "@/lib/utils";
 
 function getObjetivos(t: (key: string) => string) {
   return [
@@ -232,9 +232,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
     try {
       await withTimeout(action(form));
     } catch (error) {
-      if (error && typeof error === "object" && "digest" in error) {
-        throw error;
-      }
+      if (isNextNavigation(error)) throw error;
       savedRef.current = false;
       const msg = error instanceof ActionTimeoutError
         ? t("form.errorTimeout")

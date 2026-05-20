@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { crearConsulta } from "@/app/actions/consultas";
 import { crearMedida } from "@/app/actions/medidas";
 import { useUncontrolledFormPersist } from "@/lib/form-persist";
-import { withTimeout } from "@/lib/utils";
+import { isNextNavigation, withTimeout } from "@/lib/utils";
 
 export default function NuevaConsultaPage() {
   const params = useParams();
@@ -66,7 +66,7 @@ export default function NuevaConsultaPage() {
 
       clearDraft();
       toast.success(t("consultas.consultaRegistrada"));
-    } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
+    } catch (error) { if (isNextNavigation(error)) throw error;
       toast.error(t("consultas.errorCrearConsulta"));
       setLoading(false);
     }

@@ -20,7 +20,7 @@ import {
 } from "@/app/actions/planes";
 import { getPlantillas, crearPlanDesdePlantilla } from "@/app/actions/plantillas";
 import { PlantillaSelector } from "@/components/dieta/plantilla-selector";
-import { withTimeout } from "@/lib/utils";
+import { isNextNavigation, withTimeout } from "@/lib/utils";
 
 type Paciente = {
   id: string;
@@ -130,7 +130,7 @@ export default function NuevoPlanPage() {
         toast.success(t("nuevo.toastPlanCreated"));
       }
     } catch (error) {
-      if (error && typeof error === "object" && "digest" in error) throw error;
+      if (isNextNavigation(error)) throw error;
       toast.error(t("nuevo.toastErrorCreating"));
       setLoading(false);
     }

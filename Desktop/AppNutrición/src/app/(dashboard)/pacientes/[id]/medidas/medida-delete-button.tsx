@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { eliminarMedida } from "@/app/actions/medidas";
 import { toast } from "sonner";
+import { isNextNavigation } from "@/lib/utils";
 
 export function MedidaDeleteButton({ medidaId }: { medidaId: string }) {
   const router = useRouter();
@@ -15,7 +16,7 @@ export function MedidaDeleteButton({ medidaId }: { medidaId: string }) {
       await eliminarMedida(medidaId);
       toast.success(t("medidas.medidaEliminada"));
       router.refresh();
-    } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
+    } catch (error) { if (isNextNavigation(error)) throw error;
       toast.error(t("medidas.errorEliminar"));
     }
   }

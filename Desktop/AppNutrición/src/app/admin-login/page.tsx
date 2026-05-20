@@ -6,6 +6,7 @@ import Link from "next/link";
 import { loginAdmin } from "@/app/actions/admin";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { isNextNavigation } from "@/lib/utils";
 
 export default function AdminLoginPage() {
   const t = useTranslations("admin.login");
@@ -24,7 +25,7 @@ export default function AdminLoginPage() {
         setLoading(false);
       }
     } catch (error) {
-      if (error && typeof error === "object" && "digest" in error) throw error;
+      if (isNextNavigation(error)) throw error;
       toast.error(t("errorLogin"));
       setLoading(false);
     }

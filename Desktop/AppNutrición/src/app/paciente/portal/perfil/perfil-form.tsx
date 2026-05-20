@@ -6,6 +6,7 @@ import { actualizarPerfilPaciente, actualizarFotoPaciente, cambiarPasswordPacien
 import { toast } from "sonner";
 import { compressImage, IMAGE_PRESETS } from "@/lib/image-compress";
 import { useTranslations } from "next-intl";
+import { isNextNavigation } from "@/lib/utils";
 
 interface Props {
   nombre: string;
@@ -39,7 +40,7 @@ export function PerfilPacienteForm({ nombre, apellidos, email, telefono, fotoUrl
       await actualizarPerfilPaciente(form);
       toast.success(t("perfil.toast.perfilActualizado"));
     } catch (err) {
-      if (err && typeof err === "object" && "digest" in err) throw err;
+      if (isNextNavigation(err)) throw err;
       toast.error(t("perfil.toast.errorGuardar"));
     } finally {
       setSaving(false);
@@ -84,7 +85,7 @@ export function PerfilPacienteForm({ nombre, apellidos, email, telefono, fotoUrl
       toast.success(t("perfil.toast.passwordCambiada"));
       setPassForm({ actual: "", nueva: "", confirmar: "" });
     } catch (err) {
-      if (err && typeof err === "object" && "digest" in err) throw err;
+      if (isNextNavigation(err)) throw err;
       const msg = err instanceof Error ? err.message : t("perfil.toast.errorPassword");
       toast.error(msg);
     } finally {

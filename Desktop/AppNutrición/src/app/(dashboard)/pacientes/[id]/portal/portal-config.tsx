@@ -6,7 +6,7 @@ import { Key, Check, AlertTriangle, Shield } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { crearAccesoPaciente } from "@/app/actions/paciente-auth";
 import { toast } from "sonner";
-import { withTimeout } from "@/lib/utils";
+import { isNextNavigation, withTimeout } from "@/lib/utils";
 
 interface Props {
   pacienteId: string;
@@ -43,7 +43,7 @@ export function PortalConfig({ pacienteId, emailDefault, accesoExistente }: Prop
       setConfirmando(false);
       toast.success(t("portal.pinGenerado"));
       router.refresh();
-    } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
+    } catch (error) { if (isNextNavigation(error)) throw error;
       toast.error(t("portal.errorConfigurarAcceso"));
     } finally {
       setLoading(false);

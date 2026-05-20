@@ -186,8 +186,8 @@ export async function getDietistasAdmin(busqueda?: string): Promise<DietistaAdmi
       _count: {
         select: {
           pacientes: { where: { esDemo: false } },
-          planes: true,
-          consultas: true,
+          planes: { where: { paciente: { esDemo: false } } },
+          consultas: { where: { paciente: { esDemo: false } } },
           recetas: true,
         },
       },
@@ -295,11 +295,11 @@ export async function getDietistaDetalle(dietistaId: string): Promise<DietistaDe
       _count: {
         select: {
           pacientes: { where: { esDemo: false } },
-          planes: true,
-          consultas: true,
+          planes: { where: { paciente: { esDemo: false } } },
+          consultas: { where: { paciente: { esDemo: false } } },
           recetas: true,
           alimentos: true,
-          citas: true,
+          citas: { where: { paciente: { esDemo: false } } },
         },
       },
     },

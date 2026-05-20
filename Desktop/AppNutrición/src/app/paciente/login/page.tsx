@@ -6,6 +6,7 @@ import { Leaf, Eye, EyeOff } from "lucide-react";
 import { loginPaciente } from "@/app/actions/paciente-auth";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { isNextNavigation } from "@/lib/utils";
 import { LanguageSwitcher } from "@/components/language-switcher";
 
 export default function PatientLoginPage() {
@@ -28,7 +29,7 @@ export default function PatientLoginPage() {
         setLoading(false);
       }
     } catch (error) {
-      if (error && typeof error === "object" && "digest" in error) throw error;
+      if (isNextNavigation(error)) throw error;
       toast.error(t("login.errorGenerico"));
       setLoading(false);
     }

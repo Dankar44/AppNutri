@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles, FileDown, Share2, Pencil, Trash2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, isNextNavigation } from "@/lib/utils";
 import { guardarComoPlantilla, eliminarPlan } from "@/app/actions/planes";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
@@ -60,7 +60,7 @@ export function ActionBarMobile({ planId }: { planId: string }) {
       setPlantillaOpen(false);
       setPlantillaNombre("");
     } catch (error) {
-      if (error && typeof error === "object" && "digest" in error) throw error;
+      if (isNextNavigation(error)) throw error;
       toast.error(t("toastTemplateSaveError"));
     } finally {
       setPlantillaLoading(false);
@@ -74,7 +74,7 @@ export function ActionBarMobile({ planId }: { planId: string }) {
       await new Promise((r) => setTimeout(r, 800));
       window.location.href = "/dietas";
     } catch (error) {
-      if (error && typeof error === "object" && "digest" in error) throw error;
+      if (isNextNavigation(error)) throw error;
       toast.error(t("toastDeleteError"));
     }
   }

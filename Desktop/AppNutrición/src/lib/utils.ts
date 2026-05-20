@@ -6,6 +6,14 @@ export class ActionTimeoutError extends Error {
   constructor() { super("TIMEOUT"); this.name = "ActionTimeoutError"; }
 }
 
+export function isNextNavigation(error: unknown): error is Error {
+  if (error && typeof error === "object" && "digest" in error) {
+    const d = String((error as Record<string, unknown>).digest);
+    return d.startsWith("NEXT_REDIRECT") || d.startsWith("NEXT_NOT_FOUND");
+  }
+  return false;
+}
+
 export function withTimeout<T>(promise: Promise<T>, ms = 30_000): Promise<T> {
   return Promise.race([
     promise,

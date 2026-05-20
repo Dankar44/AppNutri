@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle, ExternalLink, Loader2, LinkIcon, AlertCircle, Unplug } from "lucide-react";
+import { isNextNavigation } from "@/lib/utils";
 import {
   createStripeConnectAccount,
   getStripeOnboardingLink,
@@ -35,7 +36,7 @@ export function StripeConnectCard({ status }: Props) {
       const { url } = await createStripeConnectAccount();
       window.location.href = url;
     } catch (err) {
-      if (err && typeof err === "object" && "digest" in err) throw err;
+      if (isNextNavigation(err)) throw err;
       toast.error(t("toastErrorConectar"));
       setLoading(false);
     }
@@ -47,7 +48,7 @@ export function StripeConnectCard({ status }: Props) {
       const { url } = await getStripeOnboardingLink();
       window.location.href = url;
     } catch (err) {
-      if (err && typeof err === "object" && "digest" in err) throw err;
+      if (isNextNavigation(err)) throw err;
       toast.error(t("toastErrorOnboarding"));
       setLoading(false);
     }
@@ -59,7 +60,7 @@ export function StripeConnectCard({ status }: Props) {
       const { url } = await getStripeDashboardLink();
       window.open(url, "_blank");
     } catch (err) {
-      if (err && typeof err === "object" && "digest" in err) throw err;
+      if (isNextNavigation(err)) throw err;
       toast.error(t("toastErrorDashboard"));
     } finally {
       setLoading(false);
@@ -74,7 +75,7 @@ export function StripeConnectCard({ status }: Props) {
       toast.success(t("toastDesconectada"));
       router.refresh();
     } catch (err) {
-      if (err && typeof err === "object" && "digest" in err) throw err;
+      if (isNextNavigation(err)) throw err;
       toast.error(t("toastErrorDesconectar"));
     } finally {
       setDisconnecting(false);

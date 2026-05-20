@@ -13,7 +13,7 @@ import { IngredienteList, type IngredienteItem } from "./ingrediente-list";
 import { MacroAnalysisCard } from "./alimento/macro-analysis-card";
 import { calcularMacrosPorcion, sumarMacros, convertirAGramos } from "@/lib/macros";
 import { useTranslations } from "next-intl";
-import { withTimeout } from "@/lib/utils";
+import { isNextNavigation, withTimeout } from "@/lib/utils";
 import { useUncontrolledFormPersist } from "@/lib/form-persist";
 
 interface RecetaFormProps {
@@ -82,7 +82,7 @@ export function RecetaForm({
         toast.success(t("form.recetaCreada"));
       }
     } catch (error) {
-      if (error && typeof error === "object" && "digest" in error) throw error;
+      if (isNextNavigation(error)) throw error;
       toast.error(t("form.errorGuardar"));
       setLoading(false);
     }

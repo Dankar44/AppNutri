@@ -5,6 +5,7 @@ import { Sparkles, Loader2, User, AlertTriangle } from "lucide-react";
 import { generarPlanIA, aceptarPlanIA } from "@/app/actions/ai";
 import { PlanPreview } from "@/components/ai/plan-preview";
 import { toast } from "sonner";
+import { isNextNavigation } from "@/lib/utils";
 import type { AIPlanGenerado, MacroObjetivos } from "@/lib/ai/types";
 import { useTranslations } from "next-intl";
 
@@ -112,7 +113,7 @@ export function IAGenerationForm({ planId, pacienteId, pacienteNombre, pacienteI
         toast.success(t("toastGenerated"));
       }
     } catch (err) {
-      if (err && typeof err === "object" && "digest" in err) throw err;
+      if (isNextNavigation(err)) throw err;
       toast.error(t("toastGenerateErrorMsg"));
     } finally {
       setLoading(false);
@@ -126,7 +127,7 @@ export function IAGenerationForm({ planId, pacienteId, pacienteNombre, pacienteI
       await aceptarPlanIA(resultado.generacionId, planId, macros);
       toast.success(t("toastAccepted"));
       window.location.href = `/dietas/${planId}`;
-    } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
+    } catch (error) { if (isNextNavigation(error)) throw error;
       toast.error(t("toastAcceptError"));
       setAccepting(false);
     }

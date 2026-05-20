@@ -28,7 +28,7 @@ import {
   getPacienteContextoCita,
 } from "@/app/actions/citas";
 import { AvatarPaciente } from "@/components/avatar-paciente";
-import { capitalizarNombre, formatDate, withTimeout } from "@/lib/utils";
+import { capitalizarNombre, formatDate, isNextNavigation, withTimeout } from "@/lib/utils";
 
 type PacienteListItem = {
   id: string;
@@ -128,7 +128,7 @@ export default function NuevaCitaPage() {
       );
       router.push("/agenda");
     } catch (error) {
-      if (error && typeof error === "object" && "digest" in error) throw error;
+      if (isNextNavigation(error)) throw error;
       toast.error(t("nueva.toastCreateError"));
       setLoading(false);
     }

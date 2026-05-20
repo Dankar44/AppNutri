@@ -25,7 +25,7 @@ import {
   moverAlimentoAComida,
 } from "@/app/actions/planes";
 import type { UnidadMedida } from "@/generated/prisma/client";
-import { cn } from "@/lib/utils";
+import { cn, isNextNavigation } from "@/lib/utils";
 
 const DIA_ORDER = ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"];
 
@@ -260,7 +260,7 @@ export function PlanEditor({
         await moverAlimentoAComida(alimentoEnComidaId, droppableData.comidaId!);
         router.refresh();
       } catch (error) {
-        if (error && typeof error === "object" && "digest" in error) throw error;
+        if (isNextNavigation(error)) throw error;
         toast.error(t("editor.toastMoveError"));
       }
     });
@@ -298,7 +298,7 @@ export function PlanEditor({
         );
         router.refresh();
       } catch (error) {
-        if (error && typeof error === "object" && "digest" in error) throw error;
+        if (isNextNavigation(error)) throw error;
         toast.error(t("editor.toastAddError"));
       }
     });
@@ -312,7 +312,7 @@ export function PlanEditor({
     try {
       await removeAlimentoDeComida(alimentoEnComidaId);
     } catch (error) {
-      if (error && typeof error === "object" && "digest" in error) throw error;
+      if (isNextNavigation(error)) throw error;
       toast.error(t("editor.toastDeleteError"));
     }
     router.refresh();
@@ -350,7 +350,7 @@ export function PlanEditor({
         router.refresh();
         toast.success(t("editor.toastReplaced"));
       } catch (error) {
-        if (error && typeof error === "object" && "digest" in error) throw error;
+        if (isNextNavigation(error)) throw error;
         toast.error(t("editor.toastReplaceError"));
       }
     });
@@ -366,7 +366,7 @@ export function PlanEditor({
         await actualizarCantidadAlimento(alimentoEnComidaId, cantidad);
         router.refresh();
       } catch (error) {
-        if (error && typeof error === "object" && "digest" in error) throw error;
+        if (isNextNavigation(error)) throw error;
         toast.error(t("editor.toastUpdateQuantityError"));
       }
     });

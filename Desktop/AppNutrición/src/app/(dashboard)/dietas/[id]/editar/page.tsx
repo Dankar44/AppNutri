@@ -8,7 +8,7 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { getPlan, actualizarPlan } from "@/app/actions/planes";
 import { useUncontrolledFormPersist } from "@/lib/form-persist";
-import { withTimeout } from "@/lib/utils";
+import { isNextNavigation, withTimeout } from "@/lib/utils";
 
 export default function EditarPlanPage() {
   const t = useTranslations("diets");
@@ -65,7 +65,7 @@ export default function EditarPlanPage() {
       clearDraft();
       toast.success(t("editar.toastUpdated"));
       router.push(`/dietas/${id}`);
-    } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
+    } catch (error) { if (isNextNavigation(error)) throw error;
       toast.error(t("editar.toastUpdateError"));
       setLoading(false);
     }

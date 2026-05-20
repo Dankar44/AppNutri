@@ -9,7 +9,7 @@ import { useTranslations } from "next-intl";
 import { useFormPersist } from "@/lib/form-persist";
 import { useLocale } from "next-intl";
 import { intlTag, type Locale } from "@/i18n/config";
-import { withTimeout } from "@/lib/utils";
+import { isNextNavigation, withTimeout } from "@/lib/utils";
 
 interface Pago {
   id: string;
@@ -94,7 +94,7 @@ export function PagosClient({ pagos, pacientes, stripeConnected }: Props) {
       setConcepto(""); setImporte(""); setNotas(""); setPacienteId("");
       router.refresh();
     } catch (err) {
-      if (err && typeof err === "object" && "digest" in err) throw err;
+      if (isNextNavigation(err)) throw err;
       toast.error(t("toasts.errorCrearCobro"));
     } finally { setLoading(false); }
   }
@@ -109,7 +109,7 @@ export function PagosClient({ pagos, pacientes, stripeConnected }: Props) {
       }
       router.refresh();
     } catch (err) {
-      if (err && typeof err === "object" && "digest" in err) throw err;
+      if (isNextNavigation(err)) throw err;
       toast.error(err instanceof Error ? err.message : t("toasts.errorGenerarLink"));
     } finally { setGeneratingLink(null); }
   }
@@ -131,7 +131,7 @@ export function PagosClient({ pagos, pacientes, stripeConnected }: Props) {
       setMetodoPago("");
       router.refresh();
     } catch (err) {
-      if (err && typeof err === "object" && "digest" in err) throw err;
+      if (isNextNavigation(err)) throw err;
       toast.error(t("toasts.errorMarcarPagado"));
     } finally { setLoading(false); }
   }
@@ -142,7 +142,7 @@ export function PagosClient({ pagos, pacientes, stripeConnected }: Props) {
       toast.success(t("toasts.cobroEliminado"));
       router.refresh();
     } catch (err) {
-      if (err && typeof err === "object" && "digest" in err) throw err;
+      if (isNextNavigation(err)) throw err;
       toast.error(t("toasts.errorEliminar"));
     }
   }

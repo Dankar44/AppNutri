@@ -131,6 +131,10 @@ export function DatePicker({
   }
 
   function nextMonth() {
+    if (pastOnly) {
+      const now = new Date();
+      if (viewYear > now.getFullYear() || (viewYear === now.getFullYear() && viewMonth >= now.getMonth())) return;
+    }
     if (viewMonth === 11) { setViewMonth(0); setViewYear((y) => y + 1); }
     else setViewMonth((m) => m + 1);
   }
@@ -247,7 +251,7 @@ export function DatePicker({
             <button type="button" onClick={() => setShowYearGrid(!showYearGrid)} className="text-sm font-semibold hover:text-primary transition-colors">
               {MONTH_LABELS[viewMonth]} {viewYear}
             </button>
-            <button type="button" onClick={nextMonth} className="p-1.5 rounded-md hover:bg-muted transition-colors touch-manipulation">
+            <button type="button" onClick={nextMonth} disabled={pastOnly && viewYear === today.getFullYear() && viewMonth >= today.getMonth()} className={`p-1.5 rounded-md transition-colors touch-manipulation ${pastOnly && viewYear === today.getFullYear() && viewMonth >= today.getMonth() ? "opacity-30 cursor-not-allowed" : "hover:bg-muted"}`}>
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
@@ -302,17 +306,21 @@ export function DatePicker({
                   const day = i + 1;
                   const sel = isSelected(day);
                   const tod = isToday(day);
+                  const future = pastOnly && new Date(viewYear, viewMonth, day) > today;
                   return (
                     <button
                       key={day}
                       type="button"
+                      disabled={future}
                       onClick={() => selectDay(day)}
                       className={`w-9 h-9 mx-auto text-sm rounded-lg transition-colors touch-manipulation ${
-                        sel
-                          ? "bg-primary text-primary-foreground font-semibold"
-                          : tod
-                            ? "border border-primary text-primary font-medium"
-                            : "hover:bg-primary/10 active:bg-primary/20 text-foreground"
+                        future
+                          ? "text-muted-foreground/30 cursor-not-allowed"
+                          : sel
+                            ? "bg-primary text-primary-foreground font-semibold"
+                            : tod
+                              ? "border border-primary text-primary font-medium"
+                              : "hover:bg-primary/10 active:bg-primary/20 text-foreground"
                       }`}
                     >
                       {day}

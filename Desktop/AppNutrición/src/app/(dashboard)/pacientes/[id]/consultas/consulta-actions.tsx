@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { eliminarConsulta } from "@/app/actions/consultas";
 import { toast } from "sonner";
+import { isNextNavigation } from "@/lib/utils";
 
 export function ConsultaActions({ consultaId }: { consultaId: string }) {
   const router = useRouter();
@@ -18,7 +19,7 @@ export function ConsultaActions({ consultaId }: { consultaId: string }) {
       toast.success(t("consultas.consultaEliminada"));
       router.refresh();
     } catch (error) {
-      if (error && typeof error === "object" && "digest" in error) throw error;
+      if (isNextNavigation(error)) throw error;
       toast.error(t("consultas.errorEliminar"));
     }
   }

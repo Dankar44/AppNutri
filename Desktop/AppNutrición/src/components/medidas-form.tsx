@@ -7,7 +7,7 @@ import { crearMedida, type MedidaFormData } from "@/app/actions/medidas";
 import { DatePicker } from "@/components/date-picker";
 import { useTranslations } from "next-intl";
 import { useUncontrolledFormPersist } from "@/lib/form-persist";
-import { withTimeout } from "@/lib/utils";
+import { isNextNavigation, withTimeout } from "@/lib/utils";
 
 interface MedidasFormProps {
   pacienteId: string;
@@ -125,7 +125,7 @@ export function MedidasForm({
       e.currentTarget.reset();
       onSuccess?.();
     } catch (error) {
-      if (error && typeof error === "object" && "digest" in error) throw error;
+      if (isNextNavigation(error)) throw error;
       toast.error(t("errorRegistrarMedidas"));
     } finally {
       setLoading(false);

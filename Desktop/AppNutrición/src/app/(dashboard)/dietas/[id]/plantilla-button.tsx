@@ -5,7 +5,7 @@ import { FileDown } from "lucide-react";
 import { guardarComoPlantilla } from "@/app/actions/planes";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
-import { withTimeout } from "@/lib/utils";
+import { isNextNavigation, withTimeout } from "@/lib/utils";
 
 export function PlantillaButton({ planId }: { planId: string }) {
   const t = useTranslations("diets.plantillaButton");
@@ -21,7 +21,7 @@ export function PlantillaButton({ planId }: { planId: string }) {
       toast.success(t("toastSaved"));
       setOpen(false);
       setNombre("");
-    } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
+    } catch (error) { if (isNextNavigation(error)) throw error;
       toast.error(t("toastSaveError"));
     } finally {
       setLoading(false);

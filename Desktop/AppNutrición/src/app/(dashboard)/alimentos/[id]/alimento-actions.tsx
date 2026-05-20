@@ -6,6 +6,7 @@ import { Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { eliminarAlimento } from "@/app/actions/alimentos";
 import { toast } from "sonner";
+import { isNextNavigation } from "@/lib/utils";
 
 export function AlimentoActions({ alimentoId }: { alimentoId: string }) {
   const t = useTranslations("foods");
@@ -18,7 +19,7 @@ export function AlimentoActions({ alimentoId }: { alimentoId: string }) {
       toast.success(t("detail.alimentoEliminado"));
       await new Promise((r) => setTimeout(r, 800)); window.location.href = "/alimentos";
     } catch (error) {
-      if (error && typeof error === "object" && "digest" in error) throw error;
+      if (isNextNavigation(error)) throw error;
       toast.error(t("detail.errorEliminar"));
     }
   }

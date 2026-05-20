@@ -9,7 +9,7 @@ import { VITAMINAS, MINERALES, type MicroKey } from "@/lib/micronutrientes";
 import { UNIDAD_LABELS_FULL } from "@/lib/units";
 import { useTranslations } from "next-intl";
 import { useUncontrolledFormPersist } from "@/lib/form-persist";
-import { withTimeout } from "@/lib/utils";
+import { isNextNavigation, withTimeout } from "@/lib/utils";
 
 const CATEGORIA_VALUES = [
   "FRUTAS", "VERDURAS", "CEREALES", "LEGUMBRES", "CARNES", "PESCADOS",
@@ -132,9 +132,7 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
         toast.success(t("form.alimentoCreado"));
       }
     } catch (error) {
-      const digest = error && typeof error === "object" && "digest" in error
-        ? String((error as Record<string, unknown>).digest) : "";
-      if (digest.startsWith("NEXT_REDIRECT") || digest.startsWith("NEXT_NOT_FOUND")) throw error;
+      if (isNextNavigation(error)) throw error;
       const message = error instanceof Error ? error.message : t("form.errorGuardar");
       toast.error(message);
       setLoading(false);

@@ -6,6 +6,7 @@ import { Trash2 } from "lucide-react";
 import { eliminarPlan } from "@/app/actions/planes";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { isNextNavigation } from "@/lib/utils";
 
 export function PlanActions({ planId }: { planId: string }) {
   const t = useTranslations("diets.planActions");
@@ -19,7 +20,7 @@ export function PlanActions({ planId }: { planId: string }) {
       await new Promise((r) => setTimeout(r, 800));
       window.location.href = "/dietas";
     } catch (error) {
-      if (error && typeof error === "object" && "digest" in error) throw error;
+      if (isNextNavigation(error)) throw error;
       toast.error(t("toastDeleteError"));
     }
   }

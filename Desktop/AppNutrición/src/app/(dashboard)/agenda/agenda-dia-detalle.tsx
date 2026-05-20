@@ -12,6 +12,7 @@ import {
   rechazarContrapropuestaDietista,
 } from "@/app/actions/citas-flujo";
 import { toast } from "sonner";
+import { isNextNavigation } from "@/lib/utils";
 import { useTranslations, useLocale } from "next-intl";
 import { intlTag, type Locale } from "@/i18n/config";
 import { ContraproponerModal } from "./contraproponer-modal";
@@ -63,7 +64,7 @@ export function AgendaDiaDetalle({ fecha, citas, onClose }: Props) {
       toast.success(t(key));
       router.refresh();
     } catch (error) {
-      if (error && typeof error === "object" && "digest" in error) throw error;
+      if (isNextNavigation(error)) throw error;
       toast.error(t("toastError"));
     }
   }
@@ -122,7 +123,7 @@ export function AgendaDiaDetalle({ fecha, citas, onClose }: Props) {
       toast.success(t("toastCancelled"));
       router.refresh();
     } catch (error) {
-      if (error && typeof error === "object" && "digest" in error) throw error;
+      if (isNextNavigation(error)) throw error;
       toast.error(t("toastError"));
     }
   }

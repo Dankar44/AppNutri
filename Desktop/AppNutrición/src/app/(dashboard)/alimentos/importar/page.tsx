@@ -8,7 +8,7 @@ import { useTranslations } from "next-intl";
 import { buscarAlimentosAPI, importarAlimentoAPI } from "@/app/actions/alimentos";
 import { MacroBadges } from "@/components/macro-badge";
 import { toast } from "sonner";
-import { withTimeout } from "@/lib/utils";
+import { isNextNavigation, withTimeout } from "@/lib/utils";
 import type { AlimentoAPIResult } from "@/lib/openfoodfacts";
 
 export default function ImportarAlimentoPage() {
@@ -26,7 +26,7 @@ export default function ImportarAlimentoPage() {
     try {
       const data = await withTimeout(buscarAlimentosAPI(query));
       setResults(data);
-    } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
+    } catch (error) { if (isNextNavigation(error)) throw error;
       toast.error(t("importar.errorBuscar"));
     } finally {
       setLoading(false);
@@ -39,7 +39,7 @@ export default function ImportarAlimentoPage() {
       const imported = await withTimeout(importarAlimentoAPI(alimento));
       toast.success(t("importar.importadoCorrectamente", { nombre: alimento.nombre }));
       if (imported?.id) router.push(`/alimentos/${imported.id}`);
-    } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
+    } catch (error) { if (isNextNavigation(error)) throw error;
       toast.error(t("importar.errorImportar"));
       setImporting(null);
     }

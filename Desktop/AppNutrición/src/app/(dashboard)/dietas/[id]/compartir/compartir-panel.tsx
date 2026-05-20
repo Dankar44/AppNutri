@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Link2, Copy, Check, XCircle } from "lucide-react";
 import { crearEnlace, eliminarEnlace } from "@/app/actions/compartir";
 import { toast } from "sonner";
-import { formatDate, withTimeout } from "@/lib/utils";
+import { formatDate, isNextNavigation, withTimeout } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 
 interface Enlace {
@@ -32,7 +32,7 @@ export function CompartirPanel({
       await withTimeout(crearEnlace(planId));
       toast.success(t("toastLinkCreated"));
       router.refresh();
-    } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
+    } catch (error) { if (isNextNavigation(error)) throw error;
       toast.error(t("toastCreateError"));
     } finally {
       setLoading(false);
@@ -44,7 +44,7 @@ export function CompartirPanel({
       await withTimeout(eliminarEnlace(id));
       toast.success(t("toastLinkDeleted"));
       router.refresh();
-    } catch (error) { if (error && typeof error === "object" && "digest" in error) throw error;
+    } catch (error) { if (isNextNavigation(error)) throw error;
       toast.error(t("toastDeleteError"));
     }
   }
