@@ -19,8 +19,8 @@ export default async function PlantillaDetallePage({ params }: Props) {
 
   let totalAlimentos = 0;
   for (const dia of datos) {
-    for (const comida of dia.comidas) {
-      totalAlimentos += comida.alimentos.length;
+    for (const comida of dia.comidas ?? []) {
+      totalAlimentos += comida.alimentos?.length ?? 0;
     }
   }
 

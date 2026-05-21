@@ -202,11 +202,11 @@ export async function guardarSeguimientoPaciente(
   let cumplido = false;
   if (data.comidasData && data.comidasData.length > 0) {
     const totalAlimentos = data.comidasData.reduce(
-      (sum, c) => sum + c.alimentos.length,
+      (sum, c) => sum + (c.alimentos?.length ?? 0),
       0
     );
     const cumplidos = data.comidasData.reduce(
-      (sum, c) => sum + c.alimentos.filter((a) => a.cumplido).length,
+      (sum, c) => sum + (c.alimentos?.filter((a) => a.cumplido).length ?? 0),
       0
     );
     cumplido = totalAlimentos > 0 && cumplidos / totalAlimentos >= 0.5;

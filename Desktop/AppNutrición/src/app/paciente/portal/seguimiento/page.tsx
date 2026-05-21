@@ -154,9 +154,9 @@ export default function SeguimientoPage() {
     { delayMs: 900, enabled: !loading }
   );
 
-  const totalAlimentos = comidasData.reduce((s, c) => s + c.alimentos.length, 0);
+  const totalAlimentos = comidasData.reduce((s, c) => s + (c.alimentos?.length ?? 0), 0);
   const alimentosCumplidos = comidasData.reduce(
-    (s, c) => s + c.alimentos.filter((a) => a.cumplido).length,
+    (s, c) => s + (c.alimentos?.filter((a) => a.cumplido).length ?? 0),
     0
   );
 

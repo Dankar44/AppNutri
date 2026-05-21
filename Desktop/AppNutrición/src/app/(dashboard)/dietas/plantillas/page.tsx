@@ -58,7 +58,7 @@ export default async function PlantillasPage({ searchParams }: Props) {
               comidas: { tipo: string; alimentos: unknown[] }[];
             }[]) || [];
             const totalComidas = datos.reduce(
-              (acc, dia) => acc + dia.comidas.reduce((a, c) => a + c.alimentos.length, 0),
+              (acc, dia) => acc + (dia.comidas ?? []).reduce((a, c) => a + (c.alimentos?.length ?? 0), 0),
               0
             );
 

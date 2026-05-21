@@ -45,9 +45,9 @@ export function SeguimientoDietistaView({ pacienteId }: { pacienteId: string }) 
   });
 
   const comidas = data?.comidasData ?? [];
-  const totalAlimentos = comidas.reduce((s, c) => s + c.alimentos.length, 0);
+  const totalAlimentos = comidas.reduce((s, c) => s + (c.alimentos?.length ?? 0), 0);
   const cumplidos = comidas.reduce(
-    (s, c) => s + c.alimentos.filter((a) => a.cumplido).length,
+    (s, c) => s + (c.alimentos?.filter((a) => a.cumplido).length ?? 0),
     0
   );
   const cumplimientoPct = totalAlimentos > 0 ? Math.round((cumplidos / totalAlimentos) * 100) : 0;
@@ -131,7 +131,7 @@ export function SeguimientoDietistaView({ pacienteId }: { pacienteId: string }) 
               <div className="space-y-3">
                 {TIPOS.map((tipo) => {
                   const c = comidas.find((x) => x.tipo === tipo);
-                  if (!c || c.alimentos.length === 0) return null;
+                  if (!c || !c.alimentos?.length) return null;
                   const allDone = c.alimentos.every((a) => a.cumplido);
                   return (
                     <div
