@@ -184,14 +184,14 @@ async function saveExtraFields(pacienteId: string, extra: ReturnType<typeof spli
   );
 }
 
-export async function crearPaciente(data: PacienteFormData) {
+export async function crearPaciente(data: PacienteFormData): Promise<{ error: string } | void> {
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error(t("auth.noAutorizado"));
+  if (!dietista) return { error: t("auth.noAutorizado") };
   if (dietista.isDemo) return;
 
   const error = validatePacienteData(data, t);
-  if (error) throw new Error(error);
+  if (error) return { error };
 
   const sanitized = sanitizeFormData(data);
 
@@ -200,7 +200,7 @@ export async function crearPaciente(data: PacienteFormData) {
       where: { email: sanitized.email },
     });
     if (dietistaExistente) {
-      throw new Error(t("paciente.emailPerteneceADietista"));
+      return { error: t("paciente.emailPerteneceADietista") };
     }
   }
 
@@ -220,14 +220,14 @@ export async function crearPaciente(data: PacienteFormData) {
   redirect(`/pacientes/${paciente.id}`);
 }
 
-export async function actualizarPaciente(id: string, data: PacienteFormData) {
+export async function actualizarPaciente(id: string, data: PacienteFormData): Promise<{ error: string } | void> {
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
-  if (!dietista) throw new Error(t("auth.noAutorizado"));
+  if (!dietista) return { error: t("auth.noAutorizado") };
   if (dietista.isDemo) return;
 
   const error = validatePacienteData(data, t);
-  if (error) throw new Error(error);
+  if (error) return { error };
 
   const sanitized = sanitizeFormData(data);
 
@@ -236,7 +236,7 @@ export async function actualizarPaciente(id: string, data: PacienteFormData) {
       where: { email: sanitized.email },
     });
     if (dietistaExistente) {
-      throw new Error(t("paciente.emailPerteneceADietista"));
+      return { error: t("paciente.emailPerteneceADietista") };
     }
   }
 

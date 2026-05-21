@@ -32,7 +32,7 @@ function getSexos(t: (key: string) => string) {
 
 interface Props {
   paciente?: Paciente | null;
-  action: (data: PacienteFormData) => Promise<void>;
+  action: (data: PacienteFormData) => Promise<{ error: string } | void>;
   submitLabel: string;
 }
 
@@ -230,7 +230,13 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
     savedRef.current = true;
     clearDraft();
     try {
-      await withTimeout(action(form));
+      const result = await withTimeout(action(form));
+      if (result && "error" in result) {
+        savedRef.current = false;
+        toast.error(result.error);
+        setLoading(false);
+        return;
+      }
     } catch (error) {
       if (isNextNavigation(error)) throw error;
       savedRef.current = false;
