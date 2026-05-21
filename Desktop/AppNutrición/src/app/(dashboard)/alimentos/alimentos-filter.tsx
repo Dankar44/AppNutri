@@ -191,7 +191,7 @@ export function AlimentosFilter({ misAlimentosCount }: { misAlimentosCount: numb
           className="hidden sm:block sm:flex-none px-3 py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
         >
           {CATEGORIA_KEYS.map((c) => (
-            <option key={c.value} value={c.value}>{t(`filter.${c.key}`)}</option>
+            <option key={c.value} value={c.value}>{t(c.value ? `categorias.${c.key}` : `filter.${c.key}`)}</option>
           ))}
         </select>
         <button
@@ -230,7 +230,7 @@ export function AlimentosFilter({ misAlimentosCount }: { misAlimentosCount: numb
               >
                 <option value="">{t("filter.todas")}</option>
                 {CATEGORIA_KEYS.filter((c) => c.value).map((c) => (
-                  <option key={c.value} value={c.value}>{t(`filter.${c.key}`)}</option>
+                  <option key={c.value} value={c.value}>{t(`categorias.${c.key}`)}</option>
                 ))}
               </select>
             </div>
