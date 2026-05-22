@@ -69,7 +69,9 @@ export function VersionChecker() {
   useEffect(() => {
     const isStale = (msg: string) =>
       msg.includes("was not found on the server") ||
-      msg.includes("failed-to-find-server-action");
+      msg.includes("failed-to-find-server-action") ||
+      msg.includes("module factory") ||
+      msg.includes("Loading chunk");
 
     function handleStaleAction() {
       if (hasPersistedForms()) {

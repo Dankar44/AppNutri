@@ -96,3 +96,22 @@ No Prisma Migrate. Schema changes use manual SQL scripts in `scripts/` with `ALT
 - Icons from `lucide-react`
 - `cn()` utility (from `src/lib/utils.ts`) for conditional Tailwind classes — wraps `clsx` + `tailwind-merge`
 - Server actions return `{ ok: boolean; error?: string }` pattern for error handling
+
+### Error boundaries
+
+Three `error.tsx` files catch runtime errors and prevent infinite loading:
+- `src/app/global-error.tsx` — root-level (catches hydration/module errors). Uses inline styles (no Tailwind, since layout may not be available).
+- `src/app/(dashboard)/error.tsx` — dashboard errors. Uses Tailwind + lucide icons.
+- `src/app/paciente/error.tsx` — patient portal errors. Uses Tailwind + lucide icons.
+
+All three detect stale-module errors (Turbopack "module factory not available") and show a "Recargar" button that does `window.location.reload()`. For other errors, they show "Reintentar" that calls the Next.js `reset()` function.
+
+### Turbopack stale cache
+
+The `predev` npm script (`rm -rf .next`) runs automatically before `npm run dev` to prevent Turbopack from serving stale module chunks. If the browser still shows module errors after restart, hard-reload (Cmd+Shift+R) to clear the browser cache.
+
+### Server actions — error handling rules
+
+- **Catch blocks**: always use `isNextNavigation(error)` from `@/lib/utils` — never the old `"digest" in error` pattern (it swallows real errors in Next.js 16).
+- **Validation errors**: return `{ error: string }` instead of `throw new Error()` — thrown errors cause red overlays in production.
+- **Server→client boundary**: never pass functions or React components as props to "use client" components — use string keys and resolve on the client side.
