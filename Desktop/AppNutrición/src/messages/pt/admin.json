@@ -336,7 +336,7 @@
       "empty": "Não há pacientes registrados"
     },
     "timeAgo": {
-      "nunca": "Nunca acessou",
+      "nunca": "Sem acesso",
       "ahoraMismo": "Agora mesmo",
       "minutos": "Há {count} min",
       "horas": "Há {count}h",
