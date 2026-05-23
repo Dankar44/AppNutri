@@ -10,6 +10,14 @@ import { getTranslations } from "next-intl/server";
 import { crearPacienteDemoSiNoExiste } from "@/lib/paciente-demo";
 import { stripe } from "@/lib/stripe";
 import { isNextNavigation } from "@/lib/utils";
+import {
+  sanitizeString,
+  sanitizeStringOptional,
+  validateEmail,
+  validatePhone,
+  validateEnum,
+  LIMITS,
+} from "@/lib/validation";
 export async function loginAdmin(email: string, password: string): Promise<{ error?: string }> {
   const t = await getTranslations("validation");
   const result = verifyAdminCredentials(email, password);
@@ -147,6 +155,8 @@ export interface DietistaAdminItem {
   email: string;
   nombre: string;
   apellidos: string;
+  telefono: string | null;
+  numColegiado: string | null;
   especialidad: string | null;
   clinica: string | null;
   creadoPor: string | null;
@@ -181,6 +191,8 @@ export async function getDietistasAdmin(busqueda?: string): Promise<DietistaAdmi
       email: true,
       nombre: true,
       apellidos: true,
+      telefono: true,
+      numColegiado: true,
       especialidad: true,
       clinica: true,
       creadoPor: true,
@@ -658,5 +670,121 @@ export async function eliminarDietista(dietistaId: string): Promise<{ ok: boolea
     if (isNextNavigation(e)) throw e;
     console.error("[admin] Error eliminando dietista:", e);
     return { ok: false, error: t("admin.errorEliminarDietista") };
+  }
+}
+
+// ─── Editar nutricionista ───
+
+export interface EditarDietistaData {
+  nombre: string;
+  apellidos: string;
+  email: string;
+  telefono?: string;
+  especialidad?: string;
+  numColegiado?: string;
+  clinica?: string;
+  creadoPor?: string;
+  fuenteContacto?: string;
+}
+
+const FUENTES_VALIDAS = ["instagram", "linkedin", "whatsapp"] as const;
+
+export async function editarDietista(
+  dietistaId: string,
+  data: EditarDietistaData
+): Promise<{ ok: boolean; error?: string }> {
+  const admin = await requireAdmin();
+  if (!admin) redirect("/admin-login");
+  if (admin.role !== "admin") return { ok: false, error: "No autorizado" };
+
+  const t = await getTranslations("validation");
+
+  try {
+    const dietista = await prisma.dietista.findUnique({
+      where: { id: dietistaId },
+      select: { id: true, authId: true, email: true },
+    });
+    if (!dietista) return { ok: false, error: t("admin.dietistaNoEncontrado") };
+
+    const nombre = sanitizeString(data.nombre, LIMITS.NOMBRE_CORTO);
+    if (!nombre) return { ok: false, error: t("perfil.nombreObligatorio") };
+    const apellidos = sanitizeString(data.apellidos, LIMITS.NOMBRE_CORTO);
+    if (!apellidos) return { ok: false, error: t("perfil.apellidosObligatorios") };
+
+    const email = validateEmail(data.email);
+    if (!email) return { ok: false, error: t("admin.emailInvalido") };
+
+    const telefono = validatePhone(data.telefono) || null;
+    const especialidad = sanitizeStringOptional(data.especialidad, LIMITS.ESPECIALIDAD);
+    const numColegiado = sanitizeStringOptional(data.numColegiado, LIMITS.COLEGIADO);
+    const clinica = sanitizeStringOptional(data.clinica, LIMITS.CLINICA);
+    const creadoPor = sanitizeStringOptional(data.creadoPor, LIMITS.NOMBRE_CORTO);
+    const fuenteContacto = validateEnum(data.fuenteContacto, FUENTES_VALIDAS);
+
+    const emailCambio = email !== dietista.email;
+
+    if (emailCambio) {
+      const existeEnDietistas = await prisma.dietista.findFirst({
+        where: { email, id: { not: dietistaId } },
+        select: { id: true },
+      });
+      if (existeEnDietistas) {
+        return { ok: false, error: t("admin.emailDuplicado") };
+      }
+
+      const existeEnAuth = await prisma.$queryRawUnsafe<{ id: string }[]>(
+        `SELECT id FROM auth.users WHERE email = $1 AND id != $2::uuid LIMIT 1`,
+        email,
+        dietista.authId
+      ).catch(() => [] as { id: string }[]);
+      if (existeEnAuth.length > 0) {
+        return { ok: false, error: t("admin.emailDuplicado") };
+      }
+
+      const existeEnPacientes = await prisma.accesoPaciente.findFirst({
+        where: { email },
+        select: { id: true },
+      });
+      if (existeEnPacientes) {
+        return { ok: false, error: t("admin.emailDuplicado") };
+      }
+    }
+
+    await prisma.dietista.update({
+      where: { id: dietistaId },
+      data: {
+        nombre,
+        apellidos,
+        email,
+        telefono,
+        especialidad,
+        numColegiado,
+        clinica,
+        creadoPor,
+        fuenteContacto,
+      },
+    });
+
+    if (emailCambio && dietista.authId) {
+      await prisma.$queryRawUnsafe(
+        `UPDATE auth.users SET email = $1, updated_at = NOW() WHERE id = $2::uuid`,
+        email,
+        dietista.authId
+      ).catch(() => {});
+      await prisma.$queryRawUnsafe(
+        `UPDATE auth.identities SET identity_data = jsonb_set(identity_data, '{email}', to_jsonb($1::text)), updated_at = NOW() WHERE user_id = $2::uuid AND provider = 'email'`,
+        email,
+        dietista.authId
+      ).catch(() => {});
+    }
+
+    revalidatePath("/admin/dietistas");
+    revalidatePath("/admin/seguimiento");
+    revalidatePath("/admin");
+    return { ok: true };
+  } catch (e) {
+    if (isNextNavigation(e)) throw e;
+    console.error("[admin] Error editando dietista:", e);
+    return { ok: false, error: t("admin.errorEditarDietista") };
   }
 }

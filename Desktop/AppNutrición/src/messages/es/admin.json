@@ -129,6 +129,27 @@
       "dias": "hace {count}d",
       "meses": "hace {count}mes{plural}"
     },
+    "editar": {
+      "titulo": "Editar nutricionista",
+      "nombre": "Nombre *",
+      "apellidos": "Apellidos *",
+      "email": "Email *",
+      "telefono": "Teléfono",
+      "especialidad": "Especialidad",
+      "numColegiado": "N.º colegiado",
+      "clinica": "Clínica",
+      "creadoPor": "Creado por",
+      "fuenteContacto": "Contactado vía",
+      "fuentePlaceholder": "Sin especificar",
+      "avisoEmail": "Cambiar el email modifica el acceso del nutricionista a la plataforma",
+      "guardar": "Guardar cambios",
+      "guardando": "Guardando...",
+      "cancelar": "Cancelar",
+      "boton": "Editar",
+      "toastExito": "Datos de {nombre} actualizados",
+      "toastError": "Error al guardar los cambios",
+      "errorEmailDuplicado": "Este email ya está en uso"
+    },
     "eliminar": {
       "titulo": "Eliminar nutricionista",
       "descripcion": "Esto eliminará permanentemente a {nombre} y todos sus datos: pacientes, planes, consultas, recetas, alimentos, mensajes, citas, suscripción y su cuenta de usuario. Esta acción no se puede deshacer.",

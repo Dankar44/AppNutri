@@ -7,6 +7,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { intlTag, type Locale } from "@/i18n/config";
 import type { DietistaAdminItem } from "@/app/actions/admin";
 import { EliminarDietistaButton } from "./eliminar-dietista-button";
+import { EditarDietistaButton } from "./editar-dietista-button";
 
 const PLAN_BADGE: Record<string, string> = {
   BASICO: "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400",
@@ -310,10 +311,26 @@ export function DietistasList({ dietistas }: Props) {
                     </div>
                   )}
                   <div className="px-5 py-2.5 border-t border-border bg-muted/30 flex items-center justify-between">
-                    <EliminarDietistaButton
-                      dietistaId={d.id}
-                      nombre={`${capitalizarNombre(d.nombre)} ${capitalizarNombre(d.apellidos)}`}
-                    />
+                    <div className="flex items-center gap-2">
+                      <EditarDietistaButton
+                        dietista={{
+                          id: d.id,
+                          nombre: d.nombre,
+                          apellidos: d.apellidos,
+                          email: d.email,
+                          telefono: d.telefono,
+                          especialidad: d.especialidad,
+                          numColegiado: d.numColegiado,
+                          clinica: d.clinica,
+                          creadoPor: d.creadoPor,
+                          fuenteContacto: d.fuenteContacto,
+                        }}
+                      />
+                      <EliminarDietistaButton
+                        dietistaId={d.id}
+                        nombre={`${capitalizarNombre(d.nombre)} ${capitalizarNombre(d.apellidos)}`}
+                      />
+                    </div>
                     <Link
                       href={`/admin/dietistas/${d.id}`}
                       className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 font-medium transition-colors"
