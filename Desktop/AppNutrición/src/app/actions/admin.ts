@@ -504,6 +504,7 @@ export async function crearCuentaNutricionista(data: {
   nombre: string;
   apellidos: string;
   fuenteContacto?: string;
+  creadoPorNombre?: string;
 }): Promise<{ ok: boolean; error?: string; dietistaId?: string }> {
   const admin = await requireAdmin();
   if (!admin) redirect("/admin-login");
@@ -573,7 +574,7 @@ export async function crearCuentaNutricionista(data: {
           nombre,
           apellidos,
           verificado: true,
-          creadoPor: admin.email,
+          creadoPor: data.creadoPorNombre || admin.email,
           fuenteContacto: data.fuenteContacto || null,
         },
       });

@@ -201,6 +201,8 @@
       "passwordPlaceholder": "Mínimo de 6 caracteres",
       "fuenteContacto": "Contactado via *",
       "fuentePlaceholder": "Selecione onde foi contactado",
+      "creadoPorNombre": "Criado por",
+      "creadoPorPlaceholder": "Nome de quem criou (opcional)",
       "submit": "Criar conta",
       "submitting": "Criando..."
     },
