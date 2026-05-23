@@ -187,6 +187,8 @@
       "emailPlaceholder": "nutricionista@ejemplo.com",
       "password": "Contraseña *",
       "passwordPlaceholder": "Mínimo 6 caracteres",
+      "fuenteContacto": "Contactado vía *",
+      "fuentePlaceholder": "Selecciona dónde se contactó",
       "submit": "Crear cuenta",
       "submitting": "Creando..."
     },
@@ -265,6 +267,13 @@
       "pacientesSinAcceso": "Pacientes sin acceso",
       "deTotales": "de {total} totales"
     },
+    "searchPlaceholder": "Buscar por nombre o email...",
+    "sort": {
+      "ultimaActividad": "Última actividad",
+      "masRecientes": "Más recientes",
+      "masPacientes": "Más pacientes",
+      "nombreAZ": "Nombre A-Z"
+    },
     "tablaDietistas": {
       "title": "Nutricionistas ({count})",
       "columns": {
@@ -275,7 +284,8 @@
         "fechaExacta": "Fecha exacta",
         "estado": "Estado"
       },
-      "noVerificado": "No verificado"
+      "noVerificado": "No verificado",
+      "empty": "No se encontraron nutricionistas"
     },
     "tablaPacientes": {
       "title": "Pacientes ({count})",

@@ -20,6 +20,7 @@ model Dietista {
   logoUrl         String?
   verificado      Boolean   @default(false)
   creadoPor       String?
+  fuenteContacto  String?
   demoEliminado   Boolean   @default(false)
   notifPreferencias Json?
   lastAccessAt    DateTime?

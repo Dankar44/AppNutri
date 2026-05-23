@@ -148,6 +148,7 @@ export interface DietistaAdminItem {
   especialidad: string | null;
   clinica: string | null;
   creadoPor: string | null;
+  fuenteContacto: string | null;
   createdAt: Date;
   lastAccessAt: Date | null;
   lastSignIn: Date | null;
@@ -181,6 +182,7 @@ export async function getDietistasAdmin(busqueda?: string): Promise<DietistaAdmi
       especialidad: true,
       clinica: true,
       creadoPor: true,
+      fuenteContacto: true,
       createdAt: true,
       lastAccessAt: true,
       _count: {
@@ -499,6 +501,7 @@ export async function crearCuentaNutricionista(data: {
   password: string;
   nombre: string;
   apellidos: string;
+  fuenteContacto?: string;
 }): Promise<{ ok: boolean; error?: string; dietistaId?: string }> {
   const admin = await requireAdmin();
   if (!admin) redirect("/admin-login");
@@ -569,6 +572,7 @@ export async function crearCuentaNutricionista(data: {
           apellidos,
           verificado: true,
           creadoPor: admin.email,
+          fuenteContacto: data.fuenteContacto || null,
         },
       });
 

@@ -24,8 +24,9 @@ export function CrearCuentaForm() {
     const password = (form.get("password") as string);
     const nombre = (form.get("nombre") as string).trim();
     const apellidos = (form.get("apellidos") as string).trim();
+    const fuenteContacto = (form.get("fuenteContacto") as string) || undefined;
 
-    const res = await crearCuentaNutricionista({ email, password, nombre, apellidos });
+    const res = await crearCuentaNutricionista({ email, password, nombre, apellidos, fuenteContacto });
 
     if (res.ok) {
       toast.success(t("toast.cuentaCreada"));
@@ -127,6 +128,20 @@ export function CrearCuentaForm() {
             placeholder={t("form.emailPlaceholder")}
             className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-indigo-500/30 text-sm"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">{t("form.fuenteContacto")}</label>
+          <select
+            name="fuenteContacto"
+            required
+            className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-indigo-500/30 text-sm"
+          >
+            <option value="">{t("form.fuentePlaceholder")}</option>
+            <option value="instagram">Instagram</option>
+            <option value="linkedin">LinkedIn</option>
+            <option value="whatsapp">WhatsApp</option>
+          </select>
         </div>
 
         <div>

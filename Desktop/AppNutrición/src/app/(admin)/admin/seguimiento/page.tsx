@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { getLocale } from "@/i18n/locale";
 import { intlTag } from "@/i18n/config";
 import { capitalizarNombre } from "@/lib/utils";
+import { SeguimientoDietistas } from "./seguimiento-dietistas";
 
 export default async function SeguimientoPage() {
   const t = await getTranslations("admin");
@@ -57,6 +58,8 @@ export default async function SeguimientoPage() {
         lastAccessAt: true,
         createdAt: true,
         verificado: true,
+        creadoPor: true,
+        fuenteContacto: true,
         _count: { select: { pacientes: { where: { esDemo: false } } } },
       },
       orderBy: { lastAccessAt: "desc" },
@@ -84,6 +87,19 @@ export default async function SeguimientoPage() {
   ).length;
   const sinAccesoDietistas = dietistas.filter((d) => !d.lastAccessAt).length;
   const sinAccesoPacientes = pacientes.filter((p) => !p.lastAccessAt).length;
+
+  const dietistasSerializados = dietistas.map((d) => ({
+    id: d.id,
+    nombre: d.nombre,
+    apellidos: d.apellidos,
+    email: d.email,
+    lastAccessAt: d.lastAccessAt?.toISOString() ?? null,
+    createdAt: d.createdAt.toISOString(),
+    verificado: d.verificado,
+    creadoPor: d.creadoPor,
+    fuenteContacto: d.fuenteContacto,
+    pacientesCount: d._count.pacientes,
+  }));
 
   return (
     <div>
@@ -139,59 +155,9 @@ export default async function SeguimientoPage() {
         ))}
       </div>
 
-      {/* Tabla de dietistas */}
-      <div className="bg-card rounded-xl border border-border overflow-hidden mb-8">
-        <div className="px-5 py-4 border-b border-border flex items-center gap-2">
-          <Users className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-          <h2 className="font-semibold">{t("seguimiento.tablaDietistas.title", { count: dietistas.length })}</h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-muted/50">
-                <th className="text-left px-5 py-3 font-medium text-muted-foreground">{t("seguimiento.tablaDietistas.columns.dietista")}</th>
-                <th className="text-left px-5 py-3 font-medium text-muted-foreground hidden sm:table-cell">{t("seguimiento.tablaDietistas.columns.email")}</th>
-                <th className="text-left px-5 py-3 font-medium text-muted-foreground hidden md:table-cell">{t("seguimiento.tablaDietistas.columns.pacientes")}</th>
-                <th className="text-left px-5 py-3 font-medium text-muted-foreground">{t("seguimiento.tablaDietistas.columns.ultimoAcceso")}</th>
-                <th className="text-left px-5 py-3 font-medium text-muted-foreground hidden lg:table-cell">{t("seguimiento.tablaDietistas.columns.fechaExacta")}</th>
-                <th className="text-left px-5 py-3 font-medium text-muted-foreground">{t("seguimiento.tablaDietistas.columns.estado")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {dietistas.map((d) => {
-                const badge = statusBadge(d.lastAccessAt);
-                return (
-                  <tr key={d.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
-                    <td className="px-5 py-3 font-medium">
-                      {capitalizarNombre(`${d.nombre} ${d.apellidos}`)}
-                      {!d.verificado && (
-                        <span className="ml-2 text-xs bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400 px-1.5 py-0.5 rounded">
-                          {t("seguimiento.tablaDietistas.noVerificado")}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3 text-muted-foreground hidden sm:table-cell">{d.email}</td>
-                    <td className="px-5 py-3 hidden md:table-cell">{d._count.pacientes}</td>
-                    <td className="px-5 py-3">
-                      <span className="flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                        {timeAgo(d.lastAccessAt)}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3 text-muted-foreground text-xs hidden lg:table-cell">
-                      {formatFecha(d.lastAccessAt)}
-                    </td>
-                    <td className="px-5 py-3">
-                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${badge.color}`}>
-                        {badge.label}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+      {/* Tabla de dietistas — componente cliente con búsqueda y orden */}
+      <div className="mb-8">
+        <SeguimientoDietistas dietistas={dietistasSerializados} />
       </div>
 
       {/* Tabla de pacientes */}
