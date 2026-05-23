@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronRight, Users, User, ArrowUpDown, Clock, Instagram, Linkedin, MessageCircle } from "lucide-react";
+import { ChevronDown, ChevronRight, Users, User, ArrowUpDown, Clock, Instagram, Linkedin, MessageCircle, Filter } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { intlTag, type Locale } from "@/i18n/config";
 import type { DietistaAdminItem } from "@/app/actions/admin";
@@ -109,12 +109,18 @@ export function DietistasList({ dietistas }: Props) {
   const tag = intlTag(locale);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("reciente");
+  const [fuenteFilter, setFuenteFilter] = useState<string | null>(null);
 
   function formatDate(d: Date | string) {
     return new Date(d).toLocaleDateString(tag, { day: "numeric", month: "short", year: "numeric" });
   }
 
-  const sorted = useMemo(() => sortDietistas(dietistas, sortKey), [dietistas, sortKey]);
+  const filtered = useMemo(() => {
+    if (!fuenteFilter) return dietistas;
+    return dietistas.filter((d) => d.fuenteContacto === fuenteFilter);
+  }, [dietistas, fuenteFilter]);
+
+  const sorted = useMemo(() => sortDietistas(filtered, sortKey), [filtered, sortKey]);
 
   function toggle(id: string) {
     setExpandedId((prev) => (prev === id ? null : id));
@@ -122,22 +128,46 @@ export function DietistasList({ dietistas }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* Sort controls */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <ArrowUpDown className="w-4 h-4 text-muted-foreground shrink-0" />
-        {SORT_OPTIONS.map((opt) => (
-          <button
-            key={opt.key}
-            onClick={() => setSortKey(opt.key)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              sortKey === opt.key
-                ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
-            }`}
-          >
-            {t(opt.labelKey)}
-          </button>
-        ))}
+      {/* Sort + filter controls */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          <ArrowUpDown className="w-4 h-4 text-muted-foreground shrink-0" />
+          {SORT_OPTIONS.map((opt) => (
+            <button
+              key={opt.key}
+              onClick={() => setSortKey(opt.key)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                sortKey === opt.key
+                  ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
+            >
+              {t(opt.labelKey)}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
+          {([
+            { key: "instagram", label: "Instagram", icon: Instagram, active: "bg-pink-50 dark:bg-pink-500/10 text-pink-600 dark:text-pink-400" },
+            { key: "linkedin", label: "LinkedIn", icon: Linkedin, active: "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400" },
+            { key: "whatsapp", label: "WhatsApp", icon: MessageCircle, active: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
+          ] as const).map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setFuenteFilter(fuenteFilter === f.key ? null : f.key)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                fuenteFilter === f.key
+                  ? f.active
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
+            >
+              <f.icon className="w-3.5 h-3.5" />
+              {f.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* List */}
