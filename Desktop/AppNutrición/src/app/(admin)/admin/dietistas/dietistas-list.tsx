@@ -60,8 +60,8 @@ function capitalizarNombre(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 }
 
-function tiempoRelativo(d: Date | string | null, t: (key: string, values?: Record<string, string | number>) => string): string | null {
-  if (!d) return null;
+function tiempoRelativo(d: Date | string | null, t: (key: string, values?: Record<string, string | number>) => string): string {
+  if (!d) return t("tiempoRelativo.sinAcceso");
   const ms = Date.now() - new Date(d).getTime();
   if (ms < 0) return t("tiempoRelativo.ahora");
   const min = Math.floor(ms / 60000);
@@ -249,12 +249,10 @@ export function DietistasList({ dietistas }: Props) {
                   <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5 flex-wrap">
                     <span className="truncate">{d.email}</span>
                     {d.especialidad && <span className="hidden sm:inline">· {d.especialidad}</span>}
-                    {relativo && (
-                      <span className="inline-flex items-center gap-1 text-[11px]">
-                        <Clock className="w-3 h-3" />
-                        {relativo}
-                      </span>
-                    )}
+                    <span className="inline-flex items-center gap-1 text-[11px]">
+                      <Clock className="w-3 h-3" />
+                      {relativo}
+                    </span>
                   </div>
                 </div>
 

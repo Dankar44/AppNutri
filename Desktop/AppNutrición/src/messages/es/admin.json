@@ -123,6 +123,7 @@
       "inactivo": "Inactivo"
     },
     "tiempoRelativo": {
+      "sinAcceso": "Sin acceso",
       "ahora": "ahora",
       "minutos": "hace {count}min",
       "horas": "hace {count}h",
