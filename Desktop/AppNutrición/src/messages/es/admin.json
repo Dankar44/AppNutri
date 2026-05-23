@@ -128,6 +128,17 @@
       "horas": "hace {count}h",
       "dias": "hace {count}d",
       "meses": "hace {count}mes{plural}"
+    },
+    "eliminar": {
+      "titulo": "Eliminar nutricionista",
+      "descripcion": "Esto eliminará permanentemente a {nombre} y todos sus datos: pacientes, planes, consultas, recetas, alimentos, mensajes, citas, suscripción y su cuenta de usuario. Esta acción no se puede deshacer.",
+      "confirmarLabel": "Eliminar permanentemente",
+      "inputLabel": "Escribe ELIMINAR para confirmar",
+      "palabraConfirmacion": "ELIMINAR",
+      "toastExito": "{nombre} ha sido eliminado permanentemente",
+      "toastError": "Error al eliminar nutricionista",
+      "boton": "Eliminar",
+      "eliminando": "Eliminando..."
     }
   },
   "dietistaDetalle": {

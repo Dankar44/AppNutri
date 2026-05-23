@@ -8,6 +8,8 @@ import { getLocale } from "@/i18n/locale";
 import { intlTag } from "@/i18n/config";
 import { getTranslations } from "next-intl/server";
 import { crearPacienteDemoSiNoExiste } from "@/lib/paciente-demo";
+import { stripe } from "@/lib/stripe";
+import { isNextNavigation } from "@/lib/utils";
 export async function loginAdmin(email: string, password: string): Promise<{ error?: string }> {
   const t = await getTranslations("validation");
   const result = verifyAdminCredentials(email, password);
@@ -597,5 +599,63 @@ export async function crearCuentaNutricionista(data: {
   } catch (e) {
     const msg = e instanceof Error ? e.message : t("general.errorDesconocido");
     return { ok: false, error: msg };
+  }
+}
+
+// ─── Eliminar nutricionista completamente ───
+
+export async function eliminarDietista(dietistaId: string): Promise<{ ok: boolean; error?: string }> {
+  const admin = await requireAdmin();
+  if (!admin) redirect("/admin-login");
+  if (admin.role !== "admin") return { ok: false, error: "No autorizado" };
+
+  const t = await getTranslations("validation");
+
+  try {
+    const dietista = await prisma.dietista.findUnique({
+      where: { id: dietistaId },
+      select: { id: true, authId: true, nombre: true, apellidos: true, stripeAccountId: true },
+    });
+    if (!dietista) return { ok: false, error: t("admin.dietistaNoEncontrado") };
+
+    // 1. Cancelar suscripción Stripe
+    try {
+      const suscRows = await prisma.$queryRawUnsafe<{ stripeSubscriptionId: string | null; stripeCustomerId: string | null }[]>(
+        `SELECT "stripeSubscriptionId", "stripeCustomerId" FROM suscripciones WHERE "dietistaId" = $1 LIMIT 1`,
+        dietistaId
+      );
+      const susc = suscRows[0];
+      if (susc?.stripeSubscriptionId) {
+        try { await stripe.subscriptions.cancel(susc.stripeSubscriptionId); } catch { /* ya cancelada */ }
+      }
+    } catch { /* tabla puede no existir */ }
+
+    // 2. Eliminar cuenta Stripe Connect
+    if (dietista.stripeAccountId) {
+      try { await stripe.accounts.del(dietista.stripeAccountId); } catch { /* ya eliminada */ }
+    }
+
+    // 3. Eliminar suscripción (raw SQL, fuera de Prisma ORM)
+    try {
+      await prisma.$queryRawUnsafe(`DELETE FROM suscripciones WHERE "dietistaId" = $1`, dietistaId);
+    } catch { /* tabla puede no existir */ }
+
+    // 4. Eliminar dietista (cascada Prisma: ~26 modelos)
+    await prisma.dietista.delete({ where: { id: dietistaId } });
+
+    // 5. Eliminar usuario de Supabase Auth
+    if (dietista.authId) {
+      await prisma.$queryRawUnsafe(`DELETE FROM auth.identities WHERE user_id = $1::uuid`, dietista.authId).catch(() => {});
+      await prisma.$queryRawUnsafe(`DELETE FROM auth.users WHERE id = $1::uuid`, dietista.authId).catch(() => {});
+    }
+
+    revalidatePath("/admin/dietistas");
+    revalidatePath("/admin/seguimiento");
+    revalidatePath("/admin");
+    return { ok: true };
+  } catch (e) {
+    if (isNextNavigation(e)) throw e;
+    console.error("[admin] Error eliminando dietista:", e);
+    return { ok: false, error: t("admin.errorEliminarDietista") };
   }
 }

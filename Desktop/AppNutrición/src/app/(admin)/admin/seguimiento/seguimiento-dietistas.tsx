@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { Search, ArrowUpDown, Clock, User, Instagram, Linkedin, MessageCircle, Filter } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
+import { EliminarDietistaButton } from "../dietistas/eliminar-dietista-button";
 import { intlTag, type Locale } from "@/i18n/config";
 
 const ADMIN_NAMES: Record<string, string> = {
@@ -202,6 +203,7 @@ export function SeguimientoDietistas({ dietistas }: Props) {
               <th className="text-left px-5 py-3 font-medium text-muted-foreground">{t("tablaDietistas.columns.ultimoAcceso")}</th>
               <th className="text-left px-5 py-3 font-medium text-muted-foreground hidden lg:table-cell">{t("tablaDietistas.columns.fechaExacta")}</th>
               <th className="text-left px-5 py-3 font-medium text-muted-foreground">{t("tablaDietistas.columns.estado")}</th>
+              <th className="px-5 py-3 w-16"></th>
             </tr>
           </thead>
           <tbody>
@@ -252,12 +254,18 @@ export function SeguimientoDietistas({ dietistas }: Props) {
                       {badge.label}
                     </span>
                   </td>
+                  <td className="px-5 py-3">
+                    <EliminarDietistaButton
+                      dietistaId={d.id}
+                      nombre={`${capitalizarNombre(d.nombre)} ${capitalizarNombre(d.apellidos)}`}
+                    />
+                  </td>
                 </tr>
               );
             })}
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-5 py-8 text-center text-muted-foreground">
+                <td colSpan={7} className="px-5 py-8 text-center text-muted-foreground">
                   {t("tablaDietistas.empty")}
                 </td>
               </tr>

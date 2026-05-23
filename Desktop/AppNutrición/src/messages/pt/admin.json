@@ -128,6 +128,17 @@
       "horas": "há {count}h",
       "dias": "há {count}d",
       "meses": "há {count} mês{plural}"
+    },
+    "eliminar": {
+      "titulo": "Excluir nutricionista",
+      "descripcion": "Isso excluirá permanentemente {nombre} e todos os seus dados: pacientes, planos, consultas, receitas, alimentos, mensagens, agendamentos, assinatura e sua conta de usuário. Esta ação não pode ser desfeita.",
+      "confirmarLabel": "Excluir permanentemente",
+      "inputLabel": "Digite EXCLUIR para confirmar",
+      "palabraConfirmacion": "EXCLUIR",
+      "toastExito": "{nombre} foi excluído permanentemente",
+      "toastError": "Erro ao excluir nutricionista",
+      "boton": "Excluir",
+      "eliminando": "Excluindo..."
     }
   },
   "dietistaDetalle": {

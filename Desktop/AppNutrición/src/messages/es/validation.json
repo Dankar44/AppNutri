@@ -119,7 +119,8 @@
     "emailNoValido": "Email no válido",
     "contrasenaMinima": "La contraseña debe tener al menos 6 caracteres",
     "nombreObligatorio": "El nombre es obligatorio",
-    "dietistaNoEncontrado": "Nutricionista no encontrado"
+    "dietistaNoEncontrado": "Nutricionista no encontrado",
+    "errorEliminarDietista": "Error al eliminar el nutricionista"
   },
   "stripe": {
     "sinCuentaStripe": "No tienes cuenta de Stripe conectada"
