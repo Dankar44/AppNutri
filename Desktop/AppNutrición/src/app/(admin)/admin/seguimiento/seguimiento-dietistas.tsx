@@ -104,6 +104,7 @@ export function SeguimientoDietistas({ dietistas }: Props) {
   const [busqueda, setBusqueda] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("actividad");
   const [fuenteFilter, setFuenteFilter] = useState<string | null>(null);
+  const [creadorFilter, setCreadorFilter] = useState<string | null>(null);
 
   function formatFecha(date: string | null): string {
     if (!date) return "—";
@@ -121,6 +122,9 @@ export function SeguimientoDietistas({ dietistas }: Props) {
     if (fuenteFilter) {
       list = list.filter((d) => d.fuenteContacto === fuenteFilter);
     }
+    if (creadorFilter) {
+      list = list.filter((d) => d.creadoPor === creadorFilter);
+    }
     const search = busqueda.trim().toLowerCase();
     if (search) {
       list = list.filter(
@@ -131,7 +135,7 @@ export function SeguimientoDietistas({ dietistas }: Props) {
       );
     }
     return list;
-  }, [dietistas, busqueda, fuenteFilter]);
+  }, [dietistas, busqueda, fuenteFilter, creadorFilter]);
 
   const sorted = useMemo(() => sortDietistas(filtered, sortKey), [filtered, sortKey]);
 
@@ -188,6 +192,25 @@ export function SeguimientoDietistas({ dietistas }: Props) {
             >
               <f.icon className="w-3.5 h-3.5" />
               {f.label}
+            </button>
+          ))}
+          <span className="w-px h-4 bg-border mx-1" />
+          {([
+            { key: "Guillermo", active: "bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400" },
+            { key: "Daniel", active: "bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400" },
+            { key: "Claudia", active: "bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400" },
+          ] as const).map((c) => (
+            <button
+              key={c.key}
+              onClick={() => setCreadorFilter(creadorFilter === c.key ? null : c.key)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                creadorFilter === c.key
+                  ? c.active
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
+            >
+              <User className="w-3.5 h-3.5" />
+              {c.key}
             </button>
           ))}
         </div>
