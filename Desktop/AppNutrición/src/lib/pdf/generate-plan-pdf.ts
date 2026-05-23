@@ -187,18 +187,18 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-function getItemNameHtml(a: AlimentoEnComida): string {
+function getItemNameHtml(a: AlimentoEnComida, t: TFunc): string {
   const name = a.alimento?.nombre || a.receta?.nombre || "?";
-  const imgHtml = a.alimento?.imagenUrl
-    ? `<img src="${escapeHtml(a.alimento.imagenUrl)}" style="width:24px;height:24px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:4px;" onerror="this.style.display='none'" />`
+  const productLink = a.alimento?.enlaceProducto
+    ? ` <a href="${escapeHtml(a.alimento.enlaceProducto)}" target="_blank" class="food-link" style="font-size:9px;">${t("planDietetico.enlaceProducto.ver")}</a>`
     : "";
-  const imgLinkHtml = a.alimento?.imagenUrl
-    ? ` <a href="${escapeHtml(a.alimento.imagenUrl)}" target="_blank" style="color:#7c3aed;font-size:9px;text-decoration:underline;">(ver imagen)</a>`
+  const imgLink = a.alimento?.imagenUrl
+    ? ` <a href="${escapeHtml(a.alimento.imagenUrl)}" target="_blank" style="color:#7c3aed;font-size:9px;text-decoration:underline;">${t("planDietetico.enlaceProducto.verImagen")}</a>`
     : "";
   if (a.alimento?.enlaceProducto) {
-    return `${imgHtml}<a href="${escapeHtml(a.alimento.enlaceProducto)}" target="_blank" class="food-link">${escapeHtml(name)}</a>${imgLinkHtml}`;
+    return `<a href="${escapeHtml(a.alimento.enlaceProducto)}" target="_blank" class="food-link">${escapeHtml(name)}</a>${imgLink}`;
   }
-  return `${imgHtml}${escapeHtml(name)}${imgLinkHtml}`;
+  return `${escapeHtml(name)}${productLink}${imgLink}`;
 }
 
 function getMacrosForItem(a: AlimentoEnComida) {
@@ -288,7 +288,7 @@ export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
 
         const rows = comida.alimentos.map((a, aIdx) => {
           const name = getItemName(a);
-          const nameHtml = getItemNameHtml(a);
+          const nameHtml = getItemNameHtml(a, tt);
           const key = overrideKey(dia.dia, tipo, aIdx);
           const qty = resolveDisplay({ cantidad: a.cantidad, unidad: a.unidad }, ov[key], tt);
           let detail = `${nameHtml}: ${qty}`;

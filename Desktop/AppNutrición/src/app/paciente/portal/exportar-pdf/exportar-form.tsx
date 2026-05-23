@@ -6,11 +6,14 @@ import {
   ChevronRight,
   Download,
   Eye,
+  Loader2,
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { generatePlanPDF, type PlanPDFData, type PDFSectionOptions } from "@/lib/pdf/generate-plan-pdf";
+import { downloadPDF } from "@/lib/pdf/pdf-download";
 import type { PdfColorTheme } from "@/lib/pdf/pdf-themes";
 
 function escapeHtml(s: string): string {
@@ -212,25 +215,32 @@ export function ExportarPDFPaciente({
     setOptions((prev) => ({ ...prev, [key]: !prev[key] }));
   }
 
-  function handleDescargar() {
-    const html = generatePlanPDF({
-      planNombre: plan.nombre,
-      pacienteNombre,
-      dietistaNombre,
-      dias: plan.dias,
-      recomendaciones,
-      caloriasObjetivo: plan.caloriasObjetivo,
-      tema,
-      brandName,
-      logoDataUrl,
-      clinica,
-      sections: toSections(applied),
-    }, tPdf);
-    const withHorario = applyHorario(html, applied, horarioHtml);
-    const ventana = window.open("", "_blank");
-    if (!ventana) return;
-    ventana.document.write(withHorario);
-    ventana.document.close();
+  const [downloading, setDownloading] = useState(false);
+
+  async function handleDescargar() {
+    setDownloading(true);
+    try {
+      const html = generatePlanPDF({
+        planNombre: plan.nombre,
+        pacienteNombre,
+        dietistaNombre,
+        dias: plan.dias,
+        recomendaciones,
+        caloriasObjetivo: plan.caloriasObjetivo,
+        tema,
+        brandName,
+        logoDataUrl,
+        clinica,
+        sections: toSections(applied),
+      }, tPdf);
+      const withHorario = applyHorario(html, applied, horarioHtml);
+      const nombre = pacienteNombre.replace(/\s+/g, "-");
+      await downloadPDF(withHorario, `Plan-${nombre}.pdf`);
+    } catch {
+      toast.error("Error al generar el PDF");
+    } finally {
+      setDownloading(false);
+    }
   }
 
   return (
@@ -295,10 +305,11 @@ export function ExportarPDFPaciente({
           <button
             type="button"
             onClick={handleDescargar}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 text-white hover:bg-green-700 px-4 py-2.5 text-sm font-semibold transition-colors"
+            disabled={downloading}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 text-white hover:bg-green-700 px-4 py-2.5 text-sm font-semibold transition-colors disabled:opacity-60"
           >
-            <Download className="w-4 h-4" />
-            {t("descargarPdf")}
+            {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            {downloading ? t("generandoPdf") : t("descargarPdf")}
           </button>
         </div>
       </div>

@@ -386,6 +386,7 @@
     "vistaPreviaActualizada": "Vista previa actualizada",
     "enviarPorEmail": "Enviar por email",
     "descargarPdf": "Descargar PDF",
+    "errorDescargarPdf": "Error al generar el PDF. Inténtalo de nuevo.",
     "personalizarEntregables": "Personalizar entregables",
     "vistaPrevia": "Vista previa",
     "noSePudoCargarVistaPrevia": "No se pudo cargar la vista previa",

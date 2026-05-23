@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_BUILD_ID: Date.now().toString(),
   },
-  serverExternalPackages: ["pg"],
+  serverExternalPackages: ["pg", "puppeteer-core"],
   experimental: {
     serverActions: {
       bodySizeLimit: "2mb",

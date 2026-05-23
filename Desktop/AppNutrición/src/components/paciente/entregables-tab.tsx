@@ -30,6 +30,7 @@ import {
   type QuantityOverride,
   UNIDAD_LABELS_FULL,
 } from "@/lib/pdf/generate-plan-pdf";
+import { downloadPDF } from "@/lib/pdf/pdf-download";
 
 // ─── Types ───
 
@@ -390,16 +391,23 @@ export function EntregablesTab({
     setPdfOptions((prev) => ({ ...prev, [key]: value }));
   }
 
-  function handlePDFDownload() {
+  const [downloading, setDownloading] = useState(false);
+
+  async function handlePDFDownload() {
     if (!pdfData) {
       toast.error(t("sinPlanActivoSeleccionado"));
       return;
     }
-    const printHtml = generatePlanPDF({ ...pdfData, sections: toSections(appliedOptions), displayOverrides: appliedOverrides }, tPdf);
-    const ventana = window.open("", "_blank");
-    if (!ventana) return;
-    ventana.document.write(printHtml);
-    ventana.document.close();
+    setDownloading(true);
+    try {
+      const html = generatePlanPDF({ ...pdfData, sections: toSections(appliedOptions), displayOverrides: appliedOverrides }, tPdf);
+      const nombre = pdfData.pacienteNombre.replace(/\s+/g, "-");
+      await downloadPDF(html, `Plan-${nombre}.pdf`);
+    } catch {
+      toast.error(t("errorDescargarPdf"));
+    } finally {
+      setDownloading(false);
+    }
   }
 
   function handleEnviarPlan() {
@@ -518,7 +526,7 @@ export function EntregablesTab({
                   {hasUnappliedChanges ? t("generarVistaPrevia") : t("vistaPreviaActualizada")}
                 </button>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-2">
                 <button
                   type="button"
                   onClick={handleEnviarPlan}
@@ -541,15 +549,15 @@ export function EntregablesTab({
                 <button
                   type="button"
                   onClick={handlePDFDownload}
-                  disabled={!pdfHtml}
+                  disabled={!pdfHtml || downloading}
                   className={cn(
                     "inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition-colors",
-                    pdfHtml
+                    pdfHtml && !downloading
                       ? "border-border hover:bg-muted"
                       : "border-border/50 text-muted-foreground cursor-not-allowed"
                   )}
                 >
-                  <Download className="w-4 h-4" />
+                  {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                   {t("descargarPdf")}
                 </button>
                 </div>

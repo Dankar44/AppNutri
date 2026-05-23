@@ -386,6 +386,7 @@
     "vistaPreviaActualizada": "Pré-visualização atualizada",
     "enviarPorEmail": "Enviar por email",
     "descargarPdf": "Baixar PDF",
+    "errorDescargarPdf": "Erro ao gerar o PDF. Tente novamente.",
     "personalizarEntregables": "Personalizar entregáveis",
     "vistaPrevia": "Pré-visualização",
     "noSePudoCargarVistaPrevia": "Não foi possível carregar a pré-visualização",

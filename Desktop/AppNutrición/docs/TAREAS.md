@@ -95,3 +95,33 @@ Actualmente las fotos de perfil (nutricionista y paciente) y el logo del PDF se 
 ### 15. Rediseñar visualización de objetivos de macros en dietas
 
 La fila de objetivos (calorías, proteínas, carbos, grasas) que aparece debajo de los tabs Resumen/Plan/Análisis usa los mismos badges de colores que la sección "Media diaria de la semana" del resumen. Queda repetitivo y visualmente confuso al verlos juntos. Rediseñar los objetivos para que se diferencien claramente: usar barras de progreso que se vayan rellenando (actual vs objetivo), o un formato distinto que no repita la misma paleta de pastillas de colores.
+
+### 16. Recuperar contraseña ("¿Olvidaste tu contraseña?")
+
+No existe ningún flujo de recuperación de contraseña. Si un nutricionista olvida su contraseña, no puede entrar. Implementar el flujo completo:
+
+**Componentes necesarios:**
+
+1. **Enlace en login** — Añadir enlace "¿Olvidaste tu contraseña?" debajo del campo de contraseña en `src/app/(auth)/login/page.tsx`, apuntando a `/recuperar-contrasena`.
+
+2. **Página `/recuperar-contrasena`** — Formulario con campo de email. Al enviar:
+   - Llamar a `supabase.auth.resetPasswordForEmail(email, { redirectTo: '${origin}/auth/callback?next=/nueva-contrasena' })`.
+   - Mostrar mensaje de confirmación ("Si existe una cuenta con ese email, recibirás un enlace para restablecer tu contraseña"). No revelar si el email existe o no (seguridad).
+   - Ruta: `src/app/(auth)/recuperar-contrasena/page.tsx`.
+
+3. **Página `/nueva-contrasena`** — Formulario con dos campos (nueva contraseña + confirmar). Al enviar:
+   - Llamar a `supabase.auth.updateUser({ password: nuevaContrasena })`.
+   - El token de reset viene en la URL como fragment (Supabase lo inyecta), y el callback de `/auth/callback` ya establece la sesión.
+   - Validar: mínimo 6 caracteres, ambos campos coinciden.
+   - Ruta: `src/app/(auth)/nueva-contrasena/page.tsx`.
+
+4. **Callback** — Verificar que `src/app/auth/callback/route.ts` maneja correctamente el flujo de reset (el `code` de Supabase se intercambia por sesión, luego redirige a `/nueva-contrasena`).
+
+5. **Traducciones** — Añadir claves en `messages/es.json`, `messages/en.json` y `messages/pt.json` bajo `auth.recovery.*`: título, descripción, placeholder, botones, mensajes de éxito/error, validaciones.
+
+6. **Email de Supabase** — Verificar/personalizar el template de email de reset en el dashboard de Supabase (Authentication → Email Templates → Reset Password). Idealmente con branding Annonia.
+
+**Notas:**
+- El flujo es solo para nutricionistas (Supabase Auth). Los pacientes usan PIN + email, no tienen contraseña.
+- Supabase gestiona el envío del email y la generación del token — no hay que implementar nada server-side para eso.
+- Seguir el mismo estilo visual que login y registro (panel izquierdo decorativo en desktop, formulario a la derecha).
