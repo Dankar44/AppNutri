@@ -38,18 +38,18 @@ export async function solicitarRecuperacion(email: string, origin: string): Prom
   const baseUrl = origin || "https://annonia.com";
   const resetLink = `${baseUrl}/nueva-password?token=${token}`;
 
-  const t = await getTranslations("emails.recuperarPassword");
+  const te = await getTranslations("emails");
 
   const html = buildRecoveryEmail({
     nombre: dietista.nombre,
     resetLink,
-    t,
+    t: (key: string) => te(`recuperarPassword.${key}`),
   });
 
   try {
     await sendEmail({
       to: normalizedEmail,
-      subject: t("subject"),
+      subject: te("recuperarPassword.subject"),
       html,
     });
   } catch (err) {

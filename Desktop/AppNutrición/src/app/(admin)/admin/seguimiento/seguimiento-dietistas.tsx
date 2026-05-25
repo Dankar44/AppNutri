@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, ArrowUpDown, Clock, User, Instagram, Linkedin, MessageCircle, Filter } from "lucide-react";
+import { Search, ArrowUpDown, Clock, User, Instagram, Linkedin, MessageCircle, Filter, AlertCircle } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { EliminarDietistaButton } from "../dietistas/eliminar-dietista-button";
 import { intlTag, type Locale } from "@/i18n/config";
@@ -105,6 +105,7 @@ export function SeguimientoDietistas({ dietistas }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>("actividad");
   const [fuenteFilter, setFuenteFilter] = useState<string | null>(null);
   const [creadorFilter, setCreadorFilter] = useState<string | null>(null);
+  const [sinAccesoFilter, setSinAccesoFilter] = useState(false);
 
   function formatFecha(date: string | null): string {
     if (!date) return "—";
@@ -125,6 +126,9 @@ export function SeguimientoDietistas({ dietistas }: Props) {
     if (creadorFilter) {
       list = list.filter((d) => d.creadoPor === creadorFilter);
     }
+    if (sinAccesoFilter) {
+      list = list.filter((d) => !d.lastAccessAt);
+    }
     const search = busqueda.trim().toLowerCase();
     if (search) {
       list = list.filter(
@@ -135,7 +139,7 @@ export function SeguimientoDietistas({ dietistas }: Props) {
       );
     }
     return list;
-  }, [dietistas, busqueda, fuenteFilter, creadorFilter]);
+  }, [dietistas, busqueda, fuenteFilter, creadorFilter, sinAccesoFilter]);
 
   const sorted = useMemo(() => sortDietistas(filtered, sortKey), [filtered, sortKey]);
 
@@ -213,6 +217,18 @@ export function SeguimientoDietistas({ dietistas }: Props) {
               {c.key}
             </button>
           ))}
+          <span className="w-px h-4 bg-border mx-1" />
+          <button
+            onClick={() => setSinAccesoFilter(!sinAccesoFilter)}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              sinAccesoFilter
+                ? "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            <AlertCircle className="w-3.5 h-3.5" />
+            {t("tablaDietistas.filtroSinAcceso")}
+          </button>
         </div>
       </div>
 

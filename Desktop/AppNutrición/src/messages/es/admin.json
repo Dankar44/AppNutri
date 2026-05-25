@@ -320,7 +320,8 @@
         "estado": "Estado"
       },
       "noVerificado": "No verificado",
-      "empty": "No se encontraron nutricionistas"
+      "empty": "No se encontraron nutricionistas",
+      "filtroSinAcceso": "Sin acceso"
     },
     "tablaPacientes": {
       "title": "Pacientes ({count})",
