@@ -64,6 +64,16 @@
   "planAlimenticio": {
     "subject": "Tu plan de alimentación — {planNombre}"
   },
+  "recuperarPassword": {
+    "subject": "Restablece tu contraseña — Annonia",
+    "titulo": "Restablecer contraseña",
+    "saludo": "Hola, {nombre}",
+    "cuerpo": "Hemos recibido una solicitud para restablecer la contraseña de tu cuenta en Annonia. Pulsa el botón de abajo para elegir una nueva contraseña.",
+    "boton": "Restablecer contraseña",
+    "expiracion": "Este enlace es válido durante 1 hora.",
+    "ignorar": "Si no solicitaste este cambio, puedes ignorar este correo. Tu contraseña seguirá siendo la misma.",
+    "footer": "Este correo es una notificación automática de Annonia."
+  },
   "accesoPortal": {
     "subject": "Acceso a tu portal de nutricion — {dietistaNombre}",
     "titulo": "Acceso a tu portal de nutricion",

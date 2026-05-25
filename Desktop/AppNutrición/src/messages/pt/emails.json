@@ -64,6 +64,16 @@
   "planAlimenticio": {
     "subject": "Seu plano alimentar — {planNombre}"
   },
+  "recuperarPassword": {
+    "subject": "Redefina sua senha — Annonia",
+    "titulo": "Redefinir senha",
+    "saludo": "Olá, {nombre}",
+    "cuerpo": "Recebemos uma solicitação para redefinir a senha da sua conta na Annonia. Clique no botão abaixo para escolher uma nova senha.",
+    "boton": "Redefinir senha",
+    "expiracion": "Este link é válido por 1 hora.",
+    "ignorar": "Se você não solicitou esta alteração, pode ignorar este email. Sua senha permanecerá a mesma.",
+    "footer": "Este email é uma notificação automática da Annonia."
+  },
   "accesoPortal": {
     "subject": "Acesso ao seu portal de nutrição — {dietistaNombre}",
     "titulo": "Acesso ao seu portal de nutrição",

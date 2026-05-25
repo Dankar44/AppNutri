@@ -32,7 +32,9 @@ export async function updateSession(request: NextRequest) {
   const isAuthPage =
     request.nextUrl.pathname.startsWith("/login") ||
     request.nextUrl.pathname.startsWith("/registro") ||
-    request.nextUrl.pathname.startsWith("/pendiente");
+    request.nextUrl.pathname.startsWith("/pendiente") ||
+    request.nextUrl.pathname.startsWith("/recuperar-password") ||
+    request.nextUrl.pathname.startsWith("/nueva-password");
 
   const isPublicRoute =
     request.nextUrl.pathname.startsWith("/landing") ||
@@ -56,7 +58,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && isAuthPage && !request.nextUrl.pathname.startsWith("/pendiente")) {
+  if (user && isAuthPage && !request.nextUrl.pathname.startsWith("/pendiente") && !request.nextUrl.pathname.startsWith("/nueva-password")) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);

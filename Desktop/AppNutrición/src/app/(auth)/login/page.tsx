@@ -197,6 +197,15 @@ function LoginContent() {
               </div>
             </div>
 
+            <div className="flex justify-end">
+              <Link
+                href="/recuperar-password"
+                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                {t("login.forgotPasswordLink")}
+              </Link>
+            </div>
+
             <button
               type="submit"
               disabled={loading}
