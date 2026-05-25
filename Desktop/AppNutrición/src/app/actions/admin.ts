@@ -10,6 +10,7 @@ import { getTranslations } from "next-intl/server";
 import { crearPacienteDemoSiNoExiste } from "@/lib/paciente-demo";
 import { stripe } from "@/lib/stripe";
 import { isNextNavigation } from "@/lib/utils";
+import { sendEmail } from "@/lib/mailer";
 import {
   sanitizeString,
   sanitizeStringOptional,
@@ -601,6 +602,14 @@ export async function crearCuentaNutricionista(data: {
         console.error("[admin] Error creando paciente demo:", err);
       });
 
+      sendEmail({
+        to: email,
+        subject: "Bienvenido/a a Annonia — Tu cuenta está lista",
+        html: buildWelcomeEmail(nombre, email, password),
+      }).catch((err) => {
+        console.error("[admin] Error enviando email de bienvenida:", err);
+      });
+
       revalidatePath("/admin/dietistas");
       revalidatePath("/admin");
       return { ok: true, dietistaId: dietista.id };
@@ -787,4 +796,45 @@ export async function editarDietista(
     console.error("[admin] Error editando dietista:", e);
     return { ok: false, error: t("admin.errorEditarDietista") };
   }
+}
+
+// ─── Email de bienvenida ───
+
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function buildWelcomeEmail(nombre: string, email: string, password: string): string {
+  return `<div style="max-width:520px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#ffffff;">
+  <div style="background:#16a34a;padding:32px 24px;text-align:center;border-radius:12px 12px 0 0;">
+    <img src="https://annonia.com/icon-512.png" alt="Annonia" width="72" height="72" style="border-radius:14px;" />
+    <h1 style="color:#ffffff;font-size:26px;margin:16px 0 4px;font-weight:700;">Annonia</h1>
+    <p style="color:rgba(255,255,255,0.85);font-size:14px;margin:0;">Nutrición profesional al alcance de todos</p>
+  </div>
+  <div style="padding:32px 24px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;">
+    <h2 style="color:#111827;font-size:20px;margin:0 0 8px;font-weight:600;">¡Bienvenido/a, ${escapeHtml(nombre)}!</h2>
+    <p style="color:#4b5563;font-size:15px;line-height:1.6;margin:0 0 20px;">
+      Te damos la bienvenida a Annonia. Tu cuenta ya está creada y lista para usar. Aquí tienes tus credenciales de acceso:
+    </p>
+    <div style="background:#f3f4f6;border-radius:8px;padding:16px 20px;margin:0 0 20px;">
+      <p style="color:#374151;font-size:14px;margin:0 0 6px;"><strong>Email:</strong> ${escapeHtml(email)}</p>
+      <p style="color:#374151;font-size:14px;margin:0;"><strong>Contraseña:</strong> ${escapeHtml(password)}</p>
+    </div>
+    <p style="color:#4b5563;font-size:14px;line-height:1.6;margin:0 0 24px;">
+      Te recomendamos cambiar tu contraseña después del primer inicio de sesión desde Ajustes.
+    </p>
+    <div style="text-align:center;margin:0 0 24px;">
+      <a href="https://annonia.com/login" target="_blank" style="display:inline-block;background:#16a34a;color:#ffffff;font-size:16px;font-weight:600;padding:14px 36px;border-radius:8px;text-decoration:none;">
+        Iniciar sesión
+      </a>
+    </div>
+    <p style="color:#9ca3af;font-size:13px;line-height:1.5;margin:0 0 16px;">
+      Si tienes alguna duda, responde a este correo y te ayudaremos.
+    </p>
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0;" />
+    <p style="color:#9ca3af;font-size:12px;text-align:center;margin:0;">
+      © 2025 Annonia · annonia.com
+    </p>
+  </div>
+</div>`;
 }
