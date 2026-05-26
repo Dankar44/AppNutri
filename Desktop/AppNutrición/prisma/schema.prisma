@@ -56,6 +56,11 @@ model Dietista {
   mensajesSoporte MensajeSoporte[]
   googleIntegracion GoogleIntegracion?
   noLeidosSoporte Int       @default(0)
+  empresaId       String?
+  empresa         Empresa?  @relation("EmpresaMiembros", fields: [empresaId], references: [id], onDelete: SetNull)
+  empresaLiderada Empresa?  @relation("EmpresaLider")
+  solicitudesEmpresa SolicitudEmpresa[]
+  movimientosStock   MovimientoStock[]
 
   @@map("dietistas")
 }
@@ -308,9 +313,15 @@ model Alimento {
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
+  stock           Int?
+  precioUnitario  Float?
+  stockMinimo     Int?
+  compartido      Boolean           @default(false)
+
   recetaIngredientes  RecetaIngrediente[]
   alimentosEnComida   AlimentoEnComida[]
   entradasDiario      EntradaDiario[]
+  movimientosStock    MovimientoStock[]
 
   @@map("alimentos")
 }
@@ -673,6 +684,12 @@ enum TipoNotificacion {
   PAGO_RECIBIDO
   PAGO_PENDIENTE
   PAGO_FALLIDO
+  EMPRESA_SOLICITUD
+  EMPRESA_ACEPTADA
+  EMPRESA_RECHAZADA
+  EMPRESA_MIEMBRO_SALIO
+  EMPRESA_LIDER_TRANSFERIDO
+  STOCK_BAJO
 }
 
 model Notificacion {
@@ -790,4 +807,65 @@ model MensajeSoporte {
 
   @@index([dietistaId, createdAt])
   @@map("mensajes_soporte")
+}
+
+// ─── Empresa (organización multi-nutricionista) ───
+
+model Empresa {
+  id          String    @id @default(dbgenerated("gen_random_uuid()::text"))
+  nombre      String
+  descripcion String?
+  slug        String    @unique
+  liderId     String    @unique
+  lider       Dietista  @relation("EmpresaLider", fields: [liderId], references: [id], onDelete: Cascade)
+  maxMiembros Int       @default(5)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  miembros         Dietista[]          @relation("EmpresaMiembros")
+  solicitudes      SolicitudEmpresa[]
+  movimientosStock MovimientoStock[]
+
+  @@map("empresas")
+}
+
+enum EstadoSolicitud {
+  PENDIENTE
+  ACEPTADA
+  RECHAZADA
+}
+
+model SolicitudEmpresa {
+  id         String          @id @default(dbgenerated("gen_random_uuid()::text"))
+  empresaId  String
+  empresa    Empresa         @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  dietistaId String?
+  dietista   Dietista?       @relation(fields: [dietistaId], references: [id], onDelete: Cascade)
+  email      String?
+  estado     EstadoSolicitud @default(PENDIENTE)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  @@unique([empresaId, dietistaId, email])
+  @@map("solicitudes_empresa")
+}
+
+model MovimientoStock {
+  id            String   @id @default(dbgenerated("gen_random_uuid()::text"))
+  alimentoId    String
+  alimento      Alimento @relation(fields: [alimentoId], references: [id], onDelete: Cascade)
+  dietistaId    String
+  dietista      Dietista @relation(fields: [dietistaId], references: [id], onDelete: Cascade)
+  empresaId     String
+  empresa       Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  tipo          String
+  cantidad      Int
+  stockAnterior Int
+  stockNuevo    Int
+  nota          String?
+  createdAt     DateTime @default(now())
+
+  @@index([alimentoId])
+  @@index([empresaId])
+  @@map("movimientos_stock")
 }

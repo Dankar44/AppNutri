@@ -45,6 +45,7 @@ interface Props {
 type PDFOptions = {
   portada: boolean;
   planSemanal: boolean;
+  cantidadesSemanal: boolean;
   detalleDiario: boolean;
   recomendaciones: boolean;
   listaCompra: boolean;
@@ -54,6 +55,7 @@ type PDFOptions = {
 const DEFAULT_OPTIONS: PDFOptions = {
   portada: true,
   planSemanal: true,
+  cantidadesSemanal: false,
   detalleDiario: true,
   recomendaciones: true,
   listaCompra: true,
@@ -68,6 +70,7 @@ const OPTION_KEYS: {
 }[] = [
   { key: "portada", labelKey: "portada", descKey: "portadaDesc", disabled: true },
   { key: "planSemanal", labelKey: "planSemanal", descKey: "planSemanalDesc" },
+  { key: "cantidadesSemanal", labelKey: "cantidadesSemanal", descKey: "cantidadesSemanalDesc" },
   { key: "detalleDiario", labelKey: "detalleDiario", descKey: "detalleDiarioDesc" },
   { key: "recomendaciones", labelKey: "recomendaciones", descKey: "recomendacionesDesc" },
   { key: "listaCompra", labelKey: "listaCompra", descKey: "listaCompraDesc" },
@@ -121,6 +124,7 @@ function toSections(options: PDFOptions): PDFSectionOptions {
   return {
     portada: options.portada,
     planSemanal: options.planSemanal,
+    cantidadesSemanal: options.cantidadesSemanal,
     detalleDiario: options.detalleDiario,
     recomendaciones: options.recomendaciones,
     listaCompra: options.listaCompra,
@@ -212,7 +216,11 @@ export function ExportarPDFPaciente({
   const hasUnappliedChanges = JSON.stringify(options) !== JSON.stringify(applied);
 
   function toggleOption(key: keyof PDFOptions) {
-    setOptions((prev) => ({ ...prev, [key]: !prev[key] }));
+    setOptions((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      if (key === "planSemanal" && !next.planSemanal) next.cantidadesSemanal = false;
+      return next;
+    });
   }
 
   const [downloading, setDownloading] = useState(false);
@@ -261,7 +269,8 @@ export function ExportarPDFPaciente({
           {OPTION_KEYS.map((opt) => {
             const noData =
               (opt.key === "horarioPaciente" && safeHorario.length === 0) ||
-              (opt.key === "recomendaciones" && !recomendaciones);
+              (opt.key === "recomendaciones" && !recomendaciones) ||
+              (opt.key === "cantidadesSemanal" && !options.planSemanal);
             const disabled = opt.disabled || noData;
             return (
               <label

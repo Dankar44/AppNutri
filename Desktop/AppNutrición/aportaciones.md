@@ -481,7 +481,7 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 
 **Estado actual:** Existe el enum `UnidadMedida` con 8 unidades (GRAMOS, UNIDAD, CUCHARADA, TAZA, etc.) y cada alimento tiene un campo `porcion` (gramos por unidad). `convertirAGramos()` calcula correctamente: 2 UNIDAD × porcion(125g) = 250g. El paciente ve la unidad original ("2 ud"), no los gramos.
 
-**Petición (Alba F. / albaf.nutricion, mayo 2025):** Quiere poner "2 yogures" y que la app entienda que son 250g. O "2 huevos" y que sepa que son 120g. Sin tener que calcular los gramos manualmente. Más visual para el paciente también.
+**Petición (Alba F. / albaf.nutricion, mayo 2025; nutricionista argentina, mayo 2026):** Quiere poner "2 yogures" y que la app entienda que son 250g. O "2 huevos" y que sepa que son 120g. Sin tener que calcular los gramos manualmente. Más visual para el paciente también. La nutricionista argentina pide poder usar medidas caseras (1 taza, 2 tazas…) en los alimentos precargados/globales, no solo en los personalizados.
 
 **Lo que falta (gap):**
 - [ ] **Porciones nombradas por alimento** — Que yogur tenga "1 yogur = 125g", huevo tenga "1 huevo = 60g", pan tenga "1 rebanada = 30g". No solo la genérica "UNIDAD" sino nombres específicos
@@ -611,6 +611,12 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 | 26 | Ordenar resultados de búsqueda por relevancia | Alta | Baja |
 | 27 | Reordenar alimentos dentro de una comida (drag & drop) | Media-Alta | Media |
 | 28 | Informe de composición nutricional de la dieta | Alta | Media |
+| 29 | Sección de medidas de bioimpedancia (BIA Tanita) | Media-Alta | Media |
+| 30 | Editar horario semanal del paciente | Media | Baja-Media |
+| 31 | Copiar/mover comidas entre días del plan | Alta | Baja-Media |
+| 32 | Pliegues ISAK completos + sumatoria + perímetro muslo | Alta | Media |
+| 33 | Perímetro de muslo en mediciones básicas | Media | Baja |
+| 34 | Renombrar "Almuerzo" a "Comida" (configurable) | Media | Baja-Media |
 
 ---
 
@@ -618,7 +624,7 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 
 **Estado actual:** Al buscar alimentos (en el editor de dietas, recetas, y la lista de alimentos), los resultados se devuelven por orden de BD (normalmente por ID o nombre alfabético). Si buscas "tomate", puede aparecer "Tomate cherry" o "Salsa de tomate" antes que "Tomate". Lo mismo con "plátano" — el resultado exacto no se prioriza.
 
-**Petición (Anabel Segura, mayo 2025):** Que al buscar un alimento, el resultado más relevante (coincidencia exacta o más cercana) aparezca primero. Si escribes "tomate", lo primero debe ser "Tomate", y después "Tomate cherry", "Salsa de tomate", etc. Si escribes "plátano", lo primero debe ser "Plátano".
+**Petición (Anabel Segura, mayo 2025; nutricionista argentina, mayo 2026):** Que al buscar un alimento, el resultado más relevante (coincidencia exacta o más cercana) aparezca primero. Si escribes "tomate", lo primero debe ser "Tomate", y después "Tomate cherry", "Salsa de tomate", etc. Si escribes "plátano", lo primero debe ser "Plátano". Ejemplo concreto: al escribir "POLL…" no aparece "Pollo" de primera.
 
 **Tareas:**
 - [ ] Implementar ordenación por relevancia en los resultados de búsqueda de alimentos:
@@ -696,3 +702,191 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 
 **Prioridad:** Alta (petición directa de nutricionistas — necesitan documentar el análisis nutricional)
 **Complejidad:** Media
+
+---
+
+## 29. Sección de medidas de bioimpedancia (BIA Tanita)
+
+**Origen:** María Moreno Nutricionista — 23 mayo 2026
+
+**Estado actual:** El sistema de mediciones del paciente registra peso, altura, IMC, perímetros corporales y % de grasa corporal (un solo valor global). No existe la posibilidad de registrar valores segmentados de bioimpedancia.
+
+**Petición:** Muchos nutricionistas hacen seguimiento con BIA Tanita (básculas de bioimpedancia). Quieren poder registrar los valores segmentados: masa muscular, masa grasa, agua corporal y demás parámetros que proporciona la bioimpedancia, no solo el peso y % de grasa global.
+
+**Tareas:**
+- [ ] Investigar qué valores devuelve una BIA Tanita típica (masa muscular total y segmentada, masa grasa total y segmentada, agua corporal, masa ósea, metabolismo basal, edad metabólica, grasa visceral, etc.)
+- [ ] Crear modelo `MedidaBioimpedancia` o ampliar el modelo `Medida` existente con campos opcionales para bioimpedancia
+- [ ] Campos principales: masaMuscularKg, masaGrasaKg, aguaCorporalPct, masaOseaKg, grasaVisceralNivel, edadMetabolica, metabolismoBasalKcal
+- [ ] Campos segmentados opcionales: brazo derecho/izquierdo, pierna derecha/izquierda, tronco (masa muscular y % grasa por segmento)
+- [ ] UI en la ficha del paciente: nueva sección o pestaña "Bioimpedancia" con formulario para registrar estos valores
+- [ ] Gráficas de evolución de los valores de bioimpedancia a lo largo del tiempo
+- [ ] Considerar importación automática si Tanita tiene API o exportación de datos
+
+**Prioridad:** Media-Alta (muchos nutricionistas usan BIA como herramienta principal de seguimiento)
+**Complejidad:** Media
+
+---
+
+## 30. Editar horario semanal del paciente desde el panel del nutricionista
+
+**Origen:** María Moreno Nutricionista — 23 mayo 2026
+
+**Estado actual:** María reporta que en el horario semanal no le deja aplicar las celdas ni editarlo. Puede tratarse de un bug en la funcionalidad de agenda/horario existente, o de la necesidad de que el nutricionista pueda gestionar el horario del paciente directamente.
+
+**Petición:** Que el nutricionista pueda editar el horario semanal del paciente (horarios de comidas, rutinas, disponibilidad) desde su panel, sin depender de que el paciente lo rellene.
+
+**Tareas:**
+- [ ] Investigar el bug reportado: verificar por qué no se pueden editar las celdas del horario semanal
+- [ ] Asegurar que el nutricionista pueda crear y modificar el horario semanal del paciente desde la ficha del paciente
+- [ ] Verificar permisos: el nutricionista debería poder editar el horario de sus pacientes
+
+**Prioridad:** Media (bug reportado + mejora de flujo de trabajo)
+**Complejidad:** Baja (si es bug) / Media (si requiere nueva funcionalidad)
+
+---
+
+## 31. Copiar/mover comidas entre días del plan
+
+**Origen:** Nutricionista argentina — mayo 2026; Guille (nutricionista) — 25 mayo 2026
+
+**Estado actual:** En el editor de dietas, cada día (Lunes a Domingo) tiene sus comidas independientes. Para repetir un desayuno del lunes en el martes, hay que recrear la comida manualmente: añadir cada alimento con su cantidad uno por uno. Existen botones para mover un alimento individual a otra comida/día, pero no para copiar una comida entera (con todos sus alimentos) a otro día.
+
+**Petición:** Poder copiar o mover una comida completa (ej: el desayuno del lunes) a otro día de la semana con un clic. Así se monta la semana mucho más rápido cuando varios días comparten comidas similares.
+
+**Tareas:**
+- [ ] Añadir botón "Copiar comida" en cada slot de comida (junto a los controles existentes)
+- [ ] Al pulsar, mostrar selector de día destino (Martes, Miércoles, etc.) y tipo de comida destino (Desayuno, Almuerzo, etc.)
+- [ ] Duplicar todos los `AlimentoEnComida` de la comida origen en la comida destino del día elegido
+- [ ] Si la comida destino ya tiene alimentos, preguntar: ¿reemplazar o añadir encima?
+- [ ] Opción de "Copiar día completo" — copiar todas las comidas de un día a otro día
+- [ ] Opcionalmente: "Mover comida" (copiar + eliminar la original)
+- [ ] Recalcular macros del día destino tras la copia
+- [ ] **Copiar desde otros planes** — Poder importar una comida o día completo de otro plan nutricional del mismo paciente o de otro paciente. Selector: elegir plan origen → día → comida, y copiar al plan actual. Útil para reutilizar comidas ya probadas sin recrearlas desde cero.
+
+**Archivos a modificar:**
+- `src/components/dieta/comida-slot.tsx` — botón de copiar comida y selector de destino
+- `src/components/dieta/dia-plan.tsx` — botón de copiar día completo
+- `src/app/actions/planes.ts` — server action para duplicar alimentos de una comida/día a otro, incluyendo desde otros planes
+
+**Prioridad:** Alta (afecta directamente a la velocidad de creación de planes — flujo principal de trabajo, pedido por múltiples nutricionistas)
+**Complejidad:** Baja-Media (media si se incluye copiar desde otros planes)
+
+---
+
+## 32. Pliegues cutáneos — protocolo ISAK completo y sumatoria
+
+**Origen:** Guille (nutricionista) — 25 mayo 2026
+
+**Estado actual:** La app ya registra 7 pliegues cutáneos basados en el protocolo Jackson & Pollock: abdominal, axilar, pectoral, subescapular, suprailiaco, tricipital y muslo. Se miden en mm con precisión de 0.1 mm. Se guardan en el modelo `MedidaAntropometrica` y se muestran en la pestaña "Mediciones" de la ficha del paciente. No existe cálculo de sumatoria de pliegues ni ecuaciones de composición corporal a partir de los pliegues.
+
+En perímetros, se registran 4: cintura, cadera, brazo y abdomen. No existe perímetro del muslo.
+
+**Petición:** Implementar los 8 pliegues cutáneos del protocolo ISAK (International Society for the Advancement of Kinanthropometry), que es el estándar profesional con acreditación de pago. El orden de medición es importante porque está estandarizado:
+
+1. **Tríceps** — cara posterior del brazo, punto medio entre acromion y olécranon. Pliegue vertical.
+2. **Subescapular** — ángulo inferior de la escápula, 2 cm por debajo. Pliegue oblicuo (45°).
+3. **Bíceps** — cara anterior del brazo, punto medio (misma altura que tríceps). Pliegue vertical.
+4. **Cresta ilíaca** — inmediatamente superior a la cresta ilíaca, línea axilar media. Pliegue horizontal/ligeramente oblicuo.
+5. **Supraespinal** — intersección de la línea del borde axilar anterior con la línea horizontal del borde superior de la cresta ilíaca. Pliegue oblicuo.
+6. **Abdominal** — 5 cm lateral al ombligo. Pliegue vertical.
+7. **Muslo anterior** — punto medio entre el pliegue inguinal y el borde superior de la rótula. Pliegue vertical.
+8. **Pierna medial (pantorrilla)** — cara medial de la pierna, máxima circunferencia. Pliegue vertical.
+
+**Diferencias con lo implementado (Jackson & Pollock vs ISAK):**
+
+| Pliegue | J&P (actual) | ISAK (pedido) | Estado |
+|---------|--------------|---------------|--------|
+| Tríceps/Tricipital | ✅ `pliegueTricipital` | ✅ Tríceps | Ya existe |
+| Subescapular | ✅ `pliegueSubescapular` | ✅ Subescapular | Ya existe |
+| Abdominal | ✅ `pliegueAbdominal` | ✅ Abdominal | Ya existe |
+| Muslo | ✅ `pliegueMuslo` | ✅ Muslo anterior | Ya existe |
+| Bíceps | ❌ | ✅ | **Falta** |
+| Cresta ilíaca | ❌ | ✅ | **Falta** (distinto de suprailiaco J&P) |
+| Supraespinal | ❌ | ✅ | **Falta** (distinto de suprailiaco J&P) |
+| Pierna medial | ❌ | ✅ | **Falta** |
+| Axilar | ✅ `pliegueAxilar` | ❌ | Solo J&P |
+| Pectoral | ✅ `plieguePectoral` | ❌ | Solo J&P |
+| Suprailiaco | ✅ `pliegueSuprailiaco` | ❌ | Solo J&P (≠ cresta ilíaca ISAK) |
+
+**Nota importante:** El pliegue suprailiaco de Jackson & Pollock NO es igual a la cresta ilíaca ni al supraespinal de ISAK. Son puntos anatómicos distintos con direcciones de pliegue diferentes. Se deben mantener los tres como campos separados.
+
+**Tareas:**
+
+*Pliegues nuevos:*
+- [ ] Añadir 4 campos al modelo `MedidaAntropometrica` en schema.prisma: `pliegueBiceps`, `pliegueCrestaIliaca`, `pliegueSupraespinal`, `plieguePierna` (todos Float?, en mm)
+- [ ] Migración SQL: `ALTER TABLE` para añadir las 4 columnas
+- [ ] Actualizar `MedidaFormData` en `src/app/actions/medidas.ts` con los nuevos campos
+- [ ] Actualizar UI de la sección de pliegues en `paciente-ficha-mediciones-tab.tsx`: mostrar los 11 pliegues organizados por protocolo (sección ISAK con los 8 en orden estandarizado, sección J&P con axilar/pectoral/suprailiaco)
+- [ ] Mostrar los pliegues ISAK en el orden protocolario (1-8) para que el nutri los mida en orden
+- [ ] Añadir los nuevos pliegues a las gráficas de evolución
+
+*Sumatoria de pliegues:*
+- [ ] Calcular y mostrar Σ8 (sumatoria de los 8 pliegues ISAK) automáticamente cuando los 8 estén rellenos
+- [ ] Calcular y mostrar Σ6 (excluyendo bíceps y pierna, los 6 pliegues del perfil restringido ISAK nivel 1)
+- [ ] Mostrar la sumatoria en la tarjeta de mediciones y en las gráficas de evolución
+- [ ] Considerar cálculo de % grasa a partir de pliegues con ecuaciones estándar: Durnin & Womersley (1974, usa bíceps+tríceps+subescapular+suprailiaco), Faulkner (1968, para deportistas)
+
+*Perímetro del muslo:*
+- [ ] Añadir campo `perimetroMuslo` (Float?, en cm) al modelo `MedidaAntropometrica`
+- [ ] Añadir a la UI en la sección de perímetros, junto a cintura/cadera/brazo/abdomen
+- [ ] Añadir a las gráficas de evolución
+
+**Archivos a modificar:**
+- `prisma/schema.prisma` — 5 nuevos campos (4 pliegues + 1 perímetro)
+- `src/app/actions/medidas.ts` — actualizar tipos, validación y guardado
+- `src/components/paciente/paciente-ficha-mediciones-tab.tsx` — UI con secciones por protocolo + sumatorias
+- `src/app/(dashboard)/reportes/[id]/generar-pdf.tsx` — incluir nuevos pliegues y sumatoria en informes
+- Script de migración SQL en `scripts/`
+
+**Prioridad:** Alta (acreditación ISAK es un estándar profesional — implementarlo posiciona la app como herramienta seria para nutricionistas con formación en antropometría)
+**Complejidad:** Media
+
+---
+
+## 33. Añadir perímetro de muslo en mediciones básicas
+
+**Origen:** Dayana Martinez Nutricionista — 25 mayo 2026
+
+**Estado actual:** En la sección de perímetros corporales se registran: cintura, cadera, brazo y abdomen. No existe perímetro del muslo como medida independiente (solo el pliegue cutáneo del muslo). Nota: la tarea #32 ya contempla añadir `perimetroMuslo` al modelo como parte de la implementación ISAK, pero esta petición pide que se incluya también en las "mediciones básicas" (no solo en la sección avanzada de antropometría).
+
+**Petición:** Poder registrar el perímetro del muslo como una medición básica más, junto a cintura, cadera, brazo y abdomen.
+
+**Tareas:**
+- [ ] Añadir campo `perimetroMuslo` (Float?, en cm) al modelo `MedidaAntropometrica` si no se ha hecho ya en tarea #32
+- [ ] Mostrar el perímetro del muslo en la sección de perímetros básicos de la UI de mediciones
+- [ ] Incluir en las gráficas de evolución de perímetros
+- [ ] Migración SQL: `ALTER TABLE` para añadir la columna
+
+**Relacionado con:** Tarea #32 (pliegues ISAK + perímetro muslo)
+**Prioridad:** Media
+**Complejidad:** Baja
+
+---
+
+## 34. Renombrar "Almuerzo" a "Comida" (o hacerlo configurable)
+
+**Origen:** Dayana Martinez Nutricionista — 25 mayo 2026
+
+**Estado actual:** El enum `TipoComida` define los tipos de comida del plan: DESAYUNO, MEDIA_MANANA, ALMUERZO, MERIENDA, CENA, SNACK, PRE_ENTRENO, POST_ENTRENO, OTROS. En la UI se muestra "Almuerzo" para la comida del mediodía. En España, "almuerzo" se usa coloquialmente para referirse a la media mañana (equivalente a MEDIA_MANANA), y la comida principal del mediodía se llama "comida". Esto genera confusión.
+
+**Petición:** Cambiar la etiqueta "Almuerzo" por "Comida" en la UI, o hacerlo configurable por país/preferencia del nutricionista.
+
+**Opciones:**
+1. **Cambio directo:** Renombrar la etiqueta de ALMUERZO a "Comida" en las traducciones (es.json). Simple pero puede confundir a usuarios de Latinoamérica donde "almuerzo" sí significa la comida del mediodía.
+2. **Configurable por país/preferencia:** Añadir opción en ajustes del dietista para elegir la terminología regional (España: "Comida", Latinoamérica: "Almuerzo"). Más trabajo pero correcto.
+3. **Traducciones regionales:** Crear variantes es-ES y es-LATAM de las traducciones. Más complejo.
+
+**Tareas:**
+- [ ] Decidir enfoque: cambio directo vs configurable
+- [ ] Si configurable: añadir campo `regionTerminologia` o `pais` al modelo `Dietista`
+- [ ] Actualizar las traducciones en `src/messages/es/patients.json` (y archivos relacionados) donde aparezca "Almuerzo"
+- [ ] Verificar que el cambio se refleje en: editor de dietas, PDF, portal del paciente, link compartido
+- [ ] NO cambiar el enum `TipoComida` en Prisma (mantener ALMUERZO como valor interno)
+
+**Archivos a modificar:**
+- `src/messages/es/patients.json` — etiqueta de ALMUERZO
+- `src/messages/es/patient-portal.json` — si hay referencia
+- `src/lib/pdf/generate-plan-pdf.ts` — si usa traducciones directas
+
+**Prioridad:** Media
+**Complejidad:** Baja (cambio directo) / Media (configurable)

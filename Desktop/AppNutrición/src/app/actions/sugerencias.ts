@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
 import { sugerirComplementos, type AlimentoSugerido } from "@/lib/ai/suggest-complement";
 import { calcularMacrosPorcion, sumarMacros, convertirAGramos, type Macros } from "@/lib/macros";
+import { getCompanyMemberIds } from "@/lib/empresa-utils";
 
 export async function getSugerencias(
   comidaId: string,
@@ -55,9 +56,11 @@ export async function getSugerencias(
   );
   const macrosActuales = sumarMacros(todosAlimentos);
 
-  // Obtener alimentos disponibles del dietista
+  const empresaRow = await prisma.dietista.findUnique({ where: { id: dietista.id }, select: { empresaId: true } });
+  const memberIds = await getCompanyMemberIds(dietista.id, empresaRow?.empresaId ?? null);
+
   const alimentosDB = await prisma.alimento.findMany({
-    where: { OR: [{ dietistaId: dietista.id }, { dietistaId: null }] },
+    where: { OR: [{ dietistaId: { in: memberIds } }, { dietistaId: null }] },
     select: { id: true, nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true, porcion: true, unidad: true },
     take: 200,
   });

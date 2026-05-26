@@ -175,6 +175,12 @@ export const LIMITS = {
   PORCIONES_MAX: 100,
   TIEMPO_PREP_MAX: 1440,
   MARCA_PDF: 200,
+  EMPRESA_NOMBRE: 200,
+  EMPRESA_DESCRIPCION: 500,
+  EMPRESA_SLUG: 50,
+  STOCK_MAX: 999999,
+  PRECIO_MAX: 99999.99,
+  NOTA_STOCK: 500,
 } as const;
 
 export const TEMA_PDF_OPCIONES = ["verde", "azul", "morado", "naranja", "oscuro", "personalizado"] as const;
@@ -186,4 +192,14 @@ export function validateHexColor(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
   return HEX_COLOR_REGEX.test(trimmed) ? trimmed : null;
+}
+
+const SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+export function validateSlug(value: unknown, maxLength: number): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim().toLowerCase().slice(0, maxLength);
+  if (!trimmed || trimmed.length < 3) return null;
+  if (!SLUG_REGEX.test(trimmed)) return null;
+  return trimmed;
 }

@@ -74,6 +74,28 @@
     "ignorar": "Si no solicitaste este cambio, puedes ignorar este correo. Tu contraseña seguirá siendo la misma.",
     "footer": "Este correo es una notificación automática de Annonia."
   },
+  "empresa": {
+    "solicitudSubject": "Nueva solicitud de ingreso — {empresaNombre}",
+    "solicitudTitulo": "Solicitud de ingreso",
+    "solicitudSaludo": "Hola {liderNombre},",
+    "solicitudCuerpo": "{solicitanteNombre} ({solicitanteEmail}) quiere unirse a tu empresa {empresaNombre}.",
+    "solicitudBoton": "Ver solicitudes",
+    "aceptadaSubject": "¡Bienvenido/a a {empresaNombre}!",
+    "aceptadaTitulo": "Solicitud aceptada",
+    "aceptadaSaludo": "Hola {solicitanteNombre},",
+    "aceptadaCuerpo": "Tu solicitud de ingreso a {empresaNombre} ha sido aceptada. Ya puedes acceder a los recursos compartidos del equipo.",
+    "aceptadaBoton": "Ir a ajustes",
+    "rechazadaSubject": "Solicitud de ingreso rechazada — {empresaNombre}",
+    "rechazadaTitulo": "Solicitud rechazada",
+    "rechazadaSaludo": "Hola {solicitanteNombre},",
+    "rechazadaCuerpo": "Tu solicitud de ingreso a {empresaNombre} ha sido rechazada por el líder del equipo.",
+    "liderazgoSubject": "Ahora lideras {empresaNombre}",
+    "liderazgoTitulo": "Liderazgo transferido",
+    "liderazgoSaludo": "Hola {nuevoLiderNombre},",
+    "liderazgoCuerpo": "{anteriorLiderNombre} te ha transferido el liderazgo de {empresaNombre}. Ahora puedes gestionar miembros y solicitudes.",
+    "liderazgoBoton": "Gestionar empresa",
+    "footer": "Este correo es una notificación automática de Annonia."
+  },
   "accesoPortal": {
     "subject": "Acceso a tu portal de nutricion — {dietistaNombre}",
     "titulo": "Acceso a tu portal de nutricion",

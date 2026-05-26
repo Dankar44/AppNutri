@@ -17,6 +17,7 @@ import {
   Eye,
   MessageSquare,
   UserPlus,
+  Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -32,6 +33,7 @@ const navItems = [
   { href: "/admin/actividad", labelKey: "nav.actividad" as const, icon: Activity },
   { href: "/admin/suscripciones", labelKey: "nav.suscripciones" as const, icon: CreditCard },
   { href: "/admin/crear-cuenta", labelKey: "nav.crearCuenta" as const, icon: UserPlus },
+  { href: "/admin/centros", labelKey: "nav.centros" as const, icon: Building2 },
 ];
 
 interface AdminSidebarProps {

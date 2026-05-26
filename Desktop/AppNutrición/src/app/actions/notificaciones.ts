@@ -38,7 +38,7 @@ export async function generarNotificaciones() {
 
   const notificacionesRecientes = await prisma.notificacion.findMany({
     where: { dietistaId: dietista.id, createdAt: { gte: hace7d } },
-    select: { tipo: true, citaId: true, pacienteId: true, createdAt: true },
+    select: { tipo: true, citaId: true, pacienteId: true, mensaje: true, createdAt: true },
   });
   const tiposPeriodicos: TipoNotificacion[] = ["PACIENTE_SIN_CONSULTA", "PACIENTE_SIN_MEDIDAS", "PLAN_ANTIGUO"];
 
@@ -158,6 +158,48 @@ export async function generarNotificaciones() {
         params: { nombrePaciente },
         enlace: `/pacientes/${e.paciente.id}/seguimiento`,
       });
+    }
+  }
+
+  // Stock bajo (solo si tiene empresa)
+  const dietistaEmpresa = await prisma.dietista.findUnique({
+    where: { id: dietista.id },
+    select: { empresaId: true },
+  });
+  if (dietistaEmpresa?.empresaId) {
+    const miembrosEmpresa = await prisma.dietista.findMany({
+      where: { empresaId: dietistaEmpresa.empresaId },
+      select: { id: true },
+    });
+    const memberIds = miembrosEmpresa.map((m) => m.id);
+    const alimentosBajoStock = await prisma.alimento.findMany({
+      where: {
+        dietistaId: { in: memberIds },
+        stock: { not: null },
+        stockMinimo: { not: null },
+      },
+      select: { id: true, nombre: true, stock: true, stockMinimo: true },
+    });
+
+    const stockNotifRecientes = notificacionesRecientes.filter(
+      (n) => n.tipo === "STOCK_BAJO" && n.createdAt >= hace24h,
+    );
+
+    for (const a of alimentosBajoStock) {
+      if (a.stock !== null && a.stockMinimo !== null && a.stock <= a.stockMinimo) {
+        const yaNotificado = stockNotifRecientes.some(
+          (n) => n.mensaje?.includes(a.nombre),
+        );
+        if (!yaNotificado) {
+          nuevas.push({
+            dietistaId: dietista.id,
+            tipo: "STOCK_BAJO",
+            titulo: `Stock bajo: ${a.nombre}`,
+            mensaje: `${a.nombre} tiene ${a.stock} uds (mínimo: ${a.stockMinimo}).`,
+            enlace: `/alimentos/${a.id}`,
+          });
+        }
+      }
     }
   }
 
@@ -314,6 +356,18 @@ export async function getBadgesNavegacion(): Promise<Record<string, number>> {
     "PLAN_ANTIGUO",
   ]);
   if (pacientes > 0) badges["/pacientes"] = pacientes;
+
+  const empresa = suma([
+    "EMPRESA_SOLICITUD",
+    "EMPRESA_ACEPTADA",
+    "EMPRESA_RECHAZADA",
+    "EMPRESA_MIEMBRO_SALIO",
+    "EMPRESA_LIDER_TRANSFERIDO",
+  ]);
+  if (empresa > 0) badges["/ajustes"] = empresa;
+
+  const stockBajo = suma(["STOCK_BAJO"]);
+  if (stockBajo > 0) badges["/alimentos"] = (badges["/alimentos"] ?? 0) + stockBajo;
 
   return badges;
 }
@@ -498,6 +552,12 @@ export type NotifPreferencias = {
   PAGO_RECIBIDO: boolean;
   PAGO_PENDIENTE: boolean;
   PAGO_FALLIDO: boolean;
+  EMPRESA_SOLICITUD: boolean;
+  EMPRESA_ACEPTADA: boolean;
+  EMPRESA_RECHAZADA: boolean;
+  EMPRESA_MIEMBRO_SALIO: boolean;
+  EMPRESA_LIDER_TRANSFERIDO: boolean;
+  STOCK_BAJO: boolean;
 };
 
 const PREFERENCIAS_DEFAULT: NotifPreferencias = {
@@ -514,6 +574,12 @@ const PREFERENCIAS_DEFAULT: NotifPreferencias = {
   PAGO_RECIBIDO: true,
   PAGO_PENDIENTE: true,
   PAGO_FALLIDO: true,
+  EMPRESA_SOLICITUD: true,
+  EMPRESA_ACEPTADA: true,
+  EMPRESA_RECHAZADA: true,
+  EMPRESA_MIEMBRO_SALIO: true,
+  EMPRESA_LIDER_TRANSFERIDO: true,
+  STOCK_BAJO: true,
 };
 
 export async function getNotifPreferencias(): Promise<NotifPreferencias> {

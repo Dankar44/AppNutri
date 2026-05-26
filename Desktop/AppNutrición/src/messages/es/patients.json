@@ -377,6 +377,8 @@
     "listaCompraDescripcion": "Todos los ingredientes del plan agrupados por categoría",
     "valoresNutricionalesPorComida": "Valores nutricionales por comida",
     "valoresNutricionalesPorComidaDescripcion": "Tabla con kcal, proteínas, carbos, grasas y fibra por comida",
+    "cantidadesSemanal": "Cantidades en resumen semanal",
+    "cantidadesSemanalDescripcion": "Muestra la cantidad junto a cada alimento en la tabla semanal (ej: Pollo - 150g)",
     "cantidadesEntregable": "Cantidades del entregable",
     "ajustaCantidades": "Ajusta las cantidades que aparecen en el PDF del paciente. Los cambios solo afectan al PDF, no al plan original.",
     "restablecer": "Restablecer",

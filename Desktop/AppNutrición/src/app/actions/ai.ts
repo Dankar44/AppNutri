@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache";
 import type { MacroObjetivos } from "@/lib/ai/types";
 import { DiaSemana, TipoComida } from "@/generated/prisma/client";
 import { findAlimentoEnLista } from "@/lib/alimento-utils";
+import { getCompanyMemberIds } from "@/lib/empresa-utils";
 import { sanitizeString, validateNumber, LIMITS } from "@/lib/validation";
 import { getTranslations } from "next-intl/server";
 import { getAlimentosGlobales } from "@/lib/alimentos-cache";
@@ -42,10 +43,13 @@ export async function generarPlanIA(
     });
     if (!paciente) return { error: t("paciente.pacienteNoEncontrado") };
 
+    const empresaRow = await prisma.dietista.findUnique({ where: { id: dietista.id }, select: { empresaId: true } });
+    const memberIds = await getCompanyMemberIds(dietista.id, empresaRow?.empresaId ?? null);
+
     const [alimentosGlobales, alimentosDietista, recetas] = await Promise.all([
       getAlimentosGlobales(),
       prisma.alimento.findMany({
-        where: { dietistaId: dietista.id, origen: "PERSONALIZADO" },
+        where: { dietistaId: { in: memberIds }, origen: "PERSONALIZADO" },
         select: { nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true },
         orderBy: { nombre: "asc" },
         take: 50,
@@ -68,7 +72,7 @@ export async function generarPlanIA(
     const todosAlimentos = [
       ...alimentosGlobales,
       ...await prisma.alimento.findMany({
-        where: { dietistaId: dietista.id },
+        where: { dietistaId: { in: memberIds } },
         select: { id: true, nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true },
       }),
     ];
@@ -196,10 +200,13 @@ export async function aceptarPlanIA(
     throw new Error(t("generacionIA.respuestaFormatoInvalido"));
   }
 
+  const empresaRow2 = await prisma.dietista.findUnique({ where: { id: dietista.id }, select: { empresaId: true } });
+  const memberIds2 = await getCompanyMemberIds(dietista.id, empresaRow2?.empresaId ?? null);
+
   const [alimentosGlobales, alimentosDietista] = await Promise.all([
     getAlimentosGlobales(),
     prisma.alimento.findMany({
-      where: { dietistaId: dietista.id },
+      where: { dietistaId: { in: memberIds2 } },
       select: { id: true, nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true },
     }),
   ]);

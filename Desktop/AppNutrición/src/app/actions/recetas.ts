@@ -15,6 +15,7 @@ import {
   sanitizeSearch,
   LIMITS,
 } from "@/lib/validation";
+import { getCompanyMemberIds } from "@/lib/empresa-utils";
 
 export interface RecetaFormData {
   nombre: string;
@@ -502,12 +503,22 @@ export async function buscarAlimentosYRecetas(
   }> = [];
 
   if (filtro !== "mis-recetas") {
+    const empresaRow = await prisma.dietista.findUnique({ where: { id: dietista.id }, select: { empresaId: true } });
+    const memberIds = await getCompanyMemberIds(dietista.id, empresaRow?.empresaId ?? null);
+
     const nombreFilter = querySanitizada
       ? { nombre: { contains: querySanitizada, mode: "insensitive" as const } }
       : {};
+    const otherMemberIds = memberIds.filter((id) => id !== dietista.id);
     const ownerFilter = filtro === "mis-alimentos"
       ? { dietistaId: dietista.id }
-      : { OR: [{ dietistaId: dietista.id }, { dietistaId: null }] };
+      : {
+          OR: [
+            { dietistaId: dietista.id },
+            ...(otherMemberIds.length > 0 ? [{ dietistaId: { in: otherMemberIds }, compartido: true }] : []),
+            { dietistaId: null },
+          ],
+        };
 
     const raw = await prisma.alimento.findMany({
       where: { ...ownerFilter, ...nombreFilter },

@@ -26,6 +26,12 @@
     "PAGO_RECIBIDO": "Pago recibido",
     "PAGO_PENDIENTE": "Pago pendiente",
     "PAGO_FALLIDO": "Pago fallido",
+    "EMPRESA_SOLICITUD": "Solicitud empresa",
+    "EMPRESA_ACEPTADA": "Solicitud aceptada",
+    "EMPRESA_RECHAZADA": "Solicitud rechazada",
+    "EMPRESA_MIEMBRO_SALIO": "Miembro salió",
+    "EMPRESA_LIDER_TRANSFERIDO": "Liderazgo transferido",
+    "STOCK_BAJO": "Stock bajo",
     "default": "Notificación"
   },
   "dot": {
@@ -79,6 +85,10 @@
       "pagos": {
         "label": "Pagos",
         "description": "Movimientos de cobros de tus pacientes"
+      },
+      "empresa": {
+        "label": "Empresa",
+        "description": "Solicitudes, miembros y alertas de tu empresa"
       }
     },
     "items": {
@@ -133,6 +143,30 @@
       "PAGO_FALLIDO": {
         "title": "Pago fallido",
         "description": "Un cobro no se ha podido procesar"
+      },
+      "EMPRESA_SOLICITUD": {
+        "title": "Solicitud de ingreso",
+        "description": "Alguien quiere unirse a tu empresa"
+      },
+      "EMPRESA_ACEPTADA": {
+        "title": "Solicitud aceptada",
+        "description": "Tu solicitud de ingreso ha sido aceptada"
+      },
+      "EMPRESA_RECHAZADA": {
+        "title": "Solicitud rechazada",
+        "description": "Tu solicitud de ingreso ha sido rechazada"
+      },
+      "EMPRESA_MIEMBRO_SALIO": {
+        "title": "Miembro salió",
+        "description": "Un miembro ha abandonado la empresa"
+      },
+      "EMPRESA_LIDER_TRANSFERIDO": {
+        "title": "Liderazgo transferido",
+        "description": "Se te ha transferido el liderazgo de la empresa"
+      },
+      "STOCK_BAJO": {
+        "title": "Stock bajo",
+        "description": "Un producto ha bajado del umbral mínimo"
       }
     }
   }

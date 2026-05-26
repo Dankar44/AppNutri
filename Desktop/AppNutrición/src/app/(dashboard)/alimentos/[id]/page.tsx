@@ -9,6 +9,8 @@ import { AlimentoImage } from "@/components/alimento/alimento-image";
 import { MacroAnalysisCard } from "@/components/alimento/macro-analysis-card";
 import { PorcionCalculator } from "@/components/alimento/porcion-calculator";
 import { MicronutrientesCard } from "@/components/alimento/micronutrientes-card";
+import { StockInfoCard } from "@/components/alimento/stock-info-card";
+import { getCurrentDietista } from "@/app/actions/auth";
 
 const CATEGORIA_KEY_MAP: Record<string, string> = {
   FRUTAS: "frutas", VERDURAS: "verduras", CEREALES: "cereales",
@@ -47,6 +49,12 @@ export default async function AlimentoDetailPage({ params }: Props) {
   }
 
   const t = await getTranslations("foods");
+  const dietista = await getCurrentDietista();
+  let tieneEmpresa = false;
+  if (dietista) {
+    const d = await prisma.dietista.findUnique({ where: { id: dietista.id }, select: { empresaId: true } });
+    tieneEmpresa = !!d?.empresaId;
+  }
 
   return (
     <div>
@@ -145,6 +153,17 @@ export default async function AlimentoDetailPage({ params }: Props) {
           porcionDefault={alimento.porcion}
         />
       </div>
+
+      {tieneEmpresa && alimento.stock !== null && (
+        <div className="mt-6">
+          <StockInfoCard
+            alimentoId={alimento.id}
+            stock={alimento.stock}
+            precioUnitario={alimento.precioUnitario}
+            stockMinimo={alimento.stockMinimo}
+          />
+        </div>
+      )}
 
       <div className="mt-6">
         <MicronutrientesCard values={micros} />

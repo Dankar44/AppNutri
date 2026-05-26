@@ -46,6 +46,7 @@ interface EntregablesTabProps {
 type PDFOptions = {
   portada: boolean;
   planSemanal: boolean;
+  cantidadesSemanal: boolean;
   detalleDiario: boolean;
   recomendaciones: boolean;
   listaCompra: boolean;
@@ -55,6 +56,7 @@ type PDFOptions = {
 const PDF_OPTIONS_DEFAULT: PDFOptions = {
   portada: true,
   planSemanal: true,
+  cantidadesSemanal: false,
   detalleDiario: true,
   recomendaciones: true,
   listaCompra: true,
@@ -69,6 +71,7 @@ const PDF_OPTIONS_KEYS: {
 }[] = [
   { key: "portada", labelKey: "portada", descriptionKey: "portadaDescripcion", disabled: true },
   { key: "planSemanal", labelKey: "planSemanalCompleto", descriptionKey: "planSemanalCompletoDescripcion" },
+  { key: "cantidadesSemanal", labelKey: "cantidadesSemanal", descriptionKey: "cantidadesSemanalDescripcion" },
   { key: "detalleDiario", labelKey: "detalleDiarioComidas", descriptionKey: "detalleDiarioComidasDescripcion" },
   { key: "recomendaciones", labelKey: "recomendaciones", descriptionKey: "recomendacionesDescripcion" },
   { key: "listaCompra", labelKey: "listaCompra", descriptionKey: "listaCompraDescripcion" },
@@ -363,6 +366,7 @@ export function EntregablesTab({
     return {
       portada: opts.portada,
       planSemanal: opts.planSemanal,
+      cantidadesSemanal: opts.cantidadesSemanal,
       detalleDiario: opts.detalleDiario,
       recomendaciones: opts.recomendaciones,
       listaCompra: opts.listaCompra,
@@ -388,7 +392,11 @@ export function EntregablesTab({
 
 
   function handlePdfOptionChange(key: keyof PDFOptions, value: boolean) {
-    setPdfOptions((prev) => ({ ...prev, [key]: value }));
+    setPdfOptions((prev) => {
+      const next = { ...prev, [key]: value };
+      if (key === "planSemanal" && !value) next.cantidadesSemanal = false;
+      return next;
+    });
   }
 
   const [downloading, setDownloading] = useState(false);
@@ -467,12 +475,14 @@ export function EntregablesTab({
                 {t("contenidoPdf")}
               </h3>
               <div className="space-y-1">
-                {PDF_OPTIONS_KEYS.map((opt) => (
+                {PDF_OPTIONS_KEYS.map((opt) => {
+                  const isDisabled = opt.disabled || (opt.key === "cantidadesSemanal" && !pdfOptions.planSemanal);
+                  return (
                   <label
                     key={opt.key}
                     className={cn(
                       "flex items-start gap-3 rounded-lg px-3 py-2.5 transition-colors",
-                      opt.disabled
+                      isDisabled
                         ? "opacity-60 cursor-not-allowed"
                         : "hover:bg-muted/50 cursor-pointer"
                     )}
@@ -480,7 +490,7 @@ export function EntregablesTab({
                     <input
                       type="checkbox"
                       checked={pdfOptions[opt.key]}
-                      disabled={opt.disabled}
+                      disabled={isDisabled}
                       onChange={(e) =>
                         handlePdfOptionChange(opt.key, e.target.checked)
                       }
@@ -495,7 +505,8 @@ export function EntregablesTab({
                       </p>
                     </div>
                   </label>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Editor de cantidades */}

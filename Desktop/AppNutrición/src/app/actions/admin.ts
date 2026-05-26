@@ -11,6 +11,7 @@ import { crearPacienteDemoSiNoExiste } from "@/lib/paciente-demo";
 import { stripe } from "@/lib/stripe";
 import { isNextNavigation } from "@/lib/utils";
 import { sendEmail } from "@/lib/mailer";
+import { generarSlug } from "@/lib/empresa-utils";
 import {
   sanitizeString,
   sanitizeStringOptional,
@@ -803,6 +804,246 @@ export async function editarDietista(
 function escapeHtml(str: string): string {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
+
+// ─── Centros (solo admin) ───
+
+export interface CentroAdminItem {
+  id: string;
+  nombre: string;
+  slug: string;
+  descripcion: string | null;
+  maxMiembros: number;
+  createdAt: Date;
+  lider: { id: string; nombre: string; apellidos: string; email: string };
+  _count: { miembros: number };
+}
+
+export async function getCentrosAdmin(busqueda?: string): Promise<CentroAdminItem[]> {
+  const admin = await requireAdmin();
+  if (!admin || admin.role !== "admin") redirect("/admin-login");
+
+  const search = busqueda?.trim().toLowerCase();
+
+  const empresas = await prisma.empresa.findMany({
+    where: search
+      ? {
+          OR: [
+            { nombre: { contains: search, mode: "insensitive" } },
+            { slug: { contains: search, mode: "insensitive" } },
+            { lider: { nombre: { contains: search, mode: "insensitive" } } },
+            { lider: { email: { contains: search, mode: "insensitive" } } },
+          ],
+        }
+      : undefined,
+    select: {
+      id: true,
+      nombre: true,
+      slug: true,
+      descripcion: true,
+      maxMiembros: true,
+      createdAt: true,
+      lider: { select: { id: true, nombre: true, apellidos: true, email: true } },
+      _count: { select: { miembros: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return empresas;
+}
+
+export async function buscarDietistasParaCentro(busqueda: string) {
+  const admin = await requireAdmin();
+  if (!admin || admin.role !== "admin") redirect("/admin-login");
+
+  const search = busqueda.trim().toLowerCase();
+  if (!search) return [];
+
+  return prisma.dietista.findMany({
+    where: {
+      empresaId: null,
+      OR: [
+        { nombre: { contains: search, mode: "insensitive" } },
+        { apellidos: { contains: search, mode: "insensitive" } },
+        { email: { contains: search, mode: "insensitive" } },
+      ],
+    },
+    select: { id: true, nombre: true, apellidos: true, email: true },
+    take: 10,
+  });
+}
+
+export async function crearCentroAdmin(data: {
+  centroNombre: string;
+  centroDescripcion?: string;
+  maxMiembros?: number;
+  modoLider: "existente" | "nuevo";
+  liderDietistaId?: string;
+  liderNombre?: string;
+  liderApellidos?: string;
+  liderEmail?: string;
+  liderPassword?: string;
+}): Promise<{ ok: boolean; error?: string; centroId?: string }> {
+  const admin = await requireAdmin();
+  if (!admin || admin.role !== "admin") redirect("/admin-login");
+
+  const t = await getTranslations("validation");
+
+  const centroNombre = data.centroNombre.trim();
+  if (!centroNombre) return { ok: false, error: t("admin.centroNombreObligatorio") };
+
+  try {
+    let liderId: string;
+
+    if (data.modoLider === "existente") {
+      if (!data.liderDietistaId) return { ok: false, error: t("admin.liderObligatorio") };
+      const dietista = await prisma.dietista.findUnique({
+        where: { id: data.liderDietistaId },
+        select: { id: true, empresaId: true },
+      });
+      if (!dietista) return { ok: false, error: t("admin.dietistaNoEncontrado") };
+      if (dietista.empresaId) return { ok: false, error: t("admin.dietistaYaEnCentro") };
+      liderId = dietista.id;
+    } else {
+      if (!data.liderEmail || !data.liderPassword || !data.liderNombre) {
+        return { ok: false, error: t("admin.camposObligatorios") };
+      }
+      const result = await crearCuentaNutricionista({
+        email: data.liderEmail,
+        password: data.liderPassword,
+        nombre: data.liderNombre,
+        apellidos: data.liderApellidos || "",
+        creadoPorNombre: admin.email,
+      });
+      if (!result.ok || !result.dietistaId) return { ok: false, error: result.error };
+      liderId = result.dietistaId;
+    }
+
+    let slug = generarSlug(centroNombre);
+    const existeSlug = await prisma.empresa.findUnique({ where: { slug } });
+    if (existeSlug) slug = `${slug}-${Date.now().toString(36)}`;
+
+    const empresa = await prisma.empresa.create({
+      data: {
+        nombre: centroNombre,
+        slug,
+        descripcion: data.centroDescripcion?.trim() || null,
+        liderId,
+        maxMiembros: data.maxMiembros ?? 5,
+      },
+    });
+
+    await prisma.dietista.update({
+      where: { id: liderId },
+      data: { empresaId: empresa.id },
+    });
+
+    revalidatePath("/admin/centros");
+    revalidatePath("/admin");
+    return { ok: true, centroId: empresa.id };
+  } catch (e) {
+    if (isNextNavigation(e)) throw e;
+    console.error("[admin] Error creando centro:", e);
+    return { ok: false, error: e instanceof Error ? e.message : t("general.errorDesconocido") };
+  }
+}
+
+export interface CentroDetalle {
+  id: string;
+  nombre: string;
+  slug: string;
+  descripcion: string | null;
+  maxMiembros: number;
+  createdAt: Date;
+  lider: { id: string; nombre: string; apellidos: string; email: string };
+  miembros: { id: string; nombre: string; apellidos: string; email: string; createdAt: Date }[];
+  solicitudes: { id: string; email: string | null; estado: string; createdAt: Date; dietista: { nombre: string; apellidos: string; email: string } | null }[];
+}
+
+export async function getCentroDetalle(centroId: string): Promise<CentroDetalle | null> {
+  const admin = await requireAdmin();
+  if (!admin || admin.role !== "admin") redirect("/admin-login");
+
+  const empresa = await prisma.empresa.findUnique({
+    where: { id: centroId },
+    select: {
+      id: true,
+      nombre: true,
+      slug: true,
+      descripcion: true,
+      maxMiembros: true,
+      createdAt: true,
+      lider: { select: { id: true, nombre: true, apellidos: true, email: true } },
+      miembros: {
+        select: { id: true, nombre: true, apellidos: true, email: true, createdAt: true },
+        orderBy: { createdAt: "asc" },
+      },
+      solicitudes: {
+        select: {
+          id: true,
+          email: true,
+          estado: true,
+          createdAt: true,
+          dietista: { select: { nombre: true, apellidos: true, email: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      },
+    },
+  });
+
+  return empresa;
+}
+
+export async function editarCentroAdmin(
+  centroId: string,
+  data: { nombre?: string; descripcion?: string; maxMiembros?: number; slug?: string }
+): Promise<{ ok: boolean; error?: string }> {
+  const admin = await requireAdmin();
+  if (!admin || admin.role !== "admin") redirect("/admin-login");
+
+  const t = await getTranslations("validation");
+
+  try {
+    const empresa = await prisma.empresa.findUnique({ where: { id: centroId } });
+    if (!empresa) return { ok: false, error: t("admin.centroNoEncontrado") };
+
+    const updateData: Record<string, unknown> = {};
+
+    if (data.nombre !== undefined) {
+      const nombre = data.nombre.trim();
+      if (!nombre) return { ok: false, error: t("admin.centroNombreObligatorio") };
+      updateData.nombre = nombre;
+    }
+    if (data.descripcion !== undefined) {
+      updateData.descripcion = data.descripcion.trim() || null;
+    }
+    if (data.maxMiembros !== undefined) {
+      if (data.maxMiembros < 1 || data.maxMiembros > 100) return { ok: false, error: t("admin.maxMiembrosInvalido") };
+      updateData.maxMiembros = data.maxMiembros;
+    }
+    if (data.slug !== undefined) {
+      const slug = data.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
+      if (!slug) return { ok: false, error: t("admin.slugInvalido") };
+      if (slug !== empresa.slug) {
+        const existe = await prisma.empresa.findUnique({ where: { slug } });
+        if (existe) return { ok: false, error: t("admin.slugDuplicado") };
+        updateData.slug = slug;
+      }
+    }
+
+    if (Object.keys(updateData).length > 0) {
+      await prisma.empresa.update({ where: { id: centroId }, data: updateData });
+    }
+
+    revalidatePath("/admin/centros");
+    revalidatePath(`/admin/centros/${centroId}`);
+    return { ok: true };
+  } catch (e) {
+    if (isNextNavigation(e)) throw e;
+    return { ok: false, error: e instanceof Error ? e.message : t("general.errorDesconocido") };
+  }
+}
+
+// ─── Email de bienvenida ───
 
 function buildWelcomeEmail(nombre: string, email: string, password: string): string {
   return `<div style="max-width:520px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#ffffff;">

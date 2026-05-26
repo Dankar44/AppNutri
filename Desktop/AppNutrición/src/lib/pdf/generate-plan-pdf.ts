@@ -79,6 +79,7 @@ export interface PDFSectionOptions {
   detalleDiario?: boolean;
   recomendaciones?: boolean;
   listaCompra?: boolean;
+  cantidadesSemanal?: boolean;
   valoresNutricionales?: boolean;
 }
 
@@ -229,7 +230,7 @@ function getDayMacros(dia: Dia) {
 export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
   const tt = t ?? ((key: string) => key);
   const theme = data.tema ?? TEMAS_PDF.verde;
-  const sec = { portada: true, planSemanal: true, detalleDiario: true, recomendaciones: true, listaCompra: true, valoresNutricionales: true, ...data.sections };
+  const sec = { portada: true, planSemanal: true, detalleDiario: true, recomendaciones: true, listaCompra: true, cantidadesSemanal: false, valoresNutricionales: true, ...data.sections };
   const brandName = escapeHtml(data.brandName || "Annonia");
   const ov = data.displayOverrides ?? {};
   const sortedDias = DIAS_ORDEN.map((d) => data.dias.find((dia) => dia.dia === d)).filter(Boolean) as Dia[];
@@ -266,7 +267,13 @@ export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
       html += `<tr><td class="meal-label">${tt("planDietetico.tipoLabels." + TIPO_KEY_MAP[tipo])}</td>`;
       for (const dia of sortedDias) {
         const comida = dia.comidas.find((c) => c.tipo === tipo);
-        const items = comida?.alimentos.map((a) => escapeHtml(getItemName(a))).join("<br>") || "-";
+        const items = comida?.alimentos.map((a, aIdx) => {
+          const name = escapeHtml(getItemName(a));
+          if (!sec.cantidadesSemanal) return name;
+          const key = overrideKey(dia.dia, tipo, aIdx);
+          const qty = resolveDisplay({ cantidad: a.cantidad, unidad: a.unidad }, ov[key], tt);
+          return `${name} - ${qty}`;
+        }).join("<br>") || "-";
         const desc = comida?.descripcion ? escapeHtml(comida.descripcion) : "";
         html += `<td>${desc ? `<strong style="font-size:8px;">${desc}</strong><br>` : ""}${items}</td>`;
       }

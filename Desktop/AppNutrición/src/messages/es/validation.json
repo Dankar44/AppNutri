@@ -123,7 +123,14 @@
     "errorEliminarDietista": "Error al eliminar el nutricionista",
     "emailInvalido": "El email no es válido",
     "emailDuplicado": "Este email ya está en uso",
-    "errorEditarDietista": "Error al editar el nutricionista"
+    "errorEditarDietista": "Error al editar el nutricionista",
+    "centroNombreObligatorio": "El nombre del centro es obligatorio",
+    "liderObligatorio": "Debes seleccionar un líder para el centro",
+    "dietistaYaEnCentro": "Este nutricionista ya pertenece a un centro",
+    "centroNoEncontrado": "Centro no encontrado",
+    "maxMiembrosInvalido": "El máximo de miembros debe ser entre 1 y 100",
+    "slugInvalido": "El slug solo puede contener letras minúsculas, números y guiones",
+    "slugDuplicado": "Este slug ya está en uso por otro centro"
   },
   "stripe": {
     "sinCuentaStripe": "No tienes cuenta de Stripe conectada"
@@ -214,8 +221,18 @@
     "cumplioComida": "Cumplió la {mealLabel} del día {fechaStr} a las {hora}.",
     "hizoCambiosComida": "Hizo cambios en la {mealLabel} del día {fechaStr} a las {hora}.",
     "meses": [
-      "enero", "febrero", "marzo", "abril", "mayo", "junio",
-      "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+      "enero",
+      "febrero",
+      "marzo",
+      "abril",
+      "mayo",
+      "junio",
+      "julio",
+      "agosto",
+      "septiembre",
+      "octubre",
+      "noviembre",
+      "diciembre"
     ]
   },
   "imagen": {
@@ -225,5 +242,21 @@
     "noApiKeys": "No hay API keys de IA configuradas",
     "timeout": "Tiempo máximo de espera agotado. Inténtalo de nuevo más tarde.",
     "rateLimitExhausted": "Demasiados reintentos por rate limit. Inténtalo de nuevo más tarde."
+  },
+  "empresa": {
+    "nombreRequerido": "El nombre de la empresa es obligatorio",
+    "slugInvalido": "El código solo puede contener letras minúsculas, números y guiones (mínimo 3 caracteres)",
+    "slugDuplicado": "Este código ya está en uso",
+    "yaEnEmpresa": "Ya perteneces a una empresa",
+    "noEnEmpresa": "No perteneces a ninguna empresa",
+    "soloLider": "Solo el líder puede realizar esta acción",
+    "empresaNoEncontrada": "Empresa no encontrada",
+    "solicitudYaEnviada": "Ya has enviado una solicitud a esta empresa",
+    "solicitudNoEncontrada": "Solicitud no encontrada",
+    "noPuedesExpulsarte": "No puedes expulsarte a ti mismo",
+    "miembroNoEncontrado": "Miembro no encontrado",
+    "yaEresLider": "Ya eres el líder de esta empresa",
+    "solicitanteYaEnOtraEmpresa": "El solicitante ya pertenece a otra empresa",
+    "tipoMovimientoInvalido": "Tipo de movimiento no válido"
   }
 }

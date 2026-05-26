@@ -15,6 +15,7 @@ import {
   Wallet,
   GraduationCap,
   AlertTriangle,
+  Building2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ const SECTIONS: NavSection[] = [
   { id: "profesional", labelKey: "nav.profesional", icon: Briefcase },
   { id: "documentos", labelKey: "nav.documentos", icon: FileText },
   { id: "anamnesis", labelKey: "nav.anamnesis", icon: ClipboardList },
+  { id: "empresa", labelKey: "nav.empresa", icon: Building2 },
   { id: "integraciones", labelKey: "nav.integraciones", icon: Plug },
   { id: "paciente-demo", labelKey: "nav.pacienteDemo", icon: Sparkles },
   { id: "suscripcion", labelKey: "nav.suscripcion", icon: CreditCard },
@@ -48,7 +50,7 @@ const SECTIONS: NavSection[] = [
  * Barra lateral de secciones del panel de Ajustes. En desktop se pega arriba
  * (sticky) y el item activo cambia cuando el scroll atraviesa cada sección.
  */
-export function AjustesNav() {
+export function AjustesNav({ hideCentro }: { hideCentro?: boolean } = {}) {
   const t = useTranslations("settings");
   const [activeId, setActiveId] = useState<string>(SECTIONS[0]?.id ?? "");
   const clickLockRef = useRef<number>(0);
@@ -81,7 +83,8 @@ export function AjustesNav() {
       },
     );
 
-    for (const s of SECTIONS) {
+    const visibleSections = hideCentro ? SECTIONS.filter((s) => s.id !== "empresa") : SECTIONS;
+    for (const s of visibleSections) {
       const el = document.getElementById(s.id);
       if (el) observer.observe(el);
     }
@@ -111,7 +114,7 @@ export function AjustesNav() {
         {t("nav.title")}
       </p>
       <ul className="flex flex-row lg:flex-col gap-1 overflow-x-auto lg:overflow-visible scrollbar-thin pb-1 lg:pb-0 -mx-1 px-1 lg:mx-0">
-        {SECTIONS.map((s) => {
+        {(hideCentro ? SECTIONS.filter((s) => s.id !== "empresa") : SECTIONS).map((s) => {
           const active = activeId === s.id;
           const Icon = s.icon;
           return (

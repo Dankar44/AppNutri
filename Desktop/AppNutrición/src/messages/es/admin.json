@@ -23,7 +23,8 @@
       "mensajes": "Mensajes",
       "actividad": "Actividad",
       "suscripciones": "Suscripciones",
-      "crearCuenta": "Crear cuenta"
+      "crearCuenta": "Crear cuenta",
+      "centros": "Centros"
     },
     "roles": {
       "creator": "Creador de cuentas",
@@ -390,5 +391,45 @@
     "enviarAriaLabel": "Enviar mensaje",
     "errorEnviar": "No se pudo enviar",
     "tuPrefix": "Tú: "
+  },
+  "centros": {
+    "title": "Centros",
+    "subtitle": "{count} centros registrados",
+    "searchPlaceholder": "Buscar por nombre, slug o líder...",
+    "crearCentro": "Crear centro",
+    "crearCentroTitle": "Crear centro",
+    "crearCentroSubtitle": "Crea un nuevo centro y asigna un líder",
+    "empty": "No hay centros registrados",
+    "creadoEl": "Creado el {date}",
+    "miembros": "miembros",
+    "liderLabel": "Líder del centro",
+    "liderBadge": "Líder",
+    "miembrosTitle": "Miembros ({count})",
+    "sinMiembros": "Este centro no tiene miembros",
+    "invitacionesPendientes": "{count} invitaciones pendientes",
+    "editarCentro": "Editar centro",
+    "volverCentros": "Volver a centros",
+    "datosCentro": "Datos del centro",
+    "liderCentro": "Líder del centro",
+    "form": {
+      "nombre": "Nombre del centro *",
+      "descripcion": "Descripción (opcional)",
+      "maxMiembros": "Máximo de miembros (licencias)",
+      "slug": "Slug",
+      "liderExistente": "Nutricionista existente",
+      "liderNuevo": "Crear cuenta nueva",
+      "buscarLider": "Buscar nutricionista por nombre o email...",
+      "cambiar": "Cambiar",
+      "liderNombreLabel": "Nombre *",
+      "liderApellidosLabel": "Apellidos",
+      "liderEmailLabel": "Email *",
+      "liderPasswordLabel": "Contraseña *",
+      "submit": "Crear centro",
+      "guardar": "Guardar cambios"
+    },
+    "toastCentroCreado": "Centro creado correctamente",
+    "toastErrorCrear": "Error al crear el centro",
+    "toastCentroEditado": "Centro actualizado correctamente",
+    "toastErrorEditar": "Error al actualizar el centro"
   }
 }

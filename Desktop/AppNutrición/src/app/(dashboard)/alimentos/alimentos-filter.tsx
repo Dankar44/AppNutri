@@ -60,11 +60,12 @@ const MINERALES_FILTER = [
 ];
 const ALL_MICRO_FILTERS = [...VITAMINAS_FILTER, ...MINERALES_FILTER];
 
-export function AlimentosFilter({ misAlimentosCount }: { misAlimentosCount: number }) {
+export function AlimentosFilter({ misAlimentosCount, tieneEmpresa = false }: { misAlimentosCount: number; tieneEmpresa?: boolean }) {
   const t = useTranslations("foods");
   const router = useRouter();
   const searchParams = useSearchParams();
   const propios = searchParams.get("propios") === "true";
+  const fuenteCentro = searchParams.get("fuente") === "centro";
   const searchDebounce = useRef<NodeJS.Timeout>(null);
   const macroDebounce = useRef<NodeJS.Timeout>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -89,15 +90,9 @@ export function AlimentosFilter({ misAlimentosCount }: { misAlimentosCount: numb
     macroDebounce.current = setTimeout(() => updateParams({ [key]: value }), 500);
   }
 
-  function togglePropios(value: boolean) {
-    const params = new URLSearchParams(searchParams.toString());
-    if (value) params.set("propios", "true");
-    else params.delete("propios");
-    router.push(`/alimentos?${params.toString()}`);
-  }
-
   function clearFilters() {
-    router.push(propios ? "/alimentos?propios=true" : "/alimentos");
+    const base = propios ? "/alimentos?propios=true" : fuenteCentro ? "/alimentos?fuente=centro" : "/alimentos";
+    router.push(base);
   }
 
   const hasFilters = searchParams.has("categoria") || searchParams.has("origen") ||
@@ -161,17 +156,27 @@ export function AlimentosFilter({ misAlimentosCount }: { misAlimentosCount: numb
           </Link>
         </div>
 
-        {/* Toggle Todos / Míos */}
+        {/* Toggle Todos / Míos / Centro */}
         <div className="flex rounded-lg border border-border overflow-hidden sm:shrink-0">
           <button
-            onClick={() => togglePropios(false)}
-            aria-pressed={!propios}
-            className={`flex-1 sm:flex-none px-3 py-2 text-sm font-medium transition-colors ${!propios ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+            onClick={() => {
+              const params = new URLSearchParams(searchParams.toString());
+              params.delete("propios");
+              params.delete("fuente");
+              router.push(`/alimentos?${params.toString()}`);
+            }}
+            aria-pressed={!propios && !fuenteCentro}
+            className={`flex-1 sm:flex-none px-3 py-2 text-sm font-medium transition-colors ${!propios && !fuenteCentro ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
           >
             {t("filter.todos")}
           </button>
           <button
-            onClick={() => togglePropios(true)}
+            onClick={() => {
+              const params = new URLSearchParams(searchParams.toString());
+              params.set("propios", "true");
+              params.delete("fuente");
+              router.push(`/alimentos?${params.toString()}`);
+            }}
             aria-pressed={propios}
             title={t("filter.verSoloPropios")}
             className={`flex-1 sm:flex-none px-3 py-2 text-sm font-medium transition-colors ${propios ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
@@ -182,6 +187,20 @@ export function AlimentosFilter({ misAlimentosCount }: { misAlimentosCount: numb
               <span className="ml-1 text-xs opacity-80">({misAlimentosCount})</span>
             )}
           </button>
+          {tieneEmpresa && (
+            <button
+              onClick={() => {
+                const params = new URLSearchParams(searchParams.toString());
+                params.delete("propios");
+                params.set("fuente", "centro");
+                router.push(`/alimentos?${params.toString()}`);
+              }}
+              aria-pressed={fuenteCentro}
+              className={`flex-1 sm:flex-none px-3 py-2 text-sm font-medium transition-colors ${fuenteCentro ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+            >
+              {t("filter.centro")}
+            </button>
+          )}
         </div>
 
         {/* Desktop: Categoría + botón filtros */}

@@ -123,7 +123,14 @@
     "errorEliminarDietista": "Erro ao excluir o nutricionista",
     "emailInvalido": "O email não é válido",
     "emailDuplicado": "Este email já está em uso",
-    "errorEditarDietista": "Erro ao editar o nutricionista"
+    "errorEditarDietista": "Erro ao editar o nutricionista",
+    "centroNombreObligatorio": "O nome do centro é obrigatório",
+    "liderObligatorio": "Você deve selecionar um líder para o centro",
+    "dietistaYaEnCentro": "Este nutricionista já pertence a um centro",
+    "centroNoEncontrado": "Centro não encontrado",
+    "maxMiembrosInvalido": "O máximo de membros deve ser entre 1 e 100",
+    "slugInvalido": "O slug só pode conter letras minúsculas, números e hífens",
+    "slugDuplicado": "Este slug já está em uso por outro centro"
   },
   "stripe": {
     "sinCuentaStripe": "Você não tem conta Stripe conectada"
@@ -225,5 +232,21 @@
     "noApiKeys": "Não há chaves de API de IA configuradas",
     "timeout": "Tempo máximo de espera esgotado. Tente novamente mais tarde.",
     "rateLimitExhausted": "Muitas tentativas por limite de taxa. Tente novamente mais tarde."
+  },
+  "empresa": {
+    "nombreRequerido": "O nome da empresa é obrigatório",
+    "slugInvalido": "O código deve ter pelo menos 3 caracteres e apenas letras minúsculas, números e hífens",
+    "slugDuplicado": "Este código já está em uso",
+    "yaEnEmpresa": "Já pertence a uma empresa",
+    "noEnEmpresa": "Não pertence a nenhuma empresa",
+    "soloLider": "Apenas o líder pode realizar esta ação",
+    "empresaNoEncontrada": "Empresa não encontrada",
+    "solicitudYaEnviada": "Já enviou uma solicitação a esta empresa",
+    "solicitudNoEncontrada": "Solicitação não encontrada",
+    "noPuedesExpulsarte": "Não pode expulsar-se a si mesmo",
+    "miembroNoEncontrado": "Membro não encontrado",
+    "yaEresLider": "Já é o líder desta empresa",
+    "solicitanteYaEnOtraEmpresa": "O solicitante já pertence a outra empresa",
+    "tipoMovimientoInvalido": "Tipo de movimento não válido"
   }
 }

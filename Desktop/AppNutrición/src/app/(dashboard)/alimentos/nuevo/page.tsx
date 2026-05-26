@@ -2,9 +2,17 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { AlimentoForm } from "@/components/alimento-form";
+import { getCurrentDietista } from "@/app/actions/auth";
+import { prisma } from "@/lib/prisma";
 
 export default async function NuevoAlimentoPage() {
   const t = await getTranslations("foods");
+  const dietista = await getCurrentDietista();
+  let tieneEmpresa = false;
+  if (dietista) {
+    const d = await prisma.dietista.findUnique({ where: { id: dietista.id }, select: { empresaId: true } });
+    tieneEmpresa = !!d?.empresaId;
+  }
 
   return (
     <div>
@@ -21,7 +29,7 @@ export default async function NuevoAlimentoPage() {
           {t("nuevo.descripcion")}
         </p>
       </div>
-      <AlimentoForm />
+      <AlimentoForm tieneEmpresa={tieneEmpresa} />
     </div>
   );
 }

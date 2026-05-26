@@ -17,7 +17,8 @@
     "cobros": "Cobranças",
     "guias": "Guias",
     "zonaPeligrosa": "Zona perigosa",
-    "idioma": "Idioma"
+    "idioma": "Idioma",
+    "empresa": "Centro"
   },
   "sections": {
     "perfil": {
@@ -69,6 +70,10 @@
     "idioma": {
       "title": "Idioma da interface",
       "description": "Selecione o idioma em que deseja usar o aplicativo."
+    },
+    "empresa": {
+      "title": "Centro",
+      "description": "Gere o seu centro e equipa de nutricionistas."
     }
   },
   "googleErrors": {
@@ -674,6 +679,58 @@
         "motivo6": "Controle de peso quinzenal"
       }
     }
+  },
+  "empresaSettings": {
+    "demoDisabled": "As funções de centro não estão disponíveis no modo demonstração.",
+    "sinCentro": "Não pertence a nenhum centro",
+    "sinCentroDesc": "Quando um centro o convidar, o convite aparecerá aqui.",
+    "invitacionesPendientes": "Convites pendentes",
+    "invitadoPor": "Convite de {nombre}",
+    "miembros": "membros",
+    "aceptarInvitacion": "Aceitar",
+    "invitacionAceptada": "Juntou-se ao centro",
+    "invitacionRechazada": "Convite rejeitado",
+    "licencias": "{count} de {max} licenças",
+    "plazasDisponibles": "{count, plural, one {# vaga disponível} other {# vagas disponíveis}}",
+    "sinPlazas": "Sem vagas",
+    "invitarMiembro": "Convidar",
+    "crearCuenta": "Criar conta",
+    "emailPlaceholder": "email@exemplo.com",
+    "enviar": "Enviar",
+    "invitacionEnviada": "Convite enviado",
+    "invitacionesEnviadas": "Convites enviados",
+    "cancelarInvitacion": "Cancelar convite",
+    "invitacionCancelada": "Convite cancelado",
+    "nombreLabel": "Nome",
+    "apellidosLabel": "Apelidos",
+    "emailLabel": "Email",
+    "passwordLabel": "Palavra-passe",
+    "crearCuentaBtn": "Criar conta",
+    "cuentaCreada": "Conta criada",
+    "copiarCredenciales": "Copiar credenciais",
+    "copiado": "Copiado para a área de transferência",
+    "miembrosTitle": "Membros",
+    "lider": "Líder",
+    "editarCentro": "Editar centro",
+    "centroNombreLabel": "Nome do centro",
+    "descripcionLabel": "Descrição",
+    "slugLabel": "Código único",
+    "guardar": "Guardar",
+    "cancelar": "Cancelar",
+    "centroActualizado": "Centro atualizado",
+    "salirDelCentro": "Sair do centro",
+    "transferirLiderazgo": "Transferir liderança",
+    "expulsarMiembro": "Expulsar",
+    "confirmarSalir": "Sair do centro?",
+    "confirmarSalirDesc": "Se for o único membro, o centro será eliminado. Se for líder, a liderança será transferida para o membro mais antigo.",
+    "confirmarExpulsar": "Expulsar {nombre}?",
+    "confirmarExpulsarDesc": "O membro perderá acesso aos recursos partilhados do centro.",
+    "confirmarTransferir": "Transferir liderança para {nombre}?",
+    "confirmarTransferirDesc": "O novo líder poderá gerir membros e convites. Esta ação não pode ser desfeita.",
+    "confirmar": "Confirmar",
+    "hasSalido": "Saiu do centro",
+    "miembroExpulsado": "Membro expulso",
+    "liderazgoTransferido": "Liderança transferida"
   },
   "idioma": {
     "espanol": "Español",

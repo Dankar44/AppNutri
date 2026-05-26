@@ -10,6 +10,7 @@ import { UNIDAD_LABELS_FULL } from "@/lib/units";
 import { useTranslations } from "next-intl";
 import { useUncontrolledFormPersist } from "@/lib/form-persist";
 import { isNextNavigation, withTimeout } from "@/lib/utils";
+import { StockSection } from "@/components/alimento/stock-section";
 
 const CATEGORIA_VALUES = [
   "FRUTAS", "VERDURAS", "CEREALES", "LEGUMBRES", "CARNES", "PESCADOS",
@@ -53,9 +54,10 @@ const UNIDAD_KEYS: Record<string, string> = {
 interface AlimentoFormProps {
   alimentoId?: string;
   defaultValues?: AlimentoFormData;
+  tieneEmpresa?: boolean;
 }
 
-export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
+export function AlimentoForm({ alimentoId, defaultValues, tieneEmpresa = false }: AlimentoFormProps) {
   const router = useRouter();
   const t = useTranslations("foods");
   const tc = useTranslations("common.deploy");
@@ -74,6 +76,10 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
   const [selectedUnidad, setSelectedUnidad] = useState<string>(defaultValues?.unidad || "GRAMOS");
   const [imagenPreview, setImagenPreview] = useState<string | null>(defaultValues?.imagenUrl || null);
   const [imagenError, setImagenError] = useState(false);
+  const [compartido, setCompartido] = useState(defaultValues?.compartido ?? false);
+  const [stockVal, setStockVal] = useState<number | null>(defaultValues?.stock ?? null);
+  const [precioVal, setPrecioVal] = useState<number | null>(defaultValues?.precioUnitario ?? null);
+  const [stockMinimoVal, setStockMinimoVal] = useState<number | null>(defaultValues?.stockMinimo ?? null);
   const hasAnyMicro = defaultValues?.micronutrientes && Object.values(defaultValues.micronutrientes).some((v) => v !== null && v !== undefined);
   const [microsOpen, setMicrosOpen] = useState(!!hasAnyMicro);
   const [microsTracked, setMicrosTracked] = useState(!!hasAnyMicro);
@@ -120,6 +126,7 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
       enlaceProducto: (form.get("enlaceProducto") as string)?.trim() || null,
       imagenUrl: (form.get("imagenUrl") as string)?.trim() || null,
       micronutrientes: parseMicros(form),
+      ...(tieneEmpresa ? { stock: stockVal, precioUnitario: precioVal, stockMinimo: stockMinimoVal, compartido } : {}),
     };
 
     try {
@@ -393,6 +400,38 @@ export function AlimentoForm({ alimentoId, defaultValues }: AlimentoFormProps) {
           </div>
         )}
       </section>
+
+      {tieneEmpresa && (
+        <section className="bg-card rounded-xl border border-border p-4 sm:p-6">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={compartido}
+              onChange={(e) => setCompartido(e.target.checked)}
+              className="w-4 h-4 rounded border-border text-primary focus:ring-primary/30"
+            />
+            <div>
+              <span className="text-sm font-medium">{t("form.compartirConCentro")}</span>
+              <p className="text-xs text-muted-foreground">{t("form.compartirConCentroDesc")}</p>
+            </div>
+          </label>
+        </section>
+      )}
+
+      {tieneEmpresa && (
+        <section className="bg-card rounded-xl border border-border p-4 sm:p-6">
+          <StockSection
+            stock={stockVal}
+            precioUnitario={precioVal}
+            stockMinimo={stockMinimoVal}
+            onChange={(field, value) => {
+              if (field === "stock") setStockVal(value);
+              if (field === "precioUnitario") setPrecioVal(value);
+              if (field === "stockMinimo") setStockMinimoVal(value);
+            }}
+          />
+        </section>
+      )}
 
       <div className="flex justify-end gap-3">
         <button

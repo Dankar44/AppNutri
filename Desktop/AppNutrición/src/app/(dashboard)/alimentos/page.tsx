@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Plus, Download, Apple } from "lucide-react";
 import { getTranslations } from "next-intl/server";
-import { getAlimentosPaginados, contarMisAlimentos } from "@/app/actions/alimentos";
+import { getAlimentosPaginados, contarMisAlimentos, tieneEmpresaActual } from "@/app/actions/alimentos";
 import { AlimentosFilter } from "./alimentos-filter";
 import { AlimentosTable } from "./alimentos-table";
 import { PageHeader } from "@/components/page-header";
@@ -12,8 +12,9 @@ interface Props {
 
 export default async function AlimentosPage({ searchParams }: Props) {
   const params = await searchParams;
-  const { busqueda, categoria, origen, calMin, calMax, protMin, protMax, carbMin, carbMax, grasaMin, grasaMax, propios: propiosParam } = params;
+  const { busqueda, categoria, origen, calMin, calMax, protMin, protMax, carbMin, carbMax, grasaMin, grasaMax, propios: propiosParam, fuente } = params;
   const propios = propiosParam === "true";
+  const fuenteAlimento = fuente === "centro" ? "centro" as const : undefined;
 
   const MICRO_KEYS = [
     "vitaminaA","vitaminaB6","vitaminaB12","vitaminaC","vitaminaD",
@@ -33,7 +34,7 @@ export default async function AlimentosPage({ searchParams }: Props) {
 
   const t = await getTranslations("foods");
 
-  const [{ alimentos, total, nextCursor }, misAlimentosCount] = await Promise.all([
+  const [{ alimentos, total, nextCursor }, misAlimentosCount, tieneEmpresa] = await Promise.all([
     getAlimentosPaginados(
       busqueda,
       categoria as Parameters<typeof getAlimentosPaginados>[1],
@@ -41,6 +42,7 @@ export default async function AlimentosPage({ searchParams }: Props) {
       {
         origen,
         propios: propios || undefined,
+        fuenteAlimento,
         calMin: calMin ? parseFloat(calMin) : undefined,
         calMax: calMax ? parseFloat(calMax) : undefined,
         protMin: protMin ? parseFloat(protMin) : undefined,
@@ -53,6 +55,7 @@ export default async function AlimentosPage({ searchParams }: Props) {
       }
     ),
     contarMisAlimentos(),
+    tieneEmpresaActual(),
   ]);
 
   return (
@@ -88,7 +91,7 @@ export default async function AlimentosPage({ searchParams }: Props) {
       />
 
       <div className="mb-6">
-        <AlimentosFilter misAlimentosCount={misAlimentosCount} />
+        <AlimentosFilter misAlimentosCount={misAlimentosCount} tieneEmpresa={tieneEmpresa} />
       </div>
 
       {alimentos.length === 0 ? (

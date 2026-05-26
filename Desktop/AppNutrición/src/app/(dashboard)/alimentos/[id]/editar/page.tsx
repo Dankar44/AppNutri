@@ -5,6 +5,8 @@ import { getTranslations } from "next-intl/server";
 import { getAlimento } from "@/app/actions/alimentos";
 import { AlimentoForm } from "@/components/alimento-form";
 import { MICRO_KEYS } from "@/lib/micronutrientes";
+import { getCurrentDietista } from "@/app/actions/auth";
+import { prisma } from "@/lib/prisma";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -17,6 +19,12 @@ export default async function EditarAlimentoPage({ params }: Props) {
   if (!alimento.dietistaId) notFound();
 
   const t = await getTranslations("foods");
+  const dietista = await getCurrentDietista();
+  let tieneEmpresa = false;
+  if (dietista) {
+    const d = await prisma.dietista.findUnique({ where: { id: dietista.id }, select: { empresaId: true } });
+    tieneEmpresa = !!d?.empresaId;
+  }
 
   return (
     <div>
@@ -32,6 +40,7 @@ export default async function EditarAlimentoPage({ params }: Props) {
       </div>
       <AlimentoForm
         alimentoId={alimento.id}
+        tieneEmpresa={tieneEmpresa}
         defaultValues={{
           nombre: alimento.nombre,
           categoria: alimento.categoria,
@@ -47,6 +56,10 @@ export default async function EditarAlimentoPage({ params }: Props) {
           micronutrientes: Object.fromEntries(
             MICRO_KEYS.map((key) => [key, (alimento as Record<string, unknown>)[key] as number | null ?? null])
           ),
+          stock: alimento.stock,
+          precioUnitario: alimento.precioUnitario,
+          stockMinimo: alimento.stockMinimo,
+          compartido: alimento.compartido,
         }}
       />
     </div>

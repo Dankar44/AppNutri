@@ -718,7 +718,9 @@
       "listaCompra": "Lista de la compra",
       "listaCompraDesc": "Ingredientes agrupados por categoría",
       "horarioSemanal": "Horario semanal",
-      "horarioSemanalDesc": "Tu horario habitual de actividades"
+      "horarioSemanalDesc": "Tu horario habitual de actividades",
+      "cantidadesSemanal": "Cantidades en resumen semanal",
+      "cantidadesSemanalDesc": "Muestra la cantidad junto a cada alimento"
     },
     "generarVistaPrevia": "Generar vista previa",
     "vistaPreviaActualizada": "Vista previa actualizada",

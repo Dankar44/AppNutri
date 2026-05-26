@@ -86,5 +86,27 @@
     "paso3": "Insira o PIN fornecido pelo seu nutricionista",
     "paso4": "No portal você poderá consultar sua dieta, registrar seu peso e muito mais",
     "footer": "Enviado pela Annonia"
+  },
+  "empresa": {
+    "solicitudSubject": "Nova solicitação de ingresso — {empresaNombre}",
+    "solicitudTitulo": "Solicitação de ingresso",
+    "solicitudSaludo": "Olá {liderNombre},",
+    "solicitudCuerpo": "{solicitanteNombre} ({solicitanteEmail}) quer juntar-se à sua empresa {empresaNombre}.",
+    "solicitudBoton": "Ver solicitações",
+    "aceptadaSubject": "Bem-vindo/a a {empresaNombre}!",
+    "aceptadaTitulo": "Solicitação aceite",
+    "aceptadaSaludo": "Olá {solicitanteNombre},",
+    "aceptadaCuerpo": "A sua solicitação de ingresso em {empresaNombre} foi aceite. Já pode aceder aos recursos partilhados da equipa.",
+    "aceptadaBoton": "Ir para definições",
+    "rechazadaSubject": "Solicitação de ingresso rejeitada — {empresaNombre}",
+    "rechazadaTitulo": "Solicitação rejeitada",
+    "rechazadaSaludo": "Olá {solicitanteNombre},",
+    "rechazadaCuerpo": "A sua solicitação de ingresso em {empresaNombre} foi rejeitada pelo líder da equipa.",
+    "liderazgoSubject": "Agora lidera {empresaNombre}",
+    "liderazgoTitulo": "Liderança transferida",
+    "liderazgoSaludo": "Olá {nuevoLiderNombre},",
+    "liderazgoCuerpo": "{anteriorLiderNombre} transferiu-lhe a liderança de {empresaNombre}. Agora pode gerir membros e solicitações.",
+    "liderazgoBoton": "Gerir empresa",
+    "footer": "Este email é uma notificação automática de Annonia."
   }
 }

@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { MacroBadges } from "@/components/macro-badge";
 import { cargarMasAlimentos } from "@/app/actions/alimentos";
 import { UNIDAD_LABELS } from "@/lib/units";
+import { StockBadge } from "@/components/alimento/stock-badge";
 
 type Alimento = {
   id: string;
@@ -19,6 +20,10 @@ type Alimento = {
   carbohidratos: number;
   grasas: number;
   origen: string;
+  stock?: number | null;
+  stockMinimo?: number | null;
+  compartido?: boolean;
+  dietistaId?: string | null;
 };
 
 const CATEGORIA_KEY_MAP: Record<string, string> = {
@@ -99,13 +104,16 @@ export function AlimentosTable({ initial, initialCursor, busqueda, categoria, pr
                   {CATEGORIA_KEY_MAP[alimento.categoria] ? t(`categorias.${CATEGORIA_KEY_MAP[alimento.categoria]}`) : alimento.categoria}
                 </span>
               </div>
-              <div className="flex flex-wrap gap-1 mt-1.5">
+              <div className="flex flex-wrap items-center gap-1 mt-1.5">
                 <MacroBadges
                   calorias={alimento.calorias}
                   proteinas={alimento.proteinas}
                   carbohidratos={alimento.carbohidratos}
                   grasas={alimento.grasas}
                 />
+                {alimento.stock !== null && alimento.stock !== undefined && (
+                  <StockBadge stock={alimento.stock} stockMinimo={alimento.stockMinimo ?? null} />
+                )}
               </div>
             </div>
           </Link>
@@ -148,23 +156,35 @@ export function AlimentosTable({ initial, initialCursor, busqueda, categoria, pr
                   : `1 ${UNIDAD_LABELS[alimento.unidad] || alimento.unidad} (${alimento.porcion}g)`}
               </td>
               <td className="px-4 py-3">
-                <MacroBadges
-                  calorias={alimento.calorias}
-                  proteinas={alimento.proteinas}
-                  carbohidratos={alimento.carbohidratos}
-                  grasas={alimento.grasas}
-                />
+                <div className="flex items-center gap-1.5">
+                  <MacroBadges
+                    calorias={alimento.calorias}
+                    proteinas={alimento.proteinas}
+                    carbohidratos={alimento.carbohidratos}
+                    grasas={alimento.grasas}
+                  />
+                  {alimento.stock !== null && alimento.stock !== undefined && (
+                    <StockBadge stock={alimento.stock} stockMinimo={alimento.stockMinimo ?? null} />
+                  )}
+                </div>
               </td>
               <td className="px-4 py-3 hidden lg:table-cell">
-                <span
-                  className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                    alimento.origen === "API"
-                      ? "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400"
-                      : "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400"
-                  }`}
-                >
-                  {alimento.origen === "API" ? t("table.importado") : t("table.personalizado")}
-                </span>
+                <div className="flex items-center gap-1">
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                      alimento.origen === "API"
+                        ? "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400"
+                        : "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400"
+                    }`}
+                  >
+                    {alimento.origen === "API" ? t("table.importado") : t("table.personalizado")}
+                  </span>
+                  {alimento.compartido && (
+                    <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400">
+                      {t("table.compartido")}
+                    </span>
+                  )}
+                </div>
               </td>
             </tr>
           ))}

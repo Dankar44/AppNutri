@@ -9,8 +9,16 @@ const DEMO_COOKIE = "annonia-demo-session";
 
 export async function GET() {
   const dietistaId = process.env.DEMO_DIETISTA_ID;
+
+  const hdrs = await headers();
+  const proto =
+    hdrs.get("x-forwarded-proto") ??
+    (process.env.NODE_ENV === "production" ? "https" : "http");
+  const host = hdrs.get("host") ?? "localhost:3000";
+  const origin = `${proto}://${host}`;
+
   if (!dietistaId) {
-    return NextResponse.redirect(new URL("/landing", process.env.NEXT_PUBLIC_SUPABASE_URL || "http://localhost:3000"));
+    return NextResponse.redirect(new URL("/landing", origin));
   }
 
   const token = await new SignJWT({ dietistaId, demo: true })
@@ -18,13 +26,7 @@ export async function GET() {
     .setExpirationTime("24h")
     .sign(SECRET);
 
-  const hdrs = await headers();
-  const proto =
-    hdrs.get("x-forwarded-proto") ??
-    (process.env.NODE_ENV === "production" ? "https" : "http");
-  const host = hdrs.get("host") ?? "localhost:3000";
-
-  const response = NextResponse.redirect(new URL("/dashboard", `${proto}://${host}`));
+  const response = NextResponse.redirect(new URL("/dashboard", origin));
 
   (await cookies()).set(DEMO_COOKIE, token, {
     httpOnly: true,

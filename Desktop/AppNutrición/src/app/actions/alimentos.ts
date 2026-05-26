@@ -14,6 +14,7 @@ import { buscarAlimentosOFF, type AlimentoAPIResult } from "@/lib/openfoodfacts"
 import { normalizarNombreAlimento, redondearMacros } from "@/lib/alimento-utils";
 import { sanitizeString, validateNumber, validateEnum, validateUrl, validateImageUrl, sanitizeSearch, LIMITS } from "@/lib/validation";
 import { type MicroKey, MICRO_KEYS } from "@/lib/micronutrientes";
+import { getCompanyMemberIds } from "@/lib/empresa-utils";
 
 export interface AlimentoFormData {
   nombre: string;
@@ -28,6 +29,10 @@ export interface AlimentoFormData {
   enlaceProducto?: string | null;
   imagenUrl?: string | null;
   micronutrientes?: Partial<Record<MicroKey, number | null>>;
+  stock?: number | null;
+  precioUnitario?: number | null;
+  stockMinimo?: number | null;
+  compartido?: boolean;
 }
 
 function validarMicros(raw: Partial<Record<MicroKey, number | null>> | undefined): Partial<Record<MicroKey, number | null>> {
@@ -75,14 +80,27 @@ export async function crearAlimento(data: AlimentoFormData) {
 
   const nombreNorm = normalizarNombreAlimento(nombreSanitizado);
 
-  // Prevenir duplicados por nombre normalizado
+  const empresaId = await getEmpresaId(dietista.id);
+  const memberIds = await getCompanyMemberIds(dietista.id, empresaId);
+
   const existente = await prisma.alimento.findFirst({
     where: {
-      OR: [{ dietistaId: dietista.id }, { dietistaId: null }],
+      OR: [{ dietistaId: { in: memberIds } }, { dietistaId: null }],
       nombre: { equals: nombreNorm, mode: "insensitive" },
     },
   });
   if (existente) throw new Error(t("alimento.yaExisteNombre"));
+
+  const stockData: Record<string, unknown> = {};
+  if (empresaId && data.stock !== undefined && data.stock !== null) {
+    stockData.stock = validateNumber(data.stock, 0, LIMITS.STOCK_MAX);
+  }
+  if (empresaId && data.precioUnitario !== undefined && data.precioUnitario !== null) {
+    stockData.precioUnitario = validateNumber(data.precioUnitario, 0, LIMITS.PRECIO_MAX);
+  }
+  if (empresaId && data.stockMinimo !== undefined && data.stockMinimo !== null) {
+    stockData.stockMinimo = validateNumber(data.stockMinimo, 0, LIMITS.STOCK_MAX);
+  }
 
   const alimento = await prisma.alimento.create({
     data: {
@@ -99,7 +117,9 @@ export async function crearAlimento(data: AlimentoFormData) {
       enlaceProducto: enlaceValidado,
       imagenUrl: imagenUrlValidada,
       origen: "PERSONALIZADO",
+      compartido: empresaId ? (data.compartido ?? false) : false,
       ...micros,
+      ...stockData,
     },
   });
 
@@ -136,6 +156,8 @@ export async function actualizarAlimento(id: string, data: AlimentoFormData) {
     throw new Error(t("alimento.urlImagenNoValida"));
   const micros = validarMicros(data.micronutrientes);
 
+  const empresaId = await getEmpresaId(dietista.id);
+
   await prisma.alimento.update({
     where: { id, dietistaId: dietista.id },
     data: {
@@ -150,6 +172,7 @@ export async function actualizarAlimento(id: string, data: AlimentoFormData) {
       unidad: data.unidad,
       enlaceProducto: enlaceValidado,
       imagenUrl: imagenUrlValidada,
+      ...(empresaId && data.compartido !== undefined ? { compartido: data.compartido } : {}),
       ...micros,
     },
   });
@@ -172,6 +195,14 @@ export async function eliminarAlimento(id: string) {
   revalidatePath("/alimentos");
 }
 
+async function getEmpresaId(dietistaId: string): Promise<string | null> {
+  const d = await prisma.dietista.findUnique({
+    where: { id: dietistaId },
+    select: { empresaId: true },
+  });
+  return d?.empresaId ?? null;
+}
+
 export async function getAlimentos(
   busqueda?: string,
   categoria?: CategoriaAlimento
@@ -179,11 +210,14 @@ export async function getAlimentos(
   const dietista = await getCurrentDietista();
   if (!dietista) return [];
 
+  const empresaId = await getEmpresaId(dietista.id);
+  const memberIds = await getCompanyMemberIds(dietista.id, empresaId);
+
   const busquedaSanitizada = busqueda ? sanitizeSearch(busqueda) : undefined;
 
   return prisma.alimento.findMany({
     where: {
-      OR: [{ dietistaId: dietista.id }, { dietistaId: null }],
+      OR: [{ dietistaId: { in: memberIds } }, { dietistaId: null }],
       ...(categoria ? { categoria } : {}),
       ...(busquedaSanitizada
         ? { nombre: { contains: busquedaSanitizada, mode: "insensitive" as const } }
@@ -198,6 +232,7 @@ const PAGE_SIZE = 100;
 interface MacroFilters {
   origen?: string;
   propios?: boolean;
+  fuenteAlimento?: "centro";
   calMin?: number;
   calMax?: number;
   protMin?: number;
@@ -226,6 +261,9 @@ export async function getAlimentosPaginados(
   const dietista = await getCurrentDietista();
   if (!dietista) return { alimentos: [], total: 0, nextCursor: null as string | null };
 
+  const empresaId = await getEmpresaId(dietista.id);
+  const memberIds = await getCompanyMemberIds(dietista.id, empresaId);
+
   const busquedaSanitizada = busqueda ? sanitizeSearch(busqueda) : undefined;
   const f = macroFilters || {};
 
@@ -248,9 +286,24 @@ export async function getAlimentosPaginados(
     }
   }
 
-  const ownerFilter = f.propios
-    ? { dietistaId: dietista.id }
-    : { OR: [{ dietistaId: dietista.id }, { dietistaId: null }] };
+  const otherMemberIds = memberIds.filter((id) => id !== dietista.id);
+
+  let ownerFilter;
+  if (f.propios) {
+    ownerFilter = { dietistaId: dietista.id };
+  } else if (f.fuenteAlimento === "centro" && otherMemberIds.length > 0) {
+    ownerFilter = { dietistaId: { in: otherMemberIds }, compartido: true };
+  } else if (otherMemberIds.length > 0) {
+    ownerFilter = {
+      OR: [
+        { dietistaId: dietista.id },
+        { dietistaId: { in: otherMemberIds }, compartido: true },
+        { dietistaId: null },
+      ],
+    };
+  } else {
+    ownerFilter = { OR: [{ dietistaId: dietista.id }, { dietistaId: null }] };
+  }
 
   const where = {
     ...ownerFilter,
@@ -270,6 +323,7 @@ export async function getAlimentosPaginados(
     id: true, nombre: true, categoria: true,
     calorias: true, proteinas: true, carbohidratos: true, grasas: true, fibra: true,
     porcion: true, unidad: true, origen: true, imagenUrl: true, dietistaId: true,
+    stock: true, stockMinimo: true, compartido: true,
   } as const;
 
   const [alimentos, total] = await Promise.all([
@@ -314,14 +368,29 @@ export async function contarMisAlimentos(): Promise<number> {
   return prisma.alimento.count({ where: { dietistaId: dietista.id } });
 }
 
+export async function tieneEmpresaActual(): Promise<boolean> {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return false;
+  const empresaId = await getEmpresaId(dietista.id);
+  return !!empresaId;
+}
+
 export async function getAlimento(id: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) return null;
 
+  const empresaId = await getEmpresaId(dietista.id);
+  const memberIds = await getCompanyMemberIds(dietista.id, empresaId);
+
+  const otherMemberIds = memberIds.filter((mid) => mid !== dietista.id);
   return prisma.alimento.findFirst({
     where: {
       id,
-      OR: [{ dietistaId: dietista.id }, { dietistaId: null }],
+      OR: [
+        { dietistaId: dietista.id },
+        ...(otherMemberIds.length > 0 ? [{ dietistaId: { in: otherMemberIds }, compartido: true }] : []),
+        { dietistaId: null },
+      ],
     },
   });
 }
@@ -346,18 +415,19 @@ export async function importarAlimentoAPI(data: AlimentoAPIResult) {
   data.grasas = validateNumber(data.grasas, 0, LIMITS.MACROS_MAX);
   data.fibra = validateNumber(data.fibra, 0, LIMITS.MACROS_MAX);
 
-  // Buscar por código de barras
+  const empresaId = await getEmpresaId(dietista.id);
+  const memberIds = await getCompanyMemberIds(dietista.id, empresaId);
+
   const existentePorCodigo = await prisma.alimento.findFirst({
-    where: { codigoBarras: data.codigoBarras, dietistaId: dietista.id },
+    where: { codigoBarras: data.codigoBarras, dietistaId: { in: memberIds } },
   });
   if (existentePorCodigo) return existentePorCodigo;
 
   const nombreNorm = normalizarNombreAlimento(data.nombre);
 
-  // Buscar también por nombre normalizado
   const existentePorNombre = await prisma.alimento.findFirst({
     where: {
-      OR: [{ dietistaId: dietista.id }, { dietistaId: null }],
+      OR: [{ dietistaId: { in: memberIds } }, { dietistaId: null }],
       nombre: { equals: nombreNorm, mode: "insensitive" },
     },
   });
@@ -393,16 +463,23 @@ export async function buscarEquivalentes(
   const dietista = await getCurrentDietista();
   if (!dietista) return [];
 
+  const empresaId = await getEmpresaId(dietista.id);
+  const memberIds = await getCompanyMemberIds(dietista.id, empresaId);
+
   const search = busqueda ? sanitizeSearch(busqueda) : undefined;
 
-  // Obtener la categoría y macros del alimento de referencia
   const ref = await prisma.alimento.findUnique({
     where: { id: alimentoIdExcluir },
     select: { categoria: true, proteinas: true, carbohidratos: true, grasas: true },
   });
 
+  const otherMemberIds = memberIds.filter((mid) => mid !== dietista.id);
   const baseWhere = {
-    OR: [{ dietistaId: dietista.id }, { dietistaId: null }],
+    OR: [
+      { dietistaId: dietista.id },
+      ...(otherMemberIds.length > 0 ? [{ dietistaId: { in: otherMemberIds }, compartido: true }] : []),
+      { dietistaId: null },
+    ],
     id: { not: alimentoIdExcluir },
     calorias: { gte: 5 as number },
     ...(search ? { nombre: { contains: search, mode: "insensitive" as const } } : {}),

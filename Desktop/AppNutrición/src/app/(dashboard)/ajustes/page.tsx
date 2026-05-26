@@ -11,6 +11,7 @@ import {
   GraduationCap,
   Lock,
   Globe,
+  Building2,
 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { TourSettings } from "@/components/tour/tour-settings";
@@ -34,6 +35,8 @@ import { CamposAnamnesisForm } from "./campos-anamnesis-form";
 import { IdiomaCard } from "./idioma-card";
 import { getCamposAnamnesis } from "@/app/actions/perfil";
 import { EarlyAdopterBadge } from "@/components/early-adopter-badge";
+import { EmpresaSection } from "./empresa-section";
+import { getMisInvitaciones } from "@/app/actions/empresa";
 
 /** Encabezado común de cada bloque: icono + título + descripción. */
 function SectionHeader({
@@ -92,14 +95,17 @@ export default async function AjustesPage({
   const dietista = await getCurrentDietista();
   if (!dietista) redirect("/login");
 
-  const [suscripcion, googleIntegracion, googleLinked, demoEliminado, camposAnamnesis, sp] = await Promise.all([
+  const [suscripcion, googleIntegracion, googleLinked, demoEliminado, camposAnamnesis, sp, invitacionesCentro] = await Promise.all([
     getSuscripcion(),
     getIntegracionNutri(),
     getGoogleIdentityLinked(),
     isDemoEliminado(),
     getCamposAnamnesis(),
     searchParams,
+    getMisInvitaciones(),
   ]);
+
+  const showCentro = !!(dietista.empresaId || invitacionesCentro.length > 0);
 
   const googleFlash =
     sp.google === "ok"
@@ -149,7 +155,7 @@ export default async function AjustesPage({
 
       {/* Layout con nav lateral + contenido */}
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-10 items-start">
-        <AjustesNav />
+        <AjustesNav hideCentro={!showCentro} />
 
         <main className="flex-1 min-w-0 space-y-10">
           {/* PERFIL */}
@@ -281,6 +287,21 @@ export default async function AjustesPage({
               <CamposAnamnesisForm initialCampos={camposAnamnesis} />
             </div>
           </section>
+
+          {/* EMPRESA / CENTRO — solo si pertenece a uno o tiene invitaciones */}
+          {showCentro && (
+            <section>
+              <SectionHeader
+                id="empresa"
+                icon={Building2}
+                title={t("sections.empresa.title")}
+                description={t("sections.empresa.description")}
+              />
+              <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
+                <EmpresaSection isDemo={!!dietista.isDemo} />
+              </div>
+            </section>
+          )}
 
           {/* INTEGRACIONES */}
           <section>

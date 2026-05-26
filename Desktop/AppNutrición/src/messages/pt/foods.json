@@ -43,7 +43,8 @@
     "carbosPor100g": "Carboidratos /100g",
     "grasasPor100g": "Gorduras /100g",
     "min": "Mín",
-    "max": "Máx"
+    "max": "Máx",
+    "centro": "Centro"
   },
   "table": {
     "headerNombre": "Nome",
@@ -52,7 +53,8 @@
     "headerMacros": "Macros / 100g",
     "headerOrigen": "Origem",
     "importado": "Importado",
-    "personalizado": "Personalizado"
+    "personalizado": "Personalizado",
+    "compartido": "Partilhado"
   },
   "detail": {
     "volverAAlimentos": "Voltar para alimentos",
@@ -108,7 +110,9 @@
     "crearAlimento": "Criar alimento",
     "alimentoActualizado": "Alimento atualizado",
     "alimentoCreado": "Alimento criado",
-    "errorGuardar": "Erro ao salvar o alimento"
+    "errorGuardar": "Erro ao salvar o alimento",
+    "compartirConCentro": "Partilhar com o centro",
+    "compartirConCentroDesc": "Os membros do seu centro poderão ver e usar este alimento."
   },
   "importar": {
     "volverAAlimentos": "Voltar para alimentos",
@@ -226,5 +230,36 @@
     "fibra": "Fibra",
     "ingredientes": "Ingredientes",
     "masIngredientes": "+{count} mais"
+  },
+  "stock": {
+    "title": "Stock e inventário",
+    "description": "Gerencie o stock deste produto partilhado com a sua equipa.",
+    "cantidadLabel": "Stock (uds)",
+    "precioLabel": "Preço unitário (€)",
+    "minimoLabel": "Limite mínimo",
+    "minimoHint": "Receberá um alerta quando o stock ficar abaixo deste limite.",
+    "valorTotal": "Valor total",
+    "ajustar": "Ajustar",
+    "ajustarStock": "Ajustar stock",
+    "anadir": "Adicionar",
+    "retirar": "Retirar",
+    "establecer": "Estabelecer",
+    "resultado": "Resultado",
+    "notaLabel": "Nota (opcional)",
+    "notaPlaceholder": "Ex: Compra semanal, venda a paciente...",
+    "cancelar": "Cancelar",
+    "confirmar": "Confirmar",
+    "stockActualizado": "Stock atualizado",
+    "errorActualizar": "Erro ao atualizar o stock",
+    "stockBajo": "Stock baixo",
+    "sinStock": "Sem stock",
+    "disponible": "Disponível",
+    "historial": "Histórico de movimentos",
+    "soloConEmpresa": "Os campos de stock só estão disponíveis para membros de uma empresa.",
+    "creadoPor": "Criado por {nombre}",
+    "resumen": "Resumo de inventário",
+    "totalConStock": "Com stock",
+    "totalStockBajo": "Stock baixo",
+    "filtroStockBajo": "Apenas stock baixo"
   }
 }

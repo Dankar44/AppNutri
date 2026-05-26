@@ -7,6 +7,7 @@ import { crearPacienteDemoSiNoExiste } from "@/lib/paciente-demo";
 import { getDemoSession, clearDemoSession } from "@/lib/demo-auth";
 import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
+import { generarSlug } from "@/lib/empresa-utils";
 
 export const getCurrentDietista = cache(async function getCurrentDietista() {
   let locale: "es" | "pt" = "es";
@@ -60,6 +61,27 @@ export const getCurrentDietista = cache(async function getCurrentDietista() {
         numColegiado: user.user_metadata.numColegiado || null,
       },
     });
+
+    if (user.user_metadata.tipoCuenta === "centro" && user.user_metadata.centroNombre) {
+      const centroNombre = String(user.user_metadata.centroNombre).trim();
+      let slug = generarSlug(centroNombre);
+      const existeSlug = await prisma.empresa.findUnique({ where: { slug } });
+      if (existeSlug) slug = `${slug}-${Date.now().toString(36)}`;
+
+      const empresa = await prisma.empresa.create({
+        data: {
+          nombre: centroNombre,
+          slug,
+          liderId: dietista.id,
+          maxMiembros: 5,
+        },
+      });
+
+      await prisma.dietista.update({
+        where: { id: dietista.id },
+        data: { empresaId: empresa.id },
+      });
+    }
 
     crearPacienteDemoSiNoExiste(prisma, dietista.id, locale).catch((err) => {
       console.error("[paciente-demo] Error creando paciente demo:", err);

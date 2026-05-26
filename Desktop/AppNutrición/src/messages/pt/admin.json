@@ -23,7 +23,8 @@
       "mensajes": "Mensagens",
       "actividad": "Atividade",
       "suscripciones": "Assinaturas",
-      "crearCuenta": "Criar conta"
+      "crearCuenta": "Criar conta",
+      "centros": "Centros"
     },
     "roles": {
       "creator": "Criador de contas",
@@ -391,5 +392,45 @@
     "enviarAriaLabel": "Enviar mensagem",
     "errorEnviar": "Não foi possível enviar",
     "tuPrefix": "Você: "
+  },
+  "centros": {
+    "title": "Centros",
+    "subtitle": "{count} centros registrados",
+    "searchPlaceholder": "Buscar por nome, slug ou líder...",
+    "crearCentro": "Criar centro",
+    "crearCentroTitle": "Criar centro",
+    "crearCentroSubtitle": "Crie um novo centro e atribua um líder",
+    "empty": "Não há centros registrados",
+    "creadoEl": "Criado em {date}",
+    "miembros": "membros",
+    "liderLabel": "Líder do centro",
+    "liderBadge": "Líder",
+    "miembrosTitle": "Membros ({count})",
+    "sinMiembros": "Este centro não tem membros",
+    "invitacionesPendientes": "{count} convites pendentes",
+    "editarCentro": "Editar centro",
+    "volverCentros": "Voltar a centros",
+    "datosCentro": "Dados do centro",
+    "liderCentro": "Líder do centro",
+    "form": {
+      "nombre": "Nome do centro *",
+      "descripcion": "Descrição (opcional)",
+      "maxMiembros": "Máximo de membros (licenças)",
+      "slug": "Slug",
+      "liderExistente": "Nutricionista existente",
+      "liderNuevo": "Criar conta nova",
+      "buscarLider": "Buscar nutricionista por nome ou email...",
+      "cambiar": "Alterar",
+      "liderNombreLabel": "Nome *",
+      "liderApellidosLabel": "Sobrenome",
+      "liderEmailLabel": "Email *",
+      "liderPasswordLabel": "Senha *",
+      "submit": "Criar centro",
+      "guardar": "Salvar alterações"
+    },
+    "toastCentroCreado": "Centro criado com sucesso",
+    "toastErrorCrear": "Erro ao criar o centro",
+    "toastCentroEditado": "Centro atualizado com sucesso",
+    "toastErrorEditar": "Erro ao atualizar o centro"
   }
 }
