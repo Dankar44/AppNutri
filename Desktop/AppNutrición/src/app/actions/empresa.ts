@@ -242,7 +242,7 @@ export async function aceptarInvitacion(solicitudId: string): Promise<{ ok: bool
     }),
     prisma.dietista.update({
       where: { id: dietista.id },
-      data: { empresaId: solicitud.empresaId },
+      data: { empresaId: solicitud.empresaId, clinica: solicitud.empresa.nombre },
     }),
   ]);
 
@@ -490,6 +490,7 @@ export async function crearMiembroCentro(data: {
       apellidos,
       verificado: true,
       empresaId: empresa.id,
+      clinica: empresa.nombre,
       creadoPor: dietista.nombre,
     },
   });
@@ -548,7 +549,7 @@ export async function salirDeEmpresa(): Promise<{ ok: boolean; error?: string }>
     if (otrosMiembros.length === 0) {
       await prisma.$transaction([
         prisma.solicitudEmpresa.deleteMany({ where: { empresaId: empresa.id } }),
-        prisma.dietista.update({ where: { id: dietista.id }, data: { empresaId: null } }),
+        prisma.dietista.update({ where: { id: dietista.id }, data: { empresaId: null, clinica: null } }),
         prisma.empresa.delete({ where: { id: empresa.id } }),
       ]);
     } else {
@@ -558,7 +559,7 @@ export async function salirDeEmpresa(): Promise<{ ok: boolean; error?: string }>
           where: { id: empresa.id },
           data: { liderId: nuevoLider.id },
         }),
-        prisma.dietista.update({ where: { id: dietista.id }, data: { empresaId: null } }),
+        prisma.dietista.update({ where: { id: dietista.id }, data: { empresaId: null, clinica: null } }),
       ]);
 
       await prisma.notificacion.create({
@@ -574,7 +575,7 @@ export async function salirDeEmpresa(): Promise<{ ok: boolean; error?: string }>
   } else {
     await prisma.dietista.update({
       where: { id: dietista.id },
-      data: { empresaId: null },
+      data: { empresaId: null, clinica: null },
     });
 
     await prisma.notificacion.create({
@@ -628,7 +629,7 @@ export async function expulsarMiembro(miembroId: string): Promise<{ ok: boolean;
 
   await prisma.dietista.update({
     where: { id: mId },
-    data: { empresaId: null },
+    data: { empresaId: null, clinica: null },
   });
 
   await prisma.notificacion.create({
@@ -762,6 +763,12 @@ export async function actualizarEmpresa(data: {
 
   if (Object.keys(updateData).length > 0) {
     await prisma.empresa.update({ where: { id: empresa.id }, data: updateData });
+    if (updateData.nombre) {
+      await prisma.dietista.updateMany({
+        where: { empresaId: empresa.id },
+        data: { clinica: updateData.nombre as string },
+      });
+    }
   }
 
   revalidateEmpresa();

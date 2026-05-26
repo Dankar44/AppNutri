@@ -934,7 +934,7 @@ export async function crearCentroAdmin(data: {
 
     await prisma.dietista.update({
       where: { id: liderId },
-      data: { empresaId: empresa.id },
+      data: { empresaId: empresa.id, clinica: centroNombre },
     });
 
     revalidatePath("/admin/centros");

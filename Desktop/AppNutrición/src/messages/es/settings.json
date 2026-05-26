@@ -94,7 +94,7 @@
     "telefonoLabel": "Teléfono",
     "especialidadLabel": "Especialidad",
     "numColegiadoLabel": "Nº Colegiado",
-    "clinicaLabel": "Clínica",
+    "clinicaLabel": "Centro",
     "guardando": "Guardando...",
     "guardarCambios": "Guardar cambios",
     "toastSuccess": "Perfil actualizado",
@@ -103,7 +103,7 @@
   "profesionalInfo": {
     "especialidadLabel": "Especialidad",
     "numColegiadoLabel": "Nº colegiado",
-    "clinicaLabel": "Clínica",
+    "clinicaLabel": "Centro",
     "emptyValue": "—"
   },
   "cambiarPassword": {
