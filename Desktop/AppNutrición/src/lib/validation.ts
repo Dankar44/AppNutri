@@ -61,6 +61,15 @@ export function validateId(value: unknown): string | null {
   return trimmed;
 }
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function validateUuid(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!UUID_REGEX.test(trimmed)) return null;
+  return trimmed;
+}
+
 // --- Validación de email ---
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

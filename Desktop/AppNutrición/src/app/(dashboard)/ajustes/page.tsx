@@ -105,7 +105,7 @@ export default async function AjustesPage({
     getMisInvitaciones(),
   ]);
 
-  const showCentro = !!(dietista.empresaId || invitacionesCentro.length > 0);
+  const showCentro = true;
 
   const googleFlash =
     sp.google === "ok"

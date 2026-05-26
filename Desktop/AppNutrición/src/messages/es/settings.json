@@ -873,7 +873,12 @@
   "empresaSettings": {
     "demoDisabled": "Las funciones de centro no están disponibles en modo demo.",
     "sinCentro": "No perteneces a ningún centro",
-    "sinCentroDesc": "Cuando un centro te invite, la invitación aparecerá aquí.",
+    "sinCentroDesc": "Crea tu propio centro o espera a que te inviten a uno.",
+    "crearMiCentro": "Crear mi centro",
+    "centroCreado": "Centro creado correctamente",
+    "crearCentroBtn": "Crear centro",
+    "centroNombrePlaceholder": "Ej: Clínica Nutrición Madrid",
+    "descripcionPlaceholder": "Breve descripción del centro (opcional)",
     "invitacionesPendientes": "Invitaciones pendientes",
     "invitadoPor": "Invitación de {nombre}",
     "miembros": "miembros",

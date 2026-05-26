@@ -14,18 +14,16 @@ import {
   Loader2,
   Send,
   Pencil,
-  UserPlus,
-  Copy,
   Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   obtenerEmpresa,
+  crearMiCentro,
   invitarMiembro,
   cancelarInvitacion,
   getMisInvitaciones,
-  crearMiembroCentro,
   aceptarInvitacion,
   rechazarInvitacion,
   salirDeEmpresa,
@@ -76,7 +74,7 @@ export function EmpresaSection({ isDemo }: { isDemo: boolean }) {
   }
 
   if (!empresa) {
-    return <SinCentroView />;
+    return <SinCentroView onCreated={loadData} />;
   }
 
   return <CentroView empresa={empresa} onUpdate={loadData} />;
@@ -84,14 +82,91 @@ export function EmpresaSection({ isDemo }: { isDemo: boolean }) {
 
 // ─── Sin centro ───
 
-function SinCentroView() {
+function SinCentroView({ onCreated }: { onCreated: () => void }) {
   const t = useTranslations("settings");
+  const [mostrarForm, setMostrarForm] = useState(false);
+  const [nombre, setNombre] = useState("");
+  const [descripcion, setDescripcion] = useState("");
+  const [isPending, startTransition] = useTransition();
+
+  function handleCrear(e: React.FormEvent) {
+    e.preventDefault();
+    startTransition(async () => {
+      const res = await crearMiCentro({ nombre, descripcion: descripcion || undefined });
+      if (res.ok) {
+        toast.success(t("empresaSettings.centroCreado"));
+        onCreated();
+      } else {
+        toast.error(res.error);
+      }
+    });
+  }
+
+  if (!mostrarForm) {
+    return (
+      <div className="text-center py-6">
+        <Building2 className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+        <p className="text-sm font-medium">{t("empresaSettings.sinCentro")}</p>
+        <p className="text-xs text-muted-foreground mt-1 mb-4">{t("empresaSettings.sinCentroDesc")}</p>
+        <button
+          onClick={() => setMostrarForm(true)}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+        >
+          <Building2 className="w-4 h-4" />
+          {t("empresaSettings.crearMiCentro")}
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="text-center py-6">
-      <Building2 className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
-      <p className="text-sm font-medium">{t("empresaSettings.sinCentro")}</p>
-      <p className="text-xs text-muted-foreground mt-1">{t("empresaSettings.sinCentroDesc")}</p>
-    </div>
+    <form onSubmit={handleCrear} className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold">{t("empresaSettings.crearMiCentro")}</h3>
+        <button
+          type="button"
+          onClick={() => setMostrarForm(false)}
+          className="text-xs text-muted-foreground hover:text-foreground"
+        >
+          {t("empresaSettings.cancelar")}
+        </button>
+      </div>
+      <div>
+        <label className="text-xs font-medium text-muted-foreground">
+          {t("empresaSettings.centroNombreLabel")}
+        </label>
+        <input
+          type="text"
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
+          required
+          maxLength={200}
+          placeholder={t("empresaSettings.centroNombrePlaceholder")}
+          className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+        />
+      </div>
+      <div>
+        <label className="text-xs font-medium text-muted-foreground">
+          {t("empresaSettings.descripcionLabel")}
+        </label>
+        <textarea
+          value={descripcion}
+          onChange={(e) => setDescripcion(e.target.value)}
+          maxLength={500}
+          rows={2}
+          placeholder={t("empresaSettings.descripcionPlaceholder")}
+          className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+        />
+      </div>
+      <button
+        type="submit"
+        disabled={isPending || nombre.trim().length < 2}
+        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
+      >
+        {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Building2 className="w-4 h-4" />}
+        {t("empresaSettings.crearCentroBtn")}
+      </button>
+    </form>
   );
 }
 
@@ -201,7 +276,6 @@ function CentroView({
   const [isPending, startTransition] = useTransition();
   const [editando, setEditando] = useState(false);
   const [mostrarInvitar, setMostrarInvitar] = useState(false);
-  const [mostrarCrearCuenta, setMostrarCrearCuenta] = useState(false);
   const [confirmAccion, setConfirmAccion] = useState<{
     tipo: "salir" | "expulsar" | "transferir";
     targetId?: string;
@@ -342,24 +416,11 @@ function CentroView({
       {empresa.esLider && (
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={() => {
-              setMostrarInvitar(true);
-              setMostrarCrearCuenta(false);
-            }}
+            onClick={() => setMostrarInvitar(true)}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
           >
             <Send className="w-4 h-4" />
             {t("empresaSettings.invitarMiembro")}
-          </button>
-          <button
-            onClick={() => {
-              setMostrarCrearCuenta(true);
-              setMostrarInvitar(false);
-            }}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors"
-          >
-            <UserPlus className="w-4 h-4" />
-            {t("empresaSettings.crearCuenta")}
           </button>
         </div>
       )}
@@ -375,16 +436,6 @@ function CentroView({
         />
       )}
 
-      {/* Formulario de crear cuenta */}
-      {mostrarCrearCuenta && empresa.esLider && (
-        <CrearCuentaForm
-          onCreated={() => {
-            setMostrarCrearCuenta(false);
-            onUpdate();
-          }}
-          onClose={() => setMostrarCrearCuenta(false)}
-        />
-      )}
 
       {/* Invitaciones pendientes enviadas por el líder */}
       {empresa.esLider && empresa.solicitudes.length > 0 && (
@@ -585,166 +636,6 @@ function InvitarMiembroForm({
           {t("empresaSettings.enviar")}
         </button>
       </div>
-    </form>
-  );
-}
-
-// ─── Crear cuenta en el centro (inline form) ───
-
-function CrearCuentaForm({
-  onCreated,
-  onClose,
-}: {
-  onCreated: () => void;
-  onClose: () => void;
-}) {
-  const t = useTranslations("settings");
-  const [nombre, setNombre] = useState("");
-  const [apellidos, setApellidos] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isPending, startTransition] = useTransition();
-  const [credenciales, setCredenciales] = useState<{
-    email: string;
-    password: string;
-  } | null>(null);
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    startTransition(async () => {
-      const res = await crearMiembroCentro({
-        nombre,
-        apellidos: apellidos || undefined,
-        email,
-        password,
-      });
-      if (res.ok && res.email && res.password) {
-        toast.success(t("empresaSettings.cuentaCreada"));
-        setCredenciales({ email: res.email, password: res.password });
-      } else {
-        toast.error(res.error);
-      }
-    });
-  }
-
-  function handleCopyCredenciales() {
-    if (!credenciales) return;
-    navigator.clipboard.writeText(
-      `Email: ${credenciales.email}\nContraseña: ${credenciales.password}`,
-    );
-    toast.success(t("empresaSettings.copiado"));
-  }
-
-  if (credenciales) {
-    return (
-      <div className="p-3 rounded-lg border border-green-200 dark:border-green-500/20 bg-green-50/30 dark:bg-green-500/5 space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-green-700 dark:text-green-400">
-            {t("empresaSettings.cuentaCreada")}
-          </span>
-          <button
-            onClick={() => {
-              setCredenciales(null);
-              onCreated();
-            }}
-            className="p-1 rounded hover:bg-muted"
-          >
-            <X className="w-4 h-4 text-muted-foreground" />
-          </button>
-        </div>
-        <div className="text-xs space-y-1 font-mono bg-background p-2 rounded border border-border">
-          <p>Email: {credenciales.email}</p>
-          <p>Contraseña: {credenciales.password}</p>
-        </div>
-        <button
-          onClick={handleCopyCredenciales}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-colors"
-        >
-          <Copy className="w-3.5 h-3.5" />
-          {t("empresaSettings.copiarCredenciales")}
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <form
-      onSubmit={handleSubmit}
-      className="p-3 rounded-lg border border-border bg-muted/30 space-y-3"
-    >
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">{t("empresaSettings.crearCuenta")}</span>
-        <button type="button" onClick={onClose} className="p-1 rounded hover:bg-muted">
-          <X className="w-4 h-4 text-muted-foreground" />
-        </button>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        <div>
-          <label className="text-[11px] font-medium text-muted-foreground">
-            {t("empresaSettings.nombreLabel")}
-          </label>
-          <input
-            type="text"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-            required
-            maxLength={100}
-            className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-          />
-        </div>
-        <div>
-          <label className="text-[11px] font-medium text-muted-foreground">
-            {t("empresaSettings.apellidosLabel")}
-          </label>
-          <input
-            type="text"
-            value={apellidos}
-            onChange={(e) => setApellidos(e.target.value)}
-            maxLength={100}
-            className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-          />
-        </div>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        <div>
-          <label className="text-[11px] font-medium text-muted-foreground">
-            {t("empresaSettings.emailLabel")}
-          </label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            maxLength={200}
-            className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-          />
-        </div>
-        <div>
-          <label className="text-[11px] font-medium text-muted-foreground">
-            {t("empresaSettings.passwordLabel")}
-          </label>
-          <input
-            type="text"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={6}
-            className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/30"
-          />
-        </div>
-      </div>
-      <button
-        type="submit"
-        disabled={isPending || !nombre.trim() || !email.includes("@") || password.length < 6}
-        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
-      >
-        {isPending ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
-        ) : (
-          <UserPlus className="w-4 h-4" />
-        )}
-        {t("empresaSettings.crearCuentaBtn")}
-      </button>
     </form>
   );
 }

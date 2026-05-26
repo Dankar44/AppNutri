@@ -8,12 +8,15 @@ import {
   sanitizeString,
   sanitizeStringOptional,
   validateId,
+  validateUuid,
   validateSlug,
   LIMITS,
 } from "@/lib/validation";
 import { sendEmail } from "@/lib/mailer";
 import { TipoNotificacion } from "@/generated/prisma/client";
 import { crearPacienteDemoSiNoExiste } from "@/lib/paciente-demo";
+import { generarSlug } from "@/lib/empresa-utils";
+import { isNextNavigation } from "@/lib/utils";
 
 function escapeHtml(str: string): string {
   return str
@@ -48,6 +51,57 @@ async function getPendingInvitationCount(empresaId: string): Promise<number> {
   return prisma.solicitudEmpresa.count({
     where: { empresaId, estado: "PENDIENTE" },
   });
+}
+
+// ─── Crear mi propio centro (cualquier nutricionista) ───
+
+const MAX_MIEMBROS_DEFAULT = 10;
+
+export async function crearMiCentro(data: {
+  nombre: string;
+  descripcion?: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
+  if (dietista.isDemo) return { ok: false, error: t("auth.noAutorizado") };
+
+  const d = await prisma.dietista.findUnique({
+    where: { id: dietista.id },
+    select: { empresaId: true },
+  });
+  if (d?.empresaId) return { ok: false, error: t("empresa.yaEnEmpresa") };
+
+  const nombre = sanitizeString(data.nombre, LIMITS.EMPRESA_NOMBRE);
+  if (!nombre || nombre.length < 2) return { ok: false, error: t("empresa.nombreRequerido") };
+
+  try {
+    let slug = generarSlug(nombre);
+    const existeSlug = await prisma.empresa.findUnique({ where: { slug } });
+    if (existeSlug) slug = `${slug}-${Date.now().toString(36)}`;
+
+    const empresa = await prisma.empresa.create({
+      data: {
+        nombre,
+        slug,
+        descripcion: sanitizeStringOptional(data.descripcion, LIMITS.EMPRESA_DESCRIPCION) || null,
+        liderId: dietista.id,
+        maxMiembros: MAX_MIEMBROS_DEFAULT,
+      },
+    });
+
+    await prisma.dietista.update({
+      where: { id: dietista.id },
+      data: { empresaId: empresa.id, clinica: nombre },
+    });
+
+    revalidateEmpresa();
+    return { ok: true };
+  } catch (e) {
+    if (isNextNavigation(e)) throw e;
+    console.error("[empresa] Error creando centro:", e);
+    return { ok: false, error: t("general.errorDesconocido") };
+  }
 }
 
 // ─── Obtener empresa del dietista actual ───
@@ -201,7 +255,7 @@ export async function aceptarInvitacion(solicitudId: string): Promise<{ ok: bool
   if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
   if (dietista.isDemo) return { ok: false, error: t("auth.noAutorizado") };
 
-  const sId = validateId(solicitudId);
+  const sId = validateUuid(solicitudId);
   if (!sId) return { ok: false, error: t("empresa.solicitudNoEncontrada") };
 
   const solicitud = await prisma.solicitudEmpresa.findUnique({
@@ -268,7 +322,7 @@ export async function rechazarInvitacion(solicitudId: string): Promise<{ ok: boo
   if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
   if (dietista.isDemo) return { ok: false, error: t("auth.noAutorizado") };
 
-  const sId = validateId(solicitudId);
+  const sId = validateUuid(solicitudId);
   if (!sId) return { ok: false, error: t("empresa.solicitudNoEncontrada") };
 
   const solicitud = await prisma.solicitudEmpresa.findUnique({
@@ -316,7 +370,7 @@ export async function cancelarInvitacion(solicitudId: string): Promise<{ ok: boo
   if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
   if (dietista.isDemo) return { ok: false, error: t("auth.noAutorizado") };
 
-  const sId = validateId(solicitudId);
+  const sId = validateUuid(solicitudId);
   if (!sId) return { ok: false, error: t("empresa.solicitudNoEncontrada") };
 
   const solicitud = await prisma.solicitudEmpresa.findUnique({

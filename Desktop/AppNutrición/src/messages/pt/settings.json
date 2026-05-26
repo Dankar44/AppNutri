@@ -683,7 +683,12 @@
   "empresaSettings": {
     "demoDisabled": "As funções de centro não estão disponíveis no modo demonstração.",
     "sinCentro": "Não pertence a nenhum centro",
-    "sinCentroDesc": "Quando um centro o convidar, o convite aparecerá aqui.",
+    "sinCentroDesc": "Crie o seu próprio centro ou aguarde um convite.",
+    "crearMiCentro": "Criar meu centro",
+    "centroCreado": "Centro criado com sucesso",
+    "crearCentroBtn": "Criar centro",
+    "centroNombrePlaceholder": "Ex: Clínica Nutrição Lisboa",
+    "descripcionPlaceholder": "Breve descrição do centro (opcional)",
     "invitacionesPendientes": "Convites pendentes",
     "invitadoPor": "Convite de {nombre}",
     "miembros": "membros",
