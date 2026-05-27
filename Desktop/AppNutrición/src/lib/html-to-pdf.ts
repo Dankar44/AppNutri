@@ -1,9 +1,12 @@
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
+
+const CHROMIUM_PATH = process.env.CHROMIUM_PATH || "/usr/bin/chromium-browser";
 
 export async function htmlToPdf(html: string): Promise<Buffer> {
   const browser = await puppeteer.launch({
     headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"],
+    executablePath: CHROMIUM_PATH,
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
   });
   try {
     const page = await browser.newPage();
