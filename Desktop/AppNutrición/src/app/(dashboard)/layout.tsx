@@ -10,6 +10,7 @@ import { SidebarWrapper } from "./sidebar-wrapper";
 import { HelpWidget } from "@/components/help/help-widget";
 import { TourWrapper } from "@/components/tour/tour-wrapper";
 import { DemoBanner } from "@/components/demo-banner";
+import { BetaBanner } from "@/components/beta-banner";
 import { DemoProvider } from "@/contexts/demo-context";
 import { prisma } from "@/lib/prisma";
 
@@ -52,6 +53,7 @@ export default async function DashboardLayout({
     <DemoProvider isDemo={dietista.isDemo}>
       <TourWrapper audience="dietista">
         {dietista.isDemo && <DemoBanner />}
+        {!dietista.isDemo && <BetaBanner />}
         <div className={`flex min-h-dvh bg-background${dietista.isDemo ? " pt-8" : ""}`}>
           <SidebarWrapper
             dietistaNombre={`${dietista.nombre} ${dietista.apellidos}`}
