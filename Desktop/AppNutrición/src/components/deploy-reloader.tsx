@@ -6,13 +6,14 @@ import { useTranslations } from "next-intl";
 import { hasPersistedForms } from "@/lib/form-persist";
 
 const POLL_INTERVAL_MS = 30_000;
+const TOAST_ID = "deploy-stale-version";
+let staleHandled = false;
 
 export function VersionChecker() {
   const t = useTranslations("common.deploy");
   const knownBuildId = useRef(process.env.NEXT_PUBLIC_BUILD_ID ?? "dev");
   const intervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const deployDetected = useRef(false);
-  const staleNotified = useRef(false);
 
   const checkVersion = useCallback(async () => {
     if (deployDetected.current) return;
@@ -24,6 +25,7 @@ export function VersionChecker() {
         deployDetected.current = true;
         if (hasPersistedForms()) {
           toast(t("nuevaVersion"), {
+            id: TOAST_ID,
             description: t("datosGuardados"),
             duration: Infinity,
             action: {
@@ -76,10 +78,11 @@ export function VersionChecker() {
       msg.includes("Loading chunk");
 
     function handleStaleAction() {
-      if (staleNotified.current) return;
-      staleNotified.current = true;
+      if (staleHandled) return;
+      staleHandled = true;
       if (hasPersistedForms()) {
         toast(t("nuevaVersion"), {
+          id: TOAST_ID,
           description: t("datosGuardados"),
           duration: Infinity,
           action: {
