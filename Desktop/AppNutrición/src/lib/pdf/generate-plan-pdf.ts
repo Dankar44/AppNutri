@@ -108,10 +108,11 @@ function generateCSS(t: PdfColorTheme): string {
   .page { page-break-after: always; padding: 30px 40px; min-height: 100vh; position: relative; }
   .page:last-child { page-break-after: avoid; }
 
-  .header { background: ${t.primary}; color: white; padding: 8px 20px; display: flex; justify-content: space-between; align-items: center; margin: -30px -40px 20px; padding: 12px 40px; }
+  .header { background: ${t.primary}; color: white; margin: -30px -40px 20px; border-spacing: 0; width: calc(100% + 80px); }
+  .header td { padding: 12px 40px; vertical-align: middle; }
   .header-name { font-weight: 700; font-size: 13px; letter-spacing: 0.3px; }
   .header-sub { font-size: 10px; opacity: 0.9; }
-  .header-logo { font-weight: 800; font-size: 16px; letter-spacing: -0.5px; }
+  .header-logo { font-weight: 800; font-size: 16px; letter-spacing: -0.5px; text-align: right; }
   .header-logo-img { max-height: 28px; vertical-align: middle; }
 
   .section-title { background: ${t.sectionBg}; padding: 10px 20px; text-align: center; font-weight: 700; font-size: 14px; color: ${t.textMedium}; margin: 20px 0 16px; border-radius: 6px; border: 1px solid ${t.border}; }
@@ -119,14 +120,14 @@ function generateCSS(t: PdfColorTheme): string {
   .day-title { background: ${t.dayHeaderBg}; color: ${t.dayHeaderText}; padding: 8px 16px; text-align: center; font-weight: 700; font-size: 13px; border-radius: 6px; margin-bottom: 12px; }
 
   /* Cover */
-  .cover { display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; text-align: center; }
-  .cover-box { background: ${t.lightBg}; border-radius: 16px; padding: 60px 80px; max-width: 500px; border: 1px solid ${t.borderLight}; }
+  .cover { text-align: center; padding-top: 80px; padding-bottom: 40px; }
+  .cover-box { background: ${t.lightBg}; border-radius: 16px; padding: 60px 80px; max-width: 500px; border: 1px solid ${t.borderLight}; margin: 0 auto; }
   .cover-title { font-size: 28px; color: ${t.textMedium}; font-weight: 300; margin-bottom: 4px; }
   .cover-title strong { font-weight: 800; color: ${t.primary}; }
   .cover-name { background: ${t.primary}; color: white; padding: 8px 24px; font-weight: 700; font-size: 14px; margin-top: 16px; display: inline-block; letter-spacing: 0.5px; border-radius: 4px; }
   .cover-logo { margin-top: 60px; font-size: 24px; font-weight: 800; color: ${t.primary}; }
   .cover-logo-img { max-width: 180px; max-height: 80px; }
-  .cover-platform { position: absolute; bottom: 40px; left: 0; right: 0; text-align: center; font-size: 18px; font-weight: 700; color: #c0c8c3; letter-spacing: 1px; }
+  .cover-platform { text-align: center; font-size: 18px; font-weight: 700; color: #c0c8c3; letter-spacing: 1px; margin-top: 60px; }
 
   /* Summary table */
   .summary-table { width: 100%; border-collapse: collapse; font-size: 9px; }
@@ -146,8 +147,8 @@ function generateCSS(t: PdfColorTheme): string {
   .detail-table tr:nth-child(even) td:not(.meal-cell) { background: ${t.lightBg}; }
 
   /* Macros */
-  .macros-row { display: flex; justify-content: center; margin-top: 12px; padding: 12px; background: ${t.sectionBg}; border-radius: 8px; border: 1px solid ${t.borderLight}; }
-  .macro-item { text-align: center; padding: 0 12px; }
+  .macros-row { margin-top: 12px; background: ${t.sectionBg}; border-radius: 8px; border: 1px solid ${t.borderLight}; border-spacing: 0; }
+  .macro-item { text-align: center; padding: 12px 16px; }
   .macro-value { font-weight: 800; font-size: 16px; }
   .macro-label { font-size: 9px; color: ${t.textLight}; margin-top: 2px; }
   .macro-cal { color: #c88a5c; }
@@ -178,7 +179,9 @@ function generateCSS(t: PdfColorTheme): string {
     body { margin: 0; }
     .page { padding: 20px 30px; break-after: page; }
     .page:last-child { break-after: avoid; }
-    .header { margin: -20px -30px 16px; padding: 10px 30px; }
+    .cover { padding-top: 200px; }
+    .header { margin: -20px -30px 16px; }
+    .header td { padding: 10px 30px; }
     .cover-logo-img { max-width: 150px; }
     .header-logo-img { max-height: 24px; }
   }
@@ -249,7 +252,7 @@ export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
 
   const footer = `<div class="footer">${brandName} &mdash; ${fecha}<div class="footer-platform">annonia.com</div></div>`;
   const pacNombre = escapeHtml(data.pacienteNombre).toUpperCase();
-  const header = `<div class="header"><div><span class="header-name">${pacNombre}</span><br><span class="header-sub">${tt("planDietetico.header.subtitulo", { pacienteNombre: pacNombre })}</span></div><div class="header-logo">${logoHeaderHtml}</div></div>`;
+  const header = `<table class="header"><tr><td><span class="header-name">${pacNombre}</span><br><span class="header-sub">${tt("planDietetico.header.subtitulo", { pacienteNombre: pacNombre })}</span></td><td class="header-logo">${logoHeaderHtml}</td></tr></table>`;
 
   let html = "";
 
@@ -332,12 +335,12 @@ export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
 
       html += `</tbody></table>`;
       if (sec.valoresNutricionales) {
-        html += `<div class="macros-row">
-          <div class="macro-item"><div class="macro-value macro-cal">${macros.calorias}</div><div class="macro-label">${tt("planDietetico.macros.kcal")}</div></div>
-          <div class="macro-item"><div class="macro-value macro-prot">${macros.proteinas}g</div><div class="macro-label">${tt("planDietetico.macros.proteinas")}</div></div>
-          <div class="macro-item"><div class="macro-value macro-carb">${macros.carbohidratos}g</div><div class="macro-label">${tt("planDietetico.macros.carbohidratos")}</div></div>
-          <div class="macro-item"><div class="macro-value macro-fat">${macros.grasas}g</div><div class="macro-label">${tt("planDietetico.macros.grasas")}</div></div>
-        </div>`;
+        html += `<table class="macros-row" width="100%"><tr>
+          <td class="macro-item"><div class="macro-value macro-cal">${macros.calorias}</div><div class="macro-label">${tt("planDietetico.macros.kcal")}</div></td>
+          <td class="macro-item"><div class="macro-value macro-prot">${macros.proteinas}g</div><div class="macro-label">${tt("planDietetico.macros.proteinas")}</div></td>
+          <td class="macro-item"><div class="macro-value macro-carb">${macros.carbohidratos}g</div><div class="macro-label">${tt("planDietetico.macros.carbohidratos")}</div></td>
+          <td class="macro-item"><div class="macro-value macro-fat">${macros.grasas}g</div><div class="macro-label">${tt("planDietetico.macros.grasas")}</div></td>
+        </tr></table>`;
       }
       html += `${footer}</div>`;
     }
@@ -371,5 +374,6 @@ export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
   const clinicaLine = data.clinica ? ` &mdash; ${escapeHtml(data.clinica)}` : "";
   html += `<div class="page cover"><div class="cover-logo" style="font-size:32px;">${logoCoverHtml}</div><p style="color:#666; margin-top:12px; font-size:12px;">${tt("planDietetico.contraportada.generadoPor", { dietistaNombre: escapeHtml(data.dietistaNombre) })}${clinicaLine}</p><p style="color:#b0b8b3; margin-top:24px; font-size:10px;">${tt("planDietetico.contraportada.plataforma")}</p></div>`;
 
-  return `<!DOCTYPE html><html><head><title>Plan Dietético - ${data.pacienteNombre}</title><style>${generateCSS(theme)}</style></head><body>${html}<script>window.onload=function(){window.print();}</script></body></html>`;
+  const printScript = data.isEmail ? "" : "<script>window.onload=function(){window.print();}</script>";
+  return `<!DOCTYPE html><html><head><title>Plan Dietético - ${data.pacienteNombre}</title><style>${generateCSS(theme)}</style></head><body>${html}${printScript}</body></html>`;
 }
