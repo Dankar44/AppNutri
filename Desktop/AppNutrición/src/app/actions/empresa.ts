@@ -203,13 +203,19 @@ export async function invitarMiembro(email: string): Promise<{ ok: boolean; erro
     }
 
     const existente = await prisma.solicitudEmpresa.findFirst({
-      where: { empresaId: empresa.id, dietistaId: targetDietista.id, estado: "PENDIENTE" },
+      where: { empresaId: empresa.id, dietistaId: targetDietista.id },
     });
-    if (existente) return { ok: false, error: t("empresa.emailYaInvitado") };
-
-    await prisma.solicitudEmpresa.create({
-      data: { empresaId: empresa.id, dietistaId: targetDietista.id },
-    });
+    if (existente) {
+      if (existente.estado === "PENDIENTE") return { ok: false, error: t("empresa.emailYaInvitado") };
+      await prisma.solicitudEmpresa.update({
+        where: { id: existente.id },
+        data: { estado: "PENDIENTE" },
+      });
+    } else {
+      await prisma.solicitudEmpresa.create({
+        data: { empresaId: empresa.id, dietistaId: targetDietista.id },
+      });
+    }
 
     await prisma.notificacion.create({
       data: {
@@ -217,18 +223,24 @@ export async function invitarMiembro(email: string): Promise<{ ok: boolean; erro
         tipo: "EMPRESA_SOLICITUD",
         titulo: `${escapeHtml(dietista.nombre)} te invita a ${escapeHtml(empresa.nombre)}`,
         mensaje: `Has sido invitado/a a unirte al centro ${empresa.nombre}.`,
-        enlace: "/ajustes",
+        enlace: "/ajustes#empresa",
       },
     });
   } else {
     const existente = await prisma.solicitudEmpresa.findFirst({
-      where: { empresaId: empresa.id, email: emailClean, estado: "PENDIENTE" },
+      where: { empresaId: empresa.id, email: emailClean },
     });
-    if (existente) return { ok: false, error: t("empresa.emailYaInvitado") };
-
-    await prisma.solicitudEmpresa.create({
-      data: { empresaId: empresa.id, email: emailClean },
-    });
+    if (existente) {
+      if (existente.estado === "PENDIENTE") return { ok: false, error: t("empresa.emailYaInvitado") };
+      await prisma.solicitudEmpresa.update({
+        where: { id: existente.id },
+        data: { estado: "PENDIENTE" },
+      });
+    } else {
+      await prisma.solicitudEmpresa.create({
+        data: { empresaId: empresa.id, email: emailClean },
+      });
+    }
   }
 
   sendEmail({
@@ -239,7 +251,7 @@ export async function invitarMiembro(email: string): Promise<{ ok: boolean; erro
       saludo: `Hola,`,
       cuerpo: `${escapeHtml(dietista.nombre)} te ha invitado a unirte al centro ${escapeHtml(empresa.nombre)} en Annonia.`,
       botonTexto: "Ver invitación",
-      botonUrl: "https://annonia.com/ajustes",
+      botonUrl: "https://annonia.com/ajustes#empresa",
     }),
   }).catch((err) => console.error("[empresa] Error email invitación:", err));
 
@@ -306,7 +318,7 @@ export async function aceptarInvitacion(solicitudId: string): Promise<{ ok: bool
       tipo: "EMPRESA_ACEPTADA",
       titulo: `${dietista.nombre} se ha unido a ${solicitud.empresa.nombre}`,
       mensaje: `${dietista.nombre} ha aceptado la invitación y se ha unido al centro.`,
-      enlace: "/ajustes",
+      enlace: "/centro",
     },
   });
 
@@ -354,7 +366,7 @@ export async function rechazarInvitacion(solicitudId: string): Promise<{ ok: boo
       tipo: "EMPRESA_RECHAZADA",
       titulo: `${dietista.nombre} ha rechazado la invitación`,
       mensaje: `${dietista.nombre} ha rechazado la invitación para unirse a ${solicitud.empresa.nombre}.`,
-      enlace: "/ajustes",
+      enlace: "/centro",
     },
   });
 
@@ -628,7 +640,7 @@ export async function salirDeEmpresa(): Promise<{ ok: boolean; error?: string }>
           tipo: "EMPRESA_LIDER_TRANSFERIDO",
           titulo: `Ahora lideras ${empresa.nombre}`,
           mensaje: `${dietista.nombre} ha abandonado la empresa y el liderazgo se te ha transferido automáticamente.`,
-          enlace: "/ajustes",
+          enlace: "/centro",
         },
       });
     }
@@ -644,7 +656,7 @@ export async function salirDeEmpresa(): Promise<{ ok: boolean; error?: string }>
         tipo: "EMPRESA_MIEMBRO_SALIO",
         titulo: `${dietista.nombre} ha salido de ${empresa.nombre}`,
         mensaje: `${dietista.nombre} ha abandonado la empresa.`,
-        enlace: "/ajustes",
+        enlace: "/centro",
       },
     });
   }
@@ -698,7 +710,7 @@ export async function expulsarMiembro(miembroId: string): Promise<{ ok: boolean;
       tipo: "EMPRESA_MIEMBRO_SALIO",
       titulo: `Has sido eliminado de ${empresa.nombre}`,
       mensaje: `El líder de ${empresa.nombre} te ha eliminado del equipo.`,
-      enlace: "/ajustes",
+      enlace: "/ajustes#empresa",
     },
   });
 
@@ -751,7 +763,7 @@ export async function transferirLiderazgo(nuevoLiderId: string): Promise<{ ok: b
       tipo: "EMPRESA_LIDER_TRANSFERIDO",
       titulo: `Ahora lideras ${empresa.nombre}`,
       mensaje: `${dietista.nombre} te ha transferido el liderazgo de ${empresa.nombre}.`,
-      enlace: "/ajustes",
+      enlace: "/centro",
     },
   });
 
@@ -763,7 +775,7 @@ export async function transferirLiderazgo(nuevoLiderId: string): Promise<{ ok: b
       saludo: `Hola ${escapeHtml(nuevoLider.nombre)},`,
       cuerpo: `${escapeHtml(dietista.nombre)} te ha transferido el liderazgo de ${escapeHtml(empresa.nombre)}. Ahora puedes gestionar miembros e invitaciones.`,
       botonTexto: "Gestionar centro",
-      botonUrl: "https://annonia.com/ajustes",
+      botonUrl: "https://annonia.com/centro",
     }),
   }).catch((err) => console.error("[empresa] Error email liderazgo:", err));
 

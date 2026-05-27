@@ -2,10 +2,9 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Package, Users } from "lucide-react";
+import { Package, Users, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmpresaSection } from "@/app/(dashboard)/ajustes/empresa-section";
-import { InventarioTab } from "./inventario-tab";
 
 const TABS = ["inventario", "equipo"] as const;
 type Tab = (typeof TABS)[number];
@@ -17,7 +16,7 @@ const TAB_ICONS: Record<Tab, React.ElementType> = {
 
 export function CentroClient({ isDemo }: { isDemo: boolean }) {
   const t = useTranslations("centro");
-  const [activeTab, setActiveTab] = useState<Tab>("inventario");
+  const [activeTab, setActiveTab] = useState<Tab>("equipo");
 
   return (
     <div>
@@ -43,7 +42,15 @@ export function CentroClient({ isDemo }: { isDemo: boolean }) {
         })}
       </div>
 
-      {activeTab === "inventario" && <InventarioTab />}
+      {activeTab === "inventario" && (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
+            <Clock className="w-6 h-6 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-semibold mb-1">{t("inventario.proximamente")}</h3>
+          <p className="text-sm text-muted-foreground max-w-md">{t("inventario.proximamenteDesc")}</p>
+        </div>
+      )}
       {activeTab === "equipo" && <EmpresaSection isDemo={isDemo} />}
     </div>
   );

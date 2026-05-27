@@ -31,6 +31,8 @@
     },
     "vacio": "No hay alimentos con stock en tu centro",
     "vacioDesc": "Añade stock a los alimentos compartidos desde la ficha de cada alimento",
-    "ajustar": "Ajustar"
+    "ajustar": "Ajustar",
+    "proximamente": "Próximamente",
+    "proximamenteDesc": "El inventario de suplementos y stock del centro estará disponible próximamente."
   }
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Plus, Download, Apple } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { getAlimentosPaginados, contarMisAlimentos, tieneEmpresaActual } from "@/app/actions/alimentos";
+import { getCurrentDietista } from "@/app/actions/auth";
 import { AlimentosFilter } from "./alimentos-filter";
 import { AlimentosTable } from "./alimentos-table";
 import { PageHeader } from "@/components/page-header";
@@ -34,7 +35,7 @@ export default async function AlimentosPage({ searchParams }: Props) {
 
   const t = await getTranslations("foods");
 
-  const [{ alimentos, total, nextCursor }, misAlimentosCount, tieneEmpresa] = await Promise.all([
+  const [{ alimentos, total, nextCursor }, misAlimentosCount, tieneEmpresa, dietista] = await Promise.all([
     getAlimentosPaginados(
       busqueda,
       categoria as Parameters<typeof getAlimentosPaginados>[1],
@@ -56,6 +57,7 @@ export default async function AlimentosPage({ searchParams }: Props) {
     ),
     contarMisAlimentos(),
     tieneEmpresaActual(),
+    getCurrentDietista(),
   ]);
 
   return (
@@ -136,6 +138,8 @@ export default async function AlimentosPage({ searchParams }: Props) {
             busqueda={busqueda}
             categoria={categoria}
             propios={propios}
+            fuenteCentro={!!fuenteAlimento}
+            currentDietistaId={dietista?.id}
           />
         </div>
       )}

@@ -291,8 +291,8 @@ export async function getAlimentosPaginados(
   let ownerFilter;
   if (f.propios) {
     ownerFilter = { dietistaId: dietista.id };
-  } else if (f.fuenteAlimento === "centro" && otherMemberIds.length > 0) {
-    ownerFilter = { dietistaId: { in: otherMemberIds }, compartido: true };
+  } else if (f.fuenteAlimento === "centro") {
+    ownerFilter = { dietistaId: { in: memberIds }, compartido: true };
   } else if (otherMemberIds.length > 0) {
     ownerFilter = {
       OR: [
@@ -324,6 +324,7 @@ export async function getAlimentosPaginados(
     calorias: true, proteinas: true, carbohidratos: true, grasas: true, fibra: true,
     porcion: true, unidad: true, origen: true, imagenUrl: true, dietistaId: true,
     stock: true, stockMinimo: true, compartido: true,
+    dietista: { select: { email: true } },
   } as const;
 
   const [alimentos, total] = await Promise.all([
@@ -352,13 +353,14 @@ export async function cargarMasAlimentos(
   busqueda?: string,
   categoria?: string,
   propios?: boolean,
+  fuenteAlimento?: "centro",
 ) {
   const busquedaSanitizada = busqueda ? sanitizeSearch(busqueda) : undefined;
   return getAlimentosPaginados(
     busquedaSanitizada,
     categoria as CategoriaAlimento | undefined,
     cursor,
-    propios ? { propios: true } : undefined,
+    { ...(propios ? { propios: true } : {}), ...(fuenteAlimento ? { fuenteAlimento } : {}) },
   );
 }
 

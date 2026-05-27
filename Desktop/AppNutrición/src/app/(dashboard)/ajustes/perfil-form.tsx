@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { actualizarPerfil, type PerfilFormData } from "@/app/actions/perfil";
-import { useUncontrolledFormPersist } from "@/lib/form-persist";
 import { isNextNavigation, withTimeout } from "@/lib/utils";
 import { useDemoGuard } from "@/contexts/demo-context";
 
@@ -15,19 +14,10 @@ interface Props {
 
 export function PerfilForm({ defaultValues }: Props) {
   const t = useTranslations("settings");
-  const tc = useTranslations("common.deploy");
   const router = useRouter();
   const blockIfDemo = useDemoGuard();
   const [loading, setLoading] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
-  const { wasRestored, clear: clearDraft } = useUncontrolledFormPersist(
-    "perfil-dietista",
-    formRef,
-  );
-
-  useEffect(() => {
-    if (wasRestored) toast.success(tc("datosRestaurados"));
-  }, [wasRestored, tc]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -45,7 +35,6 @@ export function PerfilForm({ defaultValues }: Props) {
     };
 
     try {
-      clearDraft();
       await withTimeout(actualizarPerfil(data));
       toast.success(t("perfilForm.toastSuccess"));
       router.refresh();

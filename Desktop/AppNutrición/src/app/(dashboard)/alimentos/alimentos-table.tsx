@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { MacroBadges } from "@/components/macro-badge";
@@ -24,6 +25,7 @@ type Alimento = {
   stockMinimo?: number | null;
   compartido?: boolean;
   dietistaId?: string | null;
+  dietista?: { email: string } | null;
 };
 
 const CATEGORIA_KEY_MAP: Record<string, string> = {
@@ -49,10 +51,13 @@ interface Props {
   busqueda?: string;
   categoria?: string;
   propios?: boolean;
+  fuenteCentro?: boolean;
+  currentDietistaId?: string;
 }
 
-export function AlimentosTable({ initial, initialCursor, busqueda, categoria, propios }: Props) {
+export function AlimentosTable({ initial, initialCursor, busqueda, categoria, propios, fuenteCentro, currentDietistaId }: Props) {
   const t = useTranslations("foods");
+  const router = useRouter();
   const [alimentos, setAlimentos] = useState(initial);
   const [cursor, setCursor] = useState(initialCursor);
   const [isPending, startTransition] = useTransition();
@@ -67,11 +72,11 @@ export function AlimentosTable({ initial, initialCursor, busqueda, categoria, pr
   const loadMore = useCallback(() => {
     if (!cursor || isPending) return;
     startTransition(async () => {
-      const res = await cargarMasAlimentos(cursor, busqueda, categoria, propios);
+      const res = await cargarMasAlimentos(cursor, busqueda, categoria, propios, fuenteCentro ? "centro" : undefined);
       setAlimentos((prev) => [...prev, ...res.alimentos]);
       setCursor(res.nextCursor);
     });
-  }, [cursor, isPending, busqueda, categoria, propios]);
+  }, [cursor, isPending, busqueda, categoria, propios, fuenteCentro]);
 
   useEffect(() => {
     const el = sentinelRef.current;
@@ -91,33 +96,49 @@ export function AlimentosTable({ initial, initialCursor, busqueda, categoria, pr
     <div className="bg-card rounded-xl border border-border overflow-hidden">
       {/* Mobile: cards */}
       <div className="sm:hidden divide-y divide-border">
-        {alimentos.map((alimento) => (
-          <Link
-            key={alimento.id}
-            href={`/alimentos/${alimento.id}`}
-            className="flex items-center justify-between gap-3 px-3 py-3 hover:bg-muted/50 transition-colors"
-          >
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium truncate">{alimento.nombre}</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted font-medium shrink-0">
-                  {CATEGORIA_KEY_MAP[alimento.categoria] ? t(`categorias.${CATEGORIA_KEY_MAP[alimento.categoria]}`) : alimento.categoria}
-                </span>
-              </div>
-              <div className="flex flex-wrap items-center gap-1 mt-1.5">
-                <MacroBadges
-                  calorias={alimento.calorias}
-                  proteinas={alimento.proteinas}
-                  carbohidratos={alimento.carbohidratos}
-                  grasas={alimento.grasas}
-                />
-                {alimento.stock !== null && alimento.stock !== undefined && (
-                  <StockBadge stock={alimento.stock} stockMinimo={alimento.stockMinimo ?? null} />
+        {alimentos.map((alimento) => {
+          const isFromOther = currentDietistaId && alimento.dietistaId && alimento.dietistaId !== currentDietistaId;
+          return (
+            <Link
+              key={alimento.id}
+              href={`/alimentos/${alimento.id}`}
+              className={`flex items-center justify-between gap-3 px-3 py-3 hover:bg-muted/50 transition-colors ${isFromOther ? "border-l-2 border-l-purple-400" : ""}`}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-medium truncate">{alimento.nombre}</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted font-medium shrink-0">
+                    {CATEGORIA_KEY_MAP[alimento.categoria] ? t(`categorias.${CATEGORIA_KEY_MAP[alimento.categoria]}`) : alimento.categoria}
+                  </span>
+                  {isFromOther && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 shrink-0">
+                      {t("table.deCentro")}
+                    </span>
+                  )}
+                  {alimento.compartido && !isFromOther && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 shrink-0">
+                      {t("table.compartido")}
+                    </span>
+                  )}
+                </div>
+                {isFromOther && alimento.dietista?.email && (
+                  <span className="text-[11px] text-muted-foreground">{alimento.dietista.email}</span>
                 )}
+                <div className="flex flex-wrap items-center gap-1 mt-1.5">
+                  <MacroBadges
+                    calorias={alimento.calorias}
+                    proteinas={alimento.proteinas}
+                    carbohidratos={alimento.carbohidratos}
+                    grasas={alimento.grasas}
+                  />
+                  {alimento.stock !== null && alimento.stock !== undefined && (
+                    <StockBadge stock={alimento.stock} stockMinimo={alimento.stockMinimo ?? null} />
+                  )}
+                </div>
               </div>
-            </div>
-          </Link>
-        ))}
+            </Link>
+          );
+        })}
       </div>
 
       {/* Desktop: table */}
@@ -132,18 +153,21 @@ export function AlimentosTable({ initial, initialCursor, busqueda, categoria, pr
           </tr>
         </thead>
         <tbody>
-          {alimentos.map((alimento) => (
+          {alimentos.map((alimento) => {
+            const isFromOther = currentDietistaId && alimento.dietistaId && alimento.dietistaId !== currentDietistaId;
+            return (
             <tr
               key={alimento.id}
-              className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors"
+              onClick={() => router.push(`/alimentos/${alimento.id}`)}
+              className={`border-b border-border last:border-0 hover:bg-muted/50 transition-colors cursor-pointer ${isFromOther ? "border-l-2 border-l-purple-400" : ""}`}
             >
               <td className="px-4 py-3">
-                <Link
-                  href={`/alimentos/${alimento.id}`}
-                  className="text-sm font-medium hover:text-primary transition-colors"
-                >
+                <span className="text-sm font-medium">
                   {alimento.nombre}
-                </Link>
+                </span>
+                {isFromOther && alimento.dietista?.email && (
+                  <span className="block text-[11px] text-muted-foreground mt-0.5">{alimento.dietista.email}</span>
+                )}
               </td>
               <td className="px-4 py-3">
                 <span className="text-xs px-2 py-0.5 rounded-full bg-muted font-medium">
@@ -179,7 +203,12 @@ export function AlimentosTable({ initial, initialCursor, busqueda, categoria, pr
                   >
                     {alimento.origen === "API" ? t("table.importado") : t("table.personalizado")}
                   </span>
-                  {alimento.compartido && (
+                  {isFromOther && (
+                    <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400">
+                      {t("table.deCentro")}
+                    </span>
+                  )}
+                  {alimento.compartido && !isFromOther && (
                     <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400">
                       {t("table.compartido")}
                     </span>
@@ -187,7 +216,8 @@ export function AlimentosTable({ initial, initialCursor, busqueda, categoria, pr
                 </div>
               </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
 
