@@ -97,6 +97,7 @@ export interface PlanPDFData {
   sections?: PDFSectionOptions;
   displayOverrides?: DisplayOverrides;
   locale?: string;
+  isEmail?: boolean;
 }
 
 function generateCSS(t: PdfColorTheme): string {
@@ -145,8 +146,8 @@ function generateCSS(t: PdfColorTheme): string {
   .detail-table tr:nth-child(even) td:not(.meal-cell) { background: ${t.lightBg}; }
 
   /* Macros */
-  .macros-row { display: flex; justify-content: center; gap: 20px; margin-top: 12px; padding: 12px; background: ${t.sectionBg}; border-radius: 8px; border: 1px solid ${t.borderLight}; }
-  .macro-item { text-align: center; }
+  .macros-row { display: flex; justify-content: center; margin-top: 12px; padding: 12px; background: ${t.sectionBg}; border-radius: 8px; border: 1px solid ${t.borderLight}; }
+  .macro-item { text-align: center; padding: 0 12px; }
   .macro-value { font-weight: 800; font-size: 16px; }
   .macro-label { font-size: 9px; color: ${t.textLight}; margin-top: 2px; }
   .macro-cal { color: #c88a5c; }
@@ -155,12 +156,12 @@ function generateCSS(t: PdfColorTheme): string {
   .macro-fat { color: #c97e79; }
 
   /* Shopping list */
-  .shop-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-  .shop-cat { break-inside: avoid; }
+  .shop-grid { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .shop-cat { break-inside: avoid; padding: 6px; }
   .shop-cat-title { background: ${t.primary}; color: white; padding: 6px 10px; font-weight: 700; font-size: 10px; border-radius: 4px 4px 0 0; }
-  .shop-item { padding: 4px 10px; font-size: 10px; border-bottom: 1px solid ${t.borderLight}; display: flex; align-items: center; gap: 6px; background: ${t.lightBg}; color: ${t.textMedium}; }
+  .shop-item { padding: 4px 10px; font-size: 10px; border-bottom: 1px solid ${t.borderLight}; display: flex; align-items: center; background: ${t.lightBg}; color: ${t.textMedium}; }
   .shop-item:last-child { border-radius: 0 0 4px 4px; }
-  .shop-check { width: 10px; height: 10px; border: 1.5px solid ${t.border}; border-radius: 2px; flex-shrink: 0; }
+  .shop-check { width: 10px; height: 10px; border: 1.5px solid ${t.border}; border-radius: 2px; flex-shrink: 0; margin-right: 6px; }
 
   /* Food links */
   .food-link { color: ${t.linkColor}; text-decoration: underline; text-underline-offset: 2px; }
@@ -238,10 +239,11 @@ export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
   const fecha = new Date().toLocaleDateString(fechaLocale, { day: "numeric", month: "long", year: "numeric" });
   const listaCompra = generarListaCompra(sortedDias as unknown as Parameters<typeof generarListaCompra>[0], ov);
 
-  const logoHeaderHtml = data.logoDataUrl
+  const showLogo = data.logoDataUrl && !data.isEmail;
+  const logoHeaderHtml = showLogo
     ? `<img src="${data.logoDataUrl}" alt="${brandName}" class="header-logo-img" onerror="this.style.display='none';this.parentNode.textContent='${brandName}'">`
     : brandName;
-  const logoCoverHtml = data.logoDataUrl
+  const logoCoverHtml = showLogo
     ? `<img src="${data.logoDataUrl}" alt="${brandName}" class="cover-logo-img" onerror="this.style.display='none';this.parentNode.textContent='${brandName}'">`
     : brandName;
 

@@ -282,6 +282,7 @@ export async function enviarPlanPorEmail(
   pdfData.brandName = dietista.marcaPdf || undefined;
   pdfData.logoDataUrl = dietista.pdfLogoUrl || undefined;
   pdfData.clinica = dietista.clinica || undefined;
+  pdfData.isEmail = true;
 
   const tPdf = await getTranslations("pdf");
   const htmlBody = generatePlanPDF(pdfData, tPdf);
