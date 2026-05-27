@@ -12,6 +12,7 @@ export function VersionChecker() {
   const knownBuildId = useRef(process.env.NEXT_PUBLIC_BUILD_ID ?? "dev");
   const intervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const deployDetected = useRef(false);
+  const staleNotified = useRef(false);
 
   const checkVersion = useCallback(async () => {
     if (deployDetected.current) return;
@@ -41,6 +42,7 @@ export function VersionChecker() {
     if (!process.env.NEXT_PUBLIC_BUILD_ID) return;
 
     function startPolling() {
+      clearInterval(intervalRef.current);
       checkVersion();
       intervalRef.current = setInterval(checkVersion, POLL_INTERVAL_MS);
     }
@@ -74,6 +76,8 @@ export function VersionChecker() {
       msg.includes("Loading chunk");
 
     function handleStaleAction() {
+      if (staleNotified.current) return;
+      staleNotified.current = true;
       if (hasPersistedForms()) {
         toast(t("nuevaVersion"), {
           description: t("datosGuardados"),
