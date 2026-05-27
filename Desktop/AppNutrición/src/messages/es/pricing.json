@@ -1,29 +1,32 @@
 {
   "metadata": {
-    "title": "Precios — Software para Nutricionistas desde 9,99€/mes",
-    "description": "Planes de Annonia, software de nutrición para nutricionistas: Plan Básico (25 pacientes, 9,99€/mes) o Profesional (ilimitados + IA, 11,99€/mes). Prueba gratis 14 días sin tarjeta.",
-    "ogTitle": "Precios de Annonia — Software para Nutricionistas desde 9,99€/mes",
-    "ogDescription": "Software de nutrición profesional. Plan Básico o Profesional con IA. 14 días gratis sin tarjeta.",
-    "twitterTitle": "Precios de Annonia — Software para Nutricionistas desde 9,99€/mes"
+    "title": "Software para Nutricionistas — Gratis en Beta",
+    "description": "Annonia, software de nutrición para nutricionistas. Gratis durante la fase beta. Todas las funcionalidades incluidas.",
+    "ogTitle": "Software para Nutricionistas — Gratis en Beta",
+    "ogDescription": "Software de nutrición profesional. Gratis durante la beta.",
+    "twitterTitle": "Software para Nutricionistas — Gratis en Beta"
   },
   "header": {
     "iniciarSesion": "Iniciar sesión",
     "empezarGratis": "Empezar gratis"
   },
   "hero": {
-    "badge": "14 días de prueba gratuita",
+    "badge": "Gratis durante la beta",
     "titulo": "El plan perfecto para tu consulta de nutrición",
-    "descripcion": "Elige el software de nutrición que mejor se adapte a tu práctica como nutricionista. Sin compromisos, cancela cuando quieras."
+    "descripcion": "Annonia es completamente gratis durante la fase beta. Disfruta de todas las funcionalidades sin coste y sin compromiso."
   },
   "planes": {
     "masPopular": "Más popular",
     "incluye": "Incluye:",
     "noIncluido": "No incluido:",
-    "empezarPrueba": "Empezar 14 días gratis",
+    "empezarPrueba": "Empezar gratis",
+    "gratisBeta": "Gratis",
+    "gratisSubtexto": "durante la beta",
+    "empezarGratis": "Empezar gratis",
     "periodo": "mes",
     "basico": {
       "nombre": "Básico",
-      "precio": "9,99",
+      "precio": "0",
       "descripcion": "Ideal para nutricionistas que empiezan o tienen una consulta pequeña.",
       "features": {
         "pacientesActivos": "Hasta 25 pacientes activos",
@@ -43,7 +46,7 @@
     },
     "profesional": {
       "nombre": "Profesional",
-      "precio": "11,99",
+      "precio": "0",
       "descripcion": "Para nutricionistas con consultas establecidas que quieren escalar.",
       "features": {
         "pacientesIlimitados": "Pacientes ilimitados",
@@ -66,12 +69,12 @@
       "respuesta": "Sí, puedes subir o bajar de plan cuando quieras. El cambio se aplica en el siguiente ciclo de facturación."
     },
     "despuesPrueba": {
-      "pregunta": "¿Qué pasa después de los 14 días de prueba?",
-      "respuesta": "Al finalizar la prueba, se activará tu plan seleccionado. Si no has añadido un método de pago, tu cuenta pasará a modo lectura."
+      "pregunta": "¿Cuándo dejará de ser gratis?",
+      "respuesta": "Durante la fase beta, todo es gratis. Cuando lancemos los planes de pago, te avisaremos con antelación para que puedas decidir."
     },
     "cancelar": {
       "pregunta": "¿Puedo cancelar en cualquier momento?",
-      "respuesta": "Sí, sin preguntas. Puedes cancelar desde Ajustes y seguirás teniendo acceso hasta el final de tu periodo pagado."
+      "respuesta": "No hay nada que cancelar durante la beta. Tu cuenta es completamente gratuita."
     },
     "datosSeguridad": {
       "pregunta": "¿Mis datos están seguros?",

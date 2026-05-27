@@ -1,11 +1,11 @@
 {
   "metadata": {
     "title": "Annonia — Software de Nutrição para Nutricionistas | Dietas Personalizadas com IA",
-    "description": "Software para nutricionistas: crie dietas personalizadas, gerencie pacientes, agende consultas online e gere planos alimentares com inteligência artificial. Teste grátis por 14 dias.",
+    "description": "Software para nutricionistas: crie dietas personalizadas, gerencie pacientes, agende consultas online e gere planos alimentares com inteligência artificial. Grátis durante a beta.",
     "ogTitle": "Annonia — Software de Nutrição para Nutricionistas",
-    "ogDescription": "Software para nutricionistas: dietas personalizadas com IA, gestão de pacientes, agenda e portal do paciente. A partir de 9,99€/mês.",
+    "ogDescription": "Software para nutricionistas: dietas personalizadas com IA, gestão de pacientes, agenda e portal do paciente. Grátis durante a beta.",
     "twitterTitle": "Annonia — Software de Nutrição para Nutricionistas",
-    "twitterDescription": "Dietas personalizadas com IA, gestão de pacientes e agenda online. Teste grátis por 14 dias.",
+    "twitterDescription": "Dietas personalizadas com IA, gestão de pacientes e agenda online. Grátis durante a beta.",
     "ogImageAlt": "Annonia — Software de nutrição para nutricionistas"
   },
   "navbar": {
@@ -81,7 +81,7 @@
     "preguntas": {
       "probarGratis": {
         "pregunta": "Posso experimentar Annonia gratuitamente?",
-        "respuesta": "Sim, você tem 14 dias de teste gratuito com acesso completo. Não é necessário cartão de crédito."
+        "respuesta": "Sim, Annonia é completamente grátis durante a fase beta. Crie sua conta e comece a usar com todas as funcionalidades. Sem cartão de crédito."
       },
       "datosSeguridad": {
         "pregunta": "Meus dados e os dos meus pacientes estão seguros?",
@@ -108,7 +108,7 @@
     "tituloPart3": "de nutrição",
     "descripcion": "Junte-se aos nutricionistas que confiam na Annonia para oferecer dietas personalizadas e um acompanhamento nutricional excepcional.",
     "boton": "Criar conta grátis",
-    "garantia": "14 dias grátis · Sem cartão · Cancele quando quiser"
+    "garantia": "Grátis durante a beta · Sem cartão · Sem compromissos"
   },
   "notificationCard": {
     "nombre": "Nutricionista Teresa",
@@ -140,11 +140,11 @@
       "offerBasico": "Básico",
       "offerProfesional": "Profissional",
       "offerPrueba": "Teste gratuito",
-      "offerPruebaDesc": "14 dias de teste gratuito com acesso completo"
+      "offerPruebaDesc": "Grátis durante a fase beta com acesso completo"
     },
     "landingFaq": {
       "q1": "Posso experimentar Annonia gratuitamente?",
-      "a1": "Sim, você tem 14 dias de teste gratuito com acesso completo. Não é necessário cartão de crédito.",
+      "a1": "Sim, Annonia é completamente grátis durante a fase beta. Crie sua conta e comece a usar com todas as funcionalidades. Sem cartão de crédito.",
       "q2": "Meus dados e os dos meus pacientes estão seguros?",
       "a2": "Absolutamente. Usamos criptografia, servidores na UE e cumprimos o RGPD. A segurança dos dados clínicos é nossa prioridade.",
       "q3": "Posso mudar de plano ou cancelar?",
@@ -157,8 +157,8 @@
     "preciosFaq": {
       "q1": "Posso mudar de plano a qualquer momento?",
       "a1": "Sim, você pode subir ou descer de plano quando quiser. A mudança se aplica no próximo ciclo de faturamento.",
-      "q2": "O que acontece depois dos 14 dias de teste?",
-      "a2": "Ao finalizar o teste, seu plano selecionado será ativado. Se você não adicionou um método de pagamento, sua conta passará para modo leitura.",
+      "q2": "Quando vai deixar de ser grátis?",
+      "a2": "Durante a fase beta, tudo é grátis. Quando lançarmos os planos pagos, avisaremos com antecedência.",
       "q3": "Posso cancelar a qualquer momento?",
       "a3": "Sim, sem perguntas. Você pode cancelar nas Configurações e continuará tendo acesso até o final do período pago.",
       "q4": "Meus dados estão seguros?",

@@ -63,6 +63,27 @@ export async function eliminarCuenta() {
   if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
+  const authId = dietista.authId;
+
+  // Eliminar auth ANTES del dietista para evitar zombis si falla a medias
+  if (authId) {
+    try {
+      await prisma.$queryRawUnsafe(`DELETE FROM auth.identities WHERE user_id = $1::uuid`, authId);
+    } catch (e) {
+      console.warn("[perfil] Error eliminando auth.identities:", e);
+    }
+    try {
+      await prisma.$queryRawUnsafe(`DELETE FROM auth.users WHERE id = $1::uuid`, authId);
+    } catch (e) {
+      console.warn("[perfil] Error eliminando auth.users:", e);
+    }
+  }
+
+  // Eliminar suscripción (belt-and-suspenders, cascade también la borra)
+  try {
+    await prisma.$queryRawUnsafe(`DELETE FROM suscripciones WHERE "dietistaId" = $1`, dietista.id);
+  } catch { /* puede no existir */ }
+
   // Cascade borra pacientes, planes, recetas, etc.
   await prisma.dietista.delete({ where: { id: dietista.id } });
 

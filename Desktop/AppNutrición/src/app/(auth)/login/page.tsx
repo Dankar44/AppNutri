@@ -30,11 +30,16 @@ function LoginContent() {
 
   useEffect(() => {
     const err = searchParams.get("error");
+    const verified = searchParams.get("verified");
     if (err) {
       toast.error(err);
       window.history.replaceState({}, "", "/login");
     }
-  }, [searchParams]);
+    if (verified === "true") {
+      toast.success(t("login.emailVerified"));
+      window.history.replaceState({}, "", "/login");
+    }
+  }, [searchParams, t]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -47,7 +52,11 @@ function LoginContent() {
     });
 
     if (error) {
-      toast.error(t("login.errorInvalidCredentials"));
+      if (error.message?.includes("Email not confirmed")) {
+        toast.error(t("login.errorEmailNotConfirmed"));
+      } else {
+        toast.error(t("login.errorInvalidCredentials"));
+      }
       setLoading(false);
       return;
     }

@@ -36,7 +36,7 @@ import { IdiomaCard } from "./idioma-card";
 import { getCamposAnamnesis } from "@/app/actions/perfil";
 import { EarlyAdopterBadge } from "@/components/early-adopter-badge";
 import { EmpresaSection } from "./empresa-section";
-import { getMisInvitaciones } from "@/app/actions/empresa";
+import Link from "next/link";
 
 /** Encabezado común de cada bloque: icono + título + descripción. */
 function SectionHeader({
@@ -95,17 +95,14 @@ export default async function AjustesPage({
   const dietista = await getCurrentDietista();
   if (!dietista) redirect("/login");
 
-  const [suscripcion, googleIntegracion, googleLinked, demoEliminado, camposAnamnesis, sp, invitacionesCentro] = await Promise.all([
+  const [suscripcion, googleIntegracion, googleLinked, demoEliminado, camposAnamnesis, sp] = await Promise.all([
     getSuscripcion(),
     getIntegracionNutri(),
     getGoogleIdentityLinked(),
     isDemoEliminado(),
     getCamposAnamnesis(),
     searchParams,
-    getMisInvitaciones(),
   ]);
-
-  const showCentro = true;
 
   const googleFlash =
     sp.google === "ok"
@@ -155,7 +152,7 @@ export default async function AjustesPage({
 
       {/* Layout con nav lateral + contenido */}
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-10 items-start">
-        <AjustesNav hideCentro={!showCentro} />
+        <AjustesNav />
 
         <main className="flex-1 min-w-0 space-y-10">
           {/* PERFIL */}
@@ -288,20 +285,30 @@ export default async function AjustesPage({
             </div>
           </section>
 
-          {/* EMPRESA / CENTRO — solo si pertenece a uno o tiene invitaciones */}
-          {showCentro && (
-            <section>
-              <SectionHeader
-                id="empresa"
-                icon={Building2}
-                title={t("sections.empresa.title")}
-                description={t("sections.empresa.description")}
-              />
-              <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
+          {/* EMPRESA / CENTRO */}
+          <section>
+            <SectionHeader
+              id="empresa"
+              icon={Building2}
+              title={t("sections.empresa.title")}
+              description={t("sections.empresa.description")}
+            />
+            <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
+              {dietista.empresaId ? (
+                <div className="flex items-center gap-3">
+                  <Building2 className="w-8 h-8 text-muted-foreground/40" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-muted-foreground">{t("sections.empresa.tienesCentro")}</p>
+                  </div>
+                  <Link href="/centro" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors shrink-0">
+                    {t("sections.empresa.irACentro")}
+                  </Link>
+                </div>
+              ) : (
                 <EmpresaSection isDemo={!!dietista.isDemo} />
-              </div>
-            </section>
-          )}
+              )}
+            </div>
+          </section>
 
           {/* INTEGRACIONES */}
           <section>

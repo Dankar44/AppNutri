@@ -9,6 +9,7 @@ interface SidebarWrapperProps {
   mensajesCount?: number;
   badges?: Record<string, number>;
   isAdmin?: boolean;
+  hasEmpresa?: boolean;
 }
 
 export function SidebarWrapper({
@@ -18,6 +19,7 @@ export function SidebarWrapper({
   mensajesCount = 0,
   badges = {},
   isAdmin,
+  hasEmpresa,
 }: SidebarWrapperProps) {
   return (
     <Sidebar
@@ -29,6 +31,7 @@ export function SidebarWrapper({
       mensajesCount={mensajesCount}
       badges={badges}
       isAdmin={isAdmin}
+      hasEmpresa={hasEmpresa}
     />
   );
 }

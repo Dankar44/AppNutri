@@ -73,7 +73,9 @@
     },
     "empresa": {
       "title": "Centro",
-      "description": "Gere o seu centro e equipa de nutricionistas."
+      "description": "Gere o seu centro e equipa de nutricionistas.",
+      "tienesCentro": "Já tem um centro criado. Gira a sua equipa e configuração na secção Centro.",
+      "irACentro": "Ir ao Centro"
     }
   },
   "googleErrors": {
@@ -265,11 +267,11 @@
     "planes": {
       "BASICO": {
         "nombre": "Básico",
-        "precio": "9,99€/mês"
+        "precio": "Grátis (beta)"
       },
       "PROFESIONAL": {
         "nombre": "Profissional",
-        "precio": "11,99€/mês"
+        "precio": "Grátis (beta)"
       }
     },
     "estados": {

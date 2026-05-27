@@ -1,41 +1,5 @@
-import Link from "next/link";
-import { Leaf, Lock, ArrowRight } from "lucide-react";
-import RegistroCentroForm from "./registro-centro-form";
-import { getTranslations } from "next-intl/server";
+import { redirect } from "next/navigation";
 
-export default async function RegistroCentroPage() {
-  const abierto = process.env.REGISTRATION_OPEN === "true";
-  const t = await getTranslations("auth");
-
-  if (abierto) return <RegistroCentroForm />;
-
-  return (
-    <div className="min-h-dvh flex items-center justify-center px-4 py-12 bg-gradient-to-br from-background to-muted/40">
-      <div className="w-full max-w-md text-center">
-        <div className="flex items-center justify-center gap-2 mb-10">
-          <Leaf className="w-7 h-7 text-primary" />
-          <span className="text-xl font-bold">Annonia</span>
-        </div>
-
-        <div className="w-16 h-16 rounded-full bg-muted mx-auto mb-6 flex items-center justify-center">
-          <Lock className="w-7 h-7 text-muted-foreground" strokeWidth={1.75} />
-        </div>
-
-        <h1 className="text-2xl sm:text-3xl font-bold mb-3">
-          {t("registro.cerrado.title")}
-        </h1>
-        <p className="text-muted-foreground mb-8 leading-relaxed">
-          {t("registro.cerrado.description")}
-        </p>
-
-        <Link
-          href="/login"
-          className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-lg font-medium hover:bg-green-700 transition-colors"
-        >
-          {t("registro.cerrado.goToLogin")}
-          <ArrowRight className="w-4 h-4" />
-        </Link>
-      </div>
-    </div>
-  );
+export default function RegistroCentroPage() {
+  redirect("/registro");
 }

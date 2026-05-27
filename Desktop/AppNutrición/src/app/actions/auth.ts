@@ -8,6 +8,8 @@ import { getDemoSession, clearDemoSession } from "@/lib/demo-auth";
 import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { generarSlug } from "@/lib/empresa-utils";
+import { headers } from "next/headers";
+import { checkRateLimit, LIMITES } from "@/lib/rate-limit";
 
 export const getCurrentDietista = cache(async function getCurrentDietista() {
   let locale: "es" | "pt" = "es";
@@ -41,7 +43,31 @@ export const getCurrentDietista = cache(async function getCurrentDietista() {
   });
 
   if (!dietista) {
-    if (process.env.REGISTRATION_OPEN !== "true") return null;
+    const confirmCheck = await prisma.$queryRawUnsafe<{ email_confirmed_at: Date | null }[]>(
+      `SELECT email_confirmed_at FROM auth.users WHERE id = $1::uuid`,
+      user.id,
+    );
+    if (confirmCheck.length > 0 && !confirmCheck[0].email_confirmed_at) {
+      const isOAuth = user.app_metadata?.providers?.some((p: string) => p !== "email");
+      if (isOAuth) {
+        await prisma.$queryRawUnsafe(
+          `UPDATE auth.users SET email_confirmed_at = NOW(), updated_at = NOW() WHERE id = $1::uuid`,
+          user.id,
+        );
+      } else {
+        try {
+          const supabaseSignOut = await createClient();
+          await supabaseSignOut.auth.signOut();
+        } catch { /* ignore */ }
+        return null;
+      }
+    }
+
+    const headerList = await headers();
+    const forwarded = headerList.get("x-forwarded-for");
+    const ip = forwarded?.split(",")[0]?.trim() || headerList.get("x-real-ip") || "unknown";
+    const rl = checkRateLimit({ key: `reg:${ip}`, ...LIMITES.registro });
+    if (!rl.ok) return null;
 
     if (user.email) {
       const paciente = await prisma.paciente.findFirst({
@@ -58,7 +84,8 @@ export const getCurrentDietista = cache(async function getCurrentDietista() {
         nombre: user.user_metadata.nombre || t("auth.sinNombre"),
         apellidos: user.user_metadata.apellidos || "",
         especialidad: user.user_metadata.especialidad || null,
-        numColegiado: user.user_metadata.numColegiado || null,
+        verificado: true,
+        fuenteContacto: "organico",
       },
     });
 
@@ -73,7 +100,7 @@ export const getCurrentDietista = cache(async function getCurrentDietista() {
           nombre: centroNombre,
           slug,
           liderId: dietista.id,
-          maxMiembros: 5,
+          maxMiembros: 10,
         },
       });
 

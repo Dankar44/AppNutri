@@ -890,3 +890,64 @@ En perímetros, se registran 4: cintura, cadera, brazo y abdomen. No existe per�
 
 **Prioridad:** Media
 **Complejidad:** Baja (cambio directo) / Media (configurable)
+
+---
+
+## 35. Nombre y número de colegiado en la portada del PDF
+
+**Origen:** Day Martínez Morillo (Aureva Clinics) — 27/05/2026
+
+**Estado actual:** El campo `numColegiado` existe en el modelo `Dietista` y se puede rellenar desde Ajustes y registro. El nombre del dietista y el número de colegiado ya aparecen en el **footer** de cada página del PDF (vía `marcaPdf`). Sin embargo, NO aparecen en la **portada** — solo se muestra "PLAN DIETÉTICO PERSONALIZADO", nombre del paciente y logo.
+
+**Petición:** Mostrar el nombre del profesional y su número de colegiado de forma visible en la portada del PDF.
+
+**Tareas:**
+- [ ] Añadir `numColegiado` a `PlanPDFData` (interfaz en `generate-plan-pdf.ts`)
+- [ ] Pasar `dietista.numColegiado` desde `getPlanPDFData()` en `planes.ts`
+- [ ] Añadir línea en la portada del PDF debajo del logo: "Nutricionista {nombre}. Núm. de colegio: {numColegiado}"
+- [ ] Solo mostrar si `numColegiado` tiene valor (es campo opcional)
+- [ ] Verificar que también funciona desde el portal del paciente
+
+**Prioridad:** Media
+**Complejidad:** Baja
+
+---
+
+## 36. Incluir datos de Planificación en el PDF (agua, ejercicio, alimentos a evitar)
+
+**Origen:** Day Martínez Morillo (Aureva Clinics) — 27/05/2026
+
+**Estado actual:** La pestaña "Planificación" del paciente contiene datos estructurados: ingesta de agua, ejercicio físico (tipo, duración, frecuencia, kcal), alimentos a evitar. Sin embargo, la sección "Recomendaciones" del PDF solo muestra el texto libre que el dietista escribe manualmente. Los datos estructurados de Planificación no se incluyen en el PDF, obligando al profesional a duplicar información.
+
+**Petición:** Que los datos de Planificación (agua, ejercicio, alimentos a evitar) se incluyan automáticamente en el PDF, ya sea como sección separada o integrados en las recomendaciones.
+
+**Tareas:**
+- [ ] Investigar qué datos de Planificación están disponibles (modelo `Planificacion` + campos en paciente)
+- [ ] Decidir formato: sección nueva en el PDF o integrado en recomendaciones
+- [ ] Añadir toggle en opciones del PDF: "Incluir datos de planificación"
+- [ ] Fetch de datos de planificación en `getPlanPDFData()` 
+- [ ] Generar HTML para: ingesta de agua, ejercicio físico (tipo, minutos, kcal), alimentos a evitar
+- [ ] Traducciones ES + PT
+- [ ] Verificar en portal del paciente también
+
+**Prioridad:** Media-Alta
+**Complejidad:** Media
+
+---
+
+## 37. Ocultar filas de comidas vacías en la tabla semanal del PDF
+
+**Origen:** Day Martínez Morillo (Aureva Clinics) — 27/05/2026
+
+**Estado actual:** La tabla "PLAN DIETÉTICO SEMANAL" del PDF muestra siempre las 6 filas de tipos de comida (Desayuno, Media mañana, Almuerzo, Merienda, Cena, Recena), incluso cuando un tipo está vacío para todos los días de la semana. Ejemplo: si el paciente no tiene Recena ningún día, la fila aparece igualmente con guiones.
+
+**Petición:** Ocultar automáticamente las filas de comidas que no tengan alimentos en ninguno de los 7 días.
+
+**Tareas:**
+- [ ] En `generate-plan-pdf.ts`, bloque del resumen semanal: antes de renderizar cada fila de `TIPOS_ORDEN`, verificar si existe al menos 1 alimento en algún día para ese tipo
+- [ ] Si no hay alimentos en ningún día → no renderizar la fila
+- [ ] Mismo tratamiento en el detalle diario: no mostrar bloque de comida si está vacío
+- [ ] Verificar que no rompe el layout cuando se ocultan varias filas
+
+**Prioridad:** Baja-Media
+**Complejidad:** Baja

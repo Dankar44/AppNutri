@@ -108,6 +108,7 @@ export async function registrarMovimientoStock(
 
   revalidatePath("/alimentos");
   revalidatePath(`/alimentos/${aId}`);
+  revalidatePath("/centro");
   return { ok: true, stockNuevo };
 }
 
@@ -155,6 +156,7 @@ export async function actualizarStockAlimento(
 
   revalidatePath("/alimentos");
   revalidatePath(`/alimentos/${aId}`);
+  revalidatePath("/centro");
   return { ok: true };
 }
 
@@ -224,4 +226,45 @@ export async function getResumenStockEmpresa() {
   }
 
   return { totalItems, bajosStock, valorTotal: Math.round(valorTotal * 100) / 100 };
+}
+
+// ─── Inventario completo de la empresa ───
+
+export async function getInventarioEmpresa() {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return null;
+
+  const d = await prisma.dietista.findUnique({
+    where: { id: dietista.id },
+    select: { empresaId: true },
+  });
+  if (!d?.empresaId) return null;
+
+  const memberIds = await getCompanyMemberIds(dietista.id, d.empresaId);
+
+  const alimentos = await prisma.alimento.findMany({
+    where: {
+      dietistaId: { in: memberIds },
+      OR: [
+        { stock: { not: null } },
+        { compartido: true },
+      ],
+    },
+    select: {
+      id: true,
+      nombre: true,
+      categoria: true,
+      stock: true,
+      stockMinimo: true,
+      precioUnitario: true,
+      compartido: true,
+      dietistaId: true,
+      dietista: {
+        select: { nombre: true, apellidos: true },
+      },
+    },
+    orderBy: { nombre: "asc" },
+  });
+
+  return alimentos;
 }

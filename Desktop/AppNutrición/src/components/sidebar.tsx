@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   Wallet,
   MessageSquare,
+  Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -37,7 +38,7 @@ type NavItem = {
 
 type NavSection = { title: string; items: NavItem[] };
 
-function getNavSections(t: (key: string) => string, isAdmin?: boolean): NavSection[] {
+function getNavSections(t: (key: string) => string, opts?: { isAdmin?: boolean; hasEmpresa?: boolean }): NavSection[] {
   return [
     {
       title: t("nav.gestion"),
@@ -60,12 +61,20 @@ function getNavSections(t: (key: string) => string, isAdmin?: boolean): NavSecti
       title: t("nav.acompanamiento"),
       items: [{ href: "/mensajes", label: t("navItems.mensajes"), icon: MessageSquare }],
     },
+    ...(opts?.hasEmpresa
+      ? [
+          {
+            title: t("nav.miCentro"),
+            items: [{ href: "/centro", label: t("navItems.centro"), icon: Building2 }],
+          },
+        ]
+      : []),
     {
       title: t("nav.centroDeControl"),
       items: [
         { href: "/reportes", label: t("navItems.reportes"), icon: FileBarChart },
         { href: "/ajustes", label: t("navItems.ajustes"), icon: Settings },
-        ...(isAdmin
+        ...(opts?.isAdmin
           ? [{ href: "/admin-login", label: t("navItems.admin"), icon: ShieldCheck, admin: true as const }]
           : []),
       ],
@@ -81,9 +90,10 @@ interface SidebarProps {
   /** Badges a pintar por item del sidebar, clave = href. */
   badges?: Record<string, number>;
   isAdmin?: boolean;
+  hasEmpresa?: boolean;
 }
 
-export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCount: mensajesCountInit = 0, badges: badgesInit = {}, isAdmin }: SidebarProps) {
+export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCount: mensajesCountInit = 0, badges: badgesInit = {}, isAdmin, hasEmpresa }: SidebarProps) {
   const t = useTranslations("common");
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
@@ -179,7 +189,7 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
 
       {/* Nav */}
       <nav className="flex-1 py-4 px-3 overflow-y-auto">
-        {getNavSections(t, isAdmin).map((section, sectionIndex) => (
+        {getNavSections(t, { isAdmin, hasEmpresa }).map((section, sectionIndex) => (
           <div
             key={section.title}
             className={cn(sectionIndex > 0 && "mt-6")}

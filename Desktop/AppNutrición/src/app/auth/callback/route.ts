@@ -52,13 +52,6 @@ export async function GET(req: NextRequest) {
     });
 
     if (!dietista) {
-      if (process.env.REGISTRATION_OPEN !== "true") {
-        await supabase.auth.signOut();
-        return NextResponse.redirect(
-          `${origin}/login?error=${encodeURIComponent(t("auth.registrosCerrados"))}`,
-        );
-      }
-
       if (user.email) {
         const paciente = await prisma.paciente.findFirst({
           where: { email: user.email },

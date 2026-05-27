@@ -44,7 +44,7 @@ async function getMaxMiembros(empresaId: string): Promise<number> {
     where: { id: empresaId },
     select: { maxMiembros: true },
   });
-  return empresa?.maxMiembros ?? 5;
+  return empresa?.maxMiembros ?? 10;
 }
 
 async function getPendingInvitationCount(empresaId: string): Promise<number> {
@@ -536,41 +536,47 @@ export async function crearMiembroCentro(data: {
     authId, email,
   );
 
-  const nuevoDietista = await prisma.dietista.create({
-    data: {
-      authId,
-      email,
-      nombre,
-      apellidos,
-      verificado: true,
-      empresaId: empresa.id,
-      clinica: empresa.nombre,
-      creadoPor: dietista.nombre,
-    },
-  });
+  try {
+    const nuevoDietista = await prisma.dietista.create({
+      data: {
+        authId,
+        email,
+        nombre,
+        apellidos,
+        verificado: true,
+        empresaId: empresa.id,
+        clinica: empresa.nombre,
+        creadoPor: dietista.nombre,
+      },
+    });
 
-  await prisma.$queryRawUnsafe(
-    `INSERT INTO suscripciones (id, "dietistaId", plan, estado, "fechaInicio", "createdAt", "updatedAt")
-     VALUES (gen_random_uuid()::text, $1, 'PROFESIONAL', 'ACTIVA', NOW(), NOW(), NOW())`,
-    nuevoDietista.id,
-  );
+    await prisma.$queryRawUnsafe(
+      `INSERT INTO suscripciones (id, "dietistaId", plan, estado, "fechaInicio", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, 'PROFESIONAL', 'ACTIVA', NOW(), NOW(), NOW())`,
+      nuevoDietista.id,
+    );
 
-  crearPacienteDemoSiNoExiste(prisma, nuevoDietista.id, "es").catch(() => {});
+    crearPacienteDemoSiNoExiste(prisma, nuevoDietista.id, "es").catch(() => {});
 
-  sendEmail({
-    to: email,
-    subject: `Tu cuenta en ${empresa.nombre} — Annonia`,
-    html: buildEmpresaEmail({
-      titulo: "Tu cuenta ha sido creada",
-      saludo: `Hola ${escapeHtml(nombre)},`,
-      cuerpo: `${escapeHtml(dietista.nombre)} ha creado tu cuenta en el centro ${escapeHtml(empresa.nombre)}. Tus credenciales son:<br><br><strong>Email:</strong> ${escapeHtml(email)}<br><strong>Contraseña:</strong> ${escapeHtml(password)}`,
-      botonTexto: "Iniciar sesión",
-      botonUrl: "https://annonia.com/login",
-    }),
-  }).catch((err) => console.error("[empresa] Error email crear miembro:", err));
+    sendEmail({
+      to: email,
+      subject: `Tu cuenta en ${empresa.nombre} — Annonia`,
+      html: buildEmpresaEmail({
+        titulo: "Tu cuenta ha sido creada",
+        saludo: `Hola ${escapeHtml(nombre)},`,
+        cuerpo: `${escapeHtml(dietista.nombre)} ha creado tu cuenta en el centro ${escapeHtml(empresa.nombre)}. Tus credenciales son:<br><br><strong>Email:</strong> ${escapeHtml(email)}<br><strong>Contraseña:</strong> ${escapeHtml(password)}`,
+        botonTexto: "Iniciar sesión",
+        botonUrl: "https://annonia.com/login",
+      }),
+    }).catch((err) => console.error("[empresa] Error email crear miembro:", err));
 
-  revalidateEmpresa();
-  return { ok: true, email, password };
+    revalidateEmpresa();
+    return { ok: true, email, password };
+  } catch (innerErr) {
+    await prisma.$queryRawUnsafe(`DELETE FROM auth.identities WHERE user_id = $1::uuid`, authId).catch((e) => console.warn("[empresa] Rollback auth.identities falló:", e));
+    await prisma.$queryRawUnsafe(`DELETE FROM auth.users WHERE id = $1::uuid`, authId).catch((e) => console.warn("[empresa] Rollback auth.users falló:", e));
+    throw innerErr;
+  }
 }
 
 // ─── Salir de la empresa ───

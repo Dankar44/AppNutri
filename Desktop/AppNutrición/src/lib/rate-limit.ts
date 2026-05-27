@@ -73,4 +73,6 @@ function limpiarStoresAntiguos(ahora: number, windowMs: number) {
 export const LIMITES = {
   enviarMensaje: { limit: 20, windowMs: 60_000 },
   subirAdjunto: { limit: 5, windowMs: 60_000 },
+  subirImagen: { limit: 10, windowMs: 60_000 },
+  registro: { limit: 3, windowMs: 3_600_000 },
 } as const;

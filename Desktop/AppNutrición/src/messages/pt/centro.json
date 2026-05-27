@@ -1,0 +1,36 @@
+{
+  "metadata": {
+    "title": "Centro — Annonia"
+  },
+  "tabs": {
+    "inventario": "Inventário",
+    "equipo": "Equipe"
+  },
+  "inventario": {
+    "title": "Inventário do centro",
+    "description": "Gerencie o estoque de alimentos compartilhados do seu centro",
+    "resumen": {
+      "totalProductos": "Produtos",
+      "stockBajo": "Estoque baixo",
+      "valorTotal": "Valor total"
+    },
+    "tabla": {
+      "nombre": "Alimento",
+      "stock": "Estoque",
+      "minimo": "Mínimo",
+      "precio": "Preço ud.",
+      "valor": "Valor",
+      "propietario": "Proprietário",
+      "acciones": "Ações"
+    },
+    "filtros": {
+      "todos": "Todos",
+      "stockBajo": "Estoque baixo",
+      "sinStock": "Sem estoque",
+      "buscar": "Buscar alimento..."
+    },
+    "vacio": "Não há alimentos com estoque no seu centro",
+    "vacioDesc": "Adicione estoque aos alimentos compartilhados na ficha de cada alimento",
+    "ajustar": "Ajustar"
+  }
+}

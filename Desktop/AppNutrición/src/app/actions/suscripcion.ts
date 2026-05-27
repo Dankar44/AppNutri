@@ -36,16 +36,11 @@ export async function getSuscripcion(): Promise<Suscripcion | null> {
       };
     }
 
-    // Crear suscripción de prueba de 14 días
-    const fechaFin = new Date();
-    fechaFin.setDate(fechaFin.getDate() + 14);
-
     const created = await prisma.$queryRawUnsafe<Suscripcion[]>(
       `INSERT INTO suscripciones (id, "dietistaId", plan, estado, "fechaInicio", "fechaFin", "createdAt", "updatedAt")
-       VALUES (gen_random_uuid()::text, $1, 'BASICO', 'PRUEBA', NOW(), $2, NOW(), NOW())
+       VALUES (gen_random_uuid()::text, $1, 'PROFESIONAL', 'ACTIVA', NOW(), NULL, NOW(), NOW())
        RETURNING id, "dietistaId", plan, estado, "fechaInicio", "fechaFin"`,
-      dietista.id,
-      fechaFin
+      dietista.id
     );
 
     return created[0] || null;

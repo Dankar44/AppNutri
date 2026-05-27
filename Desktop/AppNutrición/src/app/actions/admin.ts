@@ -504,6 +504,24 @@ export async function rechazarDietista(dietistaId: string) {
   const admin = await requireAdmin();
   if (!admin) redirect("/admin-login");
 
+  const dietista = await prisma.dietista.findUnique({
+    where: { id: dietistaId },
+    select: { authId: true },
+  });
+
+  if (dietista?.authId) {
+    try {
+      await prisma.$queryRawUnsafe(`DELETE FROM auth.identities WHERE user_id = $1::uuid`, dietista.authId);
+    } catch (e) {
+      console.warn("[admin] Error eliminando auth.identities al rechazar:", e);
+    }
+    try {
+      await prisma.$queryRawUnsafe(`DELETE FROM auth.users WHERE id = $1::uuid`, dietista.authId);
+    } catch (e) {
+      console.warn("[admin] Error eliminando auth.users al rechazar:", e);
+    }
+  }
+
   await prisma.dietista.delete({ where: { id: dietistaId } });
 
   revalidatePath("/admin/verificaciones");
@@ -615,8 +633,8 @@ export async function crearCuentaNutricionista(data: {
       revalidatePath("/admin");
       return { ok: true, dietistaId: dietista.id };
     } catch (innerErr) {
-      await prisma.$queryRawUnsafe(`DELETE FROM auth.identities WHERE user_id = $1::uuid`, authId).catch(() => {});
-      await prisma.$queryRawUnsafe(`DELETE FROM auth.users WHERE id = $1::uuid`, authId).catch(() => {});
+      await prisma.$queryRawUnsafe(`DELETE FROM auth.identities WHERE user_id = $1::uuid`, authId).catch((e) => console.warn("[admin] Rollback auth.identities falló:", e));
+      await prisma.$queryRawUnsafe(`DELETE FROM auth.users WHERE id = $1::uuid`, authId).catch((e) => console.warn("[admin] Rollback auth.users falló:", e));
       throw innerErr;
     }
   } catch (e) {
@@ -663,14 +681,22 @@ export async function eliminarDietista(dietistaId: string): Promise<{ ok: boolea
       await prisma.$queryRawUnsafe(`DELETE FROM suscripciones WHERE "dietistaId" = $1`, dietistaId);
     } catch { /* tabla puede no existir */ }
 
-    // 4. Eliminar dietista (cascada Prisma: ~26 modelos)
-    await prisma.dietista.delete({ where: { id: dietistaId } });
-
-    // 5. Eliminar usuario de Supabase Auth
+    // 4. Eliminar usuario de Supabase Auth ANTES del dietista
     if (dietista.authId) {
-      await prisma.$queryRawUnsafe(`DELETE FROM auth.identities WHERE user_id = $1::uuid`, dietista.authId).catch(() => {});
-      await prisma.$queryRawUnsafe(`DELETE FROM auth.users WHERE id = $1::uuid`, dietista.authId).catch(() => {});
+      try {
+        await prisma.$queryRawUnsafe(`DELETE FROM auth.identities WHERE user_id = $1::uuid`, dietista.authId);
+      } catch (authErr) {
+        console.warn("[admin] Error eliminando auth.identities:", authErr);
+      }
+      try {
+        await prisma.$queryRawUnsafe(`DELETE FROM auth.users WHERE id = $1::uuid`, dietista.authId);
+      } catch (authErr) {
+        console.warn("[admin] Error eliminando auth.users:", authErr);
+      }
     }
+
+    // 5. Eliminar dietista (cascada Prisma: ~26 modelos)
+    await prisma.dietista.delete({ where: { id: dietistaId } });
 
     revalidatePath("/admin/dietistas");
     revalidatePath("/admin/seguimiento");
@@ -697,7 +723,7 @@ export interface EditarDietistaData {
   fuenteContacto?: string;
 }
 
-const FUENTES_VALIDAS = ["instagram", "linkedin", "whatsapp"] as const;
+const FUENTES_VALIDAS = ["instagram", "linkedin", "whatsapp", "organico"] as const;
 
 export async function editarDietista(
   dietistaId: string,
@@ -780,12 +806,12 @@ export async function editarDietista(
         `UPDATE auth.users SET email = $1, updated_at = NOW() WHERE id = $2::uuid`,
         email,
         dietista.authId
-      ).catch(() => {});
+      ).catch((e) => console.warn("[admin] Error sincronizando email en auth.users:", e));
       await prisma.$queryRawUnsafe(
         `UPDATE auth.identities SET identity_data = jsonb_set(identity_data, '{email}', to_jsonb($1::text)), updated_at = NOW() WHERE user_id = $2::uuid AND provider = 'email'`,
         email,
         dietista.authId
-      ).catch(() => {});
+      ).catch((e) => console.warn("[admin] Error sincronizando email en auth.identities:", e));
     }
 
     revalidatePath("/admin/dietistas");
@@ -928,7 +954,7 @@ export async function crearCentroAdmin(data: {
         slug,
         descripcion: data.centroDescripcion?.trim() || null,
         liderId,
-        maxMiembros: data.maxMiembros ?? 5,
+        maxMiembros: data.maxMiembros ?? 10,
       },
     });
 

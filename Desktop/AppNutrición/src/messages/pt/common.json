@@ -3,6 +3,7 @@
     "gestion": "Gestão",
     "dietas": "Dietas",
     "acompanamiento": "Acompanhamento",
+    "miCentro": "Meu centro",
     "centroDeControl": "Centro de controle"
   },
   "navItems": {
@@ -13,6 +14,7 @@
     "dietas": "Dietas",
     "alimentos": "Alimentos",
     "recetas": "Receitas",
+    "centro": "Centro",
     "mensajes": "Mensagens",
     "reportes": "Relatórios",
     "ajustes": "Configurações",
@@ -232,11 +234,11 @@
   "metadata": {
     "title": "Annonia — Software para Nutricionistas",
     "titleTemplate": "%s | Annonia",
-    "description": "Software de nutrição para nutricionistas: crie dietas personalizadas, gerencie pacientes, agende consultas e gere planos alimentares com inteligência artificial. Teste grátis por 14 dias.",
+    "description": "Software de nutrição para nutricionistas: crie dietas personalizadas, gerencie pacientes, agende consultas e gere planos alimentares com inteligência artificial. Grátis durante a beta.",
     "ogTitle": "Annonia — Software para Nutricionistas",
-    "ogDescription": "Software de nutrição profissional: dietas personalizadas, gestão de pacientes e agenda com IA. A partir de 9,99€/mês.",
+    "ogDescription": "Software de nutrição profissional: dietas personalizadas, gestão de pacientes e agenda com IA. Grátis durante a beta.",
     "ogImageAlt": "Annonia - Plataforma profissional para nutricionistas",
     "twitterTitle": "Annonia — Software para Nutricionistas",
-    "twitterDescription": "Software de nutrição profissional: dietas personalizadas, gestão de pacientes e agenda com IA. Teste grátis por 14 dias."
+    "twitterDescription": "Software de nutrição profissional: dietas personalizadas, gestão de pacientes e agenda com IA. Grátis durante a beta."
   }
 }

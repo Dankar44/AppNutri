@@ -7,7 +7,11 @@
     "contrasenaOPinIncorrectos": "Contraseña o PIN incorrectos",
     "emailNoValido": "Email no válido",
     "registrosCerrados": "Los registros están cerrados. Si ya tienes cuenta de nutricionista, inicia sesión con email y contraseña.",
-    "emailRegistradoComoPaciente": "Este email está registrado como paciente. No es posible crear una cuenta de nutricionista con el mismo email."
+    "emailRegistradoComoPaciente": "Este email está registrado como paciente. No es posible crear una cuenta de nutricionista con el mismo email.",
+    "emailYaRegistrado": "Ya existe una cuenta con este email. Inicia sesión o usa otro email.",
+    "rateLimitRegistro": "Demasiados intentos de registro. Inténtalo de nuevo en una hora.",
+    "errorRegistro": "No se pudo crear la cuenta. Inténtalo de nuevo.",
+    "errorEnvioVerificacion": "No se pudo enviar el email de verificación. Inténtalo de nuevo."
   },
   "perfil": {
     "nombreObligatorio": "El nombre es obligatorio",

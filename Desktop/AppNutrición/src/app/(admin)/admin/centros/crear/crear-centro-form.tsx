@@ -24,7 +24,7 @@ export function CrearCentroForm() {
 
   const [centroNombre, setCentroNombre] = useState("");
   const [centroDescripcion, setCentroDescripcion] = useState("");
-  const [maxMiembros, setMaxMiembros] = useState(5);
+  const [maxMiembros, setMaxMiembros] = useState(10);
 
   const [busquedaLider, setBusquedaLider] = useState("");
   const [resultados, setResultados] = useState<DietistaOption[]>([]);

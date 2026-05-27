@@ -48,6 +48,7 @@ export async function updateSession(request: NextRequest) {
     // Callbacks OAuth: el code lo procesa el handler, el usuario puede no
     // tener sesión aún (Sign in with Google) o ser paciente (JWT propio).
     request.nextUrl.pathname === "/auth/callback" ||
+    request.nextUrl.pathname === "/auth/verify-email" ||
     request.nextUrl.pathname.startsWith("/api/google/");
 
   const hasDemoSession = request.cookies.has("annonia-demo-session");

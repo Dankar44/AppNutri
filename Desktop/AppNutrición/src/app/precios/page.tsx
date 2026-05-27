@@ -45,22 +45,16 @@ export default async function PreciosPage() {
     {
       id: "basico",
       nombre: t("planes.basico.nombre"),
-      precio: t("planes.basico.precio"),
-      periodo: t("planes.periodo"),
       descripcion: t("planes.basico.descripcion"),
       destacado: false,
       featureKeys: ["pacientesActivos", "planesIlimitados", "baseAlimentos", "recetas", "portalPaciente", "seguimientoMedidas", "soporteEmail"] as const,
-      noIncluyeKeys: ["dietasIA", "pacientesIlimitados", "informesPdf", "soportePrioritario"] as const,
     },
     {
       id: "profesional",
       nombre: t("planes.profesional.nombre"),
-      precio: t("planes.profesional.precio"),
-      periodo: t("planes.periodo"),
       descripcion: t("planes.profesional.descripcion"),
       destacado: true,
       featureKeys: ["pacientesIlimitados", "planesIlimitados", "baseAlimentos", "recetas", "portalPaciente", "seguimientoMedidas", "dietasIA", "informesPdf", "plantillas", "soportePrioritario"] as const,
-      noIncluyeKeys: [] as const,
     },
   ];
 
@@ -85,7 +79,7 @@ export default async function PreciosPage() {
               {t("header.iniciarSesion")}
             </Link>
             <Link
-              href="/registro?plan=basico"
+              href="/registro"
               className="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
             >
               {t("header.empezarGratis")}
@@ -135,49 +129,31 @@ export default async function PreciosPage() {
               </div>
 
               <div className="flex items-baseline gap-1 mb-8">
-                <span className="text-5xl font-bold">{plan.precio}&euro;</span>
-                <span className="text-muted-foreground">/{plan.periodo}</span>
+                <span className="text-5xl font-bold">{t("planes.gratisBeta")}</span>
+                <span className="text-sm text-muted-foreground ml-1">{t("planes.gratisSubtexto")}</span>
               </div>
 
               <Link
-                href={`/registro?plan=${plan.id}`}
+                href="/registro"
                 className={`w-full text-center py-3 rounded-xl font-semibold text-sm transition-colors mb-8 block ${
                   plan.destacado
                     ? "bg-primary text-primary-foreground hover:bg-primary/90"
                     : "bg-muted text-foreground hover:bg-muted/80"
                 }`}
               >
-                {t("planes.empezarPrueba")}
+                {t("planes.empezarGratis")}
               </Link>
 
               <div className="space-y-3 flex-1">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
                   {t("planes.incluye")}
                 </p>
-                {plan.featureKeys.map((key) => {
-                  const Icon = PLAN_ICONS[key] ?? Check;
-                  return (
-                    <div key={key} className="flex items-start gap-2.5">
-                      <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">{t(`planes.${plan.id}.features.${key}` as never)}</span>
-                    </div>
-                  );
-                })}
-
-                {plan.noIncluyeKeys.length > 0 && (
-                  <>
-                    <div className="border-t border-border my-4" />
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                      {t("planes.noIncluido")}
-                    </p>
-                    {plan.noIncluyeKeys.map((key) => (
-                      <div key={key} className="flex items-start gap-2.5 opacity-50">
-                        <span className="w-4 h-4 flex-shrink-0 mt-0.5 text-center text-xs">&mdash;</span>
-                        <span className="text-sm">{t(`planes.basico.noIncluye.${key}` as never)}</span>
-                      </div>
-                    ))}
-                  </>
-                )}
+                {plan.featureKeys.map((key) => (
+                  <div key={key} className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                    <span className="text-sm">{t(`planes.${plan.id}.features.${key}` as never)}</span>
+                  </div>
+                ))}
               </div>
             </div>
           ))}

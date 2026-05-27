@@ -1559,13 +1559,13 @@
   },
   "ajs-6": {
     "question": "¿Qué incluye el plan Básico?",
-    "answer": "El plan Básico cuesta 9.99€ al mes e incluye hasta 25 pacientes en cartera, dietas y recetas ilimitadas y acceso completo al portal del paciente. También tienes disponible la agenda, las mediciones, el seguimiento diario y todas las funciones de gestión de consulta. Lo que no incluye es la IA para generar dietas automáticamente, que está reservada al plan Profesional. Es el plan recomendado para nutricionistas que empiezan o con una cartera de tamaño moderado.",
-    "keywords": "básico, plan, 9.99, 25 pacientes"
+    "answer": "Durante la fase beta, el plan Básico es completamente gratis e incluye hasta 25 pacientes en cartera, dietas y recetas ilimitadas y acceso completo al portal del paciente. También tienes disponible la agenda, las mediciones, el seguimiento diario y todas las funciones de gestión de consulta. La IA para generar dietas automáticamente está disponible en el plan Profesional (también gratis durante la beta).",
+    "keywords": "básico, plan, gratis, 25 pacientes"
   },
   "ajs-7": {
     "question": "¿Qué incluye el plan Profesional?",
-    "answer": "El plan Profesional cuesta 11.99€ al mes e incluye pacientes ilimitados, de modo que no hay tope en tu cartera. Incorpora todo lo del plan Básico y añade la IA para generar dietas automáticamente a partir de los datos del paciente, la exportación de informes en PDF y soporte prioritario en las consultas que envíes al equipo de Annonia. Está pensado para nutricionistas con volumen medio o alto que quieren ahorrar tiempo en la creación de planes. La diferencia real con el Básico es el acceso a la IA y la atención preferente.",
-    "keywords": "profesional, plan, 11.99, ilimitados"
+    "answer": "Durante la fase beta, el plan Profesional es completamente gratis e incluye pacientes ilimitados, de modo que no hay tope en tu cartera. Incorpora todo lo del plan Básico y añade la IA para generar dietas automáticamente a partir de los datos del paciente, la exportación de informes en PDF y soporte prioritario. Está pensado para nutricionistas con volumen medio o alto que quieren ahorrar tiempo en la creación de planes.",
+    "keywords": "profesional, plan, gratis, ilimitados"
   },
   "ajs-8": {
     "question": "¿Qué es el componente `'<'SuscripcionCard'>'`?",
@@ -1574,7 +1574,7 @@
   },
   "ajs-9": {
     "question": "¿La IA está disponible en el plan Básico?",
-    "answer": "No, la IA para generar dietas no está disponible en el plan Básico. Esta funcionalidad está reservada al plan Profesional (11.99€/mes) y también se puede probar durante el TRIAL inicial de 14 días. Si tienes el plan Básico e intentas usar la IA, la plataforma te mostrará un aviso invitándote a hacer upgrade a Profesional. Es una de las diferencias principales entre ambos planes y suele ser el motivo más común para subir al superior.",
+    "answer": "No, la IA para generar dietas no está disponible en el plan Básico. Esta funcionalidad está reservada al plan Profesional (gratis durante la beta). Si tienes el plan Básico e intentas usar la IA, la plataforma te mostrará un aviso invitándote a hacer upgrade a Profesional. Es una de las diferencias principales entre ambos planes.",
     "keywords": "ia, básico, no disponible, diferencia"
   },
   "ajs-10": {
@@ -1654,7 +1654,7 @@
   },
   "ajs-25": {
     "question": "¿Los precios incluyen IVA?",
-    "answer": "Los precios mostrados en Annonia (9.99€/mes para el Básico y 11.99€/mes para el Profesional) ya incluyen el IVA aplicable según la normativa vigente. No se añaden impuestos adicionales por encima de la cantidad comunicada en la sección Suscripción. Las facturas que emite el equipo de soporte desglosan la base imponible y la cuota de IVA correspondiente para que puedas contabilizarlas correctamente. Si tienes un caso particular (por ejemplo operaciones intracomunitarias), consúltalo con soporte.",
+    "answer": "Durante la fase beta, Annonia es completamente gratis. No se aplican cargos ni impuestos. Cuando se lancen los planes de pago, los precios incluirán el IVA aplicable según la normativa vigente y recibirás facturas desglosadas.",
     "keywords": "iva, impuestos, precio, incluido"
   },
   "aj-1": {
@@ -3694,7 +3694,7 @@
   },
   "gen-14": {
     "question": "¿Qué planes de suscripción existen?",
-    "answer": "Hay dos planes: Básico a 9.99 euros al mes y Profesional a 11.99 euros al mes. Todos los nuevos usuarios disfrutan de 14 días gratis para probar la aplicación sin compromiso y sin tarjeta en algunos casos. El plan Profesional incluye funciones avanzadas como exportación ilimitada, integración Stripe Connect completa y prioridad en la IA. Puedes cambiar entre planes o cancelar en cualquier momento desde Ajustes → Suscripción. La facturación se gestiona con Stripe y recibes factura automáticamente.",
+    "answer": "Annonia es completamente gratis durante la fase beta. Hay dos planes disponibles: Básico (hasta 25 pacientes) y Profesional (pacientes ilimitados + IA). Ambos son gratis sin límite de tiempo mientras dure la beta. El plan Profesional incluye funciones avanzadas como generación de dietas con IA, exportación PDF y soporte prioritario. Puedes cambiar entre planes en cualquier momento desde Ajustes → Suscripción.",
     "keywords": "planes, precio, suscripción, básico, profesional, 14 días"
   },
   "gen-15": {

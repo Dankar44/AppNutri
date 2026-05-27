@@ -3,39 +3,30 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
-import {
-  Leaf, Eye, EyeOff, Loader2, Check, ArrowRight, ArrowLeft,
-  Crown, Star, Users, Brain, BarChart3, Share2, Shield, Zap,
-} from "lucide-react";
+import { Leaf, Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/language-switcher";
-
-const FEATURE_ICONS_BASICO = [Users, Zap, BarChart3, Star, Share2, BarChart3];
-const FEATURE_ICONS_PROFESIONAL = [Users, Check, Brain, BarChart3, Star, Shield];
+import { registrarCuenta } from "@/app/actions/registro";
 
 export default function RegistroForm() {
   const t = useTranslations("auth");
   const router = useRouter();
-  const [paso, setPaso] = useState<1 | 2 | 3>(1);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [planSeleccionado, setPlanSeleccionado] = useState("profesional");
   const [form, setForm] = useState({
     nombre: "",
     apellidos: "",
     email: "",
     password: "",
     especialidad: "",
-    numColegiado: "",
   });
 
   function updateForm(field: string, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
-  function handleSiguiente(e: React.FormEvent) {
+  async function handleRegistro(e: React.FormEvent) {
     e.preventDefault();
     if (!form.nombre.trim() || !form.apellidos.trim() || !form.email.trim()) {
       toast.error(t("registro.form.errorFieldsRequired"));
@@ -45,30 +36,19 @@ export default function RegistroForm() {
       toast.error(t("registro.form.errorPasswordLength"));
       return;
     }
-    setPaso(2);
-  }
 
-  async function handleRegistro() {
     setLoading(true);
 
-    const supabase = createClient();
-    const { error } = await supabase.auth.signUp({
-      email: form.email,
+    const result = await registrarCuenta({
+      nombre: form.nombre.trim(),
+      apellidos: form.apellidos.trim(),
+      email: form.email.trim(),
       password: form.password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
-        data: {
-          nombre: form.nombre,
-          apellidos: form.apellidos,
-          especialidad: form.especialidad,
-          numColegiado: form.numColegiado,
-          plan: planSeleccionado,
-        },
-      },
+      especialidad: form.especialidad.trim() || undefined,
     });
 
-    if (error) {
-      toast.error(error.message);
+    if (!result.ok) {
+      toast.error(result.error || t("registro.form.errorFieldsRequired"));
       setLoading(false);
       return;
     }
@@ -86,11 +66,7 @@ export default function RegistroForm() {
           <Leaf className="w-16 h-16 mb-8" />
           <h1 className="text-5xl font-bold mb-4">Annonia</h1>
           <p className="text-xl text-green-100 max-w-md">
-            {paso === 1
-              ? t("registro.form.step1.heroText")
-              : paso === 2
-                ? t("registro.form.step2.heroText")
-                : t("registro.form.step3.heroText")}
+            {t("registro.form.step1.heroText")}
           </p>
         </div>
       </div>
@@ -103,302 +79,113 @@ export default function RegistroForm() {
             <span className="text-xl sm:text-2xl font-bold">Annonia</span>
           </div>
 
-          {/* Indicador de pasos */}
-          <div className="flex items-center gap-2 mb-8">
-            <div className={`flex items-center gap-1.5 text-sm font-medium ${paso === 1 ? "text-primary" : "text-muted-foreground"}`}>
-              <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                paso === 1 ? "bg-primary text-white" : paso > 1 ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
-              }`}>
-                {paso > 1 ? <Check className="w-4 h-4" /> : "1"}
-              </span>
-              <span className="hidden sm:inline">{t("registro.form.steps.datos")}</span>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-2">{t("registro.title")}</h2>
+          <p className="text-muted-foreground text-sm sm:text-base mb-6">
+            {t("registro.subtitle")}
+          </p>
+
+          <form onSubmit={handleRegistro} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div>
+                <label htmlFor="nombre" className="block text-sm font-medium mb-1.5">
+                  {t("registro.form.step1.nombreLabel")}
+                </label>
+                <input
+                  id="nombre"
+                  type="text"
+                  value={form.nombre}
+                  onChange={(e) => updateForm("nombre", e.target.value)}
+                  placeholder={t("registro.form.step1.nombrePlaceholder")}
+                  required
+                  maxLength={100}
+                  className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+                />
+              </div>
+              <div>
+                <label htmlFor="apellidos" className="block text-sm font-medium mb-1.5">
+                  {t("registro.form.step1.apellidosLabel")}
+                </label>
+                <input
+                  id="apellidos"
+                  type="text"
+                  value={form.apellidos}
+                  onChange={(e) => updateForm("apellidos", e.target.value)}
+                  placeholder={t("registro.form.step1.apellidosPlaceholder")}
+                  required
+                  maxLength={100}
+                  className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+                />
+              </div>
             </div>
-            <div className="flex-1 h-px bg-border" />
-            <div className={`flex items-center gap-1.5 text-sm font-medium ${paso === 2 ? "text-primary" : "text-muted-foreground"}`}>
-              <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                paso === 2 ? "bg-primary text-white" : paso > 2 ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
-              }`}>
-                {paso > 2 ? <Check className="w-4 h-4" /> : "2"}
-              </span>
-              <span className="hidden sm:inline">{t("registro.form.steps.plan")}</span>
+
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium mb-1.5">
+                {t("registro.form.step1.emailLabel")}
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={form.email}
+                onChange={(e) => updateForm("email", e.target.value)}
+                placeholder={t("registro.form.step1.emailPlaceholder")}
+                required
+                maxLength={200}
+                className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+              />
             </div>
-            <div className="flex-1 h-px bg-border" />
-            <div className={`flex items-center gap-1.5 text-sm font-medium ${paso === 3 ? "text-primary" : "text-muted-foreground"}`}>
-              <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                paso === 3 ? "bg-primary text-white" : "bg-muted text-muted-foreground"
-              }`}>
-                3
-              </span>
-              <span className="hidden sm:inline">{t("registro.form.steps.verificacion")}</span>
+
+            <div>
+              <label htmlFor="especialidad" className="block text-sm font-medium mb-1.5">
+                {t("registro.form.step1.especialidadLabel")}
+                <span className="text-muted-foreground font-normal"> {t("registro.form.step1.especialidadOpcional")}</span>
+              </label>
+              <input
+                id="especialidad"
+                type="text"
+                value={form.especialidad}
+                onChange={(e) => updateForm("especialidad", e.target.value)}
+                placeholder={t("registro.form.step1.especialidadPlaceholder")}
+                maxLength={200}
+                className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+              />
             </div>
-          </div>
 
-          {/* === PASO 1: Datos personales === */}
-          {paso === 1 && (
-            <>
-              <h2 className="text-2xl sm:text-3xl font-bold mb-2">{t("registro.title")}</h2>
-              <p className="text-muted-foreground text-sm sm:text-base mb-6">
-                {t("registro.subtitle")}
-              </p>
-
-              <form onSubmit={handleSiguiente} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div>
-                    <label htmlFor="nombre" className="block text-sm font-medium mb-1.5">
-                      {t("registro.form.step1.nombreLabel")}
-                    </label>
-                    <input
-                      id="nombre"
-                      type="text"
-                      value={form.nombre}
-                      onChange={(e) => updateForm("nombre", e.target.value)}
-                      placeholder={t("registro.form.step1.nombrePlaceholder")}
-                      required
-                      maxLength={100}
-                      className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="apellidos" className="block text-sm font-medium mb-1.5">
-                      {t("registro.form.step1.apellidosLabel")}
-                    </label>
-                    <input
-                      id="apellidos"
-                      type="text"
-                      value={form.apellidos}
-                      onChange={(e) => updateForm("apellidos", e.target.value)}
-                      placeholder={t("registro.form.step1.apellidosPlaceholder")}
-                      required
-                      maxLength={100}
-                      className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium mb-1.5">
-                    {t("registro.form.step1.emailLabel")}
-                  </label>
-                  <input
-                    id="email"
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => updateForm("email", e.target.value)}
-                    placeholder={t("registro.form.step1.emailPlaceholder")}
-                    required
-                    maxLength={200}
-                    className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="especialidad" className="block text-sm font-medium mb-1.5">
-                    {t("registro.form.step1.especialidadLabel")}
-                    <span className="text-muted-foreground font-normal"> {t("registro.form.step1.especialidadOpcional")}</span>
-                  </label>
-                  <input
-                    id="especialidad"
-                    type="text"
-                    value={form.especialidad}
-                    onChange={(e) => updateForm("especialidad", e.target.value)}
-                    placeholder={t("registro.form.step1.especialidadPlaceholder")}
-                    maxLength={200}
-                    className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="password" className="block text-sm font-medium mb-1.5">
-                    {t("registro.form.step1.passwordLabel")}
-                  </label>
-                  <div className="relative">
-                    <input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      value={form.password}
-                      onChange={(e) => updateForm("password", e.target.value)}
-                      placeholder={t("registro.form.step1.passwordPlaceholder")}
-                      required
-                      minLength={6}
-                      maxLength={128}
-                      className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow pr-12"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full bg-primary text-primary-foreground py-2.5 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center gap-2 mt-2"
-                >
-                  {t("registro.form.step1.nextButton")}
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </form>
-            </>
-          )}
-
-          {/* === PASO 2: Elegir plan === */}
-          {paso === 2 && (
-            <>
-              <h2 className="text-3xl font-bold mb-2">{t("registro.form.step2.title")}</h2>
-              <p className="text-muted-foreground mb-6">
-                {t("registro.form.step2.subtitle")}
-              </p>
-
-              <div className="space-y-4 mb-6">
-                {(["basico", "profesional"] as const).map((planId) => {
-                  const selected = planSeleccionado === planId;
-                  const destacado = planId === "profesional";
-                  const icons = planId === "basico" ? FEATURE_ICONS_BASICO : FEATURE_ICONS_PROFESIONAL;
-                  const features = t.raw(`registro.form.plans.${planId}.features`) as string[];
-                  return (
-                    <button
-                      key={planId}
-                      type="button"
-                      onClick={() => setPlanSeleccionado(planId)}
-                      className={`w-full text-left rounded-xl border-2 p-5 transition-all ${
-                        selected
-                          ? "border-primary bg-primary/5 shadow-sm"
-                          : "border-border hover:border-muted-foreground/30"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          {destacado && <Crown className="w-4 h-4 text-amber-500" />}
-                          <span className="font-semibold">{t(`registro.form.plans.${planId}.nombre`)}</span>
-                          {destacado && (
-                            <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
-                              {t("registro.form.plans.profesional.destacadoLabel")}
-                            </span>
-                          )}
-                        </div>
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                          selected ? "border-primary bg-primary" : "border-muted-foreground/30"
-                        }`}>
-                          {selected && <Check className="w-3 h-3 text-white" />}
-                        </div>
-                      </div>
-
-                      <div className="flex items-baseline gap-1 mb-3">
-                        <span className="text-2xl font-bold">{t(`registro.form.plans.${planId}.precio`)}€</span>
-                        <span className="text-sm text-muted-foreground">{t("registro.form.plans.perMonth")}</span>
-                      </div>
-
-                      <div className="grid grid-cols-1 xs:grid-cols-2 gap-1.5">
-                        {features.map((texto, i) => {
-                          const Icon = icons[i] ?? Check;
-                          return (
-                            <div key={texto} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                              <Icon className="w-3 h-3 text-primary flex-shrink-0" />
-                              <span>{texto}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="flex gap-3">
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium mb-1.5">
+                {t("registro.form.step1.passwordLabel")}
+              </label>
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={form.password}
+                  onChange={(e) => updateForm("password", e.target.value)}
+                  placeholder={t("registro.form.step1.passwordPlaceholder")}
+                  required
+                  minLength={6}
+                  maxLength={128}
+                  className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow pr-12"
+                />
                 <button
                   type="button"
-                  onClick={() => setPaso(1)}
-                  className="px-4 py-2.5 rounded-lg border border-border font-medium hover:bg-muted transition-colors flex items-center gap-2 text-sm"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
-                  <ArrowLeft className="w-4 h-4" />
-                  {t("registro.form.step2.backButton")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaso(3)}
-                  className="flex-1 bg-primary text-primary-foreground py-2.5 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
-                >
-                  {t("registro.form.step2.nextButton")}
-                  <ArrowRight className="w-4 h-4" />
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
+            </div>
 
-              <p className="text-center text-xs text-muted-foreground mt-4">
-                {t("registro.form.step2.noBillingNote")}
-              </p>
-            </>
-          )}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-primary text-primary-foreground py-2.5 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+            >
+              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+              {loading ? t("registro.form.step3.submitting") : t("registro.form.step3.submitButton")}
+            </button>
+          </form>
 
-          {/* === PASO 3: Verificación profesional === */}
-          {paso === 3 && (
-            <>
-              <h2 className="text-3xl font-bold mb-2">{t("registro.form.step3.title")}</h2>
-              <p className="text-muted-foreground mb-6">
-                {t("registro.form.step3.subtitle")}
-              </p>
-
-              <div className="space-y-4 mb-6">
-                <div>
-                  <label htmlFor="numColegiado" className="block text-sm font-medium mb-1.5">
-                    {t("registro.form.step3.numColegiadoLabel")}
-                  </label>
-                  <input
-                    id="numColegiado"
-                    type="text"
-                    value={form.numColegiado}
-                    onChange={(e) => updateForm("numColegiado", e.target.value)}
-                    placeholder={t("registro.form.step3.numColegiadoPlaceholder")}
-                    required
-                    maxLength={50}
-                    className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
-                  />
-                </div>
-
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
-                  <div className="flex items-start gap-2">
-                    <Shield className="w-5 h-5 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-medium mb-1">{t("registro.form.step3.verificationTitle")}</p>
-                      <p className="text-amber-700">
-                        {t("registro.form.step3.verificationDescription")}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setPaso(2)}
-                  className="px-4 py-2.5 rounded-lg border border-border font-medium hover:bg-muted transition-colors flex items-center gap-2 text-sm"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  {t("registro.form.step3.backButton")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!form.numColegiado.trim()) {
-                      toast.error(t("registro.form.errorNumColegiado"));
-                      return;
-                    }
-                    handleRegistro();
-                  }}
-                  disabled={loading}
-                  className="flex-1 bg-primary text-primary-foreground py-2.5 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {loading ? t("registro.form.step3.submitting") : t("registro.form.step3.submitButton")}
-                </button>
-              </div>
-            </>
-          )}
-
-          {/* Links comunes */}
           <p className="text-center mt-6 text-muted-foreground">
             {t("registro.form.hasAccountPrompt")}{" "}
             <Link href="/login" className="text-primary font-medium hover:underline">
