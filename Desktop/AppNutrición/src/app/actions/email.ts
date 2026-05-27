@@ -283,7 +283,8 @@ export async function enviarPlanPorEmail(
   pdfData.logoDataUrl = dietista.pdfLogoUrl || undefined;
   pdfData.clinica = dietista.clinica || undefined;
 
-  const htmlBody = generatePlanPDF(pdfData);
+  const tPdf = await getTranslations("pdf");
+  const htmlBody = generatePlanPDF(pdfData, tPdf);
   try {
     await sendEmail({
       to: paciente.email,
