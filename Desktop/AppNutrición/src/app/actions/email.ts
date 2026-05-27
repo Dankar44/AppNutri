@@ -6,6 +6,7 @@ import { getPaciente } from "./pacientes";
 import { getPlan } from "./planes";
 import { getTranslations } from "next-intl/server";
 import { generatePlanPDF, type PlanPDFData } from "@/lib/pdf/generate-plan-pdf";
+import { htmlToPdf } from "@/lib/html-to-pdf";
 import { getRecomendaciones } from "./pacientes";
 import type { FichaInformacionData, CampoPersonalizadoDefinicion } from "@/lib/ficha-informacion-types";
 import {
@@ -285,7 +286,7 @@ export async function enviarPlanPorEmail(
 
   const tPdf = await getTranslations("pdf");
   const fullHtml = generatePlanPDF(pdfData, tPdf);
-  const attachmentHtml = fullHtml.replace(/<script>.*?<\/script>/g, "");
+  const pdfBuffer = await htmlToPdf(fullHtml);
 
   const brandName = escapeHtml(dietista.marcaPdf || "Annonia");
   const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/paciente/login`;
@@ -338,9 +339,9 @@ export async function enviarPlanPorEmail(
       html: emailHtml,
       replyTo: dietista.email,
       attachments: [{
-        filename: `${safeFileName}.html`,
-        content: attachmentHtml,
-        contentType: "text/html",
+        filename: `${safeFileName}.pdf`,
+        content: pdfBuffer,
+        contentType: "application/pdf",
       }],
     });
     return { ok: true };
