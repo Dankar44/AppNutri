@@ -282,16 +282,66 @@ export async function enviarPlanPorEmail(
   pdfData.brandName = dietista.marcaPdf || undefined;
   pdfData.logoDataUrl = dietista.pdfLogoUrl || undefined;
   pdfData.clinica = dietista.clinica || undefined;
-  pdfData.isEmail = true;
 
   const tPdf = await getTranslations("pdf");
-  const htmlBody = generatePlanPDF(pdfData, tPdf);
+  const fullHtml = generatePlanPDF(pdfData, tPdf);
+  const attachmentHtml = fullHtml.replace(/<script>.*?<\/script>/g, "");
+
+  const brandName = escapeHtml(dietista.marcaPdf || "Annonia");
+  const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/paciente/login`;
+  const emailHtml = `
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f9fafb">
+  <div style="max-width:600px;margin:0 auto;padding:32px 16px">
+    <div style="background:#fff;border-radius:12px;border:1px solid #e5e7eb;padding:32px;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+      <div style="text-align:center;margin-bottom:24px">
+        <h1 style="margin:0 0 8px;font-size:22px;color:#111827">${escapeHtml(te("planAlimenticio.titulo"))}</h1>
+        <p style="margin:0;color:#6b7280;font-size:14px">
+          ${escapeHtml(te("planAlimenticio.saludo", { pacienteNombre, dietistaNombre }))}
+        </p>
+      </div>
+
+      <div style="background:#f0fdf4;border-radius:8px;padding:20px;margin-bottom:24px;text-align:center">
+        <p style="margin:0 0 4px;font-size:16px;font-weight:700;color:#166534">
+          ${escapeHtml(plan.nombre)}
+        </p>
+        <p style="margin:0;font-size:13px;color:#4b5563">
+          ${escapeHtml(te("planAlimenticio.adjunto"))}
+        </p>
+      </div>
+
+      <div style="background:#f9fafb;border-radius:8px;padding:16px;margin-bottom:16px;text-align:center">
+        <p style="margin:0 0 12px;font-size:13px;color:#4b5563">
+          ${escapeHtml(te("planAlimenticio.portal"))}
+        </p>
+        <a href="${portalUrl}" style="display:inline-block;background:#16a34a;color:white;padding:10px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px">
+          ${escapeHtml(te("planAlimenticio.botonPortal"))}
+        </a>
+      </div>
+
+      <div style="margin-top:24px;text-align:center;color:#9ca3af;font-size:12px">
+        <p style="margin:0">${brandName} &mdash; annonia.com</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  const safeFileName = plan.nombre.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-_]/g, "").trim() || "plan-dietetico";
+
   try {
     await sendEmail({
       to: paciente.email,
       subject: te("planAlimenticio.subject", { planNombre: plan.nombre }),
-      html: htmlBody,
+      html: emailHtml,
       replyTo: dietista.email,
+      attachments: [{
+        filename: `${safeFileName}.html`,
+        content: attachmentHtml,
+        contentType: "text/html",
+      }],
     });
     return { ok: true };
   } catch (err) {

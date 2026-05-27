@@ -18,12 +18,19 @@ export function getMailer(): nodemailer.Transporter | null {
 
 const DEFAULT_FROM = process.env.EMAIL_FROM || "Annonia <noreply@annonia.com>";
 
+export interface EmailAttachment {
+  filename: string;
+  content: string | Buffer;
+  contentType?: string;
+}
+
 export async function sendEmail(opts: {
   to: string;
   subject: string;
   html: string;
   from?: string;
   replyTo?: string;
+  attachments?: EmailAttachment[];
 }): Promise<void> {
   const from = opts.from || DEFAULT_FROM;
 
@@ -35,6 +42,11 @@ export async function sendEmail(opts: {
       subject: opts.subject,
       html: opts.html,
       replyTo: opts.replyTo,
+      attachments: opts.attachments?.map((a) => ({
+        filename: a.filename,
+        content: typeof a.content === "string" ? Buffer.from(a.content, "utf-8") : a.content,
+        content_type: a.contentType,
+      })),
     });
     return;
   }
@@ -47,6 +59,11 @@ export async function sendEmail(opts: {
       subject: opts.subject,
       html: opts.html,
       replyTo: opts.replyTo,
+      attachments: opts.attachments?.map((a) => ({
+        filename: a.filename,
+        content: a.content,
+        contentType: a.contentType,
+      })),
     });
     return;
   }

@@ -62,7 +62,12 @@
     }
   },
   "planAlimenticio": {
-    "subject": "Seu plano alimentar — {planNombre}"
+    "subject": "Seu plano alimentar — {planNombre}",
+    "titulo": "Seu plano alimentar",
+    "saludo": "Olá {pacienteNombre}, {dietistaNombre} preparou um novo plano para você.",
+    "adjunto": "Seu plano está anexado a este email. Abra-o no navegador para visualizá-lo ou imprimi-lo.",
+    "portal": "Você também pode consultá-lo a qualquer momento no seu portal de paciente.",
+    "botonPortal": "Acessar o portal"
   },
   "recuperarPassword": {
     "subject": "Redefina sua senha — Annonia",
