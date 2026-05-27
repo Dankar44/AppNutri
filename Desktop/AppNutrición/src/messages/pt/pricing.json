@@ -1,19 +1,19 @@
 {
   "metadata": {
-    "title": "Software para Nutricionistas — Grátis na Beta",
-    "description": "Annonia, software de nutrição para nutricionistas. Grátis durante a fase beta. Todas as funcionalidades incluídas.",
-    "ogTitle": "Software para Nutricionistas — Grátis na Beta",
-    "ogDescription": "Software de nutrição profissional. Grátis durante a beta.",
-    "twitterTitle": "Software para Nutricionistas — Grátis na Beta"
+    "title": "Software para Nutricionistas — Grátis no Lançamento",
+    "description": "Annonia, software de nutrição para nutricionistas. Grátis durante a fase de lançamento na Espanha. Todas as funcionalidades incluídas.",
+    "ogTitle": "Software para Nutricionistas — Grátis no Lançamento",
+    "ogDescription": "Software de nutrição profissional. Grátis durante o lançamento na Espanha.",
+    "twitterTitle": "Software para Nutricionistas — Grátis no Lançamento"
   },
   "header": {
     "iniciarSesion": "Entrar",
     "empezarGratis": "Começar grátis"
   },
   "hero": {
-    "badge": "Grátis durante a beta",
+    "badge": "Grátis durante o lançamento",
     "titulo": "O plano perfeito para seu consultório de nutrição",
-    "descripcion": "Annonia é completamente grátis durante a fase beta. Aproveite todas as funcionalidades sem custo e sem compromisso."
+    "descripcion": "Annonia é completamente grátis durante a fase de lançamento na Espanha. Aproveite todas as funcionalidades sem custo e sem compromisso."
   },
   "planes": {
     "masPopular": "Mais popular",
@@ -21,7 +21,7 @@
     "noIncluido": "Não incluído:",
     "empezarPrueba": "Começar grátis",
     "gratisBeta": "Grátis",
-    "gratisSubtexto": "durante a beta",
+    "gratisSubtexto": "durante o lançamento",
     "empezarGratis": "Começar grátis",
     "periodo": "mês",
     "basico": {
@@ -70,11 +70,11 @@
     },
     "despuesPrueba": {
       "pregunta": "Quando vai deixar de ser grátis?",
-      "respuesta": "Durante a fase beta, tudo é grátis. Quando lançarmos os planos pagos, avisaremos com antecedência para que você possa decidir."
+      "respuesta": "Durante a fase de lançamento na Espanha, tudo é grátis. Quando lançarmos os planos pagos, avisaremos com antecedência para que você possa decidir."
     },
     "cancelar": {
       "pregunta": "Posso cancelar a qualquer momento?",
-      "respuesta": "Não há nada para cancelar durante a beta. Sua conta é completamente gratuita."
+      "respuesta": "Não há nada para cancelar durante o lançamento. Sua conta é completamente gratuita."
     },
     "datosSeguridad": {
       "pregunta": "Meus dados estão seguros?",

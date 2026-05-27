@@ -267,11 +267,11 @@
     "planes": {
       "BASICO": {
         "nombre": "Básico",
-        "precio": "Gratis (beta)"
+        "precio": "Gratis (lanzamiento)"
       },
       "PROFESIONAL": {
         "nombre": "Profesional",
-        "precio": "Gratis (beta)"
+        "precio": "Gratis (lanzamiento)"
       }
     },
     "estados": {

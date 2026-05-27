@@ -1,11 +1,11 @@
 {
   "metadata": {
     "title": "Annonia — Software de Nutrição para Nutricionistas | Dietas Personalizadas com IA",
-    "description": "Software para nutricionistas: crie dietas personalizadas, gerencie pacientes, agende consultas online e gere planos alimentares com inteligência artificial. Grátis durante a beta.",
+    "description": "Software para nutricionistas: crie dietas personalizadas, gerencie pacientes, agende consultas online e gere planos alimentares com inteligência artificial. Grátis durante o lançamento na Espanha.",
     "ogTitle": "Annonia — Software de Nutrição para Nutricionistas",
-    "ogDescription": "Software para nutricionistas: dietas personalizadas com IA, gestão de pacientes, agenda e portal do paciente. Grátis durante a beta.",
+    "ogDescription": "Software para nutricionistas: dietas personalizadas com IA, gestão de pacientes, agenda e portal do paciente. Grátis durante o lançamento na Espanha.",
     "twitterTitle": "Annonia — Software de Nutrição para Nutricionistas",
-    "twitterDescription": "Dietas personalizadas com IA, gestão de pacientes e agenda online. Grátis durante a beta.",
+    "twitterDescription": "Dietas personalizadas com IA, gestão de pacientes e agenda online. Grátis durante o lançamento na Espanha.",
     "ogImageAlt": "Annonia — Software de nutrição para nutricionistas"
   },
   "navbar": {
@@ -81,7 +81,7 @@
     "preguntas": {
       "probarGratis": {
         "pregunta": "Posso experimentar Annonia gratuitamente?",
-        "respuesta": "Sim, Annonia é completamente grátis durante a fase beta. Crie sua conta e comece a usar com todas as funcionalidades. Sem cartão de crédito."
+        "respuesta": "Sim, Annonia é completamente grátis durante a fase de lançamento na Espanha. Crie sua conta e comece a usar com todas as funcionalidades. Sem cartão de crédito."
       },
       "datosSeguridad": {
         "pregunta": "Meus dados e os dos meus pacientes estão seguros?",
@@ -108,7 +108,7 @@
     "tituloPart3": "de nutrição",
     "descripcion": "Junte-se aos nutricionistas que confiam na Annonia para oferecer dietas personalizadas e um acompanhamento nutricional excepcional.",
     "boton": "Criar conta grátis",
-    "garantia": "Grátis durante a beta · Sem cartão · Sem compromissos"
+    "garantia": "Grátis durante o lançamento · Sem cartão · Sem compromissos"
   },
   "notificationCard": {
     "nombre": "Nutricionista Teresa",
@@ -140,11 +140,11 @@
       "offerBasico": "Básico",
       "offerProfesional": "Profissional",
       "offerPrueba": "Teste gratuito",
-      "offerPruebaDesc": "Grátis durante a fase beta com acesso completo"
+      "offerPruebaDesc": "Grátis durante a fase de lançamento na Espanha com acesso completo"
     },
     "landingFaq": {
       "q1": "Posso experimentar Annonia gratuitamente?",
-      "a1": "Sim, Annonia é completamente grátis durante a fase beta. Crie sua conta e comece a usar com todas as funcionalidades. Sem cartão de crédito.",
+      "a1": "Sim, Annonia é completamente grátis durante a fase de lançamento na Espanha. Crie sua conta e comece a usar com todas as funcionalidades. Sem cartão de crédito.",
       "q2": "Meus dados e os dos meus pacientes estão seguros?",
       "a2": "Absolutamente. Usamos criptografia, servidores na UE e cumprimos o RGPD. A segurança dos dados clínicos é nossa prioridade.",
       "q3": "Posso mudar de plano ou cancelar?",
@@ -158,7 +158,7 @@
       "q1": "Posso mudar de plano a qualquer momento?",
       "a1": "Sim, você pode subir ou descer de plano quando quiser. A mudança se aplica no próximo ciclo de faturamento.",
       "q2": "Quando vai deixar de ser grátis?",
-      "a2": "Durante a fase beta, tudo é grátis. Quando lançarmos os planos pagos, avisaremos com antecedência.",
+      "a2": "Durante a fase de lançamento na Espanha, tudo é grátis. Quando lançarmos os planos pagos, avisaremos com antecedência.",
       "q3": "Posso cancelar a qualquer momento?",
       "a3": "Sim, sem perguntas. Você pode cancelar nas Configurações e continuará tendo acesso até o final do período pago.",
       "q4": "Meus dados estão seguros?",

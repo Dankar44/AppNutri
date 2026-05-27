@@ -1,19 +1,19 @@
 {
   "metadata": {
-    "title": "Software para Nutricionistas — Gratis en Beta",
-    "description": "Annonia, software de nutrición para nutricionistas. Gratis durante la fase beta. Todas las funcionalidades incluidas.",
-    "ogTitle": "Software para Nutricionistas — Gratis en Beta",
-    "ogDescription": "Software de nutrición profesional. Gratis durante la beta.",
-    "twitterTitle": "Software para Nutricionistas — Gratis en Beta"
+    "title": "Software para Nutricionistas — Gratis en Fase de Lanzamiento",
+    "description": "Annonia, software de nutrición para nutricionistas. Gratis durante la fase de lanzamiento en España. Todas las funcionalidades incluidas.",
+    "ogTitle": "Software para Nutricionistas — Gratis en Fase de Lanzamiento",
+    "ogDescription": "Software de nutrición profesional. Gratis durante el lanzamiento en España.",
+    "twitterTitle": "Software para Nutricionistas — Gratis en Fase de Lanzamiento"
   },
   "header": {
     "iniciarSesion": "Iniciar sesión",
     "empezarGratis": "Empezar gratis"
   },
   "hero": {
-    "badge": "Gratis durante la beta",
+    "badge": "Gratis durante el lanzamiento",
     "titulo": "El plan perfecto para tu consulta de nutrición",
-    "descripcion": "Annonia es completamente gratis durante la fase beta. Disfruta de todas las funcionalidades sin coste y sin compromiso."
+    "descripcion": "Annonia es completamente gratis durante la fase de lanzamiento en España. Disfruta de todas las funcionalidades sin coste y sin compromiso."
   },
   "planes": {
     "masPopular": "Más popular",
@@ -21,7 +21,7 @@
     "noIncluido": "No incluido:",
     "empezarPrueba": "Empezar gratis",
     "gratisBeta": "Gratis",
-    "gratisSubtexto": "durante la beta",
+    "gratisSubtexto": "durante el lanzamiento",
     "empezarGratis": "Empezar gratis",
     "periodo": "mes",
     "basico": {
@@ -70,11 +70,11 @@
     },
     "despuesPrueba": {
       "pregunta": "¿Cuándo dejará de ser gratis?",
-      "respuesta": "Durante la fase beta, todo es gratis. Cuando lancemos los planes de pago, te avisaremos con antelación para que puedas decidir."
+      "respuesta": "Durante la fase de lanzamiento en España, todo es gratis. Cuando activemos los planes de pago, te avisaremos con antelación para que puedas decidir."
     },
     "cancelar": {
       "pregunta": "¿Puedo cancelar en cualquier momento?",
-      "respuesta": "No hay nada que cancelar durante la beta. Tu cuenta es completamente gratuita."
+      "respuesta": "No hay nada que cancelar durante la fase de lanzamiento. Tu cuenta es completamente gratuita."
     },
     "datosSeguridad": {
       "pregunta": "¿Mis datos están seguros?",

@@ -177,7 +177,7 @@
     "ariaLabelWithCount": "Notificações ({count} não lidas)"
   },
   "beta": {
-    "message": "Annonia está em versão beta.",
+    "message": "Annonia está em fase de lançamento na Espanha.",
     "feedback": "Se encontrar algum erro ou tiver sugestões de melhoria, escreva para nós através de",
     "supportLink": "Mensagens → Suporte Annonia",
     "encouragement": "Seu feedback nos ajuda a melhorar!",
@@ -234,11 +234,11 @@
   "metadata": {
     "title": "Annonia — Software para Nutricionistas",
     "titleTemplate": "%s | Annonia",
-    "description": "Software de nutrição para nutricionistas: crie dietas personalizadas, gerencie pacientes, agende consultas e gere planos alimentares com inteligência artificial. Grátis durante a beta.",
+    "description": "Software de nutrição para nutricionistas: crie dietas personalizadas, gerencie pacientes, agende consultas e gere planos alimentares com inteligência artificial. Grátis durante o lançamento na Espanha.",
     "ogTitle": "Annonia — Software para Nutricionistas",
-    "ogDescription": "Software de nutrição profissional: dietas personalizadas, gestão de pacientes e agenda com IA. Grátis durante a beta.",
+    "ogDescription": "Software de nutrição profissional: dietas personalizadas, gestão de pacientes e agenda com IA. Grátis durante o lançamento na Espanha.",
     "ogImageAlt": "Annonia - Plataforma profissional para nutricionistas",
     "twitterTitle": "Annonia — Software para Nutricionistas",
-    "twitterDescription": "Software de nutrição profissional: dietas personalizadas, gestão de pacientes e agenda com IA. Grátis durante a beta."
+    "twitterDescription": "Software de nutrição profissional: dietas personalizadas, gestão de pacientes e agenda com IA. Grátis durante o lançamento na Espanha."
   }
 }
