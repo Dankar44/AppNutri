@@ -12,21 +12,14 @@ npm install --prefer-offline
 echo "=== 3. Prisma generate ==="
 npx prisma generate
 
-echo "=== 4. Parar PM2 (evita servir chunks rotos durante build) ==="
-pm2 stop nutriapp 2>/dev/null || true
-
-echo "=== 5. Limpiar build anterior ==="
-rm -rf .next
-
-echo "=== 6. Build ==="
+echo "=== 4. Build (PM2 sigue sirviendo la versión anterior) ==="
 npm run build
 
-echo "=== 7. Arrancar con PM2 ==="
-pm2 delete nutriapp 2>/dev/null || true
-pm2 start ecosystem.config.cjs
+echo "=== 5. Restart PM2 (carga la nueva versión) ==="
+pm2 restart nutriapp 2>/dev/null || (pm2 delete nutriapp 2>/dev/null; pm2 start ecosystem.config.cjs)
 pm2 save
 
-echo "=== 8. Verificar ==="
+echo "=== 6. Verificar ==="
 sleep 3
 STATUS=$(curl -s -m 10 -o /dev/null -w "%{http_code}" http://localhost:3000/login)
 if [ "$STATUS" = "200" ]; then
@@ -37,4 +30,4 @@ else
   exit 1
 fi
 
-echo "=== Deploy completado ==="
+echo "=== Deploy completado (zero-downtime) ==="

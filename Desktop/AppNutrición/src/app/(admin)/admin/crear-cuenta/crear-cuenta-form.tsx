@@ -1,19 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Eye, EyeOff, UserPlus, Copy, Check } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { crearCuentaNutricionista } from "@/app/actions/admin";
+import { useUncontrolledFormPersist } from "@/lib/form-persist";
 
 export function CrearCuentaForm() {
   const t = useTranslations("admin.crearCuenta");
+  const tc = useTranslations("common.deploy");
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [creada, setCreada] = useState<{ email: string; password: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const { wasRestored, clear: clearDraft } = useUncontrolledFormPersist(
+    "admin-crear-cuenta",
+    formRef,
+  );
+
+  useEffect(() => {
+    if (wasRestored) toast.success(tc("datosRestaurados"));
+  }, [wasRestored, tc]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -30,6 +41,7 @@ export function CrearCuentaForm() {
     const res = await crearCuentaNutricionista({ email, password, nombre, apellidos, fuenteContacto, creadoPorNombre });
 
     if (res.ok) {
+      clearDraft();
       toast.success(t("toast.cuentaCreada"));
       setCreada({ email, password });
     } else {
@@ -95,7 +107,7 @@ export function CrearCuentaForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-lg space-y-6">
+    <form ref={formRef} onSubmit={handleSubmit} className="max-w-lg space-y-6">
       <div className="bg-card rounded-xl border border-border p-6 space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
