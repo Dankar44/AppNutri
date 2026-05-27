@@ -408,7 +408,7 @@ export function EntregablesTab({
     }
     setDownloading(true);
     try {
-      const html = generatePlanPDF({ ...pdfData, sections: toSections(appliedOptions), displayOverrides: appliedOverrides }, tPdf);
+      const html = generatePlanPDF({ ...pdfData, sections: toSections(pdfOptions), displayOverrides }, tPdf);
       const nombre = pdfData.pacienteNombre.replace(/\s+/g, "-");
       await downloadPDF(html, `Plan-${nombre}.pdf`);
     } catch {
@@ -428,7 +428,7 @@ export function EntregablesTab({
       return;
     }
     startSendingPlan(async () => {
-      const res = await enviarPlanPorEmail(pacienteId, selectedPlanId);
+      const res = await enviarPlanPorEmail(pacienteId, selectedPlanId, toSections(pdfOptions), displayOverrides);
       if (res.ok) {
         toast.success(t("planEnviadoEmail"));
       } else {

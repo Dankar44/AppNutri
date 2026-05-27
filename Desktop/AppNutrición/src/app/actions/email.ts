@@ -209,7 +209,9 @@ export async function enviarCuestionarioPaciente(
 
 export async function enviarPlanPorEmail(
   pacienteId: string,
-  planId: string
+  planId: string,
+  sections?: import("@/lib/pdf/generate-plan-pdf").PDFSectionOptions,
+  displayOverrides?: import("@/lib/pdf/generate-plan-pdf").DisplayOverrides,
 ): Promise<{ ok: boolean; error?: string }> {
   const t = await getTranslations("validation");
   const te = await getTranslations("emails");
@@ -283,6 +285,8 @@ export async function enviarPlanPorEmail(
   pdfData.brandName = dietista.marcaPdf || undefined;
   pdfData.logoDataUrl = dietista.pdfLogoUrl || undefined;
   pdfData.clinica = dietista.clinica || undefined;
+  if (sections) pdfData.sections = sections;
+  if (displayOverrides) pdfData.displayOverrides = displayOverrides;
 
   const tPdf = await getTranslations("pdf");
   const fullHtml = generatePlanPDF(pdfData, tPdf);
