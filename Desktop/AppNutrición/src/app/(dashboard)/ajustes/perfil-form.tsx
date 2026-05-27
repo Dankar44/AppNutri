@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { actualizarPerfil, type PerfilFormData } from "@/app/actions/perfil";
 import { useUncontrolledFormPersist } from "@/lib/form-persist";
 import { isNextNavigation, withTimeout } from "@/lib/utils";
+import { useDemoGuard } from "@/contexts/demo-context";
 
 interface Props {
   defaultValues: PerfilFormData;
@@ -16,6 +17,7 @@ export function PerfilForm({ defaultValues }: Props) {
   const t = useTranslations("settings");
   const tc = useTranslations("common.deploy");
   const router = useRouter();
+  const blockIfDemo = useDemoGuard();
   const [loading, setLoading] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const { wasRestored, clear: clearDraft } = useUncontrolledFormPersist(
@@ -29,6 +31,7 @@ export function PerfilForm({ defaultValues }: Props) {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (blockIfDemo()) return;
     setLoading(true);
 
     const form = new FormData(e.currentTarget);

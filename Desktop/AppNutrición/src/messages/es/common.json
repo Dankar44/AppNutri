@@ -3,6 +3,7 @@
     "gestion": "Gestión",
     "dietas": "Dietas",
     "acompanamiento": "Acompañamiento",
+    "miCentro": "Mi centro",
     "centroDeControl": "Centro de control"
   },
   "navItems": {
@@ -13,6 +14,7 @@
     "dietas": "Dietas",
     "alimentos": "Alimentos",
     "recetas": "Recetas",
+    "centro": "Centro",
     "mensajes": "Mensajes",
     "reportes": "Reportes",
     "ajustes": "Ajustes",
@@ -182,7 +184,8 @@
     "closeAriaLabel": "Cerrar aviso"
   },
   "demo": {
-    "banner": "Modo demo — los cambios no se guardan"
+    "banner": "Modo demo — los cambios no se guardan",
+    "cta": "¿Necesitas una cuenta? Habla con quien te ha contactado"
   },
   "generic": {
     "loading": "Cargando...",
@@ -232,11 +235,11 @@
   "metadata": {
     "title": "Annonia — Software para Nutricionistas",
     "titleTemplate": "%s | Annonia",
-    "description": "Software de nutrición para nutricionistas: crea dietas personalizadas, gestiona pacientes, agenda citas y genera planes alimenticios con inteligencia artificial. Prueba gratis 14 días.",
+    "description": "Software de nutrición para nutricionistas: crea dietas personalizadas, gestiona pacientes, agenda citas y genera planes alimenticios con inteligencia artificial. Gratis durante la beta.",
     "ogTitle": "Annonia — Software para Nutricionistas",
-    "ogDescription": "Software de nutrición profesional: dietas personalizadas, gestión de pacientes y agenda con IA. Desde 9,99€/mes.",
+    "ogDescription": "Software de nutrición profesional: dietas personalizadas, gestión de pacientes y agenda con IA. Gratis durante la beta.",
     "ogImageAlt": "Annonia - Plataforma profesional para nutricionistas",
     "twitterTitle": "Annonia — Software para Nutricionistas",
-    "twitterDescription": "Software de nutrición profesional: dietas personalizadas, gestión de pacientes y agenda con IA. Prueba gratis 14 días."
+    "twitterDescription": "Software de nutrición profesional: dietas personalizadas, gestión de pacientes y agenda con IA. Gratis durante la beta."
   }
 }

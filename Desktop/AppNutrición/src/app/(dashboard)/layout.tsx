@@ -10,6 +10,7 @@ import { SidebarWrapper } from "./sidebar-wrapper";
 import { HelpWidget } from "@/components/help/help-widget";
 import { TourWrapper } from "@/components/tour/tour-wrapper";
 import { DemoBanner } from "@/components/demo-banner";
+import { DemoProvider } from "@/contexts/demo-context";
 import { prisma } from "@/lib/prisma";
 
 export default async function DashboardLayout({
@@ -48,26 +49,29 @@ export default async function DashboardLayout({
   }
 
   return (
-    <TourWrapper audience="dietista">
-      {dietista.isDemo && <DemoBanner />}
-      <div className={`flex min-h-dvh bg-background${dietista.isDemo ? " pt-8" : ""}`}>
-        <SidebarWrapper
-          dietistaNombre={`${dietista.nombre} ${dietista.apellidos}`}
-          signOutAction={signOut}
-          notifCount={notifCount}
-          mensajesCount={mensajesCount}
-          badges={badges}
-          isAdmin={isAdminEmail(dietista.email)}
-        />
-        <main className="flex-1 overflow-y-auto min-w-0 bg-background">
-          <div className="w-full max-w-none pt-14 lg:pt-6 lg:px-5 pb-safe lg:pb-6">
-            <div className="bg-transparent border-0 rounded-none shadow-none px-4 py-3 sm:px-5 sm:py-4 lg:bg-card lg:rounded-xl lg:border lg:border-border lg:shadow-sm lg:px-8 lg:py-8">
-              {children}
+    <DemoProvider isDemo={dietista.isDemo}>
+      <TourWrapper audience="dietista">
+        {dietista.isDemo && <DemoBanner />}
+        <div className={`flex min-h-dvh bg-background${dietista.isDemo ? " pt-8" : ""}`}>
+          <SidebarWrapper
+            dietistaNombre={`${dietista.nombre} ${dietista.apellidos}`}
+            signOutAction={signOut}
+            notifCount={notifCount}
+            mensajesCount={mensajesCount}
+            badges={badges}
+            isAdmin={isAdminEmail(dietista.email)}
+            hasEmpresa={!!dietista.empresaId}
+          />
+          <main className="flex-1 overflow-y-auto min-w-0 bg-background">
+            <div className="w-full max-w-none pt-14 lg:pt-6 lg:px-5 pb-safe lg:pb-6">
+              <div className="bg-transparent border-0 rounded-none shadow-none px-4 py-3 sm:px-5 sm:py-4 lg:bg-card lg:rounded-xl lg:border lg:border-border lg:shadow-sm lg:px-8 lg:py-8">
+                {children}
+              </div>
             </div>
-          </div>
-        </main>
-        <HelpWidget />
-      </div>
-    </TourWrapper>
+          </main>
+          <HelpWidget />
+        </div>
+      </TourWrapper>
+    </DemoProvider>
   );
 }

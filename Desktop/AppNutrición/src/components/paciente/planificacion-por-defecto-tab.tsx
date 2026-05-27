@@ -39,6 +39,7 @@ import {
   cambiarEstadoPlanificacion,
   eliminarPlanificacion,
 } from "@/app/actions/planificaciones";
+import { useDemoGuard } from "@/contexts/demo-context";
 
 /* ─── Types ─── */
 
@@ -606,6 +607,7 @@ export function PlanificacionPorDefectoTab({
 }) {
   const t = useTranslations("patients.planificacion");
   const locale = useLocale();
+  const blockIfDemo = useDemoGuard();
 
   /* ─── Planificaciones state ─── */
   const [planificaciones, setPlanificaciones] = useState<Planificacion[]>(initialPlanificaciones);
@@ -674,6 +676,7 @@ export function PlanificacionPorDefectoTab({
   }
 
   async function handleCrearConfirm() {
+    if (blockIfDemo()) return;
     if (!crearNombre.trim()) return;
     const datosCopiados = planificaciones.find((p) => p.id === copiarDeId)?.datos ?? {};
     startTransition(async () => {
@@ -696,6 +699,7 @@ export function PlanificacionPorDefectoTab({
   }
 
   async function handleRename(planId: string) {
+    if (blockIfDemo()) return;
     if (!renameValue.trim()) return;
     startTransition(async () => {
       await renombrarPlanificacion(planId, renameValue.trim());
@@ -708,6 +712,7 @@ export function PlanificacionPorDefectoTab({
   }
 
   async function handleCambiarEstado(planId: string, estado: "activa" | "terminada" | "guardada") {
+    if (blockIfDemo()) return;
     startTransition(async () => {
       await cambiarEstadoPlanificacion(planId, estado);
       setPlanificaciones((prev) =>
@@ -725,6 +730,7 @@ export function PlanificacionPorDefectoTab({
   }
 
   async function handleEliminarConfirm() {
+    if (blockIfDemo()) return;
     if (!deleteConfirmId) return;
     const planId = deleteConfirmId;
     startTransition(async () => {
@@ -1086,6 +1092,7 @@ export function PlanificacionPorDefectoTab({
   }
 
   async function handleGuardar() {
+    if (blockIfDemo()) return;
     if (!selectedPlan || !isDirty) return;
     setIsSaving(true);
     const snapshot = buildDatosSnapshot();

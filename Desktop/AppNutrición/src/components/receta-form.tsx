@@ -15,6 +15,7 @@ import { calcularMacrosPorcion, sumarMacros, convertirAGramos } from "@/lib/macr
 import { useTranslations } from "next-intl";
 import { isNextNavigation, withTimeout } from "@/lib/utils";
 import { useUncontrolledFormPersist } from "@/lib/form-persist";
+import { useDemoGuard } from "@/contexts/demo-context";
 
 interface RecetaFormProps {
   recetaId?: string;
@@ -30,6 +31,7 @@ export function RecetaForm({
   const router = useRouter();
   const t = useTranslations("recipes");
   const tc = useTranslations("common.deploy");
+  const blockIfDemo = useDemoGuard();
   const [loading, setLoading] = useState(false);
   const [ingredientes, setIngredientes] = useState<IngredienteItem[]>(defaultIngredientes);
   const formRef = useRef<HTMLFormElement>(null);
@@ -46,6 +48,7 @@ export function RecetaForm({
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (blockIfDemo()) return;
     if (ingredientes.length === 0) {
       toast.error(t("form.anadeMinimoIngrediente"));
       return;

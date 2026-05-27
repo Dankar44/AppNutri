@@ -10,6 +10,7 @@ import type { Paciente } from "@/generated/prisma/client";
 import { useTranslations } from "next-intl";
 import { useFormPersist } from "@/lib/form-persist";
 import { withTimeout, ActionTimeoutError, isNextNavigation } from "@/lib/utils";
+import { useDemoGuard } from "@/contexts/demo-context";
 
 function getObjetivos(t: (key: string) => string) {
   return [
@@ -113,6 +114,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
   const router = useRouter();
   const t = useTranslations("patients");
   const tc = useTranslations("common.deploy");
+  const blockIfDemo = useDemoGuard();
   const [loading, setLoading] = useState(false);
   const OBJETIVOS = getObjetivos(t);
   const SEXOS = getSexos(t);
@@ -214,6 +216,7 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (blockIfDemo()) return;
     if (!form.nombre.trim() || !form.apellidos.trim()) {
       toast.error(t("form.nombreApellidosObligatorios"));
       return;

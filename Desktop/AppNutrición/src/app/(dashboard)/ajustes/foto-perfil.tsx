@@ -8,6 +8,7 @@ import { actualizarFotoDietista } from "@/app/actions/perfil";
 import { toast } from "sonner";
 import { compressImage, IMAGE_PRESETS } from "@/lib/image-compress";
 import { isNextNavigation, withTimeout } from "@/lib/utils";
+import { useDemoGuard } from "@/contexts/demo-context";
 
 interface Props {
   nombre: string;
@@ -18,10 +19,12 @@ interface Props {
 export function FotoPerfil({ nombre, apellidos, fotoUrl }: Props) {
   const t = useTranslations("settings");
   const router = useRouter();
+  const blockIfDemo = useDemoGuard();
   const [preview, setPreview] = useState<string | null>(fotoUrl || null);
   const [loading, setLoading] = useState(false);
 
   async function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (blockIfDemo()) return;
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {

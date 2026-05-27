@@ -10,12 +10,14 @@ import { crearConsulta } from "@/app/actions/consultas";
 import { crearMedida } from "@/app/actions/medidas";
 import { useUncontrolledFormPersist } from "@/lib/form-persist";
 import { isNextNavigation, withTimeout } from "@/lib/utils";
+import { useDemoGuard } from "@/contexts/demo-context";
 
 export default function NuevaConsultaPage() {
   const params = useParams();
   const pacienteId = params.id as string;
   const t = useTranslations("patients");
   const tc = useTranslations("common.deploy");
+  const blockIfDemo = useDemoGuard();
   const [loading, setLoading] = useState(false);
   const [incluirMedidas, setIncluirMedidas] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -30,6 +32,7 @@ export default function NuevaConsultaPage() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (blockIfDemo()) return;
     setLoading(true);
 
     const form = new FormData(e.currentTarget);

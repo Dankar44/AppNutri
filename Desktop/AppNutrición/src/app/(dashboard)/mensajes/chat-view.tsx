@@ -17,6 +17,7 @@ import {
   type Mensaje,
 } from "@/app/actions/mensajes";
 import { subirAdjuntoMensaje } from "@/app/actions/mensajes-adjuntos";
+import { useDemoGuard } from "@/contexts/demo-context";
 
 interface Props {
   conversacion: ConversacionConPaciente;
@@ -44,10 +45,12 @@ export function ChatView({ conversacion, mensajes, cargando, onMensajeEnviado, o
 
 function ChatHeader({ conversacion: c, onVolver, t }: { conversacion: ConversacionConPaciente; onVolver?: () => void; t: ReturnType<typeof useTranslations<"chat">> }) {
   const router = useRouter();
+  const blockIfDemo = useDemoGuard();
   const [menuOpen, setMenuOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
   function toggleArchivar() {
+    if (blockIfDemo()) return;
     startTransition(async () => {
       try {
         if (c.archivadaDietista) {
@@ -282,6 +285,7 @@ function MensajeInput({
   const [enviando, setEnviando] = useState(false);
   const [adjunto, setAdjunto] = useState<{ file: File; url: string; tipo: string } | null>(null);
   const [subiendo, setSubiendo] = useState(false);
+  const blockIfDemo = useDemoGuard();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const enviandoRef = useRef(false);
@@ -296,6 +300,7 @@ function MensajeInput({
   }, [texto]);
 
   async function handleAdjuntar(e: React.ChangeEvent<HTMLInputElement>) {
+    if (blockIfDemo()) return;
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -325,6 +330,7 @@ function MensajeInput({
 
   async function handleEnviar(e?: React.FormEvent) {
     e?.preventDefault();
+    if (blockIfDemo()) return;
     if ((!texto.trim() && !adjunto) || enviandoRef.current) return;
     enviandoRef.current = true;
     setEnviando(true);

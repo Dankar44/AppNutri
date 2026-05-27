@@ -7,6 +7,7 @@ import { cambiarPlan } from "@/app/actions/suscripcion";
 import { toast } from "sonner";
 import { useTranslations, useLocale } from "next-intl";
 import { intlTag, type Locale } from "@/i18n/config";
+import { useDemoGuard } from "@/contexts/demo-context";
 
 interface Props {
   plan: string;
@@ -28,6 +29,7 @@ export function SuscripcionCard({ plan, estado, fechaInicio, fechaFin }: Props) 
   const locale = useLocale() as Locale;
   const tag = intlTag(locale);
   const router = useRouter();
+  const blockIfDemo = useDemoGuard();
   const [loading, setLoading] = useState(false);
   const planKey = (plan === "BASICO" || plan === "PROFESIONAL") ? plan : "BASICO";
   const estadoKey = (estado in ESTADO_COLORS) ? estado : "PRUEBA";
@@ -43,6 +45,7 @@ export function SuscripcionCard({ plan, estado, fechaInicio, fechaFin }: Props) 
   }
 
   async function handleCambiarPlan() {
+    if (blockIfDemo()) return;
     setLoading(true);
     try {
       await cambiarPlan(otroPlan);

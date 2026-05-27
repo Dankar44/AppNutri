@@ -6,15 +6,18 @@ import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
 import { cambiarPassword } from "@/app/actions/perfil";
 import { withTimeout } from "@/lib/utils";
+import { useDemoGuard } from "@/contexts/demo-context";
 
 export function CambiarPasswordForm() {
   const t = useTranslations("settings");
+  const blockIfDemo = useDemoGuard();
   const [loading, setLoading] = useState(false);
   const [showActual, setShowActual] = useState(false);
   const [showNueva, setShowNueva] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (blockIfDemo()) return;
     const form = new FormData(e.currentTarget);
     const actual = form.get("actual") as string;
     const nueva = form.get("nueva") as string;

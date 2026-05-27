@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { useFormPersist } from "@/lib/form-persist";
 import { isNextNavigation, withTimeout } from "@/lib/utils";
+import { useDemoGuard } from "@/contexts/demo-context";
 
 interface Props {
   pacienteId: string;
@@ -22,6 +23,7 @@ export function MedidasRapidas({ pacienteId }: Props) {
   const [grasa, setGrasa] = useState("");
   const t = useTranslations("patients.medidasRapidas");
   const tc = useTranslations("common.deploy");
+  const blockIfDemo = useDemoGuard();
 
   const formState = useMemo(() => ({ peso, altura, grasa }), [peso, altura, grasa]);
   const { wasRestored, clear: clearDraft } = useFormPersist(
@@ -49,6 +51,7 @@ export function MedidasRapidas({ pacienteId }: Props) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (blockIfDemo()) return;
     if (!peso && !altura && !grasa) {
       toast.error(t("introduceAlMenosUnValor"));
       return;

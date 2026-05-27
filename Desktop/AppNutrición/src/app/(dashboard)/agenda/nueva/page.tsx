@@ -22,6 +22,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { intlTag, type Locale } from "@/i18n/config";
 import { toast } from "sonner";
 import { useUncontrolledFormPersist } from "@/lib/form-persist";
+import { useDemoGuard } from "@/contexts/demo-context";
 import {
   crearCita,
   getPacientesParaCita,
@@ -61,6 +62,7 @@ export default function NuevaCitaPage() {
   const t = useTranslations("agenda");
   const tag = intlTag(useLocale() as Locale);
   const tc = useTranslations("common.deploy");
+  const blockIfDemo = useDemoGuard();
   const [loading, setLoading] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const { wasRestored, clear: clearDraft } = useUncontrolledFormPersist(
@@ -101,6 +103,7 @@ export default function NuevaCitaPage() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (blockIfDemo()) return;
     setLoading(true);
 
     const form = new FormData(e.currentTarget);

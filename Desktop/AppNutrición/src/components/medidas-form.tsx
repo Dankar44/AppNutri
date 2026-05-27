@@ -8,6 +8,7 @@ import { DatePicker } from "@/components/date-picker";
 import { useTranslations } from "next-intl";
 import { useUncontrolledFormPersist } from "@/lib/form-persist";
 import { isNextNavigation, withTimeout } from "@/lib/utils";
+import { useDemoGuard } from "@/contexts/demo-context";
 
 interface MedidasFormProps {
   pacienteId: string;
@@ -68,6 +69,7 @@ export function MedidasForm({
   onSuccess,
 }: MedidasFormProps) {
   const d = (key: string) => defaults[key] ?? undefined;
+  const blockIfDemo = useDemoGuard();
   const [loading, setLoading] = useState(false);
   const [fecha, setFecha] = useState(new Date().toISOString().split("T")[0]);
   const t = useTranslations("patients.medidasForm");
@@ -84,6 +86,7 @@ export function MedidasForm({
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (blockIfDemo()) return;
     setLoading(true);
 
     const form = new FormData(e.currentTarget);

@@ -29,6 +29,7 @@ import { intlTag, type Locale } from "@/i18n/config";
 import { crearMedida, type MedidaFormData } from "@/app/actions/medidas";
 import { formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { useDemoGuard } from "@/contexts/demo-context";
 
 export type MedidaSerializada = {
   id: string;
@@ -248,6 +249,7 @@ export function PacienteFichaMedicionesTab({
   const locale = useLocale() as Locale;
   const tag = intlTag(locale);
   const router = useRouter();
+  const blockIfDemo = useDemoGuard();
   const [vista, setVista] = useState<VistaMedicion>("peso");
   const [valorNuevo, setValorNuevo] = useState("");
   const [fechaNueva, setFechaNueva] = useState(
@@ -282,6 +284,7 @@ export function PacienteFichaMedicionesTab({
   const pctMusculoVal = pctMuscular(ultimoPeso, ultMasaMusc);
 
   function registrarUna() {
+    if (blockIfDemo()) return;
     const v = parseFloat(valorNuevo.replace(",", "."));
     if (Number.isNaN(v) || !METRIC_META[vista as MetricaDb]) {
       toast.error(t("introduceValorValido"));

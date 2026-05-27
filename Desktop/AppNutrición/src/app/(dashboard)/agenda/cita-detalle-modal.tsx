@@ -17,6 +17,7 @@ import {
   rechazarContrapropuestaDietista,
 } from "@/app/actions/citas-flujo";
 import { ContraproponerModal } from "./contraproponer-modal";
+import { useDemoGuard } from "@/contexts/demo-context";
 
 const ESTADO_STYLES: Record<string, string> = {
   PENDIENTE: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30",
@@ -76,6 +77,7 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
   const t = useTranslations("agenda");
   const tag = intlTag(useLocale() as Locale);
   const [pending, startTransition] = useTransition();
+  const blockIfDemo = useDemoGuard();
   const [showContraponer, setShowContraponer] = useState(false);
   const [confirmEliminar, setConfirmEliminar] = useState(false);
 
@@ -90,6 +92,7 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
   }
 
   function run(fn: () => Promise<unknown>, okMsg: string) {
+    if (blockIfDemo()) return;
     startTransition(async () => {
       try { await fn(); toast.success(okMsg); refrescar(); }
       catch (e) { toast.error(e instanceof Error ? e.message : t("citaDetalleModal.error")); }

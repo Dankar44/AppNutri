@@ -10,6 +10,7 @@ import { UNIDAD_LABELS_FULL } from "@/lib/units";
 import { useTranslations } from "next-intl";
 import { useUncontrolledFormPersist } from "@/lib/form-persist";
 import { isNextNavigation, withTimeout } from "@/lib/utils";
+import { useDemoGuard } from "@/contexts/demo-context";
 import { StockSection } from "@/components/alimento/stock-section";
 
 const CATEGORIA_VALUES = [
@@ -61,6 +62,7 @@ export function AlimentoForm({ alimentoId, defaultValues, tieneEmpresa = false }
   const router = useRouter();
   const t = useTranslations("foods");
   const tc = useTranslations("common.deploy");
+  const blockIfDemo = useDemoGuard();
   const [loading, setLoading] = useState(false);
   const isEdit = !!alimentoId;
   const formRef = useRef<HTMLFormElement>(null);
@@ -106,6 +108,7 @@ export function AlimentoForm({ alimentoId, defaultValues, tieneEmpresa = false }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (blockIfDemo()) return;
     if (imagenPreview && imagenError) {
       toast.error(t("form.urlImagenNoValida"));
       return;
