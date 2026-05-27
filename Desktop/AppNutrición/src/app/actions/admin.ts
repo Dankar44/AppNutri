@@ -20,6 +20,16 @@ import {
   validateEnum,
   LIMITS,
 } from "@/lib/validation";
+const ADMIN_NAMES: Record<string, string> = {
+  "guillermoprieto17@gmail.com": "Guillermo",
+  "daniel.karimi.alvarez@gmail.com": "Daniel",
+  "i.dellibardavarela@gmail.com": "Iñaki",
+};
+
+function adminDisplayName(email: string): string {
+  return ADMIN_NAMES[email.toLowerCase()] ?? email.split("@")[0];
+}
+
 export async function loginAdmin(email: string, password: string): Promise<{ error?: string }> {
   const t = await getTranslations("validation");
   const result = verifyAdminCredentials(email, password);
@@ -606,7 +616,7 @@ export async function crearCuentaNutricionista(data: {
           nombre,
           apellidos,
           verificado: true,
-          creadoPor: data.creadoPorNombre || admin.email,
+          creadoPor: data.creadoPorNombre || adminDisplayName(admin.email),
           fuenteContacto: data.fuenteContacto || null,
         },
       });
@@ -938,7 +948,7 @@ export async function crearCentroAdmin(data: {
         password: data.liderPassword,
         nombre: data.liderNombre,
         apellidos: data.liderApellidos || "",
-        creadoPorNombre: admin.email,
+        creadoPorNombre: adminDisplayName(admin.email),
       });
       if (!result.ok || !result.dietistaId) return { ok: false, error: result.error };
       liderId = result.dietistaId;

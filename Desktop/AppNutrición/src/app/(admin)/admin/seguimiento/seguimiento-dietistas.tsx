@@ -125,7 +125,7 @@ export function SeguimientoDietistas({ dietistas }: Props) {
       list = list.filter((d) => d.fuenteContacto === fuenteFilter);
     }
     if (creadorFilter) {
-      list = list.filter((d) => d.creadoPor === creadorFilter);
+      list = list.filter((d) => d.creadoPor && adminDisplayName(d.creadoPor) === creadorFilter);
     }
     if (sinAccesoFilter) {
       list = list.filter((d) => !d.lastAccessAt);
