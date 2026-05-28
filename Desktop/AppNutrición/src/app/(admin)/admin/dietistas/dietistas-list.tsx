@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronRight, Users, User, ArrowUpDown, Clock, Instagram, Linkedin, MessageCircle, Filter, Sprout } from "lucide-react";
+import { ChevronDown, ChevronRight, Users, User, ArrowUpDown, Clock, Instagram, Linkedin, MessageCircle, Filter, Sprout, GraduationCap } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { intlTag, type Locale } from "@/i18n/config";
 import type { DietistaAdminItem } from "@/app/actions/admin";
@@ -42,6 +42,7 @@ const FUENTE_BADGE: Record<string, { icon: typeof Instagram; color: string; labe
   linkedin: { icon: Linkedin, color: "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400" },
   whatsapp: { icon: MessageCircle, color: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
   organico: { icon: Sprout, color: "bg-lime-50 dark:bg-lime-500/10 text-lime-600 dark:text-lime-400", label: "Orgánico" },
+  universidad: { icon: GraduationCap, color: "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400", label: "Universidad" },
 };
 
 function adminDisplayName(email: string): string {
@@ -164,6 +165,7 @@ export function DietistasList({ dietistas }: Props) {
             { key: "linkedin", label: "LinkedIn", icon: Linkedin, active: "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400" },
             { key: "whatsapp", label: "WhatsApp", icon: MessageCircle, active: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
             { key: "organico", label: "Orgánico", icon: Sprout, active: "bg-lime-50 dark:bg-lime-500/10 text-lime-600 dark:text-lime-400" },
+            { key: "universidad", label: "Universidad", icon: GraduationCap, active: "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400" },
           ] as const).map((f) => (
             <button
               key={f.key}

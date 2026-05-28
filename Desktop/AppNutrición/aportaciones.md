@@ -500,13 +500,14 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 
 **Estado actual:** Cuando se añade una receta a un plan, se puede cambiar el número de porciones (1, 1.5, 2...) que escala todos los ingredientes proporcionalmente. Pero NO se pueden ajustar ingredientes individuales. Si la receta tiene 80g de garbanzos y para otro paciente quieres 200g, tienes que editar la receta original (lo que afecta a todos los planes que la usan) y volver a añadirla.
 
-**Petición (Alba F. / albaf.nutricion, mayo 2025):** Poder ajustar las cantidades de cada ingrediente de una receta directamente desde el plan, sin tener que editar la receta original. Dice que ninguna plataforma que ha visto lo hace bien.
+**Petición (Alba F. / albaf.nutricion, mayo 2025; Guillermo, mayo 2026):** Poder ajustar las cantidades de cada ingrediente de una receta directamente desde el plan, sin tener que editar la receta original. Dice que ninguna plataforma que ha visto lo hace bien. La edición debe ser posible **en el momento de añadir la receta** al plan: el nutri ve la receta base con sus ingredientes y puede decir "quiero más pasta aquí, quitar el arroz, añadir otro ingrediente" antes de confirmar. La receta original queda intacta para futuros usos.
 
 **Tareas:**
-- [ ] Al añadir una receta a un plan, crear una "instancia" editable de la receta (no una referencia fija)
-- [ ] UI para expandir la receta dentro de la comida y ajustar cantidades de cada ingrediente
+- [ ] Al añadir una receta a un plan, mostrar un paso intermedio con los ingredientes de la receta editables (cantidades, eliminar, añadir nuevos) antes de confirmar la adición
+- [ ] Crear una "instancia" editable de la receta (no una referencia fija) que almacene los ingredientes modificados
+- [ ] UI para expandir la receta dentro de la comida y seguir ajustando cantidades después de añadirla
 - [ ] Los cambios solo afectan a esa instancia en ese plan, no a la receta original
-- [ ] Recalcular macros totales de la receta cuando se cambia un ingrediente
+- [ ] Recalcular macros totales de la receta en tiempo real cuando se cambia, elimina o añade un ingrediente
 - [ ] Opción de "restaurar receta original" si quieres volver a las cantidades por defecto
 
 **Archivos a modificar:**
@@ -617,6 +618,14 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 | 32 | Pliegues ISAK completos + sumatoria + perímetro muslo | Alta | Media |
 | 33 | Perímetro de muslo en mediciones básicas | Media | Baja |
 | 34 | Renombrar "Almuerzo" a "Comida" (configurable) | Media | Baja-Media |
+| 35 | Nombre y nº colegiado en portada PDF | Media | Baja |
+| 36 | Datos de planificación en PDF (agua, ejercicio, evitar) | Media-Alta | Media |
+| 37 | Ocultar filas vacías en tabla semanal PDF | Baja-Media | Baja |
+| 38 | Foto del plato en recetas | Media-Alta | Baja |
+| 39 | Cuenta de Profesor (casos clínicos + estudiantes) | Alta | Alta |
+| 40 | Objetivos del paciente visibles en entregables | Alta | Media |
+| 41 | Buscar/ordenar alimentos por micro y macronutrientes | Alta | Media |
+| 42 | Almacén, stock y ventas de productos en consulta | Media-Alta | Alta |
 
 ---
 
@@ -775,7 +784,7 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 
 ## 32. Pliegues cutáneos — protocolo ISAK completo y sumatoria
 
-**Origen:** Guille (nutricionista) — 25 mayo 2026
+**Origen:** Guille (nutricionista) — 25 mayo 2026; Álvaro (nutricionista, LinkedIn) — 27 mayo 2026
 
 **Estado actual:** La app ya registra 7 pliegues cutáneos basados en el protocolo Jackson & Pollock: abdominal, axilar, pectoral, subescapular, suprailiaco, tricipital y muslo. Se miden en mm con precisión de 0.1 mm. Se guardan en el modelo `MedidaAntropometrica` y se muestran en la pestaña "Mediciones" de la ficha del paciente. No existe cálculo de sumatoria de pliegues ni ecuaciones de composición corporal a partir de los pliegues.
 
@@ -825,6 +834,7 @@ En perímetros, se registran 4: cintura, cadera, brazo y abdomen. No existe per�
 - [ ] Calcular y mostrar Σ6 (excluyendo bíceps y pierna, los 6 pliegues del perfil restringido ISAK nivel 1)
 - [ ] Mostrar la sumatoria en la tarjeta de mediciones y en las gráficas de evolución
 - [ ] Considerar cálculo de % grasa a partir de pliegues con ecuaciones estándar: Durnin & Womersley (1974, usa bíceps+tríceps+subescapular+suprailiaco), Faulkner (1968, para deportistas)
+- [ ] Implementar ecuación de **Kerr-Stewart** (fraccionamiento de 5 componentes: masa muscular, masa grasa, masa ósea, masa residual, piel). Es el estándar avanzado que usan los nutricionistas con formación ISAK. Álvaro confirma que usa Durnin & Womersley + Kerr con protocolo ISAK según el paciente
 
 *Perímetro del muslo:*
 - [ ] Añadir campo `perimetroMuslo` (Float?, en cm) al modelo `MedidaAntropometrica`
@@ -951,3 +961,237 @@ En perímetros, se registran 4: cintura, cadera, brazo y abdomen. No existe per�
 
 **Prioridad:** Baja-Media
 **Complejidad:** Baja
+
+---
+
+## 38. Foto del plato en recetas
+
+**Origen:** Álvaro (nutricionista, LinkedIn) — 27 mayo 2026
+
+**Estado actual:** Los alimentos individuales pueden tener imagen (campo `imagen` base64 en el modelo `Alimento`). Las recetas (`Receta`) no tienen campo de imagen. Cuando el paciente ve su plan en el portal o en el PDF, no hay foto visual del plato montado.
+
+**Petición:** Poder añadir una foto del plato terminado a cada receta. Esto mejora la adherencia del paciente porque ve exactamente cómo queda la comida. El nutricionista comenta que "si le das cara al menú, hay más adherencia".
+
+**Tareas:**
+- [ ] Añadir campo `imagen` (String?, base64 data URL) al modelo `Receta` en schema.prisma
+- [ ] Migración SQL: `ALTER TABLE recetas ADD COLUMN IF NOT EXISTS imagen TEXT`
+- [ ] UI en el formulario de receta: botón para subir/capturar foto del plato (reutilizar lógica de imagen de alimentos)
+- [ ] Mostrar la foto de la receta en la lista de recetas
+- [ ] Mostrar la foto en el portal del paciente cuando la comida incluya esa receta
+- [ ] Considerar mostrar la foto en el PDF del plan (opcional, toggle en opciones de PDF)
+- [ ] Validar con `validateImageDataUrl()` existente
+
+**Prioridad:** Media-Alta (impacto directo en adherencia del paciente)
+**Complejidad:** Baja
+
+---
+
+---
+
+# Cuenta de Profesor — Funcionalidad nueva
+
+Sección dedicada a la cuenta de tipo "Profesor", pensada para docentes de nutrición que usan Annonia como herramienta educativa. El profesor crea un paciente de prueba (caso clínico) y lo asigna a varios estudiantes para que trabajen sobre él. Los estudiantes tienen cuentas normales de nutricionista, pero reciben el paciente compartido y trabajan de forma independiente.
+
+---
+
+## 39. Cuenta de Profesor: crear y asignar pacientes de prueba a estudiantes
+
+**Origen:** Guillermo — mayo 2026
+
+**Estado actual:** No existe rol de profesor ni flujo educativo. Solo hay cuentas de dietista (nutricionista), admin y paciente.
+
+**Concepto:** Un profesor de nutrición crea una cuenta especial desde la que puede:
+1. Crear un "paciente de prueba" (caso clínico con datos ficticios: peso, altura, alergias, patologías, objetivo, etc.)
+2. Asignar ese paciente a varios de sus estudiantes
+3. Cada estudiante recibe una copia independiente del paciente en su cuenta (como si lo hubiera creado él)
+4. Los estudiantes trabajan de forma independiente: crean su propio plan, hacen su propia planificación, etc.
+5. El profesor puede ver/comparar los planes que ha hecho cada estudiante para el mismo caso
+
+**Flujo propuesto:**
+
+1. **Registro como profesor** — Nueva opción en registro o en admin: "Cuenta de profesor"
+2. **Crear caso clínico** — El profesor crea un paciente con todos los datos relevantes (datos personales, medidas, analíticas, anamnesis, objetivos, notas del caso)
+3. **Invitar estudiantes** — El profesor introduce los emails de sus estudiantes (o genera un link de invitación)
+4. **Los estudiantes se registran** — Cuentas normales de nutricionista, pero vinculadas al profesor
+5. **Asignar caso** — El profesor asigna el paciente de prueba a los estudiantes seleccionados. Cada uno recibe una copia independiente
+6. **Trabajo independiente** — Cada estudiante crea plan, planificación, etc. sobre su copia del paciente
+7. **Revisión** — El profesor accede a una vista comparativa de lo que ha hecho cada estudiante
+
+**Tareas:**
+
+*Modelo de datos:*
+- [ ] Nuevo rol `ROL_PROFESOR` o campo `esProfesor` (Boolean) en modelo `Dietista`
+- [ ] Nuevo modelo `ClaseProfesor` (id, profesorId, nombre, descripcion, createdAt) — agrupa a los estudiantes
+- [ ] Nuevo modelo `EstudianteClase` (id, claseId, dietistaId, createdAt) — relación estudiante ↔ clase
+- [ ] Nuevo modelo `CasoClinico` (id, profesorId, claseId?, datos del paciente de prueba, createdAt)
+- [ ] Nuevo modelo `AsignacionCaso` (id, casoClinicoId, estudianteId/dietistaId, pacienteId, createdAt) — vincula caso → estudiante → copia del paciente
+- [ ] Definir límites: máximo de estudiantes por clase, máximo de casos activos simultáneos
+
+*Flujo del profesor:*
+- [ ] Dashboard de profesor: ver clases, estudiantes, casos asignados
+- [ ] Crear caso clínico: formulario con datos del paciente ficticio (reutilizar campos de paciente existente)
+- [ ] Asignar caso a clase o a estudiantes individuales: al asignar, crear una copia del paciente en la cuenta de cada estudiante
+- [ ] Vista de revisión: para un caso dado, ver la lista de estudiantes y acceder al plan/planificación que hizo cada uno
+- [ ] Comparativa lado a lado (opcional, v2): ver los planes de 2-3 estudiantes en paralelo
+
+*Flujo del estudiante:*
+- [ ] Registro normal de nutricionista (con link de invitación del profesor o código de clase)
+- [ ] El paciente asignado aparece en su lista de pacientes como cualquier otro
+- [ ] Trabaja con normalidad: crea plan, planificación, medidas, etc.
+- [ ] Badge o indicador de que es un "caso de clase" (no un paciente real)
+
+*Invitaciones:*
+- [ ] El profesor genera un link de invitación por clase (ej: `/clase/[token]`)
+- [ ] El estudiante se registra o vincula su cuenta existente a la clase
+- [ ] Email de invitación con instrucciones
+
+*Límites a definir:*
+- [ ] Máximo de estudiantes por clase (¿30? ¿50? ¿configurable?)
+- [ ] Máximo de casos clínicos activos por clase
+- [ ] Máximo de clases por profesor
+- [ ] ¿El estudiante puede modificar los datos base del paciente o solo crear planes?
+- [ ] ¿El profesor paga una suscripción especial o es gratuito durante beta?
+- [ ] ¿Los estudiantes necesitan suscripción propia o van incluidos en la del profesor?
+
+**Archivos a crear:**
+- `src/app/(dashboard)/profesor/` — nuevo route group para el dashboard de profesor
+- `src/app/actions/profesor.ts` — server actions para crear clases, casos, asignar
+- `prisma/schema.prisma` — nuevos modelos
+- `src/app/(auth)/registro-profesor/` — registro específico o flag en registro existente
+
+**Prioridad:** Alta (abre un nuevo segmento de mercado: universidades y centros de formación)
+**Complejidad:** Alta
+
+---
+
+## 40. Objetivos del paciente visibles en entregables para corrección
+
+**Origen:** Guillermo — mayo 2026. Relacionado con flujo de profesor, pero útil para cualquier nutricionista.
+
+**Estado actual:** Cuando se genera un PDF/entregable del plan, se incluyen los alimentos, cantidades, macros por comida y recomendaciones. Los objetivos del paciente (kcal objetivo, macros objetivo, tipo de dieta, restricciones) y los datos de planificación están en la ficha del paciente y en la pestaña "Planificación", pero NO se incluyen en el entregable. Para corregir o evaluar un plan, hay que ir a la ficha del paciente por separado para ver qué se pedía.
+
+**Petición:** Al generar el entregable (PDF u otra vista), incluir una sección con los objetivos y requisitos del paciente para que sea fácil comparar "qué se pedía" vs "qué se ha hecho". Especialmente útil para:
+- **Profesores** que corrigen planes de estudiantes: ven el caso clínico + lo que hizo el estudiante en un solo documento
+- **Nutricionistas** que revisan su propio trabajo: verificar que el plan cumple los objetivos de macros, micronutrientes, restricciones, etc.
+
+**Contenido a incluir:**
+- [ ] Objetivo del paciente (perder peso, ganar masa, patología, etc.)
+- [ ] Kcal objetivo y distribución de macros objetivo (g y %)
+- [ ] Restricciones alimentarias (alergias, intolerancias, alimentos a evitar)
+- [ ] Patologías relevantes
+- [ ] Comparación automática: kcal objetivo vs kcal reales del plan, macros objetivo vs reales (% de adecuación)
+- [ ] Micronutrientes: si hay datos, comparar con ingesta recomendada
+- [ ] Notas del caso (especialmente relevante para casos clínicos de profesor)
+
+**Tareas:**
+- [ ] Añadir sección "Objetivos y adecuación" al PDF del plan (toggle activable)
+- [ ] Fetch de datos de planificación (objetivos, macros, restricciones) en `getPlanPDFData()`
+- [ ] Tabla comparativa: columna "Objetivo" vs columna "Plan" para kcal, proteínas, carbos, grasas
+- [ ] Indicadores visuales: verde si cumple (±10%), amarillo si se desvía (±20%), rojo si no cumple
+- [ ] Incluir restricciones y patologías como checklist informativo
+- [ ] Para el flujo de profesor: incluir también los datos del caso clínico como contexto
+
+**Relacionado con:** Tarea #28 (informe de composición nutricional) y #36 (datos de planificación en PDF)
+**Prioridad:** Alta
+**Complejidad:** Media
+
+---
+
+## 41. Buscar y ordenar alimentos por micro y macronutrientes
+
+**Origen:** Guillermo — mayo 2026
+
+**Estado actual:** El buscador de alimentos filtra por nombre y categoría. Los resultados muestran kcal, proteínas, carbohidratos y grasas, pero no se puede ordenar ni filtrar por valor nutricional. Si un paciente tiene déficit de calcio, el nutricionista tiene que saber de memoria qué alimentos son ricos en calcio o buscarlos fuera de la app.
+
+**Petición:** Poder buscar y ordenar alimentos por contenido de cualquier nutriente (macro o micro). Ejemplo: "le falta calcio al paciente → ordenar alimentos de mayor a menor contenido de calcio" para encontrar rápidamente los mejores alimentos para cubrir ese déficit. Lo mismo para hierro, fibra, proteínas, vitamina D, etc.
+
+**Funcionalidades:**
+1. **Ordenar por nutriente** — En la lista de alimentos y en el buscador del editor de dietas, selector de "Ordenar por": kcal, proteínas, carbohidratos, grasas, fibra, calcio, hierro, vitamina D, etc. (ascendente/descendente)
+2. **Filtrar por rango** — "Alimentos con más de X mg de calcio", "Alimentos con más de Y g de proteínas"
+3. **Columna dinámica** — Al seleccionar un nutriente para ordenar, mostrarlo como columna visible en los resultados (ej: si ordenas por calcio, que se vea "320 mg Ca" junto a cada alimento)
+
+**Tareas:**
+- [ ] Añadir selector "Ordenar por" en la lista de alimentos (`getAlimentosPaginados`) con opciones: nombre, kcal, proteínas, carbohidratos, grasas, fibra + micronutrientes disponibles
+- [ ] Implementar ordenación en la query de Prisma: `orderBy: { [nutriente]: 'desc' }`
+- [ ] Añadir filtros de rango: "Mínimo de X" para el nutriente seleccionado
+- [ ] En el buscador del editor de dietas (`buscarAlimentosYRecetas`): misma funcionalidad de ordenar por nutriente
+- [ ] Mostrar el valor del nutriente seleccionado de forma destacada en cada resultado
+- [ ] Considerar: botón de acceso rápido "Alimentos ricos en..." con presets (calcio, hierro, fibra, proteínas, omega-3)
+- [ ] Solo mostrar micronutrientes como opción de orden si hay datos suficientes (muchos alimentos de API no tienen micronutrientes completos)
+
+**Archivos a modificar:**
+- `src/app/actions/alimentos.ts` — `getAlimentosPaginados()`, `buscarAlimentosParaReceta()`
+- `src/app/actions/recetas.ts` — `buscarAlimentosYRecetas()`
+- `src/app/(dashboard)/alimentos/page.tsx` — UI de filtros y ordenación
+- `src/components/dieta/selector-alimento.tsx` — ordenación en el buscador del editor
+
+**Prioridad:** Alta (herramienta directa para tomar decisiones clínicas — cubrir déficits nutricionales)
+**Complejidad:** Media
+
+---
+
+## 42. Almacén, stock y ventas de productos en la consulta
+
+**Origen:** Day Martínez Morillo (Aureva Clinics) — mayo 2026
+
+**Estado actual:** Existe un sistema básico de stock en alimentos: campos `stock`, `precioUnitario` y `stockMinimo` en el modelo `Alimento`, con movimientos de stock (`MovimientoStock`) y notificación de stock bajo (`STOCK_BAJO`). Hay una sección de stock en la página de alimentos. Sin embargo, NO existe un módulo dedicado a la gestión comercial: no hay catálogo de productos de venta, no hay registro de ventas a pacientes, no se pueden emitir tickets, y no hay control de pedidos a proveedores.
+
+**Petición:** Un apartado dedicado tipo "Almacén" / "Stock y ventas" donde el nutricionista gestione exclusivamente los productos que vende en su consulta (suplementos, proteínas, barritas, productos propios, etc.). No es solo control de inventario — necesitan gestión comercial completa:
+
+1. **Catálogo de productos de venta** — Lista de productos que se venden en la consulta, con precio, stock actual, proveedor, foto
+2. **Registro de ventas** — Qué paciente ha comprado qué producto, cuándo y a qué precio
+3. **Pedidos a proveedores** — Cuando el stock baja, saber qué hay que pedir y a quién
+4. **Tickets/facturas simplificadas** — Emitir un ticket o recibo de la venta al paciente
+5. **Historial por paciente** — Ver qué productos ha comprado cada paciente (útil para seguimiento y recomendaciones)
+
+**Nota:** Los productos de venta pueden estar también vinculados al apartado de alimentos/comidas (ej: un suplemento de proteínas que se incluye en el plan), pero el interés principal es la gestión comercial.
+
+**Tareas:**
+
+*Modelo de datos:*
+- [ ] Nuevo modelo `ProductoVenta` (id, dietistaId, nombre, descripcion, categoria, precio, coste, stock, stockMinimo, proveedor, proveedorContacto, codigoBarras, imagen, alimentoId?, activo, createdAt, updatedAt) — `alimentoId` opcional para vincular con un alimento existente
+- [ ] Nuevo modelo `Venta` (id, dietistaId, pacienteId?, fecha, total, notas, createdAt)
+- [ ] Nuevo modelo `LineaVenta` (id, ventaId, productoId, cantidad, precioUnitario, subtotal)
+- [ ] Nuevo modelo `PedidoProveedor` (id, dietistaId, proveedor, estado, fechaPedido, fechaRecepcion?, notas, createdAt) con estados: PENDIENTE, PEDIDO, RECIBIDO, CANCELADO
+- [ ] Nuevo modelo `LineaPedido` (id, pedidoId, productoId, cantidadPedida, cantidadRecibida?)
+
+*Catálogo de productos:*
+- [ ] Nueva sección "Almacén" o "Stock y ventas" en el sidebar (separada de Alimentos)
+- [ ] CRUD de productos de venta: nombre, precio, coste, stock, foto, proveedor, categoría
+- [ ] Vincular opcionalmente un producto con un alimento existente (para que aparezca en planes)
+- [ ] Vista de inventario: stock actual, alertas de stock bajo, valor del inventario
+
+*Ventas:*
+- [ ] Registrar una venta: seleccionar paciente (opcional), añadir productos, cantidades, calcular total
+- [ ] Descontar automáticamente del stock al registrar venta
+- [ ] Historial de ventas con filtros por fecha, paciente, producto
+- [ ] Vista de ventas por paciente (desde la ficha del paciente)
+
+*Tickets/recibos:*
+- [ ] Generar ticket/recibo de venta en PDF o imprimible (datos del centro, productos, cantidades, precios, total, fecha)
+- [ ] Enviar ticket por email al paciente (opcional)
+- [ ] Numeración secuencial de tickets
+
+*Pedidos a proveedores:*
+- [ ] Vista de "qué hay que pedir": productos con stock por debajo del mínimo, agrupados por proveedor
+- [ ] Crear pedido: seleccionar productos y cantidades, asociar proveedor
+- [ ] Marcar pedido como recibido y actualizar stock automáticamente
+- [ ] Historial de pedidos
+
+*Reportes:*
+- [ ] Resumen de ventas por periodo (día, semana, mes)
+- [ ] Productos más vendidos
+- [ ] Margen de beneficio por producto (precio - coste)
+- [ ] Pacientes que más compran
+
+**Archivos a crear:**
+- `src/app/(dashboard)/almacen/` — nuevo route group (productos, ventas, pedidos)
+- `src/app/actions/almacen.ts` — server actions para productos, ventas, pedidos
+- `prisma/schema.prisma` — nuevos modelos
+- `src/lib/pdf/generate-ticket-pdf.ts` — generación de tickets
+- `src/components/sidebar.tsx` — nueva entrada "Almacén" en el sidebar
+
+**Relación con lo existente:** El sistema actual de stock en alimentos (`stock`, `precioUnitario`, `stockMinimo`, `MovimientoStock`) podría migrarse o integrarse con este módulo más completo. Los alimentos con stock serían un subconjunto de los productos de venta.
+
+**Prioridad:** Media-Alta (necesidad real de clínicas que venden productos — monetización directa para el nutricionista)
+**Complejidad:** Alta

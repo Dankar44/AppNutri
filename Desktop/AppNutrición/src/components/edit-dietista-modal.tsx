@@ -217,6 +217,7 @@ export function EditDietistaModal({ open, dietista, loading, onSave, onCancel }:
                 <option value="instagram">Instagram</option>
                 <option value="linkedin">LinkedIn</option>
                 <option value="whatsapp">WhatsApp</option>
+                <option value="universidad">Universidad</option>
               </select>
             </div>
           </div>

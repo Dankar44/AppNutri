@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, ArrowUpDown, Clock, User, Instagram, Linkedin, MessageCircle, Filter, AlertCircle, Sprout } from "lucide-react";
+import { Search, ArrowUpDown, Clock, User, Instagram, Linkedin, MessageCircle, Filter, AlertCircle, Sprout, GraduationCap } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { EliminarDietistaButton } from "../dietistas/eliminar-dietista-button";
 import { intlTag, type Locale } from "@/i18n/config";
@@ -21,6 +21,7 @@ const FUENTE_BADGE: Record<string, { icon: typeof Instagram; color: string; labe
   linkedin: { icon: Linkedin, color: "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400" },
   whatsapp: { icon: MessageCircle, color: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
   organico: { icon: Sprout, color: "bg-lime-50 dark:bg-lime-500/10 text-lime-600 dark:text-lime-400", label: "Orgánico" },
+  universidad: { icon: GraduationCap, color: "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400", label: "Universidad" },
 };
 
 type SortKey = "actividad" | "reciente" | "pacientes" | "nombre";
@@ -186,6 +187,7 @@ export function SeguimientoDietistas({ dietistas }: Props) {
             { key: "linkedin", label: "LinkedIn", icon: Linkedin, active: "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400" },
             { key: "whatsapp", label: "WhatsApp", icon: MessageCircle, active: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
             { key: "organico", label: "Orgánico", icon: Sprout, active: "bg-lime-50 dark:bg-lime-500/10 text-lime-600 dark:text-lime-400" },
+            { key: "universidad", label: "Universidad", icon: GraduationCap, active: "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400" },
           ] as const).map((f) => (
             <button
               key={f.key}
@@ -270,7 +272,7 @@ export function SeguimientoDietistas({ dietistas }: Props) {
                       )}
                       {d.fuenteContacto && FUENTE_BADGE[d.fuenteContacto] && (() => {
                         const fb = FUENTE_BADGE[d.fuenteContacto!];
-                        const abbr: Record<string, string> = { instagram: "IG", linkedin: "LI", whatsapp: "WA" };
+                        const abbr: Record<string, string> = { instagram: "IG", linkedin: "LI", whatsapp: "WA", universidad: "Uni" };
                         return (
                           <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${fb.color}`}>
                             <fb.icon className="w-2.5 h-2.5" />

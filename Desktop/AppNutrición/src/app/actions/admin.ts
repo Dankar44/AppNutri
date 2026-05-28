@@ -733,7 +733,7 @@ export interface EditarDietistaData {
   fuenteContacto?: string;
 }
 
-const FUENTES_VALIDAS = ["instagram", "linkedin", "whatsapp", "organico"] as const;
+const FUENTES_VALIDAS = ["instagram", "linkedin", "whatsapp", "organico", "universidad"] as const;
 
 export async function editarDietista(
   dietistaId: string,

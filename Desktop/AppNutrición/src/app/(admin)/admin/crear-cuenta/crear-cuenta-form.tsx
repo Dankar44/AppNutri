@@ -154,6 +154,7 @@ export function CrearCuentaForm() {
             <option value="instagram">Instagram</option>
             <option value="linkedin">LinkedIn</option>
             <option value="whatsapp">WhatsApp</option>
+            <option value="universidad">Universidad</option>
           </select>
         </div>
 
