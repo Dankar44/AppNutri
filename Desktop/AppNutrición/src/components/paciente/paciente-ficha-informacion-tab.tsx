@@ -145,16 +145,17 @@ export function PacienteFichaInformacionTab({
 }) {
   const t = useTranslations("patients.informacion");
   const tExtra = useTranslations("patients.informacionExtra");
+  const tSelect = useTranslations("patients");
   const tPdf = useTranslations();
   const locale = useLocale();
 
-  const SELECT_SI_NO_OCASION = getSelectSiNoOcasion(t);
-  const SELECT_ESTADO_CIVIL = getSelectEstadoCivil(t);
-  const SELECT_FUNCION_INTESTINAL = getSelectFuncionIntestinal(t);
-  const SELECT_CALIDAD_SUENO = getSelectCalidadSueno(t);
-  const SELECT_TIPOS_DIETA = getSelectTiposDieta(t);
-  const SELECT_INGESTA_AGUA = getSelectIngestaAgua(t);
-  const SELECT_OBJETIVOS_CLINICOS = getSelectObjetivosClinicos(t);
+  const SELECT_SI_NO_OCASION = getSelectSiNoOcasion(tSelect);
+  const SELECT_ESTADO_CIVIL = getSelectEstadoCivil(tSelect);
+  const SELECT_FUNCION_INTESTINAL = getSelectFuncionIntestinal(tSelect);
+  const SELECT_CALIDAD_SUENO = getSelectCalidadSueno(tSelect);
+  const SELECT_TIPOS_DIETA = getSelectTiposDieta(tSelect);
+  const SELECT_INGESTA_AGUA = getSelectIngestaAgua(tSelect);
+  const SELECT_OBJETIVOS_CLINICOS = getSelectObjetivosClinicos(tSelect);
 
   const [data, setData] = useState(() => mergeInitial(initialFicha, resumen));
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
