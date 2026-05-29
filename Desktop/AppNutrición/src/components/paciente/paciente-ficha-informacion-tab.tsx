@@ -19,13 +19,13 @@ import { useTranslations, useLocale } from "next-intl";
 import { toast } from "sonner";
 import type { FichaInformacionData, CampoPersonalizadoDefinicion, SeccionAnamnesis } from "@/lib/ficha-informacion-types";
 import {
-  SELECT_SI_NO_OCASION,
-  SELECT_ESTADO_CIVIL,
-  SELECT_FUNCION_INTESTINAL,
-  SELECT_CALIDAD_SUENO,
-  SELECT_TIPOS_DIETA,
-  SELECT_INGESTA_AGUA,
-  SELECT_OBJETIVOS_CLINICOS,
+  getSelectSiNoOcasion,
+  getSelectEstadoCivil,
+  getSelectFuncionIntestinal,
+  getSelectCalidadSueno,
+  getSelectTiposDieta,
+  getSelectIngestaAgua,
+  getSelectObjetivosClinicos,
   OPCION_VACIA,
 } from "@/lib/ficha-informacion-types";
 import { guardarFichaInformacionPaciente } from "@/app/actions/pacientes";
@@ -147,6 +147,15 @@ export function PacienteFichaInformacionTab({
   const tExtra = useTranslations("patients.informacionExtra");
   const tPdf = useTranslations();
   const locale = useLocale();
+
+  const SELECT_SI_NO_OCASION = getSelectSiNoOcasion(t);
+  const SELECT_ESTADO_CIVIL = getSelectEstadoCivil(t);
+  const SELECT_FUNCION_INTESTINAL = getSelectFuncionIntestinal(t);
+  const SELECT_CALIDAD_SUENO = getSelectCalidadSueno(t);
+  const SELECT_TIPOS_DIETA = getSelectTiposDieta(t);
+  const SELECT_INGESTA_AGUA = getSelectIngestaAgua(t);
+  const SELECT_OBJETIVOS_CLINICOS = getSelectObjetivosClinicos(t);
+
   const [data, setData] = useState(() => mergeInitial(initialFicha, resumen));
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
   const [showEnviarModal, setShowEnviarModal] = useState(false);
