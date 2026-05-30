@@ -257,7 +257,7 @@ function LoginContent() {
             </p>
           </div>
 
-          <p className="text-center mt-4 text-xs text-muted-foreground">
+          <p className="text-center mt-2 text-xs text-muted-foreground">
             {tc("soporte.problemas")}{" "}
             <a href="mailto:annonianutri@gmail.com" className="text-primary hover:underline">
               annonianutri@gmail.com
