@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Leaf, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Leaf, Eye, EyeOff, Loader2, Info } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -116,6 +116,13 @@ export default function RegistroForm() {
                   className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
                 />
               </div>
+            </div>
+
+            <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
+              <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+                {t("registro.form.step1.nombreRealAviso")}
+              </p>
             </div>
 
             <div>
