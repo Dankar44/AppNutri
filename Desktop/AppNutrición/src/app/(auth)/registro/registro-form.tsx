@@ -14,11 +14,13 @@ export default function RegistroForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showPassword2, setShowPassword2] = useState(false);
   const [form, setForm] = useState({
     nombre: "",
     apellidos: "",
     email: "",
     password: "",
+    password2: "",
     especialidad: "",
   });
 
@@ -34,6 +36,10 @@ export default function RegistroForm() {
     }
     if (form.password.length < 6) {
       toast.error(t("registro.form.errorPasswordLength"));
+      return;
+    }
+    if (form.password !== form.password2) {
+      toast.error(t("registro.form.errorPasswordMismatch"));
       return;
     }
 
@@ -181,6 +187,36 @@ export default function RegistroForm() {
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
+            </div>
+
+            <div>
+              <label htmlFor="password2" className="block text-sm font-medium mb-1.5">
+                {t("registro.form.step1.passwordConfirmLabel")}
+              </label>
+              <div className="relative">
+                <input
+                  id="password2"
+                  type={showPassword2 ? "text" : "password"}
+                  value={form.password2}
+                  onChange={(e) => updateForm("password2", e.target.value)}
+                  placeholder={t("registro.form.step1.passwordConfirmPlaceholder")}
+                  required
+                  minLength={6}
+                  maxLength={128}
+                  autoComplete="new-password"
+                  className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow pr-12"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword2(!showPassword2)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword2 ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+              {form.password2.length > 0 && form.password !== form.password2 && (
+                <p className="text-xs text-red-500 mt-1">{t("registro.form.errorPasswordMismatch")}</p>
+              )}
             </div>
 
             <button
