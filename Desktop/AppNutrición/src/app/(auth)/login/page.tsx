@@ -32,7 +32,16 @@ function LoginContent() {
     const err = searchParams.get("error");
     const verified = searchParams.get("verified");
     if (err) {
-      toast.error(err);
+      // Mapear códigos técnicos del callback de OAuth a mensajes legibles. Los textos
+      // que ya vienen traducidos (p. ej. "email registrado como paciente") contienen
+      // espacios y se muestran tal cual; un código suelto (snake_case) usa el genérico.
+      const mapaErrores: Record<string, string> = {
+        exchange_failed: t("login.errorOAuthIncompleto"),
+        missing_code: t("login.errorOAuthIncompleto"),
+        access_denied: t("login.errorGoogleCancelado"),
+      };
+      const mensaje = mapaErrores[err] ?? (err.includes(" ") ? err : t("login.errorGenerico"));
+      toast.error(mensaje);
       window.history.replaceState({}, "", "/login");
     }
     if (verified === "true") {

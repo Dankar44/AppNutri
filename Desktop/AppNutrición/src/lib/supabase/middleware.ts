@@ -53,6 +53,16 @@ export async function updateSession(request: NextRequest) {
 
   const hasDemoSession = request.cookies.has("annonia-demo-session");
 
+  // Una sesión real y una cookie demo no deben coexistir: la real manda y
+  // limpiamos la demo (dura 24h) para que no "contamine" la cuenta real
+  // mostrando el banner/datos de la demo. Se auto-cura en cualquier ruta.
+  const limpiarDemoObsoleta = (res: NextResponse) => {
+    if (user && hasDemoSession) {
+      res.cookies.delete("annonia-demo-session");
+    }
+    return res;
+  };
+
   if (!user && !hasDemoSession && !isAuthPage && !isPublicRoute && request.nextUrl.pathname !== "/") {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
@@ -62,8 +72,8 @@ export async function updateSession(request: NextRequest) {
   if (user && isAuthPage && !request.nextUrl.pathname.startsWith("/pendiente") && !request.nextUrl.pathname.startsWith("/nueva-password")) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+    return limpiarDemoObsoleta(NextResponse.redirect(url));
   }
 
-  return supabaseResponse;
+  return limpiarDemoObsoleta(supabaseResponse);
 }
