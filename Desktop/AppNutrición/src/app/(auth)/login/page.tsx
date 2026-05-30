@@ -20,6 +20,7 @@ export default function LoginPage() {
 
 function LoginContent() {
   const t = useTranslations("auth");
+  const tc = useTranslations("common");
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -255,6 +256,13 @@ function LoginContent() {
               </Link>
             </p>
           </div>
+
+          <p className="text-center mt-4 text-xs text-muted-foreground">
+            {tc("soporte.problemas")}{" "}
+            <a href="mailto:annonianutri@gmail.com" className="text-primary hover:underline">
+              annonianutri@gmail.com
+            </a>
+          </p>
 
           <div className="mt-6 flex justify-center">
             <LanguageSwitcher dropDirection="up" />
