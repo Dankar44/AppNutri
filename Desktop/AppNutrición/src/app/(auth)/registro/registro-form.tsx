@@ -11,6 +11,7 @@ import { registrarCuenta } from "@/app/actions/registro";
 
 export default function RegistroForm() {
   const t = useTranslations("auth");
+  const tc = useTranslations("common");
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -244,6 +245,13 @@ export default function RegistroForm() {
               </Link>
             </p>
           </div>
+
+          <p className="text-center mt-4 text-xs text-muted-foreground">
+            {tc("soporte.problemas")}{" "}
+            <a href="mailto:annonianutri@gmail.com" className="text-primary hover:underline">
+              annonianutri@gmail.com
+            </a>
+          </p>
 
           <div className="mt-6 flex justify-center">
             <LanguageSwitcher dropDirection="up" />
