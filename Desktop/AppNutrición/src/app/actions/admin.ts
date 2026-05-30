@@ -731,6 +731,7 @@ export interface EditarDietistaData {
   clinica?: string;
   creadoPor?: string;
   fuenteContacto?: string;
+  nuevaPassword?: string;
 }
 
 const FUENTES_VALIDAS = ["instagram", "linkedin", "whatsapp", "organico", "universidad"] as const;
@@ -822,6 +823,17 @@ export async function editarDietista(
         email,
         dietista.authId
       ).catch((e) => console.warn("[admin] Error sincronizando email en auth.identities:", e));
+    }
+
+    if (data.nuevaPassword && dietista.authId) {
+      if (data.nuevaPassword.length < 6) {
+        return { ok: false, error: t("admin.passwordMinLength") };
+      }
+      await prisma.$queryRawUnsafe(
+        `UPDATE auth.users SET encrypted_password = crypt($1, gen_salt('bf')), updated_at = NOW() WHERE id = $2::uuid`,
+        data.nuevaPassword,
+        dietista.authId
+      );
     }
 
     revalidatePath("/admin/dietistas");

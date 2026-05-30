@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Pencil, X, AlertTriangle } from "lucide-react";
+import { Pencil, X, AlertTriangle, Eye, EyeOff } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { EditarDietistaData } from "@/app/actions/admin";
 
@@ -38,7 +38,9 @@ export function EditDietistaModal({ open, dietista, loading, onSave, onCancel }:
     clinica: "",
     creadoPor: "",
     fuenteContacto: "",
+    nuevaPassword: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -52,7 +54,9 @@ export function EditDietistaModal({ open, dietista, loading, onSave, onCancel }:
         clinica: dietista.clinica ?? "",
         creadoPor: dietista.creadoPor ?? "",
         fuenteContacto: dietista.fuenteContacto ?? "",
+        nuevaPassword: "",
       });
+      setShowPassword(false);
     }
   }, [open, dietista]);
 
@@ -68,9 +72,11 @@ export function EditDietistaModal({ open, dietista, loading, onSave, onCancel }:
     form.numColegiado !== (dietista.numColegiado ?? "") ||
     form.clinica !== (dietista.clinica ?? "") ||
     form.creadoPor !== (dietista.creadoPor ?? "") ||
-    form.fuenteContacto !== (dietista.fuenteContacto ?? "");
+    form.fuenteContacto !== (dietista.fuenteContacto ?? "") ||
+    form.nuevaPassword.length > 0;
 
-  const puedeGuardar = form.nombre.trim() && form.apellidos.trim() && form.email.trim() && hayCambios;
+  const passwordInvalida = form.nuevaPassword.length > 0 && form.nuevaPassword.length < 6;
+  const puedeGuardar = form.nombre.trim() && form.apellidos.trim() && form.email.trim() && hayCambios && !passwordInvalida;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -85,6 +91,7 @@ export function EditDietistaModal({ open, dietista, loading, onSave, onCancel }:
       clinica: form.clinica || undefined,
       creadoPor: form.creadoPor || undefined,
       fuenteContacto: form.fuenteContacto || undefined,
+      nuevaPassword: form.nuevaPassword || undefined,
     });
   }
 
@@ -220,6 +227,33 @@ export function EditDietistaModal({ open, dietista, loading, onSave, onCancel }:
                 <option value="universidad">Universidad</option>
               </select>
             </div>
+          </div>
+
+          <div className="border-t border-border pt-4">
+            <label className="block text-sm font-medium mb-1">{t("nuevaPassword")}</label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={form.nuevaPassword}
+                onChange={(e) => update("nuevaPassword", e.target.value)}
+                placeholder={t("nuevaPasswordPlaceholder")}
+                maxLength={100}
+                autoComplete="off"
+                className={`${inputClass} pr-10`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            {form.nuevaPassword.length > 0 && form.nuevaPassword.length < 6 && (
+              <p className="text-xs text-red-500 mt-1">{t("passwordMinLength")}</p>
+            )}
+            <p className="text-xs text-muted-foreground mt-1">{t("nuevaPasswordHint")}</p>
           </div>
 
           <div className="flex items-center justify-end gap-2 pt-2">

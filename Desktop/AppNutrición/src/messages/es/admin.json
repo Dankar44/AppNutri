@@ -148,7 +148,12 @@
       "guardando": "Guardando...",
       "cancelar": "Cancelar",
       "boton": "Editar",
+      "nuevaPassword": "Nueva contraseña",
+      "nuevaPasswordPlaceholder": "Dejar vacío para no cambiar",
+      "nuevaPasswordHint": "Solo rellenar si quieres resetear la contraseña. No se enviará ningún email.",
+      "passwordMinLength": "Mínimo 6 caracteres",
       "toastExito": "Datos de {nombre} actualizados",
+      "toastExitoConPassword": "Datos de {nombre} actualizados (contraseña reseteada)",
       "toastError": "Error al guardar los cambios",
       "errorEmailDuplicado": "Este email ya está en uso"
     },

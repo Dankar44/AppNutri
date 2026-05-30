@@ -39,7 +39,8 @@ export function EditarDietistaButton({ dietista }: Props) {
       setSaving(false);
       return;
     }
-    toast.success(t("toastExito", { nombre: `${data.nombre} ${data.apellidos}` }));
+    const toastKey = data.nuevaPassword ? "toastExitoConPassword" : "toastExito";
+    toast.success(t(toastKey, { nombre: `${data.nombre} ${data.apellidos}` }));
     setShowModal(false);
     setSaving(false);
     router.refresh();

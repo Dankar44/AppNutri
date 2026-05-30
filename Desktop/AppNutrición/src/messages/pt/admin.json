@@ -148,7 +148,12 @@
       "guardando": "Salvando...",
       "cancelar": "Cancelar",
       "boton": "Editar",
+      "nuevaPassword": "Nova senha",
+      "nuevaPasswordPlaceholder": "Deixar vazio para não alterar",
+      "nuevaPasswordHint": "Preencher apenas para redefinir a senha. Nenhum email será enviado.",
+      "passwordMinLength": "Mínimo 6 caracteres",
       "toastExito": "Dados de {nombre} atualizados",
+      "toastExitoConPassword": "Dados de {nombre} atualizados (senha redefinida)",
       "toastError": "Erro ao salvar as alterações",
       "errorEmailDuplicado": "Este email já está em uso"
     },
