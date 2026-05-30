@@ -60,6 +60,15 @@ export function EditDietistaModal({ open, dietista, loading, onSave, onCancel }:
     }
   }, [open, dietista]);
 
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onCancel();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onCancel]);
+
   if (!open) return null;
 
   const emailCambio = form.email.trim().toLowerCase() !== dietista.email.toLowerCase();
@@ -152,6 +161,11 @@ export function EditDietistaModal({ open, dietista, loading, onSave, onCancel }:
               value={form.email}
               onChange={(e) => update("email", e.target.value)}
               maxLength={254}
+              autoComplete="off"
+              data-1p-ignore
+              data-lpignore="true"
+              data-bwignore
+              data-form-type="other"
               className={inputClass}
             />
             {emailCambio && (
@@ -239,6 +253,10 @@ export function EditDietistaModal({ open, dietista, loading, onSave, onCancel }:
                 placeholder={t("nuevaPasswordPlaceholder")}
                 maxLength={100}
                 autoComplete="off"
+                data-1p-ignore
+                data-lpignore="true"
+                data-bwignore
+                data-form-type="other"
                 className={`${inputClass} pr-10`}
               />
               <button
