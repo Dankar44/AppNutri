@@ -53,11 +53,13 @@ export async function updateSession(request: NextRequest) {
 
   const hasDemoSession = request.cookies.has("annonia-demo-session");
 
-  // Una sesión real y una cookie demo no deben coexistir: la real manda y
-  // limpiamos la demo (dura 24h) para que no "contamine" la cuenta real
-  // mostrando el banner/datos de la demo. Se auto-cura en cualquier ruta.
+  // La cookie demo (dura 24h) no debe "contaminar" el acceso a la cuenta real.
+  // La limpiamos cuando: (a) hay sesión real → la real SIEMPRE manda; o
+  // (b) el usuario va a una página de login/registro → ir ahí significa que
+  // quiere salir de la demo para entrar a su cuenta, así que no debe quedar
+  // "atrapado" en la demo. Se auto-cura en cualquier ruta.
   const limpiarDemoObsoleta = (res: NextResponse) => {
-    if (user && hasDemoSession) {
+    if (hasDemoSession && (user || isAuthPage)) {
       res.cookies.delete("annonia-demo-session");
     }
     return res;
