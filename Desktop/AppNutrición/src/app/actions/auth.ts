@@ -72,12 +72,27 @@ export async function ensureDietistaParaUsuario(
   }
 
   const t = await getTranslations("validation");
+
+  // Identidad: el registro por email guarda nombre/apellidos; Google (OAuth) usa
+  // given_name/family_name, o solo name/full_name. Cogemos lo que haya y, si solo
+  // llega el nombre completo, lo partimos (1ª palabra = nombre, resto = apellidos).
+  const meta = user.user_metadata ?? {};
+  const nombreCompleto = String(meta.full_name || meta.name || "").trim();
+  let nombre = String(meta.nombre || meta.given_name || "").trim();
+  let apellidos = String(meta.apellidos || meta.family_name || "").trim();
+  if (!nombre && nombreCompleto) {
+    const partes = nombreCompleto.split(/\s+/);
+    nombre = partes[0];
+    if (!apellidos && partes.length > 1) apellidos = partes.slice(1).join(" ");
+  }
+  if (!nombre) nombre = t("auth.sinNombre");
+
   const dietista = await prisma.dietista.create({
     data: {
       authId: user.id,
       email: user.email!,
-      nombre: user.user_metadata.nombre || t("auth.sinNombre"),
-      apellidos: user.user_metadata.apellidos || "",
+      nombre,
+      apellidos,
       especialidad: user.user_metadata.especialidad || null,
       verificado: true,
       fuenteContacto: "organico",
