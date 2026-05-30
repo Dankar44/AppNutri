@@ -1,19 +1,30 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import {
   Leaf, ArrowRight, ChevronRight, X,
-  Shield, Globe, Zap,
   Utensils, Fish, Croissant, Salad, Wheat, Vegan, Pizza, Soup, Beef, CupSoda,
   Carrot, Egg, Nut, Cherry, Banana, Bean, Sandwich, IceCreamCone, Apple, Grape, Citrus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
+import { NutritionistCounter } from "@/components/landing/nutritionist-counter";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { useTranslations } from "next-intl";
+
+// El mapa (d3-geo + topojson) se carga solo en cliente y bajo demanda para no
+// penalizar el peso inicial de la landing.
+const WorldMap = dynamic(
+  () => import("@/components/landing/world-map").then((m) => m.WorldMap),
+  {
+    ssr: false,
+    loading: () => <div className="w-full" style={{ aspectRatio: "900 / 480" }} aria-hidden />,
+  }
+);
 
 const SHOWCASE_LAYOUT = [
   {
@@ -44,8 +55,31 @@ const SHOWCASE_LAYOUT = [
 
 const FAQ_KEYS = ["probarGratis", "datosSeguridad", "cambiarPlan", "pacientesCuenta", "funcionaMovil"] as const;
 
-const TRUST_ICONS = [Shield, Globe, Zap] as const;
-const TRUST_KEYS = ["segura", "accesible", "rapida"] as const;
+// Slides del carrusel del hero. El primero usa los textos i18n existentes;
+// los siguientes llevan texto en español directamente.
+type HeroSlide = {
+  image: string;
+  i18n?: boolean;
+  part1?: string;
+  part2?: string;
+  part3?: string;
+  notifNombre?: string;
+  notifMensaje?: string;
+};
+
+const HERO_SLIDES: HeroSlide[] = [
+  { image: "/images/landing/banner.png", i18n: true },
+  {
+    image: "/images/landing/banner-oficina.png",
+    part1: "Toda tu consulta",
+    part2: "en un solo lugar",
+    part3: "y más tiempo para ti",
+    notifNombre: "Annonia",
+    notifMensaje: "Agenda, fichas y planes de hoy al día ✅",
+  },
+];
+
+const HERO_SLIDE_INTERVAL = 6000; // ms
 
 export function LandingPage() {
   const t = useTranslations("landing");
@@ -59,12 +93,6 @@ export function LandingPage() {
     imageAlt: t(`showcase.${item.key}.imageAlt`),
   }));
 
-  const TRUST_CARDS = TRUST_KEYS.map((key, i) => ({
-    icon: TRUST_ICONS[i],
-    title: t(`trust.${key}.titulo`),
-    desc: t(`trust.${key}.descripcion`),
-  }));
-
   const FAQS = FAQ_KEYS.map((key) => ({
     q: t(`faqSection.preguntas.${key}.pregunta`),
     a: t(`faqSection.preguntas.${key}.respuesta`),
@@ -72,7 +100,39 @@ export function LandingPage() {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [heroSlide, setHeroSlide] = useState(0);
   const heroRef = useRef<HTMLElement>(null);
+
+  // Textos de cada slide (el primero desde i18n, el resto en español).
+  const heroSlides = HERO_SLIDES.map((s) =>
+    s.i18n
+      ? {
+          image: s.image,
+          part1: t("hero.tituloPart1"),
+          part2: t("hero.tituloPart2"),
+          part3: t("hero.tituloPart3"),
+          notifNombre: t("notificationCard.nombre"),
+          notifMensaje: t("notificationCard.mensaje"),
+        }
+      : {
+          image: s.image,
+          part1: s.part1 ?? "",
+          part2: s.part2 ?? "",
+          part3: s.part3 ?? "",
+          notifNombre: s.notifNombre ?? "",
+          notifMensaje: s.notifMensaje ?? "",
+        }
+  );
+
+  // Auto-avance del carrusel del hero.
+  useEffect(() => {
+    if (HERO_SLIDES.length <= 1) return;
+    const id = setTimeout(
+      () => setHeroSlide((s) => (s + 1) % HERO_SLIDES.length),
+      HERO_SLIDE_INTERVAL
+    );
+    return () => clearTimeout(id);
+  }, [heroSlide]);
 
   useEffect(() => {
     function handleScroll() {
@@ -249,16 +309,26 @@ export function LandingPage() {
         </nav>
       </div>
 
-      {/* ─── HERO ─── */}
-      <section ref={heroRef} className="relative bg-green-50 dark:bg-green-950 overflow-hidden">
-        <Image
-          src="/images/landing/banner.png"
-          alt={t("hero.bannerAlt")}
-          width={1920}
-          height={1080}
-          priority
-          className="w-full block relative z-0 object-cover aspect-square sm:aspect-auto sm:h-auto object-[75%_center] sm:object-center"
-        />
+      {/* ─── HERO (carrusel) ─── */}
+      <section
+        ref={heroRef}
+        className="relative bg-green-50 dark:bg-green-950 overflow-hidden aspect-square sm:aspect-[3003/1231]"
+      >
+        {/* Imágenes apiladas con crossfade */}
+        {heroSlides.map((slide, i) => (
+          <Image
+            key={slide.image}
+            src={slide.image}
+            alt={t("hero.bannerAlt")}
+            width={3003}
+            height={1231}
+            priority={i === 0}
+            className={cn(
+              "absolute inset-0 z-0 w-full h-full object-cover object-[75%_center] sm:object-center transition-opacity duration-1000 ease-in-out",
+              i === heroSlide ? "opacity-100" : "opacity-0"
+            )}
+          />
+        ))}
 
         {/* Vignette */}
         <div
@@ -295,36 +365,71 @@ export function LandingPage() {
           }}
         />
 
-        {/* Floating notification card */}
-        <ScrollReveal direction="right" delay={600} className="hidden lg:block absolute top-[55%] right-[12%] z-20">
-          <div className="bg-white dark:bg-[#17181e] rounded-2xl shadow-xl shadow-black/10 px-5 py-4 flex items-start gap-3 max-w-xs">
-            <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center shrink-0">
-              <Leaf className="w-5 h-5 text-green-600 dark:text-green-400" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t("notificationCard.nombre")}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed mt-0.5">
-                {t("notificationCard.mensaje")}
-              </p>
+        {/* Notificación flotante (por slide) */}
+        {heroSlides.map((slide, i) => (
+          <div
+            key={`notif-${i}`}
+            className={cn(
+              "hidden lg:block absolute top-[55%] right-[12%] z-20 transition-all duration-700 ease-out",
+              i === heroSlide
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-2 pointer-events-none"
+            )}
+          >
+            <div className="bg-white dark:bg-[#17181e] rounded-2xl shadow-xl shadow-black/10 px-5 py-4 flex items-start gap-3 max-w-xs">
+              <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center shrink-0">
+                <Leaf className="w-5 h-5 text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{slide.notifNombre}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed mt-0.5">
+                  {slide.notifMensaje}
+                </p>
+              </div>
             </div>
           </div>
-        </ScrollReveal>
+        ))}
 
-        {/* Hero text */}
-        <div className="absolute inset-x-0 bottom-[28%] sm:bottom-[46%] lg:bottom-[48%] z-10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pl-3 sm:pl-5 lg:pl-8 xl:pl-12">
-            <ScrollReveal direction="up" delay={100}>
+        {/* Texto del hero (por slide) */}
+        {heroSlides.map((slide, i) => (
+          <div
+            key={`text-${i}`}
+            className={cn(
+              "absolute inset-x-0 bottom-[28%] sm:bottom-[46%] lg:bottom-[48%] z-10 transition-opacity duration-700",
+              i === heroSlide ? "opacity-100" : "opacity-0 pointer-events-none"
+            )}
+          >
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pl-3 sm:pl-5 lg:pl-8 xl:pl-12">
               <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black tracking-tight leading-[1.1] text-white drop-shadow-md max-w-3xl">
-                {t("hero.tituloPart1")}{" "}
+                {slide.part1}{" "}
                 <span className="bg-[#bdd9c5] dark:bg-[#2a5e3a] px-1.5 -mx-0.5 text-gray-900 dark:text-green-100 drop-shadow-none">
-                  {t("hero.tituloPart2")}
+                  {slide.part2}
                 </span>
                 <br />
-                {t("hero.tituloPart3")}
+                {slide.part3}
               </h1>
-            </ScrollReveal>
+            </div>
           </div>
-        </div>
+        ))}
+
+        {/* Puntitos de navegación del carrusel */}
+        {heroSlides.length > 1 && (
+          <div className="absolute bottom-[15%] sm:bottom-[12%] lg:bottom-[10%] left-1/2 -translate-x-1/2 z-30 flex items-center gap-2.5">
+            {heroSlides.map((_, i) => (
+              <button
+                key={`dot-${i}`}
+                type="button"
+                onClick={() => setHeroSlide(i)}
+                aria-label={`Ir a la imagen ${i + 1}`}
+                aria-current={i === heroSlide}
+                className={cn(
+                  "h-2.5 rounded-full shadow-sm shadow-black/20 transition-all duration-300",
+                  i === heroSlide ? "w-7 bg-white" : "w-2.5 bg-white/55 hover:bg-white/80"
+                )}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* ─── WAVE hero → spacer ─── */}
@@ -430,33 +535,15 @@ export function LandingPage() {
         <path d="M0 80V50C240 20 480 40 720 60C960 80 1200 70 1440 40V80H0Z" className="fill-[#bdd9c5] dark:fill-[#1a3a24]" />
       </svg>
 
-      {/* ─── TRUST ─── */}
+      {/* ─── COMUNIDAD (contador + mapamundi) ─── */}
       <section className="relative bg-[#bdd9c5] dark:bg-[#1a3a24] overflow-hidden">
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32">
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32">
           <ScrollReveal>
-            <div className="max-w-5xl mx-auto text-center mb-14">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-5">
-                {t("trust.tituloPart1")}{" "}
-                <span className="bg-[#9bc4a8] dark:bg-[#2a5e3a] px-2 -mx-0.5 text-white dark:text-green-200">{t("trust.tituloPart2")}</span>
-              </h2>
-              <p className="text-green-900/70 dark:text-green-200/70 text-lg leading-relaxed">
-                {t("trust.descripcion")}
-              </p>
-            </div>
+            <NutritionistCounter />
           </ScrollReveal>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            {TRUST_CARDS.map((item, i) => (
-              <ScrollReveal key={item.title} delay={i * 150} direction="up">
-                <div className="bg-white dark:bg-[#17181e] rounded-2xl p-8 text-center border border-white dark:border-green-900/30 shadow-xl shadow-green-900/10 dark:shadow-black/20 hover:shadow-2xl hover:shadow-green-900/15 hover:-translate-y-2 transition-all duration-300">
-                  <div className="w-14 h-14 rounded-2xl bg-green-50 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-5 shadow-sm shadow-green-900/5">
-                    <item.icon className="w-7 h-7 text-green-700 dark:text-green-400" />
-                  </div>
-                  <h3 className="font-bold text-green-900 dark:text-green-300 text-lg mb-2">{item.title}</h3>
-                  <p className="text-green-900/60 dark:text-green-400/60 text-sm leading-relaxed">{item.desc}</p>
-                </div>
-              </ScrollReveal>
-            ))}
-          </div>
+          <ScrollReveal delay={150} className="mt-12 sm:mt-16">
+            <WorldMap />
+          </ScrollReveal>
         </div>
       </section>
 
