@@ -1,30 +1,19 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import {
   Leaf, ArrowRight, ChevronRight, X,
+  Shield, Globe, Zap,
   Utensils, Fish, Croissant, Salad, Wheat, Vegan, Pizza, Soup, Beef, CupSoda,
   Carrot, Egg, Nut, Cherry, Banana, Bean, Sandwich, IceCreamCone, Apple, Grape, Citrus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
-import { NutritionistCounter } from "@/components/landing/nutritionist-counter";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { useTranslations } from "next-intl";
-
-// El mapa (d3-geo + topojson) se carga solo en cliente y bajo demanda para no
-// penalizar el peso inicial de la landing.
-const WorldMap = dynamic(
-  () => import("@/components/landing/world-map").then((m) => m.WorldMap),
-  {
-    ssr: false,
-    loading: () => <div className="w-full" style={{ aspectRatio: "900 / 480" }} aria-hidden />,
-  }
-);
 
 const SHOWCASE_LAYOUT = [
   {
@@ -54,6 +43,9 @@ const SHOWCASE_LAYOUT = [
 ];
 
 const FAQ_KEYS = ["probarGratis", "datosSeguridad", "cambiarPlan", "pacientesCuenta", "funcionaMovil"] as const;
+
+const TRUST_ICONS = [Shield, Globe, Zap] as const;
+const TRUST_KEYS = ["segura", "accesible", "rapida"] as const;
 
 // Slides del carrusel del hero. El primero usa los textos i18n existentes;
 // los siguientes llevan texto en español directamente.
@@ -91,6 +83,12 @@ export function LandingPage() {
     description: t(`showcase.${item.key}.descripcion`),
     ctaText: t(`showcase.${item.key}.cta`),
     imageAlt: t(`showcase.${item.key}.imageAlt`),
+  }));
+
+  const TRUST_CARDS = TRUST_KEYS.map((key, i) => ({
+    icon: TRUST_ICONS[i],
+    title: t(`trust.${key}.titulo`),
+    desc: t(`trust.${key}.descripcion`),
   }));
 
   const FAQS = FAQ_KEYS.map((key) => ({
@@ -535,15 +533,33 @@ export function LandingPage() {
         <path d="M0 80V50C240 20 480 40 720 60C960 80 1200 70 1440 40V80H0Z" className="fill-[#bdd9c5] dark:fill-[#1a3a24]" />
       </svg>
 
-      {/* ─── COMUNIDAD (contador + mapamundi) ─── */}
+      {/* ─── TRUST ─── */}
       <section className="relative bg-[#bdd9c5] dark:bg-[#1a3a24] overflow-hidden">
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32">
           <ScrollReveal>
-            <NutritionistCounter />
+            <div className="max-w-5xl mx-auto text-center mb-14">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-5">
+                {t("trust.tituloPart1")}{" "}
+                <span className="bg-[#9bc4a8] dark:bg-[#2a5e3a] px-2 -mx-0.5 text-white dark:text-green-200">{t("trust.tituloPart2")}</span>
+              </h2>
+              <p className="text-green-900/70 dark:text-green-200/70 text-lg leading-relaxed">
+                {t("trust.descripcion")}
+              </p>
+            </div>
           </ScrollReveal>
-          <ScrollReveal delay={150} className="mt-12 sm:mt-16">
-            <WorldMap />
-          </ScrollReveal>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            {TRUST_CARDS.map((item, i) => (
+              <ScrollReveal key={item.title} delay={i * 150} direction="up">
+                <div className="bg-white dark:bg-[#17181e] rounded-2xl p-8 text-center border border-white dark:border-green-900/30 shadow-xl shadow-green-900/10 dark:shadow-black/20 hover:shadow-2xl hover:shadow-green-900/15 hover:-translate-y-2 transition-all duration-300">
+                  <div className="w-14 h-14 rounded-2xl bg-green-50 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-5 shadow-sm shadow-green-900/5">
+                    <item.icon className="w-7 h-7 text-green-700 dark:text-green-400" />
+                  </div>
+                  <h3 className="font-bold text-green-900 dark:text-green-300 text-lg mb-2">{item.title}</h3>
+                  <p className="text-green-900/60 dark:text-green-400/60 text-sm leading-relaxed">{item.desc}</p>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
         </div>
       </section>
 
