@@ -4,6 +4,11 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
+  // Carpeta de salida del build. Configurable por env var para poder compilar en
+  // .next-build durante el deploy (mientras PM2 sigue sirviendo .next intacto) y luego
+  // hacer el swap, evitando que se vean estilos/textos rotos durante el build. Por
+  // defecto ".next" (lo que usa `next start`). Ver scripts/deploy.sh.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   env: {
     NEXT_PUBLIC_BUILD_ID: Date.now().toString(),
   },
