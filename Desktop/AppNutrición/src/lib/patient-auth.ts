@@ -83,6 +83,13 @@ export async function hashPin(pin: string): Promise<string> {
   return `${saltHex}:${hashHex}`;
 }
 
+// Genera un PIN numérico aleatorio de 6 dígitos con crypto (no Math.random).
+export function generarPin(): string {
+  const buf = new Uint32Array(1);
+  crypto.getRandomValues(buf);
+  return String(buf[0] % 1000000).padStart(6, "0");
+}
+
 export async function verifyPin(pin: string, storedHash: string): Promise<boolean> {
   // Compatibilidad con hashes antiguos (SHA-256 sin sal)
   if (!storedHash.includes(":")) {

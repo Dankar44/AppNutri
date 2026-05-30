@@ -88,8 +88,12 @@
     "instruccionesLabel": "Instruções:",
     "paso1": "Acesse o link acima",
     "paso2": "Insira seu email: {email}",
-    "paso3": "Insira o PIN fornecido pelo seu nutricionista",
+    "paso3": "Insira o email e o PIN que aparecem acima",
     "paso4": "No portal você poderá consultar sua dieta, registrar seu peso e muito mais",
+    "datosAccesoLabel": "Seus dados de acesso",
+    "emailLabel": "Email",
+    "pinLabel": "PIN",
+    "avisoPin": "Por segurança, você pode alterar seu PIN ao entrar no seu portal.",
     "footer": "Enviado pela Annonia"
   },
   "empresa": {

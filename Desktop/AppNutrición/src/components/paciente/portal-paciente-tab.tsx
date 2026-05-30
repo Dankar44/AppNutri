@@ -187,6 +187,10 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
                 </div>
               </button>
 
+              <p className="text-[11px] text-muted-foreground px-1 leading-relaxed">
+                {t("envioGeneraPin")}
+              </p>
+
               <button
                 type="button"
                 disabled

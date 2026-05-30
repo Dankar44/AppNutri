@@ -1,6 +1,8 @@
 "use server";
 
 import { sendEmail } from "@/lib/mailer";
+import { prisma } from "@/lib/prisma";
+import { hashPin, generarPin } from "@/lib/patient-auth";
 import { getCurrentDietista } from "./auth";
 import { getPaciente } from "./pacientes";
 import { getPlan } from "./planes";
@@ -373,6 +375,16 @@ export async function enviarAccesoPortal(
   const pacienteNombre = `${paciente.nombre} ${paciente.apellidos}`.trim();
   const dietistaNombre = `${dietista.nombre} ${dietista.apellidos}`.trim();
 
+  // Generar un PIN nuevo y guardarlo hasheado. El PIN va en texto plano en este
+  // correo (única forma: en BD solo se guarda el hash). Resetea el acceso del paciente.
+  const pin = generarPin();
+  const pinHashVal = await hashPin(pin);
+  await prisma.accesoPaciente.upsert({
+    where: { pacienteId },
+    update: { email: paciente.email, pinHash: pinHashVal, activo: true, passwordHash: null, perfilCompleto: false },
+    create: { pacienteId, email: paciente.email, pinHash: pinHashVal },
+  });
+
   const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://annonia.com"}/paciente/login`;
 
   const html = `
@@ -396,6 +408,13 @@ export async function enviarAccesoPortal(
         <a href="${portalUrl}" style="display:inline-block;background:#16a34a;color:white;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">
           ${escapeHtml(te("accesoPortal.boton"))}
         </a>
+      </div>
+
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:20px;margin-bottom:24px;text-align:center">
+        <p style="margin:0 0 12px;font-size:13px;font-weight:600;color:#1e40af">${escapeHtml(te("accesoPortal.datosAccesoLabel"))}</p>
+        <p style="margin:0 0 6px;font-size:14px;color:#374151">${escapeHtml(te("accesoPortal.emailLabel"))}: <strong>${escapeHtml(paciente.email)}</strong></p>
+        <p style="margin:0;font-size:14px;color:#374151">${escapeHtml(te("accesoPortal.pinLabel"))}: <strong style="font-size:22px;letter-spacing:4px;color:#111827">${pin}</strong></p>
+        <p style="margin:12px 0 0;font-size:12px;color:#6b7280">${escapeHtml(te("accesoPortal.avisoPin"))}</p>
       </div>
 
       <div style="background:#f9fafb;border-radius:8px;padding:16px;margin-bottom:16px">

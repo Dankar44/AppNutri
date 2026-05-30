@@ -613,6 +613,7 @@
     "aplicacionCliente": "Aplicacion para el cliente",
     "enviarInstruccionesAcceso": "Enviar instrucciones de acceso al cliente",
     "enviarPorEmail": "Enviar por email",
+    "envioGeneraPin": "Al enviar se genera un PIN nuevo y se incluye en el correo. El PIN anterior dejará de funcionar.",
     "sinEmailRegistrado": "Sin email registrado",
     "enviarPorMensaje": "Enviar por mensaje",
     "proximamente": "Proximamente",
