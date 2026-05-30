@@ -25,7 +25,7 @@ export function BetaBanner() {
   if (!visible) return null;
 
   return (
-    <div className="bg-amber-50 dark:bg-amber-500/10 border-b border-amber-200 dark:border-amber-500/20 px-4 py-3">
+    <div className="mt-14 lg:mt-0 bg-amber-50 dark:bg-amber-500/10 border-b border-amber-200 dark:border-amber-500/20 px-4 py-3">
       <div className="flex items-start gap-3 max-w-screen-xl mx-auto">
         <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
