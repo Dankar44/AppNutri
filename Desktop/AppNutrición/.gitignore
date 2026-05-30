@@ -18,3 +18,7 @@ node_modules
 *.tsbuildinfo
 next-env.d.ts
 .vercel
+
+# notas internas (solo local, no versionar)
+/aportaciones.md
+/docs/TAREAS.md
