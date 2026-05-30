@@ -293,7 +293,7 @@ export async function enviarPlanPorEmail(
   const pdfBuffer = await htmlToPdf(fullHtml);
 
   const brandName = escapeHtml(dietista.marcaPdf || "Annonia");
-  const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/paciente/login`;
+  const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://annonia.com"}/paciente/login`;
   const emailHtml = `
 <!DOCTYPE html>
 <html lang="es">
@@ -373,7 +373,7 @@ export async function enviarAccesoPortal(
   const pacienteNombre = `${paciente.nombre} ${paciente.apellidos}`.trim();
   const dietistaNombre = `${dietista.nombre} ${dietista.apellidos}`.trim();
 
-  const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/paciente/login`;
+  const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://annonia.com"}/paciente/login`;
 
   const html = `
 <!DOCTYPE html>
