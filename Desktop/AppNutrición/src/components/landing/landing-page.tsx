@@ -5,12 +5,12 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   Leaf, ArrowRight, ChevronRight, X,
-  Shield, Globe, Zap,
   Utensils, Fish, Croissant, Salad, Wheat, Vegan, Pizza, Soup, Beef, CupSoda,
   Carrot, Egg, Nut, Cherry, Banana, Bean, Sandwich, IceCreamCone, Apple, Grape, Citrus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
+import { NuestraHistoria } from "@/components/landing/nuestra-historia";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { useTranslations } from "next-intl";
@@ -44,23 +44,17 @@ const SHOWCASE_LAYOUT = [
 
 const FAQ_KEYS = ["probarGratis", "datosSeguridad", "cambiarPlan", "pacientesCuenta", "funcionaMovil"] as const;
 
-const TRUST_ICONS = [Shield, Globe, Zap] as const;
-const TRUST_KEYS = ["segura", "accesible", "rapida"] as const;
-
-// Slides del carrusel del hero. El primero usa los textos i18n existentes;
-// los siguientes llevan texto en español directamente.
+// Slides del carrusel del hero (texto en español).
 type HeroSlide = {
   image: string;
-  i18n?: boolean;
-  part1?: string;
-  part2?: string;
-  part3?: string;
-  notifNombre?: string;
-  notifMensaje?: string;
+  part1: string;
+  part2: string;
+  part3: string;
+  notifNombre: string;
+  notifMensaje: string;
 };
 
 const HERO_SLIDES: HeroSlide[] = [
-  { image: "/images/landing/banner.png", i18n: true },
   {
     image: "/images/landing/banner-oficina.png",
     part1: "Toda tu consulta",
@@ -69,9 +63,39 @@ const HERO_SLIDES: HeroSlide[] = [
     notifNombre: "Annonia",
     notifMensaje: "Agenda, fichas y planes de hoy al día ✅",
   },
+  {
+    image: "/images/landing/banner.png",
+    part1: "Nutrición",
+    part2: "personalizada",
+    part3: "para cada paciente",
+    notifNombre: "Nutricionista Teresa",
+    notifMensaje: "¡Muy bien Claudia! Se nota que sigues tu plan cocinando en casa 🍳",
+  },
+  {
+    image: "/images/landing/banner-planes.png",
+    part1: "Crea y ajusta",
+    part2: "dietas personalizadas",
+    part3: "en cualquier dispositivo",
+    notifNombre: "Carlos García",
+    notifMensaje: "¡Recibido mi nuevo plan! 🥗 Esta semana lo sigo a tope",
+  },
 ];
 
 const HERO_SLIDE_INTERVAL = 6000; // ms
+
+// Programas destacados: una tarjeta por tipo de público.
+// href apunta a su bloque de "Cómo funciona"; null = aún por hacer.
+const PROGRAMAS: {
+  label: string;
+  image: string;
+  color: string;
+  href: string | null;
+}[] = [
+  { label: "Nutricionistas", image: "/images/landing/programas/nutricionistas.png", color: "#CFE0DF", href: "#para-dietistas" },
+  { label: "Pacientes", image: "/images/landing/programas/pacientes.png", color: "#ECE2CE", href: "#para-pacientes" },
+  { label: "Universidades", image: "/images/landing/programas/universidades.png", color: "#CFDBD3", href: null },
+  { label: "Centros", image: "/images/landing/programas/centros.png", color: "#DDE6E5", href: null },
+];
 
 export function LandingPage() {
   const t = useTranslations("landing");
@@ -85,12 +109,6 @@ export function LandingPage() {
     imageAlt: t(`showcase.${item.key}.imageAlt`),
   }));
 
-  const TRUST_CARDS = TRUST_KEYS.map((key, i) => ({
-    icon: TRUST_ICONS[i],
-    title: t(`trust.${key}.titulo`),
-    desc: t(`trust.${key}.descripcion`),
-  }));
-
   const FAQS = FAQ_KEYS.map((key) => ({
     q: t(`faqSection.preguntas.${key}.pregunta`),
     a: t(`faqSection.preguntas.${key}.respuesta`),
@@ -101,26 +119,7 @@ export function LandingPage() {
   const [heroSlide, setHeroSlide] = useState(0);
   const heroRef = useRef<HTMLElement>(null);
 
-  // Textos de cada slide (el primero desde i18n, el resto en español).
-  const heroSlides = HERO_SLIDES.map((s) =>
-    s.i18n
-      ? {
-          image: s.image,
-          part1: t("hero.tituloPart1"),
-          part2: t("hero.tituloPart2"),
-          part3: t("hero.tituloPart3"),
-          notifNombre: t("notificationCard.nombre"),
-          notifMensaje: t("notificationCard.mensaje"),
-        }
-      : {
-          image: s.image,
-          part1: s.part1 ?? "",
-          part2: s.part2 ?? "",
-          part3: s.part3 ?? "",
-          notifNombre: s.notifNombre ?? "",
-          notifMensaje: s.notifMensaje ?? "",
-        }
-  );
+  const heroSlides = HERO_SLIDES;
 
   // Auto-avance del carrusel del hero.
   useEffect(() => {
@@ -476,14 +475,81 @@ export function LandingPage() {
         </ScrollReveal>
       </section>
 
+      {/* ─── PROGRAMAS DESTACADOS ─── */}
+      <section className="bg-white dark:bg-[#101117] pt-4 sm:pt-8 pb-16 sm:pb-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+            {PROGRAMAS.map((p, i) => {
+              const href = p.href;
+              const cardClass = cn(
+                "group relative block aspect-[3/4.3] rounded-[20px] overflow-hidden will-change-transform transition-[transform,box-shadow] duration-[450ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-2.5 hover:scale-[1.045] hover:shadow-[0_30px_60px_rgba(15,23,42,0.18)] hover:z-[5]",
+                href ? "cursor-pointer" : "cursor-default"
+              );
+              const contenido = (
+                <>
+                  {/* Imagen al fondo */}
+                  <div className="absolute inset-x-0 bottom-0 h-[90%]">
+                    <Image
+                      src={p.image}
+                      alt={`Para ${p.label}`}
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                      className="object-cover object-top"
+                    />
+                  </div>
+                  {/* Difuminado de la franja de color hacia la imagen */}
+                  <div
+                    className="absolute inset-x-0 top-0 h-[34%] pointer-events-none z-[1]"
+                    style={{ background: `linear-gradient(to bottom, ${p.color} 0%, ${p.color} 55%, rgba(255,255,255,0) 100%)` }}
+                  />
+                  {/* Etiqueta */}
+                  <span className="absolute top-5 inset-x-4 z-[2] text-center font-bold text-gray-900 leading-snug text-sm sm:text-base lg:text-xl">
+                    Para{" "}
+                    <span className="inline-block bg-[#c8e6c9] px-[0.3em] py-[0.05em] text-[1.45em] font-extrabold [box-decoration-break:clone] [-webkit-box-decoration-break:clone]">
+                      {p.label}
+                    </span>
+                  </span>
+                </>
+              );
+              return (
+                <ScrollReveal key={p.label} delay={i * 100} direction="up">
+                  {href ? (
+                    <a
+                      href={href}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const el = document.getElementById(href.slice(1));
+                        if (el) {
+                          el.scrollIntoView({ behavior: "smooth", block: "start" });
+                          window.history.pushState(null, "", href);
+                        }
+                      }}
+                      className={cardClass}
+                      style={{ backgroundColor: p.color }}
+                    >
+                      {contenido}
+                    </a>
+                  ) : (
+                    <div className={cardClass} style={{ backgroundColor: p.color }}>
+                      {contenido}
+                    </div>
+                  )}
+                </ScrollReveal>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
       {/* ─── SHOWCASE: Cómo funciona ─── */}
       <section id="como-funciona">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-8 sm:pt-4 sm:pb-12 space-y-16 sm:space-y-24">
           {SHOWCASE_SECTIONS.map((section, idx) => (
             <ScrollReveal key={idx} direction={section.direction} delay={100}>
               <div
+                id={`para-${section.key}`}
                 className={cn(
-                  "flex flex-col-reverse items-center gap-10 lg:gap-16",
+                  "scroll-mt-24 flex flex-col-reverse items-center gap-10 lg:gap-16",
                   section.imagePosition === "right" ? "lg:flex-row" : "lg:flex-row-reverse"
                 )}
               >
@@ -533,33 +599,10 @@ export function LandingPage() {
         <path d="M0 80V50C240 20 480 40 720 60C960 80 1200 70 1440 40V80H0Z" className="fill-[#bdd9c5] dark:fill-[#1a3a24]" />
       </svg>
 
-      {/* ─── TRUST ─── */}
+      {/* ─── NUESTRA HISTORIA ─── */}
       <section className="relative bg-[#bdd9c5] dark:bg-[#1a3a24] overflow-hidden">
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32">
-          <ScrollReveal>
-            <div className="max-w-5xl mx-auto text-center mb-14">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-5">
-                {t("trust.tituloPart1")}{" "}
-                <span className="bg-[#9bc4a8] dark:bg-[#2a5e3a] px-2 -mx-0.5 text-white dark:text-green-200">{t("trust.tituloPart2")}</span>
-              </h2>
-              <p className="text-green-900/70 dark:text-green-200/70 text-lg leading-relaxed">
-                {t("trust.descripcion")}
-              </p>
-            </div>
-          </ScrollReveal>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            {TRUST_CARDS.map((item, i) => (
-              <ScrollReveal key={item.title} delay={i * 150} direction="up">
-                <div className="bg-white dark:bg-[#17181e] rounded-2xl p-8 text-center border border-white dark:border-green-900/30 shadow-xl shadow-green-900/10 dark:shadow-black/20 hover:shadow-2xl hover:shadow-green-900/15 hover:-translate-y-2 transition-all duration-300">
-                  <div className="w-14 h-14 rounded-2xl bg-green-50 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-5 shadow-sm shadow-green-900/5">
-                    <item.icon className="w-7 h-7 text-green-700 dark:text-green-400" />
-                  </div>
-                  <h3 className="font-bold text-green-900 dark:text-green-300 text-lg mb-2">{item.title}</h3>
-                  <p className="text-green-900/60 dark:text-green-400/60 text-sm leading-relaxed">{item.desc}</p>
-                </div>
-              </ScrollReveal>
-            ))}
-          </div>
+          <NuestraHistoria />
         </div>
       </section>
 
