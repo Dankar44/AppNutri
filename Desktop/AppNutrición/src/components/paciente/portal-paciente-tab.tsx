@@ -27,6 +27,7 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
   const [generatingPin, setGeneratingPin] = useState(false);
   const [pinGenerado, setPinGenerado] = useState<string | null>(null);
   const [showConfirmRegen, setShowConfirmRegen] = useState(false);
+  const [showConfirmEnvio, setShowConfirmEnvio] = useState(false);
 
   const loadAcceso = useCallback(async () => {
     const estado = await getAccesoEstado(pacienteId);
@@ -41,6 +42,7 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
       toast.error(t("sinEmailRegistradoError"));
       return;
     }
+    setShowConfirmEnvio(false);
     startSendingAcceso(async () => {
       const res = await enviarAccesoPortal(pacienteId);
       if (res.ok) {
@@ -161,7 +163,10 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
             <div className="space-y-3">
               <button
                 type="button"
-                onClick={handleEnviarAcceso}
+                onClick={() => {
+                  if (!pacienteEmail) { toast.error(t("sinEmailRegistradoError")); return; }
+                  setShowConfirmEnvio(true);
+                }}
                 disabled={sendingAcceso || !pacienteEmail}
                 className={cn(
                   "w-full flex items-center gap-3 rounded-xl border border-border p-4 text-left transition-colors",
@@ -186,10 +191,6 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
                   </p>
                 </div>
               </button>
-
-              <p className="text-[11px] text-muted-foreground px-1 leading-relaxed">
-                {t("envioGeneraPin")}
-              </p>
 
               <button
                 type="button"
@@ -321,6 +322,43 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
                 className="px-4 py-2 rounded-lg bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 transition-colors disabled:opacity-50"
               >
                 {generatingPin ? t("generando") : t("siRegenerarPin")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal confirmación enviar acceso (genera un PIN nuevo) */}
+      {showConfirmEnvio && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowConfirmEnvio(false)}>
+          <div
+            className="bg-card rounded-2xl border border-border shadow-2xl max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3 mb-4">
+              <div className="rounded-full bg-amber-100 dark:bg-amber-500/15 p-2.5 text-amber-600 dark:text-amber-400 shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground text-base">{t("envioConfirmTitulo")}</h3>
+                <p className="text-sm text-muted-foreground mt-1">{t("envioConfirmAviso")}</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 mt-5">
+              <button
+                type="button"
+                onClick={() => setShowConfirmEnvio(false)}
+                className="px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors"
+              >
+                {t("cancelar")}
+              </button>
+              <button
+                type="button"
+                onClick={handleEnviarAcceso}
+                disabled={sendingAcceso}
+                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+              >
+                {sendingAcceso ? t("generando") : t("siEnviarAcceso")}
               </button>
             </div>
           </div>
