@@ -48,7 +48,6 @@ type PacienteForPlanificacion = {
   sexo: string | null;
   peso: number | null;
   altura: number | null;
-  objetivo: string | null;
   objetivoDetalle: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
@@ -64,20 +63,6 @@ function parseKgFromObjetivoDetalle(text: string | null | undefined): number | n
   if (!m) return null;
   const value = parseFloat(m[1].replace(",", "."));
   return Number.isFinite(value) ? value : null;
-}
-
-/** Ajuste calórico por defecto sobre el gasto, según el objetivo del paciente.
- *  Negativo = déficit (pérdida), positivo = superávit (ganancia), 0 = mantenimiento.
- *  El nutricionista puede cambiarlo después. */
-function ajustePorDefectoDeObjetivo(objetivo: string | null): number {
-  switch (objetivo) {
-    case "PERDER_PESO":
-      return -10;
-    case "GANAR_MASA":
-      return 10;
-    default:
-      return 0; // MANTENIMIENTO, PATOLOGIA, DEPORTIVO, OTRO
-  }
 }
 
 function latestValue(medidas: MedidaSerializada[], key: keyof MedidaSerializada): number | null {
@@ -875,9 +860,9 @@ export function PlanificacionPorDefectoTab({
   const [eerFormula, setEerFormula] = useState<string>(normalizeEerId(datos.formulaEer ?? EER_IDS.IOM_2005));
   const [eerObjetivoInput, setEerObjetivoInput] = useState(datos.eerObjetivo ?? "");
   // Ajuste por objetivo (déficit/superávit). Init: lo guardado o el por defecto del objetivo.
-  const [ajustePct, setAjustePct] = useState<number | null>(
-    datos.ajusteObjetivoPct !== undefined ? datos.ajusteObjetivoPct : ajustePorDefectoDeObjetivo(paciente.objetivo)
-  );
+  // Ajuste de déficit/superávit MANUAL: empieza sin aplicar (null). El nutri lo activa
+  // pulsando un botón (-10/-15/-20%…) o escribe el EER objetivo a mano.
+  const [ajustePct, setAjustePct] = useState<number | null>(datos.ajusteObjetivoPct ?? null);
 
   /* --- Macro reference source --- */
   const gDia = t("unidadGDia");
@@ -1068,7 +1053,7 @@ export function PlanificacionPorDefectoTab({
     setBmrFormula(normalizeBmrId(d.formulaBmr ?? BMR_IDS.OMS));
     setEerFormula(normalizeEerId(d.formulaEer ?? EER_IDS.IOM_2005));
     setEerObjetivoInput(d.eerObjetivo ?? "");
-    setAjustePct(d.ajusteObjetivoPct !== undefined ? d.ajusteObjetivoPct : ajustePorDefectoDeObjetivo(paciente.objetivo));
+    setAjustePct(d.ajusteObjetivoPct ?? null);
     setMacroRefIdx(d.macroRefIdx ?? 0);
     setGrasaPct(d.grasaPct ?? 30);
     setCarbPct(d.carbPct ?? 50);
@@ -1080,7 +1065,7 @@ export function PlanificacionPorDefectoTab({
     setFibraInput(d.fibraCantidad ?? "");
     setFechaInicioInput(selectedPlan.fechaInicio ? selectedPlan.fechaInicio.slice(0, 7) : "");
     setFechaFinPrevistaInput(selectedPlan.fechaFinPrevista ? selectedPlan.fechaFinPrevista.slice(0, 7) : "");
-  }, [selectedPlanId, selectedPlan, actividadInicial, pesoInicialObjetivo, FORMULAS_MASA_GRASA_GROUPS, paciente.objetivo]);
+  }, [selectedPlanId, selectedPlan, actividadInicial, pesoInicialObjetivo, FORMULAS_MASA_GRASA_GROUPS]);
 
   /* ─── Dirty tracking + manual save ─── */
   const [isDirty, setIsDirty] = useState(false);
