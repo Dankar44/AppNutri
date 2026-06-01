@@ -875,8 +875,8 @@ export function PlanificacionPorDefectoTab({
   const [eerFormula, setEerFormula] = useState<string>(normalizeEerId(datos.formulaEer ?? EER_IDS.IOM_2005));
   const [eerObjetivoInput, setEerObjetivoInput] = useState(datos.eerObjetivo ?? "");
   // Ajuste por objetivo (déficit/superávit). Init: lo guardado o el por defecto del objetivo.
-  const [ajustePct, setAjustePct] = useState<number>(
-    datos.ajusteObjetivoPct ?? ajustePorDefectoDeObjetivo(paciente.objetivo)
+  const [ajustePct, setAjustePct] = useState<number | null>(
+    datos.ajusteObjetivoPct !== undefined ? datos.ajusteObjetivoPct : ajustePorDefectoDeObjetivo(paciente.objetivo)
   );
 
   /* --- Macro reference source --- */
@@ -1001,7 +1001,7 @@ export function PlanificacionPorDefectoTab({
   const eerObjetivoEfectivo = useMemo<number | null>(() => {
     const manual = eerObjetivoInput.trim();
     if (manual !== "") return parseFloat(manual) || null;
-    if (valores?.eerActual != null) {
+    if (ajustePct != null && valores?.eerActual != null) {
       return Math.round(valores.eerActual * (1 + ajustePct / 100));
     }
     return null;
@@ -1068,7 +1068,7 @@ export function PlanificacionPorDefectoTab({
     setBmrFormula(normalizeBmrId(d.formulaBmr ?? BMR_IDS.OMS));
     setEerFormula(normalizeEerId(d.formulaEer ?? EER_IDS.IOM_2005));
     setEerObjetivoInput(d.eerObjetivo ?? "");
-    setAjustePct(d.ajusteObjetivoPct ?? ajustePorDefectoDeObjetivo(paciente.objetivo));
+    setAjustePct(d.ajusteObjetivoPct !== undefined ? d.ajusteObjetivoPct : ajustePorDefectoDeObjetivo(paciente.objetivo));
     setMacroRefIdx(d.macroRefIdx ?? 0);
     setGrasaPct(d.grasaPct ?? 30);
     setCarbPct(d.carbPct ?? 50);
@@ -1752,7 +1752,7 @@ export function PlanificacionPorDefectoTab({
                           <button
                             key={op.value}
                             type="button"
-                            onClick={() => { setAjustePct(op.value); setEerObjetivoInput(""); }}
+                            onClick={() => { setAjustePct(activo ? null : op.value); setEerObjetivoInput(""); }}
                             className={`px-1.5 py-0.5 rounded text-[10px] font-medium border transition-colors ${
                               activo
                                 ? "bg-primary text-primary-foreground border-primary"
@@ -1764,7 +1764,7 @@ export function PlanificacionPorDefectoTab({
                         );
                       })}
                     </div>
-                    {eerObjetivoInput.trim() === "" && valores?.eerActual != null && eerObjetivoEfectivo != null && ajustePct !== 0 && (
+                    {eerObjetivoInput.trim() === "" && valores?.eerActual != null && eerObjetivoEfectivo != null && ajustePct != null && ajustePct !== 0 && (
                       <p className="text-[10px] text-muted-foreground leading-tight">
                         {t("ajusteCalculadoResumen", { base: Math.round(valores.eerActual), result: eerObjetivoEfectivo })}
                       </p>
