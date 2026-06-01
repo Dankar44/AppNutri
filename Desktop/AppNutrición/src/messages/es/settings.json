@@ -114,7 +114,11 @@
     "confirmarLabel": "Confirmar contraseña",
     "cambiando": "Cambiando...",
     "cambiarContrasena": "Cambiar contraseña",
+    "establecerContrasena": "Establecer contraseña",
+    "estableciendo": "Estableciendo...",
+    "establecerAyuda": "Tu cuenta inicia sesión con Google. Establece una contraseña para poder entrar también con tu email.",
     "toastSuccess": "Contraseña actualizada",
+    "toastSuccessEstablecer": "Contraseña establecida",
     "toastErrorNoCoinciden": "Las contraseñas no coinciden",
     "toastErrorGenerico": "Error al cambiar la contraseña"
   },

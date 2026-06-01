@@ -164,6 +164,18 @@ export async function eliminarLogoPdf() {
   revalidatePath("/ajustes");
 }
 
+// ¿La cuenta tiene contraseña? Las creadas solo con Google no tienen
+// encrypted_password, así que en Ajustes se "establece" en vez de "cambiar".
+export async function dietistaTienePassword(): Promise<boolean> {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return false;
+  const estado = await prisma.$queryRawUnsafe<{ tiene: boolean }[]>(
+    `SELECT (encrypted_password IS NOT NULL AND encrypted_password <> '') as tiene FROM auth.users WHERE id = $1::uuid`,
+    dietista.authId
+  );
+  return !!estado[0]?.tiene;
+}
+
 export async function cambiarPassword(data: {
   actual: string;
   nueva: string;
@@ -174,18 +186,31 @@ export async function cambiarPassword(data: {
   if (dietista.isDemo) return { ok: false, error: t("password.noDisponibleDemo") };
 
   const { actual, nueva } = data;
-  if (!actual || !nueva) return { ok: false, error: t("password.camposObligatorios") };
+  if (!nueva) return { ok: false, error: t("password.camposObligatorios") };
   if (nueva.length < 6) return { ok: false, error: t("password.longitudMinima") };
-  if (actual === nueva) return { ok: false, error: t("password.debeSerDiferente") };
 
   const authId = dietista.authId;
 
-  const verify = await prisma.$queryRawUnsafe<{ valid: boolean }[]>(
-    `SELECT (encrypted_password = crypt($1, encrypted_password)) as valid FROM auth.users WHERE id = $2::uuid`,
-    actual, authId
+  // El servidor decide el modo según la BD (no se fía del cliente):
+  // una cuenta creada solo con Google no tiene encrypted_password.
+  const estado = await prisma.$queryRawUnsafe<{ tiene: boolean }[]>(
+    `SELECT (encrypted_password IS NOT NULL AND encrypted_password <> '') as tiene FROM auth.users WHERE id = $1::uuid`,
+    authId
   );
+  const tienePassword = !!estado[0]?.tiene;
 
-  if (!verify[0]?.valid) return { ok: false, error: t("password.actualIncorrecta") };
+  if (tienePassword) {
+    // Modo CAMBIAR: exige y verifica la contraseña actual.
+    if (!actual) return { ok: false, error: t("password.camposObligatorios") };
+    if (actual === nueva) return { ok: false, error: t("password.debeSerDiferente") };
+    const verify = await prisma.$queryRawUnsafe<{ valid: boolean }[]>(
+      `SELECT (encrypted_password = crypt($1, encrypted_password)) as valid FROM auth.users WHERE id = $2::uuid`,
+      actual, authId
+    );
+    if (!verify[0]?.valid) return { ok: false, error: t("password.actualIncorrecta") };
+  }
+  // Modo ESTABLECER (sin contraseña previa, p. ej. cuenta Google): se fija
+  // directamente porque el usuario ya está autenticado en su sesión.
 
   await prisma.$queryRawUnsafe(
     `UPDATE auth.users SET encrypted_password = crypt($1, gen_salt('bf')), updated_at = NOW() WHERE id = $2::uuid`,

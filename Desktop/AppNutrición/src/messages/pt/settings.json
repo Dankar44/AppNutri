@@ -114,7 +114,11 @@
     "confirmarLabel": "Confirmar senha",
     "cambiando": "Alterando...",
     "cambiarContrasena": "Alterar senha",
+    "establecerContrasena": "Definir senha",
+    "estableciendo": "Definindo...",
+    "establecerAyuda": "A sua conta inicia sessão com o Google. Defina uma senha para poder entrar também com o seu email.",
     "toastSuccess": "Senha atualizada",
+    "toastSuccessEstablecer": "Senha definida",
     "toastErrorNoCoinciden": "As senhas não coincidem",
     "toastErrorGenerico": "Erro ao alterar a senha"
   },

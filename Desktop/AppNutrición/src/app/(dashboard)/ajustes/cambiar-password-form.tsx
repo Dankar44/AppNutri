@@ -8,7 +8,7 @@ import { cambiarPassword } from "@/app/actions/perfil";
 import { withTimeout } from "@/lib/utils";
 import { useDemoGuard } from "@/contexts/demo-context";
 
-export function CambiarPasswordForm() {
+export function CambiarPasswordForm({ tienePassword }: { tienePassword: boolean }) {
   const t = useTranslations("settings");
   const blockIfDemo = useDemoGuard();
   const [loading, setLoading] = useState(false);
@@ -19,7 +19,7 @@ export function CambiarPasswordForm() {
     e.preventDefault();
     if (blockIfDemo()) return;
     const form = new FormData(e.currentTarget);
-    const actual = form.get("actual") as string;
+    const actual = (form.get("actual") as string) || "";
     const nueva = form.get("nueva") as string;
     const confirmar = form.get("confirmar") as string;
 
@@ -32,7 +32,11 @@ export function CambiarPasswordForm() {
     try {
       const res = await withTimeout(cambiarPassword({ actual, nueva }));
       if (res.ok) {
-        toast.success(t("cambiarPassword.toastSuccess"));
+        toast.success(
+          tienePassword
+            ? t("cambiarPassword.toastSuccess")
+            : t("cambiarPassword.toastSuccessEstablecer")
+        );
         (e.target as HTMLFormElement).reset();
       } else {
         toast.error(res.error || t("cambiarPassword.toastErrorGenerico"));
@@ -46,25 +50,31 @@ export function CambiarPasswordForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("cambiarPassword.actualLabel")}</label>
-        <div className="relative">
-          <input
-            name="actual"
-            type={showActual ? "text" : "password"}
-            required
-            maxLength={100}
-            className="w-full px-3 py-2 pr-10 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
-          />
-          <button
-            type="button"
-            onClick={() => setShowActual(!showActual)}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
-          >
-            {showActual ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-          </button>
+      {!tienePassword && (
+        <p className="text-sm text-muted-foreground">{t("cambiarPassword.establecerAyuda")}</p>
+      )}
+
+      {tienePassword && (
+        <div>
+          <label className="block text-sm font-medium mb-1">{t("cambiarPassword.actualLabel")}</label>
+          <div className="relative">
+            <input
+              name="actual"
+              type={showActual ? "text" : "password"}
+              required
+              maxLength={100}
+              className="w-full px-3 py-2 pr-10 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
+            />
+            <button
+              type="button"
+              onClick={() => setShowActual(!showActual)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
+            >
+              {showActual ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <div>
@@ -105,7 +115,13 @@ export function CambiarPasswordForm() {
         disabled={loading}
         className="px-6 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium disabled:opacity-50"
       >
-        {loading ? t("cambiarPassword.cambiando") : t("cambiarPassword.cambiarContrasena")}
+        {loading
+          ? tienePassword
+            ? t("cambiarPassword.cambiando")
+            : t("cambiarPassword.estableciendo")
+          : tienePassword
+            ? t("cambiarPassword.cambiarContrasena")
+            : t("cambiarPassword.establecerContrasena")}
       </button>
     </form>
   );
