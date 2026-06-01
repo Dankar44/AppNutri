@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { GoogleGlyph } from "@/components/google-glyph";
+import { InAppBrowserNotice, useInAppBrowser } from "@/components/in-app-browser-notice";
 
 export default function LoginPage() {
   return (
@@ -29,6 +30,7 @@ function LoginContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const { inApp } = useInAppBrowser();
 
   useEffect(() => {
     const err = searchParams.get("error");
@@ -145,25 +147,31 @@ function LoginContent() {
             {t("login.subtitle")}
           </p>
 
-          <button
-            type="button"
-            onClick={handleGoogleLogin}
-            disabled={googleLoading || loading}
-            className="w-full mb-5 flex items-center justify-center gap-3 rounded-lg border border-input bg-card py-2.5 text-sm font-medium hover:bg-muted/50 transition-colors disabled:opacity-60"
-          >
-            {googleLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <GoogleGlyph />
-            )}
-            {t("login.continueWithGoogle")}
-          </button>
+          <InAppBrowserNotice />
 
-          <div className="flex items-center gap-3 text-xs text-muted-foreground mb-5">
-            <div className="flex-1 h-px bg-border" />
-            {t("login.orWithEmail")}
-            <div className="flex-1 h-px bg-border" />
-          </div>
+          {!inApp && (
+            <>
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                disabled={googleLoading || loading}
+                className="w-full mb-5 flex items-center justify-center gap-3 rounded-lg border border-input bg-card py-2.5 text-sm font-medium hover:bg-muted/50 transition-colors disabled:opacity-60"
+              >
+                {googleLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <GoogleGlyph />
+                )}
+                {t("login.continueWithGoogle")}
+              </button>
+
+              <div className="flex items-center gap-3 text-xs text-muted-foreground mb-5">
+                <div className="flex-1 h-px bg-border" />
+                {t("login.orWithEmail")}
+                <div className="flex-1 h-px bg-border" />
+              </div>
+            </>
+          )}
 
           <form onSubmit={handleLogin} className="space-y-5">
             <div>
