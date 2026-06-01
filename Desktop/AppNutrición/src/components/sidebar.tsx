@@ -26,6 +26,7 @@ import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { NotificationBell } from "@/components/notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useIsDemo } from "@/contexts/demo-context";
 
 
 type NavItem = {
@@ -96,6 +97,7 @@ interface SidebarProps {
 export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCount: mensajesCountInit = 0, badges: badgesInit = {}, isAdmin, hasEmpresa }: SidebarProps) {
   const t = useTranslations("common");
   const pathname = usePathname();
+  const isDemo = useIsDemo();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -286,7 +288,14 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
   return (
     <>
       {/* Barra superior móvil */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 h-14 pt-safe bg-card border-b border-border flex items-center px-3">
+      <div
+        className={cn(
+          "lg:hidden fixed left-0 right-0 z-40 h-14 pt-safe bg-card border-b border-border flex items-center px-3",
+          // En la demo el banner naranja (fixed top-0, ~32px) tapaba el botón de menú.
+          // Bajamos la barra justo debajo del banner para que sea clicable.
+          isDemo ? "top-8" : "top-0",
+        )}
+      >
         <div className="min-w-20 shrink-0">
           <button
             onClick={() => setMobileOpen(true)}
