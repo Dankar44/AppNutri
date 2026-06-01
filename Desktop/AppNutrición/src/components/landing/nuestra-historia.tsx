@@ -85,7 +85,7 @@ export function NuestraHistoria() {
               fill
               sizes="(max-width: 1024px) 90vw, 55vw"
               className={cn(
-                "object-contain transition-[opacity,transform] duration-1000 ease-out",
+                "object-cover transition-[opacity,transform] duration-1000 ease-out",
                 i === active ? "opacity-100 scale-100" : "opacity-0 scale-[1.025]"
               )}
             />

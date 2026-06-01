@@ -57,7 +57,7 @@ type HeroSlide = {
 const HERO_SLIDES: HeroSlide[] = [
   {
     image: "/images/landing/banner-oficina.png",
-    part1: "Toda tu consulta",
+    part1: "Tu consulta",
     part2: "en un solo lugar",
     part3: "y más tiempo para ti",
     notifNombre: "Annonia",
@@ -402,8 +402,12 @@ export function LandingPage() {
                 <span className="bg-[#bdd9c5] dark:bg-[#2a5e3a] px-1.5 -mx-0.5 text-gray-900 dark:text-green-100 drop-shadow-none">
                   {slide.part2}
                 </span>
-                <br />
-                {slide.part3}
+                {slide.part3 && (
+                  <>
+                    <br />
+                    {slide.part3}
+                  </>
+                )}
               </h1>
             </div>
           </div>
@@ -438,7 +442,7 @@ export function LandingPage() {
       </div>
 
       {/* ─── FOOD ICONS + HEADLINE ─── */}
-      <section className="relative pt-20 pb-16 sm:pt-24 sm:pb-20 overflow-hidden bg-gradient-to-b from-green-50/40 to-white dark:from-green-950/20 dark:to-[#101117]">
+      <section className="relative pt-20 pb-6 sm:pt-24 sm:pb-8 overflow-hidden bg-gradient-to-b from-green-50/40 to-white dark:from-green-950/20 dark:to-[#101117]">
         <div className="absolute inset-0 pointer-events-none select-none" aria-hidden="true">
           <Utensils className="absolute top-[2%] left-[2%] w-8 h-8 text-green-300 dark:text-green-800 opacity-[0.55]" style={{ transform: "rotate(-15deg)" }} />
           <Fish className="absolute top-[3%] left-[11%] w-9 h-9 text-green-300 dark:text-green-800 opacity-[0.50]" style={{ transform: "rotate(5deg)" }} />
@@ -476,7 +480,7 @@ export function LandingPage() {
       </section>
 
       {/* ─── PROGRAMAS DESTACADOS ─── */}
-      <section className="bg-white dark:bg-[#101117] pt-4 sm:pt-8 pb-16 sm:pb-24">
+      <section className="bg-white dark:bg-[#101117] pt-0 sm:pt-2 pb-16 sm:pb-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
             {PROGRAMAS.map((p, i) => {
