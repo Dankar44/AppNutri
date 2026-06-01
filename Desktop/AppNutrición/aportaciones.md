@@ -261,28 +261,6 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 
 ---
 
-## 12. Bug: instrucciones del email no se pueden abrir
-
-**Estado actual:** El email de acceso al portal envía un link a `{NEXT_PUBLIC_APP_URL}/paciente/login`. El nutricionista reporta que "las instrucciones que llegan al mail para usar el portal no se pueden abrir. No es válido."
-
-**Posibles causas:**
-- Variable `NEXT_PUBLIC_APP_URL` mal configurada en producción
-- El link del email apunta a HTTP en vez de HTTPS
-- El email client corta o modifica la URL
-- El paciente no tiene cuenta creada / PIN asignado
-
-**Tareas:**
-- [ ] Verificar el valor de `NEXT_PUBLIC_APP_URL` en producción (debe ser `https://annonia.com`)
-- [ ] Revisar email recibido por el paciente: qué link exacto se muestra
-- [ ] Probar el flujo completo: crear paciente → enviar acceso → paciente abre email → clic en link → login
-- [ ] Si es problema de URL, corregir la variable de entorno
-- [ ] Considerar añadir fallback: "Si el botón no funciona, copia este enlace: ..."
-
-**Prioridad:** Urgente (bug en producción que bloquea onboarding de pacientes)
-**Complejidad:** Baja (probablemente configuración)
-
----
-
 ## 13. Soporte multi-moneda (pesos argentinos y otros)
 
 **Estado actual:** Pagos solo en EUR. Hardcodeado en `src/app/actions/pagos.ts` (`currency: "eur"`) y en `src/app/actions/stripe.ts` (`country: "ES"`).
@@ -431,28 +409,6 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 
 **Prioridad:** Alta
 **Complejidad:** Media-Alta
-
----
-
-## 19. Búsqueda de alimentos sin importar tildes
-
-**Estado actual:** El buscador de alimentos (en el editor de dietas, recetas, y la lista de alimentos) usa `mode: "insensitive"` de Prisma, que ignora mayúsculas/minúsculas pero NO ignora tildes/acentos. Buscar "platano" no encuentra "Plátano".
-
-**Petición (Anabel Segura, mayo 2025):** Que al buscar alimentos no sea necesario poner las tildes correctamente. "Platano" debería encontrar "Plátano", "salmon" debería encontrar "Salmón", etc. Para ser más rápida al escribir.
-
-**Tareas:**
-- [ ] Normalizar el input de búsqueda eliminando diacríticos (`.normalize("NFD").replace(/[̀-ͯ]/g, "")`) en `sanitizeSearch()` de `validation.ts`
-- [ ] Añadir columna `nombreNormalizado` en el modelo `Alimento` (sin tildes) para buscar contra ella, o usar `unaccent` de PostgreSQL
-- [ ] Aplicar la misma normalización en todos los puntos de búsqueda: `buscarAlimentosYRecetas()`, `getAlimentos()`, `buscarAlimentosParaReceta()`
-- [ ] Verificar que también funcione para recetas (búsqueda de ingredientes)
-
-**Archivos a modificar:**
-- `src/lib/validation.ts` — `sanitizeSearch()`
-- `src/app/actions/alimentos.ts` — `getAlimentos()`, `buscarAlimentosParaReceta()`
-- `src/app/actions/recetas.ts` — `buscarAlimentosYRecetas()`
-
-**Prioridad:** Media-Alta (afecta a la velocidad de trabajo diaria del nutri)
-**Complejidad:** Baja
 
 ---
 
@@ -645,32 +601,6 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 | 55 | Sistema de intercambio de alimentos | Media | Media-Alta |
 | 56 | Recomendaciones predefinidas por patología | Alta | Media |
 | 57 | Agrupar comidas repetidas en PDF (deduplicación) | Media | Baja-Media |
-
----
-
-## 26. Ordenar resultados de búsqueda de alimentos por relevancia
-
-**Estado actual:** Al buscar alimentos (en el editor de dietas, recetas, y la lista de alimentos), los resultados se devuelven por orden de BD (normalmente por ID o nombre alfabético). Si buscas "tomate", puede aparecer "Tomate cherry" o "Salsa de tomate" antes que "Tomate". Lo mismo con "plátano" — el resultado exacto no se prioriza.
-
-**Petición (Anabel Segura, mayo 2025; nutricionista argentina, mayo 2026):** Que al buscar un alimento, el resultado más relevante (coincidencia exacta o más cercana) aparezca primero. Si escribes "tomate", lo primero debe ser "Tomate", y después "Tomate cherry", "Salsa de tomate", etc. Si escribes "plátano", lo primero debe ser "Plátano". Ejemplo concreto: al escribir "POLL…" no aparece "Pollo" de primera.
-
-**Tareas:**
-- [ ] Implementar ordenación por relevancia en los resultados de búsqueda de alimentos:
-  1. **Coincidencia exacta** (nombre = búsqueda) → primero
-  2. **Empieza por la búsqueda** (nombre starts with búsqueda) → segundo, ordenados por longitud de nombre (más corto = más relevante)
-  3. **Contiene la búsqueda** (nombre contains búsqueda) → tercero
-- [ ] Aplicar la misma lógica en todos los puntos de búsqueda: `getAlimentosPaginados()`, `buscarAlimentosYRecetas()`, `buscarAlimentosParaReceta()`
-- [ ] La ordenación debe ser case-insensitive y accent-insensitive (complementa tarea #19)
-- [ ] Considerar hacer la ordenación en el servidor (SQL `ORDER BY CASE WHEN...`) o en el cliente tras recibir resultados
-
-**Archivos a modificar:**
-- `src/app/actions/alimentos.ts` — `getAlimentosPaginados()`, `buscarAlimentosParaReceta()`
-- `src/app/actions/recetas.ts` — `buscarAlimentosYRecetas()`
-- Alternativa: ordenar en el componente cliente que recibe los resultados
-
-**Relacionado con:** Tarea #19 (búsqueda sin tildes), #45 (búsqueda por plural/singular)
-**Prioridad:** Alta (afecta a la velocidad de trabajo diaria — el nutri pierde tiempo buscando entre resultados desordenados)
-**Complejidad:** Baja
 
 ---
 
@@ -1288,29 +1218,6 @@ También dice: "Les diré a algunas compañeras a ver si les interesa algunas ya
 
 **Prioridad:** Alta (la IA es feature clave — si genera planes malos, los nutris no la usan)
 **Complejidad:** Media
-
----
-
-## 45. Búsqueda de alimentos tolerante a plural/singular
-
-**Origen:** Guillermo — 29 mayo 2026 (reportado en producción, annonia.com)
-
-**Estado actual:** La búsqueda de alimentos usa `contains` con `mode: "insensitive"` (case-insensitive). Sin embargo, buscar "Huevos" no encuentra "Huevo" porque la búsqueda es literal — "Huevos" no está contenido en "Huevo". Esto ocurre en el buscador de ingredientes de recetas y en el editor de dietas.
-
-**Ejemplo concreto:** En el formulario de receta (annonia.com), al buscar "Huevos" en Ingredientes aparece "No se encontraron resultados", cuando debería encontrar "Huevo", "Huevo cocido", "Huevo duro", etc.
-
-**Petición:** Que la búsqueda sea tolerante a variaciones de plural/singular. Buscar "Huevos" debería encontrar "Huevo" y viceversa.
-
-**Tareas:**
-- [ ] Normalizar el término de búsqueda: si termina en "s", buscar también sin la "s" (y viceversa)
-- [ ] Considerar stemming básico en español: "os"→"o", "es"→"", "as"→"a" (ej: "tomates"→"tomate", "huevos"→"huevo")
-- [ ] Alternativa más robusta: usar `pg_trgm` (trigram matching) de PostgreSQL para búsqueda fuzzy
-- [ ] Alternativa simple: hacer OR de búsquedas — buscar el término original Y el término sin la "s" final
-- [ ] Aplicar en todos los puntos de búsqueda: `buscarAlimentosYRecetas()`, `getAlimentosPaginados()`, `buscarAlimentosParaReceta()`
-
-**Relacionado con:** Tarea #19 (búsqueda sin tildes) y #26 (ordenar por relevancia) — las tres mejoras de búsqueda deberían implementarse juntas
-**Prioridad:** Alta (bug funcional — el usuario no encuentra alimentos que existen)
-**Complejidad:** Baja
 
 ---
 
