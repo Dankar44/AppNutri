@@ -144,6 +144,7 @@ export function PlanVisual({
   showAguaEjercicio = true,
   showFoodTable = true,
   readOnly = false,
+  ocultarCalorias = false,
   vistaInicial = "resumen",
   interactionMode = "dashboard",
   localCallbacks,
@@ -160,6 +161,8 @@ export function PlanVisual({
   showAguaEjercicio?: boolean;
   showFoodTable?: boolean;
   readOnly?: boolean;
+  /** Si true (decisión del dietista por paciente), oculta kcal y macros en la vista del paciente. */
+  ocultarCalorias?: boolean;
   vistaInicial?: "resumen" | "plan" | "analisis";
   interactionMode?: InteractionMode;
   localCallbacks?: {
@@ -178,7 +181,9 @@ export function PlanVisual({
   );
   const [planSelectOpen, setPlanSelectOpen] = useState(false);
   const planSelectWrapRef = useRef<HTMLDivElement | null>(null);
-  const [vista, setVista] = useState<"resumen" | "plan" | "analisis">(vistaInicial);
+  const [vista, setVista] = useState<"resumen" | "plan" | "analisis">(
+    ocultarCalorias ? "plan" : vistaInicial,
+  );
   const [hoveredMacro, setHoveredMacro] = useState<number | null>(null);
   const [comidaChartOffset, setComidaChartOffset] = useState(0);
   const [foodTablePage, setFoodTablePage] = useState(0);
@@ -394,7 +399,8 @@ export function PlanVisual({
     <section className="space-y-4">
 
       <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-        {/* Vista tabs — en móvil va primero */}
+        {/* Vista tabs — en móvil va primero. Ocultas cuando ocultarCalorias: solo queda la vista plan. */}
+        {!ocultarCalorias && (
         <div className="order-first sm:order-last inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card p-1 shrink-0 w-full sm:w-auto">
           <button
             type="button"
@@ -436,6 +442,7 @@ export function PlanVisual({
             {t("vistaAnalisis")}
           </button>
         </div>
+        )}
 
         {/* Day selector — en móvil va segundo y se oculta en resumen */}
         <div
@@ -543,8 +550,8 @@ export function PlanVisual({
 
       </div>
 
-      {/* Objetivos de macros — oculto en móvil, la media semanal ya los muestra */}
-      {selectedPlan && (() => {
+      {/* Objetivos de macros — oculto en móvil, la media semanal ya los muestra. Oculto entero si ocultarCalorias. */}
+      {!ocultarCalorias && selectedPlan && (() => {
         const { caloriasObjetivo: co, proteinasObjetivo: po, carbohidratosObjetivo: cho, grasasObjetivo: go } = selectedPlan;
         const hayObjetivos = co != null || po != null || cho != null || go != null;
         if (!hayObjetivos) return null;
@@ -585,7 +592,7 @@ export function PlanVisual({
             }}
           />
         ) : vista === "plan" ? (
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-4">
+        <div className={cn("grid grid-cols-1 gap-4", !ocultarCalorias && "lg:grid-cols-[1fr_400px]")}>
             <div className="bg-card rounded-xl border border-border p-4">
               {showPlanSelector && (
                 <div className="flex items-center justify-between gap-3 mb-3">
@@ -599,7 +606,7 @@ export function PlanVisual({
                       >
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="truncate font-semibold">{selectedPlan?.nombre || "—"}</span>
-                          {selectedPlan?.caloriasObjetivo != null && (
+                          {!ocultarCalorias && selectedPlan?.caloriasObjetivo != null && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-medium shrink-0">
                               <Flame className="w-3 h-3" />{selectedPlan.caloriasObjetivo}
                             </span>
@@ -616,7 +623,7 @@ export function PlanVisual({
                           >
                             <div className="flex items-center gap-2 min-w-0">
                               <span className="truncate">{selectedPlan.nombre}</span>
-                              {selectedPlan.caloriasObjetivo != null && (
+                              {!ocultarCalorias && selectedPlan.caloriasObjetivo != null && (
                                 <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400"><Flame className="w-2.5 h-2.5 inline" /> {selectedPlan.caloriasObjetivo}</span>
                               )}
                             </div>
@@ -652,6 +659,7 @@ export function PlanVisual({
                           showAnalisis={false}
                           readOnly={readOnly}
                           interactionMode={interactionMode}
+                          ocultarCalorias={ocultarCalorias}
                           localCallbacks={localCallbacks}
                           planId={selectedPlan.id}
                           planNombre={selectedPlan.nombre}
@@ -673,6 +681,7 @@ export function PlanVisual({
                       showAnalisis={false}
                       readOnly={readOnly}
                       interactionMode={interactionMode}
+                      ocultarCalorias={ocultarCalorias}
                       localCallbacks={localCallbacks}
                       planId={selectedPlan.id}
                       planNombre={selectedPlan.nombre}
@@ -691,6 +700,7 @@ export function PlanVisual({
               </div>
             </div>
 
+            {!ocultarCalorias && (
             <div className="space-y-4">
             <div className="bg-card rounded-xl border border-border p-5">
               <h4 className="text-base font-semibold mb-4">{t("analisisGlobal")}</h4>
@@ -990,6 +1000,7 @@ export function PlanVisual({
               </p>
             )}
             </div>
+            )}
           </div>
         ) : (
           (() => {

@@ -13,6 +13,7 @@ interface Props {
   ejercicioMinutos: number;
   ejercicioKcal: number;
   racha?: number;
+  ocultarCalorias?: boolean;
 }
 
 export function ResumenHero({
@@ -24,6 +25,7 @@ export function ResumenHero({
   ejercicioMinutos,
   ejercicioKcal,
   racha,
+  ocultarCalorias = false,
 }: Props) {
   const t = useTranslations("patient-portal.seguimiento.resumenHero");
   const comidasPct = comidasTotal > 0 ? Math.round((comidasCumplidas / comidasTotal) * 100) : 0;
@@ -80,7 +82,11 @@ export function ResumenHero({
             tint="amber"
             label={t("ejercicio")}
             value={ejercicio ? `${ejercicioMinutos}'` : "—"}
-            sub={ejercicio && ejercicioKcal > 0 ? `${ejercicioKcal} kcal` : t("sinActividad")}
+            sub={
+              ocultarCalorias
+                ? (ejercicio ? `${ejercicioPct}%` : t("sinActividad"))
+                : (ejercicio && ejercicioKcal > 0 ? `${ejercicioKcal} kcal` : t("sinActividad"))
+            }
           />
         </div>
       </div>

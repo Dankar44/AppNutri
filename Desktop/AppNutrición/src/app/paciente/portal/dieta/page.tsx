@@ -43,7 +43,7 @@ export default async function PatientDietPage() {
 
   const paciente = await prisma.paciente.findUnique({
     where: { id: session.pacienteId },
-    select: { nombre: true, apellidos: true, peso: true, objetivo: true },
+    select: { nombre: true, apellidos: true, peso: true, objetivo: true, ocultarCalorias: true },
   });
 
   if (!plan) {
@@ -169,6 +169,7 @@ export default async function PatientDietPage() {
         showFoodTable={false}
         readOnly
         interactionMode="patient"
+        ocultarCalorias={paciente?.ocultarCalorias ?? false}
       />
       </div>
     </div>

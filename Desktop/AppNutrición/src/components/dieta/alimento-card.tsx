@@ -30,6 +30,7 @@ interface AlimentoCardProps {
   recetaPorciones?: number;
   readOnly?: boolean;
   interactionMode?: InteractionMode;
+  ocultarCalorias?: boolean;
   onRemove: (id: string) => void;
   onCantidadChange: (id: string, cantidad: number) => void;
   onBuscarEquivalente?: (alimentoId: string, nombre: string, calorias: number, proteinas: number, carbohidratos: number, grasas: number, cantidad: number) => void;
@@ -56,6 +57,7 @@ export function AlimentoCard({
   recetaPorciones,
   readOnly = false,
   interactionMode = "dashboard",
+  ocultarCalorias = false,
   onRemove,
   onCantidadChange,
   onBuscarEquivalente,
@@ -115,6 +117,7 @@ export function AlimentoCard({
     imagenUrl,
     href,
     interactionMode,
+    ocultarCalorias,
   };
 
   if (readOnly) {

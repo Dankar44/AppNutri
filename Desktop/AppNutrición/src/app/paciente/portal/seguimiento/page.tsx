@@ -46,6 +46,7 @@ export default function SeguimientoPage() {
 
   const [comidasPlan, setComidasPlan] = useState<ComidaPlanificada[]>([]);
   const [pesoKg, setPesoKg] = useState<number | null>(null);
+  const [ocultarCalorias, setOcultarCalorias] = useState(false);
 
   const [comidasData, setComidasData] = useState<ComidaSeguimiento[]>([]);
   const [aguaML, setAguaML] = useState(0);
@@ -71,6 +72,7 @@ export default function SeguimientoPage() {
 
       setComidasPlan(planData.comidas);
       setPesoKg(planData.peso);
+      setOcultarCalorias(planData.ocultarCalorias);
 
       if (seguimiento) {
         setAguaML(seguimiento.aguaML || 0);
@@ -279,6 +281,7 @@ export default function SeguimientoPage() {
         ejercicio={ejercicio}
         ejercicioMinutos={ejercicioMinutos}
         ejercicioKcal={ejercicioKcal}
+        ocultarCalorias={ocultarCalorias}
       />
 
       {comidasPlan.length === 0 ? (
@@ -334,6 +337,7 @@ export default function SeguimientoPage() {
         distanciaKm={ejercicioDistanciaKm}
         kcal={ejercicioKcal}
         pesoKg={pesoKg}
+        ocultarCalorias={ocultarCalorias}
         onToggle={setEjercicio}
         onTipo={setEjercicioTipo}
         onMinutos={setEjercicioMinutos}

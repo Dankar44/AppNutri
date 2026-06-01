@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
+import { extraerOtrasRecomendaciones } from "@/lib/recomendaciones";
 import { crearPacienteDemoSiNoExiste } from "@/lib/paciente-demo";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -350,6 +351,27 @@ export async function toggleActivoPaciente(id: string) {
   revalidatePath("/dashboard");
 }
 
+export async function setOcultarCalorias(id: string, valor: boolean) {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
+  if (dietista.isDemo) return;
+
+  const paciente = await prisma.paciente.findUnique({
+    where: { id, dietistaId: dietista.id },
+    select: { id: true },
+  });
+
+  if (!paciente) throw new Error(t("paciente.pacienteNoEncontrado"));
+
+  await prisma.paciente.update({
+    where: { id },
+    data: { ocultarCalorias: valor },
+  });
+
+  revalidatePath(`/pacientes/${id}`);
+}
+
 export async function getPacientes(
   busqueda?: string,
   soloActivos?: boolean
@@ -440,18 +462,7 @@ export async function getRecomendaciones(pacienteId: string): Promise<string> {
     `SELECT recomendaciones FROM pacientes WHERE id = $1 AND "dietistaId" = $2`,
     pacienteId, dietista.id
   );
-  const raw = rows[0]?.recomendaciones || "";
-
-  // If the field stores structured JSON, extract otrasRecomendaciones
-  try {
-    const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed === "object" && "otrasRecomendaciones" in parsed) {
-      return parsed.otrasRecomendaciones || "";
-    }
-  } catch {
-    // plain text
-  }
-  return raw;
+  return extraerOtrasRecomendaciones(rows[0]?.recomendaciones);
 }
 
 /** Saves only the "otrasRecomendaciones" text, preserving other structured fields. */

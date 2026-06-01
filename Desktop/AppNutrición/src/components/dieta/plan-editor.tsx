@@ -97,6 +97,7 @@ interface PlanEditorProps {
   showAnalisis?: boolean;
   readOnly?: boolean;
   interactionMode?: "dashboard" | "patient" | "shared";
+  ocultarCalorias?: boolean;
   localCallbacks?: LocalMutationCallbacks;
 }
 
@@ -125,6 +126,7 @@ export function PlanEditor({
   showAnalisis = true,
   readOnly = false,
   interactionMode = "dashboard",
+  ocultarCalorias = false,
   localCallbacks,
 }: PlanEditorProps) {
   const t = useTranslations("diets");
@@ -488,6 +490,7 @@ export function PlanEditor({
                       onReemplazar={handleReemplazar}
                       readOnly={readOnly}
                       interactionMode={interactionMode}
+                      ocultarCalorias={ocultarCalorias}
                     />
                   ))}
                 </div>

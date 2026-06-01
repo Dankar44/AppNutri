@@ -37,6 +37,8 @@ interface FoodHoverCardProps {
   imagenUrl?: string | null;
   href?: string | null;
   interactionMode: InteractionMode;
+  /** Si true, oculta kcal y macros en el popover (paciente con ocultarCalorias). */
+  ocultarCalorias?: boolean;
 }
 
 const MAX_INGREDIENTES = 6;
@@ -61,6 +63,7 @@ export function FoodHoverCard({
   imagenUrl,
   href,
   interactionMode,
+  ocultarCalorias = false,
 }: FoodHoverCardProps) {
   const router = useRouter();
   const t = useTranslations("foods.hoverCard");
@@ -200,6 +203,7 @@ export function FoodHoverCard({
                 </span>
               </div>
 
+              {!ocultarCalorias && (
               <div className="border-t border-border/50 pt-2">
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                   <div className="flex justify-between">
@@ -226,6 +230,7 @@ export function FoodHoverCard({
                   )}
                 </div>
               </div>
+              )}
 
               {esReceta && ingredientesVisibles && ingredientesVisibles.length > 0 && (
                 <div className="border-t border-border/50 pt-2">

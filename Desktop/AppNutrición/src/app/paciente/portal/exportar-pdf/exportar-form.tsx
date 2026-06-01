@@ -40,6 +40,8 @@ interface Props {
   brandName?: string;
   logoDataUrl?: string;
   clinica?: string;
+  /** Si true, el PDF del paciente nunca incluye kcal ni macros (decisión del dietista). */
+  ocultarCalorias?: boolean;
 }
 
 type PDFOptions = {
@@ -120,7 +122,7 @@ function generateHorarioHTML(horario: HorarioEntry[], pacienteNombre: string, br
   return `<div class="page"><div class="header"><div><span class="header-name">${escapeHtml(pacienteNombre).toUpperCase()}</span><br><span class="header-sub">${escapeHtml(safePlanTitle)}</span></div><div class="header-logo">${escapeHtml(brand)}</div></div><div class="section-title">${escapeHtml(safeHorarioTitle)}</div>${tabla}<div class="footer">${escapeHtml(brand)}<div style="color:#c0c8c3;font-size:8px;margin-top:2px;">annonia.com</div></div></div>`;
 }
 
-function toSections(options: PDFOptions): PDFSectionOptions {
+function toSections(options: PDFOptions, ocultarCalorias = false): PDFSectionOptions {
   return {
     portada: options.portada,
     planSemanal: options.planSemanal,
@@ -128,6 +130,8 @@ function toSections(options: PDFOptions): PDFSectionOptions {
     detalleDiario: options.detalleDiario,
     recomendaciones: options.recomendaciones,
     listaCompra: options.listaCompra,
+    // Si el dietista ocultó las calorías a este paciente, el PDF nunca muestra valores nutricionales.
+    valoresNutricionales: !ocultarCalorias,
   };
 }
 
@@ -148,6 +152,7 @@ export function ExportarPDFPaciente({
   brandName,
   logoDataUrl,
   clinica,
+  ocultarCalorias = false,
 }: Props) {
   const t = useTranslations("patient-portal.exportarPdf");
   const tPdf = useTranslations("pdf");
@@ -189,11 +194,11 @@ export function ExportarPDFPaciente({
       brandName,
       logoDataUrl,
       clinica,
-      sections: toSections(applied),
+      sections: toSections(applied, ocultarCalorias),
     }, tPdf);
     const withHorario = applyHorario(html, applied, horarioHtml);
     return withHorario.replace(/<script[\s\S]*?<\/script>/gi, "");
-  }, [plan, pacienteNombre, dietistaNombre, recomendaciones, tema, brandName, logoDataUrl, clinica, applied, horarioHtml, tPdf]);
+  }, [plan, pacienteNombre, dietistaNombre, recomendaciones, tema, brandName, logoDataUrl, clinica, applied, horarioHtml, tPdf, ocultarCalorias]);
 
   const totalPages = Math.max(1, (previewHtml.match(/class="page/g) || []).length);
   const [previewPage, setPreviewPage] = useState(0);
@@ -239,7 +244,7 @@ export function ExportarPDFPaciente({
         brandName,
         logoDataUrl,
         clinica,
-        sections: toSections(applied),
+        sections: toSections(applied, ocultarCalorias),
       }, tPdf);
       const withHorario = applyHorario(html, applied, horarioHtml);
       const nombre = pacienteNombre.replace(/\s+/g, "-");

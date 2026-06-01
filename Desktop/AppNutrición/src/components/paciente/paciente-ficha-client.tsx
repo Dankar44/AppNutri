@@ -74,6 +74,7 @@ type PacienteSerializado = {
   suplementos: string[];
   fichaInformacion: unknown;
   esDemo?: boolean;
+  ocultarCalorias?: boolean;
 };
 
 type PlanResumen = {
@@ -392,6 +393,7 @@ export function PacienteFichaClient({
           pacienteId={paciente.id}
           pacienteEmail={paciente.email}
           pacienteNombre={`${paciente.nombre} ${paciente.apellidos}`}
+          ocultarCalorias={paciente.ocultarCalorias === true}
           planActivo={
             planesResumen.find((p) => p.activo)
               ? { id: planesResumen.find((p) => p.activo)!.id, nombre: planesResumen.find((p) => p.activo)!.nombre }
@@ -405,6 +407,7 @@ export function PacienteFichaClient({
           pacienteId={paciente.id}
           pacienteEmail={paciente.email}
           esDemo={paciente.esDemo === true}
+          ocultarCaloriasInicial={paciente.ocultarCalorias === true}
         />
       )}
 

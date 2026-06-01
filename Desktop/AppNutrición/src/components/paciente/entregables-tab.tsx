@@ -15,6 +15,7 @@ import {
   Sparkles,
   RotateCcw,
   Ban,
+  EyeOff,
 } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -39,6 +40,8 @@ interface EntregablesTabProps {
   pacienteEmail?: string | null;
   pacienteNombre: string;
   planActivo?: { id: string; nombre: string } | null;
+  /** Si el paciente tiene activado "ocultar calorías": el PDF arranca sin valores nutricionales + aviso. */
+  ocultarCalorias?: boolean;
 }
 
 // ─── PDF Options ───
@@ -300,14 +303,17 @@ export function EntregablesTab({
   pacienteEmail,
   pacienteNombre,
   planActivo,
+  ocultarCalorias = false,
 }: EntregablesTabProps) {
   const t = useTranslations("patients.entregables");
   const tPdf = useTranslations("pdf");
   const [sendingPlan, startSendingPlan] = useTransition();
 
-  // PDF configurator state
-  const [pdfOptions, setPdfOptions] = useState<PDFOptions>(PDF_OPTIONS_DEFAULT);
-  const [appliedOptions, setAppliedOptions] = useState<PDFOptions>(PDF_OPTIONS_DEFAULT);
+  // PDF configurator state. Si el paciente tiene "ocultar calorías", los valores
+  // nutricionales arrancan desactivados para no enviarle un PDF con kcal sin querer.
+  const opcionesIniciales: PDFOptions = { ...PDF_OPTIONS_DEFAULT, valoresNutricionales: !ocultarCalorias };
+  const [pdfOptions, setPdfOptions] = useState<PDFOptions>(opcionesIniciales);
+  const [appliedOptions, setAppliedOptions] = useState<PDFOptions>(opcionesIniciales);
   const [pdfData, setPdfData] = useState<PlanPDFData | null>(null);
   const [planes, setPlanes] = useState<{ id: string; nombre: string; activo: boolean }[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(planActivo?.id ?? null);
@@ -474,6 +480,14 @@ export function EntregablesTab({
               <h3 className="text-sm font-semibold text-foreground mb-4">
                 {t("contenidoPdf")}
               </h3>
+              {ocultarCalorias && (
+                <div className="mb-3 flex items-start gap-2.5 rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-3">
+                  <EyeOff className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-800 dark:text-amber-300">
+                    {t("ocultarCaloriasAviso")}
+                  </p>
+                </div>
+              )}
               <div className="space-y-1">
                 {PDF_OPTIONS_KEYS.map((opt) => {
                   const isDisabled = opt.disabled || (opt.key === "cantidadesSemanal" && !pdfOptions.planSemanal);

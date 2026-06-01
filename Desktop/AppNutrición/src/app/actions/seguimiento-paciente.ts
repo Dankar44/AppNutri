@@ -82,9 +82,9 @@ const DIAS_SEMANA_MAP: Record<number, string> = {
 
 export async function getComidaDelDiaPaciente(
   fecha: string
-): Promise<{ comidas: ComidaPlanificada[]; peso: number | null }> {
+): Promise<{ comidas: ComidaPlanificada[]; peso: number | null; ocultarCalorias: boolean }> {
   const session = await getCurrentPaciente();
-  if (!session) return { comidas: [], peso: null };
+  if (!session) return { comidas: [], peso: null, ocultarCalorias: false };
 
   const d = new Date(fecha + "T12:00:00");
   const diaSemana = DIAS_SEMANA_MAP[d.getDay()];
@@ -115,11 +115,12 @@ export async function getComidaDelDiaPaciente(
 
   const paciente = await prisma.paciente.findUnique({
     where: { id: session.pacienteId },
-    select: { peso: true },
+    select: { peso: true, ocultarCalorias: true },
   });
+  const ocultarCalorias = paciente?.ocultarCalorias ?? false;
 
   if (!plan || plan.dias.length === 0) {
-    return { comidas: [], peso: paciente?.peso ?? null };
+    return { comidas: [], peso: paciente?.peso ?? null, ocultarCalorias };
   }
 
   const diaDelPlan = plan.dias[0];
@@ -133,7 +134,7 @@ export async function getComidaDelDiaPaciente(
     })),
   }));
 
-  return { comidas, peso: paciente?.peso ?? null };
+  return { comidas, peso: paciente?.peso ?? null, ocultarCalorias };
 }
 
 // ─── Get seguimiento del día ───

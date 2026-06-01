@@ -2,21 +2,25 @@
 
 import { useState, useTransition, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
-import { Mail, Smartphone, Loader2, Shield, Check, AlertTriangle, Copy, ExternalLink, Info } from "lucide-react";
+import { Mail, Smartphone, Loader2, Shield, Check, AlertTriangle, Copy, ExternalLink, Info, EyeOff } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, withTimeout, isNextNavigation } from "@/lib/utils";
 import { enviarAccesoPortal } from "@/app/actions/email";
 import { crearAccesoPaciente, getAccesoEstado } from "@/app/actions/paciente-auth";
+import { setOcultarCalorias } from "@/app/actions/pacientes";
 
 interface Props {
   pacienteId: string;
   pacienteEmail?: string | null;
   esDemo?: boolean;
+  ocultarCaloriasInicial?: boolean;
 }
 
-export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) {
+export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo, ocultarCaloriasInicial }: Props) {
   const t = useTranslations("patients.portal");
   const [sendingAcceso, startSendingAcceso] = useTransition();
+  const [ocultarCalorias, setOcultarCaloriasState] = useState(ocultarCaloriasInicial ?? false);
+  const [savingCalorias, setSavingCalorias] = useState(false);
   const [accesoEstado, setAccesoEstado] = useState<{
     email: string;
     activo: boolean;
@@ -66,6 +70,22 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
       toast.error(e instanceof Error ? e.message : t("errorConfigurarAcceso"));
     } finally {
       setGeneratingPin(false);
+    }
+  }
+
+  async function handleToggleCalorias() {
+    const nuevo = !ocultarCalorias;
+    setOcultarCaloriasState(nuevo);
+    setSavingCalorias(true);
+    try {
+      await withTimeout(setOcultarCalorias(pacienteId, nuevo));
+      toast.success(nuevo ? t("caloriasOcultadas") : t("caloriasVisibles"));
+    } catch (error) {
+      if (isNextNavigation(error)) throw error;
+      setOcultarCaloriasState(!nuevo);
+      toast.error(t("errorGuardarCalorias"));
+    } finally {
+      setSavingCalorias(false);
     }
   }
 
@@ -280,6 +300,43 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo }: Props) 
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Privacidad: ocultar calorías y macros al paciente */}
+      <div className="rounded-xl border border-border bg-card p-5 mt-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3 min-w-0">
+            <div className="rounded-lg bg-primary/10 p-2.5 text-primary shrink-0">
+              <EyeOff className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-base font-semibold text-foreground">
+                {t("ocultarCaloriasTitulo")}
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                {t("ocultarCaloriasDescripcion")}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleToggleCalorias}
+            disabled={savingCalorias}
+            className={cn(
+              "relative w-12 h-6 rounded-full transition-colors shrink-0 mt-1 disabled:opacity-50",
+              ocultarCalorias ? "bg-emerald-600" : "bg-muted-foreground/30",
+            )}
+            aria-pressed={ocultarCalorias}
+            aria-label={ocultarCalorias ? t("mostrarCaloriasAria") : t("ocultarCaloriasAria")}
+          >
+            <span
+              className={cn(
+                "absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform",
+                ocultarCalorias ? "translate-x-6" : "translate-x-0",
+              )}
+            />
+          </button>
         </div>
       </div>
 

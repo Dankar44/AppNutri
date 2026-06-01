@@ -25,6 +25,7 @@ interface Props {
   distanciaKm: number;
   kcal: number;
   pesoKg?: number | null;
+  ocultarCalorias?: boolean;
   onToggle: (v: boolean) => void;
   onTipo: (v: string) => void;
   onMinutos: (v: number) => void;
@@ -41,6 +42,7 @@ export function EjercicioCard({
   distanciaKm,
   kcal,
   pesoKg,
+  ocultarCalorias = false,
   onToggle,
   onTipo,
   onMinutos,
@@ -148,8 +150,8 @@ export function EjercicioCard({
         </p>
       ) : (
         <>
-          {/* Duración + distancia + kcal */}
-          <div className="px-5 pb-3 grid grid-cols-3 gap-3">
+          {/* Duración + distancia + kcal (kcal oculta si ocultarCalorias) */}
+          <div className={`px-5 pb-3 grid gap-3 ${ocultarCalorias ? "grid-cols-2" : "grid-cols-3"}`}>
             <NumberField
               label={t("seguimiento.ejercicioCard.duracion")}
               value={minutos}
@@ -165,6 +167,7 @@ export function EjercicioCard({
               step={0.1}
               placeholder={t("seguimiento.ejercicioCard.distanciaPlaceholder")}
             />
+            {!ocultarCalorias && (
             <div>
               <span className="text-xs font-medium text-muted-foreground mb-1 block">
                 {t("seguimiento.ejercicioCard.kcalLabel")}
@@ -186,6 +189,7 @@ export function EjercicioCard({
                 />
               </div>
             </div>
+            )}
           </div>
 
           {/* Buscador */}
@@ -234,7 +238,7 @@ export function EjercicioCard({
                     </div>
                     <div className="hidden sm:flex items-center gap-4 shrink-0">
                       <Stat label="MET" value={ej.met.toString()} />
-                      <Stat label="Kcal" value={`${gasto}`} />
+                      {!ocultarCalorias && <Stat label="Kcal" value={`${gasto}`} />}
                     </div>
                     <span
                       className={`inline-flex items-center justify-center w-8 h-8 rounded-lg shrink-0 transition-colors ${

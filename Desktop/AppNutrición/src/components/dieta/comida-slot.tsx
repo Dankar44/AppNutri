@@ -44,6 +44,7 @@ interface ComidaSlotProps {
   compactHeader?: boolean;
   readOnly?: boolean;
   interactionMode?: InteractionMode;
+  ocultarCalorias?: boolean;
 }
 
 export function ComidaSlot({
@@ -57,6 +58,7 @@ export function ComidaSlot({
   onReemplazar,
   readOnly = false,
   interactionMode = "dashboard",
+  ocultarCalorias = false,
 }: ComidaSlotProps) {
   const t = useTranslations("diets");
 
@@ -189,6 +191,7 @@ export function ComidaSlot({
                     recetaPorciones={a.recetaPorciones}
                     readOnly={readOnly}
                     interactionMode={interactionMode}
+                    ocultarCalorias={ocultarCalorias}
                     onRemove={onRemove}
                     onCantidadChange={onCantidadChange}
                     onBuscarEquivalente={readOnly ? undefined : (_alimentoEnComidaId, nombre, cal, prot, carb, gras, cant) => {
@@ -260,7 +263,8 @@ export function ComidaSlot({
             </div>
           )}
 
-          {/* Macro pills */}
+          {/* Macro pills — totales por comida, ocultos si ocultarCalorias */}
+          {!ocultarCalorias && (
           <div className="px-2 sm:px-4 py-2 sm:py-3 border-t border-border/50 bg-muted/10">
             <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-2">
               <span className="inline-flex items-center gap-0.5 sm:gap-1 px-2 sm:px-3.5 py-0.5 sm:py-1.5 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[10px] sm:text-sm font-medium">
@@ -280,6 +284,7 @@ export function ComidaSlot({
               </span>
             </div>
           </div>
+          )}
         </>
       )}
     </div>

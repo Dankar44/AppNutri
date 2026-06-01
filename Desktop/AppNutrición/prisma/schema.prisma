@@ -227,6 +227,8 @@ model Paciente {
   fichaSidebar        Json?
   esDemo              Boolean           @default(false)
   activo              Boolean           @default(true)
+  /// Si true, el paciente no ve calorías ni macros (portal, PDF, seguimiento). El dietista siempre los ve.
+  ocultarCalorias     Boolean           @default(false)
   lastAccessAt        DateTime?
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
@@ -870,4 +872,24 @@ model MovimientoStock {
   @@index([alimentoId])
   @@index([empresaId])
   @@map("movimientos_stock")
+}
+
+// Candidaturas del programa de colaboradores (/colaboradores).
+// Guarda las respuestas del cuestionario; la cuenta se crea aparte (auth.users + dietista).
+// El CV NO se guarda (es solo un requisito del formulario).
+model SolicitudColaborador {
+  id            String   @id @default(cuid())
+  email         String
+  telefono      String
+  pais          String
+  numPacientes  String
+  modalidad     String
+  tipoTrabajo   String
+  nivelEstudios String
+  esProfesor    Boolean  @default(false)
+  discapacidad  String
+  createdAt     DateTime @default(now())
+
+  @@index([email])
+  @@map("solicitudes_colaborador")
 }

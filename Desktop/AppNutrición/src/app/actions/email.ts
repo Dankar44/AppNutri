@@ -291,8 +291,17 @@ export async function enviarPlanPorEmail(
   if (displayOverrides) pdfData.displayOverrides = displayOverrides;
 
   const tPdf = await getTranslations("pdf");
-  const fullHtml = generatePlanPDF(pdfData, tPdf);
-  const pdfBuffer = await htmlToPdf(fullHtml);
+  let pdfBuffer: Buffer;
+  try {
+    const fullHtml = generatePlanPDF(pdfData, tPdf);
+    pdfBuffer = await htmlToPdf(fullHtml);
+  } catch (err) {
+    // El PDF se genera con un navegador headless (puppeteer-core). Si falla
+    // (p. ej. Chromium no disponible), devolvemos error en vez de romper la página.
+    console.error("Error generando el PDF del plan para email:", err);
+    const msg = err instanceof Error ? err.message : t("general.errorDesconocido");
+    return { ok: false, error: msg };
+  }
 
   const brandName = escapeHtml(dietista.marcaPdf || "Annonia");
   const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://annonia.com"}/paciente/login`;

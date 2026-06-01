@@ -7,6 +7,7 @@ import { capitalizarNombre } from "@/lib/utils";
 import { ExportarPDFPaciente } from "./exportar-form";
 import { PageHeader } from "@/components/page-header";
 import { getTheme } from "@/lib/pdf/pdf-themes";
+import { extraerOtrasRecomendaciones } from "@/lib/recomendaciones";
 
 export default async function ExportarPDFPage() {
   const t = await getTranslations("patient-portal.exportarPdf");
@@ -18,6 +19,7 @@ export default async function ExportarPDFPage() {
     select: {
       nombre: true,
       apellidos: true,
+      ocultarCalorias: true,
       dietista: { select: { nombre: true, apellidos: true, marcaPdf: true, pdfLogoUrl: true, temaPdf: true, colorPrimarioPdf: true, clinica: true } },
     },
   });
@@ -56,7 +58,8 @@ export default async function ExportarPDFPage() {
       `SELECT recomendaciones, horario FROM pacientes WHERE id = $1`,
       session.pacienteId
     );
-    recomendaciones = (rows[0]?.recomendaciones as string) || "";
+    // El campo puede ser JSON estructurado; extraer solo el texto limpio (igual que el PDF del nutricionista).
+    recomendaciones = extraerOtrasRecomendaciones(rows[0]?.recomendaciones);
     const raw = rows[0]?.horario;
     horario = Array.isArray(raw) ? raw : [];
   } catch { /* ignore */ }
@@ -96,6 +99,7 @@ export default async function ExportarPDFPage() {
           brandName={brandName}
           logoDataUrl={logoDataUrl}
           clinica={clinica}
+          ocultarCalorias={paciente.ocultarCalorias}
         />
       )}
     </div>

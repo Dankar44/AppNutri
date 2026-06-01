@@ -384,6 +384,7 @@
     "restablecer": "Restablecer",
     "planAlimenticio": "Plan alimenticio",
     "contenidoPdf": "Contenido del PDF",
+    "ocultarCaloriasAviso": "Has activado «ocultar calorías y macros» para este paciente, así que los valores nutricionales vienen desactivados. Si los activas, el PDF que le envíes mostrará calorías y macros.",
     "generarVistaPrevia": "Generar vista previa",
     "vistaPreviaActualizada": "Vista previa actualizada",
     "enviarPorEmail": "Enviar por email",
