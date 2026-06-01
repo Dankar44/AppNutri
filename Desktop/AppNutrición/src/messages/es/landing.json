@@ -54,6 +54,13 @@
       "descripcion": "Nuestra IA analiza el perfil, objetivos y restricciones de cada paciente para proponerte un plan nutricional equilibrado que puedes ajustar antes de asignarlo.",
       "cta": "Prueba la IA",
       "imageAlt": "Generación de planes con IA Annonia"
+    },
+    "universidades": {
+      "tag": "Para universidades:",
+      "titulo": "Forma a futuros nutricionistas con una herramienta real",
+      "descripcion": "Lleva Annonia a tu facultad: tus estudiantes practican con el mismo software que usarán en consulta — crean planes, gestionan casos y aprenden con datos reales. Licencias para centros educativos.",
+      "cta": "Contáctanos",
+      "imageAlt": "Annonia para universidades"
     }
   },
   "comoFunciona": {

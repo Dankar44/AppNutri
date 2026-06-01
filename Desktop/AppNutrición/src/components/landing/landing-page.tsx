@@ -4,13 +4,14 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
-  Leaf, ArrowRight, ChevronRight, X,
+  Leaf, ArrowRight, ChevronRight, X, Mail,
   Utensils, Fish, Croissant, Salad, Wheat, Vegan, Pizza, Soup, Beef, CupSoda,
   Carrot, Egg, Nut, Cherry, Banana, Bean, Sandwich, IceCreamCone, Apple, Grape, Citrus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
 import { NuestraHistoria } from "@/components/landing/nuestra-historia";
+import { MarcasColaboradores } from "@/components/landing/marcas-colaboradores";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { useTranslations } from "next-intl";
@@ -39,6 +40,14 @@ const SHOWCASE_LAYOUT = [
     imagePosition: "right" as const,
     gradientClasses: "from-green-100/80 to-emerald-200/50 border-green-200/60 dark:from-green-950/40 dark:to-emerald-900/30 dark:border-green-800/40",
     direction: "left" as const,
+  },
+  {
+    key: "universidades" as const,
+    ctaHref: "mailto:annonianutri@gmail.com",
+    imageSrc: "/images/landing/sw_universidades.png",
+    imagePosition: "left" as const,
+    gradientClasses: "from-green-50 to-emerald-100/60 border-green-200/60 dark:from-green-950/40 dark:to-emerald-900/30 dark:border-green-800/40",
+    direction: "right" as const,
   },
 ];
 
@@ -93,7 +102,7 @@ const PROGRAMAS: {
 }[] = [
   { label: "Nutricionistas", image: "/images/landing/programas/nutricionistas.png", color: "#CFE0DF", href: "#para-dietistas" },
   { label: "Pacientes", image: "/images/landing/programas/pacientes.png", color: "#ECE2CE", href: "#para-pacientes" },
-  { label: "Universidades", image: "/images/landing/programas/universidades.png", color: "#CFDBD3", href: null },
+  { label: "Universidades", image: "/images/landing/programas/universidades.png", color: "#CFDBD3", href: "#para-universidades" },
   { label: "Centros", image: "/images/landing/programas/centros.png", color: "#DDE6E5", href: null },
 ];
 
@@ -594,7 +603,7 @@ export function LandingPage() {
                     className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-green-600 text-white text-sm font-semibold hover:bg-green-700 transition-all shadow-sm shadow-green-600/20 hover:-translate-y-0.5"
                   >
                     {section.ctaText}
-                    <ArrowRight className="w-4 h-4" />
+                    {section.ctaHref.startsWith("mailto:") ? <Mail className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
                   </Link>
                 </div>
                 <div className="flex-1 w-full max-w-lg lg:max-w-xl flex justify-center">
@@ -690,6 +699,9 @@ export function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ─── MARCAS / COLABORADORES ─── */}
+      <MarcasColaboradores />
 
       {/* ─── CTA ─── */}
       <section className="py-24 sm:py-32">
