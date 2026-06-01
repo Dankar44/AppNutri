@@ -25,6 +25,8 @@ export type PlanificacionDatos = {
   pesoObjetivo?: string;
   grasaObjetivo?: string;
   imcObjetivo?: string;
+  /** % de ajuste sobre el gasto según el objetivo (déficit negativo, superávit positivo). Ej: -10 */
+  ajusteObjetivoPct?: number;
 };
 
 export type Planificacion = {

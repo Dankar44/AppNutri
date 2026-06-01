@@ -48,6 +48,7 @@ type PacienteForPlanificacion = {
   sexo: string | null;
   peso: number | null;
   altura: number | null;
+  objetivo: string | null;
   objetivoDetalle: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
@@ -63,6 +64,20 @@ function parseKgFromObjetivoDetalle(text: string | null | undefined): number | n
   if (!m) return null;
   const value = parseFloat(m[1].replace(",", "."));
   return Number.isFinite(value) ? value : null;
+}
+
+/** Ajuste calórico por defecto sobre el gasto, según el objetivo del paciente.
+ *  Negativo = déficit (pérdida), positivo = superávit (ganancia), 0 = mantenimiento.
+ *  El nutricionista puede cambiarlo después. */
+function ajustePorDefectoDeObjetivo(objetivo: string | null): number {
+  switch (objetivo) {
+    case "PERDER_PESO":
+      return -10;
+    case "GANAR_MASA":
+      return 10;
+    default:
+      return 0; // MANTENIMIENTO, PATOLOGIA, DEPORTIVO, OTRO
+  }
 }
 
 function latestValue(medidas: MedidaSerializada[], key: keyof MedidaSerializada): number | null {
@@ -125,6 +140,16 @@ const GRASA_IDS = {
   JACKSON_3: "jackson_3",
   JACKSON_7: "jackson_7",
 } as const;
+
+/** Opciones rápidas de ajuste calórico por objetivo (déficit / mantenimiento / superávit). */
+const AJUSTE_OPCIONES: { value: number; label: string }[] = [
+  { value: -20, label: "−20%" },
+  { value: -15, label: "−15%" },
+  { value: -10, label: "−10%" },
+  { value: 0, label: "0%" },
+  { value: 10, label: "+10%" },
+  { value: 15, label: "+15%" },
+];
 
 /** Map from legacy hardcoded Spanish names to stable formula IDs (for DB migration compat) */
 const LEGACY_BMR_MAP: Record<string, string> = {
@@ -744,22 +769,14 @@ export function PlanificacionPorDefectoTab({
     });
   }
   /* --- Constants (using IDs + translated labels) --- */
+  // Fórmulas de % masa grasa, sin duplicados. (Antes había grupos "Brozek" y "Siri" con
+  // las MISMAS fórmulas repetidas — bug visual. Hoy el selector solo etiqueta qué método
+  // declara el nutri; el % grasa proviene de la medida o se introduce a mano.)
   const FORMULAS_MASA_GRASA_GROUPS: FormulaGroup[] = [
     {
-      title: t("formulaGrupoDirecto"),
-      items: [{ id: GRASA_IDS.PETERSON, label: t("ecuacionPeterson") }],
-    },
-    {
-      title: t("formulaGrupoBrozek"),
+      title: "",
       items: [
-        { id: GRASA_IDS.DURNIN_WOMERSLEY, label: t("ecuacionDurninWomersley") },
-        { id: GRASA_IDS.JACKSON_3, label: t("ecuacionJackson3") },
-        { id: GRASA_IDS.JACKSON_7, label: t("ecuacionJackson7") },
-      ],
-    },
-    {
-      title: t("formulaGrupoSiri"),
-      items: [
+        { id: GRASA_IDS.PETERSON, label: t("ecuacionPeterson") },
         { id: GRASA_IDS.DURNIN_WOMERSLEY, label: t("ecuacionDurninWomersley") },
         { id: GRASA_IDS.JACKSON_3, label: t("ecuacionJackson3") },
         { id: GRASA_IDS.JACKSON_7, label: t("ecuacionJackson7") },
@@ -857,6 +874,10 @@ export function PlanificacionPorDefectoTab({
   const [bmrFormula, setBmrFormula] = useState<string>(normalizeBmrId(datos.formulaBmr ?? BMR_IDS.OMS));
   const [eerFormula, setEerFormula] = useState<string>(normalizeEerId(datos.formulaEer ?? EER_IDS.IOM_2005));
   const [eerObjetivoInput, setEerObjetivoInput] = useState(datos.eerObjetivo ?? "");
+  // Ajuste por objetivo (déficit/superávit). Init: lo guardado o el por defecto del objetivo.
+  const [ajustePct, setAjustePct] = useState<number>(
+    datos.ajusteObjetivoPct ?? ajustePorDefectoDeObjetivo(paciente.objetivo)
+  );
 
   /* --- Macro reference source --- */
   const gDia = t("unidadGDia");
@@ -899,6 +920,9 @@ export function PlanificacionPorDefectoTab({
   const [grasaPct, setGrasaPct] = useState(datos.grasaPct ?? 30);
   const [carbPct, setCarbPct] = useState(datos.carbPct ?? 50);
   const [protPct, setProtPct] = useState(datos.protPct ?? 20);
+  // Edición directa de gramos por macro: buffer mientras se teclea; se aplica al salir del campo
+  // (evita que el input "salte" al recalcularse el % en cada tecla).
+  const [gramosEdit, setGramosEdit] = useState<{ macro: "grasa" | "carb" | "prot"; val: string } | null>(null);
 
   /* --- Editable weight/body fat inputs --- */
   const pesoInicialActual = latestValue(medidas, "peso") ?? paciente.peso ?? null;
@@ -972,10 +996,20 @@ export function PlanificacionPorDefectoTab({
     actividadObjetivoOpt.paIom,
   ]);
 
+  // EER objetivo "efectivo": si el nutri fijó un valor a mano, ese; si no, se deriva del
+  // gasto actual aplicando el ajuste del objetivo (déficit/superávit). Así "sale ya calculado".
+  const eerObjetivoEfectivo = useMemo<number | null>(() => {
+    const manual = eerObjetivoInput.trim();
+    if (manual !== "") return parseFloat(manual) || null;
+    if (valores?.eerActual != null) {
+      return Math.round(valores.eerActual * (1 + ajustePct / 100));
+    }
+    return null;
+  }, [eerObjetivoInput, valores, ajustePct]);
+
   const macros = useMemo(() => {
-    const eerObj = eerObjetivoInput ? parseFloat(eerObjetivoInput) || 0 : 0;
     const w = pesoActual || 1;
-    const kcal = Math.round(eerObj);
+    const kcal = Math.max(0, Math.round(eerObjetivoEfectivo ?? 0));
     const grasaG = Math.round((kcal * grasaPct) / 100 / 9);
     const carbG = Math.round((kcal * carbPct) / 100 / 4);
     const protG = Math.round((kcal * protPct) / 100 / 4);
@@ -988,7 +1022,7 @@ export function PlanificacionPorDefectoTab({
       carbGKg: pesoActual ? carbG / pesoActual : 0,
       protGKg: pesoActual ? protG / pesoActual : 0,
     };
-  }, [eerObjetivoInput, pesoActual, grasaPct, carbPct, protPct]);
+  }, [eerObjetivoEfectivo, pesoActual, grasaPct, carbPct, protPct]);
 
   /* --- Fibra alimentaria --- */
   const FIBRA_SOURCES = [
@@ -1034,6 +1068,7 @@ export function PlanificacionPorDefectoTab({
     setBmrFormula(normalizeBmrId(d.formulaBmr ?? BMR_IDS.OMS));
     setEerFormula(normalizeEerId(d.formulaEer ?? EER_IDS.IOM_2005));
     setEerObjetivoInput(d.eerObjetivo ?? "");
+    setAjustePct(d.ajusteObjetivoPct ?? ajustePorDefectoDeObjetivo(paciente.objetivo));
     setMacroRefIdx(d.macroRefIdx ?? 0);
     setGrasaPct(d.grasaPct ?? 30);
     setCarbPct(d.carbPct ?? 50);
@@ -1045,7 +1080,7 @@ export function PlanificacionPorDefectoTab({
     setFibraInput(d.fibraCantidad ?? "");
     setFechaInicioInput(selectedPlan.fechaInicio ? selectedPlan.fechaInicio.slice(0, 7) : "");
     setFechaFinPrevistaInput(selectedPlan.fechaFinPrevista ? selectedPlan.fechaFinPrevista.slice(0, 7) : "");
-  }, [selectedPlanId, selectedPlan, actividadInicial, pesoInicialObjetivo, FORMULAS_MASA_GRASA_GROUPS]);
+  }, [selectedPlanId, selectedPlan, actividadInicial, pesoInicialObjetivo, FORMULAS_MASA_GRASA_GROUPS, paciente.objetivo]);
 
   /* ─── Dirty tracking + manual save ─── */
   const [isDirty, setIsDirty] = useState(false);
@@ -1064,6 +1099,7 @@ export function PlanificacionPorDefectoTab({
     bmrFormula, eerFormula, formulaMasaGrasa, eerObjetivoInput,
     grasaPct, carbPct, protPct, macroRefIdx,
     fibraFuente, fibraInput, pesoObjetivoInput, grasaObjetivoInput, imcObjetivoInput,
+    ajustePct,
   ]);
 
   // Reset dirty flag on plan switch
@@ -1079,6 +1115,7 @@ export function PlanificacionPorDefectoTab({
       formulaEer: eerFormula,
       formulaMasaGrasa: formulaMasaGrasa,
       eerObjetivo: eerObjetivoInput || undefined,
+      ajusteObjetivoPct: ajustePct,
       grasaPct,
       carbPct,
       protPct,
@@ -1167,6 +1204,28 @@ export function PlanificacionPorDefectoTab({
       const newOther1 = Math.round((other1 / otherTotal) * remaining);
       setOther1(newOther1);
       setOther2(remaining - newOther1);
+    }
+  }
+
+  /* ─── Editar gramos directamente → convierte a % y rebalancea (reusa la lógica del slider) ─── */
+  function handleGramosChange(macro: "grasa" | "carb" | "prot", raw: string) {
+    const kcalTotal = macros.kcal;
+    if (!kcalTotal || kcalTotal <= 0) return; // sin EER objetivo no se puede derivar el %
+    const g = parseFloat(raw.replace(",", "."));
+    if (!Number.isFinite(g) || g < 0) return;
+    const kcalPorG = macro === "grasa" ? 9 : 4;
+    const nuevoPct = Math.round(((g * kcalPorG) / kcalTotal) * 100);
+    handleSliderDrag(macro, nuevoPct);
+  }
+
+  // Valor a mostrar en el input de gramos (buffer de edición si está activo, si no el calculado).
+  function gramosValue(macro: "grasa" | "carb" | "prot", calc: number): string {
+    return gramosEdit?.macro === macro ? gramosEdit.val : String(calc);
+  }
+  function commitGramos(macro: "grasa" | "carb" | "prot") {
+    if (gramosEdit?.macro === macro) {
+      handleGramosChange(macro, gramosEdit.val);
+      setGramosEdit(null);
     }
   }
 
@@ -1670,18 +1729,46 @@ export function PlanificacionPorDefectoTab({
                   </span>
                 </td>
                 <td className="py-3 px-4">
-                  <div className="relative w-36">
-                    <input
-                      type="number" inputMode="decimal"
-                      step="1"
-                      min="500"
-                      max="10000"
-                      value={eerObjetivoInput}
-                      onChange={(e) => setEerObjetivoInput(e.target.value)}
-                      placeholder={t("unidadKcalDia")}
-                      className="w-full h-9 rounded-lg border border-border bg-background px-3 pr-16 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30"
-                    />
-                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">{t("unidadKcalDia")}</span>
+                  <div className="w-44 space-y-1.5">
+                    <div className="relative">
+                      <input
+                        type="number" inputMode="decimal"
+                        step="1"
+                        min="500"
+                        max="10000"
+                        value={eerObjetivoInput}
+                        onChange={(e) => setEerObjetivoInput(e.target.value)}
+                        placeholder={eerObjetivoEfectivo != null ? String(eerObjetivoEfectivo) : t("unidadKcalDia")}
+                        className="w-full h-9 rounded-lg border border-border bg-background px-3 pr-16 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      />
+                      <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">{t("unidadKcalDia")}</span>
+                    </div>
+                    {/* Botones rápidos de ajuste por objetivo (déficit/superávit). Al pulsar,
+                        se vuelve al modo automático (input vacío) con el nuevo porcentaje. */}
+                    <div className="flex flex-wrap gap-1">
+                      {AJUSTE_OPCIONES.map((op) => {
+                        const activo = eerObjetivoInput.trim() === "" && ajustePct === op.value;
+                        return (
+                          <button
+                            key={op.value}
+                            type="button"
+                            onClick={() => { setAjustePct(op.value); setEerObjetivoInput(""); }}
+                            className={`px-1.5 py-0.5 rounded text-[10px] font-medium border transition-colors ${
+                              activo
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-muted/40 text-muted-foreground border-border hover:bg-muted"
+                            }`}
+                          >
+                            {op.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {eerObjetivoInput.trim() === "" && valores?.eerActual != null && eerObjetivoEfectivo != null && ajustePct !== 0 && (
+                      <p className="text-[10px] text-muted-foreground leading-tight">
+                        {t("ajusteCalculadoResumen", { base: Math.round(valores.eerActual), result: eerObjetivoEfectivo })}
+                      </p>
+                    )}
                   </div>
                 </td>
                 <td className="py-3 px-4">
@@ -1754,7 +1841,20 @@ export function PlanificacionPorDefectoTab({
                       style={{ "--slider-color": "#EAB308", "--slider-pct": `${grasaPct}%` } as React.CSSProperties}
                     />
                   </td>
-                  <td className="py-3 px-4 font-medium">{macros.grasaG} g</td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="number" inputMode="decimal" min={0}
+                        value={gramosValue("grasa", macros.grasaG)}
+                        onChange={(e) => setGramosEdit({ macro: "grasa", val: e.target.value })}
+                        onBlur={() => commitGramos("grasa")}
+                        onKeyDown={(e) => { if (e.key === "Enter") commitGramos("grasa"); }}
+                        disabled={!macros.kcal}
+                        className="w-16 h-8 px-2 rounded-lg border border-border bg-background text-sm text-center font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+                      />
+                      <span className="text-muted-foreground text-xs">g</span>
+                    </div>
+                  </td>
                   <td className="py-3 px-4">{fmt2(macros.grasaGKg)} g/kg</td>
                   <td className="py-3 px-4 text-muted-foreground">{macroRef.lipidos}</td>
                 </tr>
@@ -1790,7 +1890,20 @@ export function PlanificacionPorDefectoTab({
                       style={{ "--slider-color": "#F97316", "--slider-pct": `${carbPct}%` } as React.CSSProperties}
                     />
                   </td>
-                  <td className="py-3 px-4 font-medium">{macros.carbG} g</td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="number" inputMode="decimal" min={0}
+                        value={gramosValue("carb", macros.carbG)}
+                        onChange={(e) => setGramosEdit({ macro: "carb", val: e.target.value })}
+                        onBlur={() => commitGramos("carb")}
+                        onKeyDown={(e) => { if (e.key === "Enter") commitGramos("carb"); }}
+                        disabled={!macros.kcal}
+                        className="w-16 h-8 px-2 rounded-lg border border-border bg-background text-sm text-center font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+                      />
+                      <span className="text-muted-foreground text-xs">g</span>
+                    </div>
+                  </td>
                   <td className="py-3 px-4">{fmt2(macros.carbGKg)} g/kg</td>
                   <td className="py-3 px-4 text-muted-foreground">{macroRef.carbohidratos}</td>
                 </tr>
@@ -1825,7 +1938,20 @@ export function PlanificacionPorDefectoTab({
                       style={{ "--slider-color": "#3B82F6", "--slider-pct": `${protPct}%` } as React.CSSProperties}
                     />
                   </td>
-                  <td className="py-3 px-4 font-medium">{macros.protG} g</td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="number" inputMode="decimal" min={0}
+                        value={gramosValue("prot", macros.protG)}
+                        onChange={(e) => setGramosEdit({ macro: "prot", val: e.target.value })}
+                        onBlur={() => commitGramos("prot")}
+                        onKeyDown={(e) => { if (e.key === "Enter") commitGramos("prot"); }}
+                        disabled={!macros.kcal}
+                        className="w-16 h-8 px-2 rounded-lg border border-border bg-background text-sm text-center font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+                      />
+                      <span className="text-muted-foreground text-xs">g</span>
+                    </div>
+                  </td>
                   <td className="py-3 px-4">{fmt2(macros.protGKg)} g/kg</td>
                   <td className="py-3 px-4 text-muted-foreground">{macroRef.proteinas}</td>
                 </tr>

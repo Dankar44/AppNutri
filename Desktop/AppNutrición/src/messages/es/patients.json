@@ -583,6 +583,13 @@
     }
   },
   "portal": {
+    "ocultarCaloriasTitulo": "Ocultar calorías y macros al paciente",
+    "ocultarCaloriasDescripcion": "Si lo activas, el paciente no verá las calorías ni los macronutrientes en su portal, sus PDF ni su seguimiento. Tú seguirás viéndolos siempre.",
+    "caloriasOcultadas": "El paciente ya no verá calorías ni macros",
+    "caloriasVisibles": "El paciente volverá a ver calorías y macros",
+    "errorGuardarCalorias": "No se pudo guardar el cambio",
+    "ocultarCaloriasAria": "Ocultar calorías y macros al paciente",
+    "mostrarCaloriasAria": "Mostrar calorías y macros al paciente",
     "volverAPaciente": "Volver a {nombre}",
     "portalPaciente": "Portal del paciente",
     "configuraAcceso": "Configura el acceso de {nombre} {apellidos} a su portal",
@@ -1212,6 +1219,7 @@
 
     "kcalDia": "{val} kcal/día",
     "unidadKcalDia": "kcal/día",
+    "ajusteCalculadoResumen": "Gasto {base} → objetivo {result} kcal/día",
 
     "lipidos": "Lípidos",
     "carbosCorta": "Carbos",
