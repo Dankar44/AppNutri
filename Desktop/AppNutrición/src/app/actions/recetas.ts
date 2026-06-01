@@ -525,7 +525,7 @@ export async function buscarAlimentosYRecetas(
 
     const raw = await prisma.alimento.findMany({
       where: { ...ownerFilter, ...nombreFilter },
-      take: filtro === "mis-alimentos" ? 30 : 10,
+      take: 50,
       orderBy: { nombre: "asc" },
       select: {
         id: true, nombre: true, calorias: true, proteinas: true,
@@ -577,7 +577,7 @@ export async function buscarAlimentosYRecetas(
         ? await prisma.$queryRawUnsafe(
             `SELECT r.id, r.nombre, r.porciones, r.calorias, r.proteinas, r.carbohidratos, r.grasas, r."dietistaId"
              FROM recetas r WHERE r."dietistaId" = $1 AND r."nombreNormalizado" LIKE $2
-             ORDER BY CASE WHEN r."nombreNormalizado" = $3 THEN 0 WHEN r."nombreNormalizado" LIKE $3 || '%' THEN 1 ELSE 2 END, r."nombre" ASC LIMIT 30`,
+             ORDER BY CASE WHEN r."nombreNormalizado" = $3 THEN 0 WHEN r."nombreNormalizado" LIKE $3 || '%' THEN 1 ELSE 2 END, r."nombre" ASC LIMIT 50`,
             dietista.id, `%${normalizarParaBusqueda(querySanitizada)}%`, normalizarParaBusqueda(querySanitizada),
           )
         : await prisma.$queryRawUnsafe(
@@ -594,7 +594,7 @@ export async function buscarAlimentosYRecetas(
              LEFT JOIN receta_favoritos fav ON fav."recetaId" = r.id AND fav."dietistaId" = $1
              WHERE (r."dietistaId" = $1 OR (r."dietistaId" IS NULL AND fav.id IS NOT NULL))
                AND r."nombreNormalizado" LIKE $2
-             ORDER BY CASE WHEN r."nombreNormalizado" = $3 THEN 0 WHEN r."nombreNormalizado" LIKE $3 || '%' THEN 1 ELSE 2 END, r."nombre" ASC LIMIT 5`,
+             ORDER BY CASE WHEN r."nombreNormalizado" = $3 THEN 0 WHEN r."nombreNormalizado" LIKE $3 || '%' THEN 1 ELSE 2 END, r."nombre" ASC LIMIT 50`,
             dietista.id, `%${normalizarParaBusqueda(querySanitizada)}%`, normalizarParaBusqueda(querySanitizada),
           )
         : [];
@@ -638,7 +638,7 @@ export async function buscarAlimentosParaReceta(query: string) {
       OR: [{ dietistaId: dietista.id }, { dietistaId: null }],
       nombreNormalizado: { contains: termNorm },
     },
-    take: 15,
+    take: 50,
     orderBy: { nombre: "asc" },
     select: {
       id: true,
