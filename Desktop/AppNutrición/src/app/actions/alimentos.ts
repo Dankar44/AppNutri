@@ -324,7 +324,7 @@ export async function getAlimentosPaginados(
   };
 
   const selectListado = {
-    id: true, nombre: true, categoria: true,
+    id: true, nombre: true, nombreNormalizado: true, categoria: true,
     calorias: true, proteinas: true, carbohidratos: true, grasas: true, fibra: true,
     porcion: true, unidad: true, origen: true, imagenUrl: true, dietistaId: true,
     stock: true, stockMinimo: true, compartido: true,
@@ -344,12 +344,30 @@ export async function getAlimentosPaginados(
 
   const hasMore = alimentos.length > PAGE_SIZE;
   if (hasMore) alimentos.pop();
+  // El cursor se calcula sobre el orden alfabético (consistente con orderBy nombre)
+  const nextCursor = hasMore ? alimentos[alimentos.length - 1].id : null;
 
-  return {
-    alimentos,
-    total,
-    nextCursor: hasMore ? alimentos[alimentos.length - 1].id : null,
-  };
+  // Si hay búsqueda, reordenar la página por relevancia: coincidencia exacta primero,
+  // luego las que empiezan por el término, luego el resto. (Para búsquedas normales
+  // todos los resultados caben en una página, así que el orden es completo.)
+  if (busquedaSanitizada) {
+    const term = normalizarParaBusqueda(busquedaSanitizada);
+    const rel = (n: string | null) => {
+      const v = n ?? "";
+      if (v === term) return 0;
+      if (v.startsWith(term)) return 1;
+      return 2;
+    };
+    alimentos.sort((a, b) => {
+      const ra = rel(a.nombreNormalizado);
+      const rb = rel(b.nombreNormalizado);
+      if (ra !== rb) return ra - rb;
+      if (a.nombre.length !== b.nombre.length) return a.nombre.length - b.nombre.length;
+      return a.nombre.localeCompare(b.nombre);
+    });
+  }
+
+  return { alimentos, total, nextCursor };
 }
 
 export async function cargarMasAlimentos(
