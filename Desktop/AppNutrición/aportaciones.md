@@ -935,8 +935,6 @@ En perímetros, se registran 4: cintura, cadera, brazo y abdomen. No existe per�
 
 ---
 
----
-
 # Cuenta de Profesor — Funcionalidad nueva
 
 Sección dedicada a la cuenta de tipo "Profesor", pensada para docentes de nutrición que usan Annonia como herramienta educativa. El profesor crea un paciente de prueba (caso clínico) y lo asigna a varios estudiantes para que trabajen sobre él. Los estudiantes tienen cuentas normales de nutricionista, pero reciben el paciente compartido y trabajan de forma independiente.
