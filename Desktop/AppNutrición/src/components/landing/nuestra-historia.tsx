@@ -76,7 +76,8 @@ export function NuestraHistoria() {
       {/* Grid: imagen + hitos */}
       <div className="grid lg:grid-cols-[1.55fr_1fr] gap-10 lg:gap-16 items-center">
         {/* Imagen apaisada (cambia con el paso activo) */}
-        <div className="relative w-full aspect-[16/10] rounded-[20px] overflow-hidden bg-white dark:bg-[#17181e] shadow-[0_20px_50px_rgba(15,23,42,0.12)] lg:sticky lg:top-28">
+        <div className="lg:sticky lg:top-28">
+          <div className="relative w-full aspect-[16/10] rounded-[20px] overflow-hidden bg-white dark:bg-[#17181e] shadow-[0_20px_50px_rgba(15,23,42,0.12)]">
           {HITOS.map((h, i) => (
             <Image
               key={i}
@@ -90,6 +91,7 @@ export function NuestraHistoria() {
               )}
             />
           ))}
+          </div>
         </div>
 
         {/* Lista de hitos */}

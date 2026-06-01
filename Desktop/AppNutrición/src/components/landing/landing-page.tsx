@@ -56,9 +56,9 @@ type HeroSlide = {
 
 const HERO_SLIDES: HeroSlide[] = [
   {
-    image: "/images/landing/banner-oficina.png",
+    image: "/images/landing/banner-oficina-v2.png",
     part1: "Tu consulta",
-    part2: "en un solo lugar",
+    part2: "organizada",
     part3: "y más tiempo para ti",
     notifNombre: "Annonia",
     notifMensaje: "Agenda, fichas y planes de hoy al día ✅",
@@ -72,9 +72,9 @@ const HERO_SLIDES: HeroSlide[] = [
     notifMensaje: "¡Muy bien Claudia! Se nota que sigues tu plan cocinando en casa 🍳",
   },
   {
-    image: "/images/landing/banner-planes.png",
-    part1: "Crea y ajusta",
-    part2: "dietas personalizadas",
+    image: "/images/landing/banner-planes-v2.png",
+    part1: "Crea dietas",
+    part2: "a medida",
     part3: "en cualquier dispositivo",
     notifNombre: "Carlos García",
     notifMensaje: "¡Recibido mi nuevo plan! 🥗 Esta semana lo sigo a tope",
