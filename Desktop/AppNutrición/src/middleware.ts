@@ -19,7 +19,7 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  const publicSpanishRoutes = ["/demo", "/landing", "/precios", "/legal"];
+  const publicSpanishRoutes = ["/demo", "/landing", "/precios", "/legal", "/colaboradores"];
   const isPublicRoute = publicSpanishRoutes.some(
     (r) => pathname === r || pathname.startsWith(r + "/"),
   );

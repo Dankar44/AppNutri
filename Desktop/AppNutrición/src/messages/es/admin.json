@@ -24,7 +24,8 @@
       "actividad": "Actividad",
       "suscripciones": "Suscripciones",
       "crearCuenta": "Crear cuenta",
-      "centros": "Centros"
+      "centros": "Centros",
+      "ofertas": "Ofertas"
     },
     "roles": {
       "creator": "Creador de cuentas",

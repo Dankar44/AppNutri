@@ -95,7 +95,8 @@ export async function ensureDietistaParaUsuario(
       apellidos,
       especialidad: user.user_metadata.especialidad || null,
       verificado: true,
-      fuenteContacto: "organico",
+      fuenteContacto: meta.fuenteContacto || "organico",
+      creadoPor: meta.creadoPor || null,
     },
   });
   console.log(`[auth] ficha de dietista creada para ${idLog} (id=${dietista.id}, provider=${user.app_metadata?.provider ?? "?"})`);

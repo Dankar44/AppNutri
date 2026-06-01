@@ -80,6 +80,7 @@ export async function registrarCuenta(data: {
   email: string;
   password: string;
   especialidad?: string;
+  fuente?: string;
 }): Promise<{ ok: boolean; error?: string }> {
   const t = await getTranslations("validation");
 
@@ -118,11 +119,11 @@ export async function registrarCuenta(data: {
          $1, crypt($2, gen_salt('bf')),
          NULL, NOW(), NOW(),
          '{"provider":"email","providers":["email"]}',
-         jsonb_build_object('nombre', $3::text, 'apellidos', $4::text, 'especialidad', $5::text, 'email_verified', false, 'phone_verified', false),
+         jsonb_build_object('nombre', $3::text, 'apellidos', $4::text, 'especialidad', $5::text, 'fuenteContacto', $6::text, 'creadoPor', $6::text, 'email_verified', false, 'phone_verified', false),
          false, false,
          '', '', '', '', '', '', '', ''
        ) RETURNING id`,
-      email, data.password, nombre, apellidos, especialidad || "",
+      email, data.password, nombre, apellidos, especialidad || "", data.fuente || "",
     );
 
     const authId = authRows[0].id;

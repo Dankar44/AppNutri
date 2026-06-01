@@ -18,6 +18,7 @@ import {
   MessageSquare,
   UserPlus,
   Building2,
+  Briefcase,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -34,6 +35,7 @@ const navItems = [
   { href: "/admin/suscripciones", labelKey: "nav.suscripciones" as const, icon: CreditCard },
   { href: "/admin/crear-cuenta", labelKey: "nav.crearCuenta" as const, icon: UserPlus },
   { href: "/admin/centros", labelKey: "nav.centros" as const, icon: Building2 },
+  { href: "/admin/ofertas", labelKey: "nav.ofertas" as const, icon: Briefcase },
 ];
 
 interface AdminSidebarProps {
