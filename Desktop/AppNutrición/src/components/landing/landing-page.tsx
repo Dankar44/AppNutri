@@ -469,8 +469,12 @@ export function LandingPage() {
         </div>
         <ScrollReveal>
           <div className="relative max-w-4xl mx-auto px-4 text-center">
+            <span className="inline-block text-green-800 dark:text-green-300 text-xs font-bold tracking-[0.18em] uppercase mb-4">
+              {t("subheadline.eyebrow")}
+            </span>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 dark:text-gray-100 mb-3">
-              {t("subheadline.titulo")}
+              {t("subheadline.tituloPart1")}{" "}
+              <span className="bg-[#bdd9c5] dark:bg-[#2a5e3a] dark:text-green-100 px-2 -mx-0.5">{t("subheadline.tituloPart2")}</span>.
             </h2>
             <p className="text-xl sm:text-2xl text-gray-400">
               {t("subheadline.subtitulo")}
@@ -480,9 +484,9 @@ export function LandingPage() {
       </section>
 
       {/* ─── PROGRAMAS DESTACADOS ─── */}
-      <section className="bg-white dark:bg-[#101117] pt-0 sm:pt-2 pb-16 sm:pb-24">
+      <section className="bg-white dark:bg-[#101117] pt-0 sm:pt-2 pb-6 sm:pb-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
             {PROGRAMAS.map((p, i) => {
               const href = p.href;
               const cardClass = cn(
@@ -545,10 +549,30 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ─── SHOWCASE: Cómo funciona ─── */}
+      {/* ─── OLA separadora (igual que la del hero): divide las tarjetas del encabezado ─── */}
+      <div className="relative z-10">
+        <svg viewBox="0 0 1440 80" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-[5vw] sm:h-[4vw] lg:h-[3.5vw] block">
+          <path d="M0 80V40C240 0 480 0 720 20C960 40 1200 60 1440 30V80H0Z" className="fill-[#bdd9c5] dark:fill-[#1a3a24]" />
+        </svg>
+        <section className="bg-[#bdd9c5] dark:bg-[#1a3a24] -mt-px h-12 sm:h-16 lg:h-20" />
+      </div>
+
+      {/* ─── CÓMO FUNCIONA (encabezado + bloques) ─── */}
       <section id="como-funciona">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-8 sm:pt-4 sm:pb-12 space-y-16 sm:space-y-24">
-          {SHOWCASE_SECTIONS.map((section, idx) => (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-8 sm:pt-14 sm:pb-12">
+          <ScrollReveal>
+            <div className="text-center mb-12 sm:mb-16">
+              <span className="inline-block text-green-800 dark:text-green-300 text-xs font-bold tracking-[0.18em] uppercase mb-4">
+                {t("comoFunciona.eyebrow")}
+              </span>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+                {t("comoFunciona.tituloPart1")}{" "}
+                <span className="bg-[#bdd9c5] dark:bg-[#2a5e3a] dark:text-green-100 px-2 -mx-0.5">{t("comoFunciona.tituloPart2")}</span>
+              </h2>
+            </div>
+          </ScrollReveal>
+          <div className="space-y-16 sm:space-y-24">
+            {SHOWCASE_SECTIONS.map((section, idx) => (
             <ScrollReveal key={idx} direction={section.direction} delay={100}>
               <div
                 id={`para-${section.key}`}
@@ -595,6 +619,7 @@ export function LandingPage() {
               </div>
             </ScrollReveal>
           ))}
+          </div>
         </div>
       </section>
 
@@ -620,6 +645,9 @@ export function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal>
             <div className="max-w-3xl mx-auto text-center mb-14 sm:mb-16">
+              <span className="inline-block text-green-800 dark:text-green-300 text-xs font-bold tracking-[0.18em] uppercase mb-4">
+                {t("faqSection.eyebrow")}
+              </span>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-5">
                 {t("faqSection.tituloPart1")}{" "}
                 <span className="bg-[#bdd9c5] dark:bg-[#2a5e3a] dark:text-green-100 px-2 -mx-0.5">{t("faqSection.tituloPart2")}</span>{" "}

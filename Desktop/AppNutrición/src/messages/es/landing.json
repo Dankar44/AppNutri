@@ -27,7 +27,10 @@
     "bannerAlt": "Banner Annonia"
   },
   "subheadline": {
+    "eyebrow": "Nuestros servicios",
     "titulo": "Software de nutrición personalizada.",
+    "tituloPart1": "Software de nutrición",
+    "tituloPart2": "personalizada",
     "subtitulo": "Pacientes únicos, planes alimenticios únicos."
   },
   "showcase": {
@@ -53,6 +56,11 @@
       "imageAlt": "Generación de planes con IA Annonia"
     }
   },
+  "comoFunciona": {
+    "eyebrow": "Cómo funciona",
+    "tituloPart1": "Descubre todo lo que",
+    "tituloPart2": "puedes hacer"
+  },
   "trust": {
     "titulo": "Software diseñado para nutricionistas",
     "tituloPart1": "Software diseñado para",
@@ -72,6 +80,7 @@
     }
   },
   "faqSection": {
+    "eyebrow": "Preguntas frecuentes",
     "titulo": "Respuestas más cerca que nunca",
     "tituloPart1": "Respuestas más",
     "tituloPart2": "cerca",
