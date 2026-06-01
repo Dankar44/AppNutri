@@ -1723,7 +1723,7 @@ export function PlanificacionPorDefectoTab({
                         max="10000"
                         value={eerObjetivoInput}
                         onChange={(e) => setEerObjetivoInput(e.target.value)}
-                        placeholder={eerObjetivoEfectivo != null ? String(eerObjetivoEfectivo) : t("unidadKcalDia")}
+                        placeholder={eerObjetivoEfectivo != null ? String(eerObjetivoEfectivo) : (valores?.eerActual != null ? String(Math.round(valores.eerActual)) : "—")}
                         className="w-full h-9 rounded-lg border border-border bg-background px-3 pr-16 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30"
                       />
                       <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">{t("unidadKcalDia")}</span>
