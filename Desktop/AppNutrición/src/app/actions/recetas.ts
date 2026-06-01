@@ -16,6 +16,7 @@ import {
   LIMITS,
 } from "@/lib/validation";
 import { getCompanyMemberIds } from "@/lib/empresa-utils";
+import { normalizarParaBusqueda } from "@/lib/alimento-utils";
 
 export interface RecetaFormData {
   nombre: string;
@@ -179,6 +180,7 @@ export async function crearReceta(
     data: {
       dietista: { connect: { id: dietista.id } },
       nombre: nombreSanitizado,
+      nombreNormalizado: normalizarParaBusqueda(nombreSanitizado),
       descripcion: descripcionSanitizada,
       instrucciones: instruccionesSanitizadas,
       porciones: porcionesValidadas,
@@ -223,6 +225,7 @@ export async function actualizarReceta(
     where: { id, dietistaId: dietista.id },
     data: {
       nombre: nombreSanitizado,
+      nombreNormalizado: normalizarParaBusqueda(nombreSanitizado),
       descripcion: descripcionSanitizada,
       instrucciones: instruccionesSanitizadas,
       porciones: porcionesValidadas,
@@ -298,8 +301,8 @@ function buildFiltersSql(
 
   const busquedaSanitizada = filters.busqueda ? sanitizeSearch(filters.busqueda) : undefined;
   if (busquedaSanitizada) {
-    whereExtra.push(`r."nombre" ILIKE $${i++}`);
-    values.push(`%${busquedaSanitizada}%`);
+    whereExtra.push(`r."nombreNormalizado" LIKE $${i++}`);
+    values.push(`%${normalizarParaBusqueda(busquedaSanitizada)}%`);
   }
   if (filters.calMin !== undefined) { whereExtra.push(`r."calorias" >= $${i++}`); values.push(filters.calMin); }
   if (filters.calMax !== undefined) { whereExtra.push(`r."calorias" <= $${i++}`); values.push(filters.calMax); }
@@ -507,7 +510,7 @@ export async function buscarAlimentosYRecetas(
     const memberIds = await getCompanyMemberIds(dietista.id, empresaRow?.empresaId ?? null);
 
     const nombreFilter = querySanitizada
-      ? { nombre: { contains: querySanitizada, mode: "insensitive" as const } }
+      ? { nombreNormalizado: { contains: normalizarParaBusqueda(querySanitizada) } }
       : {};
     const otherMemberIds = memberIds.filter((id) => id !== dietista.id);
     const ownerFilter = filtro === "mis-alimentos"
@@ -527,14 +530,36 @@ export async function buscarAlimentosYRecetas(
       select: {
         id: true, nombre: true, calorias: true, proteinas: true,
         carbohidratos: true, grasas: true, porcion: true, unidad: true,
-        dietistaId: true,
+        dietistaId: true, nombreNormalizado: true,
       },
     });
 
-    alimentos = raw.map(({ dietistaId, ...rest }) => ({
-      ...rest,
-      esPropio: dietistaId === dietista.id,
-    }));
+    // Reordenar por relevancia respecto al término buscado (solo en el buscador del editor)
+    if (querySanitizada) {
+      const termNorm = normalizarParaBusqueda(querySanitizada);
+      const relevancia = (n: string): number => {
+        if (n === termNorm) return 0;
+        if (n.startsWith(termNorm)) return 1;
+        return 2;
+      };
+      raw.sort((a, b) => {
+        const na = a.nombreNormalizado ?? "";
+        const nb = b.nombreNormalizado ?? "";
+        const ra = relevancia(na);
+        const rb = relevancia(nb);
+        if (ra !== rb) return ra - rb;
+        if (a.nombre.length !== b.nombre.length) return a.nombre.length - b.nombre.length;
+        return a.nombre.localeCompare(b.nombre);
+      });
+    }
+
+    alimentos = raw.map(({ dietistaId, nombreNormalizado, ...rest }) => {
+      void nombreNormalizado;
+      return {
+        ...rest,
+        esPropio: dietistaId === dietista.id,
+      };
+    });
   }
 
   let recetas: Array<{
@@ -551,9 +576,9 @@ export async function buscarAlimentosYRecetas(
       rawRecetas = querySanitizada
         ? await prisma.$queryRawUnsafe(
             `SELECT r.id, r.nombre, r.porciones, r.calorias, r.proteinas, r.carbohidratos, r.grasas, r."dietistaId"
-             FROM recetas r WHERE r."dietistaId" = $1 AND r."nombre" ILIKE $2
-             ORDER BY r."nombre" ASC LIMIT 30`,
-            dietista.id, `%${querySanitizada}%`,
+             FROM recetas r WHERE r."dietistaId" = $1 AND r."nombreNormalizado" LIKE $2
+             ORDER BY CASE WHEN r."nombreNormalizado" = $3 THEN 0 WHEN r."nombreNormalizado" LIKE $3 || '%' THEN 1 ELSE 2 END, r."nombre" ASC LIMIT 30`,
+            dietista.id, `%${normalizarParaBusqueda(querySanitizada)}%`, normalizarParaBusqueda(querySanitizada),
           )
         : await prisma.$queryRawUnsafe(
             `SELECT r.id, r.nombre, r.porciones, r.calorias, r.proteinas, r.carbohidratos, r.grasas, r."dietistaId"
@@ -568,9 +593,9 @@ export async function buscarAlimentosYRecetas(
              FROM recetas r
              LEFT JOIN receta_favoritos fav ON fav."recetaId" = r.id AND fav."dietistaId" = $1
              WHERE (r."dietistaId" = $1 OR (r."dietistaId" IS NULL AND fav.id IS NOT NULL))
-               AND r."nombre" ILIKE $2
-             ORDER BY r."nombre" ASC LIMIT 5`,
-            dietista.id, `%${querySanitizada}%`,
+               AND r."nombreNormalizado" LIKE $2
+             ORDER BY CASE WHEN r."nombreNormalizado" = $3 THEN 0 WHEN r."nombreNormalizado" LIKE $3 || '%' THEN 1 ELSE 2 END, r."nombre" ASC LIMIT 5`,
+            dietista.id, `%${normalizarParaBusqueda(querySanitizada)}%`, normalizarParaBusqueda(querySanitizada),
           )
         : [];
     }
@@ -606,10 +631,12 @@ export async function buscarAlimentosParaReceta(query: string) {
   const querySanitizada = sanitizeSearch(query);
   if (!querySanitizada) return [];
 
-  return prisma.alimento.findMany({
+  const termNorm = normalizarParaBusqueda(querySanitizada);
+
+  const raw = await prisma.alimento.findMany({
     where: {
       OR: [{ dietistaId: dietista.id }, { dietistaId: null }],
-      nombre: { contains: querySanitizada, mode: "insensitive" },
+      nombreNormalizado: { contains: termNorm },
     },
     take: 15,
     orderBy: { nombre: "asc" },
@@ -622,6 +649,28 @@ export async function buscarAlimentosParaReceta(query: string) {
       grasas: true,
       porcion: true,
       unidad: true,
+      nombreNormalizado: true,
     },
+  });
+
+  // Reordenar por relevancia respecto al término buscado (solo en el buscador del editor)
+  const relevancia = (n: string): number => {
+    if (n === termNorm) return 0;
+    if (n.startsWith(termNorm)) return 1;
+    return 2;
+  };
+  raw.sort((a, b) => {
+    const na = a.nombreNormalizado ?? "";
+    const nb = b.nombreNormalizado ?? "";
+    const ra = relevancia(na);
+    const rb = relevancia(nb);
+    if (ra !== rb) return ra - rb;
+    if (a.nombre.length !== b.nombre.length) return a.nombre.length - b.nombre.length;
+    return a.nombre.localeCompare(b.nombre);
+  });
+
+  return raw.map(({ nombreNormalizado, ...rest }) => {
+    void nombreNormalizado;
+    return rest;
   });
 }

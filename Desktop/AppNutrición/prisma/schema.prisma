@@ -271,6 +271,7 @@ model Planificacion {
 model Alimento {
   id              String            @id @default(cuid())
   nombre          String
+  nombreNormalizado String?         @map("nombreNormalizado")
   categoria       CategoriaAlimento
   calorias        Float
   proteinas       Float
@@ -329,6 +330,7 @@ model Alimento {
 model Receta {
   id              String    @id @default(cuid())
   nombre          String
+  nombreNormalizado String? @map("nombreNormalizado")
   descripcion     String?
   instrucciones   String?
   porciones       Int       @default(1)

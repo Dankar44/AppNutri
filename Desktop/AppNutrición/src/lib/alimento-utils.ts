@@ -17,6 +17,32 @@ export function redondearMacros(valor: number): number {
   return Math.round(valor * 10) / 10;
 }
 
+/**
+ * Normaliza un texto para BÚSQUEDA: minúsculas, sin tildes, espacios colapsados
+ * y des-pluralización simple. Se guarda en `nombreNormalizado` y se aplica también
+ * al término buscado, de modo que "Jamón" ↔ "jamon" y "huevos" ↔ "huevo" coincidan.
+ */
+export function normalizarParaBusqueda(nombre: string): string {
+  return nombre
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "") // quitar tildes/diacríticos
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean)
+    .map(despluralizar)
+    .join(" ");
+}
+
+// Heurística de plural para español: quitar "s" final en palabras de ≥4 letras
+// (cubre la mayoría de alimentos: huevos→huevo, tomates→tomate, fresas→fresa)
+// sin romper términos cortos ni la raíz del singular.
+function despluralizar(palabra: string): string {
+  if (palabra.length >= 4 && palabra.endsWith("s")) return palabra.slice(0, -1);
+  return palabra;
+}
+
 export function findAlimentoEnLista<T extends { nombre: string }>(
   lista: T[],
   nombre: string,

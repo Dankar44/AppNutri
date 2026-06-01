@@ -3,7 +3,7 @@ dotenv.config({ path: ".env.local" });
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
-import { normalizarNombreAlimento, redondearMacros } from "../src/lib/alimento-utils";
+import { normalizarNombreAlimento, normalizarParaBusqueda, redondearMacros } from "../src/lib/alimento-utils";
 
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL!,
@@ -121,6 +121,7 @@ async function main() {
       data: {
         ...alimento,
         nombre: normalizarNombreAlimento(alimento.nombre),
+        nombreNormalizado: normalizarParaBusqueda(alimento.nombre),
         calorias: redondearMacros(alimento.calorias),
         proteinas: redondearMacros(alimento.proteinas),
         carbohidratos: redondearMacros(alimento.carbohidratos),

@@ -16,6 +16,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
 import {
   normalizarNombreAlimento,
+  normalizarParaBusqueda,
   redondearMacros,
 } from "../src/lib/alimento-utils";
 
@@ -58,6 +59,7 @@ async function main() {
         where: { id: a.id },
         data: {
           nombre: nombreNorm,
+          nombreNormalizado: normalizarParaBusqueda(nombreNorm),
           calorias: calNorm,
           proteinas: protNorm,
           carbohidratos: carbNorm,

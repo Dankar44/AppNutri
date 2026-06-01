@@ -19,6 +19,7 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import pg from "pg";
+import { normalizarParaBusqueda } from "../src/lib/alimento-utils";
 
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL!,
@@ -260,12 +261,13 @@ async function main() {
           `INSERT INTO recetas (
             id, "dietistaId", nombre, descripcion, instrucciones, porciones,
             "tiempoPreparacion", calorias, proteinas, carbohidratos, grasas, fibra,
-            "createdAt", "updatedAt"
+            "createdAt", "updatedAt", "nombreNormalizado"
           ) VALUES (
-            gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW()
+            gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW(), $12
           ) RETURNING id`,
           [dietistaId, r.nombre, r.desc, r.instrucciones, r.porciones,
-           r.tiempo, r.kcal, r.prot, r.carb, r.grasa, r.fibra],
+           r.tiempo, r.kcal, r.prot, r.carb, r.grasa, r.fibra,
+           normalizarParaBusqueda(r.nombre)],
         );
         const recId = recRes.rows[0].id;
 

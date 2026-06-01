@@ -9,7 +9,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
-import { normalizarNombreAlimento, redondearMacros } from "../src/lib/alimento-utils";
+import { normalizarNombreAlimento, normalizarParaBusqueda, redondearMacros } from "../src/lib/alimento-utils";
 import {
   FRUTAS_EXTRA, VERDURAS_EXTRA, CEREALES_EXTRA, LEGUMBRES_EXTRA,
   CARNES_EXTRA, PESCADOS_EXTRA, LACTEOS_EXTRA, HUEVOS_EXTRA,
@@ -922,6 +922,7 @@ async function main() {
   for (const [categoria, items] of ALL_DATA) {
     const data = items.map(([nombre, cal, prot, carb, gras, fibra, porcion]) => ({
       nombre: normalizarNombreAlimento(nombre),
+      nombreNormalizado: normalizarParaBusqueda(nombre),
       categoria: categoria as Cat,
       calorias: redondearMacros(cal),
       proteinas: redondearMacros(prot),

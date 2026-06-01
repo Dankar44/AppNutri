@@ -3,6 +3,7 @@ dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import pg from "pg";
 import { RECETAS_SEED, type RecetaSeed } from "./data/recetas-seed";
+import { normalizarParaBusqueda } from "../src/lib/alimento-utils";
 
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL!,
@@ -164,12 +165,12 @@ async function insertarReceta(client: pg.PoolClient, seed: RecetaSeed) {
       id, nombre, descripcion, instrucciones, porciones, "tiempoPreparacion",
       calorias, proteinas, carbohidratos, grasas, fibra,
       ${microCols},
-      "dietistaId", "createdAt", "updatedAt"
+      "dietistaId", "createdAt", "updatedAt", "nombreNormalizado"
     ) VALUES (
       $1, $2, $3, $4, $5, $6,
       $7, $8, $9, $10, $11,
       ${microPlaceholders},
-      NULL, $${12 + MICRO_COLUMNS.length}, $${12 + MICRO_COLUMNS.length}
+      NULL, $${12 + MICRO_COLUMNS.length}, $${12 + MICRO_COLUMNS.length}, $${13 + MICRO_COLUMNS.length}
     )`,
     [
       recetaId,
@@ -185,6 +186,7 @@ async function insertarReceta(client: pg.PoolClient, seed: RecetaSeed) {
       Math.round((fib / porciones) * 10) / 10,
       ...microValues,
       now,
+      normalizarParaBusqueda(seed.nombre),
     ],
   );
 

@@ -11,7 +11,7 @@ import {
   OrigenAlimento,
 } from "@/generated/prisma/client";
 import { buscarAlimentosOFF, type AlimentoAPIResult } from "@/lib/openfoodfacts";
-import { normalizarNombreAlimento, redondearMacros } from "@/lib/alimento-utils";
+import { normalizarNombreAlimento, redondearMacros, normalizarParaBusqueda } from "@/lib/alimento-utils";
 import { sanitizeString, validateNumber, validateEnum, validateUrl, validateImageUrl, sanitizeSearch, LIMITS } from "@/lib/validation";
 import { type MicroKey, MICRO_KEYS } from "@/lib/micronutrientes";
 import { getCompanyMemberIds } from "@/lib/empresa-utils";
@@ -106,6 +106,7 @@ export async function crearAlimento(data: AlimentoFormData) {
     data: {
       dietista: { connect: { id: dietista.id } },
       nombre: nombreNorm,
+      nombreNormalizado: normalizarParaBusqueda(nombreNorm),
       categoria: data.categoria,
       calorias: redondearMacros(data.calorias),
       proteinas: redondearMacros(data.proteinas),
@@ -158,10 +159,13 @@ export async function actualizarAlimento(id: string, data: AlimentoFormData) {
 
   const empresaId = await getEmpresaId(dietista.id);
 
+  const nombreNorm = normalizarNombreAlimento(nombreSanitizado);
+
   await prisma.alimento.update({
     where: { id, dietistaId: dietista.id },
     data: {
-      nombre: normalizarNombreAlimento(nombreSanitizado),
+      nombre: nombreNorm,
+      nombreNormalizado: normalizarParaBusqueda(nombreNorm),
       categoria: data.categoria,
       calorias: redondearMacros(data.calorias),
       proteinas: redondearMacros(data.proteinas),
@@ -220,7 +224,7 @@ export async function getAlimentos(
       OR: [{ dietistaId: { in: memberIds } }, { dietistaId: null }],
       ...(categoria ? { categoria } : {}),
       ...(busquedaSanitizada
-        ? { nombre: { contains: busquedaSanitizada, mode: "insensitive" as const } }
+        ? { nombreNormalizado: { contains: normalizarParaBusqueda(busquedaSanitizada) } }
         : {}),
     },
     orderBy: { nombre: "asc" },
@@ -310,7 +314,7 @@ export async function getAlimentosPaginados(
     ...(categoria ? { categoria } : {}),
     ...(f.origen && (f.origen === "PERSONALIZADO" || f.origen === "API") ? { origen: f.origen as "PERSONALIZADO" | "API" } : {}),
     ...(busquedaSanitizada
-      ? { nombre: { contains: busquedaSanitizada, mode: "insensitive" as const } }
+      ? { nombreNormalizado: { contains: normalizarParaBusqueda(busquedaSanitizada) } }
       : {}),
     ...(f.calMin || f.calMax ? { calorias: { ...(f.calMin ? { gte: f.calMin } : {}), ...(f.calMax ? { lte: f.calMax } : {}) } } : {}),
     ...(f.protMin || f.protMax ? { proteinas: { ...(f.protMin ? { gte: f.protMin } : {}), ...(f.protMax ? { lte: f.protMax } : {}) } } : {}),
@@ -439,6 +443,7 @@ export async function importarAlimentoAPI(data: AlimentoAPIResult) {
     data: {
       dietista: { connect: { id: dietista.id } },
       nombre: nombreNorm,
+      nombreNormalizado: normalizarParaBusqueda(nombreNorm),
       categoria: "OTROS",
       calorias: redondearMacros(data.calorias),
       proteinas: redondearMacros(data.proteinas),
@@ -484,7 +489,7 @@ export async function buscarEquivalentes(
     ],
     id: { not: alimentoIdExcluir },
     calorias: { gte: 5 as number },
-    ...(search ? { nombre: { contains: search, mode: "insensitive" as const } } : {}),
+    ...(search ? { nombreNormalizado: { contains: normalizarParaBusqueda(search) } } : {}),
   };
 
   // Primero: misma categoría (priorizados)
