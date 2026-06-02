@@ -170,6 +170,37 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Bloquear el scroll del fondo mientras el menú móvil está abierto: el dedo
+  // solo mueve el menú, no la página de detrás (patrón position:fixed para iOS).
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const scrollY = window.scrollY;
+    const body = document.body;
+    const prev = {
+      position: body.style.position,
+      top: body.style.top,
+      left: body.style.left,
+      right: body.style.right,
+      width: body.style.width,
+      overflow: body.style.overflow,
+    };
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
+    body.style.overflow = "hidden";
+    return () => {
+      body.style.position = prev.position;
+      body.style.top = prev.top;
+      body.style.left = prev.left;
+      body.style.right = prev.right;
+      body.style.width = prev.width;
+      body.style.overflow = prev.overflow;
+      window.scrollTo(0, scrollY);
+    };
+  }, [mobileOpen]);
+
   const sidebarContent = (
     <>
       {/* Logo */}
@@ -190,7 +221,7 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 py-4 px-3 overflow-y-auto">
+      <nav className="flex-1 py-4 px-3 overflow-y-auto overscroll-contain">
         {getNavSections(t, { isAdmin, hasEmpresa }).map((section, sectionIndex) => (
           <div
             key={section.title}
