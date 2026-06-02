@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Loader2, Check, MessageCircle, Eye, EyeOff, ArrowLeft, FileText } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Loader2, Check, MessageCircle, Eye, EyeOff, ArrowLeft, FileText, ChevronDown, Search } from "lucide-react";
 import { enviarSolicitudColaborador } from "@/app/actions/colaboradores";
 import { verificarEmailDisponible } from "@/app/actions/registro";
 import { PAISES, PREFIJOS } from "@/lib/paises";
@@ -103,6 +103,8 @@ export function ColaboradoresForm() {
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (!pais) { setError("Selecciona tu país."); return; }
+    if (!telefono.trim()) { setError("Introduce tu número de teléfono."); return; }
     if (!cvNombre) { setError("Adjunta tu currículum en PDF."); return; }
     setLoading(true);
     const res = await enviarSolicitudColaborador({
@@ -212,24 +214,29 @@ export function ColaboradoresForm() {
           </div>
 
           <div>
-            <label htmlFor="pais" className="block text-sm font-medium mb-1.5">País de residencia</label>
-            <select id="pais" value={pais} onChange={(e) => setPais(e.target.value)} required className={inputCls}>
-              <option value="" disabled>Selecciona tu país</option>
-              {PAISES.map((p) => (
-                <option key={p.nombre} value={p.nombre}>{p.nombre}</option>
-              ))}
-            </select>
+            <label className="block text-sm font-medium mb-1.5">País de residencia</label>
+            <Combobox
+              ariaLabel="País de residencia"
+              value={pais}
+              onChange={setPais}
+              options={PAISES.map((p) => ({ value: p.nombre, label: p.nombre }))}
+              placeholder="Selecciona tu país"
+            />
           </div>
 
           <div>
             <label htmlFor="telefono" className="block text-sm font-medium mb-1.5">Teléfono</label>
             <div className="flex gap-2">
-              <select aria-label="Prefijo telefónico" value={prefijo} onChange={(e) => setPrefijo(e.target.value)} className={`${inputCls} w-auto shrink-0`}>
-                {PREFIJOS.map((p) => (
-                  <option key={p.etiqueta} value={p.dial}>{p.etiqueta}</option>
-                ))}
-              </select>
-              <input id="telefono" type="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} required maxLength={20} placeholder="600 000 000" className={inputCls} />
+              <Combobox
+                compact
+                ariaLabel="Prefijo telefónico"
+                value={prefijo}
+                onChange={setPrefijo}
+                options={PREFIJOS.map((p) => ({ value: p.dial, label: p.etiqueta }))}
+                placeholder="+34"
+                className="w-24 shrink-0"
+              />
+              <input id="telefono" type="tel" inputMode="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} maxLength={20} placeholder="600 000 000" className={`${inputCls} flex-1`} />
             </div>
             <p className="mt-1.5 text-xs text-muted-foreground">
               Te contactaremos por <strong>WhatsApp</strong> en este número.
@@ -280,6 +287,91 @@ function Select({
           <option key={v} value={v}>{l}</option>
         ))}
       </select>
+    </div>
+  );
+}
+
+// Desplegable propio (no nativo): se abre SIEMPRE hacia abajo, con altura fija +
+// scroll y buscador. Evita el problema del <select> nativo con listas largas, que
+// el navegador abre hacia arriba y puede ocupar toda la pantalla.
+function Combobox({
+  value, onChange, options, placeholder, ariaLabel, compact = false, className = "",
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  placeholder: string;
+  ariaLabel: string;
+  compact?: boolean;
+  className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onDocClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const selected = options.find((o) => o.value === value);
+  const q = query.trim().toLowerCase();
+  const filtered = q ? options.filter((o) => o.label.toLowerCase().includes(q)) : options;
+  const buttonText = compact ? (value || placeholder) : (selected ? selected.label : placeholder);
+
+  return (
+    <div ref={ref} className={`relative ${className}`}>
+      <button
+        type="button"
+        aria-label={ariaLabel}
+        onClick={() => setOpen((o) => !o)}
+        className={`${inputCls} flex items-center justify-between gap-1 text-left`}
+      >
+        <span className={selected || (compact && value) ? "" : "text-muted-foreground"}>{buttonText}</span>
+        <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+      </button>
+      {open && (
+        <div className="absolute left-0 z-50 mt-1 min-w-full w-max max-w-[min(20rem,80vw)] rounded-lg border border-border bg-card shadow-lg">
+          <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+            <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <input
+              autoFocus
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar…"
+              className="w-full bg-transparent text-sm focus:outline-none"
+            />
+          </div>
+          <ul className="max-h-56 overflow-y-auto py-1">
+            {filtered.map((o) => (
+              <li key={`${o.value}-${o.label}`}>
+                <button
+                  type="button"
+                  onClick={() => { onChange(o.value); setOpen(false); setQuery(""); }}
+                  className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-muted/50"
+                >
+                  <span>{o.label}</span>
+                  {o.value === value && <Check className="h-4 w-4 shrink-0 text-primary" />}
+                </button>
+              </li>
+            ))}
+            {filtered.length === 0 && (
+              <li className="px-3 py-2 text-sm text-muted-foreground">Sin resultados</li>
+            )}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
