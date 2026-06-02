@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Loader2, Check, MessageCircle, Eye, EyeOff, ArrowLeft, FileText } from "lucide-react";
 import { enviarSolicitudColaborador } from "@/app/actions/colaboradores";
+import { verificarEmailDisponible } from "@/app/actions/registro";
+import { PAISES, PREFIJOS } from "@/lib/paises";
 
 const WHATSAPP_NUMERO = "34654310492";
 const WHATSAPP_MSG = "¡Hola! Tengo una duda sobre el programa de colaboradores de Annonia 🌱";
@@ -57,7 +59,9 @@ export function ColaboradoresForm() {
   const [nombre, setNombre] = useState("");
   const [apellidos, setApellidos] = useState("");
   const [pais, setPais] = useState("");
+  const [prefijo, setPrefijo] = useState("+34");
   const [telefono, setTelefono] = useState("");
+  const [checkingEmail, setCheckingEmail] = useState(false);
   const [cvNombre, setCvNombre] = useState("");
   const [numPacientes, setNumPacientes] = useState("");
   const [modalidad, setModalidad] = useState("");
@@ -70,11 +74,15 @@ export function ColaboradoresForm() {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
-  function continuarPaso1(e: React.FormEvent) {
+  async function continuarPaso1(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     if (!email.includes("@")) { setError("Introduce un email válido."); return; }
     if (password.length < 6) { setError("La contraseña debe tener al menos 6 caracteres."); return; }
+    setCheckingEmail(true);
+    const check = await verificarEmailDisponible(email);
+    setCheckingEmail(false);
+    if (!check.disponible) { setError(check.error || "Ese email ya está registrado."); return; }
     setStep(2);
   }
 
@@ -99,7 +107,7 @@ export function ColaboradoresForm() {
     setLoading(true);
     const res = await enviarSolicitudColaborador({
       nombre, apellidos, email, password,
-      telefono, pais,
+      telefono: `${prefijo} ${telefono}`.trim(), pais,
       numPacientes, modalidad, tipoTrabajo, nivelEstudios,
       esProfesor: esProfesor === "si",
       discapacidad,
@@ -178,8 +186,9 @@ export function ColaboradoresForm() {
               </button>
             </div>
           </div>
-          <button type="submit" className="w-full rounded-lg bg-primary py-3 font-medium text-primary-foreground transition-colors hover:bg-green-700">
-            Continuar
+          <button type="submit" disabled={checkingEmail} className="w-full flex items-center justify-center gap-2 rounded-lg bg-primary py-3 font-medium text-primary-foreground transition-colors hover:bg-green-700 disabled:opacity-50">
+            {checkingEmail && <Loader2 className="w-4 h-4 animate-spin" />}
+            {checkingEmail ? "Comprobando…" : "Continuar"}
           </button>
         </form>
       )}
@@ -204,14 +213,26 @@ export function ColaboradoresForm() {
 
           <div>
             <label htmlFor="pais" className="block text-sm font-medium mb-1.5">País de residencia</label>
-            <input id="pais" type="text" value={pais} onChange={(e) => setPais(e.target.value)} required maxLength={80} className={inputCls} />
+            <select id="pais" value={pais} onChange={(e) => setPais(e.target.value)} required className={inputCls}>
+              <option value="" disabled>Selecciona tu país</option>
+              {PAISES.map((p) => (
+                <option key={p.nombre} value={p.nombre}>{p.nombre}</option>
+              ))}
+            </select>
           </div>
 
           <div>
             <label htmlFor="telefono" className="block text-sm font-medium mb-1.5">Teléfono</label>
-            <input id="telefono" type="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} required maxLength={30} placeholder="+34 600 000 000" className={inputCls} />
+            <div className="flex gap-2">
+              <select aria-label="Prefijo telefónico" value={prefijo} onChange={(e) => setPrefijo(e.target.value)} className={`${inputCls} w-auto shrink-0`}>
+                {PREFIJOS.map((p) => (
+                  <option key={p.etiqueta} value={p.dial}>{p.etiqueta}</option>
+                ))}
+              </select>
+              <input id="telefono" type="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} required maxLength={20} placeholder="600 000 000" className={inputCls} />
+            </div>
             <p className="mt-1.5 text-xs text-muted-foreground">
-              Te contactaremos por <strong>WhatsApp</strong> en este número, así que inclúyelo con el prefijo (ej. +34).
+              Te contactaremos por <strong>WhatsApp</strong> en este número.
             </p>
           </div>
 
