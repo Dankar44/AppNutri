@@ -94,8 +94,8 @@ function LoginContent() {
   }
 
   return (
-    <div className="min-h-dvh flex">
-      {/* Panel izquierdo decorativo */}
+    <div className="min-h-dvh lg:h-dvh flex lg:overflow-hidden">
+      {/* Panel izquierdo decorativo (fijo, centrado en pantalla) */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <Image
           src="/images/landing/banner.png"
@@ -134,9 +134,9 @@ function LoginContent() {
         </div>
       </div>
 
-      {/* Panel derecho con formulario */}
-      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-4 sm:py-8 pt-safe pb-safe">
-        <div className="w-full max-w-md">
+      {/* Panel derecho con formulario (única columna con scroll propio) */}
+      <div className="flex-1 flex flex-col px-4 sm:px-6 lg:px-8 py-4 sm:py-8 pt-safe pb-safe lg:h-dvh lg:overflow-y-auto">
+        <div className="w-full max-w-md mx-auto my-auto">
           <div className="lg:hidden flex items-center gap-2 mb-6 sm:mb-8">
             <Leaf className="w-8 h-8 text-primary" />
             <span className="text-xl sm:text-2xl font-bold">Annonia</span>

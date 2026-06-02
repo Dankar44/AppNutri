@@ -83,7 +83,8 @@ export default function RegistroCentroForm() {
   }
 
   return (
-    <div className="min-h-dvh flex">
+    <div className="min-h-dvh lg:h-dvh flex lg:overflow-hidden">
+      {/* Panel izquierdo decorativo (fijo, centrado en pantalla) */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary to-green-700 relative overflow-hidden">
         <div className="absolute inset-0 bg-black/10" />
         <div className="relative z-10 flex flex-col justify-center px-16 text-white">
@@ -97,8 +98,9 @@ export default function RegistroCentroForm() {
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6 sm:py-12 pb-safe">
-        <div className="w-full max-w-md">
+      {/* Panel derecho (única columna con scroll propio) */}
+      <div className="flex-1 flex flex-col px-4 sm:px-6 lg:px-8 py-6 sm:py-12 pb-safe lg:h-dvh lg:overflow-y-auto">
+        <div className="w-full max-w-md mx-auto my-auto">
           <div className="lg:hidden flex items-center justify-center gap-2 mb-8">
             <Leaf className="w-6 h-6 text-primary" />
             <span className="text-lg font-bold">Annonia</span>
