@@ -40,6 +40,8 @@ import {
   eliminarPlanificacion,
 } from "@/app/actions/planificaciones";
 import { useDemoGuard } from "@/contexts/demo-context";
+import { getPlanesPaciente, actualizarPlan } from "@/app/actions/planes";
+import { toast } from "sonner";
 
 /* ─── Types ─── */
 
@@ -1009,6 +1011,51 @@ export function PlanificacionPorDefectoTab({
     };
   }, [eerObjetivoEfectivo, pesoActual, grasaPct, carbPct, protPct]);
 
+  /* ─── Aplicar los objetivos calculados (kcal + macros) a una dieta del paciente (#9) ─── */
+  const [aplicarAbierto, setAplicarAbierto] = useState(false);
+  const [planesPaciente, setPlanesPaciente] = useState<
+    { id: string; nombre: string; activo: boolean; caloriasObjetivo: number | null }[] | null
+  >(null);
+  const [aplicandoPlanId, setAplicandoPlanId] = useState<string | null>(null);
+
+  async function abrirAplicarObjetivos() {
+    if (blockIfDemo()) return;
+    if (aplicarAbierto) { setAplicarAbierto(false); return; }
+    setAplicarAbierto(true);
+    if (planesPaciente === null) {
+      try {
+        const planes = await getPlanesPaciente(pacienteId);
+        setPlanesPaciente(
+          planes.map((p) => ({ id: p.id, nombre: p.nombre, activo: p.activo, caloriasObjetivo: p.caloriasObjetivo }))
+        );
+      } catch {
+        setPlanesPaciente([]);
+      }
+    }
+  }
+
+  async function aplicarObjetivosAPlan(planId: string, planNombre: string) {
+    if (blockIfDemo()) return;
+    setAplicandoPlanId(planId);
+    try {
+      await actualizarPlan(planId, {
+        caloriasObjetivo: macros.kcal,
+        proteinasObjetivo: macros.protG,
+        carbohidratosObjetivo: macros.carbG,
+        grasasObjetivo: macros.grasaG,
+      });
+      setPlanesPaciente((prev) =>
+        prev?.map((p) => (p.id === planId ? { ...p, caloriasObjetivo: macros.kcal } : p)) ?? prev
+      );
+      toast.success(t("aplicarObjetivosOk", { plan: planNombre }));
+      setAplicarAbierto(false);
+    } catch {
+      toast.error(t("aplicarObjetivosError"));
+    } finally {
+      setAplicandoPlanId(null);
+    }
+  }
+
   /* --- Fibra alimentaria --- */
   const FIBRA_SOURCES = [
     { id: "fnb_iom", label: "Food and Nutrition Board / IOM", ref: "25.3 g" },
@@ -1949,6 +1996,51 @@ export function PlanificacionPorDefectoTab({
                 {t("sumaPorcentajes", { pct: grasaPct + carbPct + protPct })}
               </div>
             )}
+
+            {/* Aplicar los objetivos calculados (kcal + macros) a una dieta del paciente */}
+            <div className="px-5 py-3 border-t border-border">
+              <button
+                type="button"
+                onClick={abrirAplicarObjetivos}
+                disabled={macros.kcal <= 0}
+                className="text-sm font-medium text-primary hover:underline disabled:text-muted-foreground disabled:no-underline disabled:cursor-not-allowed"
+              >
+                {t("aplicarObjetivosBtn")}
+              </button>
+              {macros.kcal <= 0 && (
+                <p className="mt-1 text-xs text-muted-foreground">{t("aplicarObjetivosSinKcal")}</p>
+              )}
+              {aplicarAbierto && macros.kcal > 0 && (
+                <div className="mt-2 max-w-sm space-y-1 rounded-lg border border-border bg-muted/30 p-2">
+                  {planesPaciente === null ? (
+                    <p className="px-2 py-1 text-xs text-muted-foreground">{t("aplicarObjetivosCargando")}</p>
+                  ) : planesPaciente.length === 0 ? (
+                    <p className="px-2 py-1 text-xs text-muted-foreground">{t("aplicarObjetivosSinDietas")}</p>
+                  ) : (
+                    planesPaciente.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => aplicarObjetivosAPlan(p.id, p.nombre)}
+                        disabled={aplicandoPlanId != null}
+                        className="flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-muted disabled:opacity-50"
+                      >
+                        <span className="truncate font-medium">
+                          {p.nombre}{p.activo ? ` · ${t("dietaActiva")}` : ""}
+                        </span>
+                        <span className="shrink-0 text-xs text-muted-foreground">
+                          {aplicandoPlanId === p.id
+                            ? t("aplicarObjetivosAplicando")
+                            : p.caloriasObjetivo != null
+                              ? t("kcalDia", { val: Math.round(p.caloriasObjetivo) })
+                              : t("aplicarObjetivosSinObjetivo")}
+                        </span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
           </div>
       </section>
 
