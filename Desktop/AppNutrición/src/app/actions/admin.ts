@@ -516,7 +516,7 @@ export async function rechazarDietista(dietistaId: string) {
 
   const dietista = await prisma.dietista.findUnique({
     where: { id: dietistaId },
-    select: { authId: true },
+    select: { authId: true, email: true },
   });
 
   if (dietista?.authId) {
@@ -530,6 +530,10 @@ export async function rechazarDietista(dietistaId: string) {
     } catch (e) {
       console.warn("[admin] Error eliminando auth.users al rechazar:", e);
     }
+  }
+
+  if (dietista?.email) {
+    await prisma.solicitudColaborador.deleteMany({ where: { email: dietista.email } }).catch(() => {});
   }
 
   await prisma.dietista.delete({ where: { id: dietistaId } });
@@ -665,7 +669,7 @@ export async function eliminarDietista(dietistaId: string): Promise<{ ok: boolea
   try {
     const dietista = await prisma.dietista.findUnique({
       where: { id: dietistaId },
-      select: { id: true, authId: true, nombre: true, apellidos: true, stripeAccountId: true },
+      select: { id: true, authId: true, email: true, nombre: true, apellidos: true, stripeAccountId: true },
     });
     if (!dietista) return { ok: false, error: t("admin.dietistaNoEncontrado") };
 
@@ -703,6 +707,11 @@ export async function eliminarDietista(dietistaId: string): Promise<{ ok: boolea
       } catch (authErr) {
         console.warn("[admin] Error eliminando auth.users:", authErr);
       }
+    }
+
+    // 4b. Eliminar su candidatura del programa de colaboradores (Ofertas), si la hubiera.
+    if (dietista.email) {
+      await prisma.solicitudColaborador.deleteMany({ where: { email: dietista.email } }).catch(() => {});
     }
 
     // 5. Eliminar dietista (cascada Prisma: ~26 modelos)

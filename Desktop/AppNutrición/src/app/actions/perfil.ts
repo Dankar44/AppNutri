@@ -84,6 +84,11 @@ export async function eliminarCuenta() {
     await prisma.$queryRawUnsafe(`DELETE FROM suscripciones WHERE "dietistaId" = $1`, dietista.id);
   } catch { /* puede no existir */ }
 
+  // Eliminar su candidatura del programa de colaboradores (Ofertas), si la hubiera.
+  if (dietista.email) {
+    await prisma.solicitudColaborador.deleteMany({ where: { email: dietista.email } }).catch(() => {});
+  }
+
   // Cascade borra pacientes, planes, recetas, etc.
   await prisma.dietista.delete({ where: { id: dietista.id } });
 

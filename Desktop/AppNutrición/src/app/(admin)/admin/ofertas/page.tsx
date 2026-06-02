@@ -1,6 +1,7 @@
 import { Briefcase } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
+import { CopyPhone } from "./copy-phone";
 
 const LABELS = {
   numPacientes: { "0-2": "0–2", "2-5": "2–5", "5-15": "5–15", "15-30": "15–30", "30+": "+30" } as Record<string, string>,
@@ -43,6 +44,7 @@ export default async function OfertasPage() {
             <thead>
               <tr className="border-b border-border text-left text-muted-foreground">
                 <th className="px-4 py-3 font-medium">Fecha</th>
+                <th className="px-4 py-3 font-medium">Nombre</th>
                 <th className="px-4 py-3 font-medium">Email</th>
                 <th className="px-4 py-3 font-medium">Teléfono</th>
                 <th className="px-4 py-3 font-medium">País</th>
@@ -58,8 +60,9 @@ export default async function OfertasPage() {
               {solicitudes.map((s) => (
                 <tr key={s.id} className="border-b border-border last:border-0">
                   <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{formatDate(s.createdAt)}</td>
-                  <td className="px-4 py-3 font-medium">{s.email}</td>
-                  <td className="whitespace-nowrap px-4 py-3">{s.telefono}</td>
+                  <td className="whitespace-nowrap px-4 py-3 font-medium">{`${s.nombre ?? ""} ${s.apellidos ?? ""}`.trim() || "—"}</td>
+                  <td className="px-4 py-3">{s.email}</td>
+                  <td className="px-4 py-3"><CopyPhone phone={s.telefono} /></td>
                   <td className="px-4 py-3">{s.pais}</td>
                   <td className="px-4 py-3">{l(LABELS.numPacientes, s.numPacientes)}</td>
                   <td className="px-4 py-3">{l(LABELS.modalidad, s.modalidad)}</td>

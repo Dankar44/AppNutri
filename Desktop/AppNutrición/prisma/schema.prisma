@@ -879,6 +879,8 @@ model MovimientoStock {
 // El CV NO se guarda (es solo un requisito del formulario).
 model SolicitudColaborador {
   id            String   @id @default(cuid())
+  nombre        String?
+  apellidos     String?
   email         String
   telefono      String
   pais          String

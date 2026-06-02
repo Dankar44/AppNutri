@@ -59,6 +59,8 @@ export async function enviarSolicitudColaborador(
   try {
     await prisma.solicitudColaborador.create({
       data: {
+        nombre: sanitizeString(data.nombre, 100) || null,
+        apellidos: sanitizeString(data.apellidos, 100) || null,
         email: data.email.trim().toLowerCase(),
         telefono,
         pais,
