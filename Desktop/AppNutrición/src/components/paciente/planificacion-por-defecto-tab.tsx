@@ -985,14 +985,12 @@ export function PlanificacionPorDefectoTab({
 
   // EER objetivo "efectivo": si el nutri fijó un valor a mano, ese; si no, se deriva del
   // gasto actual aplicando el ajuste del objetivo (déficit/superávit). Así "sale ya calculado".
+  // El valor objetivo es el del input. Los botones de ajuste escriben el valor calculado
+  // directamente en el input, por eso se ve en negro (como si lo hubieras tecleado).
   const eerObjetivoEfectivo = useMemo<number | null>(() => {
-    const manual = eerObjetivoInput.trim();
-    if (manual !== "") return parseFloat(manual) || null;
-    if (ajustePct != null && valores?.eerActual != null) {
-      return Math.round(valores.eerActual * (1 + ajustePct / 100));
-    }
-    return null;
-  }, [eerObjetivoInput, valores, ajustePct]);
+    const v = parseFloat(eerObjetivoInput);
+    return Number.isFinite(v) ? v : null;
+  }, [eerObjetivoInput]);
 
   const macros = useMemo(() => {
     const w = pesoActual || 1;
@@ -1769,7 +1767,7 @@ export function PlanificacionPorDefectoTab({
                         min="500"
                         max="10000"
                         value={eerObjetivoInput}
-                        onChange={(e) => setEerObjetivoInput(e.target.value)}
+                        onChange={(e) => { setEerObjetivoInput(e.target.value); setAjustePct(null); }}
                         placeholder={eerObjetivoEfectivo != null ? String(eerObjetivoEfectivo) : (valores?.eerActual != null ? String(Math.round(valores.eerActual)) : "—")}
                         className="w-full h-9 rounded-lg border border-border bg-background px-3 pr-16 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30"
                       />
@@ -1779,12 +1777,21 @@ export function PlanificacionPorDefectoTab({
                         se vuelve al modo automático (input vacío) con el nuevo porcentaje. */}
                     <div className="flex flex-wrap gap-1">
                       {AJUSTE_OPCIONES.map((op) => {
-                        const activo = eerObjetivoInput.trim() === "" && ajustePct === op.value;
+                        const activo = ajustePct === op.value;
                         return (
                           <button
                             key={op.value}
                             type="button"
-                            onClick={() => { setAjustePct(activo ? null : op.value); setEerObjetivoInput(""); }}
+                            onClick={() => {
+                              if (activo) {
+                                setAjustePct(null);
+                                setEerObjetivoInput("");
+                              } else {
+                                setAjustePct(op.value);
+                                const base = valores?.eerActual;
+                                setEerObjetivoInput(base != null ? String(Math.round(base * (1 + op.value / 100))) : "");
+                              }
+                            }}
                             className={`px-1.5 py-0.5 rounded text-[10px] font-medium border transition-colors ${
                               activo
                                 ? "bg-primary text-primary-foreground border-primary"
@@ -1796,7 +1803,7 @@ export function PlanificacionPorDefectoTab({
                         );
                       })}
                     </div>
-                    {eerObjetivoInput.trim() === "" && valores?.eerActual != null && eerObjetivoEfectivo != null && ajustePct != null && ajustePct !== 0 && (
+                    {ajustePct != null && ajustePct !== 0 && valores?.eerActual != null && eerObjetivoEfectivo != null && (
                       <p className="text-[10px] text-muted-foreground leading-tight">
                         {t("ajusteCalculadoResumen", { base: Math.round(valores.eerActual), result: eerObjetivoEfectivo })}
                       </p>
