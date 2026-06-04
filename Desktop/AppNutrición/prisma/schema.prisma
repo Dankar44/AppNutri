@@ -564,6 +564,9 @@ model Cita {
   googleEventId           String?
   googleEventIdPaciente   String?
   googleMeetLink          String?
+  /// Enlace de videollamada introducido a mano por el nutri (Zoom, Meet, Teams...).
+  /// Tiene prioridad sobre googleMeetLink en los avisos al paciente.
+  enlaceVideollamada      String?
   createdAt               DateTime    @default(now())
   updatedAt               DateTime    @updatedAt
 

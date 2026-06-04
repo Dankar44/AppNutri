@@ -40,6 +40,7 @@ export interface CitaDetalle {
   propuestoPor?: string;
   isOnline?: boolean;
   googleMeetLink?: string | null;
+  enlaceVideollamada?: string | null;
   paciente: { id: string; nombre: string; apellidos: string; fotoUrl?: string | null };
 }
 
@@ -118,6 +119,8 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
     new Date(cita.fechaHora).getTime() + cita.duracion * 60000,
   ).toLocaleTimeString(tag, { hour: "2-digit", minute: "2-digit" });
   const horaInicio = new Date(cita.fechaHora).toLocaleTimeString(tag, { hour: "2-digit", minute: "2-digit" });
+  // Enlace de la videollamada: manual del nutri (prioridad) o el de Google Meet.
+  const videoLink = cita.enlaceVideollamada || cita.googleMeetLink || null;
 
   function refrescar() {
     router.refresh();
@@ -216,17 +219,17 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
                 <Clock className="w-4 h-4 text-muted-foreground" />
                 <span>{horaInicio} – {horaFin} ({cita.duracion} min)</span>
               </div>
-              {cita.isOnline && (
+              {(cita.isOnline || videoLink) && (
                 <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-400">
                   <Video className="w-4 h-4" />
-                  {cita.googleMeetLink ? (
+                  {videoLink ? (
                     <a
-                      href={cita.googleMeetLink}
+                      href={videoLink}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="font-medium hover:underline truncate"
                     >
-                      {t("citaDetalleModal.joinGoogleMeet")}
+                      {t("citaDetalleModal.joinVideoCall")}
                     </a>
                   ) : (
                     <span className="text-muted-foreground">

@@ -8,11 +8,12 @@ import {
   sanitizeStringOptional,
   validateNumber,
   validateDate,
+  validateUrl,
   LIMITS,
 } from "@/lib/validation";
 import { syncCitaAmbos, unsyncCitaAntesDeBorrar } from "@/lib/google-sync";
 import { enviarEmailCita, construirMensajeWhatsAppCita } from "@/lib/email-citas";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, getLocale } from "next-intl/server";
 
 export interface CitaFormData {
   pacienteId: string;
@@ -21,6 +22,8 @@ export interface CitaFormData {
   motivo?: string;
   notas?: string;
   isOnline?: boolean;
+  /** Enlace de videollamada manual (Zoom, Meet, Teams...). Se incluye en el aviso al paciente. */
+  enlaceVideollamada?: string;
   /**
    * - "directa" (por defecto): crea la cita CONFIRMADA directamente, útil para citas ya acordadas en persona.
    * - "proponer": crea PENDIENTE y notifica al paciente, que decidirá si aceptarla/contraponerla/rechazarla.
@@ -39,6 +42,9 @@ export async function crearCita(data: CitaFormData) {
   const duracion = validateNumber(data.duracion || 30, LIMITS.DURACION_MIN, LIMITS.DURACION_MAX);
   const motivo = sanitizeStringOptional(data.motivo, LIMITS.MOTIVO);
   const notas = sanitizeStringOptional(data.notas, LIMITS.NOTAS);
+  // Enlace de videollamada manual: si viene pero no es URL válida, se ignora
+  // (el <input type="url"> ya valida el formato en el cliente).
+  const enlaceVideollamada = validateUrl(data.enlaceVideollamada) ?? undefined;
   const modo = data.modo ?? "directa";
 
   // Verificar que el paciente pertenece al nutri (seguridad)
@@ -60,16 +66,22 @@ export async function crearCita(data: CitaFormData) {
       origen: "DIETISTA",
       propuestoPor: "DIETISTA",
       isOnline: data.isOnline ?? false,
+      enlaceVideollamada,
     },
     select: { id: true },
   });
 
-  // Sincronizar con Google Calendar (fire-and-forget)
-  void syncCitaAmbos(cita.id);
-
-  // Avisar al paciente por email (fire-and-forget). enviarEmailCita adapta el
-  // texto al estado: "te propone una cita" (proponer) o "cita confirmada" (directa).
-  void enviarEmailCita(cita.id);
+  // Sincroniza con Google (si está conectado, genera el enlace de Meet) y SOLO
+  // DESPUÉS avisa al paciente, para que el email pueda incluir el enlace de la
+  // videollamada (manual o Meet). Fire-and-forget; el locale se captura aquí porque
+  // enviarEmailCita puede ejecutarse ya fuera del contexto de la petición.
+  // enviarEmailCita adapta el texto al estado (propuesta vs confirmada).
+  const locale = await getLocale();
+  void syncCitaAmbos(cita.id)
+    .catch((e) => console.error("[crearCita] syncCita", e))
+    .finally(() => {
+      void enviarEmailCita(cita.id, { locale });
+    });
 
   // Si es una propuesta al paciente, notificar
   if (modo === "proponer") {

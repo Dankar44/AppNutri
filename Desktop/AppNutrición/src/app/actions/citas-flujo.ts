@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 import { fromMadrid, toMadridTimeStr, toMadridDateStr } from "@/lib/tz";
 import { syncCitaAmbos, unsyncCitaAntesDeBorrar } from "@/lib/google-sync";
 import { enviarEmailCita } from "@/lib/email-citas";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, getLocale } from "next-intl/server";
 
 // ─── Tipos auxiliares ─────────────────────────────────────────────
 
@@ -805,8 +805,14 @@ export async function aceptarContrapropuestaDietista(citaId: string): Promise<vo
     },
   });
 
-  void enviarEmailCita(citaId);
-  void syncCitaAmbos(citaId);
+  // Sincroniza con Google primero (genera el Meet si está conectado) y luego avisa
+  // al paciente, para que el email incluya el enlace. locale capturado en contexto.
+  const locale = await getLocale();
+  void syncCitaAmbos(citaId)
+    .catch((e) => console.error("[citas-flujo] syncCita", e))
+    .finally(() => {
+      void enviarEmailCita(citaId, { locale });
+    });
   revalidatePath("/agenda");
   revalidatePath("/paciente/portal/citas");
 }
@@ -887,8 +893,14 @@ export async function aceptarSolicitudCita(citaId: string): Promise<void> {
     },
   });
 
-  void enviarEmailCita(citaId);
-  void syncCitaAmbos(citaId);
+  // Sincroniza con Google primero (genera el Meet si está conectado) y luego avisa
+  // al paciente, para que el email incluya el enlace. locale capturado en contexto.
+  const locale = await getLocale();
+  void syncCitaAmbos(citaId)
+    .catch((e) => console.error("[citas-flujo] syncCita", e))
+    .finally(() => {
+      void enviarEmailCita(citaId, { locale });
+    });
   revalidatePath("/agenda");
   revalidatePath("/paciente/portal/citas");
 }
@@ -985,8 +997,12 @@ export async function contraproponerCita(
     },
   });
 
-  void enviarEmailCita(contrapropuesta.id);
-  void syncCitaAmbos(contrapropuesta.id);
+  const locale = await getLocale();
+  void syncCitaAmbos(contrapropuesta.id)
+    .catch((e) => console.error("[citas-flujo] syncCita", e))
+    .finally(() => {
+      void enviarEmailCita(contrapropuesta.id, { locale });
+    });
   revalidatePath("/agenda");
   revalidatePath("/paciente/portal/citas");
   return contrapropuesta;

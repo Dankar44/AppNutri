@@ -43,7 +43,8 @@ export interface DatosEmailCita {
   duracion: number;
   motivo: string | null;
   isOnline: boolean;
-  googleMeetLink: string | null;
+  /** Enlace de videollamada ya resuelto (manual del nutri o, en su defecto, el de Google Meet). */
+  videoLink: string | null;
   pacienteNombre: string;
   dietistaNombre: string;
 }
@@ -63,8 +64,9 @@ export function renderEmailCita(
   const subject = te(SUBJECT_KEY[variante], { dietistaNombre: d.dietistaNombre, fecha });
   const intro = te(INTRO_KEY[variante], { dietistaNombre: d.dietistaNombre });
   const portalUrl = `${APP_URL}/paciente/portal/citas`;
-  const meetLink = d.isOnline && d.googleMeetLink ? d.googleMeetLink : null;
-  const filaModalidad = d.isOnline ? te("cita.modalidadOnline") : te("cita.modalidadPresencial");
+  const online = d.isOnline || !!d.videoLink;
+  const meetLink = d.videoLink;
+  const filaModalidad = online ? te("cita.modalidadOnline") : te("cita.modalidadPresencial");
 
   const html = `
 <!DOCTYPE html>

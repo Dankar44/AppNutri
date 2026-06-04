@@ -121,6 +121,7 @@ export default function NuevaCitaPage() {
         motivo: (form.get("motivo") as string) || undefined,
         notas: (form.get("notas") as string) || undefined,
         isOnline,
+        enlaceVideollamada: (form.get("enlaceVideollamada") as string) || undefined,
         modo,
       }));
       clearDraft();
@@ -238,6 +239,18 @@ export default function NuevaCitaPage() {
                 </p>
               </div>
             </label>
+
+            <div>
+              <label className="block text-sm font-medium mb-1.5">{t("nueva.videoLinkLabel")}</label>
+              <input
+                name="enlaceVideollamada"
+                type="url"
+                inputMode="url"
+                placeholder={t("nueva.videoLinkPlaceholder")}
+                className="w-full px-3 py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
+              />
+              <p className="text-xs text-muted-foreground mt-1.5">{t("nueva.videoLinkHint")}</p>
+            </div>
 
             <div>
               <label className="block text-sm font-medium mb-1.5">{t("nueva.howToCreate")}</label>

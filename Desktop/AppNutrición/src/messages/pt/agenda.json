@@ -105,6 +105,7 @@
     "confirmDeleteMessage": "Esta ação não pode ser desfeita. A consulta será removida da sua agenda.",
     "confirmDeleteButton": "Sim, excluir",
     "joinGoogleMeet": "Entrar no Google Meet",
+    "joinVideoCall": "Entrar na videochamada",
     "onlineAppointmentNote": "Consulta online — o link será gerado ao sincronizar com o Google",
     "estadoLabels": {
       "PENDIENTE": "Pendente",
@@ -261,6 +262,9 @@
     "toastProposed": "Proposta enviada ao paciente",
     "toastCreatedConfirmed": "Consulta criada e confirmada",
     "onlineHintFull": "Se você tem Google Calendar conectado, será gerado automaticamente um link do Meet.",
+    "videoLinkLabel": "Link de videochamada (opcional)",
+    "videoLinkPlaceholder": "https://zoom.us/j/... ou Meet, Teams...",
+    "videoLinkHint": "Cole aqui o seu link de Zoom, Meet ou Teams. Será incluído no aviso ao paciente. Se deixar vazio e tiver o Google conectado, será usado o Meet automático.",
     "agreedHintFull": "É criada como confirmada diretamente. Útil se você já combinou com o paciente por outro canal.",
     "proposeHintFull": "Fica pendente e o paciente recebe notificação para aceitar, contrapropor ou recusar.",
     "reasonPlaceholderAlt": "Ex. Primeira consulta, Revisão mensal…",

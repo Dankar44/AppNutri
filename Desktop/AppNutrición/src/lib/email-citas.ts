@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/mailer";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, getLocale } from "next-intl/server";
 import { renderEmailCita } from "@/lib/email-citas-template";
 
 // Evita reenviar el mismo email de cita (mismo estado) en una ventana corta.
@@ -9,8 +9,7 @@ const ultimoEnvioCita = new Map<string, number>();
 const DEBOUNCE_MS = 5 * 60 * 1000;
 
 /** Fecha larga localizada, p. ej. "lunes, 9 de junio, 17:00". */
-async function formatFechaHoraCita(d: Date): Promise<string> {
-  const locale = await import("@/i18n/locale").then((m) => m.getLocale());
+function formatFechaHoraCita(d: Date, locale: string): string {
   const tag = locale === "pt" ? "pt-BR" : "es-ES";
   return d.toLocaleString(tag, {
     weekday: "long",
@@ -21,15 +20,24 @@ async function formatFechaHoraCita(d: Date): Promise<string> {
   });
 }
 
+/** Enlace de videollamada a mostrar: el manual del nutri tiene prioridad sobre el de Google Meet. */
+function resolverVideoLink(enlaceManual: string | null, googleMeet: string | null): string | null {
+  return enlaceManual?.trim() || googleMeet || null;
+}
+
 /**
  * Envía al paciente un email sobre su cita (propuesta, confirmación, nueva fecha
  * o recordatorio, según el estado). Pensada para llamarse fire-and-forget desde
  * los flujos de cita, y con { force } desde el botón manual de la agenda.
+ *
+ * `locale` se pasa explícito desde la action (donde el contexto de la petición
+ * está vivo) para que el envío funcione aunque se ejecute diferido (p. ej.
+ * encadenado tras la sincronización con Google). Si no se pasa, se resuelve aquí.
  * No valida sesión: el llamador es responsable de la autorización.
  */
 export async function enviarEmailCita(
   citaId: string,
-  opts: { force?: boolean } = {},
+  opts: { force?: boolean; locale?: string } = {},
 ): Promise<{ ok: boolean; motivo?: string }> {
   const cita = await prisma.cita.findUnique({
     where: { id: citaId },
@@ -40,6 +48,7 @@ export async function enviarEmailCita(
       motivo: true,
       isOnline: true,
       googleMeetLink: true,
+      enlaceVideollamada: true,
       propuestoPor: true,
       paciente: { select: { nombre: true, apellidos: true, email: true, esDemo: true } },
       dietista: { select: { nombre: true, apellidos: true, email: true } },
@@ -57,8 +66,9 @@ export async function enviarEmailCita(
     ultimoEnvioCita.set(key, ahora);
   }
 
-  const te = await getTranslations("emails");
-  const fecha = await formatFechaHoraCita(cita.fechaHora);
+  const locale = opts.locale ?? (await getLocale());
+  const te = await getTranslations({ locale, namespace: "emails" });
+  const fecha = formatFechaHoraCita(cita.fechaHora, locale);
   const { subject, html } = renderEmailCita(
     {
       estado: cita.estado,
@@ -66,7 +76,7 @@ export async function enviarEmailCita(
       duracion: cita.duracion,
       motivo: cita.motivo,
       isOnline: cita.isOnline,
-      googleMeetLink: cita.googleMeetLink,
+      videoLink: resolverVideoLink(cita.enlaceVideollamada, cita.googleMeetLink),
       pacienteNombre: cita.paciente.nombre,
       dietistaNombre: `${cita.dietista.nombre} ${cita.dietista.apellidos}`.trim(),
     },
@@ -92,25 +102,30 @@ export async function enviarEmailCita(
  * Construye el texto de recordatorio de cita para enviar por WhatsApp
  * (el nutri abre wa.me con el mensaje ya escrito y solo le da a enviar).
  */
-export async function construirMensajeWhatsAppCita(citaId: string): Promise<string | null> {
+export async function construirMensajeWhatsAppCita(
+  citaId: string,
+  locale?: string,
+): Promise<string | null> {
   const cita = await prisma.cita.findUnique({
     where: { id: citaId },
     select: {
       fechaHora: true,
-      isOnline: true,
       googleMeetLink: true,
+      enlaceVideollamada: true,
       paciente: { select: { nombre: true } },
       dietista: { select: { nombre: true, apellidos: true } },
     },
   });
   if (!cita) return null;
 
-  const te = await getTranslations("emails");
-  const fecha = await formatFechaHoraCita(cita.fechaHora);
+  const loc = locale ?? (await getLocale());
+  const te = await getTranslations({ locale: loc, namespace: "emails" });
+  const fecha = formatFechaHoraCita(cita.fechaHora, loc);
   const dietistaNombre = `${cita.dietista.nombre} ${cita.dietista.apellidos}`.trim();
+  const videoLink = resolverVideoLink(cita.enlaceVideollamada, cita.googleMeetLink);
   let msg = te("cita.whatsapp", { pacienteNombre: cita.paciente.nombre, dietistaNombre, fecha });
-  if (cita.isOnline && cita.googleMeetLink) {
-    msg += "\n" + te("cita.whatsappEnlace", { enlace: cita.googleMeetLink });
+  if (videoLink) {
+    msg += "\n" + te("cita.whatsappEnlace", { enlace: videoLink });
   }
   return msg;
 }

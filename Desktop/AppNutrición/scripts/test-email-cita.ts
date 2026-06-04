@@ -77,7 +77,7 @@ const casos: Caso[] = [
     datos: {
       estado: "CONFIRMADA", propuestoPor: "DIETISTA", duracion: 45,
       motivo: "Revisión mensual", isOnline: true,
-      googleMeetLink: "https://meet.google.com/abc-defg-hij",
+      videoLink: "https://meet.google.com/abc-defg-hij",
       pacienteNombre: "María", dietistaNombre: "Dra. Ana López",
     },
     fecha: "lunes, 9 de junio, 17:00", te: teEs,
@@ -87,7 +87,7 @@ const casos: Caso[] = [
     nombre: "Propuesta · presencial · motivo con HTML peligroso (es)",
     datos: {
       estado: "PENDIENTE", propuestoPor: "DIETISTA", duracion: 30,
-      motivo: "Primera <b>consulta</b>", isOnline: false, googleMeetLink: null,
+      motivo: "Primera <b>consulta</b>", isOnline: false, videoLink: null,
       pacienteNombre: "Juan", dietistaNombre: "Dra. Ana López",
     },
     fecha: "martes, 10 de junio, 10:30", te: teEs,
@@ -97,7 +97,7 @@ const casos: Caso[] = [
     nombre: "Nueva propuesta · online sin Meet (pt)",
     datos: {
       estado: "CONTRAPROPUESTA", propuestoPor: "DIETISTA", duracion: 60,
-      motivo: null, isOnline: true, googleMeetLink: null,
+      motivo: null, isOnline: true, videoLink: null,
       pacienteNombre: "Ana", dietistaNombre: "Dr. Carlos",
     },
     fecha: "quarta-feira, 11 de junho, 09:00", te: tePt,
@@ -107,7 +107,7 @@ const casos: Caso[] = [
     nombre: "Recordatorio · paciente propuso (es)",
     datos: {
       estado: "PENDIENTE", propuestoPor: "PACIENTE", duracion: 30,
-      motivo: null, isOnline: false, googleMeetLink: null,
+      motivo: null, isOnline: false, videoLink: null,
       pacienteNombre: "Lucía", dietistaNombre: "Dra. Ana López",
     },
     fecha: "viernes, 13 de junio, 18:00", te: teEs,
@@ -133,7 +133,7 @@ for (const c of casos) {
   check(html.includes(c.te("cita.avisoPropuesta")) === c.esperaAviso,
     c.esperaAviso ? "muestra el aviso de propuesta" : "NO muestra el aviso de propuesta");
   if (c.esperaMeet) {
-    check(html.includes(c.datos.googleMeetLink!), "html incluye el enlace de videollamada");
+    check(html.includes(c.datos.videoLink!), "html incluye el enlace de videollamada");
   } else {
     check(!html.includes("meet.google.com"), "html sin enlace de videollamada");
   }
