@@ -574,7 +574,6 @@ Ainara cumplió lo prometido y envió el resumen de TODO lo que pregunta tras **
 | 41 | Buscar/ordenar alimentos por micro y macronutrientes | Alta | Media |
 | 42 | Almacén, stock y ventas de productos en consulta | Media-Alta | Alta |
 | 43 | White-label: app con marca del nutricionista | Media-Alta | Media |
-| 44 | IA repite alimentos y dieta poco equilibrada | Alta | Media |
 | 45 | Búsqueda tolerante a plural/singular | Alta | Baja |
 | 46 | Changelog público de novedades | Media-Alta | Baja |
 | 47 | Directorio público de nutricionistas | Alta | Alta |
@@ -1208,45 +1207,6 @@ Anna: "Así cada nutri trabaja con su marca dentro de la app y es superrr experi
 - CSS custom properties (variables CSS) facilitan el cambio de colores sin reescribir estilos
 
 **Prioridad:** Media-Alta (diferenciador competitivo — la competencia "Team Saludable" ya lo ofrece)
-**Complejidad:** Media
-
----
-
-## 44. Feedback: IA repite alimentos y dieta poco equilibrada
-
-**Origen:** Cris Asnadi Nutricionista (dietauric, WhatsApp) — 29 mayo 2026
-
-**Feedback completo:** "La app me parece muy bien. El otro día intenté crear un plan con IA por curiosidad y no me funcionó muy bien me repetía muchos alimentos y no parecía equilibrada. Estoy utilizando la app como soporte a mi trabajo y me está ayudando mucho. Faltaban algunos alimentos es lo que he visto. Aún tengo que profundizar más en ella pero me parece que está muy bien y es muy completa. Lo que te dije del tema hormonal ya he visto que se puede poner la fecha de nacimiento a mano que eso agiliza el trabajo."
-
-También dice: "Les diré a algunas compañeras a ver si les interesa algunas ya trabajan con otras apps!"
-
-**Confirmado por Antonio (antoniofs.nutricion, 4 jun 2026):** "La dieta con IA no funciona del todo mal, pero tampoco muy bien." Segundo profesional que reporta lo mismo → confirma que la calidad de la IA hay que mejorarla. (Ya se está trabajando en otra terminal, jun 2026.)
-
-**Problemas reportados:**
-1. **IA repite muchos alimentos** — El plan generado por IA no varía suficiente entre días/comidas
-2. **Dieta no equilibrada** — La distribución nutricional del plan generado no parece correcta
-3. **Faltan algunos alimentos** — La base de datos no tiene todos los alimentos que necesita
-
-**Positivo:** Usa la app como soporte a su trabajo y le ayuda mucho. La considera muy completa. Va a recomendar a compañeras.
-
-**Estado (jun 2026): RESUELTO en local — 1ª iteración implementada, pendiente de desplegar.** Causa raíz encontrada en código: `buildUserPrompt` (`src/lib/ai/prompts.ts`) **ignoraba la base de datos** (parámetros `_alimentos`/`_recetas` sin usar) y metía una `TABLA_NUTRICIONAL` **hardcodeada de ~30 alimentos** + un patrón rígido ("Lunes pollo, Martes ternera…"). Por eso repetía, "faltaban alimentos" y salía poco variada: la IA estaba encerrada en 30 alimentos y los que no casaban con la BD se descartaban al aceptar (`ai.ts:259`).
-
-**Tareas:**
-- [x] Revisar el prompt de generación IA para forzar más variedad — HECHO: tabla nutricional **dinámica** desde el catálogo real, eliminado el patrón rígido, reglas de variedad reforzadas (rotar proteínas, variar desayunos, no repetir entre días)
-- [x] Anti-repetición entre lotes — HECHO: antes se pasaban descripciones truncadas a 300 chars (no llegaban a cubrir lo generado); ahora se pasa la lista deduplicada de alimentos ya usados (`generate-plan.ts`)
-- [x] Instrucción explícita de equilibrio nutricional en el prompt — HECHO: REGLA 4 (proteína + carbohidrato + verdura/fruta + grasa por comida; acercarse a macros objetivo)
-- [x] "Faltan alimentos" — HECHO: el prompt usa los alimentos del nutricionista + un **muestreo de globales por categoría** (~70-90 vs 30); selección en `ai.ts` (`muestrearGlobalesVariado`)
-- [x] **Calidad de los alimentos** — HECHO: el catálogo global (2.659) es hipergranular y mezcla básicos con encurtidos, postres, harinas, casquería… sin ninguna señal de "básico". Se filtran los no-aptos por nombre (`esAlimentoBasico` / `VETO_ALIMENTO`) para que la IA no proponga "cebolleta en vinagre" ni "hígado de ternera". Mejora futura ideal: campo `esBasico`/popularidad en BD
-- [x] **Tamaño del prompt / límites de Groq** — HECHO: el tier gratuito limita a **12.000 tokens/min y 100.000/día por org**; con 141 alimentos + max_tokens 8192 saltaba un **413** (habría roto producción). Ajustado a ~70 alimentos + max_tokens 4096 + rotación de 6 claves. Validado end-to-end con generaciones reales: **7/7 días en rango de kcal** (tras el reajuste de la app) y **~50 alimentos distintos/semana**. Nota: el prompt nuevo consume ~60% más tokens/plan que antes
-- [x] **Rellenar TODAS las comidas** (bug detectado probando) — la IA solo hacía 3 comidas (desayuno/almuerzo/cena) y dejaba 3 vacías. Ahora se le pasa el nº de comidas elegido en el form (`numComidas` → `COMIDAS_POR_NUM`) y se le exige generar EXACTAMENTE esas comidas, todas con alimentos. Validado: 42/42 comidas llenas
-- [x] **Respetar macros, no solo calorías** (bug detectado probando) — reforzado el prompt para cumplir los gramos de P/C/G (±15%) y no pasarse de proteína. Validado con objetivos consistentes: prot 131/150, carb 226/220, grasa 71/80. OJO: si los objetivos del nutri son incoherentes (p. ej. 3000 kcal con macros que suman 2110) es imposible cuadrar ambos → **pendiente: validar/avisar en el form cuando los macros no sumen las calorías**
-- [x] **Filtro de restricciones por alérgeno** (#69 parcial) — alergias/intolerancias del paciente (lácteos, frutos secos, huevo, marisco, pescado, gluten, soja) se excluyen del catálogo ANTES de dárselo a la IA (`filtrarPorRestricciones` en `ai.ts`), no solo se le piden en el prompt. Validado: paciente con lactosa → 0 lácteos en catálogo y 0 en el plan
-- [ ] **Fase 2 pendiente: recetas propias como ítem seleccionable por la IA** — hoy se cargan pero no se usan; requiere que `aceptarPlanIA` soporte insertar `recetaId` (no solo `alimentoId`) en `AlimentoEnComida`
-- [ ] Relacionado con tarea #1 (tablas de composición por país) y #26 (relevancia en búsqueda)
-
-**Archivos modificados:** `src/lib/ai/prompts.ts`, `src/lib/ai/generate-plan.ts`, `src/app/actions/ai.ts`, `src/lib/alimentos-cache.ts`
-
-**Prioridad:** Alta (la IA es feature clave — si genera planes malos, los nutris no la usan)
 **Complejidad:** Media
 
 ---
