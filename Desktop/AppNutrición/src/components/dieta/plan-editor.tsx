@@ -99,6 +99,13 @@ interface PlanEditorProps {
   interactionMode?: "dashboard" | "patient" | "shared";
   ocultarCalorias?: boolean;
   localCallbacks?: LocalMutationCallbacks;
+  /** Reenviado a cada comida como botón "Copiar comida" (lo orquesta PlanVisual). */
+  onCopiarComida?: (comidaId: string) => void;
+  /** Reenviado a cada alimento como botón "Copiar alimento" (lo orquesta PlanVisual). */
+  onCopiarAlimento?: (alimentoEnComidaId: string) => void;
+  /** Nombre del alimento copiado al portapapeles (muestra "Pegar aquí" en cada comida). */
+  pegarAlimentoLabel?: string | null;
+  onPegarAlimento?: (comidaId: string) => void;
 }
 
 interface DragItemData {
@@ -128,6 +135,10 @@ export function PlanEditor({
   interactionMode = "dashboard",
   ocultarCalorias = false,
   localCallbacks,
+  onCopiarComida,
+  onCopiarAlimento,
+  pegarAlimentoLabel,
+  onPegarAlimento,
 }: PlanEditorProps) {
   const t = useTranslations("diets");
   const router = useRouter();
@@ -488,6 +499,10 @@ export function PlanEditor({
                       onRemove={handleRemoveAlimento}
                       onCantidadChange={handleCantidadChange}
                       onReemplazar={handleReemplazar}
+                      onCopiar={onCopiarComida}
+                      onCopiarAlimento={onCopiarAlimento}
+                      pegarAlimentoLabel={pegarAlimentoLabel}
+                      onPegarAlimento={onPegarAlimento}
                       readOnly={readOnly}
                       interactionMode={interactionMode}
                       ocultarCalorias={ocultarCalorias}

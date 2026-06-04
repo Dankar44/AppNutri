@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { asignarPlanComoActual } from "@/app/actions/planes";
+import { asignarPlanComoActual, copiarComidaADias, copiarDiaADias, pegarAlimentoEnComida, type ModoCopia } from "@/app/actions/planes";
 import {
   Plus,
   UtensilsCrossed,
@@ -22,10 +22,15 @@ import {
   ChevronDown,
   Check,
   FileDown,
+  Copy,
+  Download,
+  ClipboardPaste,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, isNextNavigation } from "@/lib/utils";
 import { calcularMacrosPorcion, sumarMacros, convertirAGramos } from "@/lib/macros";
 import { PlanEditor } from "@/components/dieta/plan-editor";
+import { CopiarADiasModal, type DiaOption } from "@/components/dieta/copiar-comida-modal";
+import { ImportarPlanModal } from "@/components/dieta/importar-plan-modal";
 import { FoodHoverCard, type InteractionMode } from "@/components/food-hover-card";
 export type { InteractionMode };
 import {
@@ -189,6 +194,156 @@ export function PlanVisual({
   const [foodTablePage, setFoodTablePage] = useState(0);
 
   const selectedPlan = plan;
+
+  // ── Copiar / importar comidas y días (#31) — solo en modo dietista editable ──
+  const tDiets = useTranslations("diets");
+  const esEditable = !readOnly && interactionMode === "dashboard";
+  const [isPendingCopia, startCopia] = useTransition();
+  const [copiaModal, setCopiaModal] = useState<{
+    tipo: "comida" | "dia";
+    sourceId: string;
+    excluirDiaId?: string;
+    titulo: string;
+    subtitulo?: string;
+    tipoOrigen?: string;
+    conTipoDestino?: boolean;
+  } | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  // "Portapapeles" para copiar/pegar un alimento suelto en cualquier comida.
+  // Guarda una COPIA de los datos al copiar (no el id del origen) para que la
+  // cantidad pegada sea siempre la original aunque se pegue sobre el propio origen.
+  const [portapapeles, setPortapapeles] = useState<{
+    alimentoId: string | null;
+    recetaId: string | null;
+    cantidad: number;
+    unidad: string;
+    nombre: string;
+  } | null>(null);
+
+  const diasOptions: DiaOption[] = useMemo(
+    () =>
+      [...plan.dias]
+        .sort(
+          (a, b) =>
+            DIA_KEYS.indexOf(a.dia as (typeof DIA_KEYS)[number]) -
+            DIA_KEYS.indexOf(b.dia as (typeof DIA_KEYS)[number]),
+        )
+        .map((d) => ({ id: d.id, key: d.dia, label: t(`dias.${d.dia}` as never) })),
+    [plan.dias, t],
+  );
+
+  const tiposComidaOpciones = useMemo(
+    () =>
+      (["DESAYUNO", "MEDIA_MANANA", "ALMUERZO", "MERIENDA", "CENA", "RECENA"] as const).map((k) => ({
+        key: k as string,
+        label: tDiets(`comidaSlot.tipoLabels.${k}` as never) as string,
+      })),
+    [tDiets],
+  );
+
+  function handleCopiarComida(comidaId: string) {
+    let tipo = "";
+    let diaKey = "";
+    let diaId = "";
+    for (const d of plan.dias) {
+      for (const c of d.comidas) {
+        if (c.id === comidaId) {
+          tipo = c.tipo;
+          diaKey = d.dia;
+          diaId = d.id;
+        }
+      }
+    }
+    setCopiaModal({
+      tipo: "comida",
+      sourceId: comidaId,
+      excluirDiaId: diaId,
+      titulo: tDiets("copiar.copiarComida"),
+      subtitulo: `${tDiets(`comidaSlot.tipoLabels.${tipo}` as never)} · ${t(`dias.${diaKey}` as never)}`,
+      tipoOrigen: tipo,
+      conTipoDestino: true,
+    });
+  }
+
+  function handleCopiarDia(diaId: string, diaKey: string) {
+    setCopiaModal({
+      tipo: "dia",
+      sourceId: diaId,
+      excluirDiaId: diaId,
+      titulo: tDiets("copiar.copiarDia"),
+      subtitulo: t(`dias.${diaKey}` as never),
+    });
+  }
+
+  function handleCopiarAlimento(alimentoEnComidaId: string) {
+    let snap: {
+      alimentoId: string | null;
+      recetaId: string | null;
+      cantidad: number;
+      unidad: string;
+      nombre: string;
+    } | null = null;
+    for (const d of plan.dias) {
+      for (const c of d.comidas) {
+        for (const a of c.alimentos) {
+          if (a.id === alimentoEnComidaId) {
+            snap = {
+              alimentoId: a.alimento?.id ?? null,
+              recetaId: a.receta?.id ?? null,
+              cantidad: a.cantidad,
+              unidad: a.unidad,
+              nombre: a.alimento?.nombre || a.receta?.nombre || "",
+            };
+          }
+        }
+      }
+    }
+    if (!snap) return;
+    setPortapapeles(snap);
+    toast.success(tDiets("copiar.toastAlimentoCopiado", { nombre: snap.nombre }));
+  }
+
+  function handlePegarAlimento(comidaDestinoId: string) {
+    if (!portapapeles) return;
+    const snap = portapapeles;
+    startCopia(async () => {
+      try {
+        await pegarAlimentoEnComida(comidaDestinoId, {
+          alimentoId: snap.alimentoId,
+          recetaId: snap.recetaId,
+          cantidad: snap.cantidad,
+          unidad: snap.unidad,
+        });
+        router.refresh();
+        toast.success(tDiets("copiar.toastPegado"));
+      } catch (e) {
+        if (isNextNavigation(e)) throw e;
+        toast.error(tDiets("copiar.toastCopiarError"));
+      }
+    });
+  }
+
+  function handleConfirmCopia(ids: string[], modo: ModoCopia, tipoDestino?: string) {
+    if (!copiaModal) return;
+    const m = copiaModal;
+    startCopia(async () => {
+      try {
+        if (m.tipo === "comida") await copiarComidaADias(m.sourceId, ids, modo, tipoDestino);
+        else await copiarDiaADias(m.sourceId, ids, modo);
+        router.refresh();
+        toast.success(
+          m.tipo === "comida"
+            ? tDiets("copiar.toastCopiadoComida", { n: ids.length })
+            : tDiets("copiar.toastCopiadoDia", { n: ids.length }),
+        );
+      } catch (e) {
+        if (isNextNavigation(e)) throw e;
+        toast.error(tDiets("copiar.toastCopiarError"));
+      } finally {
+        setCopiaModal(null);
+      }
+    });
+  }
 
   useEffect(() => {
     setSelectedDayKey("TODOS");
@@ -644,14 +799,54 @@ export function PlanVisual({
 
 
               <div className="space-y-4">
+                {esEditable && (
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setImportOpen(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs font-medium text-foreground hover:bg-muted transition-colors"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      {tDiets("copiar.importarDeOtroPlan")}
+                    </button>
+                  </div>
+                )}
+                {esEditable && portapapeles && (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-primary/40 bg-primary/5 text-sm">
+                    <ClipboardPaste className="w-4 h-4 text-primary shrink-0" />
+                    <span className="min-w-0 flex-1 truncate">
+                      <span className="text-muted-foreground">{tDiets("copiar.enPortapapeles")} </span>
+                      <span className="font-medium">{portapapeles.nombre}</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setPortapapeles(null)}
+                      className="text-xs font-medium text-muted-foreground hover:text-foreground shrink-0"
+                    >
+                      {tDiets("copiar.cancelarCopia")}
+                    </button>
+                  </div>
+                )}
                 {diasVisible.length > 0 ? (
                   isTodos ? (
                     diasVisible.map((dia) => (
                       <div key={dia.id}>
-                        <h2 className="text-base font-semibold text-foreground mb-3 flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                          {t(`dias.${dia.dia}`)}
-                        </h2>
+                        <div className="flex items-center justify-between mb-3">
+                          <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                            {t(`dias.${dia.dia}`)}
+                          </h2>
+                          {esEditable && (
+                            <button
+                              type="button"
+                              onClick={() => handleCopiarDia(dia.id, dia.dia)}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-primary hover:bg-muted transition-colors shrink-0"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                              {tDiets("copiar.copiarDia")}
+                            </button>
+                          )}
+                        </div>
                         <PlanEditor
                           showHeader={false}
                           compactHeader
@@ -661,6 +856,10 @@ export function PlanVisual({
                           interactionMode={interactionMode}
                           ocultarCalorias={ocultarCalorias}
                           localCallbacks={localCallbacks}
+                          onCopiarComida={esEditable ? handleCopiarComida : undefined}
+                          onCopiarAlimento={esEditable ? handleCopiarAlimento : undefined}
+                          pegarAlimentoLabel={esEditable ? (portapapeles?.nombre ?? null) : null}
+                          onPegarAlimento={esEditable ? handlePegarAlimento : undefined}
                           planId={selectedPlan.id}
                           planNombre={selectedPlan.nombre}
                           dias={[dia as any]}
@@ -674,30 +873,78 @@ export function PlanVisual({
                       </div>
                     ))
                   ) : (
-                    <PlanEditor
-                      showHeader={false}
-                      compactHeader
-                      showDayHeader={false}
-                      showAnalisis={false}
-                      readOnly={readOnly}
-                      interactionMode={interactionMode}
-                      ocultarCalorias={ocultarCalorias}
-                      localCallbacks={localCallbacks}
-                      planId={selectedPlan.id}
-                      planNombre={selectedPlan.nombre}
-                      dias={[diasVisible[0] as any]}
-                      objetivos={{
-                        calorias: selectedPlan.caloriasObjetivo ?? undefined,
-                        proteinas: selectedPlan.proteinasObjetivo ?? undefined,
-                        carbohidratos: selectedPlan.carbohidratosObjetivo ?? undefined,
-                        grasas: selectedPlan.grasasObjetivo ?? undefined,
-                      }}
-                    />
+                    <div>
+                      {esEditable && diasVisible[0] && (
+                        <div className="flex items-center justify-end mb-3">
+                          <button
+                            type="button"
+                            onClick={() => handleCopiarDia(diasVisible[0].id, diasVisible[0].dia)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-primary hover:bg-muted transition-colors"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                            {tDiets("copiar.copiarDia")}
+                          </button>
+                        </div>
+                      )}
+                      <PlanEditor
+                        showHeader={false}
+                        compactHeader
+                        showDayHeader={false}
+                        showAnalisis={false}
+                        readOnly={readOnly}
+                        interactionMode={interactionMode}
+                        ocultarCalorias={ocultarCalorias}
+                        localCallbacks={localCallbacks}
+                        onCopiarComida={esEditable ? handleCopiarComida : undefined}
+                        onCopiarAlimento={esEditable ? handleCopiarAlimento : undefined}
+                        pegarAlimentoLabel={esEditable ? (portapapeles?.nombre ?? null) : null}
+                        onPegarAlimento={esEditable ? handlePegarAlimento : undefined}
+                        planId={selectedPlan.id}
+                        planNombre={selectedPlan.nombre}
+                        dias={[diasVisible[0] as any]}
+                        objetivos={{
+                          calorias: selectedPlan.caloriasObjetivo ?? undefined,
+                          proteinas: selectedPlan.proteinasObjetivo ?? undefined,
+                          carbohidratos: selectedPlan.carbohidratosObjetivo ?? undefined,
+                          grasas: selectedPlan.grasasObjetivo ?? undefined,
+                        }}
+                      />
+                    </div>
                   )
                 ) : (
                   <div className="text-sm text-muted-foreground">{t("sinDias")}</div>
                 )}
               </div>
+
+              {esEditable && (
+                <>
+                  <CopiarADiasModal
+                    open={!!copiaModal}
+                    onClose={() => setCopiaModal(null)}
+                    titulo={copiaModal?.titulo ?? ""}
+                    subtitulo={copiaModal?.subtitulo}
+                    dias={diasOptions}
+                    excluirDiaId={copiaModal?.excluirDiaId}
+                    tipoOrigen={copiaModal?.tipoOrigen}
+                    tipoDestinoInicial={copiaModal?.tipoOrigen}
+                    tiposComida={copiaModal?.conTipoDestino ? tiposComidaOpciones : undefined}
+                    pending={isPendingCopia}
+                    onConfirm={handleConfirmCopia}
+                  />
+                  <ImportarPlanModal
+                    open={importOpen}
+                    onClose={() => setImportOpen(false)}
+                    pacienteActualId={pacienteId}
+                    pacienteActualNombre={pacienteNombre}
+                    planActualId={plan.id}
+                    diasDelPlanActual={diasOptions}
+                    onImported={() => {
+                      router.refresh();
+                      toast.success(tDiets("copiar.toastImportado"));
+                    }}
+                  />
+                </>
+              )}
             </div>
 
             {!ocultarCalorias && (

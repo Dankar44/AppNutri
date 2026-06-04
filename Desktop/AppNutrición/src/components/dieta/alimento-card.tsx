@@ -1,8 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Trash2, GripVertical, ListFilter, ExternalLink, Image as ImageLinkIcon } from "lucide-react";
-import { useState, useRef } from "react";
+import { Trash2, GripVertical, ListFilter, ExternalLink, Image as ImageLinkIcon, Copy } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
 import { getUnidadLabel } from "@/lib/units";
@@ -34,6 +34,7 @@ interface AlimentoCardProps {
   onRemove: (id: string) => void;
   onCantidadChange: (id: string, cantidad: number) => void;
   onBuscarEquivalente?: (alimentoId: string, nombre: string, calorias: number, proteinas: number, carbohidratos: number, grasas: number, cantidad: number) => void;
+  onCopiar?: (id: string) => void;
 }
 
 export function AlimentoCard({
@@ -61,10 +62,18 @@ export function AlimentoCard({
   onRemove,
   onCantidadChange,
   onBuscarEquivalente,
+  onCopiar,
 }: AlimentoCardProps) {
   const t = useTranslations("diets");
   const [tempCantidad, setTempCantidad] = useState(cantidad);
   const debounceRef = useRef<NodeJS.Timeout>(null);
+
+  // Sincronizar la cantidad mostrada cuando cambia desde fuera (p. ej. al pegar
+  // un alimento que ya existe en la comida y se SUMA su cantidad), no solo en
+  // el primer render.
+  useEffect(() => {
+    setTempCantidad(cantidad);
+  }, [cantidad]);
 
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
@@ -202,6 +211,16 @@ export function AlimentoCard({
           title={t("alimentoCard.searchEquivalent")}
         >
           <ListFilter className="w-4 h-4" />
+        </button>
+      )}
+
+      {onCopiar && (
+        <button
+          onClick={() => onCopiar(id)}
+          className="p-1.5 rounded border border-border/60 hover:bg-primary/10 hover:border-primary/30 text-muted-foreground/50 hover:text-primary transition-all shrink-0"
+          title={t("copiar.copiarAlimento")}
+        >
+          <Copy className="w-4 h-4" />
         </button>
       )}
 

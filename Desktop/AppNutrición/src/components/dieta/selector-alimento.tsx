@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useState, useEffect, useRef } from "react";
-import { X, Search, Sparkles, CookingPot, User, Plus, Minus, SlidersHorizontal } from "lucide-react";
+import { X, Search, Sparkles, CookingPot, User, Plus, Minus, SlidersHorizontal, Apple } from "lucide-react";
 import { MacroBadges } from "@/components/macro-badge";
 import { buscarAlimentosYRecetas } from "@/app/actions/recetas";
 import { getSugerencias } from "@/app/actions/sugerencias";
@@ -41,7 +41,7 @@ interface RecetaResult {
   esPropio: boolean;
 }
 
-type Filtro = "todos" | "mis-alimentos" | "mis-recetas";
+type Filtro = "todos" | "alimentos" | "recetas" | "mis-alimentos" | "mis-recetas";
 
 interface ExpandedState {
   id: string;
@@ -77,7 +77,7 @@ function scaledMacros(
 export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObjetivo }: SelectorAlimentoProps) {
   const t = useTranslations("diets");
   const [query, setQuery] = useState("");
-  const [filtro, setFiltro] = useState<Filtro>("todos");
+  const [filtro, setFiltro] = useState<Filtro>("alimentos");
   const [alimentos, setAlimentos] = useState<AlimentoResult[]>([]);
   const [recetas, setRecetas] = useState<RecetaResult[]>([]);
   const [sugerencias, setSugerencias] = useState<AlimentoSugerido[]>([]);
@@ -95,7 +95,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
     }
     if (!open) {
       setQuery("");
-      setFiltro("todos");
+      setFiltro("alimentos");
       setAlimentos([]);
       setRecetas([]);
       setSugerencias([]);
@@ -106,7 +106,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
   if (!open) return null;
 
   function ejecutarBusqueda(q: string, f: Filtro) {
-    if (f === "todos" && q.length < 2) {
+    if ((f === "todos" || f === "alimentos") && q.length < 2) {
       setAlimentos([]);
       setRecetas([]);
       return;
@@ -124,7 +124,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
     setQuery(value);
     setExpanded(null);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (value.length < 2 && filtro === "todos") {
+    if (value.length < 2 && (filtro === "todos" || filtro === "alimentos")) {
       setAlimentos([]);
       setRecetas([]);
       return;
@@ -210,8 +210,9 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
     : 10;
 
   const hasResults = alimentos.length > 0 || recetas.length > 0;
-  const filtroActivo = filtro !== "todos";
-  const mostrarSugerencias = query.length < 2 && !filtroActivo && sugerencias.length > 0;
+  // Filtros que listan resultados sin necesidad de escribir (≥2 caracteres)
+  const filtroActivo = filtro !== "todos" && filtro !== "alimentos";
+  const mostrarSugerencias = query.length < 2 && filtro === "alimentos" && sugerencias.length > 0;
 
   function renderExpandedView(
     itemId: string,
@@ -301,11 +302,13 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
               className="w-full pl-9 pr-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
             />
           </div>
-          <div className="flex gap-2 mt-3">
+          <div className="flex flex-wrap gap-1.5 mt-3">
             {([
-              { id: "todos" as const, label: t("selectorAlimento.tabAll") },
+              { id: "alimentos" as const, label: t("selectorAlimento.tabFoods") },
+              { id: "recetas" as const, label: t("selectorAlimento.tabRecipes") },
               { id: "mis-alimentos" as const, label: t("selectorAlimento.tabMyFoods") },
               { id: "mis-recetas" as const, label: t("selectorAlimento.tabMyRecipes") },
+              { id: "todos" as const, label: t("selectorAlimento.tabAll") },
             ]).map((f) => (
               <button
                 key={f.id}
@@ -371,7 +374,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
             </div>
           )}
 
-          {loadingSugerencias && query.length < 2 && !filtroActivo && (
+          {loadingSugerencias && query.length < 2 && filtro === "alimentos" && (
             <p className="text-xs text-muted-foreground text-center py-2">{t("selectorAlimento.calculatingSuggestions")}</p>
           )}
 
@@ -412,7 +415,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
                         <div className="flex items-center gap-2 min-w-0">
                           <CookingPot className="w-3.5 h-3.5 text-purple-500 shrink-0" />
                           <p className="text-sm font-medium text-purple-900 dark:text-purple-200 truncate">{r.nombre}</p>
-                          {r.esPropio && filtro === "todos" && (
+                          {r.esPropio && (
                             <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400 flex items-center gap-0.5 shrink-0">
                               <User className="w-2.5 h-2.5" />
                               {t("selectorAlimento.ownFeminine")}
@@ -455,9 +458,10 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
           {/* Alimentos */}
           {alimentos.length > 0 && (
             <div>
-              {recetas.length > 0 && (
-                <p className="text-xs font-semibold text-muted-foreground mb-2">{t("selectorAlimento.foodsSection")}</p>
-              )}
+              <div className="flex items-center gap-1.5 mb-2">
+                <Apple className="w-4 h-4 text-emerald-500" />
+                <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">{t("selectorAlimento.foodsSection")}</span>
+              </div>
               <div className="space-y-1">
                 {alimentos.map((item) => {
                   const verde = item.esPropio || filtro === "mis-alimentos";
@@ -481,7 +485,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2 min-w-0">
                             <p className={cn("text-sm font-medium truncate", verde && "text-emerald-900 dark:text-emerald-200")}>{item.nombre}</p>
-                            {item.esPropio && filtro === "todos" && (
+                            {item.esPropio && (
                               <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400 flex items-center gap-0.5 shrink-0">
                                 <User className="w-2.5 h-2.5" />
                                 {t("selectorAlimento.ownMasculine")}

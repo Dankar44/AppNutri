@@ -365,6 +365,352 @@ export async function moverAlimentoAComida(
   });
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// Copiar / mover comidas y días dentro de un plan o desde otros planes (#31)
+// ─────────────────────────────────────────────────────────────────────────
+
+export type ModoCopia = "reemplazar" | "anadir";
+
+// Orden por defecto de cada tipo de comida (igual que en crearPlan).
+const COMIDA_ORDEN: Record<TipoComida, number> = {
+  DESAYUNO: 0,
+  MEDIA_MANANA: 1,
+  ALMUERZO: 2,
+  MERIENDA: 3,
+  CENA: 4,
+  RECENA: 5,
+};
+
+/**
+ * Devuelve el id de la comida de un tipo concreto en un día. Si no existe
+ * (planes antiguos o tipos faltantes), la crea con su orden por defecto.
+ */
+async function obtenerOCrearComidaDelTipo(diaId: string, tipo: TipoComida): Promise<string> {
+  const existente = await prisma.comidaDelDia.findFirst({
+    where: { diaId, tipo },
+    orderBy: { orden: "asc" },
+    select: { id: true },
+  });
+  if (existente) return existente.id;
+
+  const nueva = await prisma.comidaDelDia.create({
+    data: { diaId, tipo, orden: COMIDA_ORDEN[tipo] ?? 0 },
+    select: { id: true },
+  });
+  return nueva.id;
+}
+
+/** ¿Es "el mismo" alimento/receta? Mismo alimentoId + misma unidad, o misma receta. */
+function mismoItem(
+  a: { alimentoId: string | null; recetaId: string | null; unidad: UnidadMedida },
+  b: { alimentoId: string | null; recetaId: string | null; unidad: UnidadMedida },
+): boolean {
+  if (a.alimentoId != null && b.alimentoId === a.alimentoId && a.unidad === b.unidad) return true;
+  if (a.recetaId != null && b.recetaId === a.recetaId) return true;
+  return false;
+}
+
+/**
+ * Copia los alimentos de una comida origen a una comida destino.
+ * - "reemplazar": vacía el destino antes de copiar (queda idéntico al origen).
+ * - "anadir": fusiona con lo existente — si un alimento (mismo alimento+unidad)
+ *   o receta ya está en el destino, SUMA la cantidad/porciones en vez de
+ *   duplicar la línea; si no, lo añade al final.
+ */
+async function copiarAlimentosAComida(
+  origenComidaId: string,
+  destinoComidaId: string,
+  modo: ModoCopia,
+) {
+  if (origenComidaId === destinoComidaId) return;
+
+  const origen = await prisma.alimentoEnComida.findMany({
+    where: { comidaId: origenComidaId },
+    orderBy: { orden: "asc" },
+    select: { alimentoId: true, recetaId: true, cantidad: true, unidad: true },
+  });
+
+  if (modo === "reemplazar") {
+    await prisma.alimentoEnComida.deleteMany({ where: { comidaId: destinoComidaId } });
+    if (origen.length > 0) {
+      await prisma.alimentoEnComida.createMany({
+        data: origen.map((a, i) => ({
+          comidaId: destinoComidaId,
+          alimentoId: a.alimentoId,
+          recetaId: a.recetaId,
+          cantidad: a.cantidad,
+          unidad: a.unidad,
+          orden: i,
+        })),
+      });
+    }
+    return;
+  }
+
+  // modo "anadir": fusionar sumando cantidades cuando el item ya existe en el destino
+  if (origen.length === 0) return;
+
+  const destino = await prisma.alimentoEnComida.findMany({
+    where: { comidaId: destinoComidaId },
+    orderBy: { orden: "asc" },
+    select: { id: true, alimentoId: true, recetaId: true, cantidad: true, unidad: true },
+  });
+
+  const incrementos = new Map<string, number>(); // id de línea destino -> cantidad a sumar
+  const nuevos: { alimentoId: string | null; recetaId: string | null; cantidad: number; unidad: UnidadMedida }[] = [];
+
+  for (const o of origen) {
+    const enDestino = destino.find((d) => mismoItem(d, o));
+    if (enDestino) {
+      incrementos.set(enDestino.id, (incrementos.get(enDestino.id) ?? 0) + o.cantidad);
+      continue;
+    }
+    const enNuevos = nuevos.find((n) => mismoItem(n, o));
+    if (enNuevos) {
+      enNuevos.cantidad += o.cantidad;
+    } else {
+      nuevos.push({ alimentoId: o.alimentoId, recetaId: o.recetaId, cantidad: o.cantidad, unidad: o.unidad });
+    }
+  }
+
+  for (const [id, inc] of incrementos) {
+    const actual = destino.find((d) => d.id === id);
+    if (!actual) continue;
+    await prisma.alimentoEnComida.update({
+      where: { id },
+      data: { cantidad: actual.cantidad + inc },
+    });
+  }
+
+  if (nuevos.length > 0) {
+    let orden = destino.length;
+    await prisma.alimentoEnComida.createMany({
+      data: nuevos.map((n) => ({
+        comidaId: destinoComidaId,
+        alimentoId: n.alimentoId,
+        recetaId: n.recetaId,
+        cantidad: n.cantidad,
+        unidad: n.unidad,
+        orden: orden++,
+      })),
+    });
+  }
+}
+
+/**
+ * Copia una comida (con todos sus alimentos) a uno o varios días destino,
+ * emparejándola con la comida del mismo tipo en cada día.
+ *
+ * La comida origen y los días destino pueden pertenecer al MISMO plan
+ * (copiar dentro del plan) o a planes DISTINTOS del mismo dietista
+ * (importar desde otro plan). Solo se valida que todo sea del dietista actual.
+ */
+export async function copiarComidaADias(
+  comidaOrigenId: string,
+  diaDestinoIds: string[],
+  modo: ModoCopia = "reemplazar",
+  tipoDestino?: string,
+) {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
+  if (dietista.isDemo) return;
+
+  const origen = await prisma.comidaDelDia.findUnique({
+    where: { id: comidaOrigenId },
+    include: { diaDelPlan: { include: { plan: { select: { dietistaId: true } } } } },
+  });
+  if (!origen || origen.diaDelPlan.plan.dietistaId !== dietista.id) {
+    throw new Error(t("auth.noAutorizado"));
+  }
+
+  // Tipo de comida destino: el elegido (validado contra el enum) o el del origen.
+  const tipo: TipoComida =
+    tipoDestino && tipoDestino in COMIDA_ORDEN ? (tipoDestino as TipoComida) : origen.tipo;
+
+  for (const diaDestinoId of diaDestinoIds) {
+    // Saltar solo si sería copiar la comida sobre sí misma (mismo día y mismo tipo)
+    if (diaDestinoId === origen.diaId && tipo === origen.tipo) continue;
+
+    const dia = await prisma.diaDelPlan.findUnique({
+      where: { id: diaDestinoId },
+      include: { plan: { select: { dietistaId: true } } },
+    });
+    if (!dia || dia.plan.dietistaId !== dietista.id) continue;
+
+    const destinoComidaId = await obtenerOCrearComidaDelTipo(diaDestinoId, tipo);
+    await copiarAlimentosAComida(comidaOrigenId, destinoComidaId, modo);
+
+    if (modo === "reemplazar") {
+      await prisma.comidaDelDia.update({
+        where: { id: destinoComidaId },
+        data: { descripcion: origen.descripcion },
+      });
+    }
+  }
+}
+
+/**
+ * Copia un día completo (todas sus comidas con sus alimentos) a uno o varios
+ * días destino, emparejando cada comida con la del mismo tipo en el destino.
+ * Intra-plan o desde otro plan del mismo dietista (igual que copiarComidaADias).
+ */
+export async function copiarDiaADias(
+  diaOrigenId: string,
+  diaDestinoIds: string[],
+  modo: ModoCopia = "reemplazar",
+) {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
+  if (dietista.isDemo) return;
+
+  const origen = await prisma.diaDelPlan.findUnique({
+    where: { id: diaOrigenId },
+    include: {
+      plan: { select: { dietistaId: true } },
+      comidas: { orderBy: { orden: "asc" }, select: { id: true, tipo: true, descripcion: true } },
+    },
+  });
+  if (!origen || origen.plan.dietistaId !== dietista.id) {
+    throw new Error(t("auth.noAutorizado"));
+  }
+
+  for (const diaDestinoId of diaDestinoIds) {
+    if (diaDestinoId === diaOrigenId) continue;
+
+    const dia = await prisma.diaDelPlan.findUnique({
+      where: { id: diaDestinoId },
+      include: { plan: { select: { dietistaId: true } } },
+    });
+    if (!dia || dia.plan.dietistaId !== dietista.id) continue;
+
+    for (const comida of origen.comidas) {
+      const destinoComidaId = await obtenerOCrearComidaDelTipo(diaDestinoId, comida.tipo);
+      await copiarAlimentosAComida(comida.id, destinoComidaId, modo);
+      if (modo === "reemplazar") {
+        await prisma.comidaDelDia.update({
+          where: { id: destinoComidaId },
+          data: { descripcion: comida.descripcion },
+        });
+      }
+    }
+  }
+}
+
+/**
+ * Pega un alimento o receta (copiado al "portapapeles" del cliente) en una
+ * comida concreta. Recibe una COPIA de los datos (alimento/receta + cantidad +
+ * unidad) capturada al copiar, no una referencia al origen — así la cantidad
+ * pegada es siempre la original (no se corrompe si se pega sobre el propio
+ * origen) y se evita una query extra para releer el origen.
+ *
+ * Si ese mismo alimento (mismo alimento+unidad) o receta ya está en el destino,
+ * SUMA la cantidad/porciones en vez de duplicar la línea; si no, lo añade al final.
+ */
+export async function pegarAlimentoEnComida(
+  destinoComidaId: string,
+  item: { alimentoId: string | null; recetaId: string | null; cantidad: number; unidad: string },
+) {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
+  if (dietista.isDemo) return;
+
+  await verificarPropietarioComida(destinoComidaId, dietista.id, t);
+
+  if (!item.alimentoId && !item.recetaId) return;
+  const cantidad = validateNumber(item.cantidad, 0.1, LIMITS.CANTIDAD_MAX);
+  const snap = {
+    alimentoId: item.alimentoId,
+    recetaId: item.recetaId,
+    unidad: item.unidad as UnidadMedida,
+  };
+
+  const existentes = await prisma.alimentoEnComida.findMany({
+    where: { comidaId: destinoComidaId },
+    select: { id: true, alimentoId: true, recetaId: true, cantidad: true, unidad: true },
+  });
+  const yaExiste = existentes.find((d) => mismoItem(d, snap));
+  if (yaExiste) {
+    await prisma.alimentoEnComida.update({
+      where: { id: yaExiste.id },
+      data: { cantidad: yaExiste.cantidad + cantidad },
+    });
+    return;
+  }
+
+  await prisma.alimentoEnComida.create({
+    data: {
+      comidaId: destinoComidaId,
+      alimentoId: snap.alimentoId,
+      recetaId: snap.recetaId,
+      cantidad,
+      unidad: snap.unidad,
+      orden: existentes.length,
+    },
+  });
+}
+
+/**
+ * Resumen ligero de un plan (días + comidas con conteo de alimentos y una
+ * muestra de nombres) para el asistente de "importar desde otro plan".
+ * Solo devuelve planes del dietista actual.
+ */
+export async function getPlanParaImportar(planId: string) {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return null;
+
+  const plan = await prisma.planAlimenticio.findUnique({
+    where: { id: planId, dietistaId: dietista.id },
+    select: {
+      id: true,
+      nombre: true,
+      dias: {
+        orderBy: { dia: "asc" },
+        select: {
+          id: true,
+          dia: true,
+          comidas: {
+            orderBy: { orden: "asc" },
+            select: {
+              id: true,
+              tipo: true,
+              _count: { select: { alimentos: true } },
+              alimentos: {
+                orderBy: { orden: "asc" },
+                take: 4,
+                select: {
+                  alimento: { select: { nombre: true } },
+                  receta: { select: { nombre: true } },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+  if (!plan) return null;
+
+  return {
+    id: plan.id,
+    nombre: plan.nombre,
+    dias: plan.dias.map((d) => ({
+      id: d.id,
+      dia: d.dia,
+      comidas: d.comidas.map((c) => ({
+        id: c.id,
+        tipo: c.tipo,
+        numAlimentos: c._count.alimentos,
+        muestra: c.alimentos
+          .map((a) => a.alimento?.nombre || a.receta?.nombre)
+          .filter((n): n is string => !!n),
+      })),
+    })),
+  };
+}
+
 export async function getPacientesParaPlan() {
   const dietista = await getCurrentDietista();
   if (!dietista) return [];

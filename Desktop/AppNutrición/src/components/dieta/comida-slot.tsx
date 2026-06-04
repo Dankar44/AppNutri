@@ -1,8 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useState, useRef } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { ChevronDown, ChevronRight, Copy, ClipboardPaste } from "lucide-react";
 import { useDroppable } from "@dnd-kit/core";
 import { AlimentoCard } from "./alimento-card";
 import { EquivalentePanel } from "./equivalente-panel";
@@ -41,6 +41,11 @@ interface ComidaSlotProps {
   onRemove: (alimentoEnComidaId: string) => void;
   onCantidadChange: (alimentoEnComidaId: string, cantidad: number) => void;
   onReemplazar?: (alimentoEnComidaId: string, nuevoAlimentoId: string, nombre: string, cantidad: number) => void;
+  onCopiar?: (comidaId: string) => void;
+  onCopiarAlimento?: (alimentoEnComidaId: string) => void;
+  /** Nombre del alimento en el "portapapeles" (si hay uno copiado); muestra el botón Pegar. */
+  pegarAlimentoLabel?: string | null;
+  onPegarAlimento?: (comidaId: string) => void;
   compactHeader?: boolean;
   readOnly?: boolean;
   interactionMode?: InteractionMode;
@@ -56,6 +61,10 @@ export function ComidaSlot({
   onRemove,
   onCantidadChange,
   onReemplazar,
+  onCopiar,
+  onCopiarAlimento,
+  pegarAlimentoLabel,
+  onPegarAlimento,
   readOnly = false,
   interactionMode = "dashboard",
   ocultarCalorias = false,
@@ -69,6 +78,12 @@ export function ComidaSlot({
 
   const [desc, setDesc] = useState(descripcion || "");
   const [hora, setHora] = useState(t(`comidaSlot.horaDefault.${tipo}` as any) || "");
+
+  // Sincronizar la nota cuando cambia desde fuera (p. ej. al copiar una comida
+  // en modo "Reemplazar", que clona también su descripción).
+  useEffect(() => {
+    setDesc(descripcion || "");
+  }, [descripcion]);
   const [collapsed, setCollapsed] = useState(false);
   const [equivalenteOpen, setEquivalenteOpen] = useState<{
     alimentoEnComidaId: string;
@@ -146,6 +161,16 @@ export function ComidaSlot({
         <h4 className="text-base sm:text-lg font-bold text-foreground flex-1 min-w-0 truncate">
           {t(`comidaSlot.tipoLabels.${tipo}` as any) || tipo}
         </h4>
+        {!readOnly && onCopiar && (
+          <button
+            onClick={() => onCopiar(comidaId)}
+            title={t("copiar.copiarComida")}
+            aria-label={t("copiar.copiarComida")}
+            className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-primary transition-colors shrink-0"
+          >
+            <Copy className="w-4 h-4" />
+          </button>
+        )}
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="p-1 rounded hover:bg-muted text-muted-foreground transition-colors shrink-0"
@@ -194,6 +219,7 @@ export function ComidaSlot({
                     ocultarCalorias={ocultarCalorias}
                     onRemove={onRemove}
                     onCantidadChange={onCantidadChange}
+                    onCopiar={onCopiarAlimento}
                     onBuscarEquivalente={readOnly ? undefined : (_alimentoEnComidaId, nombre, cal, prot, carb, gras, cant) => {
                       setEquivalenteOpen(
                         equivalenteOpen?.alimentoEnComidaId === a.id
@@ -225,20 +251,33 @@ export function ComidaSlot({
             )}
           </div>
 
-          {/* Add food bar */}
+          {/* Add food + paste bar */}
           {!readOnly && (
-            <button
-              type="button"
-              onClick={() => onAdd(comidaId)}
-              className={cn(
-                "w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors",
-                isOver
-                  ? "bg-primary/20 text-primary"
-                  : "bg-primary/10 text-primary hover:bg-primary/15"
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => onAdd(comidaId)}
+                className={cn(
+                  "w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors",
+                  isOver
+                    ? "bg-primary/20 text-primary"
+                    : "bg-primary/10 text-primary hover:bg-primary/15"
+                )}
+              >
+                {t("comidaSlot.addFood")}
+              </button>
+              {pegarAlimentoLabel && onPegarAlimento && (
+                <button
+                  type="button"
+                  onClick={() => onPegarAlimento(comidaId)}
+                  title={pegarAlimentoLabel}
+                  className="w-full px-4 py-2.5 text-sm font-medium rounded-lg border border-dashed border-primary/50 text-primary hover:bg-primary/10 transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <ClipboardPaste className="w-4 h-4 shrink-0" />
+                  <span className="truncate">{t("copiar.pegarAqui")}</span>
+                </button>
               )}
-            >
-              {t("comidaSlot.addFood")}
-            </button>
+            </div>
           )}
 
           {/* Notes */}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Search } from "lucide-react";
+import { Search, User } from "lucide-react";
 import { MacroBadges } from "./macro-badge";
 import { useTranslations } from "next-intl";
 
@@ -14,6 +14,7 @@ interface AlimentoOption {
   grasas: number;
   porcion: number;
   unidad: string;
+  esPropio?: boolean;
 }
 
 interface AlimentoSearchProps {
@@ -99,7 +100,15 @@ export function AlimentoSearch({
               onClick={() => handleSelect(alimento)}
               className="w-full px-3 py-2.5 text-left hover:bg-muted transition-colors border-b border-border last:border-0"
             >
-              <p className="text-sm font-medium">{alimento.nombre}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium">{alimento.nombre}</p>
+                {alimento.esPropio && (
+                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400 inline-flex items-center gap-0.5 shrink-0">
+                    <User className="w-2.5 h-2.5" />
+                    {t("busqueda.tuyo")}
+                  </span>
+                )}
+              </div>
               <div className="mt-1">
                 <MacroBadges
                   calorias={alimento.calorias}

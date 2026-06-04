@@ -490,14 +490,20 @@ export async function toggleFavoritoReceta(recetaId: string) {
 
 export async function buscarAlimentosYRecetas(
   query: string,
-  filtro: "todos" | "mis-alimentos" | "mis-recetas" = "todos",
+  filtro: "todos" | "alimentos" | "recetas" | "mis-alimentos" | "mis-recetas" = "todos",
 ) {
   const dietista = await getCurrentDietista();
   if (!dietista) return { alimentos: [], recetas: [] };
 
   const querySanitizada = sanitizeSearch(query);
 
-  if (!querySanitizada && filtro === "todos") return { alimentos: [], recetas: [] };
+  // En "todos"/"alimentos" sin texto no devolvemos nada (evita volcar miles de alimentos)
+  if (!querySanitizada && (filtro === "todos" || filtro === "alimentos")) {
+    return { alimentos: [], recetas: [] };
+  }
+
+  const incluirAlimentos = filtro === "todos" || filtro === "alimentos" || filtro === "mis-alimentos";
+  const incluirRecetas = filtro === "todos" || filtro === "recetas" || filtro === "mis-recetas";
 
   let alimentos: Array<{
     id: string; nombre: string; calorias: number; proteinas: number;
@@ -505,7 +511,7 @@ export async function buscarAlimentosYRecetas(
     esPropio: boolean;
   }> = [];
 
-  if (filtro !== "mis-recetas") {
+  if (incluirAlimentos) {
     const empresaRow = await prisma.dietista.findUnique({ where: { id: dietista.id }, select: { empresaId: true } });
     const memberIds = await getCompanyMemberIds(dietista.id, empresaRow?.empresaId ?? null);
 
@@ -569,36 +575,44 @@ export async function buscarAlimentosYRecetas(
     esPropio: boolean;
   }> = [];
 
-  if (filtro !== "mis-alimentos") {
-    let rawRecetas: Array<Record<string, unknown>>;
+  if (incluirRecetas) {
+    const norm = querySanitizada ? normalizarParaBusqueda(querySanitizada) : "";
+    const cols = `r.id, r.nombre, r.porciones, r.calorias, r.proteinas, r.carbohidratos, r.grasas, r."dietistaId"`;
+    const ordenRelevancia = `CASE WHEN r."nombreNormalizado" = $3 THEN 0 WHEN r."nombreNormalizado" LIKE $3 || '%' THEN 1 ELSE 2 END, r."nombre" ASC`;
+    let rawRecetas: Array<Record<string, unknown>> = [];
 
     if (filtro === "mis-recetas") {
+      // Solo recetas propias del nutricionista
       rawRecetas = querySanitizada
         ? await prisma.$queryRawUnsafe(
-            `SELECT r.id, r.nombre, r.porciones, r.calorias, r.proteinas, r.carbohidratos, r.grasas, r."dietistaId"
-             FROM recetas r WHERE r."dietistaId" = $1 AND r."nombreNormalizado" LIKE $2
-             ORDER BY CASE WHEN r."nombreNormalizado" = $3 THEN 0 WHEN r."nombreNormalizado" LIKE $3 || '%' THEN 1 ELSE 2 END, r."nombre" ASC LIMIT 50`,
-            dietista.id, `%${normalizarParaBusqueda(querySanitizada)}%`, normalizarParaBusqueda(querySanitizada),
+            `SELECT ${cols} FROM recetas r WHERE r."dietistaId" = $1 AND r."nombreNormalizado" LIKE $2
+             ORDER BY ${ordenRelevancia} LIMIT 50`,
+            dietista.id, `%${norm}%`, norm,
           )
         : await prisma.$queryRawUnsafe(
-            `SELECT r.id, r.nombre, r.porciones, r.calorias, r.proteinas, r.carbohidratos, r.grasas, r."dietistaId"
-             FROM recetas r WHERE r."dietistaId" = $1
-             ORDER BY r."nombre" ASC LIMIT 30`,
+            `SELECT ${cols} FROM recetas r WHERE r."dietistaId" = $1 ORDER BY r."nombre" ASC LIMIT 30`,
             dietista.id,
           );
-    } else {
-      rawRecetas = querySanitizada
-        ? await prisma.$queryRawUnsafe(
-            `SELECT r.id, r.nombre, r.porciones, r.calorias, r.proteinas, r.carbohidratos, r.grasas, r."dietistaId"
-             FROM recetas r
-             LEFT JOIN receta_favoritos fav ON fav."recetaId" = r.id AND fav."dietistaId" = $1
-             WHERE (r."dietistaId" = $1 OR (r."dietistaId" IS NULL AND fav.id IS NOT NULL))
-               AND r."nombreNormalizado" LIKE $2
-             ORDER BY CASE WHEN r."nombreNormalizado" = $3 THEN 0 WHEN r."nombreNormalizado" LIKE $3 || '%' THEN 1 ELSE 2 END, r."nombre" ASC LIMIT 50`,
-            dietista.id, `%${normalizarParaBusqueda(querySanitizada)}%`, normalizarParaBusqueda(querySanitizada),
-          )
-        : [];
+    } else if (querySanitizada) {
+      // "recetas" o "todos" CON texto: propias + TODAS las globales de la app
+      // (sin exigir que estén en favoritos — antes era el bug)
+      rawRecetas = await prisma.$queryRawUnsafe(
+        `SELECT ${cols} FROM recetas r
+         WHERE (r."dietistaId" = $1 OR r."dietistaId" IS NULL) AND r."nombreNormalizado" LIKE $2
+         ORDER BY ${ordenRelevancia} LIMIT 50`,
+        dietista.id, `%${norm}%`, norm,
+      );
+    } else if (filtro === "recetas") {
+      // "recetas" SIN texto: muestra las propias + las globales marcadas como favoritas
+      rawRecetas = await prisma.$queryRawUnsafe(
+        `SELECT ${cols} FROM recetas r
+         LEFT JOIN receta_favoritos fav ON fav."recetaId" = r.id AND fav."dietistaId" = $1
+         WHERE (r."dietistaId" = $1 OR (r."dietistaId" IS NULL AND fav.id IS NOT NULL))
+         ORDER BY r."nombre" ASC LIMIT 30`,
+        dietista.id,
+      );
     }
+    // "todos" sin texto → rawRecetas = [] (no se muestran recetas hasta que se busca)
 
     recetas = await Promise.all(
       rawRecetas.map(async (r) => {
@@ -649,6 +663,7 @@ export async function buscarAlimentosParaReceta(query: string) {
       grasas: true,
       porcion: true,
       unidad: true,
+      dietistaId: true,
       nombreNormalizado: true,
     },
   });
@@ -669,8 +684,8 @@ export async function buscarAlimentosParaReceta(query: string) {
     return a.nombre.localeCompare(b.nombre);
   });
 
-  return raw.map(({ nombreNormalizado, ...rest }) => {
+  return raw.map(({ nombreNormalizado, dietistaId, ...rest }) => {
     void nombreNormalizado;
-    return rest;
+    return { ...rest, esPropio: dietistaId === dietista.id };
   });
 }

@@ -220,7 +220,8 @@
   "busqueda": {
     "buscarAlimento": "Pesquisar alimento...",
     "buscarAlimentoParaAnadir": "Pesquisar alimento para adicionar...",
-    "sinResultados": "Nenhum resultado encontrado"
+    "sinResultados": "Nenhum resultado encontrado",
+    "tuyo": "Seu"
   },
   "hoverCard": {
     "sinNombre": "Sem nome",
