@@ -534,7 +534,6 @@ Ainara cumplió lo prometido y envió el resumen de TODO lo que pregunta tras **
 
 | # | Petición | Prioridad | Complejidad |
 |---|----------|-----------|-------------|
-| 12 | Bug email portal | Urgente | Baja |
 | 1 | Tablas composición por país | Alta | Alta |
 | 5 | Planes por opciones (no por día) | Alta | Alta |
 | 6 | Formulario pre-consulta paciente | Alta | Media-Alta |
@@ -549,19 +548,16 @@ Ainara cumplió lo prometido y envió el resumen de TODO lo que pregunta tras **
 | 16 | Indicador visual fuente alimento | Media | Baja |
 | 17 | Newsletter actualizaciones semanales | Media | Media |
 | 18 | Personalizar estructura anamnesis | Alta | Media-Alta |
-| 19 | Búsqueda sin tildes en alimentos | Media-Alta | Baja |
 | 20 | Cantidad + macros en selector alimentos | Alta | Media |
 | 21 | Medidas caseras / porciones por unidades | Alta | Media |
 | 22 | Ajustar ingredientes de receta en plan | Alta | Alta |
 | 23 | Comidas reutilizables (grupo de alimentos) | Media-Alta | Media |
 | 24 | Cambiar "dietista" → "nutricionista" | Media | Baja |
 | 25 | Disclaimer legal al generar con IA | Media-Alta | Baja |
-| 26 | Ordenar resultados de búsqueda por relevancia | Alta | Baja |
 | 27 | Reordenar alimentos dentro de una comida (drag & drop) | Media-Alta | Media |
 | 28 | Informe de composición nutricional de la dieta | Alta | Media |
 | 29 | Sección de medidas de bioimpedancia (BIA Tanita) | Media-Alta | Media |
 | 30 | Editar horario semanal del paciente | Media | Baja-Media |
-| 31 | ✅ Copiar/mover comidas entre días del plan | Alta | Baja-Media |
 | 32 | Pliegues ISAK completos + sumatoria + perímetro muslo | Alta | Media |
 | 33 | Perímetro de muslo en mediciones básicas | Media | Baja |
 | 34 | Renombrar "Almuerzo" a "Comida" (configurable) | Media | Baja-Media |
@@ -574,7 +570,6 @@ Ainara cumplió lo prometido y envió el resumen de TODO lo que pregunta tras **
 | 41 | Buscar/ordenar alimentos por micro y macronutrientes | Alta | Media |
 | 42 | Almacén, stock y ventas de productos en consulta | Media-Alta | Alta |
 | 43 | White-label: app con marca del nutricionista | Media-Alta | Media |
-| 45 | Búsqueda tolerante a plural/singular | Alta | Baja |
 | 46 | Changelog público de novedades | Media-Alta | Baja |
 | 47 | Directorio público de nutricionistas | Alta | Alta |
 | 48 | Ver todas las fórmulas de % grasa a la vez | Media | Media-Alta (no hay base de cálculo) |
@@ -603,7 +598,6 @@ Ainara cumplió lo prometido y envió el resumen de TODO lo que pregunta tras **
 | 71 | Farmacología: interacciones fármaco-alimento | Media-Alta | Alta |
 | 72 | Link a receta de Instagram/TikTok en las recetas | Media | Baja |
 | 73 | Enriquecer recetas globales (pasos + más recetas + fotos) | Media-Alta | Media |
-| 74 | Notificaciones de cita al paciente (email + botón WhatsApp) | Alta | Baja |
 
 ---
 
@@ -711,37 +705,6 @@ Preguntada por qué máquina usa, responde: **"los más usados son InBody"**, es
 
 **Prioridad:** Media (bug reportado + mejora de flujo de trabajo)
 **Complejidad:** Baja (si es bug) / Media (si requiere nueva funcionalidad)
-
----
-
-## 31. Copiar/mover comidas entre días del plan
-
-**Origen:** Nutricionista argentina — mayo 2026; Guille (nutricionista) — 25 mayo 2026; nutricionista (WhatsApp) — 3 junio 2026 (cita explícitamente el **batch cooking** como caso de uso: muchas comidas se reutilizan y reescribirlas es tedioso).
-
-**✅ IMPLEMENTADO Y DESPLEGADO (3 jun 2026).** En el editor de dietas: copiar un alimento suelto (portapapeles → botón "Pegar aquí" en cualquier comida; suma si ya existe, también en recetas), copiar una comida (a varios días y opcionalmente como otro tipo de comida), copiar un día entero, y "Traer de otro plan" (del mismo paciente —aparece el primero— o de otro). El modo "Añadir encima" suma cantidades en vez de duplicar líneas. Extra: buscador de alimentos mejorado (pestañas Alimentos/Recetas además de Mis alimentos/Mis recetas, recetas de la app ahora buscables, badge "Tuyo/Tuya" siempre que el item es propio, abre en Alimentos con sugerencias de macros).
-
-**Estado actual:** En el editor de dietas, cada día (Lunes a Domingo) tiene sus comidas independientes. Para repetir un desayuno del lunes en el martes, hay que recrear la comida manualmente: añadir cada alimento con su cantidad uno por uno. Existen botones para mover un alimento individual a otra comida/día, pero no para copiar una comida entera (con todos sus alimentos) a otro día.
-
-**Petición:** Poder copiar o mover una comida completa (ej: el desayuno del lunes) a otro día de la semana con un clic. Así se monta la semana mucho más rápido cuando varios días comparten comidas similares.
-
-**Tareas:**
-- [x] Añadir botón "Copiar comida" en cada slot de comida (junto a los controles existentes)
-- [x] Al pulsar, mostrar selector de día destino (Martes, Miércoles, etc.) y tipo de comida destino (Desayuno, Almuerzo, etc.)
-- [x] Duplicar todos los `AlimentoEnComida` de la comida origen en la comida destino del día elegido
-- [x] Si la comida destino ya tiene alimentos, preguntar: ¿reemplazar o añadir encima? (Añadir = suma cantidades, no duplica)
-- [x] Opción de "Copiar día completo" — copiar todas las comidas de un día a otro día
-- [ ] Opcionalmente: "Mover comida" (copiar + eliminar la original) — NO incluido (el drag & drop ya mueve alimentos; se valoró innecesario)
-- [x] Recalcular macros del día destino tras la copia (automático al refrescar)
-- [x] **Copiar desde otros planes** — Importar una comida o día completo de otro plan del mismo paciente o de otro (asistente "Traer de otro plan": paciente → plan → día/comida → días destino)
-- [x] **Extra:** copiar/pegar un alimento suelto (portapapeles + "Pegar aquí" en cualquier comida, con suma)
-
-**Archivos a modificar:**
-- `src/components/dieta/comida-slot.tsx` — botón de copiar comida y selector de destino
-- `src/components/dieta/dia-plan.tsx` — botón de copiar día completo
-- `src/app/actions/planes.ts` — server action para duplicar alimentos de una comida/día a otro, incluyendo desde otros planes
-
-**Prioridad:** Alta (afecta directamente a la velocidad de creación de planes — flujo principal de trabajo, pedido por múltiples nutricionistas)
-**Complejidad:** Baja-Media (media si se incluye copiar desde otros planes)
 
 ---
 
@@ -2075,25 +2038,3 @@ Esto refuerza la opción "estructurada" de esta tarea: pasar suplementos (y medi
 **Relacionado con:** #38 (foto del plato), #66 (etiquetas de dieta en recetas), #44 (faltan alimentos para la IA)
 **Prioridad:** Media-Alta (calidad del contenido — afecta a la percepción de la app y a la utilidad del recetario)
 **Complejidad:** Media (el grueso es el trabajo de contenido: escribir pasos y añadir fotos a cientos de recetas)
-
----
-
-## 74. Notificaciones de cita que lleguen de verdad al paciente (email automático + botón WhatsApp)
-
-**Origen:** Noelia (noelia_kreasalud, Instagram) — 4 junio 2026
-
-**Estado actual (verificado en código):** La "notificación al paciente" de una cita es **solo in-app**: crea un registro en la tabla `notificacion` que el paciente ve como badge/aviso DENTRO de su portal cuando entra (`notificaciones-paciente.ts`). **No se envía nada externo** al móvil del paciente: ni email, ni SMS, ni WhatsApp, ni push. Por eso Noelia probó "notificar al paciente" para una cita de prueba y no le llegó nada al teléfono. No es un bug de envío fallido — es que esa notificación nunca sale de la app.
-
-**Petición:** Que cuando se notifica/recuerda una cita, al paciente le llegue de verdad (no solo dentro del portal).
-
-**Solución (dos vías, ambas sin coste):**
-- [ ] **Email automático de cita** — Enviar email al paciente al crear/confirmar/recordar una cita, reutilizando el mailer existente (gratis, ya montado). Plantilla con fecha, hora, modalidad y, si es online, el enlace. Es la opción "automática".
-- [ ] **Botón "Avisar por WhatsApp"** — Botón que abra el WhatsApp del propio nutricionista (`https://wa.me/<telefono>?text=<mensaje>`) con el recordatorio ya escrito al paciente, y el nutri solo le da a enviar. Coste cero, sin API ni plantillas de Meta. Mismo patrón que ya se usa con el teléfono de los solicitantes de ofertas (copy/WhatsApp de un clic, commit 1a6cd8c).
-
-**Descartado por coste/complejidad (de momento):**
-- SMS: de pago (proveedor tipo Twilio, ~0,05-0,08 €/SMS)
-- WhatsApp Business API oficial: de pago + registro y aprobación de plantillas por Meta
-
-**Archivos probables:** `src/app/actions/citas-flujo.ts` / `citas.ts` (disparar email al notificar), `src/app/actions/email.ts` + `src/lib/mailer.ts` (plantilla de cita), UI de la cita en la agenda (botón WhatsApp).
-**Prioridad:** Alta (un recordatorio que no llega al paciente no sirve; es funcionalidad básica esperada y reduce ausencias a consulta)
-**Complejidad:** Baja (email) / Baja (botón WhatsApp con wa.me)
