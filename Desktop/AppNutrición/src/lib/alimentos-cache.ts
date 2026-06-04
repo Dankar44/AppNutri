@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 export interface AlimentoGlobalCached {
   id: string;
   nombre: string;
+  categoria: string;
   calorias: number;
   proteinas: number;
   carbohidratos: number;
@@ -20,7 +21,7 @@ export async function getAlimentosGlobales(): Promise<AlimentoGlobalCached[]> {
 
   cached = await prisma.alimento.findMany({
     where: { dietistaId: null },
-    select: { id: true, nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true },
+    select: { id: true, nombre: true, categoria: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true },
     orderBy: { nombre: "asc" },
   });
   cachedAt = now;

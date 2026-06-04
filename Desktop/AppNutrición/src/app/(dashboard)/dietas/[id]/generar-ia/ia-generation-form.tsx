@@ -82,14 +82,6 @@ export function IAGenerationForm({ planId, pacienteId, pacienteNombre, pacienteI
       parts.push(dietaLabels[tipoDieta] || tipoDieta);
     }
     const numComidas = form.get("numComidas") as string;
-    if (numComidas && numComidas !== "6") {
-      const comidasLabel: Record<string, string> = {
-        "3": t("aiPrompt.comidas3"),
-        "4": t("aiPrompt.comidas4"),
-        "5": t("aiPrompt.comidas5"),
-      };
-      parts.push(comidasLabel[numComidas] || "");
-    }
     const prefLabels: Record<string, string> = {
       pref_facil: t("aiPrompt.prefFacil"),
       pref_batch: t("aiPrompt.prefBatch"),
@@ -105,7 +97,7 @@ export function IAGenerationForm({ planId, pacienteId, pacienteNombre, pacienteI
     const instrucciones = parts.join(". ");
 
     try {
-      const result = await generarPlanIA(pacienteId, macros, instrucciones);
+      const result = await generarPlanIA(pacienteId, macros, instrucciones, parseInt(numComidas) || 6);
       if ("error" in result) {
         toast.error(result.error);
       } else {

@@ -11,7 +11,121 @@ import { findAlimentoEnLista } from "@/lib/alimento-utils";
 import { getCompanyMemberIds } from "@/lib/empresa-utils";
 import { sanitizeString, validateNumber, LIMITS } from "@/lib/validation";
 import { getTranslations } from "next-intl/server";
-import { getAlimentosGlobales } from "@/lib/alimentos-cache";
+import { getAlimentosGlobales, type AlimentoGlobalCached } from "@/lib/alimentos-cache";
+
+// Cuántos alimentos globales incluir en el prompt de la IA por categoría.
+// Da más cupo a las categorías que forman el grueso de un plan (proteínas,
+// cereales, verduras, frutas) y menos a las accesorias.
+// OJO con el total: el tier gratuito de Groq limita a 12.000 tokens/min por
+// petición (entrada + salida). Con ~70 globales + propios + system + max_tokens
+// 4096, cada petición queda holgada por debajo. Subir esto puede provocar 413.
+const LIMITE_POR_CATEGORIA: Record<string, number> = {
+  CARNES: 9, PESCADOS: 8, HUEVOS: 2, LEGUMBRES: 5, LACTEOS: 7,
+  CEREALES: 9, VERDURAS: 9, FRUTAS: 8, FRUTOS_SECOS: 4, ACEITES: 2,
+  BEBIDAS: 2, CONDIMENTOS: 1, DULCES: 1, OTROS: 3,
+};
+const LIMITE_CATEGORIA_DEFAULT = 3;
+
+// Subcadenas que delatan un preparado / derivado / ultraprocesado / víscera poco
+// apto como base de una pauta. El catálogo global es hipergranular (mezcla
+// básicos con encurtidos, postres, harinas, casquería…) y no tiene ninguna
+// señal de "alimento básico", así que filtramos por nombre antes de muestrear
+// para que la IA elija comida "de manual" (no "cebolleta en vinagre" ni "hígado
+// de ternera"). NO se vetan las cocciones entre paréntesis —"Lentejas
+// (cocidas)", "Arroz (cocido)"— porque son básicos que solo existen así.
+const VETO_ALIMENTO = [
+  "vinagre", "sashimi", "fiambre", "empanad", "frito", "frita", "relleno", "rellena", "salsa", "precocinad",
+  "conserva", "almibar", "escabeche", "encurtid", "deshidratad", "liofiliz", "inflad", "tostad", "marinad", "adobad", "ahumad",
+  "harina", "helado", "sorbete", "polo de", "batido", "crema de", "zumo", "nectar", "pure", "postre", "mousse", "flan",
+  "natillas", "pannacotta", "tarta", "galleta", "bolleria", "croissant", "donut", "gofre", "pizza", "sirope", "mermelada", "confitura",
+  "salchicha", "hamburguesa", "nugget", "salami", "chorizo", "morcilla", "mortadela", "sobrasada", "bacon", "chistorra",
+  "higado", "sesos", "rinon", "lengua", "callos", "mollej", "sangre", "casqueria",
+  "pasta de", "leche de", "bebida", "orejon", "cookie", "smoothie", "licuado", "muffin", "crep",
+  "chicharron", "surimi", "xantana", "almidon", "tapioca", "en aceite", "loncheado", "pinchito", "roast beef", "goma ",
+  "en polvo", "colageno", "turron", "trail", "ralladura", "androlla",
+  "foie", "confitad", "barrita", "santa teresa", "pulled", "aislada", "eritritol", "proteina vegana",
+];
+// Alimentos de PRUEBA del nutricionista (sondas de testing: "Test Gramos",
+// "Micros Test"…). NO se borran de la BD (los usa para sus pruebas), pero la IA
+// debe ignorarlos. Se aplica tanto a globales como a los personalizados del nutri.
+const PATRONES_PRUEBA = ["test", "micros", "prueba", "asdf", "xxx", "qwerty"];
+function esDePrueba(nombre: string): boolean {
+  const n = nombre.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  return PATRONES_PRUEBA.some((p) => n.includes(p));
+}
+
+function esAlimentoBasico(nombre: string): boolean {
+  if (esDePrueba(nombre)) return false;
+  if (nombre.trim().split(/\s+/).length >= 5) return false; // demasiado específico
+  const n = nombre.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  return !VETO_ALIMENTO.some((v) => n.includes(v));
+}
+
+/**
+ * Selecciona un subconjunto variado de los alimentos globales (que pueden ser
+ * miles) para meterlo en el prompt sin reventar el límite de tokens. Filtra los
+ * no-básicos (ver VETO_ALIMENTO), agrupa por categoría y, dentro de cada una,
+ * muestrea de forma espaciada con un offset aleatorio (para que dos
+ * generaciones no salgan idénticas).
+ */
+function muestrearGlobalesVariado(globales: AlimentoGlobalCached[]): AlimentoGlobalCached[] {
+  const grupos = new Map<string, AlimentoGlobalCached[]>();
+  for (const a of globales) {
+    if (!esAlimentoBasico(a.nombre)) continue;
+    const cat = a.categoria || "OTROS";
+    if (!grupos.has(cat)) grupos.set(cat, []);
+    grupos.get(cat)!.push(a);
+  }
+
+  const out: AlimentoGlobalCached[] = [];
+  for (const [cat, items] of grupos) {
+    const limite = LIMITE_POR_CATEGORIA[cat] ?? LIMITE_CATEGORIA_DEFAULT;
+    if (items.length <= limite) {
+      out.push(...items);
+      continue;
+    }
+    const step = items.length / limite;
+    const offset = Math.random() * step;
+    for (let i = 0; i < limite; i++) {
+      out.push(items[Math.min(items.length - 1, Math.floor(offset + i * step))]);
+    }
+  }
+  return out;
+}
+
+// Qué comidas debe generar la IA según el nº elegido en el formulario. El plan
+// tiene 6 slots fijos; las que no se generen quedan vacías (correcto si el nutri
+// quiere menos comidas). Antes la IA decidía por su cuenta y solo hacía 3.
+const COMIDAS_POR_NUM: Record<number, string[]> = {
+  3: ["DESAYUNO", "ALMUERZO", "CENA"],
+  4: ["DESAYUNO", "ALMUERZO", "MERIENDA", "CENA"],
+  5: ["DESAYUNO", "MEDIA_MANANA", "ALMUERZO", "MERIENDA", "CENA"],
+  6: ["DESAYUNO", "MEDIA_MANANA", "ALMUERZO", "MERIENDA", "CENA", "RECENA"],
+};
+
+const normTexto = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+// Exclusiones por alergia/intolerancia (texto libre del paciente). Si alguna
+// palabra clave aparece en las restricciones, se quitan del catálogo los
+// alimentos que cumplan `excluir` — así ni se le ofrecen a la IA (defensa dura,
+// además de la instrucción del prompt). Cubre los alérgenos más comunes.
+const RESTRICCIONES: { claves: string[]; excluir: (nombreNorm: string, categoria: string) => boolean }[] = [
+  { claves: ["lact", "leche", "lacteo", "queso", "yogur"], excluir: (_n, c) => c === "LACTEOS" },
+  { claves: ["fruto seco", "frutos secos", "nuez", "nueces", "almendra", "avellana", "anacardo", "pistacho", "cacahuete"], excluir: (_n, c) => c === "FRUTOS_SECOS" },
+  { claves: ["huevo"], excluir: (_n, c) => c === "HUEVOS" },
+  { claves: ["marisco", "crustaceo", "molusco"], excluir: (n) => /gamba|langostino|mejillon|almeja|pulpo|sepia|calamar|cangrejo|ostra|navaja|berberecho|vieira|cigala|centollo|bogavante|carabinero|necora|percebe/.test(n) },
+  { claves: ["pescado"], excluir: (_n, c) => c === "PESCADOS" },
+  { claves: ["gluten", "celiac", "celiaqu", "trigo"], excluir: (n) => /trigo|cebada|centeno|espelta|avena|pan|pasta|cuscus|harina|seitan|galleta|pizza|gluten/.test(n) },
+  { claves: ["soja"], excluir: (n) => /soja|tofu|tempeh|edamame|miso/.test(n) },
+];
+
+function filtrarPorRestricciones<T extends { nombre: string; categoria: string }>(lista: T[], restricciones: string[]): T[] {
+  const restr = restricciones.map(normTexto).filter(Boolean);
+  if (restr.length === 0) return lista;
+  const activas = RESTRICCIONES.filter((r) => r.claves.some((c) => restr.some((x) => x.includes(c))));
+  if (activas.length === 0) return lista;
+  return lista.filter((a) => { const n = normTexto(a.nombre); return !activas.some((r) => r.excluir(n, a.categoria)); });
+}
 
 export async function checkAIConfigured() {
   return isAIConfigured();
@@ -20,7 +134,8 @@ export async function checkAIConfigured() {
 export async function generarPlanIA(
   pacienteId: string,
   objetivos: MacroObjetivos,
-  instrucciones: string
+  instrucciones: string,
+  numComidas: number = 6
 ): Promise<{ generacionId: string; plan: unknown } | { error: string }> {
   try {
     const t = await getTranslations("validation");
@@ -50,23 +165,33 @@ export async function generarPlanIA(
       getAlimentosGlobales(),
       prisma.alimento.findMany({
         where: { dietistaId: { in: memberIds }, origen: "PERSONALIZADO" },
-        select: { nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true },
+        select: { nombre: true, categoria: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true },
         orderBy: { nombre: "asc" },
-        take: 50,
+        take: 30,
       }),
       prisma.receta.findMany({
         where: { dietistaId: dietista.id },
         select: { nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true, porciones: true },
       }),
     ]);
-    const alimentos = [...alimentosGlobales, ...alimentosDietista];
+    // Catálogo para el prompt de la IA: alimentos del nutricionista + muestreo
+    // amplio de globales por categoría. Antes el prompt ignoraba la BD y usaba
+    // una tabla fija de ~30 alimentos (#44). Se filtran además los incompatibles
+    // con las alergias/intolerancias del paciente (no se le ofrecen a la IA).
+    const restricciones = [...(paciente.alergias ?? []), ...(paciente.intolerancias ?? [])];
+    const globalesPermitidos = filtrarPorRestricciones(alimentosGlobales, restricciones);
+    const personalizadosPermitidos = filtrarPorRestricciones(alimentosDietista, restricciones).filter((a) => !esDePrueba(a.nombre));
+    const alimentosParaPrompt = [...personalizadosPermitidos, ...muestrearGlobalesVariado(globalesPermitidos)];
+
+    const comidas = COMIDAS_POR_NUM[numComidas] ?? COMIDAS_POR_NUM[6];
 
     const { plan, promptUsado } = await generateDietPlan(
       paciente,
       objetivos,
       instrucciones,
-      alimentos,
-      recetas
+      alimentosParaPrompt,
+      recetas,
+      comidas
     );
 
     const todosAlimentos = [

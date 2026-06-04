@@ -40,6 +40,7 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 - [ ] Vista previa de PDFs e imágenes
 - [ ] Para análisis de sangre: parseo opcional con IA para extraer valores clave (hemoglobina, glucosa, colesterol, etc.) y mostrarlos en un resumen/cuadrito
 - [ ] **Histórico de analíticas** — Vista tipo tabla/gráfica donde se vean todos los valores de todas las analíticas del paciente a lo largo del tiempo (ej: glucosa en enero 95, en abril 88, en julio 82). Similar a lo que Ainara hace manualmente con IA + Excel
+- [ ] **Más marcadores de analítica con evolutivo** (María Marqués, 3 jun 2026) — Hoy en mediciones solo hay colesterol HDL/LDL/total, triglicéridos y presión. Faltan y los pide expresamente: **glucosa, HbA1c, TSH, T4 libre y marcadores de función hepática** (GOT/GPT/GGT...). Que se puedan introducir y ver su evolución en el tiempo
 - [ ] Permitir al paciente subir archivos desde su portal (opcional, configurable por dietista)
 
 **Prioridad:** Media-Alta
@@ -71,6 +72,11 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 
 **Petición:** Ajustar formato para que no queden hojas medio vacías. Opción de orientación horizontal.
 
+**Input adicional (Ainara Martín, 2 jun 2026):**
+1. **Orden de secciones del PDF** — Ella pondría el "Plan semanal completo" (tabla de los 7 días) **al final, justo antes de la lista de la compra**, en vez de al principio. → Idealmente: poder reordenar las secciones del PDF, o al menos revisar el orden por defecto
+2. **Recetas en el entregable, opción más visible** — No encontraba cómo incluir las recetas en el PDF. VERIFICADO en código: los ingredientes e instrucciones de las recetas SÍ salen, pero **dentro** del bloque "Detalle diario de comidas" (sin toggle propio). → Valorar opción explícita "Incluir recetas (ingredientes y preparación)" en el modal, o aclarar en el texto descriptivo del toggle de detalle diario
+3. **Referencia: plantillas de informes de su software de escritorio** (ver vídeo abajo) — Su programa permite elegir entre múltiples modelos de informe activables con ✓/✗: Portada, Consejos, Ficha Técnica, Lista de la Compra, **Recetas Alternativas**, Menú Diario, Menú en Columnas, **Menú con Fotos**, Menú Distribuido, Menú del Día, **Menú Colectividades**, Planning Días, Planning Comidas — con cabecera personalizable (clínica, doctor, dirección, email, teléfono), texto alternativo a "Paciente", texto a pie de página, logotipo y posición del logotipo, estilos vinculables
+
 **Tareas:**
 - [ ] Auditar el CSS de impresión en `src/lib/pdf/generate-plan-pdf.ts` para eliminar espacios en blanco innecesarios
 - [ ] Mejorar el `page-break` para que las comidas no dejen huecos grandes
@@ -79,6 +85,8 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 - [ ] Opción de densidad: "normal" vs "compacto" (reduce paddings, fuentes más pequeñas)
 - [ ] Considerar layout de 2 columnas en horizontal para aprovechar espacio
 - [ ] Probar con planes reales de diferentes tamaños para verificar
+- [ ] **Reordenar secciones** (Ainara) — mover el plan semanal al final antes de la lista de la compra, o hacer el orden configurable
+- [ ] **Toggle explícito de recetas** (Ainara) — opción visible "Incluir recetas" en el modal de exportación
 
 **Archivos a modificar:**
 - `src/lib/pdf/generate-plan-pdf.ts` (layout principal)
@@ -92,9 +100,17 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 
 ## 5. Planes por opciones de comida (sin separar por día)
 
+> ⭐ **PRIORIDAD ALTA — a montar ya (hoy/mañana, jun 2026).** Antonio (lead caliente) dice que si se incluye esta opción **migra a sus clientes a Annonia mañana mismo**. La IA ya se está trabajando en paralelo en otra terminal.
+
 **Estado actual:** Los planes SIEMPRE se organizan por día de la semana (LUNES a DOMINGO). Modelo: `PlanAlimenticio → DiaDelPlan(dia: DiaSemana) → ComidaDelDia → AlimentoEnComida`.
 
 **Petición:** Modo alternativo donde el profesional da "opciones de desayuno", "opciones de almuerzo", etc., sin asignar a un día concreto. Que el profesional elija el formato según el paciente.
+
+**Input adicional (Antonio, antoniofs.nutricion — Instagram, 4 jun 2026):** Lo plantea como **dos modalidades de creación de planes** que el nutri elige:
+1. **Dieta "clásica"** — por días (Lunes desayuno: x, comida: x, cena: x / Martes...). La actual.
+2. **Dieta por opciones** — X opciones de desayuno (todas con los mismos macros y kcal), X de media mañana, de comida, de merienda, de cena... y **el paciente elige libremente** entre las opciones de cada comida. Al tener todas los mismos macros/kcal, da libertad: cocina más rápido o más elaborado según el tiempo de cada día.
+**Valor clave que destaca Antonio:** además de comodidad, sirve para **educar al paciente** en la correcta elección de alimentos (aunque podría elegir siempre lo mismo, aprende a variar). "Mayor libertad de elección." Es como trabaja él y como sus pacientes están acostumbrados a seguir.
+**Requisito de las opciones:** todas las opciones de una misma comida deben tener (aprox.) los mismos macros y kcal → al crear/validar, ayudar a que cuadren.
 
 **Tareas:**
 - [ ] Añadir campo `modalidad` al modelo `PlanAlimenticio`: "SEMANAL" (actual) o "OPCIONES"
@@ -105,6 +121,8 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 - [ ] Actualizar PDF: en modalidad OPCIONES, layout agrupado por comida (no por día)
 - [ ] Actualizar vista del paciente en portal para mostrar opciones correctamente
 - [ ] Selector al crear plan: "¿Cómo quieres organizar este plan?"
+- [ ] **El paciente puede ELEGIR** entre las opciones de cada comida desde su portal (Antonio) — no solo verlas, sino marcar/registrar cuál elige cada día
+- [ ] **Validación de macros entre opciones** (Antonio) — al crear opciones de una misma comida, mostrar los macros/kcal de cada una para que el nutri las cuadre (todas ~iguales)
 
 **Archivos principales a modificar:**
 - `prisma/schema.prisma` (modelo PlanAlimenticio)
@@ -124,6 +142,8 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 **Estado actual:** La anamnesis la rellena el dietista en la pestaña "Información" de cada paciente. Soporta campos personalizados. Hay función de enviar cuestionario por email (`enviarCuestionarioPaciente`), pero es solo informativo, no editable por el paciente.
 
 **Petición:** Enviar al paciente un formulario ANTES de la consulta para que complete sus datos (contacto, fecha de nacimiento, alergias, etc.) y no perder tiempo de consulta.
+
+**Input adicional (Alejandra, 2 jun 2026):** Lo pide como "informe de salud pre-entrevista" que el paciente rellene antes de la primera consulta, y recalca que esos datos **se vuelquen automáticamente en los apartados correspondientes** de la ficha (historial médico, alergias, medicamentos, suplementos, actividad física…), no que queden como un documento aparte.
 
 **Tareas:**
 - [ ] Crear ruta pública o autenticada para formulario pre-consulta: `/paciente/portal/preconsulta` o `/preconsulta/[token]`
@@ -190,54 +210,6 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 
 ---
 
-## 9. Cálculo automático de gramos desde % de macros
-
-**Estado actual:** En la pestaña "Planificación" del paciente existen las ecuaciones de metabolismo basal (Harris-Benedict, Mifflin-St Jeor, etc.) y se puede calcular el gasto energético. Hay referencias de rangos de macros (IOM, ANSES, etc.). Pero NO hay cálculo automático de: "pongo 2000 kcal y 30% proteínas → me calcula los gramos".
-
-**Petición:** Poner las kcal objetivo, seleccionar % de cada macro, y que calcule automáticamente los gramos.
-
-**Tareas:**
-- [ ] En la sección de planificación, añadir inputs de % para proteínas, carbohidratos y grasas
-- [ ] Validar que los % sumen 100% (o mostrar warning)
-- [ ] Cálculo automático: proteínas_g = (kcal × %P) / 4, carbos_g = (kcal × %C) / 4, grasas_g = (kcal × %G) / 9
-- [ ] Bidireccional: si se cambian los gramos, recalcular el %
-- [ ] Guardar los valores calculados como objetivos del plan (`caloriasObjetivo`, `proteinasObjetivo`, etc.)
-- [ ] Botón "Aplicar a plan" que establezca estos objetivos en el plan activo del paciente
-- [ ] Integrar con las referencias de macros existentes (IOM, ANSES, SACN, SINU, NHMRC)
-
-**Archivo principal:** `src/components/paciente/planificacion-por-defecto-tab.tsx`
-
-**Prioridad:** Media
-**Complejidad:** Baja
-
----
-
-## 10. Ecuación de Harris-Benedict automática
-
-**Estado actual:** YA IMPLEMENTADA. En `planificacion-por-defecto-tab.tsx` están:
-- Harris-Benedict original (1919)
-- Harris-Benedict revisada (Roza & Shizgal, 1984)
-- Mifflin-St Jeor (1990)
-- OMS/Schofield (1985)
-- Henry/Oxford (2005)
-- Katch-McArdle (1983) — requiere % grasa
-- Cunningham (1980)
-- Black et al. (1996)
-- Ten Haaf & Weijs (2014)
-
-**Petición del nutricionista:** "Que calcule automático y después me deje modificar para hacer déficit".
-
-**Tareas (mejora UX):**
-- [ ] Verificar que el flujo actual sea intuitivo: seleccionar ecuación → resultado → poder editar el valor
-- [ ] Añadir botones rápidos de ajuste: "-10%", "-15%", "-20%" para déficit, y "+10%", "+15%" para superávit
-- [ ] Mostrar claramente el valor "calculado" vs el valor "ajustado" (ej: "2200 kcal calculadas → 1870 kcal con déficit 15%")
-- [ ] Auto-rellenar peso, altura, edad y sexo desde los datos del paciente (verificar que ya lo haga)
-
-**Prioridad:** Baja (ya funciona, solo mejora UX)
-**Complejidad:** Baja
-
----
-
 ## 11. Link público de reserva de citas
 
 **Estado actual:** Los pacientes solo pueden solicitar citas desde el portal autenticado (`/paciente/portal/citas/nueva`). No existe un link público tipo Calendly.
@@ -279,32 +251,6 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 
 **Prioridad:** Media
 **Complejidad:** Media-Alta (depende de soporte de Stripe por país)
-
----
-
-## 14. Ocultar calorías al paciente (vista web del portal)
-
-**Estado actual:** En el PDF se puede toggle "Valores nutricionales" para mostrar/ocultar. Pero en la vista web del portal (`/paciente/portal/dieta`) las calorías SIEMPRE se muestran.
-
-**Petición:** Que el profesional pueda elegir, por cada paciente, si las calorías y macros son visibles en el portal web. Importante para pacientes con riesgo de obsesión con el conteo.
-
-**Tareas:**
-- [ ] Añadir campo `ocultarCalorias` (Boolean, default false) al modelo `Paciente` o `PlanAlimenticio`
-- [ ] UI en la ficha del paciente: toggle "Ocultar calorías y macros al paciente"
-- [ ] En el portal del paciente (`/paciente/portal/dieta`): condicionar la visualización de kcal, proteínas, carbos, grasas según el flag
-- [ ] En el portal del paciente: ocultar también en el resumen diario/semanal
-- [ ] En el seguimiento: si calorías ocultas, no mostrar kcal de ejercicio tampoco
-- [ ] El dietista siempre ve todo en su dashboard (el flag solo afecta al portal)
-- [ ] Considerar granularidad: ocultar solo kcal, o también macros, o configurable
-
-**Archivos a modificar:**
-- `prisma/schema.prisma`
-- `src/app/paciente/portal/dieta/page.tsx`
-- `src/components/paciente/paciente-ficha-client.tsx` (toggle en ficha)
-- `src/app/actions/pacientes.ts`
-
-**Prioridad:** Alta (pedido explícito por razones clínicas)
-**Complejidad:** Baja-Media
 
 ---
 
@@ -407,6 +353,48 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 - `src/lib/pdf/generate-anamnesis-pdf.ts` — PDF con campos custom
 - `src/app/actions/email.ts` — email del cuestionario con campos custom
 
+---
+
+### 📋 Material de referencia: anamnesis completa de Ainara Martín (Instagram, 2 jun 2026)
+
+Ainara cumplió lo prometido y envió el resumen de TODO lo que pregunta tras **10 años pasando consulta**. Es la base perfecta para las plantillas por especialidad.
+
+**Estructura que propone:** pestañas dentro de "Información", debajo de la principal — **Anamnesis general, Digestivo, Deportivo, Fertilidad y embarazo** — cada tema con su pestaña, "de forma que para revisar algo también es más rápido".
+
+**ANAMNESIS GENERAL:**
+- Motivo de consulta (ej: perder peso); complexión cuando era pequeño, adolescente y adulto
+- Antecedentes familiares por rama paterna y materna, y hermanos
+- Patologías **por sistemas**, cada una con espacio para escribir: generales (anemia, vit. D, colesterol…), ginecológicas, dermatológicas, digestivas, neurológicas, tiroides, hepáticas, estrés, ansiedad, depresión…
+- Medicación: cuál, cuánto y cuándo la toma
+- Vitaminas, probióticos; tratamientos antibióticos que haya hecho
+- Alergias a medicación u otras; alergias alimentarias; sospechas no diagnosticadas ("no le han dicho que es alérgica pero nota que no le sienta bien")
+- Hábitos de cocina: quién cocina en casa, si le gusta, si abusan de sal o aceite, cómo se suele cocinar
+- Platos favoritos y cuáles no piensa comerse
+- Bebidas: refrescos, alcohol, café (cuántos, cómo, si edulcora), tés, colacao, agua (cuánta)
+- Tabaco: si fuma, intención de dejarlo, hace cuánto lo dejó, si cogió peso, si no piensa dejarlo
+- **Registro de 24 horas**: un día entre semana y un día libre/fin de semana
+
+**DIGESTIVO** ("puede ser infinito"):
+- Digestiones, hinchazón (desde qué momento del día, si la nota más con alguna comida)
+- Ardor/reflujo/acidez (con qué lo nota); gases o eructos (con qué más)
+- Dolor de tripa (cuántos días, cómo es el dolor); dolores de cabeza
+- Hábito intestinal: cómo va al baño (si es mujer: cambios de frecuencia con la regla), sensación de evacuación incompleta, **escala de Bristol**, si flotan las heces, cambios de color u olor
+- Para indagar causas: estrés, viajes a países tipo África/Asia/Sudamérica, si ha vivido fuera (Erasmus…), covid…
+
+**DEPORTIVO:**
+- Entrenos: días y horas, si dobla sesiones
+- Tomas pre y post entreno y qué toma; suplementación
+- Si va a gym, si le pautan el entreno o va por libre
+- Objetivos de competición si los tiene; sensaciones entrenando
+
+**FERTILIDAD Y EMBARAZO** (enfocado a mujer):
+- Cómo nació: parto natural/cesárea; lactancia (pecho, fórmula o mixto); peso al nacer
+- Primera regla y cómo son las reglas (¿regulares?), dolorosas, abundantes
+- Método anticonceptivo (si toma o tiene alguno)
+- Menopausia: cuándo empezó con desarreglos, cuánto tiempo hasta estar oficialmente en menopausia, síntomas notados…
+
+**ONCOLOGÍA** (añadido 2 jun 2026): Ainara tiene cada vez más pacientes oncológicos y va a crear en su sistema una pestaña exclusiva de preguntas solo para ellos (como la deportiva o la general). Incluir "Oncología" como plantilla/pestaña de especialidad. Relacionado: en función del tipo de cáncer y los efectos secundarios del tratamiento, se excluyen alimentos/recetas (ver tarea #69).
+
 **Prioridad:** Alta
 **Complejidad:** Media-Alta
 
@@ -461,6 +449,8 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 **Estado actual:** Cuando se añade una receta a un plan, se puede cambiar el número de porciones (1, 1.5, 2...) que escala todos los ingredientes proporcionalmente. Pero NO se pueden ajustar ingredientes individuales. Si la receta tiene 80g de garbanzos y para otro paciente quieres 200g, tienes que editar la receta original (lo que afecta a todos los planes que la usan) y volver a añadirla.
 
 **Petición (Alba F. / albaf.nutricion, mayo 2025; Guillermo, mayo 2026):** Poder ajustar las cantidades de cada ingrediente de una receta directamente desde el plan, sin tener que editar la receta original. Dice que ninguna plataforma que ha visto lo hace bien. La edición debe ser posible **en el momento de añadir la receta** al plan: el nutri ve la receta base con sus ingredientes y puede decir "quiero más pasta aquí, quitar el arroz, añadir otro ingrediente" antes de confirmar. La receta original queda intacta para futuros usos.
+
+**Input adicional (nutricionista por WhatsApp, sin identificar — 2 jun 2026):** Al consultar una receta ("gazpacho casero") veía macros y micros pero **no los ingredientes ni sus cantidades**, y pide **poder modificarlos ahí directamente**. Nota técnica: la ficha de la receta (`/recetas/[id]`) SÍ muestra ingredientes con cantidades — probablemente lo miraba desde el buscador del plan (que solo lista nombres de ingredientes, sin cantidades) o dio con un *alimento* llamado así (sin ingredientes). → Reforzar: mostrar ingredientes CON cantidades en el selector del plan y al expandir la receta dentro de la comida.
 
 **Tareas:**
 - [ ] Al añadir una receta a un plan, mostrar un paso intermedio con los ingredientes de la receta editables (cantidades, eliminar, añadir nuevos) antes de confirmar la adición
@@ -545,7 +535,6 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 | # | Petición | Prioridad | Complejidad |
 |---|----------|-----------|-------------|
 | 12 | Bug email portal | Urgente | Baja |
-| 14 | Ocultar calorías al paciente | Alta | Baja-Media |
 | 1 | Tablas composición por país | Alta | Alta |
 | 5 | Planes por opciones (no por día) | Alta | Alta |
 | 6 | Formulario pre-consulta paciente | Alta | Media-Alta |
@@ -554,13 +543,11 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 | 3 | Combinar tipos de dieta | Media | Baja-Media |
 | 4 | Mejorar formato PDF | Media | Media |
 | 8 | Múltiples actividades/día | Media | Media |
-| 9 | % macros → gramos automático | Media | Baja |
 | 11 | Link público reserva citas | Media | Media-Alta |
 | 13 | Multi-moneda (pesos) | Media | Media-Alta |
 | 7 | Selector país paciente | Baja-Media | Baja |
 | 16 | Indicador visual fuente alimento | Media | Baja |
 | 17 | Newsletter actualizaciones semanales | Media | Media |
-| 10 | Mejora UX Harris-Benedict | Baja | Baja |
 | 18 | Personalizar estructura anamnesis | Alta | Media-Alta |
 | 19 | Búsqueda sin tildes en alimentos | Media-Alta | Baja |
 | 20 | Cantidad + macros en selector alimentos | Alta | Media |
@@ -574,7 +561,7 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 | 28 | Informe de composición nutricional de la dieta | Alta | Media |
 | 29 | Sección de medidas de bioimpedancia (BIA Tanita) | Media-Alta | Media |
 | 30 | Editar horario semanal del paciente | Media | Baja-Media |
-| 31 | Copiar/mover comidas entre días del plan | Alta | Baja-Media |
+| 31 | ✅ Copiar/mover comidas entre días del plan | Alta | Baja-Media |
 | 32 | Pliegues ISAK completos + sumatoria + perímetro muslo | Alta | Media |
 | 33 | Perímetro de muslo en mediciones básicas | Media | Baja |
 | 34 | Renombrar "Almuerzo" a "Comida" (configurable) | Media | Baja-Media |
@@ -591,7 +578,7 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 | 45 | Búsqueda tolerante a plural/singular | Alta | Baja |
 | 46 | Changelog público de novedades | Media-Alta | Baja |
 | 47 | Directorio público de nutricionistas | Alta | Alta |
-| 48 | Ver todas las fórmulas de % grasa a la vez | Media | Baja |
+| 48 | Ver todas las fórmulas de % grasa a la vez | Media | Media-Alta (no hay base de cálculo) |
 | 49 | Generar plan algorítmico sin IA (desde BD de alimentos) | Media-Alta | Alta |
 | 50 | Notas de consulta/seguimiento por sesión | Alta | Media |
 | 51 | Documentación RGPD personalizada por nutricionista | Media-Alta | Media |
@@ -601,6 +588,23 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 | 55 | Sistema de intercambio de alimentos | Media | Media-Alta |
 | 56 | Recomendaciones predefinidas por patología | Alta | Media |
 | 57 | Agrupar comidas repetidas en PDF (deduplicación) | Media | Baja-Media |
+| 58 | Perímetros de pierna (muslo/gemelo) en métricas | Media | Baja |
+| 59 | Fotos de progreso (antes/después) en métricas | Media | Media |
+| 60 | Modal "Definir objetivo": labels crudos + objetivo principal | Media | Baja |
+| 61 | Registrar infecciones diagnosticadas (fechas) | Media | Baja-Media |
+| 62 | Medicamentos/suplementos en tabla + catálogo de suplementos | Media | Baja-Media |
+| 63 | Videollamada con Zoom y otras plataformas | Media | Baja-Media |
+| 64 | Keto ratio en Planificación | Media-Baja | Baja |
+| 65 | Pautar suplementos dentro del plan (momento de toma) | Media-Alta | Media |
+| 66 | Etiquetas de tipo de dieta en recetas + filtro | Media-Alta | Media |
+| 67 | Especificar patología concreta en objetivo "Patología" | Media-Alta | Baja-Media |
+| 68 | Duplicar receta de la app como propia editable | Media-Alta | Baja-Media |
+| 69 | Exclusiones automáticas por patología/alérgeno/cocinado | Alta | Alta |
+| 70 | Plan de objetivos con proyección temporal | Alta | Media |
+| 71 | Farmacología: interacciones fármaco-alimento | Media-Alta | Alta |
+| 72 | Link a receta de Instagram/TikTok en las recetas | Media | Baja |
+| 73 | Enriquecer recetas globales (pasos + más recetas + fotos) | Media-Alta | Media |
+| 74 | Notificaciones de cita al paciente (email + botón WhatsApp) | Alta | Baja |
 
 ---
 
@@ -667,18 +671,26 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 
 **Origen:** María Moreno Nutricionista — 23 mayo 2026
 
-**Estado actual:** El sistema de mediciones del paciente registra peso, altura, IMC, perímetros corporales y % de grasa corporal (un solo valor global). No existe la posibilidad de registrar valores segmentados de bioimpedancia.
+**Estado actual (CORREGIDO jun 2026 — verificado en código):** El registro manual de valores de bioimpedancia **YA EXISTE y funciona**. El modelo `MedidaAntropometrica` y la UI de Mediciones (`paciente-ficha-mediciones-tab.tsx`) incluyen: `masaMuscular`, `musculoEsqueletico`, `agua`, `masaOsea`, `grasaVisceral`, `grasaSubcutanea`, `grasaCorporal`, con gráficas de evolución. **Lo que falta:** valores segmentados (brazo der/izq, pierna der/izq, tronco), `metabolismoBasalKcal`, `edadMetabolica`, y la **integración con las máquinas** (que los datos pasen solos sin teclearlos).
 
 **Petición:** Muchos nutricionistas hacen seguimiento con BIA Tanita (básculas de bioimpedancia). Quieren poder registrar los valores segmentados: masa muscular, masa grasa, agua corporal y demás parámetros que proporciona la bioimpedancia, no solo el peso y % de grasa global.
 
+**Input adicional (Marta Espada, 2 jun 2026):** Pregunta directamente si habrá **integración con máquinas de bioimpedancia (InBody, Tanita…)** — es decir, no solo registrar los valores a mano, sino que los datos pasen de la máquina a la app automáticamente. Refuerza que hay demanda real de la parte de integración, no solo del registro manual.
+
+Preguntada por qué máquina usa, responde: **"los más usados son InBody"**, es con los que más familiarizada está; conoce Tanita pero prefiere InBody. → **Priorizar la integración con InBody** (API en la nube, LookinBody Web) sobre Tanita.
+
 **Tareas:**
 - [ ] Investigar qué valores devuelve una BIA Tanita típica (masa muscular total y segmentada, masa grasa total y segmentada, agua corporal, masa ósea, metabolismo basal, edad metabólica, grasa visceral, etc.)
-- [ ] Crear modelo `MedidaBioimpedancia` o ampliar el modelo `Medida` existente con campos opcionales para bioimpedancia
-- [ ] Campos principales: masaMuscularKg, masaGrasaKg, aguaCorporalPct, masaOseaKg, grasaVisceralNivel, edadMetabolica, metabolismoBasalKcal
+- [x] ~~Ampliar el modelo con campos de bioimpedancia~~ — HECHO: `masaMuscular`, `musculoEsqueletico`, `agua`, `masaOsea`, `grasaVisceral`, `grasaSubcutanea` en `MedidaAntropometrica`
+- [ ] Campos que aún faltan: `edadMetabolica`, `metabolismoBasalKcal` (la BIA los da y no se registran)
 - [ ] Campos segmentados opcionales: brazo derecho/izquierdo, pierna derecha/izquierda, tronco (masa muscular y % grasa por segmento)
-- [ ] UI en la ficha del paciente: nueva sección o pestaña "Bioimpedancia" con formulario para registrar estos valores
-- [ ] Gráficas de evolución de los valores de bioimpedancia a lo largo del tiempo
+- [x] ~~UI en la ficha del paciente~~ — HECHO: dentro de la pestaña Mediciones
+- [x] ~~Gráficas de evolución~~ — HECHO
 - [ ] Considerar importación automática si Tanita tiene API o exportación de datos
+- [ ] **Integración con máquinas (Marta Espada)** — investigar vías de integración por fabricante:
+  - InBody: tiene API en la nube (InBody LookinBody Web / API para partners) — investigar requisitos y coste
+  - Tanita: los modelos pro (MC-780, DC-430...) exportan CSV por USB/SD y algunos tienen software con exportación — primer paso viable: **importar el CSV/PDF de la máquina** y parsearlo a la ficha del paciente
+  - Paso intermedio sin API: subir el archivo de resultados (CSV/PDF) y extraer valores automáticamente (relacionado con el parseo IA de analíticas, tarea #2)
 
 **Prioridad:** Media-Alta (muchos nutricionistas usan BIA como herramienta principal de seguimiento)
 **Complejidad:** Media
@@ -705,21 +717,24 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 
 ## 31. Copiar/mover comidas entre días del plan
 
-**Origen:** Nutricionista argentina — mayo 2026; Guille (nutricionista) — 25 mayo 2026
+**Origen:** Nutricionista argentina — mayo 2026; Guille (nutricionista) — 25 mayo 2026; nutricionista (WhatsApp) — 3 junio 2026 (cita explícitamente el **batch cooking** como caso de uso: muchas comidas se reutilizan y reescribirlas es tedioso).
+
+**✅ IMPLEMENTADO Y DESPLEGADO (3 jun 2026).** En el editor de dietas: copiar un alimento suelto (portapapeles → botón "Pegar aquí" en cualquier comida; suma si ya existe, también en recetas), copiar una comida (a varios días y opcionalmente como otro tipo de comida), copiar un día entero, y "Traer de otro plan" (del mismo paciente —aparece el primero— o de otro). El modo "Añadir encima" suma cantidades en vez de duplicar líneas. Extra: buscador de alimentos mejorado (pestañas Alimentos/Recetas además de Mis alimentos/Mis recetas, recetas de la app ahora buscables, badge "Tuyo/Tuya" siempre que el item es propio, abre en Alimentos con sugerencias de macros).
 
 **Estado actual:** En el editor de dietas, cada día (Lunes a Domingo) tiene sus comidas independientes. Para repetir un desayuno del lunes en el martes, hay que recrear la comida manualmente: añadir cada alimento con su cantidad uno por uno. Existen botones para mover un alimento individual a otra comida/día, pero no para copiar una comida entera (con todos sus alimentos) a otro día.
 
 **Petición:** Poder copiar o mover una comida completa (ej: el desayuno del lunes) a otro día de la semana con un clic. Así se monta la semana mucho más rápido cuando varios días comparten comidas similares.
 
 **Tareas:**
-- [ ] Añadir botón "Copiar comida" en cada slot de comida (junto a los controles existentes)
-- [ ] Al pulsar, mostrar selector de día destino (Martes, Miércoles, etc.) y tipo de comida destino (Desayuno, Almuerzo, etc.)
-- [ ] Duplicar todos los `AlimentoEnComida` de la comida origen en la comida destino del día elegido
-- [ ] Si la comida destino ya tiene alimentos, preguntar: ¿reemplazar o añadir encima?
-- [ ] Opción de "Copiar día completo" — copiar todas las comidas de un día a otro día
-- [ ] Opcionalmente: "Mover comida" (copiar + eliminar la original)
-- [ ] Recalcular macros del día destino tras la copia
-- [ ] **Copiar desde otros planes** — Poder importar una comida o día completo de otro plan nutricional del mismo paciente o de otro paciente. Selector: elegir plan origen → día → comida, y copiar al plan actual. Útil para reutilizar comidas ya probadas sin recrearlas desde cero.
+- [x] Añadir botón "Copiar comida" en cada slot de comida (junto a los controles existentes)
+- [x] Al pulsar, mostrar selector de día destino (Martes, Miércoles, etc.) y tipo de comida destino (Desayuno, Almuerzo, etc.)
+- [x] Duplicar todos los `AlimentoEnComida` de la comida origen en la comida destino del día elegido
+- [x] Si la comida destino ya tiene alimentos, preguntar: ¿reemplazar o añadir encima? (Añadir = suma cantidades, no duplica)
+- [x] Opción de "Copiar día completo" — copiar todas las comidas de un día a otro día
+- [ ] Opcionalmente: "Mover comida" (copiar + eliminar la original) — NO incluido (el drag & drop ya mueve alimentos; se valoró innecesario)
+- [x] Recalcular macros del día destino tras la copia (automático al refrescar)
+- [x] **Copiar desde otros planes** — Importar una comida o día completo de otro plan del mismo paciente o de otro (asistente "Traer de otro plan": paciente → plan → día/comida → días destino)
+- [x] **Extra:** copiar/pegar un alimento suelto (portapapeles + "Pegar aquí" en cualquier comida, con suma)
 
 **Archivos a modificar:**
 - `src/components/dieta/comida-slot.tsx` — botón de copiar comida y selector de destino
@@ -945,6 +960,8 @@ Sección dedicada a la cuenta de tipo "Profesor", pensada para docentes de nutri
 
 **Origen:** Guillermo — mayo 2026
 
+**Validación de mercado (jun 2026):** José Miguel Martínez, profesor de la **Universidad de Alicante**, rechazó la app diciendo que web/funcionalidades/flujo "son prácticamente idénticos a otros softwares que ya usan en la universidad" y que no ve valor diferencial. → CONFIRMA que en docencia ya usan software de gestión nutricional (probablemente Dietowin u otro de escritorio) y que el diferencial NO es la gestión de dietas (eso ya lo tienen), sino **el flujo docente**: asignar casos a alumnos + corregir/calificar su trabajo, que esos programas NO tienen. La cuenta de Profesor es el verdadero gancho para universidades; sin ella, Annonia es "uno más". Refuerza prioridad.
+
 **Estado actual:** No existe rol de profesor ni flujo educativo. Solo hay cuentas de dietista (nutricionista), admin y paciente.
 
 **Concepto:** Un profesor de nutrición crea una cuenta especial desde la que puede:
@@ -1093,6 +1110,8 @@ Sección dedicada a la cuenta de tipo "Profesor", pensada para docentes de nutri
 
 **Nota:** Los productos de venta pueden estar también vinculados al apartado de alimentos/comidas (ej: un suplemento de proteínas que se incluye en el plan), pero el interés principal es la gestión comercial.
 
+**Input adicional (nutricion.estigil, Instagram — 2 jun 2026, ⭐ posible centro/clínica):** Trabaja en una clínica presencial que vende suplementación. Vio el aviso de stock bajo y le interesa la **gestión del stock de suplementación** para plantearle a su jefe usar Annonia en la clínica (gestión de pacientes + stock). Lo describe como "un plus, no imprescindible" — pero es la puerta de entrada de un centro completo. Refuerza la prioridad de este módulo como argumento de venta para clínicas.
+
 **Tareas:**
 
 *Modelo de datos:*
@@ -1201,6 +1220,8 @@ Anna: "Así cada nutri trabaja con su marca dentro de la app y es superrr experi
 
 También dice: "Les diré a algunas compañeras a ver si les interesa algunas ya trabajan con otras apps!"
 
+**Confirmado por Antonio (antoniofs.nutricion, 4 jun 2026):** "La dieta con IA no funciona del todo mal, pero tampoco muy bien." Segundo profesional que reporta lo mismo → confirma que la calidad de la IA hay que mejorarla. (Ya se está trabajando en otra terminal, jun 2026.)
+
 **Problemas reportados:**
 1. **IA repite muchos alimentos** — El plan generado por IA no varía suficiente entre días/comidas
 2. **Dieta no equilibrada** — La distribución nutricional del plan generado no parece correcta
@@ -1208,11 +1229,22 @@ También dice: "Les diré a algunas compañeras a ver si les interesa algunas ya
 
 **Positivo:** Usa la app como soporte a su trabajo y le ayuda mucho. La considera muy completa. Va a recomendar a compañeras.
 
+**Estado (jun 2026): RESUELTO en local — 1ª iteración implementada, pendiente de desplegar.** Causa raíz encontrada en código: `buildUserPrompt` (`src/lib/ai/prompts.ts`) **ignoraba la base de datos** (parámetros `_alimentos`/`_recetas` sin usar) y metía una `TABLA_NUTRICIONAL` **hardcodeada de ~30 alimentos** + un patrón rígido ("Lunes pollo, Martes ternera…"). Por eso repetía, "faltaban alimentos" y salía poco variada: la IA estaba encerrada en 30 alimentos y los que no casaban con la BD se descartaban al aceptar (`ai.ts:259`).
+
 **Tareas:**
-- [ ] Revisar el prompt de generación IA para forzar más variedad de alimentos entre días (penalizar repeticiones)
-- [ ] Añadir instrucción explícita de equilibrio nutricional en el prompt (distribución de macros por comida)
-- [ ] Investigar qué alimentos faltan — posiblemente alimentos específicos de su especialidad o región
+- [x] Revisar el prompt de generación IA para forzar más variedad — HECHO: tabla nutricional **dinámica** desde el catálogo real, eliminado el patrón rígido, reglas de variedad reforzadas (rotar proteínas, variar desayunos, no repetir entre días)
+- [x] Anti-repetición entre lotes — HECHO: antes se pasaban descripciones truncadas a 300 chars (no llegaban a cubrir lo generado); ahora se pasa la lista deduplicada de alimentos ya usados (`generate-plan.ts`)
+- [x] Instrucción explícita de equilibrio nutricional en el prompt — HECHO: REGLA 4 (proteína + carbohidrato + verdura/fruta + grasa por comida; acercarse a macros objetivo)
+- [x] "Faltan alimentos" — HECHO: el prompt usa los alimentos del nutricionista + un **muestreo de globales por categoría** (~70-90 vs 30); selección en `ai.ts` (`muestrearGlobalesVariado`)
+- [x] **Calidad de los alimentos** — HECHO: el catálogo global (2.659) es hipergranular y mezcla básicos con encurtidos, postres, harinas, casquería… sin ninguna señal de "básico". Se filtran los no-aptos por nombre (`esAlimentoBasico` / `VETO_ALIMENTO`) para que la IA no proponga "cebolleta en vinagre" ni "hígado de ternera". Mejora futura ideal: campo `esBasico`/popularidad en BD
+- [x] **Tamaño del prompt / límites de Groq** — HECHO: el tier gratuito limita a **12.000 tokens/min y 100.000/día por org**; con 141 alimentos + max_tokens 8192 saltaba un **413** (habría roto producción). Ajustado a ~70 alimentos + max_tokens 4096 + rotación de 6 claves. Validado end-to-end con generaciones reales: **7/7 días en rango de kcal** (tras el reajuste de la app) y **~50 alimentos distintos/semana**. Nota: el prompt nuevo consume ~60% más tokens/plan que antes
+- [x] **Rellenar TODAS las comidas** (bug detectado probando) — la IA solo hacía 3 comidas (desayuno/almuerzo/cena) y dejaba 3 vacías. Ahora se le pasa el nº de comidas elegido en el form (`numComidas` → `COMIDAS_POR_NUM`) y se le exige generar EXACTAMENTE esas comidas, todas con alimentos. Validado: 42/42 comidas llenas
+- [x] **Respetar macros, no solo calorías** (bug detectado probando) — reforzado el prompt para cumplir los gramos de P/C/G (±15%) y no pasarse de proteína. Validado con objetivos consistentes: prot 131/150, carb 226/220, grasa 71/80. OJO: si los objetivos del nutri son incoherentes (p. ej. 3000 kcal con macros que suman 2110) es imposible cuadrar ambos → **pendiente: validar/avisar en el form cuando los macros no sumen las calorías**
+- [x] **Filtro de restricciones por alérgeno** (#69 parcial) — alergias/intolerancias del paciente (lácteos, frutos secos, huevo, marisco, pescado, gluten, soja) se excluyen del catálogo ANTES de dárselo a la IA (`filtrarPorRestricciones` en `ai.ts`), no solo se le piden en el prompt. Validado: paciente con lactosa → 0 lácteos en catálogo y 0 en el plan
+- [ ] **Fase 2 pendiente: recetas propias como ítem seleccionable por la IA** — hoy se cargan pero no se usan; requiere que `aceptarPlanIA` soporte insertar `recetaId` (no solo `alimentoId`) en `AlimentoEnComida`
 - [ ] Relacionado con tarea #1 (tablas de composición por país) y #26 (relevancia en búsqueda)
+
+**Archivos modificados:** `src/lib/ai/prompts.ts`, `src/lib/ai/generate-plan.ts`, `src/app/actions/ai.ts`, `src/lib/alimentos-cache.ts`
 
 **Prioridad:** Alta (la IA es feature clave — si genera planes malos, los nutris no la usan)
 **Complejidad:** Media
@@ -1296,7 +1328,7 @@ También dice: "Les diré a algunas compañeras a ver si les interesa algunas ya
 
 **Origen:** Ainara Martín (ainara_nutri, Instagram) — 29 mayo 2026
 
-**Estado actual:** En la sección de Planificación existen múltiples ecuaciones de metabolismo basal (Harris-Benedict, Mifflin-St Jeor, OMS, etc.) que se pueden comparar. Para el % de grasa corporal, los cálculos se hacen a partir de pliegues cutáneos (#32) pero solo se muestra un resultado según la ecuación seleccionada, no una comparativa de todas las fórmulas disponibles.
+**Estado actual (VERIFICADO en código, jun 2026 — corrige lo que se asumía):** El selector de "fórmula de % grasa" en Planificación es **DECORATIVO**: no calcula nada, solo guarda la etiqueta elegida. El % de grasa actual proviene de la medida `grasaCorporal` (o se teclea a mano), **NO se calcula a partir de pliegues**. El comparador de metabolismo basal tampoco muestra todas las fórmulas a la vez (solo la seleccionada). Los pliegues registrados **NO incluyen bíceps** (que Durnin & Womersley necesita). El bug de grupos duplicados ("Brozek"/"Siri" con las mismas fórmulas) **YA se arregló (jun 2026)**.
 
 **Petición:** Tener un apartado similar al de las fórmulas de metabolismo basal pero para % de grasa corporal, donde se puedan ver TODAS las fórmulas a la vez (Durnin & Womersley, Faulkner, Jackson & Pollock, Siri, Brozek, etc.) y no solo una. Ainara dice: "me gustan los datos, tener un apartado como el que aparece con las fórmulas para % de grasa donde se puedan ver todas de una, no marca una en concreto."
 
@@ -1308,7 +1340,7 @@ También dice: "Les diré a algunas compañeras a ver si les interesa algunas ya
 
 **Relacionado con:** Tarea #32 (pliegues ISAK) y #10 (mejora UX ecuaciones)
 **Prioridad:** Media
-**Complejidad:** Baja
+**Complejidad:** Media-Alta (REVISADO jun 2026: NO hay base de cálculo; hay que implementar 5-6 ecuaciones científicas validadas + conversión densidad→%grasa + mapeo de pliegues por sexo. Riesgo clínico si se implementan mal. Falta registrar el pliegue del bíceps para Durnin & Womersley. NO es "baja" como se estimó.)
 
 ---
 
@@ -1320,7 +1352,17 @@ También dice: "Les diré a algunas compañeras a ver si les interesa algunas ya
 
 **Petición:** Ainara dice: "lo planes con IA genial pero si estaría guay como tiene bvas e de datos de composición de alimentos y recetas que he visto que vais añadiendo poco a poco, que te calcule con ello sin meter IA de por medio." Quiere que la app genere un plan basado en la BD de alimentos/recetas, ajustando cantidades para cumplir los objetivos de macros, sin depender de la IA.
 
+**Input adicional (nutricion.estigil, Instagram — 2 jun 2026, ⭐ posible centro/clínica):** Variante concreta del mismo concepto: ella define la estructura de calorías y macros, **elige las recetas que quiere usar**, y la app **ajusta automáticamente las cantidades de esas recetas** para cuadrar con los macros objetivo. "Si yo hago la distribución y después elijo las recetas, ¿esas recetas se ajustan a esos macros?" Para ella sería lo ideal. → Modo "ajustar recetas seleccionadas a objetivos": escalar porciones/cantidades de las recetas elegidas hasta cumplir las kcal/macros del día o de cada comida. (Hoy lo más cercano: la generación IA acepta kcal+macros objetivo y tiene en cuenta las recetas propias, pero no garantiza usar las que tú elijas ni ajusta cantidades de forma determinista.)
+
 **Concepto:** El nutricionista define: kcal objetivo, distribución de macros (% P/C/G), número de comidas, preferencias/restricciones. La app selecciona alimentos de la BD y calcula cantidades para alcanzar los objetivos, como una calculadora de dietas clásica.
+
+**Detalle del asistente del software de referencia de Ainara (capturas, 2 jun 2026 — ver vídeo en nota MotivoClub/PDF):** "que lo calcule y nosotros marquemos si queremos eso o cambiarlo; puedo hacer los repartos incluso de cada toma manualmente". Pantalla "Características de la dieta a crear":
+- **Ingesta diaria como RANGO** de kcal con slider (ej: entre 2.206 y 2.406 kcal), no un valor fijo
+- **Reparto de nutrientes** con sliders en % y gramos a la vez (ej: 25% 148g prótidos / 50% 281g glúcidos / 25% 64g lípidos)
+- **Reparto de kcal por toma** (desayuno, media mañana, comida, merienda, cena) — editable manualmente
+- **Reparto de proteínas por toma** — también manual
+- Opción de **cargar más un nutriente concreto** si la pauta lo necesita
+- Asistente "cálculo por kg de peso" (g/kg de proteína, etc.)
 
 **Tareas:**
 - [ ] Algoritmo de composición de dieta: dado un objetivo calórico y distribución de macros, seleccionar alimentos y calcular cantidades
@@ -1338,8 +1380,8 @@ También dice: "Les diré a algunas compañeras a ver si les interesa algunas ya
 ### Nota: Ainara ofrece videollamada + lista de preguntas de anamnesis
 
 Ainara Martín lleva 10 años pasando consulta y ofrece:
-1. Enviar el lunes un documento con todas las preguntas que usa en su base de datos de anamnesis
-2. Hacer una videollamada para explicar su sistema si hace falta
+1. ✅ **RECIBIDO (2 jun 2026)** — Envió por Instagram el resumen completo de su anamnesis. Volcado íntegro en la tarea #18 (sección "Material de referencia: anamnesis completa de Ainara Martín")
+2. Hacer una videollamada para explicar su sistema si hace falta (pendiente, si se necesita)
 
 Esto es muy valioso para la tarea #18 (personalizar estructura anamnesis) — tener las preguntas reales de una profesional con experiencia.
 
@@ -1386,6 +1428,9 @@ Esto es muy valioso para la tarea #18 (personalizar estructura anamnesis) — te
 
 *Vista previa para próxima consulta:*
 - [ ] Al abrir la ficha de un paciente, mostrar un resumen de la última nota de sesión (ej: banner o card en la parte superior) para que el nutricionista recuerde qué se habló la última vez
+
+*Ejercicios de educación alimentaria (María Marqués, 3 jun 2026):*
+- [ ] Sección para registrar los **ejercicios de educación alimentaria realizados en consulta** (ej: lectura de etiquetas, plato de Harvard, control de raciones, registro de hambre real vs emocional...). Que quede constancia de qué se ha trabajado con el paciente a nivel educativo, no solo lo dietético
 
 **Archivos a crear/modificar:**
 - `prisma/schema.prisma` — nuevo modelo `NotaSesion`
@@ -1503,6 +1548,13 @@ Esto es muy valioso para la tarea #18 (personalizar estructura anamnesis) — te
 
 **Petición:** Añadir algún tipo de registro para evaluar cómo de saciado se ha quedado el paciente con cada comida, o si se ha quedado con hambre. Información clave para que el nutricionista ajuste las cantidades y la composición del plan.
 
+**Input adicional (Alejandra, 2 jun 2026):** Ampliar el registro más allá de la saciedad — que el paciente pueda anotar **cómo le sienta cada comida**:
+- Saciedad: insatisfecho / normal / muy lleno
+- Síntomas posprandiales: somnolencia, reflujo, dolor estomacal, inflamación posprandial
+- Estado positivo: "en buen estado" (podría salir a caminar 15-20 min después)
+
+Además, pide un **registro dietético con fotos**: que el paciente pueda subir fotos de los platos que come en cada comida. Muy útil para que el nutricionista vea raciones y composición reales sin depender de la descripción escrita.
+
 **Concepto:** Tras cada comida (o al final del día), el paciente indica su nivel de saciedad. Opciones de implementación:
 1. **Escala por comida** — En cada comida del registro diario, escala 1-5 (muy hambriento → muy lleno) o emojis
 2. **Escala global del día** — Un único valor de saciedad general para el día
@@ -1516,6 +1568,14 @@ Esto es muy valioso para la tarea #18 (personalizar estructura anamnesis) — te
 - [ ] UI para el nutricionista: ver la saciedad reportada en el panel de seguimiento del paciente
 - [ ] Gráfica de evolución de saciedad a lo largo del tiempo
 - [ ] Considerar: campo de texto opcional "¿Por qué?" (ej: "me quedé con hambre porque cené tarde")
+- [ ] **Síntomas posprandiales por comida** (Alejandra) — selector múltiple por comida: somnolencia, reflujo, dolor estomacal, inflamación posprandial, en buen estado. Guardar dentro de `comidasData` JSON
+- [ ] **Foto del plato por comida** (Alejandra) — el paciente sube foto de lo que ha comido en cada comida desde el portal (base64 comprimida/redimensionada, reutilizar `validateImageDataUrl()`). Vigilar peso en BD
+- [ ] Vista del nutricionista: timeline del registro dietético con fotos + síntomas por comida (clave para detectar intolerancias y patrones digestivos)
+
+**Input adicional (María Marqués, 3 jun 2026) — ampliar el seguimiento más allá de la adherencia al plan:**
+- [ ] **Otras bebidas (sin alcohol)** — junto a la ingesta de agua, sección para registrar otras bebidas (café, infusiones, refrescos, lácteos...). Hoy solo se registra agua (`aguaML`)
+- [ ] **Parámetros de bienestar/conducta en el seguimiento diario** — sueño, estado emocional, bienestar general, actividad física, conducta alimentaria (esto último ya definido en la sección "comportamientos alimentarios" de la anamnesis — reutilizar). Que el seguimiento no sea solo "¿cumpliste el plan?"
+- [ ] **Escala de Bristol con imagen** — en la sección de función intestinal, mostrar la imagen de la escala de Bristol para que el paciente identifique su tipo (1-7). Relacionado con el bloque digestivo de la anamnesis (#18)
 
 **Archivos a modificar:**
 - `prisma/schema.prisma` — campo nuevo si es por día
@@ -1607,3 +1667,473 @@ Esto es muy valioso para la tarea #18 (personalizar estructura anamnesis) — te
 
 **Prioridad:** Media (mejora la legibilidad del PDF — menos páginas, más claro para el paciente)
 **Complejidad:** Baja-Media
+
+---
+
+## 58. Añadir mediciones de las piernas en métricas
+
+**Origen:** Remedios Velasco (remediosvelascosalazar@gmail.com) — 1 junio 2026; Dayana Martínez (nutriconday, WhatsApp) — 4 junio 2026, vuelve a pedir poder poner medidas en cm de **muslo y pierna** (ya era origen de la #33). Demanda repetida → reforzar prioridad.
+
+**Estado actual:** El modelo `MedidaAntropometrica` (`prisma/schema.prisma`) tiene perímetros de **cintura, cadera, brazo y abdomen**, y pliegues cutáneos (abdominal, axilar, pectoral, subescapular, suprailíaco, tricipital y del muslo). Pero **no existe ningún perímetro de pierna/muslo ni de gemelo** — solo el `pliegueMuslo`, que es un pliegue, no una circunferencia.
+
+**Petición:** Poder registrar las mediciones (perímetros) de las piernas en la zona de métricas.
+
+**Concepto:** Añadir circunferencias de la pierna para seguir el progreso del tren inferior (muy usado en recomposición/hipertrofia).
+
+**Tareas:**
+- [ ] Añadir campos al modelo `MedidaAntropometrica`: `perimetroMuslo Float?` y opcionalmente `perimetroGemelo Float?` (pantorrilla)
+- [ ] Script SQL manual `ALTER TABLE medidas_antropometricas ADD COLUMN IF NOT EXISTS ...` (no hay Prisma Migrate)
+- [ ] Añadir los campos al formulario de nueva/editar medición
+- [ ] Incluirlos en el listado, gráficas de evolución y, si aplica, en el PDF de evolución
+
+**Prioridad:** Media
+**Complejidad:** Baja (un par de campos más, mismo patrón que los perímetros existentes)
+
+---
+
+## 59. Fotos de progreso (antes / después) en métricas
+
+**Origen:** Remedios Velasco (remediosvelascosalazar@gmail.com) — 1 junio 2026; Antonio (antoniofs.nutricion, 4 jun 2026) — lo pide para los que trabajan **online**: apartado para registrar fotos de perfil, de frente y de espalda
+
+**Estado actual:** No existe ninguna funcionalidad de fotos de progreso. No hay campo de foto en `MedidaAntropometrica` ni modelo asociado.
+
+**Petición:** Poder añadir foto del **antes y el después** del paciente para comparar visualmente la evolución. Antonio concreta los tipos de foto útiles en seguimiento online: **frente, perfil y espalda**.
+
+**Concepto:**
+1. Subir una o varias fotos asociadas a una fecha (idealmente con tipo: frontal / lateral / posterior)
+2. Ver una vista comparativa "antes vs después" (dos fechas lado a lado)
+3. Opcionalmente, incluirlas en el PDF de evolución
+
+**Tareas:**
+- [ ] Decidir modelo: campo `foto String?` (base64) en `MedidaAntropometrica`, o nuevo modelo `FotoProgreso` (id, pacienteId, fecha, imagen base64, tipo) — preferible el modelo separado para permitir varias fotos por fecha
+- [ ] Script SQL manual para crear tabla/columna
+- [ ] UI de subida reutilizando `validateImageDataUrl()` de `src/lib/validation.ts` (ya se guardan imágenes en base64 en BD)
+- [ ] Vista comparativa antes/después (selector de dos fechas)
+- [ ] Opcional: incluir en el PDF de evolución
+- [ ] **Vigilar el peso de las imágenes**: comprimir/redimensionar antes de guardar para no inflar la BD (las fotos de cuerpo entero pesan más que un avatar)
+
+**Prioridad:** Media
+**Complejidad:** Media (subida + almacenamiento + vista comparativa; las imágenes en base64 ya están soportadas pero hay que cuidar el tamaño)
+
+## 60. Revisar modal "Definir objetivo" y la sección "Objetivo principal"
+
+**Problema (captura):** en el modal "Define un nuevo objetivo" (sidebar de la ficha del paciente) los desplegables muestran los **valores crudos del enum**, sin formatear ni traducir:
+- "Tipo de objetivo" → muestra `medicion` (debería ser "Medición" / "Genérico")
+- "Tipo de medición" → muestra `grasa_corporal`, `masa_muscular`, `perimetro_cintura`, `perimetro_cadera`, `trigliceridos`, `colesterol`… (deberían ser "Grasa corporal", "Masa muscular", "Perímetro de cintura", "Perímetro de cadera", "Triglicéridos", "Colesterol"…)
+
+Se ven valores "de programador" y queda poco profesional.
+
+**Dónde está:**
+- Componente: `src/components/paciente/ficha-sidebar.tsx` — los `<Select>` de `tipoObjetivo` (~línea 467) y `tipoMedicion` (~línea 479) usan `TIPOS_OBJETIVO` / `TIPOS_MEDICION`, construidos con las keys crudas como label.
+- Enums: `src/lib/ficha-sidebar-types.ts` (`TIPOS_OBJETIVO_KEYS`, `TIPOS_MEDICION_KEYS`, `UNIDADES_MEDICION`).
+
+**Tareas:**
+- [ ] Mostrar etiquetas legibles/traducidas en ambos desplegables (añadir claves i18n en `patients.json` es/pt y mapear key→label, en vez de usar la key cruda).
+- [ ] Revisar la sección **"Objetivos" / "Objetivo principal"** de la ficha: cómo se define y se **actualiza** el objetivo principal — parece que no termina de funcionar bien. Verificar el flujo de añadir/editar y qué objetivo queda marcado como "principal".
+
+**Prioridad:** Media (afecta a la imagen de la herramienta — se ven valores sin formatear)
+**Complejidad:** Baja (las etiquetas) + por revisar (la lógica del objetivo principal)
+
+---
+
+## 61. Registrar infecciones diagnosticadas (con fecha de diagnóstico y de remisión)
+
+**Origen:** nutricionista (WhatsApp) — 1 jun 2026
+
+**Estado actual:** La anamnesis tiene patologías (texto), antecedentes personales y familiares (texto) y un campo de notas. NO hay un apartado específico para registrar infecciones que ha tenido el paciente con sus fechas; hoy solo se podría anotar como texto suelto en patologías/antecedentes/notas.
+
+**Petición:** Poder registrar infecciones diagnosticadas (ej. H. pylori) indicando **cuándo se diagnosticó y cuándo remitió**. Es información clínica relevante para el seguimiento.
+
+**Tareas:**
+- [ ] Añadir en la anamnesis (sección Clínica) un apartado "Infecciones" como lista: nombre/tipo, fecha de diagnóstico, fecha de remisión (opcional), notas.
+- [ ] Permitir añadir varias.
+- [ ] Mostrarlas en la ficha y, si procede, en el PDF de anamnesis/historial.
+
+**Archivos:** `src/lib/ficha-informacion-types.ts` (tipos de la sección clínica) + `src/components/paciente/paciente-ficha-informacion-tab.tsx` (UI).
+
+**Prioridad:** Media
+**Complejidad:** Baja-Media
+
+---
+
+## 62. Mostrar medicamentos / suplementos (y similares) en forma de tabla
+
+**Origen:** nutricionista (WhatsApp) — 1 jun 2026
+
+**Estado actual:** Medicamentos, suplementos, alergias, intolerancias y patologías son listas de texto (`string[]`) y se muestran como texto/lista simple (`renderLista`) en la ficha general del paciente.
+
+**Petición:** Que esos datos (medicamentos, suplementos…) se presenten en **formato tabla**, más legible y ordenado.
+
+**Input adicional (Alejandra, 2 jun 2026):** Para los **suplementos** del historial médico, en vez de texto libre, propone:
+1. Un **desplegable con opciones** de suplementos comunes (proteína whey, creatina, vitamina D, omega-3, magnesio…)
+2. Una **lista/catálogo propio del nutricionista** donde pueda dar de alta sus suplementos con **marca, dosis y posología**, y luego asignarlos al paciente desde el desplegable
+
+Esto refuerza la opción "estructurada" de esta tarea: pasar suplementos (y medicamentos) de `string[]` a objetos con campos.
+
+**Tareas:**
+- [ ] Mostrar medicamentos/suplementos (y quizá alergias, patologías, intolerancias) en una tabla en la ficha del paciente.
+- [ ] Valorar columnas útiles (nombre, dosis/posología, frecuencia, notas). Si se quiere dosis/frecuencia, implica pasar de `string[]` a objetos con campos; si no, basta una tabla de una columna bien formateada.
+- [ ] Mantener compatibilidad con los datos existentes (texto suelto).
+- [ ] **Catálogo de suplementos del nutricionista** (Alejandra) — CRUD en Ajustes o sección propia: nombre, marca, dosis, posología, notas. Modelo `Suplemento` (id, dietistaId, nombre, marca?, dosis?, posologia?, notas?)
+- [ ] **Desplegable en la ficha del paciente** (Alejandra) — al añadir un suplemento, autocompletar/seleccionar desde el catálogo propio + lista de suplementos comunes predefinidos; opción de texto libre como fallback
+- [ ] Relacionado con la tarea #65 (pautar suplementos en el plan): el mismo catálogo alimentaría la pauta de suplementación
+
+**Archivos:** `src/components/paciente/paciente-ficha-general-tab.tsx` (visualización) + modelo si se estructuran campos (dosis/frecuencia).
+
+**Prioridad:** Media-Baja (presentación)
+**Complejidad:** Baja (tabla simple) / Media (si se estructura con dosis y frecuencia)
+
+---
+
+## 63. Videollamada también con Zoom y otras plataformas (además de Google Meet)
+
+**Origen:** nutricionista (WhatsApp) — 1 jun 2026
+
+**Estado actual:** Las citas se pueden marcar como "online" (casilla al crear la cita en la Agenda) y, si el nutricionista tiene **Google conectado** (Ajustes → Integraciones), se genera automáticamente un enlace de **Google Meet** (`isOnline` + `googleMeetLink`). Solo Google Meet; no hay Zoom ni otras.
+
+**Petición:** Poder usar también **Zoom** u otras plataformas para las videollamadas, no solo Meet.
+
+**Tareas:**
+- [ ] Permitir elegir plataforma (Google Meet / Zoom / Teams / enlace manual).
+- [ ] Opción simple de partida: un campo **"enlace de videollamada" manual** en la cita (pegar el de Zoom/Teams) además del Meet automático.
+- [ ] Integración real con Zoom (API) como mejora mayor.
+
+**Archivos:** `agenda/nueva/page.tsx`, `cita-detalle-modal.tsx`, modelo de cita (campo enlace/plataforma).
+**Prioridad:** Media
+**Complejidad:** Baja (enlace manual) / Media-Alta (integración con Zoom API)
+
+---
+
+## 64. Calcular el keto ratio (ratio cetogénico) para dietas keto
+
+**Origen:** nutricionista (WhatsApp) — 1 jun 2026
+
+**Estado actual:** La pestaña Planificación calcula gasto, objetivo calórico y reparto de macros en gramos, pero **no** el ratio cetogénico.
+
+**Petición:** Para pacientes en dieta keto, mostrar el **keto ratio** = gramos de grasa : (gramos de proteína + gramos de carbohidratos). Ej. 4:1, 3:1, 2:1.
+
+**Tareas:**
+- [ ] Calcular a partir de los gramos ya disponibles: `ratio = grasa_g / (proteina_g + carbo_g)`.
+- [ ] Mostrarlo en la sección de macros de Planificación (siempre, o activable cuando la dieta sea keto).
+- [ ] Opcional: fijar un ratio objetivo (4:1, 3:1…) y que ajuste los macros para alcanzarlo.
+
+**Archivo:** `src/components/paciente/planificacion-por-defecto-tab.tsx`
+**Prioridad:** Media-Baja (nicho: pacientes keto)
+**Complejidad:** Baja (mostrar el ratio) / Media (ajustar macros a un ratio objetivo)
+
+---
+
+## 65. Pautar suplementos dentro del plan (antes/con/después de cada comida)
+
+**Origen:** Alejandra (WhatsApp) — 2 junio 2026
+
+**Estado actual:** El plan alimenticio solo contiene alimentos y recetas (`ComidaDelDia` → `AlimentoEnComida`). Los suplementos solo existen como lista de texto en el historial médico de la anamnesis. No hay forma de **pautar** la toma de suplementos dentro del plan, ni de indicar el momento de la toma.
+
+**Petición:** Poder incorporar al plan los suplementos a tomar, indicando el momento: **antes del desayuno, con el desayuno, después de la cena…** Que el paciente vea la pauta de suplementación integrada en su plan (portal + PDF).
+
+**Concepto:**
+1. El nutricionista pauta suplementos en el plan: qué suplemento, dosis, y momento de la toma (antes de / con / después de + tipo de comida, o en ayunas / antes de dormir)
+2. El paciente lo ve en su plan en el portal, junto a las comidas correspondientes
+3. Aparece también en el PDF del plan (sección de suplementación o integrado en cada comida)
+4. Se alimenta del catálogo de suplementos del nutricionista (ver tarea #62: marca, dosis, posología)
+
+**Tareas:**
+- [ ] Nuevo modelo `SuplementoEnPlan` (id, planId, suplementoId? o nombre libre, dosis, momento, tipoComida?, notas) — `momento`: ANTES / CON / DESPUES / AYUNAS / ANTES_DORMIR
+- [ ] UI en el editor de dietas: sección "Suplementación" del plan, o botón "Añadir suplemento" en cada comida
+- [ ] Selector desde el catálogo de suplementos del nutricionista (#62) + texto libre como fallback
+- [ ] Mostrar la pauta en el portal del paciente junto a cada comida ("Antes del desayuno: Omega-3, 1 cápsula")
+- [ ] Incluir en el PDF del plan: tabla de suplementación (toggle activable) o línea en cada comida
+- [ ] Considerar: check de cumplimiento en el seguimiento diario ("¿has tomado tus suplementos?")
+
+**Archivos a modificar:**
+- `prisma/schema.prisma` — nuevo modelo
+- `src/app/actions/planes.ts` — CRUD de suplementos del plan
+- `src/components/dieta/` — UI del editor
+- `src/lib/pdf/generate-plan-pdf.ts` — sección de suplementación
+- `src/app/paciente/portal/dieta/page.tsx` — vista del paciente
+
+**Relacionado con:** Tarea #62 (catálogo de suplementos con marca/dosis/posología)
+**Prioridad:** Media-Alta (flujo habitual en consulta — la suplementación es parte de la pauta y hoy hay que darla por fuera de la app)
+**Complejidad:** Media
+
+---
+
+## 66. Etiquetas de tipo de dieta en recetas (paleo, keto, FODMAP, vegana…) + filtro avanzado
+
+**Origen:** Alejandra (WhatsApp) — 2 junio 2026
+
+**Estado actual:** Las recetas tienen filtros avanzados (categoría, tiempo de preparación, macros, favoritas, propias vs globales) pero NO tienen etiquetas de tipo de dieta. No se puede filtrar el recetario por "apta para keto" o "baja en FODMAPs".
+
+**Petición:** En los filtros avanzados de recetas, poder seleccionar recetas que sirven para: **dieta paleo, keto, baja en FODMAPs, vegana, vegetariana, para celíacos (sin gluten)**, etc. Una receta puede encajar en varias dietas a la vez (multi-etiqueta).
+
+**Tareas:**
+- [ ] Definir el set de etiquetas: paleo, keto, baja en FODMAPs, vegana, vegetariana, sin gluten (celíacos), sin lactosa, mediterránea, antiinflamatoria… (alineado con los tipos de dieta de la generación IA, tarea #3)
+- [ ] Añadir campo `etiquetasDieta` (String[] o JSON) al modelo `Receta` — script SQL manual (recordar: el cliente Prisma local no se regenera para `recetas`, usar raw SQL como en migraciones anteriores)
+- [ ] UI en el formulario de receta: selector multi-etiqueta (chips)
+- [ ] Etiquetar las ~315 recetas globales existentes (semi-automatizable: analizar ingredientes con un script — sin carne ni pescado → vegetariana; sin gluten → celíacos; etc. — con revisión manual)
+- [ ] Filtro multi-etiqueta en los filtros avanzados de la lista de recetas y en el buscador del editor de dietas
+- [ ] Mostrar las etiquetas como badges en la tarjeta/detalle de la receta
+- [ ] Considerar: usar estas etiquetas en la generación IA (si el plan es keto, priorizar recetas etiquetadas keto)
+
+**Archivos a modificar:**
+- `scripts/` — migración SQL + script de etiquetado de recetas globales
+- `src/app/actions/recetas.ts` — guardar/filtrar etiquetas
+- `src/app/(dashboard)/recetas/` — UI de filtros y formulario
+- `src/components/dieta/selector-alimento.tsx` — filtro en el buscador del plan
+
+**Relacionado con:** Tarea #3 (combinar tipos de dieta en planes)
+**Prioridad:** Media-Alta (mejora directa de la utilidad del recetario global — más fácil encontrar recetas aptas para cada paciente)
+**Complejidad:** Media (el grueso es etiquetar bien las 315 recetas globales)
+
+---
+
+### Nota: MotivoClub (marca de suplementos) — posible colaboración B2B
+
+**Origen:** Juan, MotivoClub (+34 694 22 92 43, WhatsApp) — 2 junio 2026. Marca de suplementos premium certificados. Contactados por Instagram; preguntan "¿ves algún tipo de encaje con la app?".
+
+**Encajes naturales con lo ya planificado:**
+- **#62 (catálogo de suplementos)** — sus productos podrían venir precargados en el catálogo (nombre, marca, dosis, posología) para que los nutricionistas los asignen al paciente con un clic
+- **#65 (pautar suplementos en el plan)** — el nutricionista pautaría productos MotivoClub directamente en el plan, con el momento de toma
+- **#42 (almacén/ventas en clínica)** — clínicas que venden suplementación podrían tener MotivoClub como proveedor en el módulo de pedidos
+- Posible modelo: afiliación/comisión por recomendación, catálogo patrocinado, o descuento para usuarios de Annonia.
+
+**Modelo propuesto a Juan (Guillermo, 2 jun 2026):**
+1. **Afiliación** (vía rápida — MotivoClub ya trabaja con afiliación): catálogo de MotivoClub dentro de Annonia → el nutricionista asigna el suplemento en un clic en la pauta → el paciente compra con el código de afiliado del nutri (impreso en la pauta) o con su link de afiliado con el descuento ya incluido → **paciente: 10% de descuento; nutricionista: comisión por cada compra**
+2. **Venta en consulta**: MotivoClub como proveedor en el futuro módulo de stock/pedidos (#42) — pedido directo desde la app o contacto directo, según cómo trabajen la venta a clínicas
+
+**Implicación técnica para Annonia:** el catálogo de suplementos (#62) y la pauta de suplementos en el plan (#65) necesitarán soporte de afiliación: código de afiliado por nutricionista (por marca), link de afiliado por producto, y que el código/link aparezca en la pauta (PDF + portal del paciente).
+
+**Detalle operativo confirmado por Juan (audio, 3 jun 2026):**
+- Reunión: **semana que viene** (esta semana MotivoClub está fuera)
+- **Alta de afiliados individual**: cada nutri necesita su código específico → alta uno a uno. Datos a enviar a MotivoClub: **nombre, apellidos, email, teléfono**
+- Cada nutri afiliado tiene **portal propio de MotivoClub**: ve ventas, comisiones acumuladas, cobra, y tiene material de promoción
+- **Venta en clínica**: catálogo + contacto de MotivoClub dentro de Annonia, con condiciones especiales "por venir de Annonia". El trato con cada clínica (stock, volumen, urgencias de suministro, acuerdos) lo lleva **MotivoClub directamente**
+
+**Cómo enfocarlo en Annonia (decisión Guillermo, 3 jun 2026):**
+- **Opt-in, NO a todos**: sección tipo "Colaboradores / marcas partner" donde el nutri que quiera se apunta. No contactar a todos los nutris. (RGPD: pasar datos a un tercero exige consentimiento explícito → el opt-in es obligatorio, no opcional)
+- **PENDIENTE CLAVE — ¿qué gana Annonia?** Hoy el modelo solo beneficia a la marca (vende) y al nutri (comisión); Annonia aporta la red gratis. Hay que negociar una **comisión de plataforma (override)**: que MotivoClub pague a Annonia un % de cada venta generada por sus nutris, además del descuento al cliente (10%) y la comisión al nutri. Es el estándar de las redes de afiliación.
+- **Referencia de mercado**: modelo **Fullscript / Wellevate** (EE.UU.) — plataformas de dispensación de suplementos integradas en software de nutrición; el profesional recomienda y gana margen, la plataforma se lleva un override. Annonia puede ser "el Fullscript español" integrando varias marcas.
+- **No atarse a exclusividad** con MotivoClub: dejar la puerta a sumar más marcas = más valor para los nutris y más ingreso para Annonia.
+- A futuro: integración/API para no dar de alta a mano; que el form del nutri se envíe solo.
+
+---
+
+## 67. Especificar la patología concreta al elegir "Patología" como objetivo principal
+
+**Origen:** María (WhatsApp) — 2 junio 2026
+
+**Estado actual:** El objetivo del paciente es un enum fijo `ObjetivoPaciente` (`prisma/schema.prisma:122`): PERDER_PESO, GANAR_MASA, MANTENIMIENTO, PATOLOGIA, DEPORTIVO, OTRO. Existe `objetivoDetalle` (String?) como texto libre, y en la anamnesis (pestaña Información → "Objetivos clínicos") aparece un textarea de detalle al seleccionar una opción. Pero al elegir "Patología" como objetivo, **no hay un selector ni campo evidente para indicar cuál es la patología** (ej: resistencia a la insulina) — el detalle en texto libre no es visible/obvio en todos los puntos donde se elige el objetivo, y no hay lista de patologías comunes.
+
+**Petición:** María dice: "En objetivos principales / patología no hay opción de agregar la patología, por ejemplo resistencia a la insulina. Creo que ayudaría."
+
+**Tareas:**
+- [ ] Al seleccionar "Patología" como objetivo (alta/edición de paciente y donde se edite el objetivo): mostrar campo adicional "¿Qué patología?" de forma clara
+- [ ] Selector con patologías comunes en consulta de nutrición: resistencia a la insulina, diabetes tipo 2, SOP, hipotiroidismo, hipertensión, dislipemia, hiperuricemia, SIBO, celiaquía, hígado graso… + opción de texto libre
+- [ ] Guardar en `objetivoDetalle` (ya existe en el modelo) o en campo estructurado nuevo
+- [ ] Mostrar la patología junto al objetivo en la ficha, lista de pacientes y entregables ("Objetivo: Patología — Resistencia a la insulina")
+- [ ] Sincronizar/sugerir desde las patologías ya registradas en el historial médico de la anamnesis (si tiene "resistencia a la insulina" en patologías, ofrecerla al elegir objetivo Patología)
+- [ ] Revisar el mismo gap en el modal "Definir objetivo" del sidebar (relacionado con tarea #60)
+
+**Relacionado con:** Tarea #60 (modal definir objetivo) y #56 (recomendaciones predefinidas por patología — la patología estructurada permitiría sugerir la plantilla de recomendaciones automáticamente)
+**Prioridad:** Media-Alta (dato clínico central — el objetivo "Patología" sin especificar cuál es poco útil)
+**Complejidad:** Baja-Media
+
+---
+
+## 68. Duplicar receta de la app como receta propia editable
+
+**Origen:** nutricionista por WhatsApp (sin identificar) — 2 junio 2026
+
+**Estado actual (verificado en código):** Las recetas globales ("de la app") solo se pueden marcar como favoritas — **no se pueden editar ni duplicar**. En `/recetas/[id]` el botón Editar solo aparece si `!receta.esGlobal`. Si una nutricionista quiere su versión del "Gazpacho andaluz" con otros ingredientes, tiene que crear la receta desde cero.
+
+**Petición:** Quiere "poder modificarlo aquí directamente" al ver una receta de la app. Como las globales son compartidas, la solución natural es **duplicar**: botón "Crear mi versión" / "Duplicar y editar" que copie la receta global a su biblioteca como receta propia, ya editable.
+
+**Tareas:**
+- [ ] Botón "Duplicar y editar" en la ficha de recetas globales (junto al de favorito)
+- [ ] Server action `duplicarReceta`: copiar receta + ingredientes con `dietistaId` del nutricionista (raw SQL — recordar que el cliente Prisma local no conoce campos nuevos de `recetas`)
+- [ ] Tras duplicar, redirigir a `/recetas/[nuevoId]/editar`
+- [ ] Indicar en la copia su origen ("basada en Gazpacho andaluz") — opcional
+- [ ] Permitir duplicar también recetas propias (útil para variantes por paciente)
+
+**Relacionado con:** Tarea #22 (ajustar ingredientes de receta en el plan — cubre el caso "solo para este plan"; esta cubre "mi versión permanente")
+**Prioridad:** Media-Alta (desbloquea personalizar el catálogo global de 315 recetas sin trabajo duplicado)
+**Complejidad:** Baja-Media
+
+---
+
+## 69. Exclusiones automáticas por patología, alérgeno y tipo de cocinado ("Situaciones de Interés Nutricional")
+
+**Origen:** Ainara Martín (ainara_nutri, Instagram) — 2 junio 2026. Basado en el software que usa con su compañero: **Dietowin 11** (software de dietética de escritorio para Windows, clásico en consultas españolas). Vídeo demo oficial: https://www.youtube.com/watch?v=N5-4SQ0BN2I — capturas guardadas en el chat de Instagram. Dietowin es fuerte en lo clínico (exclusiones, objetivos, informes) pero anticuado (escritorio, sin web/portal del paciente) — referencia de competencia muy útil.
+
+**Estado actual:** El paciente tiene alergias/intolerancias/alimentos a evitar como texto, y la IA las tiene en cuenta en el prompt. Pero NO existe un sistema estructurado donde alimentos y recetas estén marcados como contraindicados para patologías concretas, ni exclusión automática al montar la pauta.
+
+**Petición (transcripción del audio):** "En la base de datos tengo metidas un montón de patologías. Dentro de todas las composiciones de alimentos y de todas las recetas son exclusiones. Si yo tengo un paciente diabético, todas las recetas que son dulces o con harinas procesadas las marco 'diabetes' y se eliminan automáticamente de la pauta que le voy a preparar. Lo mismo con cualquier patología: ácido úrico, Crohn, colitis… en función del tipo de cáncer, el efecto secundario que tengan. O si es vegano, todas las recetas y alimentos que no pueda comer van fuera. Así infinito — eso sí que lleva mucho curro."
+
+**Cómo funciona en su software (capturas):**
+- Cada alimento/receta tiene marcadas las **"Situaciones de Interés Nutricional"** en las que se excluye
+- Al asignar la(s) patología(s) al paciente, el catálogo disponible para su pauta se filtra automáticamente
+- Leyenda visual: "En uso / Excluido / **Excluido por referencia**" (si un ingrediente está excluido, las recetas que lo contienen quedan excluidas en cascada)
+- **Niveles de exclusión** (pantalla "Condiciones Dieta"): por FAMILIA de alimentos, por ALÉRGENO, por INGREDIENTE, por TIPOLOGÍA de cocinado, por RECETA concreta, por NUTRIENTE
+- **Alérgenos** (los 14 UE): altramuces, apio, cacahuete, crustáceos, frutos secos, gluten, huevo, lácteo, legumbre(*), moluscos, mostaza, nueces, pescado, sésamo, soja, sulfitos
+- **Tipologías de cocinado** excluibles: asado, brasa, rebozado, fritos, gratinado, guisado, hervidos, horno, parrilla, plancha, vapor, vegetariano, "no niños", japonés, curry, disociada, féculas, lácteo…
+- **Catálogo de patologías de referencia** (~50): acné seborreico, aerofagia/gastropatía, alcoholismo, anemias (ferropénica, por carencia de B12/ácido fólico/cobre), aterosclerosis, cardiopatías, cefaleas, celiaquía, cetosis acetonémica, cistitis-uretritis, colecistitis/insuficiencia biliar, colelitiasis, colitis ulcerosa, colon irritable, diabetes mellitus I y II, diarrea intestinal, dislipemias (IIA, IIB, IV), divertículos esofágicos, diverticulosis, embarazo, enteritis, esofagitis por reflujo, estreñimiento, FODMAPs, gastropatía por reflujo biliar, hemorroides, hepatopatía crónica, hernia de hiato, hipertensión arterial, hipertiroidismo, hiperuricemia-gota, hipoparatiroidismo, hipopotasemia, hipotensión, hipotiroidismo, insuficiencia renal (sobrepeso / diálisis), intolerancias (glucosa, leche, gluten), lactancia materna…
+- **Todo ampliable por cada nutricionista** (puede crear sus propias situaciones y marcar sus exclusiones)
+
+**Extra (restauración colectiva):** "Carta de alérgenos y las recetas que los contengan — importante para nutris que trabajan en restauración colectiva." → Poder generar la carta de alérgenos a partir de las recetas.
+
+**Tareas:**
+- [ ] Modelo de "situación nutricional" (patología/condición): catálogo global predefinido (~50 de referencia) + personalizadas por dietista
+- [ ] Marcar alimentos y recetas con las situaciones en las que se excluyen (relación many-to-many)
+- [ ] Marcado de alérgenos (14 UE) por alimento; herencia automática a recetas vía ingredientes ("excluido por referencia")
+- [ ] Asignar situaciones al paciente (desde patologías de la anamnesis, relacionado con #67)
+- [ ] Al montar la pauta (manual, IA o algorítmica #49): filtrar/avisar de alimentos y recetas excluidos para ese paciente
+- [ ] Exclusión por tipología de cocinado (fritos, rebozados…) y por familia de alimentos
+- [ ] Carta de alérgenos imprimible a partir de recetas (restauración colectiva)
+- [ ] Empezar simple: etiquetar las 315 recetas globales con las exclusiones más comunes (diabetes, hiperuricemia, celiaquía, FODMAP, vegano…) — solapa con el etiquetado de la tarea #66
+
+**Relacionado con:** #66 (etiquetas de dieta en recetas), #67 (patología del paciente), #56 (recomendaciones por patología), #49 (generación algorítmica), #44 (calidad de la IA)
+**Prioridad:** Alta (diferenciador clínico potente — es EL sistema que hace útil su software de escritorio; "eso sí que lleva mucho curro" pero el valor es enorme)
+**Complejidad:** Alta (modelo + etiquetado masivo + integración en todos los flujos de creación de pauta)
+
+---
+
+## 70. Plan de objetivos con proyección temporal (peso/grasa objetivo + evolución estimada)
+
+**Origen:** Ainara Martín (ainara_nutri, Instagram) — 2 junio 2026 (captura de su software)
+
+**Estado actual:** Existe el objetivo del paciente (enum + texto), objetivos numéricos sueltos en el sidebar (tarea #60, con bugs de labels), y la pestaña Planificación calcula gasto y macros. Pero NO hay un "plan de objetivos" integrado que proyecte la evolución en el tiempo.
+
+**Petición:** "Tengo una pestaña de objetivos: si la persona me dice que quiere bajar 5 kilos en 5 meses, yo le marco objetivo de reducir tanto peso y tanta grasa, con su metabolismo basal y los METs de consumo deportivo, y me calcula la restricción que debería hacerle."
+
+**Cómo lo hace su software (captura "Plan de Objetivos"):**
+- **Objetivo de peso** sobre una barra visual con rangos clasificados (bajo peso / normopeso / sobrepeso I / II / obesidad I…) — se ve dónde está y a dónde va
+- **Objetivo de % masa grasa** con la misma barra (bajo / saludable / alto / obesidad)
+- **Estado actual vs objetivo, lado a lado**: peso, masa grasa (kg y %), masa libre de grasa, agua corporal total, estado por IMC, estado por %MG, y **metabolismo basal actual vs MB en el objetivo** (ej: 1.736 → 1.478 kcal)
+- **Plan**: pérdida por semana configurable (ej: 800 g/semana) + número de semanas → **evolución estimada semana a semana** (85,2 → 84,4 → 83,6 → 82,8 kg)
+- Con eso **calcula la restricción calórica** que hay que aplicar (integrando MB + METs de la actividad deportiva)
+
+**Tareas:**
+- [ ] Vista "Plan de objetivos" en la ficha del paciente (o dentro de Planificación): peso objetivo + % grasa objetivo con clasificación visual por rangos
+- [ ] Comparativa estado actual vs objetivo (usar las medidas ya registradas: peso, % grasa, masa muscular, agua…)
+- [ ] Configurar ritmo (g/semana o kg/mes) y/o fecha objetivo → calcular el otro automáticamente
+- [ ] Tabla/gráfica de evolución estimada semana a semana, superpuesta con la evolución REAL de las mediciones (objetivo vs realidad)
+- [ ] Calcular la restricción calórica derivada (kcal/día) y ofrecer "Aplicar a Planificación" (enlaza con tarea #9)
+- [ ] Recalcular el MB estimado en el peso objetivo
+- [ ] Aviso si el ritmo configurado es poco saludable (>1% peso/semana, por ejemplo)
+
+**Relacionado con:** #9 (aplicar macros al plan), #60 (objetivos del sidebar), #67 (patología/objetivo), #29 (composición corporal)
+**Prioridad:** Alta (cierra el círculo: objetivo → cálculo → pauta → seguimiento; muy visual para motivar al paciente)
+**Complejidad:** Media
+
+---
+
+## 71. Módulo de farmacología: interacciones fármaco-alimento en la pauta
+
+**Origen:** Ainara Martín (ainara_nutri, Instagram) — 2 junio 2026
+
+**Estado actual:** Los medicamentos del paciente se registran como lista de texto en la anamnesis (`string[]`, ver tarea #62). No hay base de datos de fármacos ni detección de interacciones con alimentos.
+
+**Petición (transcripción del audio):** "Otro módulo que yo metería, que yo estoy en ello: un modo de farmacología. Metería todos los medicamentos que haya con las posibles interacciones que puedan tener, sobre todo a nivel nutricional. Por ejemplo, casi todas las medicaciones interaccionan con el pomelo. Como se van a marcar en el listado de medicación, yo lo que estoy haciendo es configurar la IA para que me detecte los fármacos que yo escribo, y así si hay alguna posible interacción dentro de la pauta me la marque con un color más llamativo."
+
+**Concepto:**
+1. Base de datos de fármacos comunes con sus interacciones alimento-fármaco relevantes (pomelo, vitamina K/anticoagulantes, lácteos/tetraciclinas, tiramina/IMAOs, alcohol, regaliz, hipérico…)
+2. Al registrar la medicación del paciente (idealmente estructurada, tarea #62), detectar los fármacos (texto libre → IA/matching)
+3. Al montar o revisar la pauta: si un alimento del plan interacciona con su medicación → **resaltado visual llamativo** + explicación de la interacción
+4. Aviso también en la generación con IA (pasar las interacciones como restricción al prompt)
+
+**Tareas:**
+- [ ] Investigar fuente de datos de interacciones fármaco-nutriente (AEMPS/CIMA, bases públicas, bibliografía) — calidad clínica crítica
+- [ ] Modelo `Farmaco` (nombre, principio activo, interacciones: alimento/grupo + severidad + descripción)
+- [ ] Matching de la medicación del paciente (texto libre) contra la BD de fármacos — IA o fuzzy matching
+- [ ] Resaltar en el editor del plan los alimentos con interacción para ese paciente (color llamativo + tooltip explicativo)
+- [ ] Incluir aviso en el PDF/portal (opcional, configurable)
+- [ ] Integrar como restricción en la generación IA y algorítmica
+- [ ] Disclaimer clínico: es una ayuda, no sustituye la revisión profesional
+
+**Relacionado con:** #62 (medicación estructurada), #69 (exclusiones), #25 (disclaimer IA)
+**Prioridad:** Media-Alta (seguridad clínica + diferenciador fuerte; Ainara lo está montando por su cuenta — demanda real)
+**Complejidad:** Alta (el reto es la calidad de la base de datos de interacciones)
+
+---
+
+### Nota: estrategia de pricing modular + posible expansión a fisioterapia (Ainara, 2 jun 2026)
+
+**Pricing por módulos ("mentalidad tiburón"):** Ainara recomienda NO sacar todas las funcionalidades con la misma tarifa. Sobre los dos planes que vio (básico y profesional), metería **módulos de pago**: por ejemplo, una versión reducida del módulo digestivo incluida, y los nutricionistas clínicos que quieran ampliarla pagan la extensión. Lo mismo con farmacología (#71) o deportiva. Criterio: que sean de pago "las cosas que más curro llevan a nivel de programación". → Decisión de negocio para Guillermo; encaja con las futuras #69/#70/#71 como candidatos a módulos premium.
+
+**Fisioterapia como segundo mercado:** Su compañero es fisioterapeuta. Las bases de datos/software de fisioterapia son "supercomplicadas para gente a la que no le gusta la informática" (a él le hizo un Excel simple para historiales médicos). Sugiere que a futuro se podría hacer un módulo de consulta u otro programa extrapolando Annonia a fisioterapia. → Idea de expansión a largo plazo; el sistema de fichas/anamnesis/citas/pagos ya cubriría gran parte.
+
+**Vídeo de referencia del software que usan:** https://www.youtube.com/watch?v=N5-4SQ0BN2I — demo oficial de **Dietowin 11.0**, el programa de las capturas (exclusiones, objetivos, asistente de dieta, informes). Analizar Dietowin como referencia de competencia clínica.
+
+---
+
+### Nota: entrenutris (influencers de nutrición, Instagram) — lead + caso de uso club deportivo
+
+**Origen:** entrenutris (Instagram, parecen argentinos) — 2 junio 2026. Influencers de nutrición contactados por Guillermo. Interesados pero con la agenda liada: la nutri del equipo que iba a probar la app está de viaje y vuelve a **mitad de junio** (agendado para entonces — hacer seguimiento si no contactan).
+
+**Caso de uso que plantean:** uno de ellos trabaja en un **club deportivo** y quiere probar si la app "funciona bien en grupos, en equipos y demás". → Uso de Annonia para **equipos deportivos**: gestionar muchos deportistas a la vez, posiblemente con planes compartidos por grupo, vista de equipo, etc. Aún sin petición concreta — recoger qué echan en falta cuando lo prueben. Relacionado con #39 (cuenta profesor: asignación a grupos) por la mecánica de grupos.
+
+---
+
+## 72. Link a receta de Instagram/TikTok en las recetas
+
+**Origen:** nutredesdeelalma (Instagram) — 2 junio 2026
+
+**Estado actual:** Las recetas tienen nombre, ingredientes, instrucciones, macros y tiempo de preparación. No hay campo para enlazar a una receta publicada en redes sociales.
+
+**Petición:** Opción de añadir un link en la receta, para quien tenga Instagram o TikTok y suba recetas allí — poder enlazar el vídeo/post de la receta desde la ficha de la receta en Annonia.
+
+**Tareas:**
+- [ ] Añadir campo `enlaceExterno` (String?, URL) al modelo `Receta` — script SQL manual (el cliente Prisma local no se regenera para `recetas`, usar raw SQL)
+- [ ] Validar que sea una URL (idealmente reconocer Instagram/TikTok/YouTube y mostrar icono)
+- [ ] UI en el formulario de receta: campo "Enlace a la receta (Instagram, TikTok, YouTube...)"
+- [ ] Mostrar el enlace como botón/icono en la ficha de la receta y, si aplica, en el portal del paciente y el PDF
+- [ ] Considerar embed/preview del vídeo en la ficha (opcional)
+
+**Relacionado con:** #38 (foto del plato en recetas — también lo pide esta misma nutri)
+**Prioridad:** Media
+**Complejidad:** Baja
+
+---
+
+## 73. Enriquecer el catálogo de recetas globales (más recetas + pasos completos + fotos)
+
+**Origen:** nutricionista (WhatsApp) — 3 junio 2026
+
+**Estado actual (verificado en código, 3 jun 2026):**
+- **Recetas globales: SÍ existen, son 316** precargadas (`scripts/data/recetas-seed.ts` + `scripts/seed-recetas-app.ts`). Lo de "que las recetas vengan al entrar, como los alimentos" YA ESTÁ.
+- **Pasos de elaboración: casi ninguna los trae** — en el seed el campo `instrucciones` está prácticamente vacío (solo nombre, ingredientes, porciones y tiempo) → las recetas se ven simples y sin preparación.
+- **Fotos: solo en alimentos, NO en recetas.** El modelo `Alimento` tiene `imagenUrl`; el modelo `Receta` NO tiene ningún campo de imagen → poner foto a las recetas es la tarea #38 (aún pendiente).
+
+**Petición:** "Faltan alimentos y recetas; las recetas que hay son muy simples y quizás no tienen todos los pasos. Las fotografías de cada receta ayudan a que los menús sean mucho más agradables." (Reconoce que es normal por estar empezando.)
+
+**Tareas:**
+- [ ] **Pasos de elaboración completos** — Rellenar el campo `instrucciones` de las recetas globales con la preparación paso a paso (hoy está casi siempre vacío). Revisar/enriquecer las recetas seed existentes
+- [ ] **Más recetas** — Ampliar el catálogo global (y seguir sumando alimentos a la base)
+- [ ] **Foto por receta** — Ver tarea #38 (foto del plato en recetas): clave para que los menús/PDF sean más atractivos y mejoren la adherencia
+- [ ] Considerar generar/completar instrucciones de las recetas existentes con IA y revisión manual
+
+**Relacionado con:** #38 (foto del plato), #66 (etiquetas de dieta en recetas), #44 (faltan alimentos para la IA)
+**Prioridad:** Media-Alta (calidad del contenido — afecta a la percepción de la app y a la utilidad del recetario)
+**Complejidad:** Media (el grueso es el trabajo de contenido: escribir pasos y añadir fotos a cientos de recetas)
+
+---
+
+## 74. Notificaciones de cita que lleguen de verdad al paciente (email automático + botón WhatsApp)
+
+**Origen:** Noelia (noelia_kreasalud, Instagram) — 4 junio 2026
+
+**Estado actual (verificado en código):** La "notificación al paciente" de una cita es **solo in-app**: crea un registro en la tabla `notificacion` que el paciente ve como badge/aviso DENTRO de su portal cuando entra (`notificaciones-paciente.ts`). **No se envía nada externo** al móvil del paciente: ni email, ni SMS, ni WhatsApp, ni push. Por eso Noelia probó "notificar al paciente" para una cita de prueba y no le llegó nada al teléfono. No es un bug de envío fallido — es que esa notificación nunca sale de la app.
+
+**Petición:** Que cuando se notifica/recuerda una cita, al paciente le llegue de verdad (no solo dentro del portal).
+
+**Solución (dos vías, ambas sin coste):**
+- [ ] **Email automático de cita** — Enviar email al paciente al crear/confirmar/recordar una cita, reutilizando el mailer existente (gratis, ya montado). Plantilla con fecha, hora, modalidad y, si es online, el enlace. Es la opción "automática".
+- [ ] **Botón "Avisar por WhatsApp"** — Botón que abra el WhatsApp del propio nutricionista (`https://wa.me/<telefono>?text=<mensaje>`) con el recordatorio ya escrito al paciente, y el nutri solo le da a enviar. Coste cero, sin API ni plantillas de Meta. Mismo patrón que ya se usa con el teléfono de los solicitantes de ofertas (copy/WhatsApp de un clic, commit 1a6cd8c).
+
+**Descartado por coste/complejidad (de momento):**
+- SMS: de pago (proveedor tipo Twilio, ~0,05-0,08 €/SMS)
+- WhatsApp Business API oficial: de pago + registro y aprobación de plantillas por Meta
+
+**Archivos probables:** `src/app/actions/citas-flujo.ts` / `citas.ts` (disparar email al notificar), `src/app/actions/email.ts` + `src/lib/mailer.ts` (plantilla de cita), UI de la cita en la agenda (botón WhatsApp).
+**Prioridad:** Alta (un recordatorio que no llega al paciente no sirve; es funcionalidad básica esperada y reduce ausencias a consulta)
+**Complejidad:** Baja (email) / Baja (botón WhatsApp con wa.me)
