@@ -117,5 +117,31 @@
     "liderazgoCuerpo": "{anteriorLiderNombre} transferiu-lhe a liderança de {empresaNombre}. Agora pode gerir membros e solicitações.",
     "liderazgoBoton": "Gerir empresa",
     "footer": "Este email é uma notificação automática de Annonia."
+  },
+  "cita": {
+    "subjectConfirmada": "Consulta confirmada com {dietistaNombre} — {fecha}",
+    "subjectPropuesta": "{dietistaNombre} propõe uma consulta — {fecha}",
+    "subjectNuevaPropuesta": "{dietistaNombre} propõe outra data — {fecha}",
+    "subjectRecordatorio": "Lembrete da sua consulta com {dietistaNombre} — {fecha}",
+    "titulo": "A sua consulta",
+    "saludo": "Olá {pacienteNombre},",
+    "introConfirmada": "A sua consulta com {dietistaNombre} está confirmada:",
+    "introPropuesta": "{dietistaNombre} propõe-lhe uma consulta:",
+    "introNuevaPropuesta": "{dietistaNombre} propõe-lhe uma nova data para a sua consulta:",
+    "introRecordatorio": "Lembramos a sua próxima consulta com {dietistaNombre}:",
+    "fechaLabel": "Data e hora",
+    "duracionLabel": "Duração",
+    "duracionValor": "{min} min",
+    "modalidadLabel": "Modalidade",
+    "modalidadOnline": "Online (videochamada)",
+    "modalidadPresencial": "Presencial",
+    "motivoLabel": "Motivo",
+    "enlaceVideollamada": "Entrar na videochamada",
+    "avisoPropuesta": "Aceda ao seu portal para aceitar a consulta, propor outra data ou recusá-la.",
+    "boton": "Ver as minhas consultas",
+    "footer": "Enviado pela Annonia",
+    "footerResponder": "Precisa de alterar algo? Responda a este email e falará diretamente com o seu nutricionista.",
+    "whatsapp": "Olá {pacienteNombre}, lembro-lhe a sua consulta com {dietistaNombre}: {fecha}.",
+    "whatsappEnlace": "Link para a videochamada: {enlace}"
   }
 }

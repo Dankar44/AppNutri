@@ -1,15 +1,15 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  X, Clock, User, Check, Calendar, CalendarClock, Trash2, Loader2, ExternalLink, Video,
+  X, Clock, User, Check, Calendar, CalendarClock, Trash2, Loader2, ExternalLink, Video, Mail, MessageCircle,
 } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { intlTag, type Locale } from "@/i18n/config";
 import { toast } from "sonner";
-import { actualizarEstadoCita, eliminarCita } from "@/app/actions/citas";
+import { actualizarEstadoCita, eliminarCita, notificarCitaPorEmail, getInfoAvisoCita } from "@/app/actions/citas";
 import {
   aceptarSolicitudCita,
   rechazarSolicitudCita,
@@ -80,6 +80,39 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
   const blockIfDemo = useDemoGuard();
   const [showContraponer, setShowContraponer] = useState(false);
   const [confirmEliminar, setConfirmEliminar] = useState(false);
+  const [info, setInfo] = useState<{
+    tieneEmail: boolean;
+    telefono: string | null;
+    mensajeWhatsApp: string | null;
+  } | null>(null);
+  const [enviandoEmail, setEnviandoEmail] = useState(false);
+
+  // Carga los datos de contacto del paciente para los botones de aviso
+  // (email/WhatsApp) sin tener que propagarlos por las queries de la agenda.
+  useEffect(() => {
+    let activo = true;
+    getInfoAvisoCita(cita.id)
+      .then((r) => { if (activo) setInfo(r); })
+      .catch(() => { /* sin datos de contacto: no se muestran los botones */ });
+    return () => { activo = false; };
+  }, [cita.id]);
+
+  function notificarEmail() {
+    if (blockIfDemo()) return;
+    setEnviandoEmail(true);
+    notificarCitaPorEmail(cita.id)
+      .then((r) => {
+        if (r.ok) toast.success(t("citaDetalleModal.toastEmailSent"));
+        else toast.error(r.error || t("citaDetalleModal.error"));
+      })
+      .catch(() => toast.error(t("citaDetalleModal.error")))
+      .finally(() => setEnviandoEmail(false));
+  }
+
+  const waHref =
+    info?.telefono && info.mensajeWhatsApp
+      ? `https://wa.me/${info.telefono.replace(/[^\d]/g, "")}?text=${encodeURIComponent(info.mensajeWhatsApp)}`
+      : null;
 
   const horaFin = new Date(
     new Date(cita.fechaHora).getTime() + cita.duracion * 60000,
@@ -317,6 +350,34 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
                 </button>
               </div>
             ) : null}
+
+            {/* Avisar al paciente (email automático / WhatsApp manual) */}
+            {(info?.tieneEmail || waHref) && (
+              <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-border">
+                {info?.tieneEmail && (
+                  <button
+                    type="button"
+                    onClick={notificarEmail}
+                    disabled={enviandoEmail}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs font-medium hover:bg-muted disabled:opacity-60 transition-colors"
+                  >
+                    {enviandoEmail ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+                    {t("citaDetalleModal.notifyByEmail")}
+                  </button>
+                )}
+                {waHref && (
+                  <a
+                    href={waHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-green-300 dark:border-green-500/40 text-green-700 dark:text-green-400 text-xs font-medium hover:bg-green-50 dark:hover:bg-green-500/15 transition-colors"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    {t("citaDetalleModal.notifyByWhatsApp")}
+                  </a>
+                )}
+              </div>
+            )}
 
             {/* Acciones auxiliares */}
             <div className="flex items-center justify-between pt-2 border-t border-border">

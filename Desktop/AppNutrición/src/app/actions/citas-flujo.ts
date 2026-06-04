@@ -6,6 +6,7 @@ import { getCurrentPaciente } from "@/lib/patient-auth";
 import { revalidatePath } from "next/cache";
 import { fromMadrid, toMadridTimeStr, toMadridDateStr } from "@/lib/tz";
 import { syncCitaAmbos, unsyncCitaAntesDeBorrar } from "@/lib/google-sync";
+import { enviarEmailCita } from "@/lib/email-citas";
 import { getTranslations } from "next-intl/server";
 
 // ─── Tipos auxiliares ─────────────────────────────────────────────
@@ -804,6 +805,7 @@ export async function aceptarContrapropuestaDietista(citaId: string): Promise<vo
     },
   });
 
+  void enviarEmailCita(citaId);
   void syncCitaAmbos(citaId);
   revalidatePath("/agenda");
   revalidatePath("/paciente/portal/citas");
@@ -885,6 +887,7 @@ export async function aceptarSolicitudCita(citaId: string): Promise<void> {
     },
   });
 
+  void enviarEmailCita(citaId);
   void syncCitaAmbos(citaId);
   revalidatePath("/agenda");
   revalidatePath("/paciente/portal/citas");
@@ -982,6 +985,7 @@ export async function contraproponerCita(
     },
   });
 
+  void enviarEmailCita(contrapropuesta.id);
   void syncCitaAmbos(contrapropuesta.id);
   revalidatePath("/agenda");
   revalidatePath("/paciente/portal/citas");

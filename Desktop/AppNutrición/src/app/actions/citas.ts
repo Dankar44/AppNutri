@@ -11,6 +11,7 @@ import {
   LIMITS,
 } from "@/lib/validation";
 import { syncCitaAmbos, unsyncCitaAntesDeBorrar } from "@/lib/google-sync";
+import { enviarEmailCita, construirMensajeWhatsAppCita } from "@/lib/email-citas";
 import { getTranslations } from "next-intl/server";
 
 export interface CitaFormData {
@@ -65,6 +66,10 @@ export async function crearCita(data: CitaFormData) {
 
   // Sincronizar con Google Calendar (fire-and-forget)
   void syncCitaAmbos(cita.id);
+
+  // Avisar al paciente por email (fire-and-forget). enviarEmailCita adapta el
+  // texto al estado: "te propone una cita" (proponer) o "cita confirmada" (directa).
+  void enviarEmailCita(cita.id);
 
   // Si es una propuesta al paciente, notificar
   if (modo === "proponer") {
@@ -294,6 +299,60 @@ export async function getPacienteContextoCita(pacienteId: string) {
   ]);
 
   return { paciente, proximaCita, ultimaCita, planActivo, ultimaMedida };
+}
+
+/**
+ * Reenvía al paciente el email de su cita (botón "Notificar por email" en la agenda).
+ * force: true se salta el debounce para permitir recordatorios manuales.
+ */
+export async function notificarCitaPorEmail(
+  citaId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
+  if (dietista.isDemo) return { ok: true };
+
+  const cita = await prisma.cita.findFirst({
+    where: { id: citaId, dietistaId: dietista.id },
+    select: { id: true, paciente: { select: { email: true } } },
+  });
+  if (!cita) return { ok: false, error: t("cita.citaNoEncontrada") };
+  if (!cita.paciente.email) return { ok: false, error: t("paciente.sinEmailRegistrado") };
+
+  const res = await enviarEmailCita(citaId, { force: true });
+  if (!res.ok) return { ok: false, error: t("general.errorDesconocido") };
+  return { ok: true };
+}
+
+/**
+ * Datos de contacto del paciente para los avisos de cita desde la agenda:
+ * si tiene email (para el botón de email) y su teléfono + mensaje ya redactado
+ * (para el botón de WhatsApp). Verifica que la cita pertenece al nutri actual.
+ */
+export async function getInfoAvisoCita(citaId: string): Promise<{
+  tieneEmail: boolean;
+  telefono: string | null;
+  mensajeWhatsApp: string | null;
+}> {
+  const vacio = { tieneEmail: false, telefono: null, mensajeWhatsApp: null };
+  const dietista = await getCurrentDietista();
+  if (!dietista) return vacio;
+
+  const cita = await prisma.cita.findFirst({
+    where: { id: citaId, dietistaId: dietista.id },
+    select: { id: true, paciente: { select: { email: true, telefono: true } } },
+  });
+  if (!cita) return vacio;
+
+  const mensajeWhatsApp = cita.paciente.telefono
+    ? await construirMensajeWhatsAppCita(citaId)
+    : null;
+  return {
+    tieneEmail: !!cita.paciente.email,
+    telefono: cita.paciente.telefono ?? null,
+    mensajeWhatsApp,
+  };
 }
 
 async function formatFechaHoraIntl(d: Date): Promise<string> {

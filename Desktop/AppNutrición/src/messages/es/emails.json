@@ -117,5 +117,31 @@
     "pinLabel": "PIN",
     "avisoPin": "Por seguridad, puedes cambiar tu PIN cuando entres a tu portal.",
     "footer": "Enviado desde Annonia"
+  },
+  "cita": {
+    "subjectConfirmada": "Cita confirmada con {dietistaNombre} — {fecha}",
+    "subjectPropuesta": "{dietistaNombre} te propone una cita — {fecha}",
+    "subjectNuevaPropuesta": "{dietistaNombre} te propone otra fecha — {fecha}",
+    "subjectRecordatorio": "Recordatorio de tu cita con {dietistaNombre} — {fecha}",
+    "titulo": "Tu cita",
+    "saludo": "Hola {pacienteNombre},",
+    "introConfirmada": "Tu cita con {dietistaNombre} está confirmada:",
+    "introPropuesta": "{dietistaNombre} te propone una cita:",
+    "introNuevaPropuesta": "{dietistaNombre} te propone una nueva fecha para tu cita:",
+    "introRecordatorio": "Te recordamos tu próxima cita con {dietistaNombre}:",
+    "fechaLabel": "Fecha y hora",
+    "duracionLabel": "Duración",
+    "duracionValor": "{min} min",
+    "modalidadLabel": "Modalidad",
+    "modalidadOnline": "Online (videollamada)",
+    "modalidadPresencial": "Presencial",
+    "motivoLabel": "Motivo",
+    "enlaceVideollamada": "Entrar a la videollamada",
+    "avisoPropuesta": "Entra en tu portal para aceptar la cita, proponer otra fecha o rechazarla.",
+    "boton": "Ver mis citas",
+    "footer": "Enviado desde Annonia",
+    "footerResponder": "¿Necesitas cambiar algo? Responde a este correo y hablarás directamente con tu nutricionista.",
+    "whatsapp": "Hola {pacienteNombre}, te recuerdo tu cita con {dietistaNombre}: {fecha}.",
+    "whatsappEnlace": "Enlace para la videollamada: {enlace}"
   }
 }
