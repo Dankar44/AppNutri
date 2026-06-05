@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { actualizarPerfil, type PerfilFormData } from "@/app/actions/perfil";
 import { isNextNavigation, withTimeout } from "@/lib/utils";
 import { useDemoGuard } from "@/contexts/demo-context";
+import { TelefonoInput } from "@/components/telefono-input";
 
 interface Props {
   defaultValues: PerfilFormData;
@@ -17,6 +18,7 @@ export function PerfilForm({ defaultValues }: Props) {
   const router = useRouter();
   const blockIfDemo = useDemoGuard();
   const [loading, setLoading] = useState(false);
+  const [telefono, setTelefono] = useState(defaultValues.telefono || "");
   const formRef = useRef<HTMLFormElement>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -61,8 +63,12 @@ export function PerfilForm({ defaultValues }: Props) {
       </div>
       <div>
         <label className="block text-sm font-medium mb-1">{t("perfilForm.telefonoLabel")}</label>
-        <input name="telefono" maxLength={20} defaultValue={defaultValues.telefono || ""}
-          className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm" />
+        <TelefonoInput
+          value={telefono}
+          onChange={setTelefono}
+          inputClassName="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
+        />
+        <input type="hidden" name="telefono" value={telefono} />
       </div>
       <div>
         <label className="block text-sm font-medium mb-1">{t("perfilForm.especialidadLabel")}</label>

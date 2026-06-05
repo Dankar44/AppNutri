@@ -82,11 +82,11 @@ export function validateEmail(value: unknown): string | null {
 
 // --- Validación de teléfono ---
 
-const PHONE_REGEX = /^[+]?[\d\s()-]{6,20}$/;
+const PHONE_REGEX = /^[+]?[\d\s()-]{6,25}$/;
 
 export function validatePhone(value: unknown): string | null {
   if (typeof value !== "string" || !value.trim()) return null;
-  const trimmed = value.trim().slice(0, 20);
+  const trimmed = value.trim().slice(0, 25);
   return PHONE_REGEX.test(trimmed) ? trimmed : null;
 }
 
