@@ -19,7 +19,7 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  const publicSpanishRoutes = ["/demo", "/landing", "/precios", "/legal", "/colaboradores"];
+  const publicSpanishRoutes = ["/demo", "/landing", "/precios", "/legal", "/colaboradores", "/faq", "/software-para-nutricionistas-gratis"];
   const isPublicRoute = publicSpanishRoutes.some(
     (r) => pathname === r || pathname.startsWith(r + "/"),
   );
@@ -52,6 +52,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|api/health|api/locale|api/version|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|llms.txt|manifest.webmanifest|api/health|api/locale|api/version|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

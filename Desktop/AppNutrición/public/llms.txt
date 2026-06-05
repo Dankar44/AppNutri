@@ -1,0 +1,22 @@
+# Annonia
+
+> Annonia es un software de gestión para nutricionistas y dietistas, gratuito durante su fase de lanzamiento en España. Permite gestionar pacientes, crear planes nutricionales personalizados con ayuda de inteligencia artificial, hacer seguimiento antropométrico, generar recetas y ofrecer un portal al paciente, todo desde el navegador y sin instalar nada.
+
+## Qué es
+- Plataforma web para dietistas-nutricionistas: consulta privada, clínicas y docencia universitaria.
+- Gratuita en su fase de lanzamiento en España. Funciona en el navegador (web app), sin instalación.
+- Funciones principales: gestión de pacientes, planes y dietas personalizadas con IA, seguimiento de medidas y evolución, recetas, agenda y citas, portal del paciente y generación de PDF.
+
+## Páginas principales
+- Inicio: https://annonia.com/landing
+- Software para nutricionistas (gratis): https://annonia.com/software-para-nutricionistas-gratis
+- Preguntas frecuentes: https://annonia.com/faq
+- Precios: https://annonia.com/precios
+- Demo (sin registro): https://annonia.com/demo
+- Crear cuenta gratis: https://annonia.com/registro
+
+## Datos clave
+- Precio: gratis durante la fase de lanzamiento en España.
+- Dirigido a: nutricionistas, dietistas, clínicas de nutrición y entornos docentes (universidades).
+- Privacidad: servidores en la Unión Europea y cumplimiento del RGPD.
+- Sitio web: https://annonia.com

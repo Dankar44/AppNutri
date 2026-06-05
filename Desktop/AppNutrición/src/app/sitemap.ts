@@ -11,10 +11,28 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1.0,
     },
     {
+      url: `${BASE}/software-para-nutricionistas-gratis`,
+      lastModified: new Date("2026-06-05"),
+      changeFrequency: "monthly",
+      priority: 0.9,
+    },
+    {
+      url: `${BASE}/faq`,
+      lastModified: new Date("2026-06-05"),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
       url: `${BASE}/precios`,
       lastModified: new Date("2026-04-27"),
       changeFrequency: "monthly",
       priority: 0.9,
+    },
+    {
+      url: `${BASE}/colaboradores`,
+      lastModified: new Date("2026-06-05"),
+      changeFrequency: "monthly",
+      priority: 0.7,
     },
     {
       url: `${BASE}/registro`,
