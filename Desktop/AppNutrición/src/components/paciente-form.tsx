@@ -6,6 +6,7 @@ import { Loader2, X, Plus, AlertTriangle } from "lucide-react";
 import { DatePicker } from "@/components/date-picker";
 import { toast } from "sonner";
 import type { PacienteFormData } from "@/app/actions/pacientes";
+import { TelefonoInput } from "@/components/telefono-input";
 import type { Paciente } from "@/generated/prisma/client";
 import { useTranslations } from "next-intl";
 import { useFormPersist } from "@/lib/form-persist";
@@ -304,12 +305,10 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
             <label className="block text-sm font-medium mb-1.5">
               {t("form.telefono")}
             </label>
-            <input
-              type="tel"
-              value={form.telefono}
-              onChange={(e) => update("telefono", e.target.value)}
-              maxLength={20}
-              className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+            <TelefonoInput
+              value={form.telefono || ""}
+              onChange={(v) => update("telefono", v)}
+              inputClassName="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             />
           </div>
           <div>

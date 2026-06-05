@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { compressImage, IMAGE_PRESETS } from "@/lib/image-compress";
 import { useTranslations } from "next-intl";
 import { isNextNavigation } from "@/lib/utils";
+import { TelefonoInput } from "@/components/telefono-input";
 
 interface Props {
   nombre: string;
@@ -151,12 +152,10 @@ export function PerfilPacienteForm({ nombre, apellidos, email, telefono, fotoUrl
             </div>
             <div>
               <label className="block text-sm font-medium mb-1.5">{t("perfil.telefono")}</label>
-              <input
-                type="tel"
+              <TelefonoInput
                 value={form.telefono}
-                onChange={(e) => update("telefono", e.target.value)}
-                maxLength={20}
-                className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                onChange={(v) => update("telefono", v)}
+                inputClassName="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
             </div>
             <div>

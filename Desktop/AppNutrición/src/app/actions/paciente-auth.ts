@@ -143,7 +143,7 @@ export async function actualizarPerfilPaciente(data: { nombre?: string; apellido
   const updateData: Record<string, string | null> = {};
   if (data.nombre?.trim()) updateData.nombre = data.nombre.trim().slice(0, 100);
   if (data.apellidos?.trim()) updateData.apellidos = data.apellidos.trim().slice(0, 100);
-  if (data.telefono !== undefined) updateData.telefono = data.telefono.trim().slice(0, 20) || null;
+  if (data.telefono !== undefined) updateData.telefono = data.telefono.trim().slice(0, 25) || null;
 
   if (Object.keys(updateData).length > 0) {
     await prisma.paciente.update({

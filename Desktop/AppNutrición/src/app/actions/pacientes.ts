@@ -40,7 +40,7 @@ export interface PacienteFormData {
 // --- Sanitización y validación ---
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_REGEX = /^[0-9+\-\s()]{6,20}$/;
+const PHONE_REGEX = /^[0-9+\-\s()]{6,25}$/;
 const SEXOS_VALIDOS: string[] = ["MASCULINO", "FEMENINO", "OTRO"];
 const OBJETIVOS_VALIDOS: string[] = [
   "PERDER_PESO", "GANAR_MASA", "MANTENIMIENTO", "PATOLOGIA", "DEPORTIVO", "OTRO",
@@ -107,7 +107,7 @@ function sanitizeFormData(data: PacienteFormData) {
     nombre: capitalizeName(sanitizeString(data.nombre, 100)),
     apellidos: capitalizeName(sanitizeString(data.apellidos, 100)),
     email: sanitizeString(data.email, 200).toLowerCase() || null,
-    telefono: sanitizeString(data.telefono, 20) || null,
+    telefono: sanitizeString(data.telefono, 25) || null,
     fechaNacimiento: data.fechaNacimiento ? new Date(data.fechaNacimiento) : null,
     sexo: (data.sexo && SEXOS_VALIDOS.includes(data.sexo) ? data.sexo : null) as Sexo | null,
     peso: data.peso && data.peso > 0 ? data.peso : null,
