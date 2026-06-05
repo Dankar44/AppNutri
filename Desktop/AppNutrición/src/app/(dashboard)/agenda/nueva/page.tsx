@@ -28,6 +28,7 @@ import {
   getPacientesParaCita,
   getPacienteContextoCita,
 } from "@/app/actions/citas";
+import { getIntegracionNutri } from "@/app/actions/google-integracion";
 import { AvatarPaciente } from "@/components/avatar-paciente";
 import { capitalizarNombre, formatDate, isNextNavigation, withTimeout } from "@/lib/utils";
 
@@ -78,11 +79,20 @@ export default function NuevaCitaPage() {
   const [pacienteId, setPacienteId] = useState("");
   const [contexto, setContexto] = useState<ContextoCita>(null);
   const [contextoLoading, setContextoLoading] = useState(false);
+  // Solo mostramos lo de "Google Meet" si el nutri tiene Google conectado y con
+  // creación de Meet activa. Si no, la cita online va con enlace manual.
+  const [tieneMeetAuto, setTieneMeetAuto] = useState(false);
 
   useEffect(() => {
     getPacientesParaCita().then((data) =>
       setPacientes(data as PacienteListItem[]),
     );
+  }, []);
+
+  useEffect(() => {
+    getIntegracionNutri()
+      .then((i) => setTieneMeetAuto(!!(i && i.crearMeet)))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -232,10 +242,10 @@ export default function NuevaCitaPage() {
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium inline-flex items-center gap-2">
                   <Video className="w-4 h-4 text-primary" />
-                  {t("nueva.onlineAppointment")}
+                  {tieneMeetAuto ? t("nueva.onlineAppointment") : t("nueva.onlineAppointmentSimple")}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {t("nueva.onlineHintFull")}
+                  {tieneMeetAuto ? t("nueva.onlineHintFull") : t("nueva.onlineHintSimple")}
                 </p>
               </div>
             </label>
@@ -249,7 +259,7 @@ export default function NuevaCitaPage() {
                 placeholder={t("nueva.videoLinkPlaceholder")}
                 className="w-full px-3 py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
               />
-              <p className="text-xs text-muted-foreground mt-1.5">{t("nueva.videoLinkHint")}</p>
+              <p className="text-xs text-muted-foreground mt-1.5">{tieneMeetAuto ? t("nueva.videoLinkHint") : t("nueva.videoLinkHintSimple")}</p>
             </div>
 
             <div>
