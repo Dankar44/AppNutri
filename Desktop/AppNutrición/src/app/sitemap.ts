@@ -23,6 +23,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
+      url: `${BASE}/alternativa-a-dietowin`,
+      lastModified: new Date("2026-06-05"),
+      changeFrequency: "monthly",
+      priority: 0.85,
+    },
+    {
+      url: `${BASE}/alternativa-a-nutrium`,
+      lastModified: new Date("2026-06-05"),
+      changeFrequency: "monthly",
+      priority: 0.85,
+    },
+    {
       url: `${BASE}/precios`,
       lastModified: new Date("2026-04-27"),
       changeFrequency: "monthly",

@@ -48,6 +48,7 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/colaboradores") ||
     request.nextUrl.pathname.startsWith("/faq") ||
     request.nextUrl.pathname.startsWith("/software-para-nutricionistas-gratis") ||
+    request.nextUrl.pathname.startsWith("/alternativa-") ||
     // Callbacks OAuth: el code lo procesa el handler, el usuario puede no
     // tener sesión aún (Sign in with Google) o ser paciente (JWT propio).
     request.nextUrl.pathname === "/auth/callback" ||
