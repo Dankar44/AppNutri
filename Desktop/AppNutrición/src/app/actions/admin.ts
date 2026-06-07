@@ -53,6 +53,12 @@ export async function getAdminStats() {
   const inicioMesActual = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
   const inicioMesAnterior = new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1);
 
+  // Excluimos la cuenta demo del recuento de nutricionistas reales, para que el total
+  // del panel coincida con el resto de vistas (seguimiento, listado). Sin esto, el
+  // panel contaba el dietista demo y los demás sitios no → números distintos.
+  const demoId = process.env.DEMO_DIETISTA_ID;
+  const excluirDemo = demoId ? { id: { not: demoId } } : {};
+
   const [
     totalDietistas,
     totalPacientes,
@@ -63,12 +69,12 @@ export async function getAdminStats() {
     pacientesEsteMes,
     pacientesMesAnterior,
   ] = await Promise.all([
-    prisma.dietista.count(),
+    prisma.dietista.count({ where: excluirDemo }),
     prisma.paciente.count({ where: { esDemo: false } }),
     prisma.planAlimenticio.count({ where: { activo: true, paciente: { esDemo: false } } }),
     prisma.consulta.count({ where: { fecha: { gte: inicioMesActual }, paciente: { esDemo: false } } }),
-    prisma.dietista.count({ where: { createdAt: { gte: inicioMesActual } } }),
-    prisma.dietista.count({ where: { createdAt: { gte: inicioMesAnterior, lt: inicioMesActual } } }),
+    prisma.dietista.count({ where: { ...excluirDemo, createdAt: { gte: inicioMesActual } } }),
+    prisma.dietista.count({ where: { ...excluirDemo, createdAt: { gte: inicioMesAnterior, lt: inicioMesActual } } }),
     prisma.paciente.count({ where: { createdAt: { gte: inicioMesActual }, esDemo: false } }),
     prisma.paciente.count({ where: { createdAt: { gte: inicioMesAnterior, lt: inicioMesActual }, esDemo: false } }),
   ]);
@@ -187,16 +193,23 @@ export async function getDietistasAdmin(busqueda?: string): Promise<DietistaAdmi
 
   const search = busqueda?.trim().toLowerCase();
 
+  // Excluimos la cuenta demo del listado, igual que en el panel y en seguimiento.
+  const demoId = process.env.DEMO_DIETISTA_ID;
+  const excluirDemo = demoId ? { id: { not: demoId } } : {};
+
   const dietistas = await prisma.dietista.findMany({
-    where: search
-      ? {
-          OR: [
-            { nombre: { contains: search, mode: "insensitive" } },
-            { apellidos: { contains: search, mode: "insensitive" } },
-            { email: { contains: search, mode: "insensitive" } },
-          ],
-        }
-      : undefined,
+    where: {
+      ...excluirDemo,
+      ...(search
+        ? {
+            OR: [
+              { nombre: { contains: search, mode: "insensitive" } },
+              { apellidos: { contains: search, mode: "insensitive" } },
+              { email: { contains: search, mode: "insensitive" } },
+            ],
+          }
+        : {}),
+    },
     select: {
       id: true,
       authId: true,

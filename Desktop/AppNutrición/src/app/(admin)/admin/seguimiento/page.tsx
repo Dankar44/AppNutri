@@ -47,9 +47,13 @@ export default async function SeguimientoPage() {
     return { label: t("seguimiento.statusBadge.inactivo"), color: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400" };
   }
 
+  // Mismo criterio que el panel: todos los nutricionistas reales, excluyendo la cuenta
+  // demo. (Antes filtraba por demoEliminado, lo que dejaba fuera a usuarios reales que
+  // habían borrado su paciente de ejemplo → el total no cuadraba con el del panel.)
+  const demoId = process.env.DEMO_DIETISTA_ID;
   const [dietistas, pacientes] = await Promise.all([
     prisma.dietista.findMany({
-      where: { demoEliminado: false },
+      where: demoId ? { id: { not: demoId } } : {},
       select: {
         id: true,
         nombre: true,
