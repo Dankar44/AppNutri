@@ -17,6 +17,7 @@ import {
   User,
   Lightbulb,
   Video,
+  MessageCircle,
 } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { intlTag, type Locale } from "@/i18n/config";
@@ -27,8 +28,12 @@ import {
   crearCita,
   getPacientesParaCita,
   getPacienteContextoCita,
+  getInfoAvisoCita,
 } from "@/app/actions/citas";
+import { setAvisarPorWhatsapp } from "@/app/actions/pacientes";
 import { getIntegracionNutri } from "@/app/actions/google-integracion";
+import { DatePicker } from "@/components/date-picker";
+import { TimePicker } from "@/components/time-picker";
 import { AvatarPaciente } from "@/components/avatar-paciente";
 import { capitalizarNombre, formatDate, isNextNavigation, withTimeout } from "@/lib/utils";
 
@@ -42,6 +47,7 @@ type PacienteListItem = {
   fechaNacimiento: Date | null;
   objetivo: string | null;
   objetivoDetalle: string | null;
+  avisarPorWhatsapp: boolean;
 };
 
 type ContextoCita = Awaited<ReturnType<typeof getPacienteContextoCita>>;
@@ -82,6 +88,9 @@ export default function NuevaCitaPage() {
   // Solo mostramos lo de "Google Meet" si el nutri tiene Google conectado y con
   // creación de Meet activa. Si no, la cita online va con enlace manual.
   const [tieneMeetAuto, setTieneMeetAuto] = useState(false);
+  const [fecha, setFecha] = useState(() => new Date().toLocaleDateString("sv-SE"));
+  const [hora, setHora] = useState("10:00");
+  const [avisarWhatsapp, setAvisarWhatsapp] = useState(false);
 
   useEffect(() => {
     getPacientesParaCita().then((data) =>
@@ -89,9 +98,18 @@ export default function NuevaCitaPage() {
     );
   }, []);
 
+  // Si se llega desde la ficha de un paciente (/agenda/nueva?paciente=ID),
+  // dejarlo ya preseleccionado.
   useEffect(() => {
+    const pre = new URLSearchParams(window.location.search).get("paciente");
+    if (pre) setPacienteId(pre);
+  }, []);
+
+  useEffect(() => {
+    // El Meet automático se genera cuando hay Google conectado con sincronización
+    // activa (el flag crearMeet del modelo no se usa en la generación real).
     getIntegracionNutri()
-      .then((i) => setTieneMeetAuto(!!(i && i.crearMeet)))
+      .then((i) => setTieneMeetAuto(!!(i && i.sincronizar)))
       .catch(() => {});
   }, []);
 
@@ -111,20 +129,32 @@ export default function NuevaCitaPage() {
     [pacientes, pacienteId],
   );
 
+  // El aviso por WhatsApp arranca según la preferencia guardada del paciente.
+  useEffect(() => {
+    setAvisarWhatsapp(pacienteSeleccionado?.avisarPorWhatsapp ?? false);
+  }, [pacienteSeleccionado]);
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (blockIfDemo()) return;
-    setLoading(true);
-
+    // No permitir crear una cita en una fecha/hora ya pasada. El calendario ya
+    // bloquea los días pasados; aquí cubrimos también la hora cuando es para hoy.
+    if (new Date(`${fecha}T${hora}`) < new Date()) {
+      toast.error(t("nueva.fechaPasadaError"));
+      return;
+    }
     const form = new FormData(e.currentTarget);
-    const fecha = form.get("fecha") as string;
-    const hora = form.get("hora") as string;
 
     const modo = (form.get("modo") as "directa" | "proponer") || "directa";
     const isOnline = form.get("isOnline") === "on";
 
+    // Abrir la pestaña de WhatsApp YA, dentro del gesto del clic, para que el
+    // navegador no la bloquee. Luego le ponemos la URL con el mensaje.
+    const waWin = avisarWhatsapp && pacienteSeleccionado?.telefono ? window.open("", "_blank") : null;
+    setLoading(true);
+
     try {
-      await withTimeout(crearCita({
+      const cita = await withTimeout(crearCita({
         pacienteId: form.get("pacienteId") as string,
         fechaHora: `${fecha}T${hora}:00`,
         duracion: parseInt(form.get("duracion") as string) || 30,
@@ -135,6 +165,23 @@ export default function NuevaCitaPage() {
         modo,
       }));
       clearDraft();
+      // Recordar la preferencia de WhatsApp del paciente si ha cambiado.
+      if (pacienteId && avisarWhatsapp !== (pacienteSeleccionado?.avisarPorWhatsapp ?? false)) {
+        void setAvisarPorWhatsapp(pacienteId, avisarWhatsapp);
+      }
+      // Si se pidió avisar por WhatsApp, abrir el chat con el mensaje ya escrito.
+      if (waWin) {
+        try {
+          const info = cita?.id ? await getInfoAvisoCita(cita.id) : null;
+          if (info?.telefono && info.mensajeWhatsApp) {
+            waWin.location.href = `https://wa.me/${info.telefono.replace(/[^\d]/g, "")}?text=${encodeURIComponent(info.mensajeWhatsApp)}`;
+          } else {
+            waWin.close();
+          }
+        } catch {
+          waWin.close();
+        }
+      }
       toast.success(
         modo === "proponer"
           ? t("nueva.toastProposed")
@@ -142,6 +189,7 @@ export default function NuevaCitaPage() {
       );
       router.push("/agenda");
     } catch (error) {
+      waWin?.close();
       if (isNextNavigation(error)) throw error;
       toast.error(t("nueva.toastCreateError"));
       setLoading(false);
@@ -202,22 +250,16 @@ export default function NuevaCitaPage() {
             <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 sm:gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1.5">{t("nueva.dateLabel")}</label>
-                <input
-                  name="fecha"
-                  type="date"
-                  required
-                  defaultValue={new Date().toISOString().split("T")[0]}
-                  className="w-full px-3 py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
-                />
+                <DatePicker value={fecha} onChange={setFecha} required futureOnly />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">{t("nueva.timeLabel")}</label>
-                <input
-                  name="hora"
-                  type="time"
-                  required
-                  defaultValue="10:00"
-                  className="w-full px-3 py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
+                <TimePicker
+                  value={hora}
+                  onChange={setHora}
+                  fecha={fecha}
+                  ariaLabel={t("nueva.timeLabel")}
+                  inputClassName="w-full px-3 py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
                 />
               </div>
             </div>
@@ -261,6 +303,26 @@ export default function NuevaCitaPage() {
               />
               <p className="text-xs text-muted-foreground mt-1.5">{tieneMeetAuto ? t("nueva.videoLinkHint") : t("nueva.videoLinkHintSimple")}</p>
             </div>
+
+            {pacienteSeleccionado?.telefono && (
+              <label className="flex items-start gap-3 p-3 rounded-lg border border-border cursor-pointer hover:bg-muted/40 has-[:checked]:border-primary has-[:checked]:bg-primary/5 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={avisarWhatsapp}
+                  onChange={(e) => setAvisarWhatsapp(e.target.checked)}
+                  className="mt-1 accent-primary"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium inline-flex items-center gap-2">
+                    <MessageCircle className="w-4 h-4 text-green-600" />
+                    {t("nueva.avisarWhatsapp")}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {t("nueva.avisarWhatsappHint")}
+                  </p>
+                </div>
+              </label>
+            )}
 
             <div>
               <label className="block text-sm font-medium mb-1.5">{t("nueva.howToCreate")}</label>
@@ -370,13 +432,13 @@ export default function NuevaCitaPage() {
                     </div>
                   )}
                   {pacienteSeleccionado.email && (
-                    <div className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
                       <Mail className="w-3.5 h-3.5 shrink-0" />
                       <span className="truncate">{pacienteSeleccionado.email}</span>
                     </div>
                   )}
                   {pacienteSeleccionado.telefono && (
-                    <div className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Phone className="w-3.5 h-3.5 shrink-0" />
                       <span>{pacienteSeleccionado.telefono}</span>
                     </div>

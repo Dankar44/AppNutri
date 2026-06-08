@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useState, useEffect, useCallback } from "react";
-import { X, Search, ArrowUp, ArrowDown, Minus, ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { X, Search, ArrowUp, ArrowDown, Minus, ChevronLeft, ChevronRight, Plus, CopyPlus } from "lucide-react";
 import { buscarEquivalentes } from "@/app/actions/alimentos";
 
 interface EquivalentePanelProps {
@@ -14,6 +14,8 @@ interface EquivalentePanelProps {
   grasas: number;
   cantidad: number;
   onSelect: (alimentoId: string, nombre: string, cantidad: number) => void;
+  /** Si está, muestra un botón para añadir el equivalente como alternativa ("o ...") en vez de sustituir (#5). */
+  onAgregarAlternativa?: (alimentoId: string, nombre: string, cantidad: number) => void;
   onClose: () => void;
 }
 
@@ -62,6 +64,7 @@ export function EquivalentePanel({
   grasas,
   cantidad,
   onSelect,
+  onAgregarAlternativa,
   onClose,
 }: EquivalentePanelProps) {
   const t = useTranslations("diets");
@@ -138,7 +141,7 @@ export function EquivalentePanel({
         <p className="text-xs text-primary font-medium mb-2">
           {t("equivalentePanel.calculationNote")}
         </p>
-        <div className="grid grid-cols-[1fr_75px_60px_60px_60px_36px] gap-1 text-[10px] font-semibold text-muted-foreground">
+        <div className="grid grid-cols-[1fr_64px_52px_52px_52px_72px] gap-1 text-[10px] font-semibold text-muted-foreground">
           <span>{t("equivalentePanel.columnFood")}</span>
           <span className="text-center bg-primary/10 text-primary rounded px-1 py-0.5">{t("equivalentePanel.columnEnergy")}</span>
           <span className="text-center">{t("equivalentePanel.columnFat")}</span>
@@ -149,7 +152,7 @@ export function EquivalentePanel({
       </div>
 
       {/* Reference row */}
-      <div className="grid grid-cols-[1fr_75px_60px_60px_60px_36px] gap-1 items-center px-4 py-2 bg-primary/5 border-b border-primary/10 text-xs">
+      <div className="grid grid-cols-[1fr_64px_52px_52px_52px_72px] gap-1 items-center px-4 py-2 bg-primary/5 border-b border-primary/10 text-xs">
         <div className="min-w-0">
           <p className="font-semibold truncate text-primary">{nombre}</p>
           <p className="text-[10px] text-muted-foreground">{cantidad}g · {t("equivalentePanel.reference")}</p>
@@ -171,7 +174,7 @@ export function EquivalentePanel({
           visible.map((eq) => (
             <div
               key={eq.id}
-              className="grid grid-cols-[1fr_75px_60px_60px_60px_36px] gap-1 items-center px-4 py-2.5 hover:bg-muted/30 transition-colors text-xs"
+              className="grid grid-cols-[1fr_64px_52px_52px_52px_72px] gap-1 items-center px-4 py-2.5 hover:bg-muted/30 transition-colors text-xs"
             >
               <div className="min-w-0">
                 <p className="text-sm font-medium truncate">{eq.nombre}</p>
@@ -193,7 +196,17 @@ export function EquivalentePanel({
                 <p className="tabular-nums font-medium">{Math.round(eq.prot)} g</p>
                 <DiffIndicator value={eq.diffProt} />
               </div>
-              <div>
+              <div className="flex items-center justify-end gap-1">
+                {onAgregarAlternativa && (
+                  <button
+                    type="button"
+                    onClick={() => onAgregarAlternativa(eq.id, eq.nombre, eq.cantidadG)}
+                    className="p-1.5 rounded-lg border border-primary/40 text-primary hover:bg-primary/10 transition-colors"
+                    title={t("equivalentePanel.addAsAlternativa")}
+                  >
+                    <CopyPlus className="w-3.5 h-3.5" />
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => onSelect(eq.id, eq.nombre, eq.cantidadG)}

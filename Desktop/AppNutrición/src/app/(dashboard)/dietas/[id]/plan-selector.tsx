@@ -175,7 +175,7 @@ export function PlanSelector({ planActualId, pacienteId, planes }: Props) {
         className={`inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors shrink-0 border ${
           esActivo
             ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30 cursor-default"
-            : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
+            : "bg-card text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 hover:border-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed"
         }`}
         title={esActivo ? t("markedAsCurrent") : t("markAsCurrent")}
       >

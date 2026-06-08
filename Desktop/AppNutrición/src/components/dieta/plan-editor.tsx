@@ -23,6 +23,8 @@ import {
   removeAlimentoDeComida,
   actualizarCantidadAlimento,
   moverAlimentoAComida,
+  agregarAlternativa,
+  eliminarAlternativa,
 } from "@/app/actions/planes";
 import type { UnidadMedida } from "@/generated/prisma/client";
 import { cn, isNextNavigation } from "@/lib/utils";
@@ -59,6 +61,7 @@ interface AlimentoEnComidaData {
     ingredientes?: { nombre: string; cantidad: number; unidad: string }[];
     esPropio?: boolean;
   } | null;
+  alternativas?: { id: string; nombre: string; cantidad: number; unidad: string; esReceta: boolean }[];
 }
 
 interface ComidaData {
@@ -145,6 +148,8 @@ export function PlanEditor({
   const [isPending, startTransition] = useTransition();
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [selectedComidaId, setSelectedComidaId] = useState<string | null>(null);
+  // #5 — Si está, el selector de alimento añadirá lo elegido como ALTERNATIVA de este AlimentoEnComida.
+  const [alternativaParaId, setAlternativaParaId] = useState<string | null>(null);
   const [activeDragItem, setActiveDragItem] = useState<DragItemData | null>(null);
   const [selectedDay, setSelectedDay] = useState<DayTab>("TODOS");
 
@@ -182,6 +187,7 @@ export function PlanEditor({
               recetaIngredientes: a.receta?.ingredientes,
               recetaDescripcion: a.receta?.descripcion,
               recetaPorciones: a.receta?.porciones,
+              alternativas: a.alternativas ?? [],
             };
           }),
         })),
@@ -280,8 +286,41 @@ export function PlanEditor({
   }
 
   function handleAddAlimento(comidaId: string) {
+    setAlternativaParaId(null);
     setSelectedComidaId(comidaId);
     setSelectorOpen(true);
+  }
+
+  // Abre el selector para añadir una alternativa (alimento o receta) a un ítem.
+  function handleAbrirSelectorAlternativa(alimentoEnComidaId: string) {
+    setAlternativaParaId(alimentoEnComidaId);
+    setSelectedComidaId(null);
+    setSelectorOpen(true);
+  }
+
+  function handleEliminarAlternativa(alternativaId: string) {
+    startTransition(async () => {
+      try {
+        await eliminarAlternativa(alternativaId);
+        router.refresh();
+      } catch (error) {
+        if (isNextNavigation(error)) throw error;
+        toast.error(t("editor.toastDeleteError"));
+      }
+    });
+  }
+
+  // Desde el panel de "equivalente": añade el alimento equivalente como alternativa.
+  function handleAgregarAlternativaDirecta(alimentoEnComidaId: string, alimentoId: string, _nombre: string, cantidad: number) {
+    startTransition(async () => {
+      try {
+        await agregarAlternativa(alimentoEnComidaId, alimentoId, null, cantidad);
+        router.refresh();
+      } catch (error) {
+        if (isNextNavigation(error)) throw error;
+        toast.error(t("editor.toastAddError"));
+      }
+    });
   }
 
   function handleSelectAlimento(item: {
@@ -295,6 +334,20 @@ export function PlanEditor({
     carbohidratos: number;
     grasas: number;
   }) {
+    // Modo alternativa (#5): lo elegido se añade como "o ..." del ítem, no como comida nueva.
+    if (alternativaParaId) {
+      const itemId = alternativaParaId;
+      startTransition(async () => {
+        try {
+          await agregarAlternativa(itemId, item.alimentoId, item.recetaId, item.cantidad, item.unidad as UnidadMedida);
+          router.refresh();
+        } catch (error) {
+          if (isNextNavigation(error)) throw error;
+          toast.error(t("editor.toastAddError"));
+        }
+      });
+      return;
+    }
     if (!selectedComidaId) return;
     if (localCallbacks) {
       localCallbacks.onAdd(selectedComidaId, item);
@@ -503,6 +556,9 @@ export function PlanEditor({
                       onCopiarAlimento={onCopiarAlimento}
                       pegarAlimentoLabel={pegarAlimentoLabel}
                       onPegarAlimento={onPegarAlimento}
+                      onAbrirSelectorAlternativa={handleAbrirSelectorAlternativa}
+                      onEliminarAlternativa={handleEliminarAlternativa}
+                      onAgregarAlternativaDirecta={handleAgregarAlternativaDirecta}
                       readOnly={readOnly}
                       interactionMode={interactionMode}
                       ocultarCalorias={ocultarCalorias}
@@ -552,7 +608,7 @@ export function PlanEditor({
 
         <SelectorAlimento
           open={selectorOpen && !readOnly}
-          onClose={() => setSelectorOpen(false)}
+          onClose={() => { setSelectorOpen(false); setAlternativaParaId(null); }}
           onSelect={handleSelectAlimento}
           comidaId={selectedComidaId || undefined}
           macrosObjetivo={

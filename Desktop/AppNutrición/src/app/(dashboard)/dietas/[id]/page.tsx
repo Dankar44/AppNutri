@@ -168,6 +168,13 @@ export default async function PlanDetailPage({ params }: Props) {
                       porciones: (a.receta as unknown as { porciones: number }).porciones ?? 1,
                     }
                   : null,
+                alternativas: a.alternativas?.map((alt) => ({
+                  id: alt.id,
+                  nombre: alt.alimento?.nombre || alt.receta?.nombre || "",
+                  cantidad: alt.cantidad,
+                  unidad: alt.unidad,
+                  esReceta: !!alt.receta,
+                })) ?? [],
               })),
             })),
           })),

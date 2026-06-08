@@ -372,6 +372,37 @@ export async function setOcultarCalorias(id: string, valor: boolean) {
   revalidatePath(`/pacientes/${id}`);
 }
 
+/** Activa/desactiva el aviso automático de cita por email para un paciente concreto. */
+export async function setAvisarPorEmail(id: string, valor: boolean) {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
+  if (dietista.isDemo) return;
+
+  const paciente = await prisma.paciente.findUnique({
+    where: { id, dietistaId: dietista.id },
+    select: { id: true },
+  });
+  if (!paciente) throw new Error(t("paciente.pacienteNoEncontrado"));
+
+  await prisma.paciente.update({
+    where: { id },
+    data: { avisarPorEmail: valor },
+  });
+
+  revalidatePath(`/pacientes/${id}`);
+}
+
+/** Guarda la preferencia de "avisar por WhatsApp" de un paciente (default false). */
+export async function setAvisarPorWhatsapp(id: string, valor: boolean) {
+  const dietista = await getCurrentDietista();
+  if (!dietista || dietista.isDemo) return;
+  await prisma.paciente.updateMany({
+    where: { id, dietistaId: dietista.id },
+    data: { avisarPorWhatsapp: valor },
+  });
+}
+
 export async function getPacientes(
   busqueda?: string,
   soloActivos?: boolean

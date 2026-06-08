@@ -216,6 +216,10 @@ model Paciente {
   preferencias        String[]
   notas               String?
 
+  /// Avisos de cita al paciente (configurables por paciente).
+  avisarPorEmail      Boolean  @default(true)
+  avisarPorWhatsapp   Boolean  @default(false)
+
   /// Formulario extendido tipo ficha clínica (pestaña Información)
   fichaInformacion    Json?
 
@@ -323,6 +327,7 @@ model Alimento {
 
   recetaIngredientes  RecetaIngrediente[]
   alimentosEnComida   AlimentoEnComida[]
+  alternativas        AlternativaAlimento[]
   entradasDiario      EntradaDiario[]
   movimientosStock    MovimientoStock[]
 
@@ -373,6 +378,7 @@ model Receta {
 
   ingredientes    RecetaIngrediente[]
   alimentosEnComida AlimentoEnComida[]
+  alternativas      AlternativaAlimento[]
   entradasDiario    EntradaDiario[]
   favoritos         RecetaFavorito[]
 
@@ -461,7 +467,28 @@ model AlimentoEnComida {
   unidad      UnidadMedida @default(GRAMOS)
   orden       Int          @default(0)
 
+  // #5 — Alternativas intercambiables ("o"): otras opciones equivalentes de este mismo ítem.
+  alternativas AlternativaAlimento[]
+
   @@map("alimentos_en_comida")
+}
+
+// #5 — Alternativa equivalente de un AlimentoEnComida: "avena 50 g  o  cereales 70 g".
+// Puede ser un alimento o una receta. Es excluyente con el principal → NO suma a los macros.
+model AlternativaAlimento {
+  id                 String           @id @default(cuid())
+  alimentoEnComidaId String
+  alimentoEnComida   AlimentoEnComida @relation(fields: [alimentoEnComidaId], references: [id], onDelete: Cascade)
+  alimentoId         String?
+  alimento           Alimento?        @relation(fields: [alimentoId], references: [id], onDelete: SetNull)
+  recetaId           String?
+  receta             Receta?          @relation(fields: [recetaId], references: [id], onDelete: SetNull)
+  cantidad           Float
+  unidad             UnidadMedida     @default(GRAMOS)
+  orden              Int              @default(0)
+
+  @@index([alimentoEnComidaId])
+  @@map("alternativas_alimento")
 }
 
 model Plantilla {

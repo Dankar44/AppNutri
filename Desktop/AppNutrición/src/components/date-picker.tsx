@@ -26,7 +26,13 @@ function formatDisplay(dateStr: string): string {
 const DROP_W = 280;
 const DROP_H = 340;
 
-function parseTypedDate(input: string, pastOnly: boolean): string | null {
+function medianocheHoy(): Date {
+  const h = new Date();
+  h.setHours(0, 0, 0, 0);
+  return h;
+}
+
+function parseTypedDate(input: string, pastOnly: boolean, futureOnly: boolean): string | null {
   const clean = input.replace(/[^\d]/g, "");
   if (clean.length !== 8) return null;
   const day = parseInt(clean.slice(0, 2));
@@ -35,7 +41,9 @@ function parseTypedDate(input: string, pastOnly: boolean): string | null {
   if (month < 1 || month > 12 || day < 1 || day > 31 || year < 1900 || year > 2100) return null;
   const maxDays = new Date(year, month, 0).getDate();
   if (day > maxDays) return null;
-  if (pastOnly && new Date(year, month - 1, day) > new Date()) return null;
+  const fecha = new Date(year, month - 1, day);
+  if (pastOnly && fecha > new Date()) return null;
+  if (futureOnly && fecha < medianocheHoy()) return null;
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
@@ -52,12 +60,15 @@ export function DatePicker({
   required,
   placeholder,
   pastOnly = false,
+  futureOnly = false,
 }: {
   value: string;
   onChange: (v: string) => void;
   required?: boolean;
   placeholder?: string;
   pastOnly?: boolean;
+  /** Bloquea fechas anteriores a hoy (hoy incluido). Para citas/eventos futuros. */
+  futureOnly?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [typedValue, setTypedValue] = useState(() => value ? formatDisplay(value) : "");
@@ -126,6 +137,10 @@ export function DatePicker({
   }
 
   function prevMonth() {
+    if (futureOnly) {
+      const now = new Date();
+      if (viewYear < now.getFullYear() || (viewYear === now.getFullYear() && viewMonth <= now.getMonth())) return;
+    }
     if (viewMonth === 0) { setViewMonth(11); setViewYear((y) => y - 1); }
     else setViewMonth((m) => m - 1);
   }
@@ -160,6 +175,7 @@ export function DatePicker({
     selectedParts[2] === day;
 
   const today = new Date();
+  const hoy0 = medianocheHoy();
   const isToday = (day: number) =>
     today.getFullYear() === viewYear &&
     today.getMonth() === viewMonth &&
@@ -169,6 +185,8 @@ export function DatePicker({
   const startDay = firstDayOfMonth(viewYear, viewMonth);
   const currentYear = new Date().getFullYear();
   const yearRangeStart = Math.floor((viewYear - 6) / 12) * 12;
+  const prevMonthBloqueado = futureOnly && viewYear === today.getFullYear() && viewMonth <= today.getMonth();
+  const nextMonthBloqueado = pastOnly && viewYear === today.getFullYear() && viewMonth >= today.getMonth();
 
   return (
     <div className="relative" ref={ref}>
@@ -188,7 +206,7 @@ export function DatePicker({
             setTypedValue(formatted);
             const digits = formatted.replace(/[^\d]/g, "");
             if (digits.length === 8) {
-              const parsed = parseTypedDate(formatted, pastOnly);
+              const parsed = parseTypedDate(formatted, pastOnly, futureOnly);
               if (parsed) {
                 onChange(parsed);
                 const [y, m] = parsed.split("-").map(Number);
@@ -202,7 +220,7 @@ export function DatePicker({
               onChange("");
               return;
             }
-            const parsed = parseTypedDate(typedValue, pastOnly);
+            const parsed = parseTypedDate(typedValue, pastOnly, futureOnly);
             if (parsed) {
               onChange(parsed);
             } else {
@@ -245,13 +263,13 @@ export function DatePicker({
         >
           {/* Cabecera */}
           <div className="flex items-center justify-between mb-3">
-            <button type="button" onClick={prevMonth} className="p-1.5 rounded-md hover:bg-muted transition-colors touch-manipulation">
+            <button type="button" onClick={prevMonth} disabled={prevMonthBloqueado} className={`p-1.5 rounded-md transition-colors touch-manipulation ${prevMonthBloqueado ? "opacity-30 cursor-not-allowed" : "hover:bg-muted"}`}>
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button type="button" onClick={() => setShowYearGrid(!showYearGrid)} className="text-sm font-semibold hover:text-primary transition-colors">
               {MONTH_LABELS[viewMonth]} {viewYear}
             </button>
-            <button type="button" onClick={nextMonth} disabled={pastOnly && viewYear === today.getFullYear() && viewMonth >= today.getMonth()} className={`p-1.5 rounded-md transition-colors touch-manipulation ${pastOnly && viewYear === today.getFullYear() && viewMonth >= today.getMonth() ? "opacity-30 cursor-not-allowed" : "hover:bg-muted"}`}>
+            <button type="button" onClick={nextMonth} disabled={nextMonthBloqueado} className={`p-1.5 rounded-md transition-colors touch-manipulation ${nextMonthBloqueado ? "opacity-30 cursor-not-allowed" : "hover:bg-muted"}`}>
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
@@ -270,23 +288,26 @@ export function DatePicker({
                 </button>
               </div>
               <div className="grid grid-cols-4 gap-1">
-                {Array.from({ length: 12 }, (_, i) => yearRangeStart + i).map((y) => (
-                  <button
-                    key={y}
-                    type="button"
-                    disabled={pastOnly && y > currentYear}
-                    onClick={() => selectYear(y)}
-                    className={`py-2 text-xs rounded-md transition-colors touch-manipulation ${
-                      y === viewYear
-                        ? "bg-primary text-primary-foreground font-semibold"
-                        : pastOnly && y > currentYear
-                          ? "text-muted-foreground/40"
-                          : "hover:bg-primary/10 text-foreground"
-                    }`}
-                  >
-                    {y}
-                  </button>
-                ))}
+                {Array.from({ length: 12 }, (_, i) => yearRangeStart + i).map((y) => {
+                  const yBloq = (pastOnly && y > currentYear) || (futureOnly && y < currentYear);
+                  return (
+                    <button
+                      key={y}
+                      type="button"
+                      disabled={yBloq}
+                      onClick={() => selectYear(y)}
+                      className={`py-2 text-xs rounded-md transition-colors touch-manipulation ${
+                        y === viewYear
+                          ? "bg-primary text-primary-foreground font-semibold"
+                          : yBloq
+                            ? "text-muted-foreground/40"
+                            : "hover:bg-primary/10 text-foreground"
+                      }`}
+                    >
+                      {y}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ) : (
@@ -306,15 +327,16 @@ export function DatePicker({
                   const day = i + 1;
                   const sel = isSelected(day);
                   const tod = isToday(day);
-                  const future = pastOnly && new Date(viewYear, viewMonth, day) > today;
+                  const dia = new Date(viewYear, viewMonth, day);
+                  const bloqueado = (pastOnly && dia > today) || (futureOnly && dia < hoy0);
                   return (
                     <button
                       key={day}
                       type="button"
-                      disabled={future}
+                      disabled={bloqueado}
                       onClick={() => selectDay(day)}
                       className={`w-9 h-9 mx-auto text-sm rounded-lg transition-colors touch-manipulation ${
-                        future
+                        bloqueado
                           ? "text-muted-foreground/30 cursor-not-allowed"
                           : sel
                             ? "bg-primary text-primary-foreground font-semibold"

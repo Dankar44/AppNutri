@@ -128,6 +128,7 @@
     "pacienteEjemplo": "Paciente de exemplo",
     "enviarEmail": "Enviar email",
     "editarPaciente": "Editar paciente",
+    "nuevaCita": "Nova consulta",
     "seccionDisponibleOrdenador": "Seção disponível no computador",
     "planificacionRequiereTablas": "O planejamento nutricional requer tabelas amplas. Acesse pelo computador ou tablet para usar esta funcionalidade.",
     "editarDatosBasicos": "editar dados básicos",
@@ -361,7 +362,7 @@
     "dietaYaMarcada": "Esta dieta já está marcada como atual",
     "marcarDietaActual": "Marcar esta dieta como atual",
     "crearNuevoPlanParaPaciente": "Criar novo plano para este paciente",
-    "dietaCount": "{count} dieta",
+    "dietaCount": "{count} {count, plural, one {dieta} other {dietas}}",
     "dietaCountPlural": "{count} dietas"
   },
   "entregables": {
@@ -584,6 +585,10 @@
     }
   },
   "portal": {
+    "avisarEmailTitulo": "Avisar das consultas por email",
+    "avisarEmailDescripcion": "Se desativar, este paciente não receberá os emails automáticos de consulta. Os outros pacientes sim. (Você sempre pode reenviar o email manualmente desde a consulta.)",
+    "avisarEmailActivado": "Avisos por email ativados para este paciente",
+    "avisarEmailDesactivado": "Avisos por email desativados para este paciente",
     "ocultarCaloriasTitulo": "Ocultar calorias e macros ao paciente",
     "ocultarCaloriasDescripcion": "Se ativares, o paciente não verá as calorias nem os macronutrientes no seu portal, nos seus PDF nem no seu acompanhamento. Tu continuarás a vê-los sempre.",
     "caloriasOcultadas": "O paciente já não verá calorias nem macros",

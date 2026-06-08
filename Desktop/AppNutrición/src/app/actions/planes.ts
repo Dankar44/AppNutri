@@ -250,6 +250,13 @@ export async function getPlan(id: string) {
                 include: {
                   alimento: true,
                   receta: { include: { ingredientes: { include: { alimento: { select: { nombre: true } } } } } },
+                  alternativas: {
+                    orderBy: { orden: "asc" },
+                    include: {
+                      alimento: true,
+                      receta: { include: { ingredientes: { include: { alimento: { select: { nombre: true } } } } } },
+                    },
+                  },
                 },
               },
             },
@@ -335,6 +342,68 @@ export async function actualizarDescripcionComida(
     where: { id: comidaId },
     data: { descripcion: descripcion.trim().slice(0, 500) || null },
   });
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Alternativas de un ítem ("avena 50 g  o  cereales 70 g") — #5
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Añade una alternativa equivalente (alimento o receta) a un AlimentoEnComida.
+ * Es excluyente con el principal: no suma a los macros, solo da opción de elegir.
+ */
+export async function agregarAlternativa(
+  alimentoEnComidaId: string,
+  alimentoId: string | null,
+  recetaId: string | null,
+  cantidad: number,
+  unidad: UnidadMedida = "GRAMOS",
+) {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
+  if (dietista.isDemo) return;
+
+  await verificarPropietarioAlimentoEnComida(alimentoEnComidaId, dietista.id, t);
+  if (!alimentoId && !recetaId) return;
+  cantidad = validateNumber(cantidad, 0.1, LIMITS.CANTIDAD_MAX);
+
+  const count = await prisma.alternativaAlimento.count({ where: { alimentoEnComidaId } });
+  await prisma.alternativaAlimento.create({
+    data: { alimentoEnComidaId, alimentoId, recetaId, cantidad, unidad, orden: count },
+  });
+}
+
+/** Helper: verifica que una alternativa pertenezca a un plan del dietista actual. */
+async function verificarPropietarioAlternativa(alternativaId: string, dietistaId: string, t: (key: string) => string) {
+  const alt = await prisma.alternativaAlimento.findUnique({
+    where: { id: alternativaId },
+    select: { alimentoEnComida: { select: { comida: { select: { diaDelPlan: { select: { plan: { select: { dietistaId: true } } } } } } } } },
+  });
+  if (!alt || alt.alimentoEnComida.comida.diaDelPlan.plan.dietistaId !== dietistaId) {
+    throw new Error(t("auth.noAutorizado"));
+  }
+}
+
+export async function eliminarAlternativa(alternativaId: string) {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
+  if (dietista.isDemo) return;
+
+  await verificarPropietarioAlternativa(alternativaId, dietista.id, t);
+  await prisma.alternativaAlimento.delete({ where: { id: alternativaId } });
+}
+
+export async function actualizarCantidadAlternativa(alternativaId: string, cantidad: number) {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
+  if (dietista.isDemo) return;
+
+  await verificarPropietarioAlternativa(alternativaId, dietista.id, t);
+  cantidad = validateNumber(cantidad, 0.1, LIMITS.CANTIDAD_MAX);
+  await prisma.alternativaAlimento.update({ where: { id: alternativaId }, data: { cantidad } });
 }
 
 export async function moverAlimentoAComida(

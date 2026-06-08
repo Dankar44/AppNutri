@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Trash2, GripVertical, ListFilter, ExternalLink, Image as ImageLinkIcon, Copy } from "lucide-react";
+import { Trash2, GripVertical, ListFilter, ExternalLink, Image as ImageLinkIcon, Copy, Plus, X } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
@@ -35,6 +35,11 @@ interface AlimentoCardProps {
   onCantidadChange: (id: string, cantidad: number) => void;
   onBuscarEquivalente?: (alimentoId: string, nombre: string, calorias: number, proteinas: number, carbohidratos: number, grasas: number, cantidad: number) => void;
   onCopiar?: (id: string) => void;
+  /** Alternativas equivalentes ("o ...") de este ítem (#5). */
+  alternativas?: { id: string; nombre: string; cantidad: number; unidad?: string; esReceta?: boolean }[];
+  /** Abre el selector para añadir una alternativa a este ítem (recibe el id del AlimentoEnComida). */
+  onAgregarAlternativa?: (id: string) => void;
+  onEliminarAlternativa?: (alternativaId: string) => void;
 }
 
 export function AlimentoCard({
@@ -63,6 +68,9 @@ export function AlimentoCard({
   onCantidadChange,
   onBuscarEquivalente,
   onCopiar,
+  alternativas,
+  onAgregarAlternativa,
+  onEliminarAlternativa,
 }: AlimentoCardProps) {
   const t = useTranslations("diets");
   const [tempCantidad, setTempCantidad] = useState(cantidad);
@@ -158,12 +166,12 @@ export function AlimentoCard({
   }
 
   return (
+    <div className="border-b border-border/50 last:border-b-0">
     <div
       ref={setNodeRef}
       style={style}
       className={cn(
         "flex items-center gap-2 px-3 py-2.5 touch-none",
-        "border-b border-border/50 last:border-b-0",
         "hover:bg-muted/30 transition-colors",
         isDragging && "opacity-50 shadow-lg z-50 bg-card"
       )}
@@ -231,6 +239,38 @@ export function AlimentoCard({
       >
         <Trash2 className="w-4 h-4" />
       </button>
+      </div>
+
+      {((alternativas && alternativas.length > 0) || onAgregarAlternativa) && (
+        <div className="pl-9 pr-3 pb-2 space-y-1">
+          {alternativas?.map((alt) => (
+            <div key={alt.id} className="flex items-center gap-1.5 text-xs">
+              <span className="text-primary font-semibold">{t("alimentoCard.or")}</span>
+              <span className="tabular-nums text-muted-foreground">{alt.cantidad}</span>
+              <span className="text-muted-foreground">{getUnidadLabel(alt.unidad || "GRAMOS", alt.esReceta)} {t("alimentoCard.unitConnector")}</span>
+              <span className={cn("font-medium truncate", alt.esReceta ? "text-purple-600 dark:text-purple-400" : "text-foreground")}>{alt.nombre}</span>
+              {onEliminarAlternativa && (
+                <button
+                  onClick={() => onEliminarAlternativa(alt.id)}
+                  title={t("alimentoCard.removeAlternativa")}
+                  className="p-0.5 rounded hover:bg-red-50 dark:hover:bg-red-500/10 text-muted-foreground/50 hover:text-red-500 transition-colors shrink-0"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          ))}
+          {onAgregarAlternativa && (
+            <button
+              type="button"
+              onClick={() => onAgregarAlternativa(id)}
+              className="inline-flex items-center gap-1 text-xs font-medium text-primary/80 hover:text-primary transition-colors"
+            >
+              <Plus className="w-3 h-3" /> {t("alimentoCard.addAlternativa")}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

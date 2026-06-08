@@ -7,20 +7,23 @@ import { toast } from "sonner";
 import { cn, withTimeout, isNextNavigation } from "@/lib/utils";
 import { enviarAccesoPortal } from "@/app/actions/email";
 import { crearAccesoPaciente, getAccesoEstado } from "@/app/actions/paciente-auth";
-import { setOcultarCalorias } from "@/app/actions/pacientes";
+import { setOcultarCalorias, setAvisarPorEmail } from "@/app/actions/pacientes";
 
 interface Props {
   pacienteId: string;
   pacienteEmail?: string | null;
   esDemo?: boolean;
   ocultarCaloriasInicial?: boolean;
+  avisarPorEmailInicial?: boolean;
 }
 
-export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo, ocultarCaloriasInicial }: Props) {
+export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo, ocultarCaloriasInicial, avisarPorEmailInicial }: Props) {
   const t = useTranslations("patients.portal");
   const [sendingAcceso, startSendingAcceso] = useTransition();
   const [ocultarCalorias, setOcultarCaloriasState] = useState(ocultarCaloriasInicial ?? false);
   const [savingCalorias, setSavingCalorias] = useState(false);
+  const [avisarEmail, setAvisarEmailState] = useState(avisarPorEmailInicial ?? true);
+  const [savingAvisoEmail, setSavingAvisoEmail] = useState(false);
   const [accesoEstado, setAccesoEstado] = useState<{
     email: string;
     activo: boolean;
@@ -70,6 +73,22 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo, ocultarCa
       toast.error(e instanceof Error ? e.message : t("errorConfigurarAcceso"));
     } finally {
       setGeneratingPin(false);
+    }
+  }
+
+  async function handleToggleEmail() {
+    const nuevo = !avisarEmail;
+    setAvisarEmailState(nuevo);
+    setSavingAvisoEmail(true);
+    try {
+      await withTimeout(setAvisarPorEmail(pacienteId, nuevo));
+      toast.success(nuevo ? t("avisarEmailActivado") : t("avisarEmailDesactivado"));
+    } catch (error) {
+      if (isNextNavigation(error)) throw error;
+      setAvisarEmailState(!nuevo);
+      toast.error(t("errorGuardarCalorias"));
+    } finally {
+      setSavingAvisoEmail(false);
     }
   }
 
@@ -300,6 +319,38 @@ export function PortalPacienteTab({ pacienteId, pacienteEmail, esDemo, ocultarCa
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Avisos de cita por email (configurable por paciente) */}
+      <div className="rounded-xl border border-border bg-card p-5 mt-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3 min-w-0">
+            <div className="rounded-lg bg-primary/10 p-2.5 text-primary shrink-0">
+              <Mail className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-base font-semibold text-foreground">{t("avisarEmailTitulo")}</h2>
+              <p className="text-sm text-muted-foreground mt-1">{t("avisarEmailDescripcion")}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleToggleEmail}
+            disabled={savingAvisoEmail}
+            className={cn(
+              "relative w-12 h-6 rounded-full transition-colors shrink-0 mt-1 disabled:opacity-50",
+              avisarEmail ? "bg-emerald-600" : "bg-muted-foreground/30",
+            )}
+            aria-pressed={avisarEmail}
+          >
+            <span
+              className={cn(
+                "absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform",
+                avisarEmail ? "translate-x-6" : "translate-x-0",
+              )}
+            />
+          </button>
         </div>
       </div>
 

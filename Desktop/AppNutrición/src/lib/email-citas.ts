@@ -50,13 +50,16 @@ export async function enviarEmailCita(
       googleMeetLink: true,
       enlaceVideollamada: true,
       propuestoPor: true,
-      paciente: { select: { nombre: true, apellidos: true, email: true, esDemo: true } },
+      paciente: { select: { nombre: true, apellidos: true, email: true, esDemo: true, avisarPorEmail: true } },
       dietista: { select: { nombre: true, apellidos: true, email: true } },
     },
   });
   if (!cita) return { ok: false, motivo: "no-cita" };
   if (cita.paciente.esDemo) return { ok: false, motivo: "demo" };
   if (!cita.paciente.email) return { ok: false, motivo: "sin-email" };
+  // El interruptor por paciente solo corta el envío AUTOMÁTICO; el botón manual
+  // de la agenda (force: true) envía igual aunque esté desactivado.
+  if (!opts.force && !cita.paciente.avisarPorEmail) return { ok: false, motivo: "desactivado" };
 
   if (!opts.force) {
     const key = `${citaId}:${cita.estado}`;

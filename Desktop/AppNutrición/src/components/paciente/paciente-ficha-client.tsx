@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Mail, Calendar, Pencil, X } from "lucide-react";
+import { Mail, Calendar, Pencil, X, CalendarPlus } from "lucide-react";
 import type { FichaInformacionData, CampoPersonalizadoDefinicion } from "@/lib/ficha-informacion-types";
 import { AvatarPaciente } from "@/components/avatar-paciente";
 import {
@@ -75,6 +75,7 @@ type PacienteSerializado = {
   fichaInformacion: unknown;
   esDemo?: boolean;
   ocultarCalorias?: boolean;
+  avisarPorEmail?: boolean;
 };
 
 type PlanResumen = {
@@ -217,6 +218,16 @@ export function PacienteFichaClient({
               {formatDate(paciente.fechaNacimiento)}
               {edad != null && ` (${edad} ${t("edadAnios")})`}
             </span>
+          )}
+          {!paciente.esDemo && (
+            <Link
+              href={`/agenda/nueva?paciente=${paciente.id}`}
+              className="inline-flex items-center gap-1.5 px-3 py-2.5 lg:py-2 rounded-lg border border-primary/40 text-primary hover:bg-primary/10 transition-colors text-sm font-medium min-h-11 lg:min-h-0"
+              title={t("nuevaCita")}
+            >
+              <CalendarPlus className="w-4 h-4 shrink-0" />
+              <span>{t("nuevaCita")}</span>
+            </Link>
           )}
           {paciente.email && (
             <a
@@ -408,6 +419,7 @@ export function PacienteFichaClient({
           pacienteEmail={paciente.email}
           esDemo={paciente.esDemo === true}
           ocultarCaloriasInicial={paciente.ocultarCalorias === true}
+          avisarPorEmailInicial={paciente.avisarPorEmail !== false}
         />
       )}
 

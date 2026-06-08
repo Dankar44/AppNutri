@@ -100,6 +100,7 @@ export type PlanVisualItem = {
     ingredientes?: { nombre: string; cantidad: number; unidad: string }[];
     esPropio?: boolean;
   } | null;
+  alternativas?: { id: string; nombre: string; cantidad: number; unidad: string; esReceta: boolean }[];
 };
 
 export type PlanVisualComida = {

@@ -392,6 +392,9 @@
   "alimentoCard": {
     "unitConnector": "de",
     "searchEquivalent": "Pesquisar alimento equivalente",
+    "or": "ou",
+    "addAlternativa": "Adicionar alternativa",
+    "removeAlternativa": "Remover alternativa",
     "delete": "Excluir"
   },
   "comidaSlot": {
@@ -472,7 +475,8 @@
     "reference": "referência",
     "searching": "Pesquisando equivalentes...",
     "noResults": "Nenhum equivalente encontrado",
-    "useEquivalent": "Usar este equivalente"
+    "useEquivalent": "Usar este equivalente",
+    "addAsAlternativa": "Adicionar como alternativa"
   },
   "plantillaSelector": {
     "title": "Criar a partir de modelo (opcional)",

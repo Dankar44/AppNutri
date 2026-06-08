@@ -259,6 +259,7 @@ export async function getPacientesParaCita() {
       fechaNacimiento: true,
       objetivo: true,
       objetivoDetalle: true,
+      avisarPorWhatsapp: true,
     },
     orderBy: { nombre: "asc" },
   });

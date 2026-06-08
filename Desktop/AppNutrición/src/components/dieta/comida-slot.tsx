@@ -30,6 +30,7 @@ interface AlimentoEnSlot {
   recetaIngredientes?: { nombre: string; cantidad: number; unidad: string }[];
   recetaDescripcion?: string | null;
   recetaPorciones?: number;
+  alternativas?: { id: string; nombre: string; cantidad: number; unidad?: string; esReceta?: boolean }[];
 }
 
 interface ComidaSlotProps {
@@ -46,6 +47,11 @@ interface ComidaSlotProps {
   /** Nombre del alimento en el "portapapeles" (si hay uno copiado); muestra el botón Pegar. */
   pegarAlimentoLabel?: string | null;
   onPegarAlimento?: (comidaId: string) => void;
+  /** Abre el selector para añadir una alternativa a un ítem (#5). */
+  onAbrirSelectorAlternativa?: (alimentoEnComidaId: string) => void;
+  onEliminarAlternativa?: (alternativaId: string) => void;
+  /** Añade el equivalente elegido como alternativa (desde el panel de equivalente). */
+  onAgregarAlternativaDirecta?: (alimentoEnComidaId: string, alimentoId: string, nombre: string, cantidad: number) => void;
   compactHeader?: boolean;
   readOnly?: boolean;
   interactionMode?: InteractionMode;
@@ -65,6 +71,9 @@ export function ComidaSlot({
   onCopiarAlimento,
   pegarAlimentoLabel,
   onPegarAlimento,
+  onAbrirSelectorAlternativa,
+  onEliminarAlternativa,
+  onAgregarAlternativaDirecta,
   readOnly = false,
   interactionMode = "dashboard",
   ocultarCalorias = false,
@@ -220,6 +229,9 @@ export function ComidaSlot({
                     onRemove={onRemove}
                     onCantidadChange={onCantidadChange}
                     onCopiar={onCopiarAlimento}
+                    alternativas={a.alternativas}
+                    onAgregarAlternativa={readOnly ? undefined : onAbrirSelectorAlternativa}
+                    onEliminarAlternativa={readOnly ? undefined : onEliminarAlternativa}
                     onBuscarEquivalente={readOnly ? undefined : (_alimentoEnComidaId, nombre, cal, prot, carb, gras, cant) => {
                       setEquivalenteOpen(
                         equivalenteOpen?.alimentoEnComidaId === a.id
@@ -243,6 +255,14 @@ export function ComidaSlot({
                         }
                         setEquivalenteOpen(null);
                       }}
+                      onAgregarAlternativa={
+                        onAgregarAlternativaDirecta
+                          ? (nuevoAlimentoId, nombre, cantidad) => {
+                              onAgregarAlternativaDirecta(a.id, nuevoAlimentoId, nombre, cantidad);
+                              setEquivalenteOpen(null);
+                            }
+                          : undefined
+                      }
                       onClose={() => setEquivalenteOpen(null)}
                     />
                   )}
