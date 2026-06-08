@@ -475,7 +475,7 @@ export async function toggleFavoritoReceta(recetaId: string) {
     favorito = false;
   } else {
     await prisma.$executeRawUnsafe(
-      `INSERT INTO receta_favoritos ("dietistaId", "recetaId") VALUES ($1, $2)
+      `INSERT INTO receta_favoritos (id, "dietistaId", "recetaId") VALUES (gen_random_uuid()::text, $1, $2)
        ON CONFLICT ("dietistaId", "recetaId") DO NOTHING`,
       dietista.id,
       recetaId,
