@@ -37,6 +37,14 @@ function getColorClass(color?: string) {
   return COLOR_CLASSES[color || "otro"] || COLOR_CLASSES.otro;
 }
 
+// El portal del paciente guarda los días en minúsculas y sin tilde ("lunes",
+// "miercoles"...) mientras que esta vista usa "Lunes", "Miércoles"... Normalizamos
+// (minúsculas + sin tildes) al comparar para que el horario que rellena el paciente
+// se muestre aquí sin depender de mayúsculas/acentos.
+function normalizaDia(d: string) {
+  return d.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+}
+
 interface Props {
   initialEntries: HorarioEntry[];
   readOnly?: boolean;
@@ -60,7 +68,7 @@ export function HorarioSemanal({ initialEntries, readOnly, onSave }: Props) {
 
   const entryMap = useMemo(() => {
     const m = new Map<string, HorarioEntry>();
-    for (const e of entries) m.set(`${e.dia}-${e.hora}`, e);
+    for (const e of entries) m.set(`${normalizaDia(e.dia)}-${e.hora}`, e);
     return m;
   }, [entries]);
 
@@ -68,14 +76,14 @@ export function HorarioSemanal({ initialEntries, readOnly, onSave }: Props) {
     const m = new Map<string, number>();
     for (const dia of DIAS) {
       let count = 0;
-      for (const h of HORAS) if (entryMap.has(`${dia}-${h}`)) count++;
+      for (const h of HORAS) if (entryMap.has(`${normalizaDia(dia)}-${h}`)) count++;
       m.set(dia, count);
     }
     return m;
   }, [entryMap]);
 
   function getEntry(dia: string, hora: string) {
-    return entryMap.get(`${dia}-${hora}`);
+    return entryMap.get(`${normalizaDia(dia)}-${hora}`);
   }
 
   function startEdit(dia: string, hora: string) {
