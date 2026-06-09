@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useState, useEffect, useCallback } from "react";
-import { X, Search, ArrowUp, ArrowDown, Minus, ChevronLeft, ChevronRight, Plus, CopyPlus } from "lucide-react";
+import { X, Search, ArrowUp, ArrowDown, Minus, Plus, ChevronLeft, ChevronRight, Replace } from "lucide-react";
 import { buscarEquivalentes } from "@/app/actions/alimentos";
 
 interface EquivalentePanelProps {
@@ -13,8 +13,9 @@ interface EquivalentePanelProps {
   carbohidratos: number;
   grasas: number;
   cantidad: number;
+  /** Sustituir el alimento por el equivalente elegido. */
   onSelect: (alimentoId: string, nombre: string, cantidad: number) => void;
-  /** Si está, muestra un botón para añadir el equivalente como alternativa ("o ...") en vez de sustituir (#5). */
+  /** Añadir el equivalente como alternativa ("o ...") en vez de sustituir (#5). */
   onAgregarAlternativa?: (alimentoId: string, nombre: string, cantidad: number) => void;
   onClose: () => void;
 }
@@ -34,6 +35,7 @@ interface Equivalente {
 }
 
 const PAGE_SIZE = 6;
+const GRID = "grid grid-cols-[minmax(0,1fr)_52px_42px_42px_42px_124px] gap-1";
 
 function DiffIndicator({ value }: { value: number }) {
   const rounded = Math.round(value);
@@ -72,11 +74,13 @@ export function EquivalentePanel({
   const [allResults, setAllResults] = useState<Equivalente[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
+  // Cantidad de referencia EDITABLE: al cambiarla se recalculan las equivalencias.
+  const [cantidadRef, setCantidadRef] = useState(cantidad);
 
-  const calRef = (calorias * cantidad) / 100;
-  const protRef = (proteinas * cantidad) / 100;
-  const carbRef = (carbohidratos * cantidad) / 100;
-  const grasRef = (grasas * cantidad) / 100;
+  const calRef = (calorias * cantidadRef) / 100;
+  const protRef = (proteinas * cantidadRef) / 100;
+  const carbRef = (carbohidratos * cantidadRef) / 100;
+  const grasRef = (grasas * cantidadRef) / 100;
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -111,6 +115,10 @@ export function EquivalentePanel({
   const totalPages = Math.ceil(allResults.length / PAGE_SIZE);
   const visible = allResults.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
+  function ajustar(delta: number) {
+    setCantidadRef((c) => Math.max(1, Math.round((c + delta) * 10) / 10));
+  }
+
   return (
     <div className="border border-primary/20 rounded-xl bg-card shadow-lg overflow-hidden my-2">
       {/* Header */}
@@ -136,12 +144,43 @@ export function EquivalentePanel({
         </div>
       </div>
 
-      {/* Reference info + column headers */}
+      {/* Cantidad de referencia EDITABLE (−/+) + nota + cabeceras de columna */}
       <div className="px-4 pt-3 pb-2 border-b border-border/50 bg-muted/10">
-        <p className="text-xs text-primary font-medium mb-2">
-          {t("equivalentePanel.calculationNote")}
-        </p>
-        <div className="grid grid-cols-[1fr_64px_52px_52px_52px_72px] gap-1 text-[10px] font-semibold text-muted-foreground">
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <p className="text-xs text-primary font-medium">{t("equivalentePanel.calculationNote")}</p>
+          <div className="inline-flex items-center gap-1 shrink-0">
+            <span className="text-[11px] text-muted-foreground">{t("equivalentePanel.referenceQty")}</span>
+            <div className="inline-flex items-center rounded-lg border border-border overflow-hidden">
+              <button
+                type="button"
+                onClick={() => ajustar(-5)}
+                className="px-1.5 py-1 hover:bg-muted text-muted-foreground transition-colors"
+                title="-5 g"
+              >
+                <Minus className="w-3 h-3" />
+              </button>
+              <input
+                type="number"
+                inputMode="decimal"
+                value={cantidadRef}
+                onChange={(e) => setCantidadRef(Math.max(1, parseFloat(e.target.value) || 1))}
+                className="w-14 text-center text-sm tabular-nums bg-transparent border-x border-border py-1 focus:outline-none"
+                min={1}
+                max={10000}
+              />
+              <span className="px-1 text-[11px] text-muted-foreground">g</span>
+              <button
+                type="button"
+                onClick={() => ajustar(5)}
+                className="px-1.5 py-1 hover:bg-muted text-muted-foreground transition-colors"
+                title="+5 g"
+              >
+                <Plus className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className={`${GRID} text-[10px] font-semibold text-muted-foreground`}>
           <span>{t("equivalentePanel.columnFood")}</span>
           <span className="text-center bg-primary/10 text-primary rounded px-1 py-0.5">{t("equivalentePanel.columnEnergy")}</span>
           <span className="text-center">{t("equivalentePanel.columnFat")}</span>
@@ -151,11 +190,11 @@ export function EquivalentePanel({
         </div>
       </div>
 
-      {/* Reference row */}
-      <div className="grid grid-cols-[1fr_64px_52px_52px_52px_72px] gap-1 items-center px-4 py-2 bg-primary/5 border-b border-primary/10 text-xs">
+      {/* Reference row (recalculada en vivo) */}
+      <div className={`${GRID} items-center px-4 py-2 bg-primary/5 border-b border-primary/10 text-xs`}>
         <div className="min-w-0">
           <p className="font-semibold truncate text-primary">{nombre}</p>
-          <p className="text-[10px] text-muted-foreground">{cantidad}g · {t("equivalentePanel.reference")}</p>
+          <p className="text-[10px] text-muted-foreground">{cantidadRef}g · {t("equivalentePanel.reference")}</p>
         </div>
         <p className="text-center font-bold tabular-nums">{Math.round(calRef)} kcal</p>
         <p className="text-center tabular-nums">{Math.round(grasRef)} g</p>
@@ -172,10 +211,7 @@ export function EquivalentePanel({
           <div className="px-4 py-8 text-center text-sm text-muted-foreground">{t("equivalentePanel.noResults")}</div>
         ) : (
           visible.map((eq) => (
-            <div
-              key={eq.id}
-              className="grid grid-cols-[1fr_64px_52px_52px_52px_72px] gap-1 items-center px-4 py-2.5 hover:bg-muted/30 transition-colors text-xs"
-            >
+            <div key={eq.id} className={`${GRID} items-center px-4 py-2.5 hover:bg-muted/30 transition-colors text-xs`}>
               <div className="min-w-0">
                 <p className="text-sm font-medium truncate">{eq.nombre}</p>
                 <p className="text-[10px] text-muted-foreground">{eq.cantidadG}g</p>
@@ -196,25 +232,27 @@ export function EquivalentePanel({
                 <p className="tabular-nums font-medium">{Math.round(eq.prot)} g</p>
                 <DiffIndicator value={eq.diffProt} />
               </div>
-              <div className="flex items-center justify-end gap-1">
+              <div className="flex flex-col gap-1 min-w-0">
+                <button
+                  type="button"
+                  onClick={() => onSelect(eq.id, eq.nombre, eq.cantidadG)}
+                  className="w-full inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg border border-border text-[10px] font-medium text-muted-foreground hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-colors whitespace-nowrap overflow-hidden"
+                  title={t("equivalentePanel.substitute")}
+                >
+                  <Replace className="w-3 h-3 shrink-0" />
+                  <span className="truncate">{t("equivalentePanel.substitute")}</span>
+                </button>
                 {onAgregarAlternativa && (
                   <button
                     type="button"
                     onClick={() => onAgregarAlternativa(eq.id, eq.nombre, eq.cantidadG)}
-                    className="p-1.5 rounded-lg border border-primary/40 text-primary hover:bg-primary/10 transition-colors"
-                    title={t("equivalentePanel.addAsAlternativa")}
+                    className="w-full inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg bg-primary text-primary-foreground text-[10px] font-medium hover:bg-primary/90 transition-colors whitespace-nowrap overflow-hidden"
+                    title={t("equivalentePanel.addAlternativaBtn")}
                   >
-                    <CopyPlus className="w-3.5 h-3.5" />
+                    <Plus className="w-3 h-3 shrink-0" />
+                    <span className="truncate">{t("equivalentePanel.addAlternativaBtn")}</span>
                   </button>
                 )}
-                <button
-                  type="button"
-                  onClick={() => onSelect(eq.id, eq.nombre, eq.cantidadG)}
-                  className="p-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                  title={t("equivalentePanel.useEquivalent")}
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                </button>
               </div>
             </div>
           ))

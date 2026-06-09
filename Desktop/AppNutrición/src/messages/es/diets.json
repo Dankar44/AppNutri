@@ -391,10 +391,11 @@
   },
   "alimentoCard": {
     "unitConnector": "de",
-    "searchEquivalent": "Buscar alimento equivalente",
+    "searchEquivalent": "Equivalencias y alternativas",
     "or": "o",
     "addAlternativa": "Añadir alternativa",
     "removeAlternativa": "Quitar alternativa",
+    "alternativasLabel": "Alternativas",
     "delete": "Eliminar"
   },
   "comidaSlot": {
@@ -476,7 +477,10 @@
     "searching": "Buscando equivalentes...",
     "noResults": "No se encontraron equivalentes",
     "useEquivalent": "Usar este equivalente",
-    "addAsAlternativa": "Añadir como alternativa"
+    "addAsAlternativa": "Añadir como alternativa",
+    "referenceQty": "Cantidad",
+    "substitute": "Sustituir",
+    "addAlternativaBtn": "Alternativa"
   },
   "plantillaSelector": {
     "title": "Crear desde plantilla (opcional)",

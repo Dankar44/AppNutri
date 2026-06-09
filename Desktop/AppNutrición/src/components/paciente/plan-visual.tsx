@@ -219,6 +219,7 @@ export function PlanVisual({
     cantidad: number;
     unidad: string;
     nombre: string;
+    origenId: string;
   } | null>(null);
 
   const diasOptions: DiaOption[] = useMemo(
@@ -283,6 +284,7 @@ export function PlanVisual({
       cantidad: number;
       unidad: string;
       nombre: string;
+      origenId: string;
     } | null = null;
     for (const d of plan.dias) {
       for (const c of d.comidas) {
@@ -294,6 +296,7 @@ export function PlanVisual({
               cantidad: a.cantidad,
               unidad: a.unidad,
               nombre: a.alimento?.nombre || a.receta?.nombre || "",
+              origenId: a.id,
             };
           }
         }
@@ -314,7 +317,7 @@ export function PlanVisual({
           recetaId: snap.recetaId,
           cantidad: snap.cantidad,
           unidad: snap.unidad,
-        });
+        }, snap.origenId);
         router.refresh();
         toast.success(tDiets("copiar.toastPegado"));
       } catch (e) {

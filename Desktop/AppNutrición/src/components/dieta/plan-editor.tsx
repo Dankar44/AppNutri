@@ -23,6 +23,7 @@ import {
   removeAlimentoDeComida,
   actualizarCantidadAlimento,
   moverAlimentoAComida,
+  sustituirAlimentoEnComida,
   agregarAlternativa,
   eliminarAlternativa,
 } from "@/app/actions/planes";
@@ -402,17 +403,8 @@ export function PlanEditor({
     }
     startTransition(async () => {
       try {
-        let comidaId: string | null = null;
-        for (const dia of dias) {
-          for (const comida of dia.comidas) {
-            for (const a of comida.alimentos) {
-              if (a.id === alimentoEnComidaId) comidaId = comida.id;
-            }
-          }
-        }
-        if (!comidaId) return;
-        await removeAlimentoDeComida(alimentoEnComidaId);
-        await addAlimentoAComida(comidaId, nuevoAlimentoId, null, cantidad);
+        // Sustituir = UPDATE de la línea (conserva sus alternativas), no borrar+crear.
+        await sustituirAlimentoEnComida(alimentoEnComidaId, nuevoAlimentoId, cantidad);
         router.refresh();
         toast.success(t("editor.toastReplaced"));
       } catch (error) {

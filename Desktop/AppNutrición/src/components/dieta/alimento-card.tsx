@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Trash2, GripVertical, ListFilter, ExternalLink, Image as ImageLinkIcon, Copy, Plus, X } from "lucide-react";
+import { Trash2, GripVertical, Replace, ExternalLink, Image as ImageLinkIcon, Copy, CopyPlus, CornerDownRight, X } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
@@ -215,10 +215,20 @@ export function AlimentoCard({
       {onBuscarEquivalente && !esReceta && (
         <button
           onClick={() => onBuscarEquivalente(id, nombre, calorias, proteinas, carbohidratos, grasas, convertirAGramos(cantidad, unidad || "GRAMOS", porcion || 100))}
-          className="p-1.5 rounded border border-border/60 hover:bg-primary/10 hover:border-primary/30 text-muted-foreground/50 hover:text-primary transition-all shrink-0"
+          className="p-1.5 rounded-lg border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary/80 hover:text-primary transition-all shrink-0"
           title={t("alimentoCard.searchEquivalent")}
         >
-          <ListFilter className="w-4 h-4" />
+          <Replace className="w-4 h-4" />
+        </button>
+      )}
+
+      {esReceta && onAgregarAlternativa && (
+        <button
+          onClick={() => onAgregarAlternativa(id)}
+          className="p-1.5 rounded-lg border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary/80 hover:text-primary transition-all shrink-0"
+          title={t("alimentoCard.addAlternativa")}
+        >
+          <CopyPlus className="w-4 h-4" />
         </button>
       )}
 
@@ -241,34 +251,28 @@ export function AlimentoCard({
       </button>
       </div>
 
-      {((alternativas && alternativas.length > 0) || onAgregarAlternativa) && (
+      {alternativas && alternativas.length > 0 && (
         <div className="pl-9 pr-3 pb-2 space-y-1">
-          {alternativas?.map((alt) => (
-            <div key={alt.id} className="flex items-center gap-1.5 text-xs">
-              <span className="text-primary font-semibold">{t("alimentoCard.or")}</span>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-0.5">
+            {t("alimentoCard.alternativasLabel")}
+          </p>
+          {alternativas.map((alt) => (
+            <div key={alt.id} className="flex items-center gap-1.5 text-xs rounded-md bg-muted/40 px-2 py-1">
+              <CornerDownRight className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
               <span className="tabular-nums text-muted-foreground">{alt.cantidad}</span>
               <span className="text-muted-foreground">{getUnidadLabel(alt.unidad || "GRAMOS", alt.esReceta)} {t("alimentoCard.unitConnector")}</span>
-              <span className={cn("font-medium truncate", alt.esReceta ? "text-purple-600 dark:text-purple-400" : "text-foreground")}>{alt.nombre}</span>
+              <span className={cn("font-medium truncate", alt.esReceta ? "text-purple-600 dark:text-purple-400" : "text-foreground/80")}>{alt.nombre}</span>
               {onEliminarAlternativa && (
                 <button
                   onClick={() => onEliminarAlternativa(alt.id)}
                   title={t("alimentoCard.removeAlternativa")}
-                  className="p-0.5 rounded hover:bg-red-50 dark:hover:bg-red-500/10 text-muted-foreground/50 hover:text-red-500 transition-colors shrink-0"
+                  className="ml-auto p-0.5 rounded hover:bg-red-50 dark:hover:bg-red-500/10 text-muted-foreground/50 hover:text-red-500 transition-colors shrink-0"
                 >
                   <X className="w-3 h-3" />
                 </button>
               )}
             </div>
           ))}
-          {onAgregarAlternativa && (
-            <button
-              type="button"
-              onClick={() => onAgregarAlternativa(id)}
-              className="inline-flex items-center gap-1 text-xs font-medium text-primary/80 hover:text-primary transition-colors"
-            >
-              <Plus className="w-3 h-3" /> {t("alimentoCard.addAlternativa")}
-            </button>
-          )}
         </div>
       )}
     </div>

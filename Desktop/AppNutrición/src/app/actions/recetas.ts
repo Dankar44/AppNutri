@@ -689,3 +689,47 @@ export async function buscarAlimentosParaReceta(query: string) {
     return { ...rest, esPropio: dietistaId === dietista.id };
   });
 }
+
+/**
+ * Busca recetas (propias + de la app) equivalentes por macros a una de referencia,
+ * ordenadas por similitud, para el panel de equivalencias/alternativas de recetas (#5).
+ * El tamaño equivalente se ajusta en RACIONES (las recetas se miden así), no en gramos.
+ */
+export async function buscarEquivalentesReceta(
+  recetaIdExcluir: string,
+  caloriasReferencia: number,
+  busqueda?: string,
+) {
+  void caloriasReferencia; // el cálculo de raciones lo hace el panel; aquí solo filtramos/ordenamos
+  const dietista = await getCurrentDietista();
+  if (!dietista) return [];
+
+  const search = busqueda ? sanitizeSearch(busqueda) : undefined;
+
+  const ref = await prisma.receta.findUnique({
+    where: { id: recetaIdExcluir },
+    select: { proteinas: true, carbohidratos: true, grasas: true },
+  });
+
+  const recetas = await prisma.receta.findMany({
+    where: {
+      OR: [{ dietistaId: dietista.id }, { dietistaId: null }],
+      id: { not: recetaIdExcluir },
+      calorias: { gt: 0 },
+      ...(search ? { nombreNormalizado: { contains: normalizarParaBusqueda(search) } } : {}),
+    },
+    select: { id: true, nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true, porciones: true, dietistaId: true },
+    orderBy: { nombre: "asc" },
+    take: 60,
+  });
+
+  if (ref) {
+    recetas.sort((a, b) => {
+      const dA = Math.abs(a.proteinas - ref.proteinas) + Math.abs(a.carbohidratos - ref.carbohidratos) + Math.abs(a.grasas - ref.grasas);
+      const dB = Math.abs(b.proteinas - ref.proteinas) + Math.abs(b.carbohidratos - ref.carbohidratos) + Math.abs(b.grasas - ref.grasas);
+      return dA - dB;
+    });
+  }
+
+  return recetas.map(({ dietistaId, ...rest }) => ({ ...rest, esPropio: dietistaId === dietista.id }));
+}

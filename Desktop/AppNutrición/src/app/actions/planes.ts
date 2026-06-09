@@ -406,6 +406,31 @@ export async function actualizarCantidadAlternativa(alternativaId: string, canti
   await prisma.alternativaAlimento.update({ where: { id: alternativaId }, data: { cantidad } });
 }
 
+/**
+ * Sustituye el alimento de un AlimentoEnComida por otro (cambia alimentoId y
+ * cantidad) SIN borrar la línea, para que sus alternativas se conserven (#5).
+ * Eliminar el alimento (removeAlimentoDeComida) sí borra sus alternativas (cascade).
+ */
+export async function sustituirAlimentoEnComida(
+  alimentoEnComidaId: string,
+  alimentoId: string,
+  cantidad: number,
+  unidad: UnidadMedida = "GRAMOS",
+) {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
+  if (dietista.isDemo) return;
+
+  await verificarPropietarioAlimentoEnComida(alimentoEnComidaId, dietista.id, t);
+  cantidad = validateNumber(cantidad, 0.1, LIMITS.CANTIDAD_MAX);
+
+  await prisma.alimentoEnComida.update({
+    where: { id: alimentoEnComidaId },
+    data: { alimentoId, recetaId: null, cantidad, unidad },
+  });
+}
+
 export async function moverAlimentoAComida(
   alimentoEnComidaId: string,
   nuevaComidaId: string
@@ -496,21 +521,40 @@ async function copiarAlimentosAComida(
   const origen = await prisma.alimentoEnComida.findMany({
     where: { comidaId: origenComidaId },
     orderBy: { orden: "asc" },
-    select: { alimentoId: true, recetaId: true, cantidad: true, unidad: true },
+    select: {
+      alimentoId: true,
+      recetaId: true,
+      cantidad: true,
+      unidad: true,
+      // #5 — arrastrar también las alternativas ("o ...") al copiar.
+      alternativas: {
+        orderBy: { orden: "asc" },
+        select: { alimentoId: true, recetaId: true, cantidad: true, unidad: true },
+      },
+    },
   });
+
+  type AltLite = { alimentoId: string | null; recetaId: string | null; cantidad: number; unidad: UnidadMedida };
+  // Nested create de alternativas para un AlimentoEnComida (undefined si no hay).
+  const altCreate = (alts: AltLite[]) =>
+    alts.length > 0
+      ? { create: alts.map((alt, j) => ({ alimentoId: alt.alimentoId, recetaId: alt.recetaId, cantidad: alt.cantidad, unidad: alt.unidad, orden: j })) }
+      : undefined;
 
   if (modo === "reemplazar") {
     await prisma.alimentoEnComida.deleteMany({ where: { comidaId: destinoComidaId } });
-    if (origen.length > 0) {
-      await prisma.alimentoEnComida.createMany({
-        data: origen.map((a, i) => ({
+    let orden = 0;
+    for (const a of origen) {
+      await prisma.alimentoEnComida.create({
+        data: {
           comidaId: destinoComidaId,
           alimentoId: a.alimentoId,
           recetaId: a.recetaId,
           cantidad: a.cantidad,
           unidad: a.unidad,
-          orden: i,
-        })),
+          orden: orden++,
+          alternativas: altCreate(a.alternativas),
+        },
       });
     }
     return;
@@ -522,23 +566,28 @@ async function copiarAlimentosAComida(
   const destino = await prisma.alimentoEnComida.findMany({
     where: { comidaId: destinoComidaId },
     orderBy: { orden: "asc" },
-    select: { id: true, alimentoId: true, recetaId: true, cantidad: true, unidad: true },
+    select: { id: true, alimentoId: true, recetaId: true, cantidad: true, unidad: true, _count: { select: { alternativas: true } } },
   });
 
   const incrementos = new Map<string, number>(); // id de línea destino -> cantidad a sumar
-  const nuevos: { alimentoId: string | null; recetaId: string | null; cantidad: number; unidad: UnidadMedida }[] = [];
+  // Item fusionado cuyo destino NO tenía alternativas → heredar las del origen (sin duplicar).
+  const altsParaFusionados = new Map<string, AltLite[]>();
+  const nuevos: (AltLite & { alternativas: AltLite[] })[] = [];
 
   for (const o of origen) {
     const enDestino = destino.find((d) => mismoItem(d, o));
     if (enDestino) {
       incrementos.set(enDestino.id, (incrementos.get(enDestino.id) ?? 0) + o.cantidad);
+      if (enDestino._count.alternativas === 0 && o.alternativas.length > 0 && !altsParaFusionados.has(enDestino.id)) {
+        altsParaFusionados.set(enDestino.id, o.alternativas);
+      }
       continue;
     }
     const enNuevos = nuevos.find((n) => mismoItem(n, o));
     if (enNuevos) {
       enNuevos.cantidad += o.cantidad;
     } else {
-      nuevos.push({ alimentoId: o.alimentoId, recetaId: o.recetaId, cantidad: o.cantidad, unidad: o.unidad });
+      nuevos.push({ alimentoId: o.alimentoId, recetaId: o.recetaId, cantidad: o.cantidad, unidad: o.unidad, alternativas: o.alternativas });
     }
   }
 
@@ -551,17 +600,27 @@ async function copiarAlimentosAComida(
     });
   }
 
-  if (nuevos.length > 0) {
-    let orden = destino.length;
-    await prisma.alimentoEnComida.createMany({
-      data: nuevos.map((n) => ({
+  // Heredar alternativas en los items fusionados que no tenían ninguna.
+  for (const [destinoId, alts] of altsParaFusionados) {
+    if (alts.length === 0) continue;
+    await prisma.alternativaAlimento.createMany({
+      data: alts.map((alt, j) => ({ alimentoEnComidaId: destinoId, alimentoId: alt.alimentoId, recetaId: alt.recetaId, cantidad: alt.cantidad, unidad: alt.unidad, orden: j })),
+    });
+  }
+
+  // Crear los nuevos con sus alternativas.
+  let orden = destino.length;
+  for (const n of nuevos) {
+    await prisma.alimentoEnComida.create({
+      data: {
         comidaId: destinoComidaId,
         alimentoId: n.alimentoId,
         recetaId: n.recetaId,
         cantidad: n.cantidad,
         unidad: n.unidad,
         orden: orden++,
-      })),
+        alternativas: altCreate(n.alternativas),
+      },
     });
   }
 }
@@ -680,6 +739,7 @@ export async function copiarDiaADias(
 export async function pegarAlimentoEnComida(
   destinoComidaId: string,
   item: { alimentoId: string | null; recetaId: string | null; cantidad: number; unidad: string },
+  origenAlimentoEnComidaId?: string,
 ) {
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
@@ -696,9 +756,18 @@ export async function pegarAlimentoEnComida(
     unidad: item.unidad as UnidadMedida,
   };
 
+  // #5 — alternativas del alimento copiado (leídas del origen, si sigue existiendo).
+  const altsOrigen = origenAlimentoEnComidaId
+    ? await prisma.alternativaAlimento.findMany({
+        where: { alimentoEnComidaId: origenAlimentoEnComidaId },
+        orderBy: { orden: "asc" },
+        select: { alimentoId: true, recetaId: true, cantidad: true, unidad: true },
+      })
+    : [];
+
   const existentes = await prisma.alimentoEnComida.findMany({
     where: { comidaId: destinoComidaId },
-    select: { id: true, alimentoId: true, recetaId: true, cantidad: true, unidad: true },
+    select: { id: true, alimentoId: true, recetaId: true, cantidad: true, unidad: true, _count: { select: { alternativas: true } } },
   });
   const yaExiste = existentes.find((d) => mismoItem(d, snap));
   if (yaExiste) {
@@ -706,6 +775,12 @@ export async function pegarAlimentoEnComida(
       where: { id: yaExiste.id },
       data: { cantidad: yaExiste.cantidad + cantidad },
     });
+    // Heredar alternativas solo si el destino no tenía ninguna (no duplicar).
+    if (yaExiste._count.alternativas === 0 && altsOrigen.length > 0) {
+      await prisma.alternativaAlimento.createMany({
+        data: altsOrigen.map((alt, j) => ({ alimentoEnComidaId: yaExiste.id, alimentoId: alt.alimentoId, recetaId: alt.recetaId, cantidad: alt.cantidad, unidad: alt.unidad, orden: j })),
+      });
+    }
     return;
   }
 
@@ -717,6 +792,9 @@ export async function pegarAlimentoEnComida(
       cantidad,
       unidad: snap.unidad,
       orden: existentes.length,
+      alternativas: altsOrigen.length > 0
+        ? { create: altsOrigen.map((alt, j) => ({ alimentoId: alt.alimentoId, recetaId: alt.recetaId, cantidad: alt.cantidad, unidad: alt.unidad, orden: j })) }
+        : undefined,
     },
   });
 }
@@ -915,6 +993,13 @@ export async function getPlanesDetallePaciente(pacienteId: string) {
                       ingredientes: { include: { alimento: { select: { nombre: true } } } },
                     },
                   },
+                  alternativas: {
+                    orderBy: { orden: "asc" },
+                    include: {
+                      alimento: { select: { nombre: true } },
+                      receta: { select: { nombre: true } },
+                    },
+                  },
                 },
               },
             },
@@ -1008,6 +1093,13 @@ export async function getPlanesDetallePaciente(pacienteId: string) {
                   esPropio: !!a.receta.dietistaId && a.receta.dietistaId === dietista.id,
                 }
               : null,
+            alternativas: (a.alternativas ?? []).map((alt) => ({
+              id: alt.id,
+              nombre: alt.alimento?.nombre || alt.receta?.nombre || "",
+              cantidad: alt.cantidad,
+              unidad: alt.unidad,
+              esReceta: !!alt.receta,
+            })),
           };
         }),
       })),
