@@ -1,8 +1,19 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Leaf, Check } from "lucide-react";
+import { Check } from "lucide-react";
 import { JsonLd } from "@/components/json-ld";
 import { getOrganizationJsonLd, getSoftwareApplicationJsonLd } from "@/lib/structured-data";
+import {
+  SeoHeader,
+  SeoHero,
+  SeoFooter,
+  SeoFaqList,
+  SeoExplorar,
+  SeoCtaFinal,
+  SectionTitle,
+  CtaButtons,
+  Highlight,
+  getBreadcrumbJsonLd,
+} from "@/components/seo/seo-shell";
 
 export const metadata: Metadata = {
   title: { absolute: "Alternativa gratuita a Dietowin — Annonia" },
@@ -19,6 +30,22 @@ export const metadata: Metadata = {
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Annonia" }],
   },
 };
+
+const COMPARATIVA: { campo: string; annonia: string; otro: string }[] = [
+  { campo: "Precio", annonia: "Gratis (fase de lanzamiento)", otro: "De pago (licencia)" },
+  { campo: "Funciona en", annonia: "Navegador, sin instalar", otro: "Se instala en el ordenador" },
+  { campo: "Para empezar", annonia: "Creas la cuenta y listo (1 min)", otro: "Licencia + instalación" },
+  { campo: "Planes con IA", annonia: "Sí, plan semanal completo en minutos", otro: "Cálculo automatizado propio" },
+  { campo: "Portal del paciente", annonia: "Sí (email + PIN, sin registro)", otro: "App móvil" },
+];
+
+const VENTAJAS = [
+  "Gratis durante la fase de lanzamiento en España",
+  "100% web: sin instalar ni mantener nada",
+  "Planes nutricionales personalizados con IA",
+  "Portal para el paciente (email + PIN, sin que se registre)",
+  "Datos en servidores de la UE y cumplimiento del RGPD",
+];
 
 const FAQ = [
   {
@@ -43,110 +70,117 @@ const faqJsonLd = {
 
 export default function AlternativaDietowinPage() {
   return (
-    <div className="min-h-dvh bg-background">
+    <div className="min-h-dvh bg-white dark:bg-[#101117]">
       <JsonLd data={getOrganizationJsonLd()} />
       <JsonLd data={getSoftwareApplicationJsonLd()} />
       <JsonLd data={faqJsonLd} />
+      <JsonLd data={getBreadcrumbJsonLd("Alternativa a Dietowin", "/alternativa-a-dietowin")} />
 
-      <main className="mx-auto max-w-3xl px-5 py-12 sm:py-16">
-        <Link href="/landing" className="mb-8 inline-flex items-center gap-2 text-sm font-medium">
-          <Leaf className="h-5 w-5 text-primary" />
-          Annonia
-        </Link>
+      <SeoHeader />
 
-        <h1 className="text-3xl font-bold leading-tight sm:text-4xl">
-          Annonia: la alternativa gratuita a Dietowin
-        </h1>
+      <main>
+        <SeoHero
+          eyebrow="Comparativa"
+          title={
+            <>
+              La alternativa <Highlight>gratuita</Highlight> a Dietowin
+            </>
+          }
+          description={
+            <>
+              <strong className="text-gray-900 dark:text-gray-100">Annonia</strong> es una alternativa
+              gratuita y 100% online a Dietowin para nutricionistas y dietistas: pacientes, planes con
+              inteligencia artificial y seguimiento desde el navegador, sin instalar nada y sin
+              licencia, durante la fase de lanzamiento en España.
+            </>
+          }
+        >
+          <CtaButtons />
+          <p className="mt-6 text-xs text-gray-400 dark:text-gray-500">
+            Actualizado: <time dateTime="2026-06">junio de 2026</time>
+          </p>
+        </SeoHero>
 
-        <p className="mt-4 text-lg text-muted-foreground">
-          <strong className="text-foreground">Annonia</strong> es una alternativa <strong className="text-foreground">gratuita y 100% online</strong> a
-          Dietowin para nutricionistas y dietistas. Gestiona pacientes, crea planes nutricionales
-          personalizados con inteligencia artificial y haz seguimiento de la evolución desde el
-          navegador, <strong className="text-foreground">sin instalar nada y sin licencia</strong>, durante la fase de lanzamiento en España.
-        </p>
+        {/* Tabla comparativa */}
+        <section className="py-10 sm:py-14">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <SectionTitle eyebrow="Frente a frente">
+              Annonia frente a <Highlight>Dietowin</Highlight>
+            </SectionTitle>
+            <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
+              <table className="w-full text-sm sm:text-base">
+                <thead>
+                  <tr className="bg-[#bdd9c5]/40 dark:bg-[#1a3a24]/50 text-left">
+                    <th className="px-5 py-4 w-[30%]" aria-label="Característica"></th>
+                    <th className="px-5 py-4 font-extrabold text-green-700 dark:text-green-400">Annonia</th>
+                    <th className="px-5 py-4 font-semibold text-gray-500 dark:text-gray-400">Dietowin</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-[#17181e]">
+                  {COMPARATIVA.map((fila) => (
+                    <tr key={fila.campo}>
+                      <td className="px-5 py-4 font-semibold text-gray-900 dark:text-gray-100">{fila.campo}</td>
+                      <td className="px-5 py-4 text-gray-700 dark:text-gray-200">
+                        <span className="inline-flex items-start gap-2">
+                          <Check className="w-4 h-4 mt-1 text-green-600 dark:text-green-400 shrink-0" />
+                          {fila.annonia}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 text-gray-500 dark:text-gray-400">{fila.otro}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-4 text-xs text-gray-400 dark:text-gray-500 text-center">
+              Dietowin es un software consolidado en el sector; esta comparativa destaca las diferencias
+              de modelo (gratuito y web frente a licencia e instalación). Datos sujetos a cambios.
+            </p>
+          </div>
+        </section>
 
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Link href="/registro" className="rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-green-700">
-            Crear mi cuenta gratis
-          </Link>
-          <Link href="/demo" className="rounded-lg border border-input bg-card px-6 py-3 font-medium transition-colors hover:bg-muted/50">
-            Ver la demo
-          </Link>
-        </div>
+        {/* Ventajas */}
+        <section className="py-12 sm:py-16 bg-gradient-to-b from-green-50/40 to-white dark:from-green-950/10 dark:to-[#101117]">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6">
+            <SectionTitle eyebrow="Por qué cambiarte">
+              ¿Por qué elegir <Highlight>Annonia</Highlight>?
+            </SectionTitle>
+            <ul className="space-y-3.5">
+              {VENTAJAS.map((item) => (
+                <li
+                  key={item}
+                  className="flex items-start gap-3 bg-white dark:bg-[#17181e] rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm px-5 py-4 text-gray-700 dark:text-gray-200"
+                >
+                  <span className="mt-0.5 w-6 h-6 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center shrink-0">
+                    <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+                  </span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
 
-        <h2 className="mt-12 text-2xl font-bold">Annonia frente a Dietowin</h2>
-        <div className="mt-5 overflow-x-auto rounded-xl border border-border">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-left">
-                <th className="px-4 py-3 font-medium"></th>
-                <th className="px-4 py-3 font-semibold text-primary">Annonia</th>
-                <th className="px-4 py-3 font-medium text-muted-foreground">Dietowin</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="border-b border-border">
-                <td className="px-4 py-3 font-medium">Precio</td>
-                <td className="px-4 py-3">Gratis (fase de lanzamiento)</td>
-                <td className="px-4 py-3 text-muted-foreground">De pago (licencia)</td>
-              </tr>
-              <tr className="border-b border-border">
-                <td className="px-4 py-3 font-medium">Funciona en</td>
-                <td className="px-4 py-3">Navegador, sin instalar</td>
-                <td className="px-4 py-3 text-muted-foreground">Se instala en el ordenador</td>
-              </tr>
-              <tr className="border-b border-border">
-                <td className="px-4 py-3 font-medium">Para empezar</td>
-                <td className="px-4 py-3">Creas la cuenta y listo (1 min)</td>
-                <td className="px-4 py-3 text-muted-foreground">Licencia + instalación</td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 font-medium">Portal del paciente</td>
-                <td className="px-4 py-3">Sí (email + PIN, sin registro)</td>
-                <td className="px-4 py-3 text-muted-foreground">App móvil</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <p className="mt-3 text-xs text-muted-foreground">
-          Dietowin es un software consolidado en el sector; esta comparativa destaca las diferencias
-          de modelo (gratuito y web frente a licencia e instalación). Datos sujetos a cambios.
-        </p>
+        {/* FAQ */}
+        <section className="py-12 sm:py-16">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6">
+            <SectionTitle eyebrow="Dudas habituales">
+              Preguntas <Highlight>frecuentes</Highlight>
+            </SectionTitle>
+            <SeoFaqList items={FAQ} />
+          </div>
+        </section>
 
-        <h2 className="mt-12 text-2xl font-bold">¿Por qué elegir Annonia?</h2>
-        <ul className="mt-4 space-y-2.5">
-          {[
-            "Gratis durante la fase de lanzamiento en España",
-            "100% web: sin instalar ni mantener nada",
-            "Planes nutricionales personalizados con IA",
-            "Portal para el paciente (email + PIN, sin que se registre)",
-            "Datos en servidores de la UE y cumplimiento del RGPD",
-          ].map((item) => (
-            <li key={item} className="flex items-start gap-2.5 text-muted-foreground">
-              <Check className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-              <span>{item}</span>
-            </li>
-          ))}
-        </ul>
+        <SeoExplorar actual="/alternativa-a-dietowin" />
 
-        <h2 className="mt-12 text-2xl font-bold">Preguntas frecuentes</h2>
-        <div className="mt-5 space-y-3">
-          {FAQ.map((f) => (
-            <details key={f.q} className="rounded-lg border border-border bg-card p-4">
-              <summary className="cursor-pointer font-medium">{f.q}</summary>
-              <p className="mt-2 text-sm text-muted-foreground">{f.a}</p>
-            </details>
-          ))}
-        </div>
-
-        <div className="mt-12 rounded-2xl border border-border bg-card p-8 text-center">
-          <h2 className="text-2xl font-bold">Prueba Annonia gratis</h2>
-          <p className="mt-2 text-muted-foreground">Sin licencia, sin instalación, con todas las funciones.</p>
-          <Link href="/registro" className="mt-5 inline-block rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-green-700">
-            Crear mi cuenta gratis
-          </Link>
-        </div>
+        <SeoCtaFinal
+          titulo="Prueba Annonia"
+          highlight="gratis"
+          descripcion="Sin licencia, sin instalación y con todas las funciones. Crea tu cuenta en menos de un minuto."
+        />
       </main>
+
+      <SeoFooter />
     </div>
   );
 }

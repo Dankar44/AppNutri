@@ -12,25 +12,25 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${BASE}/software-para-nutricionistas-gratis`,
-      lastModified: new Date("2026-06-05"),
+      lastModified: new Date("2026-06-10"),
       changeFrequency: "monthly",
       priority: 0.9,
     },
     {
       url: `${BASE}/faq`,
-      lastModified: new Date("2026-06-05"),
+      lastModified: new Date("2026-06-10"),
       changeFrequency: "monthly",
       priority: 0.8,
     },
     {
       url: `${BASE}/alternativa-a-dietowin`,
-      lastModified: new Date("2026-06-05"),
+      lastModified: new Date("2026-06-10"),
       changeFrequency: "monthly",
       priority: 0.85,
     },
     {
       url: `${BASE}/alternativa-a-nutrium`,
-      lastModified: new Date("2026-06-05"),
+      lastModified: new Date("2026-06-10"),
       changeFrequency: "monthly",
       priority: 0.85,
     },
@@ -42,7 +42,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${BASE}/colaboradores`,
-      lastModified: new Date("2026-06-05"),
+      lastModified: new Date("2026-06-10"),
       changeFrequency: "monthly",
       priority: 0.7,
     },

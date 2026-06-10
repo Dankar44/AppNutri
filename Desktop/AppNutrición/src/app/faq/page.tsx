@@ -1,8 +1,18 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Leaf } from "lucide-react";
 import { JsonLd } from "@/components/json-ld";
 import { getOrganizationJsonLd } from "@/lib/structured-data";
+import {
+  SeoHeader,
+  SeoHero,
+  SeoFooter,
+  SeoFaqList,
+  SeoExplorar,
+  SeoCtaFinal,
+  Eyebrow,
+  Highlight,
+  CtaButtons,
+  getBreadcrumbJsonLd,
+} from "@/components/seo/seo-shell";
 
 export const metadata: Metadata = {
   title: { absolute: "Preguntas frecuentes sobre software de nutrición — Annonia" },
@@ -84,55 +94,68 @@ const faqJsonLd = {
   })),
 };
 
-function Bloque({ titulo, items }: { titulo: string; items: QA[] }) {
-  return (
-    <section className="mt-10">
-      <h2 className="text-2xl font-bold">{titulo}</h2>
-      <div className="mt-4 space-y-3">
-        {items.map((f) => (
-          <details key={f.q} className="rounded-lg border border-border bg-card p-4">
-            <summary className="cursor-pointer font-medium">{f.q}</summary>
-            <p className="mt-2 text-sm text-muted-foreground">{f.a}</p>
-          </details>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 export default function FaqPage() {
   return (
-    <div className="min-h-dvh bg-background">
+    <div className="min-h-dvh bg-white dark:bg-[#101117]">
       <JsonLd data={getOrganizationJsonLd()} />
       <JsonLd data={faqJsonLd} />
+      <JsonLd data={getBreadcrumbJsonLd("Preguntas frecuentes", "/faq")} />
 
-      <main className="mx-auto max-w-3xl px-5 py-12 sm:py-16">
-        <Link href="/landing" className="mb-8 inline-flex items-center gap-2 text-sm font-medium">
-          <Leaf className="h-5 w-5 text-primary" />
-          Annonia
-        </Link>
+      <SeoHeader />
 
-        <h1 className="text-3xl font-bold leading-tight sm:text-4xl">Preguntas frecuentes</h1>
-        <p className="mt-4 text-lg text-muted-foreground">
-          Dudas habituales sobre software para nutricionistas y sobre Annonia.
-        </p>
+      <main>
+        <SeoHero
+          eyebrow="Resolvemos tus dudas"
+          title={
+            <>
+              Preguntas <Highlight>frecuentes</Highlight>
+            </>
+          }
+          description="Las dudas más habituales sobre software para nutricionistas y sobre Annonia, respondidas de forma clara y directa."
+        >
+          <CtaButtons />
+          <p className="mt-6 text-xs text-gray-400 dark:text-gray-500">
+            Actualizado: <time dateTime="2026-06">junio de 2026</time>
+          </p>
+        </SeoHero>
 
-        <Bloque titulo="Sobre Annonia" items={PRODUCTO} />
-        <Bloque titulo="Sobre software de nutrición" items={SECTOR} />
-
-        <div className="mt-12 rounded-2xl border border-border bg-card p-8 text-center">
-          <h2 className="text-2xl font-bold">¿Lo probamos?</h2>
-          <p className="mt-2 text-muted-foreground">Crea tu cuenta gratis o entra en la demo sin registrarte.</p>
-          <div className="mt-5 flex flex-wrap justify-center gap-3">
-            <Link href="/registro" className="rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-green-700">
-              Crear mi cuenta gratis
-            </Link>
-            <Link href="/demo" className="rounded-lg border border-input bg-card px-6 py-3 font-medium transition-colors hover:bg-muted/50">
-              Ver la demo
-            </Link>
+        {/* Sobre Annonia */}
+        <section className="py-12 sm:py-16">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6">
+            <div className="mb-8">
+              <Eyebrow>El producto</Eyebrow>
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+                Sobre <Highlight>Annonia</Highlight>
+              </h2>
+            </div>
+            <SeoFaqList items={PRODUCTO} />
           </div>
-        </div>
+        </section>
+
+        {/* Sobre el sector */}
+        <section className="py-12 sm:py-16 bg-gradient-to-b from-green-50/40 to-white dark:from-green-950/10 dark:to-[#101117]">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6">
+            <div className="mb-8">
+              <Eyebrow>El sector</Eyebrow>
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+                Sobre <Highlight>software de nutrición</Highlight>
+              </h2>
+            </div>
+            <SeoFaqList items={SECTOR} />
+          </div>
+        </section>
+
+        <SeoExplorar actual="/faq" />
+
+        <SeoCtaFinal
+          titulo="¿Lo"
+          highlight="probamos"
+          resto="?"
+          descripcion="Crea tu cuenta gratis en menos de un minuto o entra en la demo sin registrarte. Sin tarjeta y con todas las funciones."
+        />
       </main>
+
+      <SeoFooter />
     </div>
   );
 }
