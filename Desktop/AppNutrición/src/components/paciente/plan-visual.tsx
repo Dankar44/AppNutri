@@ -73,6 +73,8 @@ export type PlanVisualItem = {
   id: string;
   cantidad: number;
   unidad: string;
+  /** Alias visual editado por el nutri (solo presentación). */
+  nombrePersonalizado?: string | null;
   alimento: ({
     id: string;
     nombre: string;
@@ -100,7 +102,23 @@ export type PlanVisualItem = {
     ingredientes?: { nombre: string; cantidad: number; unidad: string }[];
     esPropio?: boolean;
   } | null;
-  alternativas?: { id: string; nombre: string; cantidad: number; unidad: string; esReceta: boolean }[];
+  alternativas?: {
+    id: string;
+    nombre: string;
+    cantidad: number;
+    unidad: string;
+    esReceta: boolean;
+    realId?: string | null;
+    calorias?: number;
+    proteinas?: number;
+    carbohidratos?: number;
+    grasas?: number;
+    fibra?: number;
+    porcion?: number;
+    recetaPorciones?: number;
+    recetaDescripcion?: string | null;
+    recetaIngredientes?: { nombre: string; cantidad: number; unidad: string }[];
+  }[];
 };
 
 export type PlanVisualComida = {
@@ -295,7 +313,7 @@ export function PlanVisual({
               recetaId: a.receta?.id ?? null,
               cantidad: a.cantidad,
               unidad: a.unidad,
-              nombre: a.alimento?.nombre || a.receta?.nombre || "",
+              nombre: a.nombrePersonalizado || a.alimento?.nombre || a.receta?.nombre || "",
               origenId: a.id,
             };
           }
@@ -1314,7 +1332,7 @@ export function PlanVisual({
                   if (item.alimento) {
                     const kcal = Math.round((item.alimento.calorias * convertirAGramos(item.cantidad, item.unidad, item.alimento.porcion || 100)) / 100);
                     allFoods.push({
-                      nombre: item.alimento.nombre, calorias: kcal, comida: TIPO_LABELS_TABLE[comida.tipo] || comida.tipo,
+                      nombre: item.nombrePersonalizado || item.alimento.nombre, calorias: kcal, comida: TIPO_LABELS_TABLE[comida.tipo] || comida.tipo,
                       itemCalorias: item.alimento.calorias, itemProteinas: item.alimento.proteinas, itemCarbohidratos: item.alimento.carbohidratos, itemGrasas: item.alimento.grasas, itemFibra: item.alimento.fibra,
                       cantidad: item.cantidad, unidad: item.unidad, porcion: item.alimento.porcion,
                       esPropio: item.alimento.esPropio,
@@ -1324,7 +1342,7 @@ export function PlanVisual({
                   } else if (item.receta) {
                     const kcal = Math.round(item.receta.calorias * item.cantidad);
                     allFoods.push({
-                      nombre: item.receta.nombre, calorias: kcal, comida: TIPO_LABELS_TABLE[comida.tipo] || comida.tipo,
+                      nombre: item.nombrePersonalizado || item.receta.nombre, calorias: kcal, comida: TIPO_LABELS_TABLE[comida.tipo] || comida.tipo,
                       itemCalorias: item.receta.calorias, itemProteinas: item.receta.proteinas, itemCarbohidratos: item.receta.carbohidratos, itemGrasas: item.receta.grasas, itemFibra: item.receta.fibra,
                       cantidad: item.cantidad, unidad: item.unidad,
                       esReceta: true, esPropio: item.receta.esPropio,
@@ -1978,7 +1996,7 @@ function ResumenSemanal({
                 <div className="pt-1 space-y-1.5">
                   {dia.comidas.filter((c) => c.alimentos.length > 0).map((comida) => {
                     const previews = comida.alimentos
-                      .map((a) => a.alimento?.nombre || a.receta?.nombre || "")
+                      .map((a) => a.nombrePersonalizado || a.alimento?.nombre || a.receta?.nombre || "")
                       .filter(Boolean)
                       .slice(0, 3)
                       .join(", ");

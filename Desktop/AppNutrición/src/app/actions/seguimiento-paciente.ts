@@ -128,7 +128,7 @@ export async function getComidaDelDiaPaciente(
     tipo: c.tipo,
     descripcion: c.descripcion,
     alimentos: c.alimentos.map((a) => ({
-      nombre: a.alimento?.nombre || a.receta?.nombre || "Alimento",
+      nombre: a.nombrePersonalizado || a.alimento?.nombre || a.receta?.nombre || "Alimento",
       cantidad: a.cantidad,
       unidad: a.unidad,
     })),

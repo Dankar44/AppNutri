@@ -136,6 +136,7 @@ export default async function PatientDietPage() {
                 id: a.id,
                 cantidad: a.cantidad,
                 unidad: a.unidad,
+                nombrePersonalizado: a.nombrePersonalizado ?? null,
                 alimento: a.alimento
                   ? { ...a.alimento, ...(microMap[a.alimento.id] || {}) }
                   : null,

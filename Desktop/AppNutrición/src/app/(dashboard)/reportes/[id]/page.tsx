@@ -54,7 +54,7 @@ export default async function ReportesPacientePage({ params }: Props) {
           comidas: d.comidas.map((c) => ({
             tipo: c.tipo,
             alimentos: c.alimentos.map((a) => ({
-              nombre: a.alimento?.nombre || a.receta?.nombre || t("sinNombre"),
+              nombre: a.nombrePersonalizado || a.alimento?.nombre || a.receta?.nombre || t("sinNombre"),
               cantidad: a.cantidad,
               unidad: a.unidad ?? "GRAMOS",
               enlaceProducto: a.alimento?.enlaceProducto ?? null,

@@ -107,12 +107,15 @@ export default async function PlantillaDetallePage({ params }: Props) {
               recetaId: a.recetaId,
               cantidad: a.cantidad,
               unidad: a.unidad,
-              nombre: alimento?.nombre || receta?.nombre || t("generic.deleted"),
+              nombre: a.nombrePersonalizado || alimento?.nombre || receta?.nombre || t("generic.deleted"),
               calorias: alimento?.calorias || receta?.calorias || 0,
               proteinas: alimento?.proteinas || receta?.proteinas || 0,
               carbohidratos: alimento?.carbohidratos || receta?.carbohidratos || 0,
               grasas: alimento?.grasas || receta?.grasas || 0,
               porcion: alimento?.porcion ?? 100,
+              // #5 — passthrough: el editor no los muestra aún, pero NO los pierde al guardar.
+              nombrePersonalizado: a.nombrePersonalizado ?? null,
+              alternativas: a.alternativas ?? [],
             };
           }),
         })),

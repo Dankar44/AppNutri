@@ -27,6 +27,10 @@ interface SelectorAlimentoProps {
   }) => void;
   comidaId?: string;
   macrosObjetivo?: { calorias: number; proteinas: number; carbohidratos: number; grasas: number };
+  /** Modo "Sustituir / Alternativa" (abierto desde "Más opciones" de un ítem) (#5). */
+  modoSustituirAlternativa?: boolean;
+  onSustituir?: (item: { alimentoId: string | null; recetaId: string | null; nombre: string; cantidad: number; unidad: string; calorias: number; proteinas: number; carbohidratos: number; grasas: number }) => void;
+  onAlternativa?: (item: { alimentoId: string | null; recetaId: string | null; nombre: string; cantidad: number; unidad: string; calorias: number; proteinas: number; carbohidratos: number; grasas: number }) => void;
 }
 
 interface AlimentoResult {
@@ -74,7 +78,7 @@ function scaledMacros(
   return { calorias: m.calorias, proteinas: m.proteinas, carbohidratos: m.carbohidratos, grasas: m.grasas };
 }
 
-export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObjetivo }: SelectorAlimentoProps) {
+export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObjetivo, modoSustituirAlternativa = false, onSustituir, onAlternativa }: SelectorAlimentoProps) {
   const t = useTranslations("diets");
   const [query, setQuery] = useState("");
   const [filtro, setFiltro] = useState<Filtro>("alimentos");
@@ -149,8 +153,12 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
     proteinas: number,
     carbohidratos: number,
     grasas: number,
+    accion: "agregar" | "sustituir" | "alternativa" = "agregar",
   ) {
-    onSelect({ alimentoId, recetaId, nombre, cantidad, unidad, calorias, proteinas, carbohidratos, grasas });
+    const item = { alimentoId, recetaId, nombre, cantidad, unidad, calorias, proteinas, carbohidratos, grasas };
+    if (accion === "sustituir" && onSustituir) onSustituir(item);
+    else if (accion === "alternativa" && onAlternativa) onAlternativa(item);
+    else onSelect(item);
     setQuery("");
     setAlimentos([]);
     setRecetas([]);
@@ -194,9 +202,10 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
     nombre: string,
     base: { calorias: number; proteinas: number; carbohidratos: number; grasas: number },
     unidadOriginal: string,
+    accion: "agregar" | "sustituir" | "alternativa" = "agregar",
   ) {
     if (!expanded) return;
-    doSelect(alimentoId, recetaId, nombre, expanded.cantidad, unidadOriginal, base.calorias, base.proteinas, base.carbohidratos, base.grasas);
+    doSelect(alimentoId, recetaId, nombre, expanded.cantidad, unidadOriginal, base.calorias, base.proteinas, base.carbohidratos, base.grasas, accion);
   }
 
   function adjustQty(delta: number) {
@@ -265,13 +274,32 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
         <div className="mb-2 flex justify-center">
           <MacroBadges calorias={macros.calorias} proteinas={macros.proteinas} carbohidratos={macros.carbohidratos} grasas={macros.grasas} />
         </div>
-        <button
-          type="button"
-          onClick={() => addExpanded(alimentoId, recetaId, nombre, base, unidadOriginal)}
-          className="w-full py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
-        >
-          {t("selectorAlimento.add")}
-        </button>
+        {modoSustituirAlternativa ? (
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => addExpanded(alimentoId, recetaId, nombre, base, unidadOriginal, "sustituir")}
+              className="flex-1 py-2 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-colors"
+            >
+              {t("equivalentePanel.substitute")}
+            </button>
+            <button
+              type="button"
+              onClick={() => addExpanded(alimentoId, recetaId, nombre, base, unidadOriginal, "alternativa")}
+              className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+            >
+              + {t("equivalentePanel.addAlternativaBtn")}
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => addExpanded(alimentoId, recetaId, nombre, base, unidadOriginal)}
+            className="w-full py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            {t("selectorAlimento.add")}
+          </button>
+        )}
       </div>
     );
   }
@@ -280,7 +308,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 px-0 sm:px-4">
       <div className="bg-card rounded-t-xl sm:rounded-xl border border-border shadow-xl w-full sm:max-w-lg max-h-[90dvh] sm:max-h-[80vh] flex flex-col pb-safe sm:pb-0">
         <div className="flex items-center justify-between p-4 border-b border-border">
-          <h3 className="font-semibold">{t("selectorAlimento.title")}</h3>
+          <h3 className="font-semibold">{modoSustituirAlternativa ? t("selectorAlimento.titleSustituirAlternativa") : t("selectorAlimento.title")}</h3>
           <button
             onClick={onClose}
             aria-label={t("selectorAlimento.close")}
@@ -342,7 +370,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
                   >
                     <div
                       className="w-full text-left p-3 hover:bg-amber-50 dark:hover:bg-amber-500/15 transition-colors cursor-pointer"
-                      onClick={() => quickAddAlimento(s)}
+                      onClick={() => modoSustituirAlternativa ? toggleExpandAlimento(s) : quickAddAlimento(s)}
                     >
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-medium">{s.nombre}</p>
@@ -409,7 +437,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
                   >
                     <div
                       className="w-full text-left p-3 hover:bg-purple-50 dark:hover:bg-purple-500/15 transition-colors cursor-pointer"
-                      onClick={() => quickAddReceta(r)}
+                      onClick={() => modoSustituirAlternativa ? toggleExpandReceta(r) : quickAddReceta(r)}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 min-w-0">
@@ -480,7 +508,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
                           "w-full text-left p-3 transition-colors cursor-pointer",
                           verde ? "hover:bg-emerald-50 dark:hover:bg-emerald-500/15" : "hover:bg-muted",
                         )}
-                        onClick={() => quickAddAlimento(item)}
+                        onClick={() => modoSustituirAlternativa ? toggleExpandAlimento(item) : quickAddAlimento(item)}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2 min-w-0">

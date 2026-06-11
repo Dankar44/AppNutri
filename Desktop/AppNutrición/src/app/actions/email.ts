@@ -247,7 +247,7 @@ export async function enviarPlanPorEmail(
           alimento: a.alimento
             ? {
                 id: a.alimento.id,
-                nombre: a.alimento.nombre,
+                nombre: a.nombrePersonalizado || a.alimento.nombre,
                 categoria: a.alimento.categoria ?? "OTROS",
                 calorias: a.alimento.calorias ?? 0,
                 proteinas: a.alimento.proteinas ?? 0,
@@ -260,7 +260,7 @@ export async function enviarPlanPorEmail(
           receta: a.receta
             ? {
                 id: a.receta.id,
-                nombre: a.receta.nombre,
+                nombre: a.nombrePersonalizado || a.receta.nombre,
                 descripcion: a.receta.descripcion,
                 instrucciones: a.receta.instrucciones,
                 porciones: a.receta.porciones ?? 1,

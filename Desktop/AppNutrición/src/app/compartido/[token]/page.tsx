@@ -33,6 +33,7 @@ export default async function SharedPlanPage({ params }: Props) {
           id: a.id,
           cantidad: a.cantidad,
           unidad: a.unidad ?? "GRAMOS",
+          nombrePersonalizado: a.nombrePersonalizado ?? null,
           alimento: a.alimento
             ? {
                 id: a.alimento.id,

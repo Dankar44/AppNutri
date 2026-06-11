@@ -8,6 +8,14 @@ import type { DiaSemana, TipoComida, UnidadMedida } from "@/generated/prisma/cli
 import { sanitizeString, sanitizeSearch, LIMITS } from "@/lib/validation";
 import { getTranslations } from "next-intl/server";
 
+interface PlantillaAlternativa {
+  alimentoId: string | null;
+  recetaId: string | null;
+  cantidad: number;
+  unidad: UnidadMedida;
+  nombrePersonalizado?: string | null;
+}
+
 interface PlantillaDia {
   dia: DiaSemana;
   comidas: {
@@ -17,6 +25,10 @@ interface PlantillaDia {
       recetaId: string | null;
       cantidad: number;
       unidad: UnidadMedida;
+      /// Alias visual (#5). Plantillas antiguas no lo tienen.
+      nombrePersonalizado?: string | null;
+      /// Alternativas "o ..." (#5). Plantillas antiguas no lo tienen.
+      alternativas?: PlantillaAlternativa[];
     }[];
   }[];
 }
@@ -164,7 +176,7 @@ export async function crearPlanDesdePlantilla(
 
   const datos = (plantilla.datos as unknown as PlantillaDia[]) || [];
 
-  // Recoger todos los IDs referenciados y verificar cuáles existen
+  // Recoger todos los IDs referenciados (incl. alternativas) y verificar cuáles existen
   const alimentoIds = new Set<string>();
   const recetaIds = new Set<string>();
   for (const dia of datos) {
@@ -172,6 +184,10 @@ export async function crearPlanDesdePlantilla(
       for (const a of comida.alimentos) {
         if (a.alimentoId) alimentoIds.add(a.alimentoId);
         if (a.recetaId) recetaIds.add(a.recetaId);
+        for (const alt of a.alternativas ?? []) {
+          if (alt.alimentoId) alimentoIds.add(alt.alimentoId);
+          if (alt.recetaId) recetaIds.add(alt.recetaId);
+        }
       }
     }
   }
@@ -222,16 +238,37 @@ export async function crearPlanDesdePlantilla(
           (!a.recetaId || recetasValidas.has(a.recetaId))
       );
 
-      if (alimentosValidos2.length > 0) {
-        await prisma.alimentoEnComida.createMany({
-          data: alimentosValidos2.map((a, aOrden) => ({
+      // Crear cada alimento con su alias y sus alternativas (#5); las alternativas
+      // con referencias rotas se descartan igual que los alimentos.
+      for (let aOrden = 0; aOrden < alimentosValidos2.length; aOrden++) {
+        const a = alimentosValidos2[aOrden];
+        const altsValidas = (a.alternativas ?? []).filter(
+          (alt) =>
+            (alt.alimentoId && alimentosValidos.has(alt.alimentoId)) ||
+            (alt.recetaId && recetasValidas.has(alt.recetaId)),
+        );
+        await prisma.alimentoEnComida.create({
+          data: {
             comidaId: comidaCreada.id,
             alimentoId: a.alimentoId && alimentosValidos.has(a.alimentoId) ? a.alimentoId : null,
             recetaId: a.recetaId && recetasValidas.has(a.recetaId) ? a.recetaId : null,
             cantidad: a.cantidad,
             unidad: a.unidad,
+            nombrePersonalizado: a.nombrePersonalizado ?? null,
             orden: aOrden,
-          })),
+            alternativas: altsValidas.length > 0
+              ? {
+                  create: altsValidas.map((alt, j) => ({
+                    alimentoId: alt.alimentoId && alimentosValidos.has(alt.alimentoId) ? alt.alimentoId : null,
+                    recetaId: alt.recetaId && recetasValidas.has(alt.recetaId) ? alt.recetaId : null,
+                    cantidad: alt.cantidad,
+                    unidad: alt.unidad,
+                    nombrePersonalizado: alt.nombrePersonalizado ?? null,
+                    orden: j,
+                  })),
+                }
+              : undefined,
+          },
         });
       }
     }

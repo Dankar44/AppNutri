@@ -387,6 +387,8 @@
     "toastReplaced": "Alimento reemplazado",
     "toastReplaceError": "Error al reemplazar",
     "toastUpdateQuantityError": "Error al actualizar cantidad",
+    "toastAlternativasRecalculadas": "{n, plural, one {# alternativa recalculada} other {# alternativas recalculadas}} según la nueva cantidad",
+    "toastEquivalenciasGuardadas": "Equivalencias guardadas",
     "sinNombre": "Sin nombre"
   },
   "alimentoCard": {
@@ -396,6 +398,8 @@
     "addAlternativa": "Añadir alternativa",
     "removeAlternativa": "Quitar alternativa",
     "alternativasLabel": "Alternativas",
+    "renombrar": "Editar nombre (solo texto, no cambia macros)",
+    "revisarEquivalencias": "Revisar equivalencias",
     "delete": "Eliminar"
   },
   "comidaSlot": {
@@ -428,6 +432,7 @@
   },
   "selectorAlimento": {
     "title": "Añadir alimento o receta",
+    "titleSustituirAlternativa": "Sustituir o añadir alternativa",
     "close": "Cerrar",
     "searchPlaceholder": "Buscar alimento o receta...",
     "filterByName": "Filtrar por nombre...",
@@ -480,7 +485,22 @@
     "addAsAlternativa": "Añadir como alternativa",
     "referenceQty": "Cantidad",
     "substitute": "Sustituir",
-    "addAlternativaBtn": "Alternativa"
+    "addAlternativaBtn": "Alternativa",
+    "titleRecipe": "Recetas equivalentes",
+    "searchRecipe": "Buscar receta",
+    "columnRecipe": "Receta",
+    "unitRaciones": "rac.",
+    "masOpciones": "Más opciones",
+    "added": "Añadida"
+  },
+  "revisionPanel": {
+    "title": "Revisar equivalencias",
+    "nota": "Cambia la cantidad del alimento principal y las alternativas se recalculan para igualar sus calorías. También puedes ajustar cada una a mano.",
+    "columnaCantidad": "Cantidad",
+    "recalcular": "Recalcular todas",
+    "sinDatos": "Sin datos nutricionales",
+    "guardar": "Guardar",
+    "cancelar": "Cancelar"
   },
   "plantillaSelector": {
     "title": "Crear desde plantilla (opcional)",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useState, useTransition, useMemo } from "react";
+import { useState, useTransition, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -26,6 +26,9 @@ import {
   sustituirAlimentoEnComida,
   agregarAlternativa,
   eliminarAlternativa,
+  actualizarCantidadAlternativa,
+  renombrarItemPlan,
+  guardarEquivalenciasItem,
 } from "@/app/actions/planes";
 import type { UnidadMedida } from "@/generated/prisma/client";
 import { cn, isNextNavigation } from "@/lib/utils";
@@ -36,6 +39,7 @@ interface AlimentoEnComidaData {
   id: string;
   cantidad: number;
   unidad: string;
+  nombrePersonalizado?: string | null;
   alimento: {
     id: string;
     nombre: string;
@@ -62,7 +66,25 @@ interface AlimentoEnComidaData {
     ingredientes?: { nombre: string; cantidad: number; unidad: string }[];
     esPropio?: boolean;
   } | null;
-  alternativas?: { id: string; nombre: string; cantidad: number; unidad: string; esReceta: boolean }[];
+  alternativas?: {
+    id: string;
+    nombre: string;
+    cantidad: number;
+    unidad: string;
+    esReceta: boolean;
+    realId?: string | null;
+    calorias?: number;
+    proteinas?: number;
+    carbohidratos?: number;
+    grasas?: number;
+    fibra?: number;
+    porcion?: number;
+    recetaPorciones?: number;
+    recetaDescripcion?: string | null;
+    recetaIngredientes?: { nombre: string; cantidad: number; unidad: string }[];
+    /** UI optimista: aún sin confirmar por el servidor (#5). */
+    pendiente?: boolean;
+  }[];
 }
 
 interface ComidaData {
@@ -151,6 +173,11 @@ export function PlanEditor({
   const [selectedComidaId, setSelectedComidaId] = useState<string | null>(null);
   // #5 — Si está, el selector de alimento añadirá lo elegido como ALTERNATIVA de este AlimentoEnComida.
   const [alternativaParaId, setAlternativaParaId] = useState<string | null>(null);
+  // #5 — UI optimista: alternativas recién añadidas (visibles al instante, marcadas
+  // "pendiente" hasta que el refresh trae la real) y eliminadas (ocultas al instante).
+  type AltOptimista = { id: string; nombre: string; cantidad: number; unidad: string; esReceta: boolean; realId: string | null; pendiente: true };
+  const [altsOptimistas, setAltsOptimistas] = useState<Record<string, AltOptimista[]>>({});
+  const [altsEliminadas, setAltsEliminadas] = useState<Set<string>>(new Set());
   const [activeDragItem, setActiveDragItem] = useState<DragItemData | null>(null);
   const [selectedDay, setSelectedDay] = useState<DayTab>("TODOS");
 
@@ -172,7 +199,7 @@ export function PlanEditor({
             return {
               id: a.id,
               alimentoRealId: a.alimento?.id || a.receta?.id || null,
-              nombre: item?.nombre || t("editor.sinNombre"),
+              nombre: a.nombrePersonalizado || item?.nombre || t("editor.sinNombre"),
               cantidad: a.cantidad,
               unidad: a.unidad || "GRAMOS",
               porcion: a.alimento?.porcion || 100,
@@ -188,13 +215,49 @@ export function PlanEditor({
               recetaIngredientes: a.receta?.ingredientes,
               recetaDescripcion: a.receta?.descripcion,
               recetaPorciones: a.receta?.porciones,
-              alternativas: a.alternativas ?? [],
+              // Merge optimista: servidor (sin las eliminadas) + pendientes aún no confirmadas.
+              alternativas: [
+                ...(a.alternativas ?? []).filter((s) => !altsEliminadas.has(s.id)),
+                ...(altsOptimistas[a.id] ?? []).filter(
+                  (o) => !(a.alternativas ?? []).some((s) => s.realId === o.realId && Math.abs(s.cantidad - o.cantidad) < 0.01),
+                ),
+              ],
             };
           }),
         })),
       })),
-    [dias]
+    [dias, altsOptimistas, altsEliminadas]
   );
+
+  // Poda del estado optimista cuando el refresh trae los datos reales.
+  useEffect(() => {
+    const serverPorItem = new Map<string, { id: string; realId?: string | null; cantidad: number }[]>();
+    const todosIds = new Set<string>();
+    for (const d of dias) {
+      for (const c of d.comidas) {
+        for (const a of c.alimentos) {
+          serverPorItem.set(a.id, a.alternativas ?? []);
+          for (const s of a.alternativas ?? []) todosIds.add(s.id);
+        }
+      }
+    }
+    setAltsOptimistas((prev) => {
+      let changed = false;
+      const next: Record<string, AltOptimista[]> = {};
+      for (const [itemId, list] of Object.entries(prev)) {
+        const server = serverPorItem.get(itemId) ?? [];
+        const rest = list.filter((o) => !server.some((s) => s.realId === o.realId && Math.abs(s.cantidad - o.cantidad) < 0.01));
+        if (rest.length !== list.length) changed = true;
+        if (rest.length > 0) next[itemId] = rest;
+      }
+      return changed || Object.keys(next).length !== Object.keys(prev).length ? next : prev;
+    });
+    setAltsEliminadas((prev) => {
+      const next = new Set([...prev].filter((id) => todosIds.has(id)));
+      return next.size !== prev.size ? next : prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dias]);
 
   // Get available day keys from the data
   const availableDays = useMemo(
@@ -300,28 +363,95 @@ export function PlanEditor({
   }
 
   function handleEliminarAlternativa(alternativaId: string) {
+    // UI optimista: ocultar al instante; restaurar si el servidor falla.
+    setAltsEliminadas((prev) => new Set(prev).add(alternativaId));
     startTransition(async () => {
       try {
         await eliminarAlternativa(alternativaId);
         router.refresh();
       } catch (error) {
         if (isNextNavigation(error)) throw error;
+        setAltsEliminadas((prev) => {
+          const next = new Set(prev);
+          next.delete(alternativaId);
+          return next;
+        });
         toast.error(t("editor.toastDeleteError"));
       }
     });
   }
 
-  // Desde el panel de "equivalente": añade el alimento equivalente como alternativa.
-  function handleAgregarAlternativaDirecta(alimentoEnComidaId: string, alimentoId: string, _nombre: string, cantidad: number) {
+  /**
+   * Añade una alternativa con UI optimista (#5): se pinta al instante como
+   * "pendiente" y se consolida cuando el refresh trae la fila real; si el
+   * servidor falla, se retira y se avisa.
+   */
+  function agregarAlternativaOptimista(
+    alimentoEnComidaId: string,
+    payload: { alimentoId: string | null; recetaId: string | null; nombre: string; cantidad: number; unidad: string },
+  ) {
+    const tempId = `opt-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+    const optimista: AltOptimista = {
+      id: tempId,
+      nombre: payload.nombre,
+      cantidad: payload.cantidad,
+      unidad: payload.unidad,
+      esReceta: !!payload.recetaId,
+      realId: payload.alimentoId || payload.recetaId,
+      pendiente: true,
+    };
+    setAltsOptimistas((prev) => ({
+      ...prev,
+      [alimentoEnComidaId]: [...(prev[alimentoEnComidaId] ?? []), optimista],
+    }));
     startTransition(async () => {
       try {
-        await agregarAlternativa(alimentoEnComidaId, alimentoId, null, cantidad);
+        await agregarAlternativa(alimentoEnComidaId, payload.alimentoId, payload.recetaId, payload.cantidad, payload.unidad as UnidadMedida);
         router.refresh();
       } catch (error) {
         if (isNextNavigation(error)) throw error;
+        setAltsOptimistas((prev) => ({
+          ...prev,
+          [alimentoEnComidaId]: (prev[alimentoEnComidaId] ?? []).filter((o) => o.id !== tempId),
+        }));
         toast.error(t("editor.toastAddError"));
       }
     });
+  }
+
+  // Desde el panel de "equivalente": añade el alimento equivalente como alternativa.
+  function handleAgregarAlternativaDirecta(alimentoEnComidaId: string, alimentoId: string, nombre: string, cantidad: number, esReceta = false) {
+    agregarAlternativaOptimista(alimentoEnComidaId, {
+      alimentoId: esReceta ? null : alimentoId,
+      recetaId: esReceta ? alimentoId : null,
+      nombre,
+      cantidad,
+      unidad: "GRAMOS",
+    });
+  }
+
+  // Desde el catálogo completo ("Más opciones"): sustituir el ítem por lo elegido.
+  function handleSustituirDesdeSelector(item: { alimentoId: string | null; recetaId: string | null; cantidad: number; unidad: string }) {
+    const id = alternativaParaId;
+    const nuevoId = item.alimentoId || item.recetaId;
+    if (!id || !nuevoId) return;
+    startTransition(async () => {
+      try {
+        await sustituirAlimentoEnComida(id, nuevoId, item.cantidad, item.unidad as UnidadMedida, !!item.recetaId);
+        router.refresh();
+        toast.success(t("editor.toastReplaced"));
+      } catch (error) {
+        if (isNextNavigation(error)) throw error;
+        toast.error(t("editor.toastReplaceError"));
+      }
+    });
+  }
+
+  // Desde el catálogo completo ("Más opciones"): añadir lo elegido como alternativa.
+  function handleAlternativaDesdeSelector(item: { alimentoId: string | null; recetaId: string | null; nombre: string; cantidad: number; unidad: string }) {
+    const id = alternativaParaId;
+    if (!id) return;
+    agregarAlternativaOptimista(id, item);
   }
 
   function handleSelectAlimento(item: {
@@ -337,16 +467,7 @@ export function PlanEditor({
   }) {
     // Modo alternativa (#5): lo elegido se añade como "o ..." del ítem, no como comida nueva.
     if (alternativaParaId) {
-      const itemId = alternativaParaId;
-      startTransition(async () => {
-        try {
-          await agregarAlternativa(itemId, item.alimentoId, item.recetaId, item.cantidad, item.unidad as UnidadMedida);
-          router.refresh();
-        } catch (error) {
-          if (isNextNavigation(error)) throw error;
-          toast.error(t("editor.toastAddError"));
-        }
-      });
+      agregarAlternativaOptimista(alternativaParaId, item);
       return;
     }
     if (!selectedComidaId) return;
@@ -385,7 +506,7 @@ export function PlanEditor({
     router.refresh();
   }
 
-  async function handleReemplazar(alimentoEnComidaId: string, nuevoAlimentoId: string, _nombre: string, cantidad: number) {
+  async function handleReemplazar(alimentoEnComidaId: string, nuevoAlimentoId: string, _nombre: string, cantidad: number, esReceta = false) {
     if (localCallbacks) {
       let comidaId: string | null = null;
       for (const dia of dias) {
@@ -404,7 +525,7 @@ export function PlanEditor({
     startTransition(async () => {
       try {
         // Sustituir = UPDATE de la línea (conserva sus alternativas), no borrar+crear.
-        await sustituirAlimentoEnComida(alimentoEnComidaId, nuevoAlimentoId, cantidad);
+        await sustituirAlimentoEnComida(alimentoEnComidaId, nuevoAlimentoId, cantidad, "GRAMOS", esReceta);
         router.refresh();
         toast.success(t("editor.toastReplaced"));
       } catch (error) {
@@ -421,7 +542,50 @@ export function PlanEditor({
     }
     startTransition(async () => {
       try {
-        await actualizarCantidadAlimento(alimentoEnComidaId, cantidad);
+        const res = await actualizarCantidadAlimento(alimentoEnComidaId, cantidad);
+        router.refresh();
+        if (res && res.alternativasRecalculadas > 0) {
+          toast.success(t("editor.toastAlternativasRecalculadas", { n: res.alternativasRecalculadas }));
+        }
+      } catch (error) {
+        if (isNextNavigation(error)) throw error;
+        toast.error(t("editor.toastUpdateQuantityError"));
+      }
+    });
+  }
+
+  // #5 — Editar la cantidad de una alternativa ya añadida (inline en la línea "↳").
+  function handleCantidadAlternativaChange(alternativaId: string, cantidad: number) {
+    startTransition(async () => {
+      try {
+        await actualizarCantidadAlternativa(alternativaId, cantidad);
+        router.refresh();
+      } catch (error) {
+        if (isNextNavigation(error)) throw error;
+        toast.error(t("editor.toastUpdateQuantityError"));
+      }
+    });
+  }
+
+  // #5 — Guardar la revisión de equivalencias (principal + todas las alternativas a la vez).
+  function handleGuardarEquivalencias(itemId: string, cantidadPrincipal: number, cambios: { id: string; cantidad: number }[]) {
+    startTransition(async () => {
+      try {
+        await guardarEquivalenciasItem(itemId, cantidadPrincipal, cambios);
+        router.refresh();
+        toast.success(t("editor.toastEquivalenciasGuardadas"));
+      } catch (error) {
+        if (isNextNavigation(error)) throw error;
+        toast.error(t("editor.toastUpdateQuantityError"));
+      }
+    });
+  }
+
+  // #5 — Alias visual de una línea o alternativa (solo presentación, no toca macros).
+  function handleRenombrar(id: string, nombre: string, esAlternativa: boolean) {
+    startTransition(async () => {
+      try {
+        await renombrarItemPlan(id, nombre, esAlternativa);
         router.refresh();
       } catch (error) {
         if (isNextNavigation(error)) throw error;
@@ -551,6 +715,9 @@ export function PlanEditor({
                       onAbrirSelectorAlternativa={handleAbrirSelectorAlternativa}
                       onEliminarAlternativa={handleEliminarAlternativa}
                       onAgregarAlternativaDirecta={handleAgregarAlternativaDirecta}
+                      onCantidadAlternativaChange={handleCantidadAlternativaChange}
+                      onRenombrar={handleRenombrar}
+                      onGuardarEquivalencias={handleGuardarEquivalencias}
                       readOnly={readOnly}
                       interactionMode={interactionMode}
                       ocultarCalorias={ocultarCalorias}
@@ -602,6 +769,9 @@ export function PlanEditor({
           open={selectorOpen && !readOnly}
           onClose={() => { setSelectorOpen(false); setAlternativaParaId(null); }}
           onSelect={handleSelectAlimento}
+          modoSustituirAlternativa={!!alternativaParaId}
+          onSustituir={handleSustituirDesdeSelector}
+          onAlternativa={handleAlternativaDesdeSelector}
           comidaId={selectedComidaId || undefined}
           macrosObjetivo={
             objetivos.calorias != null

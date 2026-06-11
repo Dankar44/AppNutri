@@ -1,7 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Trash2, GripVertical, Replace, ExternalLink, Image as ImageLinkIcon, Copy, CopyPlus, CornerDownRight, X } from "lucide-react";
+import { Trash2, GripVertical, Replace, ExternalLink, Image as ImageLinkIcon, Copy, CornerDownRight, X, Pencil, SlidersHorizontal } from "lucide-react";
+import { RevisionEquivalenciasPanel } from "./revision-equivalencias-panel";
 import { useState, useRef, useEffect } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
@@ -33,13 +34,185 @@ interface AlimentoCardProps {
   ocultarCalorias?: boolean;
   onRemove: (id: string) => void;
   onCantidadChange: (id: string, cantidad: number) => void;
-  onBuscarEquivalente?: (alimentoId: string, nombre: string, calorias: number, proteinas: number, carbohidratos: number, grasas: number, cantidad: number) => void;
+  onBuscarEquivalente?: (alimentoId: string, nombre: string, calorias: number, proteinas: number, carbohidratos: number, grasas: number, cantidad: number, esReceta: boolean) => void;
   onCopiar?: (id: string) => void;
   /** Alternativas equivalentes ("o ...") de este ítem (#5). */
-  alternativas?: { id: string; nombre: string; cantidad: number; unidad?: string; esReceta?: boolean }[];
-  /** Abre el selector para añadir una alternativa a este ítem (recibe el id del AlimentoEnComida). */
-  onAgregarAlternativa?: (id: string) => void;
+  alternativas?: AlternativaData[];
   onEliminarAlternativa?: (alternativaId: string) => void;
+  /** Edita la cantidad de una alternativa ya añadida (#5). */
+  onCantidadAlternativaChange?: (alternativaId: string, cantidad: number) => void;
+  /** Alias visual de la línea o de una alternativa (solo presentación) (#5). */
+  onRenombrar?: (id: string, nombre: string, esAlternativa: boolean) => void;
+  /** Guarda la revisión de equivalencias (cantidad del principal + de cada alternativa) (#5). */
+  onGuardarEquivalencias?: (id: string, cantidadPrincipal: number, cambios: { id: string; cantidad: number }[]) => void;
+}
+
+interface AlternativaData {
+  id: string;
+  nombre: string;
+  cantidad: number;
+  unidad?: string;
+  esReceta?: boolean;
+  realId?: string | null;
+  calorias?: number;
+  proteinas?: number;
+  carbohidratos?: number;
+  grasas?: number;
+  fibra?: number;
+  porcion?: number;
+  recetaPorciones?: number;
+  recetaDescripcion?: string | null;
+  recetaIngredientes?: { nombre: string; cantidad: number; unidad: string }[];
+  /** UI optimista: aún sin confirmar por el servidor (#5). */
+  pendiente?: boolean;
+}
+
+/** Línea "↳" de una alternativa: cantidad editable inline + alias + hover/clic con macros + quitar (#5). */
+function AlternativaRow({
+  alt,
+  interactionMode = "dashboard",
+  ocultarCalorias = false,
+  onCantidadChange,
+  onRenombrar,
+  onEliminar,
+}: {
+  alt: AlternativaData;
+  interactionMode?: InteractionMode;
+  ocultarCalorias?: boolean;
+  onCantidadChange?: (alternativaId: string, cantidad: number) => void;
+  onRenombrar?: (id: string, nombre: string, esAlternativa: boolean) => void;
+  onEliminar?: (alternativaId: string) => void;
+}) {
+  const t = useTranslations("diets");
+  const [tempCantidad, setTempCantidad] = useState(alt.cantidad);
+  const [editandoNombre, setEditandoNombre] = useState(false);
+  const [tempNombre, setTempNombre] = useState(alt.nombre);
+  const debounceRef = useRef<NodeJS.Timeout>(null);
+
+  useEffect(() => {
+    setTempCantidad(alt.cantidad);
+  }, [alt.cantidad]);
+  useEffect(() => {
+    setTempNombre(alt.nombre);
+  }, [alt.nombre]);
+
+  function handleCantidad(value: number) {
+    setTempCantidad(value);
+    if (!onCantidadChange) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      if (value > 0) onCantidadChange(alt.id, value);
+    }, 500);
+  }
+
+  function guardarNombre() {
+    setEditandoNombre(false);
+    if (onRenombrar && tempNombre.trim() && tempNombre.trim() !== alt.nombre) {
+      onRenombrar(alt.id, tempNombre.trim(), true);
+    } else {
+      setTempNombre(alt.nombre);
+    }
+  }
+
+  // Hover/clic con macros, igual que el alimento principal (si tenemos los datos).
+  const tieneMacros = alt.calorias != null && alt.realId;
+  const altHref =
+    tieneMacros && interactionMode === "dashboard"
+      ? (alt.esReceta
+        ? `/recetas/${alt.realId}?porciones=${alt.cantidad}`
+        : `/alimentos/${alt.realId}?cantidad=${Math.round(convertirAGramos(alt.cantidad, alt.unidad || "GRAMOS", alt.porcion || 100))}`)
+      : null;
+
+  // Recién añadida (UI optimista): aparece al instante con su aspecto DEFINITIVO
+  // (sin gris ni spinner); solo que aún no es editable hasta que el servidor
+  // confirme. Si falla, el padre la retira y muestra el error.
+  if (alt.pendiente) {
+    return (
+      <div className="flex items-center gap-1.5 text-xs rounded-md bg-muted/40 px-2 py-1">
+        <CornerDownRight className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
+        <span className="w-14 px-1 py-0.5 inline-block text-right tabular-nums">{alt.cantidad}</span>
+        <span className="text-muted-foreground shrink-0">{getUnidadLabel(alt.unidad || "GRAMOS", alt.esReceta)} {t("alimentoCard.unitConnector")}</span>
+        <span className={cn("font-medium truncate", alt.esReceta ? "text-purple-600 dark:text-purple-400" : "text-foreground/80")}>{alt.nombre}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="group/alt flex items-center gap-1.5 text-xs rounded-md bg-muted/40 px-2 py-1">
+      <CornerDownRight className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
+      {onCantidadChange ? (
+        <input
+          type="number"
+          inputMode="decimal"
+          value={tempCantidad}
+          onChange={(e) => handleCantidad(parseFloat(e.target.value) || 0)}
+          className="w-14 px-1 py-0.5 text-xs rounded border border-transparent hover:border-border focus:border-primary/50 bg-transparent text-right tabular-nums focus:outline-none focus:ring-1 focus:ring-primary/20"
+          min={0}
+          max={10000}
+          step={alt.esReceta ? 0.5 : 1}
+        />
+      ) : (
+        <span className="tabular-nums text-muted-foreground">{alt.cantidad}</span>
+      )}
+      <span className="text-muted-foreground shrink-0">{getUnidadLabel(alt.unidad || "GRAMOS", alt.esReceta)} {t("alimentoCard.unitConnector")}</span>
+      {editandoNombre ? (
+        <input
+          type="text"
+          value={tempNombre}
+          autoFocus
+          maxLength={200}
+          onChange={(e) => setTempNombre(e.target.value)}
+          onBlur={guardarNombre}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") guardarNombre();
+            if (e.key === "Escape") { setTempNombre(alt.nombre); setEditandoNombre(false); }
+          }}
+          className="flex-1 min-w-0 px-1 py-0.5 text-xs rounded border border-primary/40 bg-background focus:outline-none focus:ring-1 focus:ring-primary/30"
+        />
+      ) : tieneMacros ? (
+        <FoodHoverCard
+          nombre={alt.nombre}
+          calorias={alt.calorias ?? 0}
+          proteinas={alt.proteinas ?? 0}
+          carbohidratos={alt.carbohidratos ?? 0}
+          grasas={alt.grasas ?? 0}
+          fibra={alt.fibra ?? 0}
+          cantidad={alt.cantidad}
+          unidad={alt.unidad || "GRAMOS"}
+          porcion={alt.porcion}
+          esReceta={alt.esReceta}
+          recetaIngredientes={alt.recetaIngredientes}
+          recetaDescripcion={alt.recetaDescripcion}
+          recetaPorciones={alt.recetaPorciones}
+          href={altHref}
+          interactionMode={interactionMode}
+          ocultarCalorias={ocultarCalorias}
+        >
+          <span className={cn("font-medium truncate", alt.esReceta ? "text-purple-600 dark:text-purple-400" : "text-foreground/80", interactionMode === "dashboard" && "hover:underline")}>{alt.nombre}</span>
+        </FoodHoverCard>
+      ) : (
+        <span className={cn("font-medium truncate", alt.esReceta ? "text-purple-600 dark:text-purple-400" : "text-foreground/80")}>{alt.nombre}</span>
+      )}
+      {onRenombrar && !editandoNombre && (
+        <button
+          onClick={() => setEditandoNombre(true)}
+          title={t("alimentoCard.renombrar")}
+          className="p-0.5 rounded text-muted-foreground/40 hover:text-primary opacity-0 group-hover/alt:opacity-100 focus:opacity-100 transition-opacity shrink-0"
+        >
+          <Pencil className="w-3 h-3" />
+        </button>
+      )}
+      {onEliminar && (
+        <button
+          onClick={() => onEliminar(alt.id)}
+          title={t("alimentoCard.removeAlternativa")}
+          className="ml-auto p-0.5 rounded hover:bg-red-50 dark:hover:bg-red-500/10 text-muted-foreground/50 hover:text-red-500 transition-colors shrink-0"
+        >
+          <X className="w-3 h-3" />
+        </button>
+      )}
+    </div>
+  );
 }
 
 export function AlimentoCard({
@@ -69,12 +242,30 @@ export function AlimentoCard({
   onBuscarEquivalente,
   onCopiar,
   alternativas,
-  onAgregarAlternativa,
   onEliminarAlternativa,
+  onCantidadAlternativaChange,
+  onRenombrar,
+  onGuardarEquivalencias,
 }: AlimentoCardProps) {
   const t = useTranslations("diets");
   const [tempCantidad, setTempCantidad] = useState(cantidad);
+  const [editandoNombre, setEditandoNombre] = useState(false);
+  const [tempNombre, setTempNombre] = useState(nombre);
+  const [revisionOpen, setRevisionOpen] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout>(null);
+
+  useEffect(() => {
+    setTempNombre(nombre);
+  }, [nombre]);
+
+  function guardarNombre() {
+    setEditandoNombre(false);
+    if (onRenombrar && tempNombre.trim() && tempNombre.trim() !== nombre) {
+      onRenombrar(id, tempNombre.trim(), false);
+    } else {
+      setTempNombre(nombre);
+    }
+  }
 
   // Sincronizar la cantidad mostrada cuando cambia desde fuera (p. ej. al pegar
   // un alimento que ya existe en la comida y se SUMA su cantidad), no solo en
@@ -197,9 +388,34 @@ export function AlimentoCard({
         <span className="text-muted-foreground text-sm shrink-0">
           {unidadLabel} {t("alimentoCard.unitConnector")}
         </span>
-        <FoodHoverCard {...foodHoverProps}>
-          <span className={cn("truncate font-medium", nameColor, interactionMode === "dashboard" && "hover:underline")}>{nombre}</span>
-        </FoodHoverCard>
+        {editandoNombre ? (
+          <input
+            type="text"
+            value={tempNombre}
+            autoFocus
+            maxLength={200}
+            onChange={(e) => setTempNombre(e.target.value)}
+            onBlur={guardarNombre}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") guardarNombre();
+              if (e.key === "Escape") { setTempNombre(nombre); setEditandoNombre(false); }
+            }}
+            className="flex-1 min-w-0 px-1.5 py-0.5 text-sm rounded border border-primary/40 bg-background focus:outline-none focus:ring-1 focus:ring-primary/30"
+          />
+        ) : (
+          <FoodHoverCard {...foodHoverProps}>
+            <span className={cn("truncate font-medium", nameColor, interactionMode === "dashboard" && "hover:underline")}>{nombre}</span>
+          </FoodHoverCard>
+        )}
+        {onRenombrar && !editandoNombre && (
+          <button
+            onClick={() => setEditandoNombre(true)}
+            title={t("alimentoCard.renombrar")}
+            className="p-0.5 rounded text-muted-foreground/40 hover:text-primary transition-colors shrink-0"
+          >
+            <Pencil className="w-3 h-3" />
+          </button>
+        )}
         {enlaceProducto && (
           <a href={enlaceProducto} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="shrink-0">
             <ExternalLink className="w-3.5 h-3.5 text-primary/60 hover:text-primary" />
@@ -212,23 +428,18 @@ export function AlimentoCard({
         )}
       </div>
 
-      {onBuscarEquivalente && !esReceta && (
+      {onBuscarEquivalente && (
         <button
-          onClick={() => onBuscarEquivalente(id, nombre, calorias, proteinas, carbohidratos, grasas, convertirAGramos(cantidad, unidad || "GRAMOS", porcion || 100))}
+          onClick={() => onBuscarEquivalente(
+            realId,
+            nombre, calorias, proteinas, carbohidratos, grasas,
+            esReceta ? cantidad : convertirAGramos(cantidad, unidad || "GRAMOS", porcion || 100),
+            !!esReceta,
+          )}
           className="p-1.5 rounded-lg border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary/80 hover:text-primary transition-all shrink-0"
           title={t("alimentoCard.searchEquivalent")}
         >
           <Replace className="w-4 h-4" />
-        </button>
-      )}
-
-      {esReceta && onAgregarAlternativa && (
-        <button
-          onClick={() => onAgregarAlternativa(id)}
-          className="p-1.5 rounded-lg border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary/80 hover:text-primary transition-all shrink-0"
-          title={t("alimentoCard.addAlternativa")}
-        >
-          <CopyPlus className="w-4 h-4" />
         </button>
       )}
 
@@ -253,26 +464,54 @@ export function AlimentoCard({
 
       {alternativas && alternativas.length > 0 && (
         <div className="pl-9 pr-3 pb-2 space-y-1">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-0.5">
-            {t("alimentoCard.alternativasLabel")}
-          </p>
+          <div className="flex items-center justify-between mb-0.5">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              {t("alimentoCard.alternativasLabel")}
+            </p>
+            {onGuardarEquivalencias && !revisionOpen && (
+              <button
+                type="button"
+                onClick={() => setRevisionOpen(true)}
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-primary/70 hover:text-primary transition-colors"
+                title={t("alimentoCard.revisarEquivalencias")}
+              >
+                <SlidersHorizontal className="w-3 h-3" />
+                {t("alimentoCard.revisarEquivalencias")}
+              </button>
+            )}
+          </div>
           {alternativas.map((alt) => (
-            <div key={alt.id} className="flex items-center gap-1.5 text-xs rounded-md bg-muted/40 px-2 py-1">
-              <CornerDownRight className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
-              <span className="tabular-nums text-muted-foreground">{alt.cantidad}</span>
-              <span className="text-muted-foreground">{getUnidadLabel(alt.unidad || "GRAMOS", alt.esReceta)} {t("alimentoCard.unitConnector")}</span>
-              <span className={cn("font-medium truncate", alt.esReceta ? "text-purple-600 dark:text-purple-400" : "text-foreground/80")}>{alt.nombre}</span>
-              {onEliminarAlternativa && (
-                <button
-                  onClick={() => onEliminarAlternativa(alt.id)}
-                  title={t("alimentoCard.removeAlternativa")}
-                  className="ml-auto p-0.5 rounded hover:bg-red-50 dark:hover:bg-red-500/10 text-muted-foreground/50 hover:text-red-500 transition-colors shrink-0"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-            </div>
+            <AlternativaRow
+              key={alt.id}
+              alt={alt}
+              interactionMode={interactionMode}
+              ocultarCalorias={ocultarCalorias}
+              onCantidadChange={onCantidadAlternativaChange}
+              onRenombrar={onRenombrar}
+              onEliminar={onEliminarAlternativa}
+            />
           ))}
+          {revisionOpen && onGuardarEquivalencias && (
+            <RevisionEquivalenciasPanel
+              principal={{
+                nombre,
+                cantidad,
+                unidad: unidad || "GRAMOS",
+                esReceta: !!esReceta,
+                calorias,
+                proteinas,
+                carbohidratos,
+                grasas,
+                porcion: porcion ?? 100,
+              }}
+              alternativas={alternativas.filter((a) => !a.pendiente)}
+              onGuardar={(cantidadPrincipal, cambios) => {
+                onGuardarEquivalencias(id, cantidadPrincipal, cambios);
+                setRevisionOpen(false);
+              }}
+              onClose={() => setRevisionOpen(false)}
+            />
+          )}
         </div>
       )}
     </div>

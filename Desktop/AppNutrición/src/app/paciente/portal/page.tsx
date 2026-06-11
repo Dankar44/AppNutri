@@ -219,7 +219,7 @@ export default async function PatientPortalPage() {
       : null;
   const alimentosActual = comidaPlan
     ? comidaPlan.alimentos.map((a) => ({
-        nombre: a.alimento?.nombre || a.receta?.nombre || t("dashboard.alimentoFallback"),
+        nombre: a.nombrePersonalizado || a.alimento?.nombre || a.receta?.nombre || t("dashboard.alimentoFallback"),
         cantidad: a.cantidad,
         unidad: a.unidad ?? "GRAMOS",
       }))

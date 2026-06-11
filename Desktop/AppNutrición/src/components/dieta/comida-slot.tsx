@@ -30,7 +30,25 @@ interface AlimentoEnSlot {
   recetaIngredientes?: { nombre: string; cantidad: number; unidad: string }[];
   recetaDescripcion?: string | null;
   recetaPorciones?: number;
-  alternativas?: { id: string; nombre: string; cantidad: number; unidad?: string; esReceta?: boolean }[];
+  alternativas?: {
+    id: string;
+    nombre: string;
+    cantidad: number;
+    unidad?: string;
+    esReceta?: boolean;
+    realId?: string | null;
+    calorias?: number;
+    proteinas?: number;
+    carbohidratos?: number;
+    grasas?: number;
+    fibra?: number;
+    porcion?: number;
+    recetaPorciones?: number;
+    recetaDescripcion?: string | null;
+    recetaIngredientes?: { nombre: string; cantidad: number; unidad: string }[];
+    /** UI optimista: aún sin confirmar por el servidor (#5). */
+    pendiente?: boolean;
+  }[];
 }
 
 interface ComidaSlotProps {
@@ -41,7 +59,7 @@ interface ComidaSlotProps {
   onAdd: (comidaId: string) => void;
   onRemove: (alimentoEnComidaId: string) => void;
   onCantidadChange: (alimentoEnComidaId: string, cantidad: number) => void;
-  onReemplazar?: (alimentoEnComidaId: string, nuevoAlimentoId: string, nombre: string, cantidad: number) => void;
+  onReemplazar?: (alimentoEnComidaId: string, nuevoAlimentoId: string, nombre: string, cantidad: number, esReceta?: boolean) => void;
   onCopiar?: (comidaId: string) => void;
   onCopiarAlimento?: (alimentoEnComidaId: string) => void;
   /** Nombre del alimento en el "portapapeles" (si hay uno copiado); muestra el botón Pegar. */
@@ -51,7 +69,13 @@ interface ComidaSlotProps {
   onAbrirSelectorAlternativa?: (alimentoEnComidaId: string) => void;
   onEliminarAlternativa?: (alternativaId: string) => void;
   /** Añade el equivalente elegido como alternativa (desde el panel de equivalente). */
-  onAgregarAlternativaDirecta?: (alimentoEnComidaId: string, alimentoId: string, nombre: string, cantidad: number) => void;
+  onAgregarAlternativaDirecta?: (alimentoEnComidaId: string, alimentoId: string, nombre: string, cantidad: number, esReceta?: boolean) => void;
+  /** Edita la cantidad de una alternativa ya añadida (#5). */
+  onCantidadAlternativaChange?: (alternativaId: string, cantidad: number) => void;
+  /** Alias visual de una línea o alternativa (#5). */
+  onRenombrar?: (id: string, nombre: string, esAlternativa: boolean) => void;
+  /** Guarda la revisión de equivalencias de un ítem (#5). */
+  onGuardarEquivalencias?: (id: string, cantidadPrincipal: number, cambios: { id: string; cantidad: number }[]) => void;
   compactHeader?: boolean;
   readOnly?: boolean;
   interactionMode?: InteractionMode;
@@ -74,6 +98,9 @@ export function ComidaSlot({
   onAbrirSelectorAlternativa,
   onEliminarAlternativa,
   onAgregarAlternativaDirecta,
+  onCantidadAlternativaChange,
+  onRenombrar,
+  onGuardarEquivalencias,
   readOnly = false,
   interactionMode = "dashboard",
   ocultarCalorias = false,
@@ -103,6 +130,7 @@ export function ComidaSlot({
     carbohidratos: number;
     grasas: number;
     cantidad: number;
+    esReceta: boolean;
   } | null>(null);
   const debounceRef = useRef<NodeJS.Timeout>(null);
 
@@ -230,13 +258,15 @@ export function ComidaSlot({
                     onCantidadChange={onCantidadChange}
                     onCopiar={onCopiarAlimento}
                     alternativas={a.alternativas}
-                    onAgregarAlternativa={readOnly ? undefined : onAbrirSelectorAlternativa}
                     onEliminarAlternativa={readOnly ? undefined : onEliminarAlternativa}
-                    onBuscarEquivalente={readOnly ? undefined : (_alimentoEnComidaId, nombre, cal, prot, carb, gras, cant) => {
+                    onCantidadAlternativaChange={readOnly ? undefined : onCantidadAlternativaChange}
+                    onRenombrar={readOnly ? undefined : onRenombrar}
+                    onGuardarEquivalencias={readOnly ? undefined : onGuardarEquivalencias}
+                    onBuscarEquivalente={readOnly ? undefined : (_id, nombre, cal, prot, carb, gras, cant, esRec) => {
                       setEquivalenteOpen(
                         equivalenteOpen?.alimentoEnComidaId === a.id
                           ? null
-                          : { alimentoEnComidaId: a.id, alimentoRealId: a.alimentoRealId || a.id, nombre, calorias: cal, proteinas: prot, carbohidratos: carb, grasas: gras, cantidad: cant }
+                          : { alimentoEnComidaId: a.id, alimentoRealId: a.alimentoRealId || a.id, nombre, calorias: cal, proteinas: prot, carbohidratos: carb, grasas: gras, cantidad: cant, esReceta: esRec }
                       );
                     }}
                   />
@@ -249,18 +279,22 @@ export function ComidaSlot({
                       carbohidratos={equivalenteOpen.carbohidratos}
                       grasas={equivalenteOpen.grasas}
                       cantidad={equivalenteOpen.cantidad}
-                      onSelect={(nuevoAlimentoId, nombre, cantidad) => {
-                        if (onReemplazar) {
-                          onReemplazar(a.id, nuevoAlimentoId, nombre, cantidad);
-                        }
+                      esReceta={equivalenteOpen.esReceta}
+                      onSelect={(nuevoId, nombre, cantidad) => {
+                        if (onReemplazar) onReemplazar(a.id, nuevoId, nombre, cantidad, equivalenteOpen?.esReceta ?? false);
                         setEquivalenteOpen(null);
                       }}
                       onAgregarAlternativa={
                         onAgregarAlternativaDirecta
-                          ? (nuevoAlimentoId, nombre, cantidad) => {
-                              onAgregarAlternativaDirecta(a.id, nuevoAlimentoId, nombre, cantidad);
-                              setEquivalenteOpen(null);
+                          ? (nuevoId, nombre, cantidad) => {
+                              // El panel NO se cierra: el nutri puede añadir varias alternativas seguidas.
+                              onAgregarAlternativaDirecta(a.id, nuevoId, nombre, cantidad, equivalenteOpen?.esReceta ?? false);
                             }
+                          : undefined
+                      }
+                      onMasOpciones={
+                        onAbrirSelectorAlternativa
+                          ? () => { onAbrirSelectorAlternativa(a.id); setEquivalenteOpen(null); }
                           : undefined
                       }
                       onClose={() => setEquivalenteOpen(null)}

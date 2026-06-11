@@ -316,15 +316,90 @@ export async function actualizarCantidadAlimento(
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
-  if (dietista.isDemo) return;
+  if (dietista.isDemo) return { alternativasRecalculadas: 0 };
 
   await verificarPropietarioAlimentoEnComida(alimentoEnComidaId, dietista.id, t);
   cantidad = validateNumber(cantidad, 0.1, LIMITS.CANTIDAD_MAX);
+
+  const item = await prisma.alimentoEnComida.findUnique({
+    where: { id: alimentoEnComidaId },
+    select: { cantidad: true, alternativas: { select: { id: true, cantidad: true, recetaId: true } } },
+  });
 
   await prisma.alimentoEnComida.update({
     where: { id: alimentoEnComidaId },
     data: { cantidad },
   });
+
+  // #5 — Reescalar las alternativas proporcionalmente para que sigan siendo
+  // equivalentes (p. ej. principal 60→120 g ⇒ alternativa 70→140 g).
+  let alternativasRecalculadas = 0;
+  if (item && item.cantidad > 0 && item.alternativas.length > 0 && cantidad !== item.cantidad) {
+    const factor = cantidad / item.cantidad;
+    for (const alt of item.alternativas) {
+      const nueva = alt.recetaId
+        ? Math.max(0.5, Math.round(alt.cantidad * factor * 2) / 2) // recetas: pasos de 0,5 raciones
+        : Math.max(1, Math.round(alt.cantidad * factor)); // alimentos: gramos enteros
+      await prisma.alternativaAlimento.update({ where: { id: alt.id }, data: { cantidad: nueva } });
+      alternativasRecalculadas++;
+    }
+  }
+
+  return { alternativasRecalculadas };
+}
+
+/**
+ * Guarda de golpe la revisión de equivalencias de un ítem (#5): la cantidad del
+ * principal y la de cada alternativa EXACTAMENTE como las dejó el nutri en el
+ * panel (sin reescalado automático — eso lo hizo ya el panel en pantalla).
+ */
+export async function guardarEquivalenciasItem(
+  alimentoEnComidaId: string,
+  cantidadPrincipal: number,
+  alternativas: { id: string; cantidad: number }[],
+) {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
+  if (dietista.isDemo) return;
+
+  await verificarPropietarioAlimentoEnComida(alimentoEnComidaId, dietista.id, t);
+  cantidadPrincipal = validateNumber(cantidadPrincipal, 0.1, LIMITS.CANTIDAD_MAX);
+
+  await prisma.alimentoEnComida.update({
+    where: { id: alimentoEnComidaId },
+    data: { cantidad: cantidadPrincipal },
+  });
+
+  for (const alt of alternativas) {
+    const cantidad = validateNumber(alt.cantidad, 0.1, LIMITS.CANTIDAD_MAX);
+    // Scoped al propio ítem → no se puede tocar una alternativa ajena.
+    await prisma.alternativaAlimento.updateMany({
+      where: { id: alt.id, alimentoEnComidaId },
+      data: { cantidad },
+    });
+  }
+}
+
+/**
+ * Renombra (alias visual) una línea del plan o una alternativa (#5).
+ * Solo presentación: NO toca macros ni el Alimento/Receta. Vacío → vuelve al nombre original.
+ */
+export async function renombrarItemPlan(id: string, nombre: string, esAlternativa = false) {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
+  if (dietista.isDemo) return;
+
+  const alias = sanitizeString(nombre, LIMITS.NOMBRE) || null;
+
+  if (esAlternativa) {
+    await verificarPropietarioAlternativa(id, dietista.id, t);
+    await prisma.alternativaAlimento.update({ where: { id }, data: { nombrePersonalizado: alias } });
+  } else {
+    await verificarPropietarioAlimentoEnComida(id, dietista.id, t);
+    await prisma.alimentoEnComida.update({ where: { id }, data: { nombrePersonalizado: alias } });
+  }
 }
 
 export async function actualizarDescripcionComida(
@@ -413,9 +488,10 @@ export async function actualizarCantidadAlternativa(alternativaId: string, canti
  */
 export async function sustituirAlimentoEnComida(
   alimentoEnComidaId: string,
-  alimentoId: string,
+  nuevoId: string,
   cantidad: number,
   unidad: UnidadMedida = "GRAMOS",
+  esReceta = false,
 ) {
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
@@ -425,9 +501,12 @@ export async function sustituirAlimentoEnComida(
   await verificarPropietarioAlimentoEnComida(alimentoEnComidaId, dietista.id, t);
   cantidad = validateNumber(cantidad, 0.1, LIMITS.CANTIDAD_MAX);
 
+  // El alias visual se limpia: es OTRO alimento/receta y el nombre antiguo ya no aplica.
   await prisma.alimentoEnComida.update({
     where: { id: alimentoEnComidaId },
-    data: { alimentoId, recetaId: null, cantidad, unidad },
+    data: esReceta
+      ? { recetaId: nuevoId, alimentoId: null, cantidad, unidad, nombrePersonalizado: null }
+      : { alimentoId: nuevoId, recetaId: null, cantidad, unidad, nombrePersonalizado: null },
   });
 }
 
@@ -526,19 +605,20 @@ async function copiarAlimentosAComida(
       recetaId: true,
       cantidad: true,
       unidad: true,
+      nombrePersonalizado: true,
       // #5 — arrastrar también las alternativas ("o ...") al copiar.
       alternativas: {
         orderBy: { orden: "asc" },
-        select: { alimentoId: true, recetaId: true, cantidad: true, unidad: true },
+        select: { alimentoId: true, recetaId: true, cantidad: true, unidad: true, nombrePersonalizado: true },
       },
     },
   });
 
-  type AltLite = { alimentoId: string | null; recetaId: string | null; cantidad: number; unidad: UnidadMedida };
+  type AltLite = { alimentoId: string | null; recetaId: string | null; cantidad: number; unidad: UnidadMedida; nombrePersonalizado: string | null };
   // Nested create de alternativas para un AlimentoEnComida (undefined si no hay).
   const altCreate = (alts: AltLite[]) =>
     alts.length > 0
-      ? { create: alts.map((alt, j) => ({ alimentoId: alt.alimentoId, recetaId: alt.recetaId, cantidad: alt.cantidad, unidad: alt.unidad, orden: j })) }
+      ? { create: alts.map((alt, j) => ({ alimentoId: alt.alimentoId, recetaId: alt.recetaId, cantidad: alt.cantidad, unidad: alt.unidad, nombrePersonalizado: alt.nombrePersonalizado, orden: j })) }
       : undefined;
 
   if (modo === "reemplazar") {
@@ -552,6 +632,7 @@ async function copiarAlimentosAComida(
           recetaId: a.recetaId,
           cantidad: a.cantidad,
           unidad: a.unidad,
+          nombrePersonalizado: a.nombrePersonalizado,
           orden: orden++,
           alternativas: altCreate(a.alternativas),
         },
@@ -587,7 +668,7 @@ async function copiarAlimentosAComida(
     if (enNuevos) {
       enNuevos.cantidad += o.cantidad;
     } else {
-      nuevos.push({ alimentoId: o.alimentoId, recetaId: o.recetaId, cantidad: o.cantidad, unidad: o.unidad, alternativas: o.alternativas });
+      nuevos.push({ alimentoId: o.alimentoId, recetaId: o.recetaId, cantidad: o.cantidad, unidad: o.unidad, nombrePersonalizado: o.nombrePersonalizado, alternativas: o.alternativas });
     }
   }
 
@@ -604,7 +685,7 @@ async function copiarAlimentosAComida(
   for (const [destinoId, alts] of altsParaFusionados) {
     if (alts.length === 0) continue;
     await prisma.alternativaAlimento.createMany({
-      data: alts.map((alt, j) => ({ alimentoEnComidaId: destinoId, alimentoId: alt.alimentoId, recetaId: alt.recetaId, cantidad: alt.cantidad, unidad: alt.unidad, orden: j })),
+      data: alts.map((alt, j) => ({ alimentoEnComidaId: destinoId, alimentoId: alt.alimentoId, recetaId: alt.recetaId, cantidad: alt.cantidad, unidad: alt.unidad, nombrePersonalizado: alt.nombrePersonalizado, orden: j })),
     });
   }
 
@@ -618,6 +699,7 @@ async function copiarAlimentosAComida(
         recetaId: n.recetaId,
         cantidad: n.cantidad,
         unidad: n.unidad,
+        nombrePersonalizado: n.nombrePersonalizado,
         orden: orden++,
         alternativas: altCreate(n.alternativas),
       },
@@ -756,14 +838,20 @@ export async function pegarAlimentoEnComida(
     unidad: item.unidad as UnidadMedida,
   };
 
-  // #5 — alternativas del alimento copiado (leídas del origen, si sigue existiendo).
-  const altsOrigen = origenAlimentoEnComidaId
-    ? await prisma.alternativaAlimento.findMany({
-        where: { alimentoEnComidaId: origenAlimentoEnComidaId },
-        orderBy: { orden: "asc" },
-        select: { alimentoId: true, recetaId: true, cantidad: true, unidad: true },
+  // #5 — alternativas y alias del alimento copiado (leídos del origen, si sigue existiendo).
+  const origenItem = origenAlimentoEnComidaId
+    ? await prisma.alimentoEnComida.findUnique({
+        where: { id: origenAlimentoEnComidaId },
+        select: {
+          nombrePersonalizado: true,
+          alternativas: {
+            orderBy: { orden: "asc" },
+            select: { alimentoId: true, recetaId: true, cantidad: true, unidad: true, nombrePersonalizado: true },
+          },
+        },
       })
-    : [];
+    : null;
+  const altsOrigen = origenItem?.alternativas ?? [];
 
   const existentes = await prisma.alimentoEnComida.findMany({
     where: { comidaId: destinoComidaId },
@@ -778,7 +866,7 @@ export async function pegarAlimentoEnComida(
     // Heredar alternativas solo si el destino no tenía ninguna (no duplicar).
     if (yaExiste._count.alternativas === 0 && altsOrigen.length > 0) {
       await prisma.alternativaAlimento.createMany({
-        data: altsOrigen.map((alt, j) => ({ alimentoEnComidaId: yaExiste.id, alimentoId: alt.alimentoId, recetaId: alt.recetaId, cantidad: alt.cantidad, unidad: alt.unidad, orden: j })),
+        data: altsOrigen.map((alt, j) => ({ alimentoEnComidaId: yaExiste.id, alimentoId: alt.alimentoId, recetaId: alt.recetaId, cantidad: alt.cantidad, unidad: alt.unidad, nombrePersonalizado: alt.nombrePersonalizado, orden: j })),
       });
     }
     return;
@@ -791,9 +879,10 @@ export async function pegarAlimentoEnComida(
       recetaId: snap.recetaId,
       cantidad,
       unidad: snap.unidad,
+      nombrePersonalizado: origenItem?.nombrePersonalizado ?? null,
       orden: existentes.length,
       alternativas: altsOrigen.length > 0
-        ? { create: altsOrigen.map((alt, j) => ({ alimentoId: alt.alimentoId, recetaId: alt.recetaId, cantidad: alt.cantidad, unidad: alt.unidad, orden: j })) }
+        ? { create: altsOrigen.map((alt, j) => ({ alimentoId: alt.alimentoId, recetaId: alt.recetaId, cantidad: alt.cantidad, unidad: alt.unidad, nombrePersonalizado: alt.nombrePersonalizado, orden: j })) }
         : undefined,
     },
   });
@@ -828,6 +917,7 @@ export async function getPlanParaImportar(planId: string) {
                 orderBy: { orden: "asc" },
                 take: 4,
                 select: {
+                  nombrePersonalizado: true,
                   alimento: { select: { nombre: true } },
                   receta: { select: { nombre: true } },
                 },
@@ -851,7 +941,7 @@ export async function getPlanParaImportar(planId: string) {
         tipo: c.tipo,
         numAlimentos: c._count.alimentos,
         muestra: c.alimentos
-          .map((a) => a.alimento?.nombre || a.receta?.nombre)
+          .map((a) => a.nombrePersonalizado || a.alimento?.nombre || a.receta?.nombre)
           .filter((n): n is string => !!n),
       })),
     })),
@@ -996,8 +1086,13 @@ export async function getPlanesDetallePaciente(pacienteId: string) {
                   alternativas: {
                     orderBy: { orden: "asc" },
                     include: {
-                      alimento: { select: { nombre: true } },
-                      receta: { select: { nombre: true } },
+                      alimento: { select: { id: true, nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true, fibra: true, porcion: true } },
+                      receta: {
+                        select: {
+                          id: true, nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true, fibra: true, porciones: true, descripcion: true,
+                          ingredientes: { include: { alimento: { select: { nombre: true } } } },
+                        },
+                      },
                     },
                   },
                 },
@@ -1061,6 +1156,7 @@ export async function getPlanesDetallePaciente(pacienteId: string) {
             id: a.id,
             cantidad: a.cantidad,
             unidad: a.unidad,
+            nombrePersonalizado: a.nombrePersonalizado ?? null,
             alimento: a.alimento
               ? {
                   id: a.alimento.id,
@@ -1095,10 +1191,20 @@ export async function getPlanesDetallePaciente(pacienteId: string) {
               : null,
             alternativas: (a.alternativas ?? []).map((alt) => ({
               id: alt.id,
-              nombre: alt.alimento?.nombre || alt.receta?.nombre || "",
+              nombre: alt.nombrePersonalizado || alt.alimento?.nombre || alt.receta?.nombre || "",
               cantidad: alt.cantidad,
               unidad: alt.unidad,
               esReceta: !!alt.receta,
+              realId: alt.alimento?.id || alt.receta?.id || null,
+              calorias: alt.alimento?.calorias ?? alt.receta?.calorias ?? 0,
+              proteinas: alt.alimento?.proteinas ?? alt.receta?.proteinas ?? 0,
+              carbohidratos: alt.alimento?.carbohidratos ?? alt.receta?.carbohidratos ?? 0,
+              grasas: alt.alimento?.grasas ?? alt.receta?.grasas ?? 0,
+              fibra: alt.alimento?.fibra ?? alt.receta?.fibra ?? 0,
+              porcion: alt.alimento?.porcion ?? 100,
+              recetaPorciones: alt.receta?.porciones ?? undefined,
+              recetaDescripcion: alt.receta?.descripcion ?? null,
+              recetaIngredientes: alt.receta?.ingredientes?.map((i) => ({ nombre: i.alimento.nombre, cantidad: i.cantidad, unidad: i.unidad })) ?? undefined,
             })),
           };
         }),
@@ -1162,6 +1268,15 @@ export async function guardarComoPlantilla(planId: string, nombre: string) {
         recetaId: a.recetaId,
         cantidad: a.cantidad,
         unidad: a.unidad,
+        // #5 — conservar alias y alternativas al guardar como plantilla.
+        nombrePersonalizado: a.nombrePersonalizado ?? null,
+        alternativas: (a.alternativas ?? []).map((alt) => ({
+          alimentoId: alt.alimentoId,
+          recetaId: alt.recetaId,
+          cantidad: alt.cantidad,
+          unidad: alt.unidad,
+          nombrePersonalizado: alt.nombrePersonalizado ?? null,
+        })),
       })),
     })),
   }));
@@ -1212,7 +1327,8 @@ export async function getPlanPDFData(planId: string): Promise<PlanPDFData | null
           alimento: a.alimento
             ? {
                 id: a.alimento.id,
-                nombre: a.alimento.nombre,
+                // El PDF muestra el alias visual si el nutri renombró la línea (#5).
+                nombre: a.nombrePersonalizado || a.alimento.nombre,
                 categoria: a.alimento.categoria ?? "OTROS",
                 calorias: a.alimento.calorias ?? 0,
                 proteinas: a.alimento.proteinas ?? 0,
@@ -1227,7 +1343,7 @@ export async function getPlanPDFData(planId: string): Promise<PlanPDFData | null
           receta: a.receta
             ? {
                 id: a.receta.id,
-                nombre: a.receta.nombre,
+                nombre: a.nombrePersonalizado || a.receta.nombre,
                 descripcion: a.receta.descripcion,
                 instrucciones: a.receta.instrucciones,
                 porciones: a.receta.porciones ?? 1,

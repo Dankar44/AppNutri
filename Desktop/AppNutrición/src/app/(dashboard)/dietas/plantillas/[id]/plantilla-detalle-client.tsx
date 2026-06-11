@@ -24,6 +24,15 @@ interface EditorAlimento {
   grasas: number;
   fibra: number;
   porcion: number;
+  /** #5 — passthrough: se conservan al guardar aunque el editor no los muestre aún. */
+  nombrePersonalizado?: string | null;
+  alternativas?: {
+    alimentoId: string | null;
+    recetaId: string | null;
+    cantidad: number;
+    unidad: string;
+    nombrePersonalizado?: string | null;
+  }[];
 }
 
 interface EditorDia {
@@ -237,6 +246,9 @@ export function PlantillaDetalleClient({
             recetaId: a.recetaId,
             cantidad: a.cantidad,
             unidad: a.unidad,
+            // #5 — conservar alias y alternativas (el editor aún no los muestra, pero no los pierde).
+            nombrePersonalizado: a.nombrePersonalizado ?? null,
+            alternativas: a.alternativas ?? [],
           })),
         })),
     }));

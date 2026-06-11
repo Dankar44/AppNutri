@@ -466,6 +466,8 @@ model AlimentoEnComida {
   cantidad    Float
   unidad      UnidadMedida @default(GRAMOS)
   orden       Int          @default(0)
+  /// Alias visual editado por el nutri (solo presentación; no toca macros ni el Alimento).
+  nombrePersonalizado String?
 
   // #5 — Alternativas intercambiables ("o"): otras opciones equivalentes de este mismo ítem.
   alternativas AlternativaAlimento[]
@@ -486,6 +488,8 @@ model AlternativaAlimento {
   cantidad           Float
   unidad             UnidadMedida     @default(GRAMOS)
   orden              Int              @default(0)
+  /// Alias visual editado por el nutri (solo presentación; no toca macros ni el Alimento).
+  nombrePersonalizado String?
 
   @@index([alimentoEnComidaId])
   @@map("alternativas_alimento")
