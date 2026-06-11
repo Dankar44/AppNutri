@@ -91,7 +91,7 @@ const TIPO_KEYS: Record<string, string> = {
   MERIENDA: "comidaMerienda", CENA: "comidaCena", RECENA: "comidaRecena",
 };
 
-const UNIDADES = ["GRAMOS", "MILILITROS", "UNIDAD", "CUCHARADA", "CUCHARADITA", "TAZA", "REBANADA", "PIEZA"] as const;
+const UNIDADES = ["GRAMOS", "MILILITROS", "UNIDAD", "CUCHARADA", "CUCHARADITA", "TAZA", "REBANADA", "PIEZA", "LATA", "LONCHA"] as const;
 
 // ─── Quantity Editor ───
 

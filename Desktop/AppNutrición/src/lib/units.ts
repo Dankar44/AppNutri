@@ -7,6 +7,8 @@ export const UNIDAD_LABELS: Record<string, string> = {
   TAZA: "tz",
   REBANADA: "reb",
   PIEZA: "pza",
+  LATA: "lata",
+  LONCHA: "loncha",
 };
 
 export const UNIDAD_LABELS_FULL: Record<string, string> = {
@@ -18,6 +20,8 @@ export const UNIDAD_LABELS_FULL: Record<string, string> = {
   TAZA: "tazas",
   REBANADA: "rebanadas",
   PIEZA: "piezas",
+  LATA: "latas",
+  LONCHA: "lonchas",
 };
 
 export function formatQuantity(cantidad: number, unidad: string): string {

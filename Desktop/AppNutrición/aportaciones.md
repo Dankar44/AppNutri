@@ -10,8 +10,10 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 
 **Petición:** Poder seleccionar la tabla de composición según el país del profesional. Ejemplo: Argenfood (Argentina), BEDCA (España), USDA (EE.UU.), etc.
 
+**Input adicional (Betzabe Díaz, Perú — Instagram, 9 jun 2026):** Pregunta si Annonia quiere llegar también a **nutricionistas latinos**. Caso concreto: los tipos de **pan** que ofrece la app (Pan Ácimo, Pan Blanco, Pan Cateto, Pan Candeal…) no coinciden con los de Perú, donde se consume mucho **pan francés, chiabatta**, etc. Ellos trabajan con la **Tabla de Composición de Alimentos Peruanos** (INS/CENAN). → Añadir **Perú** a las tablas regionales a integrar (junto a Argenfood, BEDCA, USDA…). Enlaza con #95 (sinónimos/nombres locales de alimentos). Confirma que LatAm es un mercado real y que la base de alimentos española no encaja del todo allí.
+
 **Tareas:**
-- [ ] Investigar APIs o datasets descargables de Argenfood, BEDCA, y USDA
+- [ ] Investigar APIs o datasets descargables de Argenfood, BEDCA, USDA y **Tabla de Composición de Alimentos Peruanos (INS/CENAN)**
 - [ ] Añadir campo `tablaComposicion` al modelo `Dietista` (o a nivel de configuración) para elegir tabla por defecto
 - [ ] Crear sistema de importación/seed por tabla regional
 - [ ] En el buscador de alimentos, permitir filtrar por fuente/tabla
@@ -339,6 +341,8 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 
 **Reiterado por Guillermo (apuntes de reuniones, 4 jun 2026):** Anamnesis distinta por perfil (deportistas, etc.), que no sea la misma para todos, y **hacer la edición de la anamnesis más fácil y más visible** (hoy está algo escondida en Ajustes). Demanda recurrente → prioridad.
 
+**Input adicional (Betzabe Díaz, Perú — 9 jun 2026):** Pide considerar **antecedentes familiares** en el historial médico ("ayudan a dar enfoque al plan o a relacionar la aparición de una patología"). VERIFICADO: la anamnesis YA tiene campos `antecedentesPersonales` y `antecedentesFamiliares` (sección clínica de `ficha-informacion-types.ts`). Lo que falta: el **bloque resumen "Historial médico"** de la ficha general (`paciente-ficha-general-tab.tsx`) solo muestra alergias/intolerancias/patologías/medicamentos/suplementos, NO los antecedentes. → Mostrar también los antecedentes (personales y familiares) en ese resumen, para tenerlos a la vista junto al resto del historial.
+
 **Lo que falta (gap respecto a lo implementado):**
 
 - [ ] **Secciones personalizadas con nombre propio** — Poder crear secciones como "Screening digestivo" o "Evaluación deportiva" con título editable, no solo el genérico "Campos personalizados"
@@ -431,9 +435,13 @@ Ainara cumplió lo prometido y envió el resumen de TODO lo que pregunta tras **
 
 ## 21. Medidas caseras y porciones por unidades
 
-**Estado actual:** Existe el enum `UnidadMedida` con 8 unidades (GRAMOS, UNIDAD, CUCHARADA, TAZA, etc.) y cada alimento tiene un campo `porcion` (gramos por unidad). `convertirAGramos()` calcula correctamente: 2 UNIDAD × porcion(125g) = 250g. El paciente ve la unidad original ("2 ud"), no los gramos.
+> ⭐⭐ **PRIORIDAD MÁXIMA — PRIMER PASO HECHO (11 jun 2026).** ✅ **BD actualizada**: 807 de 2.659 alimentos globales tienen ya su **medida casera por defecto** con sus gramos por unidad (revisión completa del catálogo, alimento a alimento): 320 UNIDAD (huevo 60 g, plátano 120 g, yogur 125 g, galletas, salchichas, barritas…), 217 MILILITROS (leche 250, zumos, refrescos 330…), 145 CUCHARADA (aceite 10 g, miel, mermelada, cremas de frutos secos…), 47 REBANADA (panes 30-60 g), 31 LONCHA (jamón serrano 15 g, york/fiambres 20 g), 24 LATA (atún 50 g escurrido, sardinas 85 g), 23 CUCHARADITA (azúcar 5 g, tabasco…). Se añadieron las unidades **LATA y LONCHA** al enum (migración + UI + i18n es/pt). Porciones redondeadas a múltiplos de 5. El resto (~1.850) se queda en gramos a propósito (carnes/pescados frescos, verduras, arroz/pasta/harinas: se pesan). Los macros siguen por 100 g; los planes existentes no cambian (snapshot propio). Script reproducible: `scripts/asignar-unidades-alimentos.ts` (dry-run + `--apply`, registro en `scripts/cambios-unidades.tsv`). Fix incluido: el panel "Revisar equivalencias" ahora recalcula las alternativas en su propia unidad (antes metía gramos con unidad casera). ⚠️ Pendiente deploy: LATA/LONCHA necesitan el código nuevo para mostrarse bien (el resto de unidades ya funciona en prod).
+
+**Estado actual:** Existe el enum `UnidadMedida` con 8 unidades (GRAMOS, UNIDAD, CUCHARADA, TAZA, etc.) y cada alimento tiene un campo `porcion` (gramos por unidad). `convertirAGramos()` calcula correctamente: 2 UNIDAD × porcion(125g) = 250g. El paciente ve la unidad original ("2 ud"), no los gramos. → La base ya está; falta poblar las unidades/porciones por defecto de los alimentos y exponer el selector de unidad al pautar.
 
 **Petición (Alba F. / albaf.nutricion, mayo 2025; nutricionista argentina, mayo 2026; Ainara Martín, mayo 2026):** Quiere poner "2 yogures" y que la app entienda que son 250g. O "2 huevos" y que sepa que son 120g. Sin tener que calcular los gramos manualmente. Más visual para el paciente también. La nutricionista argentina pide poder usar medidas caseras (1 taza, 2 tazas…) en los alimentos precargados/globales, no solo en los personalizados. Ainara refuerza: "que en las recetas haya equivalencias a medidas caseras, a la gente no le gusta pesar la comida pero si le dices 2 cazos de alubias sí lo hacen". Aplicar especialmente en recetas, donde los ingredientes deberían mostrarse en medidas caseras (cazos, vasos, cucharadas) además de gramos.
+
+**Input adicional (Lucía Hernández, LinkedIn — 9 jun 2026):** Poder añadir una **anotación libre por alimento** junto a la cantidad, sobre todo para indicar la **medida casera**: ej. "Aceite de oliva (10 g) — anotación: cucharada sopera". Y que esa anotación **aparezca también en el entregable (PDF)**, porque muchos pacientes no pesan la comida y siguen mejor el plan con medidas caseras. VERIFICADO: `AlimentoEnComida` NO tiene campo de nota/anotación → habría que añadir un campo `nota`/`medidaCasera` por alimento y mostrarlo en el plan, portal y PDF. (Encaja con esta tarea de medidas caseras; es una forma rápida y libre de darlas sin necesidad del sistema completo de porciones nombradas.)
 
 **Input adicional (nutricionista +34 693…, WhatsApp — 8 jun 2026):** "Al meter el desayuno no puedo modificar la leche, entra con 250 y no me deja cambiarla, solo ver macros. Y faltan más medidas como cuchara, unidad."
 
@@ -448,8 +456,10 @@ Ainara cumplió lo prometido y envió el resumen de TODO lo que pregunta tras **
 - [ ] **⭐ Selector de unidad en el editor del plan** — que junto a la cantidad de cada alimento se pueda elegir la unidad (g, ml, unidad, cucharada, vaso, taza…), no solo un número con la unidad fija. Hoy la unidad es una etiqueta no editable
 - [ ] **Porciones nombradas por alimento** — Que yogur tenga "1 yogur = 125g", huevo tenga "1 huevo = 60g", pan tenga "1 rebanada = 30g". No solo la genérica "UNIDAD" sino nombres específicos
 - [ ] **Múltiples porciones por alimento** — Un alimento podría tener varias medidas: "1 unidad (125g)", "1 tarrina (250g)", "1 cucharada (15g)"
+- [ ] **Tallas de ración S / M / L por alimento** (nutricionista en reunión, 10 jun 2026) — poder definir por alimento unos tamaños con sus gramos (ej. S = 40 g, M = 50 g, L = 60 g) y elegir la talla al pautar. Más vistoso e intuitivo para el paciente que un número en gramos
 - [ ] **UX más clara en el selector** — Que al añadir un alimento sea obvio que puedes cambiar de gramos a unidades, y que se vea cuántos gramos equivale
-- [ ] **Valores de porción correctos en alimentos precargados** — Muchos alimentos tienen porcion=100 por defecto, deberían tener porciones reales (yogur=125, huevo=60, etc.)
+- [x] **Valores de porción correctos en alimentos precargados** — HECHO (11 jun 2026): unidad casera + gramos por unidad asignados a 807 alimentos globales (ver nota de arriba). Dudosos que quedaron en gramos a propósito: tomate/zanahoria/patata, albóndigas/nuggets, aguacate (pendiente de fracciones), onza de chocolate
+- [ ] **Lista de la compra en unidades, no en gramos** (Guillermo/nutris, 10 jun 2026) — en la lista de la compra, alimentos como los **huevos** salen en gramos ("720 g de huevo") cuando lo natural es en unidades ("12 huevos"). La lista (`shopping-list.tsx` → `formatearCantidad`) YA respeta la unidad del ítem, así que el arreglo es que esos alimentos se expresen en su unidad casera (huevo = unidad, no gramos) — depende de tener bien la unidad/porción del alimento (los dos puntos de arriba). Poder además editar la cantidad/unidad en la propia lista de la compra
 - [ ] **Confusión de UX detectada**: al hacer clic en el NOMBRE del alimento en la comida, se navega a la ficha del alimento (solo lectura, "ver macros") — varias nutris creen que ahí se edita la cantidad. La cantidad se edita en el input numérico junto al alimento. Valorar que el nombre no saque de la edición o dejar más claro dónde se cambia cantidad/unidad
 - [ ] **Medidas caseras en INGREDIENTES de recetas + fracciones** (nutricionista email, 8 jun 2026) — al añadir ingredientes a una receta, poder elegir entre cucharadita, cucharada, taza, rebanada, piezas, y **fracciones: mitad (1/2), cuarto (1/4)**, etc. (las fracciones son un matiz nuevo a soportar además de las unidades existentes)
 
@@ -512,6 +522,8 @@ Ainara cumplió lo prometido y envió el resumen de TODO lo que pregunta tras **
 **Estado actual:** En toda la app se usa "dietista" como término para el profesional: textos de UI, emails, PDFs, landing, páginas legales, structured data, etc. El modelo de datos en Prisma se llama `Dietista` y las variables usan esa nomenclatura.
 
 **Petición (mayo 2025):** Usar "nutricionista" o "dietista-nutricionista" en vez de solo "dietista". En España, "dietista" se asocia a la FP (Técnico en Dietética), mientras que "dietista-nutricionista" es el título universitario (Grado en Nutrición Humana y Dietética). "Nutricionista" suena más profesional y es el término que prefieren los graduados universitarios.
+
+**Input adicional (José, WhatsApp — 9 jun 2026):** Pide poder **identificarse según su titulación real** (Dietista-Nutricionista, o **Técnico Superior en Dietética**, etc.) y no únicamente como "nutricionista". VERIFICADO: hoy `Dietista` tiene un campo `especialidad` (libre) y `numColegiado`, pero NO un selector de **titulación profesional** que se refleje en perfil, PDF y portal. → Añadir un campo de **titulación/tipo de profesional** (selector: Dietista-Nutricionista / Técnico Superior en Dietética / Nutricionista / otro) que el profesional elija y que aparezca en sus entregables (PDF #35), perfil y donde se le identifique. Importante para que cada profesional se represente con su título correcto (y legalmente preciso).
 
 **Tareas:**
 - [ ] Definir el término a usar: "nutricionista" (más corto) o "dietista-nutricionista" (más preciso). Valorar usar "nutricionista" en la UI general y "dietista-nutricionista" solo donde haga falta (legal, registro)
@@ -631,6 +643,13 @@ Ainara cumplió lo prometido y envió el resumen de TODO lo que pregunta tras **
 | 90 | BUG: las recetas no suman sus micronutrientes al total del día | Alta | Media |
 | 91 | Renombrar pestaña "Información" del paciente a "Anamnesis" | Baja-Media | Muy baja |
 | 93 | Recetas favoritas en "Mis recetas" del buscador del plan (etiqueta Favorito) | Media-Alta | Baja |
+| 94 | La sesión del dietista se cae tras horas/reinicio (refresco de tokens) | Media-Alta | Media |
+| 95 | Búsqueda de alimentos por palabras (orden) + sinónimos/alias | Alta | Media |
+| 96 | BUG: paciente no accede al portal desde el móvil (sí desde el PC) | Alta | Media |
+| 97 | Notificaciones del chat de mensajes en la campana (configurable) | Media | Media |
+| 98 | Vista Análisis "Todos": título de cada día en recuadro centrado | Baja-Media | Baja |
+| 99 | Clasificar recetas por categoría (desayuno, snack, salsa, puré…) | Media-Alta | Media |
+| 100 | Vista Resumen: mostrar tiempos de comida por día (no "X sin alimentos") | Media | Baja |
 
 ---
 
@@ -639,6 +658,8 @@ Ainara cumplió lo prometido y envió el resumen de TODO lo que pregunta tras **
 **Estado actual:** En el editor de dietas, cada comida (Desayuno, Almuerzo, etc.) muestra los alimentos en el orden en que se añadieron. Existen botones para mover un alimento a otra comida o a otro día, pero NO se puede cambiar el orden de los alimentos dentro de la misma comida. El modelo `AlimentoEnComida` no tiene campo de orden.
 
 **Petición (Anabel Segura, mayo 2025):** Poder reordenar los alimentos dentro de una comida para que el orden tenga sentido lógico (ej: primero el plato principal, luego la guarnición, luego el postre). Idealmente con drag & drop, o con flechas arriba/abajo.
+
+**Reiterado (nutricionista, WhatsApp — 11 jun 2026):** Pide poder **cambiar un alimento a otra ingesta** (mover a otra comida — esto YA existe vía botón) y, sobre todo, **reordenar dentro de la misma ingesta** para cambiar el orden de los alimentos (es el núcleo de esta tarea: falta el reordenado dentro de la comida).
 
 **Tareas:**
 - [ ] Añadir campo `orden` (Int, default 0) al modelo `AlimentoEnComida` en schema.prisma
@@ -702,6 +723,11 @@ Ainara cumplió lo prometido y envió el resumen de TODO lo que pregunta tras **
 **Petición:** Muchos nutricionistas hacen seguimiento con BIA Tanita (básculas de bioimpedancia). Quieren poder registrar los valores segmentados: masa muscular, masa grasa, agua corporal y demás parámetros que proporciona la bioimpedancia, no solo el peso y % de grasa global.
 
 **Input adicional (Marta Espada, 2 jun 2026):** Pregunta directamente si habrá **integración con máquinas de bioimpedancia (InBody, Tanita…)** — es decir, no solo registrar los valores a mano, sino que los datos pasen de la máquina a la app automáticamente. Refuerza que hay demanda real de la parte de integración, no solo del registro manual.
+
+**Input adicional (contacto con software de bioimpedancia propio — 9 jun 2026):** Un contacto comenta que **ellos tienen un software de bioimpedancia** y propone **integrarlo con Annonia**, volcando los datos en la parte de mediciones e **integrándolo con el flujo de revisiones** (#50/#94) para ir valorando la evolución. Pide además que las mediciones sean **rellenables tanto por el paciente como por el nutricionista**.
+- Posible vía de integración (partner) además de InBody/Tanita — pedirle qué software es y cómo exporta los datos (API, CSV, etc.).
+- [ ] **NUEVO — Mediciones rellenables por el paciente:** VERIFICADO que hoy las mediciones (`MedidaAntropometrica`, incluida bioimpedancia) **solo las rellena el nutri**; el paciente solo registra peso/agua/ejercicio en seguimiento y VE la evolución (portal de evolución = solo lectura). Permitir que el paciente registre sus propias mediciones/bioimpedancia desde el portal (ej. si tiene báscula de bioimpedancia en casa), idealmente dentro de una **revisión** (#50): el nutri "lanza la revisión" y el paciente rellena sus medidas. Requiere una action de mediciones con `getCurrentPaciente` + UI en el portal + que el nutri lo vea/valide.
+- [ ] **Sistema de confirmación/aprobación (nutricionista en reunión, 10 jun 2026):** que el paciente pueda meter sus datos de ficha (peso, altura, pliegues, mediciones) desde el portal, pero que NO entren directos: queden **pendientes de aprobación** y le lleguen al nutricionista, que los **acepta o rechaza** antes de que se incorporen al historial (por si el paciente se equivoca). Aplica también a los datos de la ficha/anamnesis que rellene el paciente (relacionado con #6 pre-consulta).
 
 Preguntada por qué máquina usa, responde: **"los más usados son InBody"**, es con los que más familiarizada está; conoce Tanita pero prefiere InBody. → **Priorizar la integración con InBody** (API en la nube, LookinBody Web) sobre Tanita.
 
@@ -1241,6 +1267,7 @@ Anna: "Así cada nutri trabaja con su marca dentro de la app y es superrr experi
    - El ajuste posterior (`ai.ts` ~línea 239) **solo cuadra calorías** (escala todo proporcional), NO recorta carbohidratos si se pasan.
    - **Solución para el nutri HOY:** poner el límite en el **campo "Carbohidratos (g)" = 100**, no solo en instrucciones de texto. El campo numérico es el objetivo real que sigue la IA.
    - **Tareas:** (a) que las instrucciones de texto tipo "máximo X g de Y" se reflejen en los campos numéricos o se traten como restricción dura; (b) soportar **límites máximos por macro** (no solo objetivo); (c) que el prompt respete "máximo" y no empuje siempre al alza; (d) en el ajuste posterior, si un macro se pasa del límite, recortarlo
+6. **⚠️ Elige carnes/alimentos exóticos al pedir priorizar un grupo (nutricionista, 10 jun 2026, 3 semanas usándola):** al pedir que priorice carnes, en algún día mete **faisán** u otras carnes poco habituales. Mismo patrón que el "aceite de almendras dulces": la IA tira de alimentos raros del catálogo. → Refuerza limpiar/priorizar el catálogo que se ofrece a la IA (alimentos comunes primero) y/o el enfoque "IA libre + matching". NOTA POSITIVA del mismo nutri: la IA "viene muy bien para hacer el menú rápido y luego individualizarlo a cada paciente según sus macros".
 
 **Propuesta de arquitectura (Guillermo, 4 jun 2026) — a valorar:** En vez de pasarle a la IA el catálogo de alimentos para que elija (lo que provoca elecciones raras como "aceite de almendras dulces"), dejar que **la IA genere el plan libremente** (nombre del alimento + cantidad + datos nutricionales que ella estime), y luego **por dentro hacer matching** con el alimento más parecido de nuestra base de datos, ajustando a la cantidad correspondiente.
 
@@ -1459,7 +1486,15 @@ Esto es muy valioso para la tarea #18 (personalizar estructura anamnesis) — te
 
 ## 51. Documentación de protección de datos (RGPD) personalizada por nutricionista
 
-**Origen:** Ainara Martín (ainara_nutri, Instagram) — 29 mayo 2026
+> ⭐ **PRIORIDAD ALTA / inminente (9 jun 2026).** Varios profesionales han pedido ya el **contrato de encargado de tratamiento (DPA)** Annonia↔nutricionista (José y otros). Guillermo: "lo vamos a hacer dentro de nada". Sacar primero el DPA que Annonia facilita a cada profesional, y en paralelo el almacenamiento de documentos del paciente.
+
+**Origen:** Ainara Martín (ainara_nutri, Instagram) — 29 mayo 2026; José (WhatsApp) — 9 jun 2026 (pide el DPA de encargado de tratamiento).
+
+**Dos piezas distintas a no confundir:**
+- **(A) DPA Annonia ↔ nutricionista:** documento de encargado de tratamiento que **Annonia entrega al profesional** (Annonia trata los datos de los pacientes en su nombre). Es lo que pide José. → PRIORITARIO, sale pronto.
+- **(B) Documentos del nutri ↔ paciente:** consentimientos/RGPD que el nutri envía a SUS pacientes para firmar (lo de Ainara, abajo).
+
+**Apartado "Documentos" en la ficha del paciente (Guillermo, 9 jun 2026):** que todos los documentos del paciente (consentimientos firmados, DPA, etc.) se **guarden automáticamente en un apartado de "Documentos" dentro de la ficha de ese paciente**, y queden siempre a mano. Unificar con la sección de archivos del paciente de la tarea #2 (un único apartado "Documentos/Archivos" del paciente que albergue tanto los archivos subidos como los documentos legales firmados).
 
 **Estado actual:** Annonia tiene sus propias páginas legales (política de privacidad, términos de servicio, cookies) accesibles desde el footer. Sin embargo, no existe funcionalidad para que cada nutricionista gestione su propia documentación de protección de datos personalizada ni para enviarla a firmar a sus pacientes.
 
@@ -1495,9 +1530,9 @@ Esto es muy valioso para la tarea #18 (personalizar estructura anamnesis) — te
 - [ ] **Consentimiento específico para uso de IA con los datos del paciente** — sobre todo de cara a **universidades** (casos clínicos de alumnos, tarea #39): que el paciente/representante consienta expresamente el tratamiento de sus datos con IA. Documento aparte del consentimiento general
 - [ ] Plantilla de consentimiento informado predefinida que el nutri pueda usar/editar (no solo subir la suya)
 
-**Relacionado con:** #18 (anamnesis), #39 (cuenta profesor/unis)
-**Prioridad:** Media-Alta (requisito legal para muchos nutricionistas — el RGPD exige consentimiento documentado)
-**Complejidad:** Media
+**Relacionado con:** #18 (anamnesis), #39 (cuenta profesor/unis), #2 (archivos/documentos del paciente — el apartado "Documentos" se comparte), #79 (checklist legal — el DPA)
+**Prioridad:** Alta (el DPA Annonia↔nutricionista es inminente y ya pedido por varios; requisito legal — el RGPD exige consentimiento documentado y encargo de tratamiento)
+**Complejidad:** Media (el DPA en sí es un documento + entrega/firma; el almacenamiento de documentos del paciente es un poco más adelante)
 
 ---
 
@@ -1617,6 +1652,10 @@ Además, pide un **registro dietético con fotos**: que el paciente pueda subir 
 - [ ] Botón equivalente con dos acciones: "Sustituir" / "Añadir como alternativa"
 - [ ] Una alimento puede tener N alternativas (ej: cereales / avena / pan integral)
 - [ ] Mostrar las alternativas en el PDF y en el portal del paciente ("X o Y o Z")
+
+**Input adicional (nutricionista, WhatsApp — 11 jun 2026, probando el panel de alternativas ya desplegado):**
+- [ ] **Nombres truncados en el panel de equivalencias** — en los resultados del panel, los nombres largos se cortan ("Atún En Lata En…", "Atún Claro En C…") y no se distingue qué tipo de atún es. Hacer el panel/columna más ancho, o mostrar el nombre completo / con tooltip al pasar por encima
+- [ ] **"Al cambiar la cantidad no se recalculan las equivalencias" — ACLARADO (verificado en código): NO es bug, es UX.** El recálculo de las alternativas ya añadidas existe pero es **MANUAL**: al cambiar la cantidad del alimento principal en la tarjeta, las alternativas NO se reescalan solas; hay que pulsar el botón **"Revisar equivalencias" → "Recalcular todas"** (modal con nota "Cambia la cantidad del alimento principal y las alternativas se recalculan para igualar sus calorías"). La nutri esperaba que fuera automático. **Mejora propuesta:** recalcular las alternativas **automáticamente** al cambiar la cantidad del alimento principal (o avisar "tienes alternativas, ¿recalcular?"), y/o hacer el botón "Revisar equivalencias" más visible. (Guillermo lo probó y "va" porque usó el botón / el panel.)
 
 **Petición:** Marta menciona que compañeras suyas usan un sistema de intercambio de alimentos en sus consultas y lo considera útil. El concepto es: para cada alimento del plan, definir una lista de alternativas equivalentes nutricionalmente (ej: "en vez de 150g de pollo, puedes comer 170g de pavo o 200g de merluza"). Así el paciente tiene flexibilidad sin salirse de los macros.
 
@@ -2063,7 +2102,15 @@ Esto refuerza la opción "estructurada" de esta tarea: pasar suplementos (y medi
 
 ## 71. Módulo de farmacología: interacciones fármaco-alimento en la pauta
 
-**Origen:** Ainara Martín (ainara_nutri, Instagram) — 2 junio 2026
+**Origen:** Ainara Martín (ainara_nutri, Instagram) — 2 junio 2026; José (WhatsApp) — 9 junio 2026 (preguntas concretas de un profesional riguroso, ver abajo).
+
+**Estado actual (VERIFICADO en código, 9 jun 2026):** Los medicamentos del paciente se registran como lista de texto en la anamnesis (`string[]`, ver tarea #62). No hay base de datos de fármacos ni detección de interacciones. Y confirmado: **la IA NO recibe la medicación del paciente** al generar la dieta — el prompt (`src/lib/ai/prompts.ts`) solo recibe objetivo, alergias, intolerancias, patologías, preferencias e instrucciones del nutri; la medicación no se pasa. Así que hoy la IA no tiene en cuenta los fármacos (salvo que el nutri lo escriba a mano en instrucciones).
+
+**Preguntas de José (9 jun 2026) — definen bien el alcance deseado:**
+1. ¿La IA tiene en cuenta la medicación al generar la dieta? → HOY NO (verificado).
+2. ¿Annonia detecta/avisa interacciones **alimento-medicamento**? → No, aún no (es este módulo).
+3. ¿Y interacciones **suplemento-medicamento**? → Tampoco; añadir suplementos al alcance del módulo (enlaza con #62/#65).
+4. ¿En qué **fuentes** se basarían las alertas? Él sugiere: **fichas técnicas (AEMPS/CIMA), BOT PLUS, CIM**. → Documentar la fuente de cada interacción y mostrarla; usar fuentes oficiales/farmacéuticas fiables (CIMA-AEMPS, BOT PLUS del CGCOF, etc.). La calidad y trazabilidad de la fuente es clave para que un profesional confíe.
 
 **Estado actual:** Los medicamentos del paciente se registran como lista de texto en la anamnesis (`string[]`, ver tarea #62). No hay base de datos de fármacos ni detección de interacciones con alimentos.
 
@@ -2076,9 +2123,11 @@ Esto refuerza la opción "estructurada" de esta tarea: pasar suplementos (y medi
 4. Aviso también en la generación con IA (pasar las interacciones como restricción al prompt)
 
 **Tareas:**
-- [ ] Investigar fuente de datos de interacciones fármaco-nutriente (AEMPS/CIMA, bases públicas, bibliografía) — calidad clínica crítica
-- [ ] Modelo `Farmaco` (nombre, principio activo, interacciones: alimento/grupo + severidad + descripción)
+- [ ] Investigar fuente de datos de interacciones fármaco-nutriente (AEMPS/CIMA, bases públicas, bibliografía) — calidad clínica crítica. José sugiere fichas técnicas (CIMA-AEMPS), **BOT PLUS** (CGCOF) y CIM. **Mostrar la fuente de cada alerta** (trazabilidad) para que el profesional confíe
+- [ ] Modelo `Farmaco` (nombre, principio activo, interacciones: alimento/grupo + severidad + descripción + fuente)
 - [ ] Matching de la medicación del paciente (texto libre) contra la BD de fármacos — IA o fuzzy matching
+- [ ] **Paso rápido y previo: pasar la medicación del paciente al prompt de la IA** como contexto/restricción (hoy no se pasa). Aunque no haya BD de interacciones aún, que la IA al menos la conozca al generar la dieta
+- [ ] Contemplar también interacciones **suplemento-medicamento** (no solo alimento-fármaco) — enlaza con el catálogo de suplementos (#62) y la pauta (#65)
 - [ ] Resaltar en el editor del plan los alimentos con interacción para ese paciente (color llamativo + tooltip explicativo)
 - [ ] Incluir aviso en el PDF/portal (opcional, configurable)
 - [ ] Integrar como restricción en la generación IA y algorítmica
@@ -2244,9 +2293,11 @@ Esto refuerza la opción "estructurada" de esta tarea: pasar suplementos (y medi
 
 ### Parte C — Reparto de macros POR COMIDA en la planificación (configuración avanzada)
 
-**Origen:** Guillermo (apuntes reunión, 5 jun 2026)
+**Origen:** Guillermo (apuntes reunión, 5 jun 2026); Saija (nutricionista, WhatsApp — 11 jun 2026).
 
-**Estado actual (verificado en código):** La sección "Distribución de macronutrientes" de la planificación reparte los macros **solo a nivel del día** (% y total del día). NO permite repartir por comida.
+**Input de Saija (11 jun 2026):** Al crear el plan solo se piden las calorías (y macros) del DÍA, pero le gustaría **fijar el objetivo por comida** (ej. desayuno = 400 kcal + sus gramos de proteína/grasa/carbohidrato) y **ver en tiempo real, mientras monta el plan, si se va cumpliendo** ese objetivo por comida. VERIFICADO: hoy en el editor se ven los **macros TOTALES de cada comida** (pills en `comida-slot.tsx`) y el **total del día vs objetivo** (panel de análisis), pero NO hay objetivo POR comida ni indicador de cumplimiento por comida. → Sumar a esta tarea: (a) poder definir objetivo de kcal+macros por comida, (b) mostrar el cumplimiento por comida en vivo (ej. "Desayuno 380/400 kcal") mientras se añaden alimentos.
+
+**Estado actual (verificado en código):** La sección "Distribución de macronutrientes" de la planificación reparte los macros **solo a nivel del día** (% y total del día). NO permite repartir por comida. En el editor se muestran los totales por comida pero sin objetivo por comida.
 
 **Petición:** Que la barra de "2000 kcal, ¿cómo distribuirlas?" se pueda **abrir como "configuración avanzada por comida"**: definir el reparto de kcal y de macros **comida a comida**. Ejemplos:
 - Día de descanso: desayuno 70% carbo / 20% grasa / 10% proteína; tarde otra distribución…
@@ -2546,4 +2597,151 @@ Esto refuerza la opción "estructurada" de esta tarea: pasar suplementos (y medi
 
 **Relacionado con:** #92 (bug favoritos, ya arreglado), #68 (duplicar/editar recetas de la app), [[feedback-recetas]] (scope mías = propias + favoritas)
 **Prioridad:** Media-Alta (flujo principal: encontrar rápido las recetas que usas al montar el plan)
+**Complejidad:** Baja
+
+---
+
+## 94. La sesión del dietista se cae tras varias horas / reinicio del servidor (revisar refresco de tokens)
+
+**Origen:** Guillermo — 9 junio 2026
+
+**Problema:** Inicias sesión, dejas el ordenador abierto unas horas (≈12h) y/o hay un reinicio del servidor (deploy, `pm2 restart`), y al volver te ha **deslogueado** y tienes que entrar de nuevo. Molesto en el uso diario.
+
+**Estado actual (verificado en código):**
+- La sesión del **dietista** es de **Supabase Auth** (cookies `sb-…`). Las sesiones JWT propias NO son el problema: paciente dura 30 días (`patient-auth.ts`), admin dura `ADMIN_SESSION_DAYS` (`admin.ts`). El deslogueo es de la sesión de Supabase.
+- `src/lib/supabase-browser.ts`: el cliente está con **`persistSession: false, autoRefreshToken: false`** → el token de acceso **no se auto-refresca en el navegador**. El access token de Supabase caduca (~1h por defecto).
+- El refresco se hace **server-side**: `middleware.ts` → `updateSession()` de `src/lib/supabase/middleware.ts` (patrón `@supabase/ssr`). Si una pestaña queda inactiva muchas horas sin navegar, el middleware no se ejecuta y el token caduca; al volver, si el refresh token está caducado/rotado, cae a login.
+
+**Qué revisar (hipótesis a investigar):**
+- [ ] Política de **refresh token** en el proyecto Supabase: caducidad del refresh token, rotación y "reuse detection". La combinación de `autoRefreshToken:false` en cliente + refresco solo en middleware puede provocar rotaciones cruzadas que invaliden el refresh token
+- [ ] **JWT expiry** del proyecto Supabase (access token ~1h): valorar subirlo si procede
+- [ ] **Matcher del middleware**: confirmar que `updateSession` se ejecuta en las rutas del dashboard, para que cada navegación refresque las cookies
+- [ ] Valorar activar **`autoRefreshToken: true`** (y `persistSession`) en el cliente, o un refresco periódico, para que una pestaña abierta mantenga viva la sesión sin depender solo del middleware
+- [ ] Confirmar que un `pm2 restart`/deploy NO invalida la sesión por sí mismo (las cookies viven en el navegador; si se cae al reiniciar, sospechar del refresh token / cookies reescritas en el arranque)
+- [ ] Reproducir: dejar sesión abierta, esperar a que caduque el access token, navegar y ver si el refresh server-side la renueva o cae a `/login`
+
+**Archivos:** `src/lib/supabase-browser.ts`, `src/lib/supabase/server.ts`, `src/lib/supabase/middleware.ts`, `src/middleware.ts`, `src/app/actions/auth.ts` (`getCurrentDietista`)
+**Prioridad:** Media-Alta (mala experiencia recurrente — desloguearse solo frena el uso diario y da sensación de inestabilidad)
+**Complejidad:** Media (auth/sesión: delicado, posible mezcla de config en Supabase + código)
+
+---
+
+## 95. Búsqueda de alimentos más flexible (por palabras en cualquier orden) + sinónimos/alias
+
+**Origen:** Lucía Hernández (LinkedIn) — 9 junio 2026; nutricionista (audio, 3 semanas usándola) — 10 junio 2026.
+
+**Input adicional (nutricionista, 10 jun 2026) — relevancia confusa (palabra vs prefijo):** Al buscar "pan" salen antes alimentos como **"Panga"**, o al buscar "salmón" sale **"salmonete"**, en vez del alimento esperado. VERIFICADO: el buscador del editor SÍ reordena por relevancia (`recetas.ts` ~líneas 543-560: exacto > empieza-por > contiene), pero "Panga"/"salmonete" **empiezan por** "pan"/"salmon", así que entran en el mismo nivel que "Pan Blanco" y, al desempatar por longitud, la palabra más corta ("Panga") gana. → Afinar la relevancia para **distinguir "pan" como PALABRA completa** (que esté como token: "Pan Blanco", "Pan integral") de "pan" como mero prefijo de otra palabra ("Panga"): priorizar coincidencia de palabra completa sobre prefijo de cadena.
+
+**Estado actual (VERIFICADO en código):** La búsqueda usa `nombreNormalizado` + `normalizarParaBusqueda()`, que **ya quita tildes, pasa a minúsculas y despluraliza** (las tareas #19 "sin tildes" y #45 "plural/singular" ya están cubiertas). PERO la coincidencia es por **subcadena en orden** (LIKE sobre el texto normalizado), así que:
+- "copos de avena" NO encuentra "Avena (copos)" → falla por el **orden de las palabras** y por el "de"/paréntesis.
+- No hay **sinónimos/alias**: si un alimento se llama distinto en otro país (LatAm), no se encuentra ni se puede mostrar con su nombre local.
+
+**Petición de Lucía (dos cosas):**
+1. **Búsqueda por palabras independientes del orden** — que al escribir "copos de avena" encuentre "Avena (copos)". Buscar cada palabra (token) como AND, sin exigir el orden literal ni los conectores ("de", paréntesis).
+2. **Sinónimos / nombre alternativo del alimento** — poder indicar un sinónimo del nombre para pacientes de otras nacionalidades (ej. nombres distintos en Latinoamérica). Que sirva para (a) encontrar el alimento al buscar por el sinónimo y (b) opcionalmente mostrar ese nombre local al paciente.
+
+**Tareas:**
+- [ ] Búsqueda por tokens: dividir la consulta en palabras (ya normalizadas/despluralizadas) y exigir que TODAS aparezcan en `nombreNormalizado`, en cualquier orden (varios LIKE con AND, o full-text search). Ignorar conectores ("de", "con"...) y paréntesis
+- [ ] Combinar con relevancia (#26): priorizar coincidencia exacta/prefijo, luego por tokens
+- [ ] Campo `sinonimos`/`alias` (String[] o texto) en `Alimento`, incluido en `nombreNormalizado` para la búsqueda
+- [ ] (Opcional) mostrar el sinónimo/nombre local al paciente según su país (enlaza con selector de país del paciente #7 y terminología regional #34)
+
+**Relacionado con:** #19 (sin tildes — hecho), #45 (plural — hecho), #26 (relevancia), #7 (país del paciente), #34 (terminología regional)
+**Prioridad:** Alta (la búsqueda es el flujo más usado al montar planes; que no encuentre "copos de avena" frustra)
+**Complejidad:** Media (tokens: baja-media; sinónimos: media)
+
+---
+
+## 96. BUG: el paciente no puede acceder al portal desde el MÓVIL (sí desde el ordenador)
+
+**Origen:** Lucía Hernández (LinkedIn) — 10 jun 2026. Corrige su reporte anterior: el paciente al que envió el acceso por correo **no podía entrar desde el móvil, pero desde el ordenador sí le dejó**. Por tanto NO es problema de credenciales/PIN ni de la función (que está habilitada): es algo específico del **móvil**.
+
+**Estado actual (verificado en código):** El login del paciente (`/paciente/login`, email + PIN) y la cookie de sesión `annonia-paciente-session` parecen correctos (`httpOnly`, `secure` en https, `sameSite: "lax"`, 30 días) — no hay un problema evidente de cookie en el código. El fallo es solo en móvil, lo que apunta a entorno/cliente, no a la lógica.
+
+**Hipótesis a investigar (reproducir en móvil real: iOS Safari y Android Chrome):**
+- [ ] **Navegador in-app / webview del correo:** si el paciente abre el link desde la app de Gmail/Outlook/Instagram en el móvil, se abre en un navegador integrado (webview) donde las cookies o el JS pueden fallar y la sesión no persiste. Es la causa más típica de "en el móvil no me deja". Posible solución: forzar/instar a abrir en el navegador del sistema, o revisar el flujo de set-cookie tras login en webview
+- [ ] **Responsive del login en móvil:** que el formulario/botón no se vea o no sea pulsable (teclado tapando el botón, overflow, etc.)
+- [ ] **Input del PIN en móvil:** teclado numérico, autocompletado o gestor de contraseñas del móvil interfiriendo
+- [ ] **Cookies en Safari iOS** (ITP / bloqueo de cookies) — confirmar que la cookie se setea y se reenvía en iOS
+- [ ] Reproducir el caso EXACTO: abrir el enlace del email de acceso desde el móvil (no copiando la URL) y ver qué pasa al meter email + PIN
+
+**Prioridad:** Alta (la mayoría de pacientes usan el portal desde el móvil; si no pueden entrar desde el móvil, el portal del paciente prácticamente no sirve)
+**Complejidad:** Media (hay que reproducir en móvil para localizar; el arreglo depende de la causa)
+
+---
+
+## 97. Notificaciones del chat de mensajes en la campana (configurable por tipo)
+
+**Origen:** nutricionista (reunión) — 10 junio 2026
+
+**Estado actual (verificado en código):** Las notificaciones de la campana (`Notificacion` / `TipoNotificacion`) cubren citas, pagos, paciente sin consulta/medidas, plan antiguo, diario nuevo, empresa… pero **el chat de mensajes (paciente↔nutri) va por su cuenta** (tiene su propio contador de no leídos, `noLeidosSoporte` y conversaciones), no aparece como notificación en la campana.
+
+**Petición:** En la campana de notificaciones (arriba, donde está la configuración), poder elegir que **las notificaciones del chat de mensajes también lleguen ahí**, como un bloque/categoría más. Es decir, unificar y permitir configurar qué tipos de notificación se reciben en la campana, incluyendo los mensajes.
+
+**Tareas:**
+- [ ] Añadir las notificaciones de mensajes nuevos a la campana (nuevo `TipoNotificacion` para mensaje, o integrar el contador de chat en el panel de la campana)
+- [ ] En la configuración de notificaciones (la que ya hay arriba en la campana): permitir activar/desactivar por tipo, incluido "Mensajes"
+- [ ] Agrupar el panel por bloques (citas, pagos, pacientes, mensajes…) — los mensajes como un cuarto bloque
+- [ ] Cuidar no duplicar el aviso si el chat ya tiene su propio badge
+
+**Prioridad:** Media
+**Complejidad:** Media
+
+---
+
+## 98. Vista "Análisis → Todos": título de cada día en un recuadro centrado
+
+**Origen:** nutricionista (reunión) — 10 junio 2026
+
+**Estado actual:** En el editor de dietas, modo Análisis, al elegir "Todos" se muestran los días (Lunes, Martes, Miércoles…) uno debajo de otro. El título de cada día se ve como texto suelto, poco diferenciado.
+
+**Petición:** Que en esa vista "Todos" el **título de cada día** (Lunes, Martes…) se muestre en un **recuadro/cuadrito y centrado**, para separar visualmente cada día y que sea más claro de leer.
+
+**Tareas:**
+- [ ] En el modo Análisis (vista "Todos"), maquetar el encabezado de cada día como una cabecera con fondo/recuadro y texto centrado
+- [ ] Mantener coherencia con el resto del estilo de la app
+
+**Archivos:** componentes del análisis del plan (`src/components/dieta/analisis-sidebar.tsx` / vista de análisis del editor)
+**Prioridad:** Baja-Media (mejora visual/legibilidad)
+**Complejidad:** Baja
+
+---
+
+## 99. Clasificar las recetas por categoría (desayuno, comida, snack, salsa, puré…)
+
+**Origen:** nutricionista (reunión) — 10 junio 2026
+
+**Estado actual (verificado en código):** Los alimentos tienen `CategoriaAlimento` (frutas, carnes, pescados, panes…) y se filtran por categoría. Las **recetas NO tienen categoría** (`Receta` no tiene campo de categoría/tipo) → no se pueden clasificar ni filtrar por tipo de plato.
+
+**Petición:** Igual que los alimentos se clasifican (panes, pescados, carnes…), poder clasificar las **recetas** por tipo: desayunos, comidas, cenas, snacks, salsas, purés, postres, etc. Para encontrarlas y organizarlas mejor.
+
+**Tareas:**
+- [ ] Añadir campo `categoria`/`tipo` a `Receta` (enum o string) — script SQL manual (recordar: cliente Prisma local no regenera `recetas`, usar raw SQL)
+- [ ] Definir el set de categorías de receta (desayuno, comida, cena, snack, salsa, puré, postre, bebida…)
+- [ ] UI en el formulario de receta: selector de categoría
+- [ ] Filtro por categoría en la lista de recetas y en el buscador del plan
+- [ ] Etiquetar las 316 recetas globales con su categoría (semi-automatizable)
+
+**Relacionado con:** #66 (etiquetas de tipo de dieta en recetas — son ejes distintos: #66 = paleo/keto/vegana; #99 = momento/tipo de plato)
+**Prioridad:** Media-Alta (organiza el recetario — muy útil al montar planes)
+**Complejidad:** Media (el grueso es etiquetar las recetas globales)
+
+---
+
+## 100. Vista "Resumen" del plan: mostrar los tiempos de comida por día (en vez de "X comidas sin alimentos")
+
+**Origen:** nutricionista (mensaje) — 10 junio 2026. (También elogia que ya se añadió lo de copiar alimentos entre días, #31: "quedó súper".)
+
+**Estado actual (verificado en código):** En la vista Resumen del plan, un día con comidas vacías muestra un texto genérico **"{count} comida(s) sin alimentos"** (`diets.json` → `mealsWithoutFoods`, usado en `resumen-diario.tsx` / `dia-columna.tsx`). No se ve QUÉ comidas faltan ni en qué día concreto.
+
+**Petición:** En el Resumen, ver **todos los días de la semana con sus tiempos de comida** (desayuno, media mañana, almuerzo, merienda, cena…) y marcar cuáles están vacíos, para saber de un vistazo **en qué día y en qué comida falta agregar alimentos**. Mucho más visual que "5 comidas sin alimentos".
+
+**Tareas:**
+- [ ] En la vista Resumen, en vez del texto "{count} comida(s) sin alimentos", listar los tipos de comida del día y señalar visualmente los vacíos (ej. en gris/atenuado o con un icono) vs los que ya tienen alimentos
+- [ ] Mantenerlo compacto para que el resumen siga siendo de un vistazo
+- [ ] Coherencia con el orden de comidas del plan
+
+**Archivos:** `src/components/dieta/resumen-diario.tsx`, `src/components/dieta/dia-columna.tsx`
+**Relacionado con:** #31 (copiar comidas entre días — ya hecho), #37 (filas vacías en PDF)
+**Prioridad:** Media (mejora de visibilidad al montar la semana)
 **Complejidad:** Baja

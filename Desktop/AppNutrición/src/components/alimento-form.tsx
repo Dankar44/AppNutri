@@ -38,7 +38,7 @@ const CATEGORIA_KEYS: Record<string, string> = {
 
 const UNIDAD_VALUES = [
   "GRAMOS", "MILILITROS", "UNIDAD", "CUCHARADA", "CUCHARADITA", "TAZA",
-  "REBANADA", "PIEZA",
+  "REBANADA", "PIEZA", "LATA", "LONCHA",
 ] as const;
 
 const UNIDAD_KEYS: Record<string, string> = {
@@ -50,6 +50,8 @@ const UNIDAD_KEYS: Record<string, string> = {
   TAZA: "unidades.taza",
   REBANADA: "unidades.rebanada",
   PIEZA: "unidades.pieza",
+  LATA: "unidades.lata",
+  LONCHA: "unidades.loncha",
 };
 
 interface AlimentoFormProps {

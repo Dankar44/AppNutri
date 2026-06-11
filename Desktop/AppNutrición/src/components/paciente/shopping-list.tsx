@@ -200,6 +200,7 @@ function formatearCantidad(g: number, unidad?: string) {
     const labels: Record<string, string> = {
       MILILITROS: "ml", UNIDAD: "ud", CUCHARADA: "cda",
       CUCHARADITA: "cdta", TAZA: "tz", REBANADA: "reb", PIEZA: "pza",
+      LATA: "lata", LONCHA: "loncha",
     };
     const label = labels[unidad] || unidad.toLowerCase();
     const rounded = Number.isInteger(g) ? g : Math.round(g * 10) / 10;

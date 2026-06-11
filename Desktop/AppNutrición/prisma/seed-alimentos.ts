@@ -115,6 +115,9 @@ const alimentos = [
 
 async function main() {
   console.log("Sembrando alimentos...");
+  // NOTA: el seed inserta todo en GRAMOS. Tras sembrar, ejecutar
+  // `npx tsx scripts/asignar-unidades-alimentos.ts --apply` para asignar las
+  // unidades caseras por defecto (huevo → ud, leche → ml, pan → reb…) (#21).
 
   for (const alimento of alimentos) {
     await prisma.alimento.create({

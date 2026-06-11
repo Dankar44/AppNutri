@@ -154,6 +154,8 @@ enum UnidadMedida {
   TAZA
   REBANADA
   PIEZA
+  LATA
+  LONCHA
 }
 
 enum OrigenAlimento {

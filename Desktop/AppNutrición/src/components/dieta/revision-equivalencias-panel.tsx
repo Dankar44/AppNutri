@@ -80,9 +80,17 @@ export function RevisionEquivalenciasPanel({ principal, alternativas, onGuardar,
       for (const alt of alternativas) {
         const calBase = alt.calorias ?? 0;
         if (calBase <= 0) continue; // sin datos: no tocar
-        next[alt.id] = alt.esReceta
-          ? Math.max(0.5, Math.round((objetivo / calBase) * 2) / 2)
-          : redondearGramos((objetivo / calBase) * 100);
+        if (alt.esReceta) {
+          next[alt.id] = Math.max(0.5, Math.round((objetivo / calBase) * 2) / 2);
+          continue;
+        }
+        const gramos = (objetivo / calBase) * 100;
+        const unidad = alt.unidad || "GRAMOS";
+        // La cantidad guardada va en la unidad de la alternativa: si es casera
+        // (ud, reb, cda…), convertir los gramos equivalentes a unidades (pasos de 0.5).
+        next[alt.id] = unidad === "GRAMOS" || unidad === "MILILITROS"
+          ? redondearGramos(gramos)
+          : Math.max(0.5, Math.round((gramos / (alt.porcion || 100)) * 2) / 2);
       }
       return next;
     });
@@ -94,7 +102,8 @@ export function RevisionEquivalenciasPanel({ principal, alternativas, onGuardar,
     recalcularTodas(v);
   }
 
-  const pasoP = principal.esReceta ? 0.5 : 5;
+  const esGramosP = principal.unidad === "GRAMOS" || principal.unidad === "MILILITROS";
+  const pasoP = principal.esReceta ? 0.5 : esGramosP ? 5 : 1;
 
   return (
     <div className="border border-primary/20 rounded-xl bg-card shadow-lg overflow-hidden my-2">
@@ -163,7 +172,7 @@ export function RevisionEquivalenciasPanel({ principal, alternativas, onGuardar,
                   }}
                   min={alt.esReceta ? 0.5 : 0}
                   max={10000}
-                  step={alt.esReceta ? 0.5 : 5}
+                  step={alt.esReceta || !(alt.unidad === "GRAMOS" || alt.unidad === "MILILITROS" || !alt.unidad) ? 0.5 : 5}
                   className="w-14 px-1 py-1 text-[11px] rounded border border-border/60 bg-background text-right tabular-nums focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/50"
                 />
                 <span className="text-[10px] text-muted-foreground">{getUnidadLabel(alt.unidad || "GRAMOS", alt.esReceta)}</span>
