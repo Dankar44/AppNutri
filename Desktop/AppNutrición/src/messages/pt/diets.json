@@ -454,6 +454,8 @@
     "foodsSection": "Alimentos",
     "add": "Adicionar",
     "adjustQuantity": "Ajustar quantidade",
+    "per100g": "por 100 g",
+    "perRacion": "por porção",
     "reasons": {
       "highProtein": "Rico em proteínas",
       "carbSource": "Fonte de carboidratos",

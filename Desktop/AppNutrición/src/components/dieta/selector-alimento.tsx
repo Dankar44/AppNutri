@@ -166,14 +166,8 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
     onClose();
   }
 
-  function quickAddAlimento(item: AlimentoResult | AlimentoSugerido) {
-    doSelect(item.id, null, item.nombre, getCantidadDefault(item.unidad, item.porcion), item.unidad, item.calorias, item.proteinas, item.carbohidratos, item.grasas);
-  }
-
-  function quickAddReceta(item: RecetaResult) {
-    doSelect(null, item.id, item.nombre, 1, "GRAMOS", item.calorias, item.proteinas, item.carbohidratos, item.grasas);
-  }
-
+  // El clic en un resultado SIEMPRE expande (cantidad + macros en vivo + botón Añadir);
+  // nunca añade directo, para que el nutri vea/ajuste la cantidad antes de confirmar.
   function toggleExpandAlimento(item: AlimentoResult | AlimentoSugerido) {
     if (expanded?.id === item.id && expanded.type === "alimento") {
       setExpanded(null);
@@ -235,6 +229,10 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
     if (!expanded || expanded.id !== itemId) return null;
     const unitLabel = esReceta ? "porc." : getUnidadLabel(expanded.unidad);
     const macros = scaledMacros(base, expanded.cantidad, expanded.unidad, expanded.porcion, esReceta);
+    // Equivalencia en gramos para unidades caseras ("2 ud × 120 g = 240 g"): explica
+    // de dónde salen los macros recalculados de abajo.
+    const esUnidadCasera = !esReceta && expanded.unidad !== "GRAMOS" && expanded.unidad !== "MILILITROS";
+    const gramosTotales = esUnidadCasera ? Math.round(convertirAGramos(expanded.cantidad, expanded.unidad, expanded.porcion || 100)) : 0;
 
     return (
       <div className="px-3 pb-3 pt-2 border-t border-border/50 bg-muted/30 rounded-b-lg" onClick={(e) => e.stopPropagation()}>
@@ -271,6 +269,11 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
             <Plus className="w-3.5 h-3.5" />
           </button>
         </div>
+        {esUnidadCasera && (
+          <p className="mb-2 text-center text-[11px] text-muted-foreground tabular-nums">
+            {expanded.cantidad} {unitLabel} × {Math.round(expanded.porcion || 100)} g = <span className="font-semibold text-foreground">{gramosTotales} g</span>
+          </p>
+        )}
         <div className="mb-2 flex justify-center">
           <MacroBadges calorias={macros.calorias} proteinas={macros.proteinas} carbohidratos={macros.carbohidratos} grasas={macros.grasas} />
         </div>
@@ -370,7 +373,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
                   >
                     <div
                       className="w-full text-left p-3 hover:bg-amber-50 dark:hover:bg-amber-500/15 transition-colors cursor-pointer"
-                      onClick={() => modoSustituirAlternativa ? toggleExpandAlimento(s) : quickAddAlimento(s)}
+                      onClick={() => toggleExpandAlimento(s)}
                     >
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-medium">{s.nombre}</p>
@@ -391,8 +394,9 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
                           </button>
                         </div>
                       </div>
-                      <div className="mt-1">
+                      <div className="mt-1 flex items-center gap-1.5 flex-wrap">
                         <MacroBadges calorias={s.calorias} proteinas={s.proteinas} carbohidratos={s.carbohidratos} grasas={s.grasas} />
+                        <span className="text-[10px] text-muted-foreground">{t("selectorAlimento.per100g")}</span>
                       </div>
                     </div>
                     {renderExpandedView(s.id, s.id, null, s.nombre, s, false, s.unidad)}
@@ -437,7 +441,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
                   >
                     <div
                       className="w-full text-left p-3 hover:bg-purple-50 dark:hover:bg-purple-500/15 transition-colors cursor-pointer"
-                      onClick={() => modoSustituirAlternativa ? toggleExpandReceta(r) : quickAddReceta(r)}
+                      onClick={() => toggleExpandReceta(r)}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 min-w-0">
@@ -467,8 +471,9 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
                           </button>
                         </div>
                       </div>
-                      <div className="mt-1">
+                      <div className="mt-1 flex items-center gap-1.5 flex-wrap">
                         <MacroBadges calorias={r.calorias} proteinas={r.proteinas} carbohidratos={r.carbohidratos} grasas={r.grasas} />
+                        <span className="text-[10px] text-muted-foreground">{t("selectorAlimento.perRacion")}</span>
                       </div>
                       {r.ingredientes.length > 0 && (
                         <p className="mt-1.5 text-[10px] text-purple-600 dark:text-purple-400 truncate">
@@ -508,7 +513,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
                           "w-full text-left p-3 transition-colors cursor-pointer",
                           verde ? "hover:bg-emerald-50 dark:hover:bg-emerald-500/15" : "hover:bg-muted",
                         )}
-                        onClick={() => modoSustituirAlternativa ? toggleExpandAlimento(item) : quickAddAlimento(item)}
+                        onClick={() => toggleExpandAlimento(item)}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2 min-w-0">
@@ -532,8 +537,9 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
                             <SlidersHorizontal className="w-3.5 h-3.5" />
                           </button>
                         </div>
-                        <div className="mt-1">
+                        <div className="mt-1 flex items-center gap-1.5 flex-wrap">
                           <MacroBadges calorias={item.calorias} proteinas={item.proteinas} carbohidratos={item.carbohidratos} grasas={item.grasas} />
+                          <span className="text-[10px] text-muted-foreground">{t("selectorAlimento.per100g")}</span>
                         </div>
                       </div>
                       {renderExpandedView(item.id, item.id, null, item.nombre, item, false, item.unidad)}
