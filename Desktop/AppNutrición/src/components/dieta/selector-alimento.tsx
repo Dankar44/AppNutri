@@ -199,13 +199,31 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
     accion: "agregar" | "sustituir" | "alternativa" = "agregar",
   ) {
     if (!expanded) return;
-    doSelect(alimentoId, recetaId, nombre, expanded.cantidad, unidadOriginal, base.calorias, base.proteinas, base.carbohidratos, base.grasas, accion);
+    // En alimentos se guarda la unidad activa del panel (puede haberse cambiado a gramos);
+    // en recetas el estado usa "PORCIONES" interno → se guarda la unidad original ("GRAMOS").
+    const unidad = expanded.type === "receta" ? unidadOriginal : expanded.unidad;
+    doSelect(alimentoId, recetaId, nombre, expanded.cantidad, unidad, base.calorias, base.proteinas, base.carbohidratos, base.grasas, accion);
   }
 
   function adjustQty(delta: number) {
     if (!expanded) return;
     const min = expanded.type === "receta" ? 0.5 : 1;
     setExpanded({ ...expanded, cantidad: Math.max(min, Math.round((expanded.cantidad + delta) * 10) / 10) });
+  }
+
+  // Alterna la unidad del panel entre la casera del alimento y gramos.
+  // Unidad→gramos: exacto (2 ud × 120 g = 240 g). Gramos→unidad: redondea a 0,5 (250 g →
+  // 2 ud) y recalcula; los gramos resultantes (240) quedan a la vista, no es silencioso.
+  function toggleUnidadExpanded(unidadNatural: string) {
+    if (!expanded) return;
+    const porcion = expanded.porcion || 100;
+    if (expanded.unidad === "GRAMOS") {
+      const uds = Math.max(0.5, Math.round((expanded.cantidad / porcion) * 2) / 2);
+      setExpanded({ ...expanded, unidad: unidadNatural, cantidad: uds });
+    } else {
+      const gramos = Math.round(convertirAGramos(expanded.cantidad, expanded.unidad, porcion));
+      setExpanded({ ...expanded, unidad: "GRAMOS", cantidad: gramos });
+    }
   }
 
   const step = expanded
@@ -233,10 +251,12 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
     // de dónde salen los macros recalculados de abajo.
     const esUnidadCasera = !esReceta && expanded.unidad !== "GRAMOS" && expanded.unidad !== "MILILITROS";
     const gramosTotales = esUnidadCasera ? Math.round(convertirAGramos(expanded.cantidad, expanded.unidad, expanded.porcion || 100)) : 0;
+    // Toggle unidad↔gramos: solo en alimentos con unidad casera (en g/ml no aporta nada).
+    const conToggleUnidad = !esReceta && unidadOriginal !== "GRAMOS" && unidadOriginal !== "MILILITROS";
 
     return (
       <div className="px-3 pb-3 pt-2 border-t border-border/50 bg-muted/30 rounded-b-lg" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-center gap-2 mb-2">
+        <div className="flex items-center justify-center flex-wrap gap-2 mb-2">
           <button
             type="button"
             onClick={() => adjustQty(-step)}
@@ -268,6 +288,30 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
           >
             <Plus className="w-3.5 h-3.5" />
           </button>
+          {conToggleUnidad && (
+            <div className="inline-flex rounded-lg border border-border overflow-hidden shrink-0 text-xs font-medium" role="group" aria-label={t("selectorAlimento.unitToggle")}>
+              <button
+                type="button"
+                onClick={() => { if (expanded.unidad === "GRAMOS") toggleUnidadExpanded(unidadOriginal); }}
+                className={cn(
+                  "px-2.5 h-8 transition-colors",
+                  expanded.unidad !== "GRAMOS" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted",
+                )}
+              >
+                {getUnidadLabel(unidadOriginal)}
+              </button>
+              <button
+                type="button"
+                onClick={() => { if (expanded.unidad !== "GRAMOS") toggleUnidadExpanded(unidadOriginal); }}
+                className={cn(
+                  "px-2.5 h-8 border-l border-border transition-colors",
+                  expanded.unidad === "GRAMOS" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted",
+                )}
+              >
+                g
+              </button>
+            </div>
+          )}
         </div>
         {esUnidadCasera && (
           <p className="mb-2 text-center text-[11px] text-muted-foreground tabular-nums">

@@ -456,6 +456,7 @@
     "adjustQuantity": "Ajustar cantidad",
     "per100g": "por 100 g",
     "perRacion": "por ración",
+    "unitToggle": "Cambiar entre unidad y gramos",
     "reasons": {
       "highProtein": "Alto en proteínas",
       "carbSource": "Fuente de carbohidratos",
