@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Mail, Calendar, Pencil, X, CalendarPlus } from "lucide-react";
+import { Calendar, X } from "lucide-react";
 import type { FichaInformacionData, CampoPersonalizadoDefinicion } from "@/lib/ficha-informacion-types";
 import { AvatarPaciente } from "@/components/avatar-paciente";
 import {
@@ -18,7 +18,7 @@ import {
   PacienteFichaMedicionesTab,
   type MedidaSerializada,
 } from "./paciente-ficha-mediciones-tab";
-import { PacienteActions } from "@/app/(dashboard)/pacientes/[id]/paciente-actions";
+import { PacienteActionBar } from "./paciente-action-bar";
 import { getFichaTabs, type PestanaFicha } from "@/lib/paciente-ficha-pestanas";
 import { PlanificacionPorDefectoTab } from "./planificacion-por-defecto-tab";
 import type { Planificacion } from "@/app/actions/planificaciones";
@@ -219,35 +219,12 @@ export function PacienteFichaClient({
               {edad != null && ` (${edad} ${t("edadAnios")})`}
             </span>
           )}
-          {!paciente.esDemo && (
-            <Link
-              href={`/agenda/nueva?paciente=${paciente.id}`}
-              className="inline-flex items-center gap-1.5 px-3 py-2.5 lg:py-2 rounded-lg border border-primary/40 text-primary hover:bg-primary/10 transition-colors text-sm font-medium min-h-11 lg:min-h-0"
-              title={t("nuevaCita")}
-            >
-              <CalendarPlus className="w-4 h-4 shrink-0" />
-              <span>{t("nuevaCita")}</span>
-            </Link>
-          )}
-          {paciente.email && (
-            <a
-              href={`mailto:${paciente.email}`}
-              className="p-2.5 lg:p-2 rounded-lg border border-border hover:bg-muted transition-colors min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 flex items-center justify-center"
-              title={paciente.email}
-              aria-label={t("enviarEmail")}
-            >
-              <Mail className="w-4 h-4" />
-            </a>
-          )}
-          <Link
-            href={`/pacientes/${paciente.id}/editar`}
-            className="p-2.5 lg:p-2 rounded-lg border border-border hover:bg-muted transition-colors min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 flex items-center justify-center"
-            title={t("editarPaciente")}
-            aria-label={t("editarPaciente")}
-          >
-            <Pencil className="w-4 h-4" />
-          </Link>
-          <PacienteActions pacienteId={paciente.id} activo={paciente.activo} />
+          <PacienteActionBar
+            pacienteId={paciente.id}
+            activo={paciente.activo}
+            email={paciente.email}
+            esDemo={paciente.esDemo === true}
+          />
         </div>
       </div>
 
