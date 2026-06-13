@@ -408,58 +408,31 @@ Ainara cumplió lo prometido y envió el resumen de TODO lo que pregunta tras **
 
 ---
 
-## 20. Mostrar cantidad de referencia y editar cantidad en el selector de alimentos
-
-**Estado actual:** Al buscar un alimento en el panel "Añadir alimento o receta" del editor de dietas, cada resultado muestra nombre + macros (kcal, proteínas, carbos, grasas). Pero NO se indica a qué cantidad corresponden esos valores (¿100g? ¿una ración? ¿60g?). Tras añadir el alimento, el nutri tiene que ir a la tarjeta del alimento en la comida para cambiar la cantidad.
-
-**Petición (Anabel Segura, mayo 2025):** Dos mejoras en el selector de alimentos:
-
-1. **Mostrar la cantidad de referencia** junto a los macros — que se vea "por 100g" o "por ración (60g)" de un vistazo, para saber qué significan los números.
-2. **Poder editar la cantidad directamente en el selector** antes de añadir — un input de cantidad + unidad en cada resultado, que recalcule los macros en tiempo real. Así se añade el alimento ya con la cantidad correcta sin tener que buscarlo después.
-
-**Tareas:**
-- [ ] Mostrar la porción de referencia en cada resultado del selector (ej: "por 100g" o "por ración")
-- [ ] Añadir input de cantidad + selector de unidad inline en cada resultado del buscador
-- [ ] Recalcular macros en tiempo real al cambiar la cantidad (kcal, P, C, G proporcionales)
-- [ ] Al hacer clic en "añadir", usar la cantidad introducida en vez del default
-- [ ] Mantener el flujo rápido: que el input no estorbe si el nutri solo quiere añadir rápido con la cantidad por defecto
-
-**Archivos a modificar:**
-- `src/components/dieta/selector-alimento.tsx` — resultados de búsqueda y lógica de añadir
-- `src/components/dieta/comida-slot.tsx` — recibe el alimento añadido con su cantidad
-
-**Prioridad:** Alta (afecta directamente a la eficiencia del flujo principal de trabajo)
-**Complejidad:** Media
-
----
-
 ## 21. Medidas caseras y porciones por unidades
 
-> ⭐⭐ **PRIORIDAD MÁXIMA — PRIMER PASO HECHO (11 jun 2026).** ✅ **BD actualizada**: 807 de 2.659 alimentos globales tienen ya su **medida casera por defecto** con sus gramos por unidad (revisión completa del catálogo, alimento a alimento): 320 UNIDAD (huevo 60 g, plátano 120 g, yogur 125 g, galletas, salchichas, barritas…), 217 MILILITROS (leche 250, zumos, refrescos 330…), 145 CUCHARADA (aceite 10 g, miel, mermelada, cremas de frutos secos…), 47 REBANADA (panes 30-60 g), 31 LONCHA (jamón serrano 15 g, york/fiambres 20 g), 24 LATA (atún 50 g escurrido, sardinas 85 g), 23 CUCHARADITA (azúcar 5 g, tabasco…). Se añadieron las unidades **LATA y LONCHA** al enum (migración + UI + i18n es/pt). Porciones redondeadas a múltiplos de 5. El resto (~1.850) se queda en gramos a propósito (carnes/pescados frescos, verduras, arroz/pasta/harinas: se pesan). Los macros siguen por 100 g; los planes existentes no cambian (snapshot propio). Script reproducible: `scripts/asignar-unidades-alimentos.ts` (dry-run + `--apply`, registro en `scripts/cambios-unidades.tsv`). Fix incluido: el panel "Revisar equivalencias" ahora recalcula las alternativas en su propia unidad (antes metía gramos con unidad casera). ⚠️ Pendiente deploy: LATA/LONCHA necesitan el código nuevo para mostrarse bien (el resto de unidades ya funciona en prod).
+> **Ya hecho y desplegado (jun 2026):** (1) 807 alimentos globales con su medida casera por defecto (huevo→ud 60 g, plátano→ud 120 g, leche→ml 250, pan→reb, jamón→loncha, atún→lata…); resto en gramos a propósito (carnes/pescados frescos, verduras, arroz/pasta). (2) Unidades **LATA y LONCHA** nuevas en el enum. (3) En el **selector al añadir**: clic abre panel de cantidad, macros etiquetados "por 100 g", equivalencia "2 ud × 120 g = 240 g", y **conmutador unidad↔gramos** (pasar a gramos guarda en gramos; volver a unidad redondea a 0,5 y recalcula). Script reproducible: `scripts/asignar-unidades-alimentos.ts`.
 
-**Estado actual:** Existe el enum `UnidadMedida` con 8 unidades (GRAMOS, UNIDAD, CUCHARADA, TAZA, etc.) y cada alimento tiene un campo `porcion` (gramos por unidad). `convertirAGramos()` calcula correctamente: 2 UNIDAD × porcion(125g) = 250g. El paciente ve la unidad original ("2 ud"), no los gramos. → La base ya está; falta poblar las unidades/porciones por defecto de los alimentos y exponer el selector de unidad al pautar.
+**Estado actual:** El enum `UnidadMedida` tiene 10 unidades. Cada alimento tiene `porcion` (gramos por unidad) y `convertirAGramos()` calcula bien (2 UNIDAD × 120g = 240g). El paciente ve la unidad ("2 ud"). Lo que falta son las porciones nombradas/múltiples por alimento y cambiar la unidad de un alimento **ya añadido** al plan (el conmutador hoy solo está al añadir, no en la tarjeta del plan).
 
 **Petición (Alba F. / albaf.nutricion, mayo 2025; nutricionista argentina, mayo 2026; Ainara Martín, mayo 2026):** Quiere poner "2 yogures" y que la app entienda que son 250g. O "2 huevos" y que sepa que son 120g. Sin tener que calcular los gramos manualmente. Más visual para el paciente también. La nutricionista argentina pide poder usar medidas caseras (1 taza, 2 tazas…) en los alimentos precargados/globales, no solo en los personalizados. Ainara refuerza: "que en las recetas haya equivalencias a medidas caseras, a la gente no le gusta pesar la comida pero si le dices 2 cazos de alubias sí lo hacen". Aplicar especialmente en recetas, donde los ingredientes deberían mostrarse en medidas caseras (cazos, vasos, cucharadas) además de gramos.
 
 **Input adicional (Lucía Hernández, LinkedIn — 9 jun 2026):** Poder añadir una **anotación libre por alimento** junto a la cantidad, sobre todo para indicar la **medida casera**: ej. "Aceite de oliva (10 g) — anotación: cucharada sopera". Y que esa anotación **aparezca también en el entregable (PDF)**, porque muchos pacientes no pesan la comida y siguen mejor el plan con medidas caseras. VERIFICADO: `AlimentoEnComida` NO tiene campo de nota/anotación → habría que añadir un campo `nota`/`medidaCasera` por alimento y mostrarlo en el plan, portal y PDF. (Encaja con esta tarea de medidas caseras; es una forma rápida y libre de darlas sin necesidad del sistema completo de porciones nombradas.)
 
-**Input adicional (nutricionista +34 693…, WhatsApp — 8 jun 2026):** "Al meter el desayuno no puedo modificar la leche, entra con 250 y no me deja cambiarla, solo ver macros. Y faltan más medidas como cuchara, unidad."
+**Input adicional (nutricionista +34 693…, WhatsApp — 8 jun 2026):** "Al meter el desayuno no puedo modificar la leche, entra con 250 y no me deja cambiarla, solo ver macros. Y faltan más medidas como cuchara, unidad." → **Resuelto en gran parte:** al añadir ya se puede ajustar cantidad y cambiar unidad↔gramos, y existen LATA/LONCHA + las medidas caseras pobladas. Queda solo cambiar la unidad de un alimento ya añadido en la tarjeta.
 
 **VERIFICADO en código (estado real y preciso de las unidades, jun 2026):**
 - **Al CREAR un alimento propio SÍ se elige la unidad**: `alimento-form.tsx` tiene `<select name="unidad">` con todas las opciones (g, ml, unidad, cucharada, cucharadita, taza, rebanada, pieza) + campo `porcion` (gramos por unidad). PERO: **una sola unidad por alimento** (un único campo `unidad`), y solo en los alimentos **que tú creas** (Guillermo, 8 jun: "solo una unidad por alimento y solo los nuevos").
 - **Alimentos precargados/globales**: vienen con su unidad de origen (la leche en ml) y el nutri **no puede cambiarla** (no son editables / no hay opción). Por eso la nutri no puede pasar la leche a "vaso/cuchara".
 - **En el EDITOR DEL PLAN**: la unidad es solo una **etiqueta de texto** (`alimento-card.tsx` muestra `unidadLabel`; no hay selector de unidad ni en la card ni en `comida-slot.tsx`). Solo se edita la **cantidad numérica**, no la unidad.
 
-→ **Gaps principales a cerrar:** (a) poder elegir/cambiar la unidad de un alimento **al pautarlo en el plan** (no solo la fija del alimento); (b) **varias medidas por alimento** (no solo una); (c) poder asignar medidas caseras también a los **alimentos precargados**.
+→ **Gaps principales a cerrar:** (a) cambiar la unidad de un alimento **ya añadido** en la tarjeta del plan (al añadir ya se puede); (b) **varias medidas por alimento** (no solo una).
 
 **Lo que falta (gap):**
-- [ ] **⭐ Selector de unidad en el editor del plan** — que junto a la cantidad de cada alimento se pueda elegir la unidad (g, ml, unidad, cucharada, vaso, taza…), no solo un número con la unidad fija. Hoy la unidad es una etiqueta no editable
+- [ ] **⭐ Cambiar la unidad en la tarjeta del plan** — al **añadir** ya hay conmutador unidad↔gramos; falta poder cambiarla también en un alimento **ya añadido** (hoy en la tarjeta la unidad es etiqueta fija, solo se edita el número)
 - [ ] **Porciones nombradas por alimento** — Que yogur tenga "1 yogur = 125g", huevo tenga "1 huevo = 60g", pan tenga "1 rebanada = 30g". No solo la genérica "UNIDAD" sino nombres específicos
 - [ ] **Múltiples porciones por alimento** — Un alimento podría tener varias medidas: "1 unidad (125g)", "1 tarrina (250g)", "1 cucharada (15g)"
 - [ ] **Tallas de ración S / M / L por alimento** (nutricionista en reunión, 10 jun 2026) — poder definir por alimento unos tamaños con sus gramos (ej. S = 40 g, M = 50 g, L = 60 g) y elegir la talla al pautar. Más vistoso e intuitivo para el paciente que un número en gramos
-- [ ] **UX más clara en el selector** — Que al añadir un alimento sea obvio que puedes cambiar de gramos a unidades, y que se vea cuántos gramos equivale
-- [x] **Valores de porción correctos en alimentos precargados** — HECHO (11 jun 2026): unidad casera + gramos por unidad asignados a 807 alimentos globales (ver nota de arriba). Dudosos que quedaron en gramos a propósito: tomate/zanahoria/patata, albóndigas/nuggets, aguacate (pendiente de fracciones), onza de chocolate
-- [ ] **Lista de la compra en unidades, no en gramos** (Guillermo/nutris, 10 jun 2026) — en la lista de la compra, alimentos como los **huevos** salen en gramos ("720 g de huevo") cuando lo natural es en unidades ("12 huevos"). La lista (`shopping-list.tsx` → `formatearCantidad`) YA respeta la unidad del ítem, así que el arreglo es que esos alimentos se expresen en su unidad casera (huevo = unidad, no gramos) — depende de tener bien la unidad/porción del alimento (los dos puntos de arriba). Poder además editar la cantidad/unidad en la propia lista de la compra
+- [ ] **Editar cantidad/unidad en la lista de la compra** — los huevos y demás ya salen en su unidad casera (ud) ahora que el alimento la tiene bien; falta poder **editar** la cantidad/unidad directamente en la propia lista
 - [ ] **Confusión de UX detectada**: al hacer clic en el NOMBRE del alimento en la comida, se navega a la ficha del alimento (solo lectura, "ver macros") — varias nutris creen que ahí se edita la cantidad. La cantidad se edita en el input numérico junto al alimento. Valorar que el nombre no saque de la edición o dejar más claro dónde se cambia cantidad/unidad
 - [ ] **Medidas caseras en INGREDIENTES de recetas + fracciones** (nutricionista email, 8 jun 2026) — al añadir ingredientes a una receta, poder elegir entre cucharadita, cucharada, taza, rebanada, piezas, y **fracciones: mitad (1/2), cuarto (1/4)**, etc. (las fracciones son un matiz nuevo a soportar además de las unidades existentes)
 
@@ -576,7 +549,6 @@ Ainara cumplió lo prometido y envió el resumen de TODO lo que pregunta tras **
 | 16 | Indicador visual fuente alimento | Media | Baja |
 | 17 | Newsletter actualizaciones semanales | Media | Media |
 | 18 | Personalizar estructura anamnesis | Alta | Media-Alta |
-| 20 | Cantidad + macros en selector alimentos | Alta | Media |
 | 21 | Medidas caseras / porciones por unidades | Alta | Media |
 | 22 | Ajustar ingredientes de receta en plan | Alta | Alta |
 | 23 | Comidas reutilizables (grupo de alimentos) | Media-Alta | Media |
@@ -650,6 +622,8 @@ Ainara cumplió lo prometido y envió el resumen de TODO lo que pregunta tras **
 | 98 | Vista Análisis "Todos": título de cada día en recuadro centrado | Baja-Media | Baja |
 | 99 | Clasificar recetas por categoría (desayuno, snack, salsa, puré…) | Media-Alta | Media |
 | 100 | Vista Resumen: mostrar tiempos de comida por día (no "X sin alimentos") | Media | Baja |
+| 101 | Alimentos solicitados para añadir al catálogo (lista acumulativa) | Media | Baja |
+| 102 | Recordatorio de 24h en historia alimentaria con cálculo de ingesta | Media-Alta | Media |
 
 ---
 
@@ -1681,9 +1655,11 @@ Además, pide un **registro dietético con fotos**: que el paciente pueda subir 
 
 ## 56. Recomendaciones predefinidas por patología/condición
 
-**Origen:** Ainara Martín (ainara_nutri, Instagram) — 29 mayo 2026
+**Origen:** Ainara Martín (ainara_nutri, Instagram) — 29 mayo 2026; Joana (joananutrilim, Instagram) — 12 junio 2026 (añade **estados fisiológicos**, no solo patologías).
 
 **Estado actual:** La sección "Recomendaciones" del PDF es un campo de texto libre que el nutricionista escribe manualmente para cada paciente. No existen plantillas ni bloques predefinidos de recomendaciones por condición.
+
+**Input de Joana (12 jun 2026):** Pide un campo para agregar recomendaciones no solo por patología, sino también por **estado fisiológico**: embarazo, menopausia, SOP, endometriosis… Es decir, las plantillas/bloques de recomendaciones deben cubrir tanto patologías (diabetes, hiperuricemia…) como estados fisiológicos. Ampliar el catálogo de plantillas globales predefinidas con estos casos.
 
 **Petición:** Ainara tiene un sistema propio (Excel con fichas) donde, según la patología del paciente (diabetes, ácido úrico, oncológico, pérdida de peso…), marca una pestaña y las recomendaciones correspondientes se añaden automáticamente al plan. Quiere lo mismo en Annonia: bloques de recomendaciones por condición que se seleccionen con un checkbox y se inserten automáticamente en el PDF.
 
@@ -1821,9 +1797,9 @@ Se ven valores "de programador" y queda poco profesional.
 
 ## 62. Mostrar medicamentos / suplementos (y similares) en forma de tabla
 
-**Origen:** nutricionista (WhatsApp) — 1 jun 2026
+**Origen:** nutricionista (WhatsApp) — 1 jun 2026; Joana (joananutrilim, Instagram) — 12 jun 2026 (pide "una sección de medicación o suplementos" además de la dieta).
 
-**Estado actual:** Medicamentos, suplementos, alergias, intolerancias y patologías son listas de texto (`string[]`) y se muestran como texto/lista simple (`renderLista`) en la ficha general del paciente.
+**Estado actual:** Medicamentos, suplementos, alergias, intolerancias y patologías son listas de texto (`string[]` en `Paciente`) y se muestran como texto/lista simple (`renderLista`) en la ficha general del paciente. Es decir, medicación y suplementos **YA se registran** en el historial del paciente; lo que se pide es una **sección más estructurada/visible** y poder **pautarlos junto a la dieta** (suplementos: #65; catálogo: este #62; medicación + interacciones: #71).
 
 **Petición:** Que esos datos (medicamentos, suplementos…) se presenten en **formato tabla**, más legible y ordenado.
 
@@ -2102,7 +2078,7 @@ Esto refuerza la opción "estructurada" de esta tarea: pasar suplementos (y medi
 
 ## 71. Módulo de farmacología: interacciones fármaco-alimento en la pauta
 
-**Origen:** Ainara Martín (ainara_nutri, Instagram) — 2 junio 2026; José (WhatsApp) — 9 junio 2026 (preguntas concretas de un profesional riguroso, ver abajo).
+**Origen:** Ainara Martín (ainara_nutri, Instagram) — 2 junio 2026; José (WhatsApp) — 9 junio 2026 (preguntas concretas de un profesional riguroso, ver abajo); Joana (joananutrilim, Instagram) — 12 junio 2026 ("la warfarina no se debe mezclar con pomelo… poner un campo de medicación creo que es esencial"; trabaja patología digestiva y fertilidad — demanda repetida por tres profesionales).
 
 **Estado actual (VERIFICADO en código, 9 jun 2026):** Los medicamentos del paciente se registran como lista de texto en la anamnesis (`string[]`, ver tarea #62). No hay base de datos de fármacos ni detección de interacciones. Y confirmado: **la IA NO recibe la medicación del paciente** al generar la dieta — el prompt (`src/lib/ai/prompts.ts`) solo recibe objetivo, alergias, intolerancias, patologías, preferencias e instrucciones del nutri; la medicación no se pasa. Así que hoy la IA no tiene en cuenta los fármacos (salvo que el nutri lo escriba a mano en instrucciones).
 
@@ -2745,3 +2721,44 @@ Esto refuerza la opción "estructurada" de esta tarea: pasar suplementos (y medi
 **Relacionado con:** #31 (copiar comidas entre días — ya hecho), #37 (filas vacías en PDF)
 **Prioridad:** Media (mejora de visibilidad al montar la semana)
 **Complejidad:** Baja
+
+---
+
+## 101. Alimentos solicitados por nutricionistas para añadir al catálogo (lista acumulativa)
+
+**Origen:** varios nutricionistas (se irá ampliando).
+
+Lista de alimentos concretos que los nutris echan en falta en la base de datos global. En lugar de una entrada por alimento, se acumulan aquí para añadirlos por lotes al catálogo (con macros + micros + unidad/porción correcta, ver #21).
+
+**Pendientes de añadir:**
+- [ ] **Tortitas de legumbres** (nutricionista, 12 jun 2026) — existen "Tortita de arroz" y "Tortita de avena", pero no de legumbres.
+- [ ] (Relacionado: panes/alimentos peruanos —pan francés, chiabatta…— pedidos por Betzabe, ver #1; faltan alimentos también reportado en #44)
+
+**Nota:** mientras no estén en el catálogo global, el nutri puede crearlos como **alimento propio** con sus valores y le quedan guardados. Conviene revisar periódicamente esta lista y meterlos al seed global.
+
+**Relacionado con:** #1 (tablas por país), #44 (faltan alimentos para la IA), #21 (unidad/porción correcta al añadirlos)
+**Prioridad:** Media (contenido — mejora continua del catálogo)
+**Complejidad:** Baja (añadir alimentos al seed)
+
+---
+
+## 102. Recordatorio de 24 horas (R24h) en la historia alimentaria, con cálculo aproximado de la ingesta
+
+**Origen:** Saija (nutricionista, WhatsApp — 12 jun 2026). Relacionado con el "registro de 24h (día entre semana + día libre)" que pidió Ainara (#18).
+
+**Estado actual (verificado en código):** La anamnesis tiene una sección "Historia alimentaria" (`historiaAlimentaria` en `ficha-informacion-types.ts`) con campos de TEXTO libre (tipos de dieta, alimentos favoritos/rechazados…). NO existe un recordatorio de 24 horas estructurado ni ningún cálculo de la ingesta que el paciente refiere.
+
+**Petición:** Añadir un **cuadro de recordatorio de 24 horas** en la historia alimentaria donde el nutri va anotando lo que el paciente refiere haber comido (por comidas) y la app **calcula un aproximado de las calorías y macros consumidos**, reutilizando la base de alimentos. Ejemplo de Saija:
+> Desayuno: 2 rebanadas de pan (30 g CH) · 1 cda de queso crema (5 g lípidos) · 2 huevos (10 g lípidos, 16 g proteína)… y así, para tener idea de cuánto consume el paciente al día. Un aproximado, porque nunca es exacto.
+
+**Tareas:**
+- [ ] Estructura de R24h: comidas (desayuno, media mañana, comida…) → alimentos con cantidad, usando el mismo buscador de alimentos del plan
+- [ ] Calcular kcal y macros aproximados por comida y total del día, reutilizando `calcularMacrosPorcion` / el motor de cálculo que ya existe
+- [ ] Mostrar el total estimado del día (con una nota de "aproximado")
+- [ ] Guardarlo en la ficha del paciente (anamnesis / historia alimentaria)
+- [ ] Idealmente permitir un día entre semana y un día libre/fin de semana (Ainara, #18)
+- [ ] Útil para comparar la ingesta habitual estimada con el objetivo y enfocar el plan
+
+**Relacionado con:** #18 (anamnesis / registro 24h de Ainara), #78 (objetivos y macros), #28 (informe nutricional), motor de cálculo de macros existente
+**Prioridad:** Media-Alta (herramienta clásica de valoración inicial; muy útil y reutiliza lo que ya hay)
+**Complejidad:** Media (UI + estructura nuevas, pero el buscador y el cálculo de macros ya existen)
