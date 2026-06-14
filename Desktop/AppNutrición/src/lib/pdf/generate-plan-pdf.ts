@@ -45,7 +45,46 @@ function overrideKey(dia: string, tipo: string, idx: number): string {
   return `${dia}-${tipo}-${idx}`;
 }
 
+/** Líneas "o 70 g Cereales" de las alternativas de un ítem (#5). "" si no tiene. */
+function altLinesHtml(a: AlimentoEnComida, tt: TFunc, conCantidades = true): string {
+  if (!a.alternativas || a.alternativas.length === 0) return "";
+  return a.alternativas
+    .map((alt) => {
+      const nombre = escapeHtml(getAltNombre(alt));
+      if (!nombre) return "";
+      const qty = esAltReceta(alt)
+        ? `${alt.cantidad} ${tt("planDietetico.alternativas.rac")}`
+        : formatQuantity(alt.cantidad, alt.unidad);
+      const cuerpo = conCantidades ? `${qty} ${nombre}` : nombre;
+      return `<br><span class="alt-line"><span class="alt-o">${tt("planDietetico.alternativas.o")}</span> ${cuerpo}</span>`;
+    })
+    .join("");
+}
+
 // Types
+/**
+ * Alternativa "o ..." (#5). Acepta la forma MAPEADA ({nombre}) y la CRUDA de
+ * Prisma ({nombrePersonalizado, alimento, receta}) para que el exportador del
+ * paciente pueda pasar el plan tal cual.
+ */
+interface AlternativaPDF {
+  cantidad: number;
+  unidad: string;
+  nombre?: string;
+  nombrePersonalizado?: string | null;
+  esReceta?: boolean;
+  alimento?: { nombre: string } | null;
+  receta?: { nombre: string } | null;
+}
+
+function getAltNombre(alt: AlternativaPDF): string {
+  return alt.nombrePersonalizado || alt.nombre || alt.alimento?.nombre || alt.receta?.nombre || "";
+}
+
+function esAltReceta(alt: AlternativaPDF): boolean {
+  return alt.esReceta ?? !!alt.receta;
+}
+
 interface AlimentoEnComida {
   cantidad: number;
   unidad: string;
@@ -60,6 +99,9 @@ interface AlimentoEnComida {
     porciones: number; calorias: number; proteinas: number; carbohidratos: number; grasas: number;
     ingredientes: { alimento: { nombre: string }; cantidad: number; unidad: string }[];
   } | null;
+  /** Alias visual del nutri (#5). Las vías mapeadas ya lo resuelven en `nombre`; la cruda (exportador del paciente) lo trae aquí. */
+  nombrePersonalizado?: string | null;
+  alternativas?: AlternativaPDF[];
 }
 
 interface Comida {
@@ -118,6 +160,8 @@ function generateCSS(t: PdfColorTheme): string {
   .section-title { background: ${t.sectionBg}; padding: 10px 20px; text-align: center; font-weight: 700; font-size: 14px; color: ${t.textMedium}; margin: 20px 0 16px; border-radius: 6px; border: 1px solid ${t.border}; }
 
   .day-title { background: ${t.dayHeaderBg}; color: ${t.dayHeaderText}; padding: 8px 16px; text-align: center; font-weight: 700; font-size: 13px; border-radius: 6px; margin-bottom: 12px; }
+  .alt-line { font-size: 0.9em; color: ${t.textLight}; }
+  .alt-o { color: ${t.primary}; font-weight: 700; }
 
   /* Cover */
   .cover { text-align: center; padding-top: 80px; padding-bottom: 40px; }
@@ -135,6 +179,10 @@ function generateCSS(t: PdfColorTheme): string {
   .summary-table td { padding: 6px 4px; border: 1px solid ${t.borderLight}; vertical-align: top; text-align: center; font-size: 9px; color: ${t.textMedium}; }
   .summary-table .meal-label { background: ${t.accent}; color: white; font-weight: 700; font-size: 9px; padding: 6px 8px; text-align: center; writing-mode: vertical-rl; transform: rotate(180deg); min-width: 30px; }
   .summary-table tr:nth-child(even) td:not(.meal-label) { background: ${t.lightBg}; }
+  /* Cada grupo (principal + sus alternativas) separado para que se vea dónde empieza otro (#5) */
+  .summary-table .sem-item { margin-bottom: 5px; }
+  .summary-table .sem-item:last-child { margin-bottom: 0; }
+  .summary-table .sem-main { font-weight: 600; color: ${t.textMedium}; }
 
   /* Day detail table */
   .detail-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
@@ -145,6 +193,9 @@ function generateCSS(t: PdfColorTheme): string {
   .detail-table .plato-cell { width: 160px; font-weight: 600; font-size: 10px; color: ${t.textMedium}; }
   .detail-table .ingredientes-cell { font-size: 10px; color: ${t.textLight}; }
   .detail-table tr:nth-child(even) td:not(.meal-cell) { background: ${t.lightBg}; }
+  /* Que una comida no se parta entre páginas dejando filas huérfanas sin su etiqueta (#5) */
+  .detail-table tbody { break-inside: avoid; page-break-inside: avoid; }
+  .detail-table tr { break-inside: avoid; page-break-inside: avoid; }
 
   /* Macros */
   .macros-row { margin-top: 12px; background: ${t.sectionBg}; border-radius: 8px; border: 1px solid ${t.borderLight}; border-spacing: 0; }
@@ -193,7 +244,7 @@ function escapeHtml(s: string): string {
 }
 
 function getItemNameHtml(a: AlimentoEnComida, t: TFunc): string {
-  const name = a.alimento?.nombre || a.receta?.nombre || "?";
+  const name = a.nombrePersonalizado || a.alimento?.nombre || a.receta?.nombre || "?";
   const productLink = a.alimento?.enlaceProducto
     ? ` <a href="${escapeHtml(a.alimento.enlaceProducto)}" target="_blank" class="food-link" style="font-size:9px;">${t("planDietetico.enlaceProducto.ver")}</a>`
     : "";
@@ -223,7 +274,7 @@ function getMacrosForItem(a: AlimentoEnComida) {
 }
 
 function getItemName(a: AlimentoEnComida): string {
-  return a.alimento?.nombre || a.receta?.nombre || "?";
+  return a.nombrePersonalizado || a.alimento?.nombre || a.receta?.nombre || "?";
 }
 
 function getDayMacros(dia: Dia) {
@@ -273,12 +324,13 @@ export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
       for (const dia of sortedDias) {
         const comida = dia.comidas.find((c) => c.tipo === tipo);
         const items = comida?.alimentos.map((a, aIdx) => {
-          const name = escapeHtml(getItemName(a));
-          if (!sec.cantidadesSemanal) return name;
+          const name = `<span class="sem-main">${escapeHtml(getItemName(a))}</span>`;
+          const alts = altLinesHtml(a, tt, sec.cantidadesSemanal);
+          if (!sec.cantidadesSemanal) return `<div class="sem-item">${name}${alts}</div>`;
           const key = overrideKey(dia.dia, tipo, aIdx);
           const qty = resolveDisplay({ cantidad: a.cantidad, unidad: a.unidad }, ov[key], tt);
-          return `${name} - ${qty}`;
-        }).join("<br>") || "-";
+          return `<div class="sem-item">${name} - ${qty}${alts}</div>`;
+        }).join("") || "-";
         const desc = comida?.descripcion ? escapeHtml(comida.descripcion) : "";
         html += `<td>${desc ? `<strong style="font-size:8px;">${desc}</strong><br>` : ""}${items}</td>`;
       }
@@ -292,7 +344,7 @@ export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
     for (const dia of sortedDias) {
       const macros = getDayMacros(dia);
       html += `<div class="page">${header}<div class="day-title">${tt("planDietetico.diaLabels." + DIA_KEY_MAP[dia.dia])}</div>`;
-      html += `<table class="detail-table"><thead><tr><th style="width:90px">${tt("planDietetico.tabla.comida")}</th><th style="width:160px">${tt("planDietetico.tabla.platos")}</th><th>${tt("planDietetico.tabla.ingredientesYCantidades")}</th></tr></thead><tbody>`;
+      html += `<table class="detail-table"><thead><tr><th style="width:90px">${tt("planDietetico.tabla.comida")}</th><th style="width:160px">${tt("planDietetico.tabla.platos")}</th><th>${tt("planDietetico.tabla.ingredientesYCantidades")}</th></tr></thead>`;
 
       for (const tipo of TIPOS_ORDEN) {
         const comida = dia.comidas.find((c) => c.tipo === tipo);
@@ -311,13 +363,16 @@ export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
               detail += `<br><strong>${tt("planDietetico.receta.receta")}</strong> ${escapeHtml(a.receta.instrucciones).replace(/\n/g, "<br>")}`;
             }
           }
+          // Alternativas "o ..." del ítem (#5)
+          detail += altLinesHtml(a, tt);
           return { name, nameHtml, qty, detail };
         });
 
         const hasDesc = !!comida.descripcion;
         const totalRows = hasDesc ? rows.length + 1 : rows.length;
 
-        html += `<tr>`;
+        // Un <tbody> por comida: con break-inside:avoid no se parte entre páginas.
+        html += `<tbody class="comida-group"><tr>`;
         html += `<td class="meal-cell" rowspan="${totalRows}"><strong>${tt("planDietetico.tipoLabels." + TIPO_KEY_MAP[tipo])}</strong><br><span class="hora">${tt("planDietetico.horaDefault." + TIPO_KEY_MAP[tipo])}</span></td>`;
 
         if (hasDesc) {
@@ -331,9 +386,10 @@ export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
             html += `<tr><td class="plato-cell">${rows[i].nameHtml}</td><td class="ingredientes-cell">${rows[i].detail}</td></tr>`;
           }
         }
+        html += `</tbody>`;
       }
 
-      html += `</tbody></table>`;
+      html += `</table>`;
       if (sec.valoresNutricionales) {
         html += `<table class="macros-row" width="100%"><tr>
           <td class="macro-item"><div class="macro-value macro-cal">${macros.calorias}</div><div class="macro-label">${tt("planDietetico.macros.kcal")}</div></td>

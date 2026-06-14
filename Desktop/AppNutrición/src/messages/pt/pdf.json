@@ -27,6 +27,10 @@
       "ingredientes": "INGREDIENTES:",
       "receta": "RECEITA:"
     },
+    "alternativas": {
+      "o": "ou",
+      "rac": "rac."
+    },
     "enlaceProducto": {
       "ver": "(ver)",
       "verImagen": "(ver imagem)"

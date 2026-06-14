@@ -34,6 +34,23 @@ export default async function SharedPlanPage({ params }: Props) {
           cantidad: a.cantidad,
           unidad: a.unidad ?? "GRAMOS",
           nombrePersonalizado: a.nombrePersonalizado ?? null,
+          alternativas: a.alternativas?.map((alt) => ({
+            id: alt.id,
+            nombre: alt.nombrePersonalizado || alt.alimento?.nombre || alt.receta?.nombre || "",
+            cantidad: alt.cantidad,
+            unidad: alt.unidad,
+            esReceta: !!alt.receta,
+            realId: alt.alimento?.id || alt.receta?.id || null,
+            calorias: alt.alimento?.calorias ?? alt.receta?.calorias ?? 0,
+            proteinas: alt.alimento?.proteinas ?? alt.receta?.proteinas ?? 0,
+            carbohidratos: alt.alimento?.carbohidratos ?? alt.receta?.carbohidratos ?? 0,
+            grasas: alt.alimento?.grasas ?? alt.receta?.grasas ?? 0,
+            fibra: alt.alimento?.fibra ?? alt.receta?.fibra ?? 0,
+            porcion: alt.alimento?.porcion ?? 100,
+            recetaPorciones: alt.receta?.porciones ?? undefined,
+            recetaDescripcion: alt.receta?.descripcion ?? null,
+            recetaIngredientes: alt.receta?.ingredientes?.map((i: { alimento: { nombre: string }; cantidad: number; unidad: string }) => ({ nombre: i.alimento.nombre, cantidad: i.cantidad, unidad: i.unidad })) ?? undefined,
+          })) ?? [],
           alimento: a.alimento
             ? {
                 id: a.alimento.id,

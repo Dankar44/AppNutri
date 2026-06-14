@@ -41,6 +41,13 @@ export default async function ExportarPDFPage() {
                 include: {
                   alimento: true,
                   receta: { include: { ingredientes: { include: { alimento: { select: { nombre: true } } } } } },
+                  alternativas: {
+                    orderBy: { orden: "asc" },
+                    include: {
+                      alimento: { select: { nombre: true } },
+                      receta: { select: { nombre: true } },
+                    },
+                  },
                 },
               },
             },

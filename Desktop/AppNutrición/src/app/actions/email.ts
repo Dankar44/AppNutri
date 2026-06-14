@@ -257,6 +257,12 @@ export async function enviarPlanPorEmail(
                 porcion: a.alimento.porcion ?? 100,
               }
             : null,
+          alternativas: (a.alternativas ?? []).map((alt) => ({
+            nombre: alt.nombrePersonalizado || alt.alimento?.nombre || alt.receta?.nombre || "",
+            cantidad: alt.cantidad,
+            unidad: alt.unidad,
+            esReceta: !!alt.receta,
+          })),
           receta: a.receta
             ? {
                 id: a.receta.id,

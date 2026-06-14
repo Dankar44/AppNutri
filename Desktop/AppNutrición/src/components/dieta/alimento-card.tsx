@@ -330,28 +330,47 @@ export function AlimentoCard({
 
   if (readOnly) {
     return (
-      <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border/50 last:border-b-0">
-        <div className="flex-1 min-w-0 flex items-center gap-1.5 text-sm">
-          <span className="w-16 sm:w-14 px-2 py-1 sm:px-1.5 sm:py-0.5 text-base sm:text-sm text-right tabular-nums font-medium">
-            {cantidad}
-          </span>
-          <span className="text-muted-foreground text-sm shrink-0">
-            {unidadLabel} {t("alimentoCard.unitConnector")}
-          </span>
-          <FoodHoverCard {...foodHoverProps}>
-            <span className={cn("truncate font-medium", nameColor, interactionMode === "dashboard" && "hover:underline")}>{nombre}</span>
-          </FoodHoverCard>
-          {enlaceProducto && (
-            <a href={enlaceProducto} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="shrink-0">
-              <ExternalLink className="w-3.5 h-3.5 text-primary/60 hover:text-primary" />
-            </a>
-          )}
-          {imagenUrl && (
-            <a href={imagenUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="shrink-0">
-              <ImageLinkIcon className="w-3.5 h-3.5 text-violet-400 hover:text-violet-600" />
-            </a>
-          )}
+      <div className="border-b border-border/50 last:border-b-0">
+        <div className="flex items-center gap-2 px-3 py-2.5">
+          <div className="flex-1 min-w-0 flex items-center gap-1.5 text-sm">
+            <span className="w-16 sm:w-14 px-2 py-1 sm:px-1.5 sm:py-0.5 text-base sm:text-sm text-right tabular-nums font-medium">
+              {cantidad}
+            </span>
+            <span className="text-muted-foreground text-sm shrink-0">
+              {unidadLabel} {t("alimentoCard.unitConnector")}
+            </span>
+            <FoodHoverCard {...foodHoverProps}>
+              <span className={cn("truncate font-medium", nameColor, interactionMode === "dashboard" && "hover:underline")}>{nombre}</span>
+            </FoodHoverCard>
+            {enlaceProducto && (
+              <a href={enlaceProducto} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="shrink-0">
+                <ExternalLink className="w-3.5 h-3.5 text-primary/60 hover:text-primary" />
+              </a>
+            )}
+            {imagenUrl && (
+              <a href={imagenUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="shrink-0">
+                <ImageLinkIcon className="w-3.5 h-3.5 text-violet-400 hover:text-violet-600" />
+              </a>
+            )}
+          </div>
         </div>
+
+        {/* Alternativas "o ..." visibles también para el paciente (#5, solo lectura) */}
+        {alternativas && alternativas.length > 0 && (
+          <div className="pl-9 pr-3 pb-2 space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-0.5">
+              {t("alimentoCard.alternativasLabel")}
+            </p>
+            {alternativas.map((alt) => (
+              <AlternativaRow
+                key={alt.id}
+                alt={alt}
+                interactionMode={interactionMode}
+                ocultarCalorias={ocultarCalorias}
+              />
+            ))}
+          </div>
+        )}
       </div>
     );
   }

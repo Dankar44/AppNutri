@@ -1358,6 +1358,12 @@ export async function getPlanPDFData(planId: string): Promise<PlanPDFData | null
                 })),
               }
             : null,
+          alternativas: (a.alternativas ?? []).map((alt) => ({
+            nombre: alt.nombrePersonalizado || alt.alimento?.nombre || alt.receta?.nombre || "",
+            cantidad: alt.cantidad,
+            unidad: alt.unidad,
+            esReceta: !!alt.receta,
+          })),
         })),
       })),
     })),

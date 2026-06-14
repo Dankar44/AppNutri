@@ -61,6 +61,18 @@ export async function getPlanPorToken(token: string) {
                     include: {
                       alimento: true,
                       receta: { include: { ingredientes: { include: { alimento: { select: { nombre: true } } } } } },
+                      alternativas: {
+                        orderBy: { orden: "asc" },
+                        include: {
+                          alimento: { select: { id: true, nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true, fibra: true, porcion: true } },
+                          receta: {
+                            select: {
+                              id: true, nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true, fibra: true, porciones: true, descripcion: true,
+                              ingredientes: { include: { alimento: { select: { nombre: true } } } },
+                            },
+                          },
+                        },
+                      },
                     },
                   },
                 },

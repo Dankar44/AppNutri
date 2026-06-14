@@ -658,25 +658,59 @@ export function EntregablesTab({
                                 const doc = iframe.contentDocument;
                                 if (!doc) return;
                                 const styleId = "preview-page-delim";
-                                if (!doc.getElementById(styleId)) {
-                                  const style = doc.createElement("style");
+                                let style = doc.getElementById(styleId) as HTMLStyleElement | null;
+                                if (!style) {
+                                  style = doc.createElement("style");
                                   style.id = styleId;
-                                  style.textContent = `
-                                    html, body { margin: 0; padding: 0; background: white; overflow: hidden; }
-                                    .page {
-                                      margin: 0 !important;
-                                      height: 1123px !important;
-                                      min-height: 1123px !important;
-                                      max-height: 1123px !important;
-                                      width: 794px !important;
-                                      background: white;
-                                      box-sizing: border-box;
-                                      overflow: hidden;
-                                    }
-                                    .page.cover { justify-content: center; }
-                                  `;
                                   doc.head.appendChild(style);
                                 }
+                                // Sin altura fija: cada bloque .page crece según su contenido para
+                                // NO recortar (antes se perdían los valores nutricionales al final
+                                // de un día con mucho contenido).
+                                style.textContent = `
+                                  html, body { margin: 0; padding: 0; background: white; overflow: hidden; }
+                                  .page {
+                                    margin: 0 !important;
+                                    min-height: 0 !important;
+                                    width: 794px !important;
+                                    background: white;
+                                    box-sizing: border-box;
+                                    overflow: hidden;
+                                  }
+                                  .page.cover { justify-content: center; }
+                                  .preview-spacer td { padding: 0 !important; border: 0 !important; }
+                                `;
+                                const PAGE_H = 1123;
+                                const pages = Array.from(doc.querySelectorAll<HTMLElement>(".page"));
+                                let total = 0;
+                                for (const page of pages) {
+                                  page.style.height = "auto";
+                                  // Emular el break-inside del PDF: empujar a la hoja siguiente las
+                                  // comidas que quedarían partidas por un límite de hoja, para que el
+                                  // preview se vea IGUAL que el PDF descargado (comidas sin cortar).
+                                  const pageTop = page.getBoundingClientRect().top;
+                                  const grupos = Array.from(page.querySelectorAll<HTMLElement>("tbody.comida-group"));
+                                  for (const g of grupos) {
+                                    const top = g.getBoundingClientRect().top - pageTop;
+                                    const h = g.offsetHeight;
+                                    if (h <= 0 || h > PAGE_H) continue; // comida más alta que una hoja: inevitable
+                                    const ini = Math.floor(top / PAGE_H);
+                                    const fin = Math.floor((top + h - 1) / PAGE_H);
+                                    if (ini !== fin) {
+                                      const push = Math.round((ini + 1) * PAGE_H - top);
+                                      const spacer = doc.createElement("tbody");
+                                      spacer.className = "preview-spacer";
+                                      spacer.innerHTML = `<tr><td colspan="3" style="height:${push}px"></td></tr>`;
+                                      g.parentNode?.insertBefore(spacer, g);
+                                    }
+                                  }
+                                  // Cada día se redondea a múltiplos de una hoja (1123px), igual que el
+                                  // page-break del PDF → mismo nº de páginas y sin contenido cortado.
+                                  const needed = Math.max(1, Math.ceil((page.scrollHeight - 4) / PAGE_H));
+                                  page.style.height = `${needed * PAGE_H}px`;
+                                  total += needed;
+                                }
+                                if (total > 0) setTotalPages(total);
                               } catch {
                                 // cross-origin safety
                               }
