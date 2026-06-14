@@ -1622,14 +1622,8 @@ Además, pide un **registro dietético con fotos**: que el paciente pueda subir 
 
 **Estado actual:** En el plan alimenticio, cada comida tiene alimentos fijos con sus cantidades. Existe un botón "equivalente" en cada alimento del editor (`equivalente-panel.tsx`) que **sustituye** el alimento por otro de macros similares. Pero solo sustituye (1 a 1) y el cambio no se ofrece al paciente como alternativa: no hay un sistema estructurado de intercambios visible para el paciente.
 
-**Input prioritario (Guillermo, 4 jun 2026) — mejora concreta del equivalente actual:** Que el botón equivalente dé a elegir entre **SUSTITUIR** (cambiar el alimento, como ahora) o **AÑADIR COMO ALTERNATIVA** (dejar las dos opciones). Así el nutri puede poner "50 g de cereales **O** 50 g de avena" y el paciente elige. Y que esas alternativas **aparezcan en el entregable (PDF) y en el portal del paciente**, no solo en el editor. Es la vía rápida hacia el sistema de intercambios completo de abajo.
-- [ ] Botón equivalente con dos acciones: "Sustituir" / "Añadir como alternativa"
-- [ ] Una alimento puede tener N alternativas (ej: cereales / avena / pan integral)
-- [ ] Mostrar las alternativas en el PDF y en el portal del paciente ("X o Y o Z")
-
-**Input adicional (nutricionista, WhatsApp — 11 jun 2026, probando el panel de alternativas ya desplegado):**
+**Feedback pendiente (nutricionista, probando el panel de alternativas):**
 - [ ] **Nombres truncados en el panel de equivalencias** — en los resultados del panel, los nombres largos se cortan ("Atún En Lata En…", "Atún Claro En C…") y no se distingue qué tipo de atún es. Hacer el panel/columna más ancho, o mostrar el nombre completo / con tooltip al pasar por encima
-- [ ] **"Al cambiar la cantidad no se recalculan las equivalencias" — ACLARADO (verificado en código): NO es bug, es UX.** El recálculo de las alternativas ya añadidas existe pero es **MANUAL**: al cambiar la cantidad del alimento principal en la tarjeta, las alternativas NO se reescalan solas; hay que pulsar el botón **"Revisar equivalencias" → "Recalcular todas"** (modal con nota "Cambia la cantidad del alimento principal y las alternativas se recalculan para igualar sus calorías"). La nutri esperaba que fuera automático. **Mejora propuesta:** recalcular las alternativas **automáticamente** al cambiar la cantidad del alimento principal (o avisar "tienes alternativas, ¿recalcular?"), y/o hacer el botón "Revisar equivalencias" más visible. (Guillermo lo probó y "va" porque usó el botón / el panel.)
 
 **Petición:** Marta menciona que compañeras suyas usan un sistema de intercambio de alimentos en sus consultas y lo considera útil. El concepto es: para cada alimento del plan, definir una lista de alternativas equivalentes nutricionalmente (ej: "en vez de 150g de pollo, puedes comer 170g de pavo o 200g de merluza"). Así el paciente tiene flexibilidad sin salirse de los macros.
 
