@@ -87,6 +87,30 @@ interface AlimentoEnComidaData {
   }[];
 }
 
+/** Alimento ya transformado para render; `pendiente` = optimista sin confirmar (#5). */
+type AlimentoRender = {
+  id: string;
+  alimentoRealId: string | null;
+  nombre: string;
+  cantidad: number;
+  unidad: string;
+  porcion: number;
+  calorias: number;
+  proteinas: number;
+  carbohidratos: number;
+  grasas: number;
+  fibra: number;
+  esReceta: boolean;
+  esPropio?: boolean;
+  enlaceProducto: string | null;
+  imagenUrl: string | null;
+  recetaIngredientes?: { nombre: string; cantidad: number; unidad: string }[];
+  recetaDescripcion?: string | null;
+  recetaPorciones?: number;
+  alternativas: NonNullable<AlimentoEnComidaData["alternativas"]>;
+  pendiente?: boolean;
+};
+
 interface ComidaData {
   id: string;
   tipo: string;
@@ -178,6 +202,9 @@ export function PlanEditor({
   type AltOptimista = { id: string; nombre: string; cantidad: number; unidad: string; esReceta: boolean; realId: string | null; pendiente: true };
   const [altsOptimistas, setAltsOptimistas] = useState<Record<string, AltOptimista[]>>({});
   const [altsEliminadas, setAltsEliminadas] = useState<Set<string>>(new Set());
+  // #5 — UI optimista al AÑADIR un alimento: aparece al instante (por comidaId)
+  // hasta que el refresh trae la fila real.
+  const [alimentosOptimistas, setAlimentosOptimistas] = useState<Record<string, AlimentoRender[]>>({});
   const [activeDragItem, setActiveDragItem] = useState<DragItemData | null>(null);
   const [selectedDay, setSelectedDay] = useState<DayTab>("TODOS");
 
@@ -194,39 +221,45 @@ export function PlanEditor({
           id: comida.id,
           tipo: comida.tipo,
           descripcion: comida.descripcion,
-          alimentos: comida.alimentos.map((a) => {
-            const item = a.alimento || a.receta;
-            return {
-              id: a.id,
-              alimentoRealId: a.alimento?.id || a.receta?.id || null,
-              nombre: a.nombrePersonalizado || item?.nombre || t("editor.sinNombre"),
-              cantidad: a.cantidad,
-              unidad: a.unidad || "GRAMOS",
-              porcion: a.alimento?.porcion || 100,
-              calorias: item?.calorias || 0,
-              proteinas: item?.proteinas || 0,
-              carbohidratos: item?.carbohidratos || 0,
-              grasas: item?.grasas || 0,
-              fibra: item?.fibra || 0,
-              esReceta: !!a.receta,
-              esPropio: a.alimento?.esPropio || a.receta?.esPropio,
-              enlaceProducto: a.alimento?.enlaceProducto || null,
-              imagenUrl: a.alimento?.imagenUrl || null,
-              recetaIngredientes: a.receta?.ingredientes,
-              recetaDescripcion: a.receta?.descripcion,
-              recetaPorciones: a.receta?.porciones,
-              // Merge optimista: servidor (sin las eliminadas) + pendientes aún no confirmadas.
-              alternativas: [
-                ...(a.alternativas ?? []).filter((s) => !altsEliminadas.has(s.id)),
-                ...(altsOptimistas[a.id] ?? []).filter(
-                  (o) => !(a.alternativas ?? []).some((s) => s.realId === o.realId && Math.abs(s.cantidad - o.cantidad) < 0.01),
-                ),
-              ],
-            };
-          }),
+          alimentos: [
+            ...comida.alimentos.map((a): AlimentoRender => {
+              const item = a.alimento || a.receta;
+              return {
+                id: a.id,
+                alimentoRealId: a.alimento?.id || a.receta?.id || null,
+                nombre: a.nombrePersonalizado || item?.nombre || t("editor.sinNombre"),
+                cantidad: a.cantidad,
+                unidad: a.unidad || "GRAMOS",
+                porcion: a.alimento?.porcion || 100,
+                calorias: item?.calorias || 0,
+                proteinas: item?.proteinas || 0,
+                carbohidratos: item?.carbohidratos || 0,
+                grasas: item?.grasas || 0,
+                fibra: item?.fibra || 0,
+                esReceta: !!a.receta,
+                esPropio: a.alimento?.esPropio || a.receta?.esPropio,
+                enlaceProducto: a.alimento?.enlaceProducto || null,
+                imagenUrl: a.alimento?.imagenUrl || null,
+                recetaIngredientes: a.receta?.ingredientes,
+                recetaDescripcion: a.receta?.descripcion,
+                recetaPorciones: a.receta?.porciones,
+                // Merge optimista: servidor (sin las eliminadas) + pendientes aún no confirmadas.
+                alternativas: [
+                  ...(a.alternativas ?? []).filter((s) => !altsEliminadas.has(s.id)),
+                  ...(altsOptimistas[a.id] ?? []).filter(
+                    (o) => !(a.alternativas ?? []).some((s) => s.realId === o.realId && Math.abs(s.cantidad - o.cantidad) < 0.01),
+                  ),
+                ],
+              };
+            }),
+            // Alimentos recién añadidos (optimista): visibles al instante hasta que el refresh los trae.
+            ...(alimentosOptimistas[comida.id] ?? []).filter(
+              (o) => !comida.alimentos.some((a) => (a.alimento?.id || a.receta?.id || null) === o.alimentoRealId && Math.abs(a.cantidad - o.cantidad) < 0.01),
+            ),
+          ],
         })),
       })),
-    [dias, altsOptimistas, altsEliminadas]
+    [dias, altsOptimistas, altsEliminadas, alimentosOptimistas]
   );
 
   // Poda del estado optimista cuando el refresh trae los datos reales.
@@ -255,6 +288,24 @@ export function PlanEditor({
     setAltsEliminadas((prev) => {
       const next = new Set([...prev].filter((id) => todosIds.has(id)));
       return next.size !== prev.size ? next : prev;
+    });
+    // Poda de alimentos optimistas ya confirmados por el servidor.
+    const serverPorComida = new Map<string, { realId: string | null; cantidad: number }[]>();
+    for (const d of dias) {
+      for (const c of d.comidas) {
+        serverPorComida.set(c.id, c.alimentos.map((a) => ({ realId: a.alimento?.id || a.receta?.id || null, cantidad: a.cantidad })));
+      }
+    }
+    setAlimentosOptimistas((prev) => {
+      let changed = false;
+      const next: Record<string, AlimentoRender[]> = {};
+      for (const [comidaId, list] of Object.entries(prev)) {
+        const server = serverPorComida.get(comidaId) ?? [];
+        const rest = list.filter((o) => !server.some((s) => s.realId === o.alimentoRealId && Math.abs(s.cantidad - o.cantidad) < 0.01));
+        if (rest.length !== list.length) changed = true;
+        if (rest.length > 0) next[comidaId] = rest;
+      }
+      return changed || Object.keys(next).length !== Object.keys(prev).length ? next : prev;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dias]);
@@ -419,6 +470,48 @@ export function PlanEditor({
     });
   }
 
+  /**
+   * Añade un alimento a una comida con UI optimista (#5): aparece al instante con
+   * su aspecto final (no editable ese ~segundo) y se consolida cuando el refresh
+   * trae la fila real; si el servidor falla, se retira y se avisa.
+   */
+  function addAlimentoOptimista(
+    comidaId: string,
+    item: { alimentoId: string | null; recetaId: string | null; nombre: string; cantidad: number; unidad: string; calorias: number; proteinas: number; carbohidratos: number; grasas: number },
+  ) {
+    const tempId = `optf-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+    const optimista: AlimentoRender = {
+      id: tempId,
+      alimentoRealId: item.alimentoId || item.recetaId,
+      nombre: item.nombre,
+      cantidad: item.cantidad,
+      unidad: item.unidad,
+      porcion: 100,
+      calorias: item.calorias,
+      proteinas: item.proteinas,
+      carbohidratos: item.carbohidratos,
+      grasas: item.grasas,
+      fibra: 0,
+      esReceta: !!item.recetaId,
+      esPropio: false,
+      enlaceProducto: null,
+      imagenUrl: null,
+      alternativas: [],
+      pendiente: true,
+    };
+    setAlimentosOptimistas((prev) => ({ ...prev, [comidaId]: [...(prev[comidaId] ?? []), optimista] }));
+    startTransition(async () => {
+      try {
+        await addAlimentoAComida(comidaId, item.alimentoId, item.recetaId, item.cantidad, item.unidad as UnidadMedida);
+        router.refresh();
+      } catch (error) {
+        if (isNextNavigation(error)) throw error;
+        setAlimentosOptimistas((prev) => ({ ...prev, [comidaId]: (prev[comidaId] ?? []).filter((o) => o.id !== tempId) }));
+        toast.error(t("editor.toastAddError"));
+      }
+    });
+  }
+
   // Desde el panel de "equivalente": añade el alimento equivalente como alternativa.
   function handleAgregarAlternativaDirecta(alimentoEnComidaId: string, alimentoId: string, nombre: string, cantidad: number, esReceta = false) {
     agregarAlternativaOptimista(alimentoEnComidaId, {
@@ -475,21 +568,7 @@ export function PlanEditor({
       localCallbacks.onAdd(selectedComidaId, item);
       return;
     }
-    startTransition(async () => {
-      try {
-        await addAlimentoAComida(
-          selectedComidaId,
-          item.alimentoId,
-          item.recetaId,
-          item.cantidad,
-          item.unidad as UnidadMedida
-        );
-        router.refresh();
-      } catch (error) {
-        if (isNextNavigation(error)) throw error;
-        toast.error(t("editor.toastAddError"));
-      }
-    });
+    addAlimentoOptimista(selectedComidaId, item);
   }
 
   async function handleRemoveAlimento(alimentoEnComidaId: string) {

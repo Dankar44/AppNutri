@@ -30,6 +30,8 @@ interface AlimentoEnSlot {
   recetaIngredientes?: { nombre: string; cantidad: number; unidad: string }[];
   recetaDescripcion?: string | null;
   recetaPorciones?: number;
+  /** UI optimista: alimento recién añadido aún sin confirmar (#5). */
+  pendiente?: boolean;
   alternativas?: {
     id: string;
     nombre: string;
@@ -251,6 +253,7 @@ export function ComidaSlot({
                     recetaIngredientes={a.recetaIngredientes}
                     recetaDescripcion={a.recetaDescripcion}
                     recetaPorciones={a.recetaPorciones}
+                    pendiente={a.pendiente}
                     readOnly={readOnly}
                     interactionMode={interactionMode}
                     ocultarCalorias={ocultarCalorias}

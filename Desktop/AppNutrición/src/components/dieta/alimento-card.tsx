@@ -45,6 +45,8 @@ interface AlimentoCardProps {
   onRenombrar?: (id: string, nombre: string, esAlternativa: boolean) => void;
   /** Guarda la revisión de equivalencias (cantidad del principal + de cada alternativa) (#5). */
   onGuardarEquivalencias?: (id: string, cantidadPrincipal: number, cambios: { id: string; cantidad: number }[]) => void;
+  /** UI optimista: alimento recién añadido, aún sin confirmar → aspecto final pero no interactivo (#5). */
+  pendiente?: boolean;
 }
 
 interface AlternativaData {
@@ -246,6 +248,7 @@ export function AlimentoCard({
   onCantidadAlternativaChange,
   onRenombrar,
   onGuardarEquivalencias,
+  pendiente = false,
 }: AlimentoCardProps) {
   const t = useTranslations("diets");
   const [tempCantidad, setTempCantidad] = useState(cantidad);
@@ -376,7 +379,7 @@ export function AlimentoCard({
   }
 
   return (
-    <div className="border-b border-border/50 last:border-b-0">
+    <div className={cn("border-b border-border/50 last:border-b-0", pendiente && "pointer-events-none")}>
     <div
       ref={setNodeRef}
       style={style}
