@@ -37,6 +37,7 @@ import {
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { normalizarCantidadTexto } from "@/components/cantidad-input";
 import type { CategoriaCompra, ItemCompra } from "@/lib/shopping-list";
 
 // ─── Categorías: meta (icono + color) ───
@@ -1338,10 +1339,11 @@ function ItemRow({
       {/* Cantidad (editable solo en custom) */}
       {editing ? (
         <input
-          type="number"
+          type="text"
+          inputMode="decimal"
           autoFocus
           value={editValue}
-          onChange={(e) => setEditValue(e.target.value)}
+          onChange={(e) => setEditValue(normalizarCantidadTexto(e.target.value))}
           onBlur={() => onEndEdit(Math.max(0, parseFloat(editValue) || 0))}
           onKeyDown={(e) => {
             if (e.key === "Enter") (e.target as HTMLInputElement).blur();
@@ -1459,13 +1461,11 @@ function AddItemModal({
             <div>
               <label className="text-xs font-medium text-muted-foreground">{t("cantidadGLabel")}</label>
               <input
-                type="number"
+                type="text"
                 inputMode="decimal"
                 value={cantidad}
-                onChange={(e) => setCantidad(e.target.value)}
+                onChange={(e) => setCantidad(normalizarCantidadTexto(e.target.value))}
                 onKeyDown={(e) => e.key === "Enter" && submit()}
-                min={1}
-                max={100000}
                 className="w-full mt-1 px-3 py-2 rounded-lg border border-border bg-background text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
             </div>

@@ -13,6 +13,7 @@ import {
   validateNumberOptional,
   LIMITS,
 } from "@/lib/validation";
+import { esUnidadDiscreta } from "@/lib/units";
 import { capitalizarNombre } from "@/lib/utils";
 import { getRecomendaciones } from "./pacientes";
 import type { PlanPDFData } from "@/lib/pdf/generate-plan-pdf";
@@ -323,8 +324,14 @@ export async function actualizarCantidadAlimento(
 
   const item = await prisma.alimentoEnComida.findUnique({
     where: { id: alimentoEnComidaId },
-    select: { cantidad: true, alternativas: { select: { id: true, cantidad: true, recetaId: true } } },
+    select: { cantidad: true, recetaId: true, unidad: true, alternativas: { select: { id: true, cantidad: true, recetaId: true } } },
   });
+
+  // Recetas y unidades caseras van en pasos de 0,5 (nunca 1,754 porciones), venga
+  // del input o de cualquier otro flujo. Los gramos/ml se dejan tal cual.
+  if (item && (item.recetaId || esUnidadDiscreta(item.unidad))) {
+    cantidad = Math.max(0.5, Math.round(cantidad * 2) / 2);
+  }
 
   await prisma.alimentoEnComida.update({
     where: { id: alimentoEnComidaId },
@@ -478,6 +485,14 @@ export async function actualizarCantidadAlternativa(alternativaId: string, canti
 
   await verificarPropietarioAlternativa(alternativaId, dietista.id, t);
   cantidad = validateNumber(cantidad, 0.1, LIMITS.CANTIDAD_MAX);
+  // Recetas y unidades caseras en pasos de 0,5, igual que el principal.
+  const alt = await prisma.alternativaAlimento.findUnique({
+    where: { id: alternativaId },
+    select: { recetaId: true, unidad: true },
+  });
+  if (alt && (alt.recetaId || esUnidadDiscreta(alt.unidad))) {
+    cantidad = Math.max(0.5, Math.round(cantidad * 2) / 2);
+  }
   await prisma.alternativaAlimento.update({ where: { id: alternativaId }, data: { cantidad } });
 }
 

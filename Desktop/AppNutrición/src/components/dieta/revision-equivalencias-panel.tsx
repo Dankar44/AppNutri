@@ -4,7 +4,8 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { X, RotateCcw, Save } from "lucide-react";
 import { DiffIndicator, redondearGramos } from "./equivalente-panel";
-import { getUnidadLabel } from "@/lib/units";
+import { CantidadInput } from "@/components/cantidad-input";
+import { getUnidadLabel, esUnidadDiscreta } from "@/lib/units";
 import { convertirAGramos } from "@/lib/macros";
 import { cn } from "@/lib/utils";
 
@@ -131,14 +132,13 @@ export function RevisionEquivalenciasPanel({ principal, alternativas, onGuardar,
       {/* Fila del principal (referencia, editable) */}
       <div className={`${GRID} items-center px-4 py-2.5 bg-primary/5 border-b border-primary/10 text-xs`}>
         <div className="flex items-center gap-1">
-          <input
-            type="number"
-            inputMode="decimal"
+          <CantidadInput
             value={cantPrincipal}
-            onChange={(e) => handlePrincipalChange(parseFloat(e.target.value))}
+            onChange={handlePrincipalChange}
             min={principal.esReceta ? 0.5 : 0}
             max={10000}
             step={pasoP}
+            redondearA={principal.esReceta || esUnidadDiscreta(principal.unidad) ? 0.5 : undefined}
             className="w-14 px-1 py-1 text-[11px] rounded border border-primary/40 bg-background text-right tabular-nums focus:outline-none focus:ring-1 focus:ring-primary/30"
           />
           <span className="text-[10px] text-muted-foreground">{getUnidadLabel(principal.unidad, principal.esReceta)}</span>
@@ -162,17 +162,13 @@ export function RevisionEquivalenciasPanel({ principal, alternativas, onGuardar,
           return (
             <div key={alt.id} className={`${GRID} items-center px-4 py-2.5 hover:bg-muted/30 transition-colors text-xs`}>
               <div className="flex items-center gap-1">
-                <input
-                  type="number"
-                  inputMode="decimal"
+                <CantidadInput
                   value={qty}
-                  onChange={(e) => {
-                    const v = parseFloat(e.target.value);
-                    if (Number.isFinite(v) && v > 0) setCants((prev) => ({ ...prev, [alt.id]: v }));
-                  }}
+                  onChange={(v) => setCants((prev) => ({ ...prev, [alt.id]: v }))}
                   min={alt.esReceta ? 0.5 : 0}
                   max={10000}
                   step={alt.esReceta || !(alt.unidad === "GRAMOS" || alt.unidad === "MILILITROS" || !alt.unidad) ? 0.5 : 5}
+                  redondearA={alt.esReceta || esUnidadDiscreta(alt.unidad) ? 0.5 : undefined}
                   className="w-14 px-1 py-1 text-[11px] rounded border border-border/60 bg-background text-right tabular-nums focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/50"
                 />
                 <span className="text-[10px] text-muted-foreground">{getUnidadLabel(alt.unidad || "GRAMOS", alt.esReceta)}</span>

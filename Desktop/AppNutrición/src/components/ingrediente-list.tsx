@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { AlimentoSearch } from "./alimento-search";
+import { CantidadInput } from "./cantidad-input";
 import { MacroBadges } from "./macro-badge";
 import { calcularMacrosPorcion, convertirAGramos, type Macros } from "@/lib/macros";
 import { getCantidadDefault, UNIDAD_LABELS } from "@/lib/units";
@@ -113,12 +114,9 @@ export function IngredienteList({
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <input
-                      type="number" inputMode="decimal"
+                    <CantidadInput
                       value={ing.cantidad}
-                      onChange={(e) =>
-                        updateCantidad(index, parseFloat(e.target.value) || 0)
-                      }
+                      onChange={(n) => updateCantidad(index, n)}
                       min={0}
                       max={10000}
                       step="1"

@@ -7,8 +7,9 @@ import { MacroBadges } from "@/components/macro-badge";
 import { buscarAlimentosYRecetas } from "@/app/actions/recetas";
 import { getSugerencias } from "@/app/actions/sugerencias";
 import type { AlimentoSugerido } from "@/lib/ai/suggest-complement";
-import { getCantidadDefault, getUnidadLabel } from "@/lib/units";
+import { getCantidadDefault, getUnidadLabel, esUnidadDiscreta } from "@/lib/units";
 import { calcularMacrosPorcion, convertirAGramos } from "@/lib/macros";
+import { normalizarCantidadTexto } from "@/components/cantidad-input";
 import { cn } from "@/lib/utils";
 
 interface SelectorAlimentoProps {
@@ -51,6 +52,9 @@ interface ExpandedState {
   id: string;
   type: "alimento" | "receta";
   cantidad: number;
+  /** Texto crudo del input: puede quedar vacío mientras se edita (borrar y teclear
+   *  desde cero). `cantidad` guarda el número para los cálculos (0 si está vacío). */
+  cantidadTexto: string;
   unidad: string;
   porcion: number;
 }
@@ -172,10 +176,12 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
     if (expanded?.id === item.id && expanded.type === "alimento") {
       setExpanded(null);
     } else {
+      const cantidad = getCantidadDefault(item.unidad, item.porcion);
       setExpanded({
         id: item.id,
         type: "alimento",
-        cantidad: getCantidadDefault(item.unidad, item.porcion),
+        cantidad,
+        cantidadTexto: String(cantidad),
         unidad: item.unidad,
         porcion: item.porcion,
       });
@@ -186,7 +192,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
     if (expanded?.id === item.id && expanded.type === "receta") {
       setExpanded(null);
     } else {
-      setExpanded({ id: item.id, type: "receta", cantidad: 1, unidad: "PORCIONES", porcion: 1 });
+      setExpanded({ id: item.id, type: "receta", cantidad: 1, cantidadTexto: "1", unidad: "PORCIONES", porcion: 1 });
     }
   }
 
@@ -199,6 +205,8 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
     accion: "agregar" | "sustituir" | "alternativa" = "agregar",
   ) {
     if (!expanded) return;
+    // Defensa: sin cantidad válida no se añade (el botón ya queda deshabilitado).
+    if (!(Number.isFinite(expanded.cantidad) && expanded.cantidad >= (expanded.type === "receta" ? 0.5 : 1))) return;
     // En alimentos se guarda la unidad activa del panel (puede haberse cambiado a gramos);
     // en recetas el estado usa "PORCIONES" interno → se guarda la unidad original ("GRAMOS").
     const unidad = expanded.type === "receta" ? unidadOriginal : expanded.unidad;
@@ -208,7 +216,8 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
   function adjustQty(delta: number) {
     if (!expanded) return;
     const min = expanded.type === "receta" ? 0.5 : 1;
-    setExpanded({ ...expanded, cantidad: Math.max(min, Math.round((expanded.cantidad + delta) * 10) / 10) });
+    const nueva = Math.max(min, Math.round((expanded.cantidad + delta) * 10) / 10);
+    setExpanded({ ...expanded, cantidad: nueva, cantidadTexto: String(nueva) });
   }
 
   // Alterna la unidad del panel entre la casera del alimento y gramos.
@@ -219,10 +228,10 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
     const porcion = expanded.porcion || 100;
     if (expanded.unidad === "GRAMOS") {
       const uds = Math.max(0.5, Math.round((expanded.cantidad / porcion) * 2) / 2);
-      setExpanded({ ...expanded, unidad: unidadNatural, cantidad: uds });
+      setExpanded({ ...expanded, unidad: unidadNatural, cantidad: uds, cantidadTexto: String(uds) });
     } else {
       const gramos = Math.round(convertirAGramos(expanded.cantidad, expanded.unidad, porcion));
-      setExpanded({ ...expanded, unidad: "GRAMOS", cantidad: gramos });
+      setExpanded({ ...expanded, unidad: "GRAMOS", cantidad: gramos, cantidadTexto: String(gramos) });
     }
   }
 
@@ -247,6 +256,9 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
     if (!expanded || expanded.id !== itemId) return null;
     const unitLabel = esReceta ? "porc." : getUnidadLabel(expanded.unidad);
     const macros = scaledMacros(base, expanded.cantidad, expanded.unidad, expanded.porcion, esReceta);
+    // Sin cantidad válida no se añade: se avisa y se bloquean los botones.
+    const minCantidad = esReceta ? 0.5 : 1;
+    const cantidadValida = Number.isFinite(expanded.cantidad) && expanded.cantidad >= minCantidad;
     // Equivalencia en gramos para unidades caseras ("2 ud × 120 g = 240 g"): explica
     // de dónde salen los macros recalculados de abajo.
     const esUnidadCasera = !esReceta && expanded.unidad !== "GRAMOS" && expanded.unidad !== "MILILITROS";
@@ -266,18 +278,30 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
           </button>
           <div className="relative w-[120px]">
             <input
-              type="number"
+              type="text"
               inputMode="decimal"
-              min={esReceta ? 0.5 : 1}
-              max={10000}
-              step={step}
-              value={expanded.cantidad}
+              value={expanded.cantidadTexto}
               onChange={(e) => {
-                const v = parseFloat(e.target.value);
-                if (Number.isFinite(v) && v > 0) setExpanded({ ...expanded, cantidad: v });
+                const raw = normalizarCantidadTexto(e.target.value);
+                const v = parseFloat(raw);
+                // Permite vaciar el campo (borrar y teclear desde cero): el texto
+                // manda, y cantidad queda en 0 mientras no haya un número válido.
+                setExpanded({ ...expanded, cantidadTexto: raw, cantidad: Number.isFinite(v) && v > 0 ? v : 0 });
               }}
+              onBlur={() => setExpanded((prev) => {
+                if (!prev) return prev;
+                const v = parseFloat(prev.cantidadTexto);
+                if (!(Number.isFinite(v) && v > 0)) return prev; // vacío: sigue el aviso y el botón bloqueado
+                // Canónico al salir ("2." → "2"); en recetas y unidades caseras, en pasos de 0,5.
+                const enMedias = prev.type === "receta" || esUnidadDiscreta(prev.unidad);
+                const limpio = enMedias ? Math.max(0.5, Math.round(v * 2) / 2) : v;
+                return { ...prev, cantidadTexto: String(limpio), cantidad: limpio };
+              })}
               onClick={(e) => e.stopPropagation()}
-              className="w-full h-9 px-2 pr-10 rounded-lg border border-border bg-background text-center text-sm font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className={cn(
+                "w-full h-9 px-2 pr-10 rounded-lg border bg-background text-center text-sm font-semibold tabular-nums focus:outline-none focus:ring-2",
+                cantidadValida ? "border-border focus:ring-primary/30" : "border-amber-400 focus:ring-amber-400/40",
+              )}
             />
             <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">{unitLabel}</span>
           </div>
@@ -313,7 +337,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
             </div>
           )}
         </div>
-        {esUnidadCasera && (
+        {esUnidadCasera && cantidadValida && (
           <p className="mb-2 text-center text-[11px] text-muted-foreground tabular-nums">
             {expanded.cantidad} {unitLabel} × {Math.round(expanded.porcion || 100)} g = <span className="font-semibold text-foreground">{gramosTotales} g</span>
           </p>
@@ -321,19 +345,26 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
         <div className="mb-2 flex justify-center">
           <MacroBadges calorias={macros.calorias} proteinas={macros.proteinas} carbohidratos={macros.carbohidratos} grasas={macros.grasas} />
         </div>
+        {!cantidadValida && (
+          <p className="mb-2 text-center text-xs font-medium text-amber-600 dark:text-amber-400">
+            {t("selectorAlimento.cantidadRequerida")}
+          </p>
+        )}
         {modoSustituirAlternativa ? (
           <div className="flex gap-2">
             <button
               type="button"
+              disabled={!cantidadValida}
               onClick={() => addExpanded(alimentoId, recetaId, nombre, base, unidadOriginal, "sustituir")}
-              className="flex-1 py-2 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-colors"
+              className="flex-1 py-2 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
             >
               {t("equivalentePanel.substitute")}
             </button>
             <button
               type="button"
+              disabled={!cantidadValida}
               onClick={() => addExpanded(alimentoId, recetaId, nombre, base, unidadOriginal, "alternativa")}
-              className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+              className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
             >
               + {t("equivalentePanel.addAlternativaBtn")}
             </button>
@@ -341,8 +372,9 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
         ) : (
           <button
             type="button"
+            disabled={!cantidadValida}
             onClick={() => addExpanded(alimentoId, recetaId, nombre, base, unidadOriginal)}
-            className="w-full py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+            className="w-full py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
           >
             {t("selectorAlimento.add")}
           </button>

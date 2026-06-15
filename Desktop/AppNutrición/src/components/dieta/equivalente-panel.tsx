@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { X, Search, ArrowUp, ArrowDown, Minus, Plus, ChevronLeft, ChevronRight, Replace, ListFilter, Check } from "lucide-react";
 import { buscarEquivalentes } from "@/app/actions/alimentos";
 import { buscarEquivalentesReceta } from "@/app/actions/recetas";
+import { CantidadInput } from "@/components/cantidad-input";
 
 interface EquivalentePanelProps {
   alimentoId: string;
@@ -197,15 +198,14 @@ export function EquivalentePanel({
               >
                 <Minus className="w-3 h-3" />
               </button>
-              <input
-                type="number"
-                inputMode="decimal"
+              <CantidadInput
                 value={cantidadRef}
-                onChange={(e) => setCantidadRef(Math.max(minRef, parseFloat(e.target.value) || minRef))}
+                onChange={setCantidadRef}
                 className="w-14 text-center text-sm tabular-nums bg-transparent border-x border-border py-1 focus:outline-none"
                 min={minRef}
                 max={10000}
                 step={paso}
+                redondearA={esReceta ? 0.5 : undefined}
               />
               <span className="px-1 text-[11px] text-muted-foreground">{unidadCorta}</span>
               <button
@@ -261,19 +261,15 @@ export function EquivalentePanel({
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">{eq.nombre}</p>
                   <div className="flex items-center gap-1 mt-0.5">
-                    <input
-                      type="number"
-                      inputMode="decimal"
+                    <CantidadInput
                       value={qty}
-                      onChange={(e) => {
-                        const v = parseFloat(e.target.value);
-                        if (Number.isFinite(v) && v > 0) setOverrides((o) => ({ ...o, [eq.id]: v }));
-                      }}
+                      onChange={(v) => setOverrides((o) => ({ ...o, [eq.id]: v }))}
                       // min=0 ancla la rejilla del step en múltiplos limpios (100→105→110,
-                      // no 101→106 como pasaba con min=1). El onChange ya descarta v≤0.
+                      // no 101→106 como pasaba con min=1). CantidadInput ya descarta v≤0.
                       min={esReceta ? 0.5 : 0}
                       max={10000}
                       step={esReceta ? 0.5 : 5}
+                      redondearA={esReceta ? 0.5 : undefined}
                       className="w-14 px-1 py-0.5 text-[11px] rounded border border-border/60 bg-background text-right tabular-nums focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/50"
                     />
                     <span className="text-[10px] text-muted-foreground">{unidadCorta}</span>

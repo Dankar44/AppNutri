@@ -42,3 +42,12 @@ export function getCantidadDefault(unidad: string, porcion: number): number {
   if (unidad === "GRAMOS" || unidad === "MILILITROS") return porcion;
   return 1;
 }
+
+/**
+ * true si la cantidad va en pasos de 0,5 (unidades caseras como ud/loncha/lata),
+ * y no en gramos/mililitros, que admiten cualquier entero. Las raciones de receta
+ * también van de 0,5 en 0,5 pero se detectan aparte (con su flag `esReceta`).
+ */
+export function esUnidadDiscreta(unidad?: string | null): boolean {
+  return !!unidad && unidad !== "GRAMOS" && unidad !== "MILILITROS";
+}

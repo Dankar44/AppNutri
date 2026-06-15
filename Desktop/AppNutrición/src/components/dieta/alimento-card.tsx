@@ -6,9 +6,10 @@ import { RevisionEquivalenciasPanel } from "./revision-equivalencias-panel";
 import { useState, useRef, useEffect } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
-import { getUnidadLabel } from "@/lib/units";
+import { getUnidadLabel, esUnidadDiscreta } from "@/lib/units";
 import { convertirAGramos } from "@/lib/macros";
 import { FoodHoverCard, type InteractionMode } from "@/components/food-hover-card";
+import { CantidadInput } from "@/components/cantidad-input";
 
 interface AlimentoCardProps {
   id: string;
@@ -143,15 +144,14 @@ function AlternativaRow({
     <div className="group/alt flex items-center gap-1.5 text-xs rounded-md bg-muted/40 px-2 py-1">
       <CornerDownRight className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
       {onCantidadChange ? (
-        <input
-          type="number"
-          inputMode="decimal"
+        <CantidadInput
           value={tempCantidad}
-          onChange={(e) => handleCantidad(parseFloat(e.target.value) || 0)}
+          onChange={handleCantidad}
           className="w-14 px-1 py-0.5 text-xs rounded border border-transparent hover:border-border focus:border-primary/50 bg-transparent text-right tabular-nums focus:outline-none focus:ring-1 focus:ring-primary/20"
           min={0}
           max={10000}
           step={alt.esReceta ? 0.5 : 1}
+          redondearA={alt.esReceta || esUnidadDiscreta(alt.unidad) ? 0.5 : undefined}
         />
       ) : (
         <span className="tabular-nums text-muted-foreground">{alt.cantidad}</span>
@@ -398,14 +398,13 @@ export function AlimentoCard({
       </button>
 
       <div className="flex-1 min-w-0 flex items-center gap-1.5 text-sm">
-        <input
-          type="number"
-          inputMode="decimal"
+        <CantidadInput
           value={tempCantidad}
-          onChange={(e) => handleCantidadChange(parseFloat(e.target.value) || 0)}
+          onChange={handleCantidadChange}
           className="w-16 sm:w-14 px-2 py-1 sm:px-1.5 sm:py-0.5 text-base sm:text-sm rounded border border-transparent hover:border-border focus:border-primary/50 bg-transparent text-right tabular-nums focus:outline-none focus:ring-1 focus:ring-primary/20"
           min={0}
           max={10000}
+          redondearA={esReceta || esUnidadDiscreta(unidad) ? 0.5 : undefined}
         />
         <span className="text-muted-foreground text-sm shrink-0">
           {unidadLabel} {t("alimentoCard.unitConnector")}

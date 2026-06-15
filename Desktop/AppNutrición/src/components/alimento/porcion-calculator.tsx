@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { Flame, Droplets, Circle, Diamond, Triangle, Minus, Plus } from "lucide-react";
+import { CantidadInput } from "@/components/cantidad-input";
 
 interface Props {
   calorias: number;
@@ -62,12 +63,11 @@ export function PorcionCalculator({ calorias, proteinas, carbohidratos, grasas, 
           <Minus className="w-4 h-4" />
         </button>
         <div className="flex-1 relative">
-          <input
-            type="number" inputMode="decimal"
+          <CantidadInput
             min={0}
             max={10000}
             value={gramos}
-            onChange={(e) => setGramos(clamp(Number(e.target.value) || 0))}
+            onChange={setGramos}
             className="w-full h-11 px-4 pr-10 rounded-lg border border-border bg-background text-center text-lg font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">g</span>
