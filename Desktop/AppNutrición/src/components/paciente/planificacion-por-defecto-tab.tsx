@@ -136,6 +136,7 @@ const AJUSTE_OPCIONES: { value: number; label: string }[] = [
   { value: 0, label: "0%" },
   { value: 10, label: "+10%" },
   { value: 15, label: "+15%" },
+  { value: 20, label: "+20%" },
 ];
 
 /** Map from legacy hardcoded Spanish names to stable formula IDs (for DB migration compat) */
