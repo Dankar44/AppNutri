@@ -102,10 +102,12 @@ export async function AgendaSidebar({
                     const pref =
                       prefijo.charAt(0).toUpperCase() + prefijo.slice(1);
                     const t0 = inicio.toLocaleTimeString(tag, {
+                      timeZone: "Europe/Madrid",
                       hour: "2-digit",
                       minute: "2-digit",
                     });
                     const t1 = fin.toLocaleTimeString(tag, {
+                      timeZone: "Europe/Madrid",
                       hour: "2-digit",
                       minute: "2-digit",
                     });

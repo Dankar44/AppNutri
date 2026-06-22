@@ -157,12 +157,13 @@ export function AgendaDiaDetalle({ fecha, citas, onClose }: Props) {
         <div className="divide-y divide-border">
           {citas.map((cita) => {
             const hora = new Date(cita.fechaHora).toLocaleTimeString(tag, {
+              timeZone: "Europe/Madrid",
               hour: "2-digit",
               minute: "2-digit",
             });
             const horaFin = new Date(
               new Date(cita.fechaHora).getTime() + cita.duracion * 60000
-            ).toLocaleTimeString(tag, { hour: "2-digit", minute: "2-digit" });
+            ).toLocaleTimeString(tag, { timeZone: "Europe/Madrid", hour: "2-digit", minute: "2-digit" });
 
             return (
               <div key={cita.id} className="px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3">

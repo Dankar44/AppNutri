@@ -85,3 +85,20 @@ export function toMadridDateTimeLocal(d: Date): string {
   const hora = toMadridTimeStr(d);
   return `${fecha}T${hora}`;
 }
+
+/**
+ * Interpreta un string de `<input type="datetime-local">` ("YYYY-MM-DDTHH:MM",
+ * con segundos opcionales) como hora de Europa/Madrid y devuelve el Date (instante)
+ * correspondiente. Úsalo al GUARDAR citas: el usuario teclea hora de Madrid, no UTC.
+ * Devuelve null si el string no tiene el formato esperado.
+ *
+ * Ejemplo (servidor en UTC): fromMadridLocalString("2026-06-27T18:00") → Date cuyo
+ * instante es 16:00:00Z (porque 18:00 Madrid en verano = 16:00 UTC).
+ */
+export function fromMadridLocalString(s: string): Date | null {
+  const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  if (!m) return null;
+  const [y, mo, d, h, mi] = m.slice(1).map((v) => parseInt(v, 10));
+  if (y < 1900 || y > 2100 || mo < 1 || mo > 12 || d < 1 || d > 31 || h > 23 || mi > 59) return null;
+  return fromMadrid(y, mo - 1, d, h, mi);
+}

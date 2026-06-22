@@ -92,7 +92,7 @@ export async function generarNotificaciones() {
   // Citas de hoy
   for (const cita of citasHoy) {
     if (!existeCitaNotif("CITA_HOY", cita.id)) {
-      const hora = new Date(cita.fechaHora).toLocaleTimeString(locale === "pt" ? "pt-BR" : "es-ES", { hour: "2-digit", minute: "2-digit" });
+      const hora = new Date(cita.fechaHora).toLocaleTimeString(locale === "pt" ? "pt-BR" : "es-ES", { timeZone: "Europe/Madrid", hour: "2-digit", minute: "2-digit" });
       const nombrePaciente = `${cita.paciente.nombre} ${cita.paciente.apellidos}`;
       nuevas.push({
         dietistaId: dietista.id,

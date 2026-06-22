@@ -1143,6 +1143,7 @@ async function formatFechaHora(d: Date): Promise<string> {
   const locale = await import("@/i18n/locale").then((m) => m.getLocale());
   const tag = locale === "pt" ? "pt-BR" : "es-ES";
   return d.toLocaleString(tag, {
+    timeZone: "Europe/Madrid",
     weekday: "long",
     day: "numeric",
     month: "long",

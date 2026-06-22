@@ -56,7 +56,10 @@ interface Props {
 const formatLocalDate = toMadridDateStr;
 
 function minutosDesdeInicio(d: Date): number {
-  return d.getHours() * 60 + d.getMinutes() - START_HOUR * 60;
+  // Hora en Europe/Madrid (no getHours(), que usaría el TZ del proceso/navegador y
+  // descuadraba la POSICIÓN del bloque respecto al texto, que sí usa toMadridTimeStr).
+  const [h, m] = toMadridTimeStr(d).split(":").map(Number);
+  return h * 60 + m - START_HOUR * 60;
 }
 
 type PosicionCita = { topPx: number; heightPx: number } | null;

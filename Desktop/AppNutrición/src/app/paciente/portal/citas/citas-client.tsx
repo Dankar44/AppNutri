@@ -15,6 +15,7 @@ import {
   type CitaPortalPaciente,
 } from "@/app/actions/citas-flujo";
 import { ContraproponerPacienteModal } from "./contraproponer-paciente-modal";
+import { toMadridTimeStr } from "@/lib/tz";
 
 const ESTADO_BADGE: Record<string, { labelKey: string; className: string }> = {
   PENDIENTE:       { labelKey: "citas.estadoBadge.pendiente",       className: "bg-amber-100 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-500/30" },
@@ -28,11 +29,20 @@ function formatFechaLarga(iso: string, t: ReturnType<typeof useTranslations<"pat
   const d = new Date(iso);
   const diasKeys = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"] as const;
   const mesesKeys = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"] as const;
-  const dia = t(`citas.formatFecha.dias.${diasKeys[d.getDay()]}` as never);
-  const mes = t(`citas.formatFecha.meses.${mesesKeys[d.getMonth()]}` as never);
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mm = String(d.getMinutes()).padStart(2, "0");
-  return t("citas.formatFecha.template" as never, { dia, fecha: d.getDate(), mes, anio: d.getFullYear(), hora: `${hh}:${mm}` } as never);
+  // Componentes de la fecha de la cita en zona Europe/Madrid (no en el TZ del
+  // proceso) para elegir los keys de i18n y el día/año coherentes con la hora.
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Madrid",
+    weekday: "short",
+    day: "numeric",
+    month: "numeric",
+    year: "numeric",
+  }).formatToParts(d);
+  const wdMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  const dia = t(`citas.formatFecha.dias.${diasKeys[wdMap[get("weekday")] ?? 0]}` as never);
+  const mes = t(`citas.formatFecha.meses.${mesesKeys[(parseInt(get("month"), 10) || 1) - 1]}` as never);
+  return t("citas.formatFecha.template" as never, { dia, fecha: Number(get("day")), mes, anio: Number(get("year")), hora: toMadridTimeStr(d) } as never);
 }
 
 export function CitasPortalClient({ citasIniciales }: { citasIniciales: CitaPortalPaciente[] }) {

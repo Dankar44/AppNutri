@@ -66,7 +66,11 @@ export default async function PatientPortalPage() {
   if (!session) redirect("/paciente/login");
 
   const hoyIso = new Date().toISOString().split("T")[0];
-  const diaSemana = DIAS_SEMANA_MAP[new Date().getDay()];
+  // Día de la semana del paciente en zona Europe/Madrid (no en el TZ del
+  // servidor, que en prod es UTC y cerca de medianoche daría el día equivocado).
+  const WEEKDAY_TO_NUM: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  const weekdayMadrid = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Madrid", weekday: "short" }).format(new Date());
+  const diaSemana = DIAS_SEMANA_MAP[WEEKDAY_TO_NUM[weekdayMadrid] ?? 0];
   const hace30Dias = new Date();
   hace30Dias.setDate(hace30Dias.getDate() - 30);
 

@@ -7,10 +7,10 @@ import { EstadoCita } from "@/generated/prisma/client";
 import {
   sanitizeStringOptional,
   validateNumber,
-  validateDate,
   validateUrl,
   LIMITS,
 } from "@/lib/validation";
+import { fromMadrid, fromMadridLocalString, toMadridDateStr } from "@/lib/tz";
 import { syncCitaAmbos, unsyncCitaAntesDeBorrar } from "@/lib/google-sync";
 import { enviarEmailCita, construirMensajeWhatsAppCita } from "@/lib/email-citas";
 import { getTranslations, getLocale } from "next-intl/server";
@@ -37,7 +37,9 @@ export async function crearCita(data: CitaFormData) {
   if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
-  const fechaHora = validateDate(data.fechaHora);
+  // La hora la teclea el nutri en hora de Madrid; interpretarla como tal
+  // (el servidor va en UTC, así que `new Date(string)` la guardaría 1-2h desplazada).
+  const fechaHora = fromMadridLocalString(data.fechaHora);
   if (!fechaHora) throw new Error(t("cita.fechaHoraInvalidas"));
   const duracion = validateNumber(data.duracion || 30, LIMITS.DURACION_MIN, LIMITS.DURACION_MAX);
   const motivo = sanitizeStringOptional(data.motivo, LIMITS.MOTIVO);
@@ -139,10 +141,10 @@ export async function getCitasSemana(fechaInicio: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) return [];
 
-  const inicio = new Date(fechaInicio);
-  inicio.setHours(0, 0, 0, 0);
-  const fin = new Date(inicio);
-  fin.setDate(fin.getDate() + 7);
+  // Límites del rango en hora de Madrid (00:00 del día, no del TZ del servidor UTC).
+  const [y, m, d] = fechaInicio.slice(0, 10).split("-").map(Number);
+  const inicio = fromMadrid(y, m - 1, d, 0, 0);
+  const fin = fromMadrid(y, m - 1, d + 7, 0, 0);
 
   return prisma.cita.findMany({
     where: {
@@ -159,8 +161,8 @@ export async function getCitasMes(anio: number, mes: number) {
   const dietista = await getCurrentDietista();
   if (!dietista) return [];
 
-  const inicio = new Date(anio, mes, 1);
-  const fin = new Date(anio, mes + 1, 1);
+  const inicio = fromMadrid(anio, mes, 1, 0, 0);
+  const fin = fromMadrid(anio, mes + 1, 1, 0, 0);
 
   return prisma.cita.findMany({
     where: {
@@ -177,10 +179,10 @@ export async function getCitasHoy() {
   const dietista = await getCurrentDietista();
   if (!dietista) return [];
 
-  const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
-  const manana = new Date(hoy);
-  manana.setDate(manana.getDate() + 1);
+  // "Hoy" en Madrid (no en UTC del servidor): tomar el día actual de Madrid.
+  const [y, m, d] = toMadridDateStr(new Date()).split("-").map(Number);
+  const hoy = fromMadrid(y, m - 1, d, 0, 0);
+  const manana = fromMadrid(y, m - 1, d + 1, 0, 0);
 
   return prisma.cita.findMany({
     where: {
@@ -201,8 +203,8 @@ export async function getCitasDia(fechaYYYYMMDD: string) {
   const [y, m, d] = fechaYYYYMMDD.split("-").map(Number);
   if (!y || !m || !d) return [];
 
-  const inicio = new Date(y, m - 1, d, 0, 0, 0, 0);
-  const fin = new Date(y, m - 1, d + 1, 0, 0, 0, 0);
+  const inicio = fromMadrid(y, m - 1, d, 0, 0);
+  const fin = fromMadrid(y, m - 1, d + 1, 0, 0);
 
   return prisma.cita.findMany({
     where: {
@@ -372,6 +374,7 @@ async function formatFechaHoraIntl(d: Date): Promise<string> {
   const locale = await import("@/i18n/locale").then((m) => m.getLocale());
   const tag = locale === "pt" ? "pt-BR" : "es-ES";
   return d.toLocaleString(tag, {
+    timeZone: "Europe/Madrid",
     weekday: "long",
     day: "numeric",
     month: "long",

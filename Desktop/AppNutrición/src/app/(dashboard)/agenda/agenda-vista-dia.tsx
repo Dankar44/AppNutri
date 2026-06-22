@@ -76,14 +76,16 @@ export function AgendaVistaDia({ fecha, citas }: Props) {
 
     let targetPx: number;
     if (esHoyInit) {
-      const minutosDesde = now.getHours() * 60 + now.getMinutes() - START_HOUR * 60;
+      const [nowH, nowM] = toMadridTimeStr(now).split(":").map(Number);
+      const minutosDesde = nowH * 60 + nowM - START_HOUR * 60;
       const clamped = Math.max(0, Math.min(minutosDesde, (END_HOUR - START_HOUR + 1) * 60));
       targetPx = (clamped / 60) * pxPerHour;
     } else if (citas.length > 0) {
       const primera = new Date(
         citas.reduce((min, c) => (c.fechaHora < min ? c.fechaHora : min), citas[0].fechaHora),
       );
-      const min = primera.getHours() * 60 + primera.getMinutes() - START_HOUR * 60;
+      const [primeraH, primeraM] = toMadridTimeStr(primera).split(":").map(Number);
+      const min = primeraH * 60 + primeraM - START_HOUR * 60;
       targetPx = Math.max(0, (min / 60) * pxPerHour);
     } else {
       targetPx = (8 - START_HOUR) * pxPerHour;
@@ -108,8 +110,10 @@ export function AgendaVistaDia({ fecha, citas }: Props) {
 
   const totalHeight = (END_HOUR - START_HOUR + 1) * pxPerHour;
 
-  const minutosDesdeInicio = (d: Date) =>
-    d.getHours() * 60 + d.getMinutes() - START_HOUR * 60;
+  const minutosDesdeInicio = (d: Date) => {
+    const [h, m] = toMadridTimeStr(d).split(":").map(Number);
+    return h * 60 + m - START_HOUR * 60;
+  };
 
   const lineaActualPct = useMemo(() => {
     if (!esHoy) return null;
@@ -185,6 +189,7 @@ export function AgendaVistaDia({ fecha, citas }: Props) {
                 <div className="h-0.5 flex-1 bg-rose-500/90" />
                 <span className="text-[10px] font-semibold text-rose-600 dark:text-rose-400 tabular-nums pr-2 shrink-0 bg-card/90 px-1 rounded">
                   {ahora.toLocaleTimeString(tag, {
+                    timeZone: "Europe/Madrid",
                     hour: "2-digit",
                     minute: "2-digit",
                   })}

@@ -197,7 +197,7 @@ export function AgendaMensual({ citas, anio, mes, diaSeleccionado, onSelectDia }
                   >
                     <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${ESTADO_DOT[cita.estado] || ESTADO_DOT.PENDIENTE}`} />
                     <span className="truncate">
-                      {new Date(cita.fechaHora).toLocaleTimeString(tag, { hour: "2-digit", minute: "2-digit" })}{" "}
+                      {new Date(cita.fechaHora).toLocaleTimeString(tag, { timeZone: "Europe/Madrid", hour: "2-digit", minute: "2-digit" })}{" "}
                       {cita.paciente.nombre}
                     </span>
                   </div>

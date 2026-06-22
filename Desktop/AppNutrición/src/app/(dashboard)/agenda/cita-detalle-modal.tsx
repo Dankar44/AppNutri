@@ -18,6 +18,7 @@ import {
 } from "@/app/actions/citas-flujo";
 import { ContraproponerModal } from "./contraproponer-modal";
 import { useDemoGuard } from "@/contexts/demo-context";
+import { toMadridTimeStr } from "@/lib/tz";
 
 const ESTADO_STYLES: Record<string, string> = {
   PENDIENTE: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30",
@@ -48,15 +49,26 @@ function formatFechaLarga(iso: string, t: (key: string) => string): string {
   const d = new Date(iso);
   const dayKeys = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"] as const;
   const monthKeys = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"] as const;
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mm = String(d.getMinutes()).padStart(2, "0");
-  const dayName = t(`citaDetalleModal.dias.${dayKeys[d.getDay()]}`);
-  const monthName = t(`citaDetalleModal.meses.${monthKeys[d.getMonth()]}`);
+  // Componentes de fecha en zona Europe/Madrid (weekday, día y mes) para no
+  // depender del TZ del proceso al elegir los índices de los keys de i18n.
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Madrid",
+    weekday: "short",
+    day: "numeric",
+    month: "numeric",
+  }).formatToParts(d);
+  const wdMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  const dayIdx = wdMap[get("weekday")] ?? 0;
+  const monthIdx = (parseInt(get("month"), 10) || 1) - 1;
+  const numero = get("day");
+  const dayName = t(`citaDetalleModal.dias.${dayKeys[dayIdx]}`);
+  const monthName = t(`citaDetalleModal.meses.${monthKeys[monthIdx]}`);
   return t("citaDetalleModal.fechaLargaFormat")
     .replace("{dia}", dayName)
-    .replace("{numero}", String(d.getDate()))
+    .replace("{numero}", numero)
     .replace("{mes}", monthName)
-    .replace("{hora}", `${hh}:${mm}`);
+    .replace("{hora}", toMadridTimeStr(d));
 }
 
 function googleCalendarUrl(cita: CitaDetalle) {
@@ -117,8 +129,8 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
 
   const horaFin = new Date(
     new Date(cita.fechaHora).getTime() + cita.duracion * 60000,
-  ).toLocaleTimeString(tag, { hour: "2-digit", minute: "2-digit" });
-  const horaInicio = new Date(cita.fechaHora).toLocaleTimeString(tag, { hour: "2-digit", minute: "2-digit" });
+  ).toLocaleTimeString(tag, { timeZone: "Europe/Madrid", hour: "2-digit", minute: "2-digit" });
+  const horaInicio = new Date(cita.fechaHora).toLocaleTimeString(tag, { timeZone: "Europe/Madrid", hour: "2-digit", minute: "2-digit" });
   // Enlace de la videollamada: manual del nutri (prioridad) o el de Google Meet.
   const videoLink = cita.enlaceVideollamada || cita.googleMeetLink || null;
 

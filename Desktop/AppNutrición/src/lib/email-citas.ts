@@ -12,6 +12,7 @@ const DEBOUNCE_MS = 5 * 60 * 1000;
 function formatFechaHoraCita(d: Date, locale: string): string {
   const tag = locale === "pt" ? "pt-BR" : "es-ES";
   return d.toLocaleString(tag, {
+    timeZone: "Europe/Madrid",
     weekday: "long",
     day: "numeric",
     month: "long",
