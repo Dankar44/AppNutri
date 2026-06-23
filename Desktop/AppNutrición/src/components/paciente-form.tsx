@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, X, Plus, AlertTriangle } from "lucide-react";
+import { Loader2, X, Plus, AlertTriangle, ChevronDown } from "lucide-react";
 import { DatePicker } from "@/components/date-picker";
 import { toast } from "sonner";
 import type { PacienteFormData } from "@/app/actions/pacientes";
@@ -10,7 +10,7 @@ import { TelefonoInput } from "@/components/telefono-input";
 import type { Paciente } from "@/generated/prisma/client";
 import { useTranslations } from "next-intl";
 import { useFormPersist } from "@/lib/form-persist";
-import { withTimeout, ActionTimeoutError, isNextNavigation } from "@/lib/utils";
+import { withTimeout, ActionTimeoutError, isNextNavigation, cn } from "@/lib/utils";
 import { useDemoGuard } from "@/contexts/demo-context";
 
 function getObjetivos(t: (key: string) => string) {
@@ -119,6 +119,9 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
   const [loading, setLoading] = useState(false);
   const OBJETIVOS = getObjetivos(t);
   const SEXOS = getSexos(t);
+  // En alta nueva pedimos solo lo esencial; el resto va plegado (lo rellenará el paciente con la anamnesis o el nutri más tarde).
+  const esNuevo = !paciente;
+  const [showOpcional, setShowOpcional] = useState(false);
   const [showUnsavedModal, setShowUnsavedModal] = useState(false);
   const pendingHrefRef = useRef<string | null>(null);
   const [form, setForm] = useState<PacienteFormData>({
@@ -340,6 +343,29 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
         </div>
       </section>
 
+      {/* Resto de datos: en alta nueva van plegados (los rellena el paciente con la anamnesis o el nutri más tarde); en edición se muestran siempre */}
+      {esNuevo && (
+        <button
+          type="button"
+          onClick={() => setShowOpcional((v) => !v)}
+          aria-expanded={showOpcional}
+          className="w-full flex items-center justify-between gap-3 bg-card rounded-xl border border-border p-6 text-left hover:border-primary/40 transition-colors"
+        >
+          <div>
+            <h2 className="text-lg font-semibold">{t("form.masDatosOpcional")}</h2>
+            <p className="text-sm text-muted-foreground mt-1">{t("form.masDatosHint")}</p>
+          </div>
+          <ChevronDown
+            className={cn(
+              "w-5 h-5 shrink-0 text-muted-foreground transition-transform",
+              showOpcional && "rotate-180",
+            )}
+          />
+        </button>
+      )}
+
+      {(!esNuevo || showOpcional) && (
+        <>
       {/* Medidas */}
       <section className="bg-card rounded-xl border border-border p-6">
         <h2 className="text-lg font-semibold mb-4">{t("form.medidasCorporales")}</h2>
@@ -585,6 +611,8 @@ export function PacienteForm({ paciente, action, submitLabel }: Props) {
           className="w-full px-4 py-2.5 rounded-lg border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring transition-shadow resize-none"
         />
       </section>
+        </>
+      )}
 
       {/* Submit */}
       <div className="flex justify-end gap-3">

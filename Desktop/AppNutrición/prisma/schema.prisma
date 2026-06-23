@@ -225,6 +225,12 @@ model Paciente {
   /// Formulario extendido tipo ficha clínica (pestaña Información)
   fichaInformacion    Json?
 
+  /// Preconsulta (#6): el paciente rellena su propia anamnesis con un link antes de la consulta.
+  /// Estado derivado de los timestamps: sin enviar / enviada / completada.
+  preconsultaToken        String?   @unique
+  preconsultaEnviadaAt    DateTime?
+  preconsultaCompletadaAt DateTime?
+
   /// Horario de paciente (guardado como JSONB)
   horario             Json?
   /// Recomendaciones clínicas (guardadas como texto)
@@ -272,6 +278,8 @@ model Planificacion {
   fechaFinPrevista  DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @default(now()) @updatedAt
+
+  dias              DiaDelPlan[]
 
   @@map("planificaciones")
 }
@@ -437,10 +445,14 @@ model DiaDelPlan {
   planId  String
   plan    PlanAlimenticio @relation(fields: [planId], references: [id], onDelete: Cascade)
   dia     DiaSemana
+  planificacionId String?
+  planificacion   Planificacion? @relation(fields: [planificacionId], references: [id], onDelete: SetNull)
+  grupoId String?
 
   comidas ComidaDelDia[]
 
   @@unique([planId, dia])
+  @@index([grupoId])
   @@map("dias_del_plan")
 }
 
@@ -730,6 +742,7 @@ enum TipoNotificacion {
   EMPRESA_MIEMBRO_SALIO
   EMPRESA_LIDER_TRANSFERIDO
   STOCK_BAJO
+  PRECONSULTA_COMPLETADA
 }
 
 model Notificacion {

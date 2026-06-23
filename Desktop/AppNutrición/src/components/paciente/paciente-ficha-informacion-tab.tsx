@@ -29,11 +29,12 @@ import {
   OPCION_VACIA,
 } from "@/lib/ficha-informacion-types";
 import { guardarFichaInformacionPaciente } from "@/app/actions/pacientes";
-import { enviarCuestionarioPaciente } from "@/app/actions/email";
+import { EnviarAnamnesisButton } from "./enviar-anamnesis-button";
 import { getBrandingDietista } from "@/app/actions/perfil";
 import { generateAnamnesisPDF } from "@/lib/pdf/generate-anamnesis-pdf";
 import { getTheme } from "@/lib/pdf/pdf-themes";
 import { FichaAccordion } from "./ficha-accordion";
+import { TimePicker } from "@/components/time-picker";
 import {
   FichaLabel,
   FichaTextarea,
@@ -50,6 +51,9 @@ type PacienteResumen = {
   objetivo: string | null;
   objetivoDetalle: string | null;
 };
+
+const HORA_INPUT_CLS =
+  "w-full h-10 rounded-lg border border-input bg-background px-3 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2";
 
 const OBJETIVO_MAP: Record<string, string> = {
   PERDER_PESO: "control_peso",
@@ -132,6 +136,7 @@ export function PacienteFichaInformacionTab({
   pacienteId,
   pacienteNombre,
   pacienteEmail,
+  preconsultaCompletadaAt,
   initialFicha,
   camposAnamnesis = [],
   resumen,
@@ -139,6 +144,7 @@ export function PacienteFichaInformacionTab({
   pacienteId: string;
   pacienteNombre: string;
   pacienteEmail: string | null;
+  preconsultaCompletadaAt?: string | null;
   initialFicha: FichaInformacionData | null | undefined;
   camposAnamnesis?: CampoPersonalizadoDefinicion[];
   resumen: PacienteResumen;
@@ -146,6 +152,7 @@ export function PacienteFichaInformacionTab({
   const t = useTranslations("patients.informacion");
   const tExtra = useTranslations("patients.informacionExtra");
   const tSelect = useTranslations("patients");
+  const tPre = useTranslations("patients.preconsulta");
   const tPdf = useTranslations();
   const locale = useLocale();
 
@@ -159,8 +166,6 @@ export function PacienteFichaInformacionTab({
 
   const [data, setData] = useState(() => mergeInitial(initialFicha, resumen));
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
-  const [showEnviarModal, setShowEnviarModal] = useState(false);
-  const [enviando, setEnviando] = useState(false);
 
   const dataRef = useRef(data);
   dataRef.current = data;
@@ -267,33 +272,6 @@ export function PacienteFichaInformacionTab({
     doSave(data);
   }
 
-  async function handleEnviarCuestionario() {
-    if (!pacienteEmail) {
-      toast.error(t("sinEmailParaCuestionario"));
-      return;
-    }
-    // Guardar primero si hay cambios pendientes
-    if (saveStatus === "unsaved") {
-      await doSave(data);
-    }
-    setEnviando(true);
-    try {
-      const result = await enviarCuestionarioPaciente(pacienteId, data);
-      if (result.ok) {
-        toast.success(t("cuestionarioEnviado"), {
-          description: t("cuestionarioEnviadoA", { email: pacienteEmail }),
-        });
-        setShowEnviarModal(false);
-      } else {
-        toast.error(result.error || tExtra("noSePudoEnviar"));
-      }
-    } catch {
-      toast.error(t("errorEnviarCuestionario"));
-    } finally {
-      setEnviando(false);
-    }
-  }
-
   async function handleExportarPDF() {
     if (saveStatus === "unsaved") {
       await doSave(data);
@@ -335,22 +313,15 @@ export function PacienteFichaInformacionTab({
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      {preconsultaCompletadaAt && (
+        <div className="flex items-center gap-2 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-sm px-4 py-2.5">
+          <Check className="w-4 h-4 shrink-0" />
+          {tPre("rellenadaPorPaciente", { fecha: new Date(preconsultaCompletadaAt).toLocaleDateString(locale) })}
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 mb-2 border-b border-border">
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              if (!pacienteEmail) {
-                toast.error(tExtra("registraEmailAntes"));
-                return;
-              }
-              setShowEnviarModal(true);
-            }}
-            className="inline-flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors w-fit"
-          >
-            <ClipboardList className="w-4 h-4" />
-            {t("enviarCuestionario")}
-          </button>
+          <EnviarAnamnesisButton pacienteId={pacienteId} pacienteEmail={pacienteEmail} />
           <button
             type="button"
             onClick={handleExportarPDF}
@@ -579,7 +550,9 @@ export function PacienteFichaInformacionTab({
             <TagLine label={tExtra("medicacion")} tags={resumen.medicamentos} />
             <p className="text-xs text-muted-foreground mt-2">
               {tExtra("editarListasCompletas")}{" "}
-              <span className="font-medium text-foreground">{tExtra("editarPaciente")}</span>.
+              <Link href={`/pacientes/${pacienteId}/editar`} className="font-medium text-primary hover:underline">
+                {tExtra("editarPaciente")}
+              </Link>.
             </p>
           </div>
           <div>
@@ -646,20 +619,22 @@ export function PacienteFichaInformacionTab({
             left={
               <div>
                 <FichaLabel>{tExtra("horaLevantarse")}</FichaLabel>
-                <FichaInput
+                <TimePicker
                   value={al.horaLevantarse ?? ""}
                   onChange={(v) => setField("alimentaria", "horaLevantarse", v)}
-                  placeholder="HH:MM"
+                  inputClassName={HORA_INPUT_CLS}
+                  ariaLabel={tExtra("horaLevantarse")}
                 />
               </div>
             }
             right={
               <div>
                 <FichaLabel>{tExtra("horaAcostarse")}</FichaLabel>
-                <FichaInput
+                <TimePicker
                   value={al.horaAcostarse ?? ""}
                   onChange={(v) => setField("alimentaria", "horaAcostarse", v)}
-                  placeholder="HH:MM"
+                  inputClassName={HORA_INPUT_CLS}
+                  ariaLabel={tExtra("horaAcostarse")}
                 />
               </div>
             }
@@ -803,41 +778,6 @@ export function PacienteFichaInformacionTab({
       </Link>
 
 
-      {showEnviarModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-background rounded-xl border border-border shadow-lg max-w-md w-full p-6 space-y-4">
-            <h3 className="text-lg font-semibold">{tExtra("enviarCuestionarioTitulo")}</h3>
-            <p className="text-sm text-muted-foreground">
-              {tExtra("enviarResumenCuestionario")}
-            </p>
-            <p className="text-sm font-medium bg-muted rounded-lg px-3 py-2">
-              {pacienteEmail}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {tExtra("pacienteRevisarDatos")}
-            </p>
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowEnviarModal(false)}
-                disabled={enviando}
-                className="px-4 py-2 text-sm rounded-lg border border-border hover:bg-muted transition-colors"
-              >
-                {tExtra("cancelar")}
-              </button>
-              <button
-                type="button"
-                onClick={handleEnviarCuestionario}
-                disabled={enviando}
-                className="px-4 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 inline-flex items-center gap-2"
-              >
-                {enviando && <Loader2 className="w-4 h-4 animate-spin" />}
-                {enviando ? tExtra("enviando") : tExtra("enviar")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -118,6 +118,14 @@
     "avisoPin": "Por seguridad, puedes cambiar tu PIN cuando entres a tu portal.",
     "footer": "Enviado desde Annonia"
   },
+  "preconsulta": {
+    "subject": "{dietistaNombre} te pide completar tu información antes de la consulta",
+    "titulo": "Completa tu información antes de la consulta",
+    "saludo": "Hola {pacienteNombre}, {dietistaNombre} te pide que completes un breve cuestionario antes de vuestra consulta.",
+    "instruccion": "Pulsa el botón para rellenar tus datos. Solo te llevará unos minutos y se guardan automáticamente en tu ficha.",
+    "boton": "Completar mi información",
+    "footer": "Enviado desde Annonia"
+  },
   "cita": {
     "subjectConfirmada": "Cita confirmada con {dietistaNombre} — {fecha}",
     "subjectPropuesta": "{dietistaNombre} te propone una cita — {fecha}",

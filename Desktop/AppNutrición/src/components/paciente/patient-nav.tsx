@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Leaf, LayoutDashboard, UtensilsCrossed, TrendingUp, MessageSquareText,
   ShoppingCart, Settings, FileDown, LogOut, Menu, X, BookOpen, Calendar,
-  MessageSquare, Clock,
+  MessageSquare, Clock, ClipboardList,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -56,6 +56,7 @@ function getPatientNavSections(t: (key: string) => string): NavSection[] {
     {
       title: t("patientNav.cuenta"),
       items: [
+        { href: "/paciente/portal/anamnesis", label: t("patientNavItems.miAnamnesis"), icon: ClipboardList },
         { href: "/paciente/portal/exportar-pdf", label: t("patientNavItems.generarPdf"), icon: FileDown },
         { href: "/paciente/portal/perfil", label: t("patientNavItems.miPerfil"), icon: Settings },
       ],

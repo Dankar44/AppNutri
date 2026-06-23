@@ -32,6 +32,7 @@
     "EMPRESA_MIEMBRO_SALIO": "Membro saiu",
     "EMPRESA_LIDER_TRANSFERIDO": "Liderança transferida",
     "STOCK_BAJO": "Stock baixo",
+    "PRECONSULTA_COMPLETADA": "Anamnese",
     "default": "Notificação"
   },
   "dot": {

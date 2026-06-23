@@ -126,3 +126,52 @@ export function getSelectObjetivosClinicos(t?: TFunc) {
 }
 /** @deprecated Use getSelectObjetivosClinicos(t) instead */
 export const SELECT_OBJETIVOS_CLINICOS = getSelectObjetivosClinicos();
+
+// --- Saneamiento de campos personalizados (compartido: Ajustes y formulario de preconsulta) ---
+
+export const MAX_CAMPOS_ANAMNESIS = 20;
+const MAX_LABEL_LENGTH = 100;
+const MAX_OPCIONES = 20;
+const MAX_OPCION_LENGTH = 100;
+const TIPOS_VALIDOS: TipoCampoAnamnesis[] = ["texto", "textarea", "selector"];
+const SECCIONES_VALIDAS: SeccionAnamnesis[] = [
+  "consulta",
+  "personalSocial",
+  "clinica",
+  "alimentaria",
+  "personalizado",
+];
+
+/** Normaliza/valida la definición de campos personalizados (máx. 20, etiquetas y opciones acotadas). */
+export function sanitizeCamposAnamnesis(raw: unknown): CampoPersonalizadoDefinicion[] {
+  if (!Array.isArray(raw)) return [];
+  const result: CampoPersonalizadoDefinicion[] = [];
+
+  for (const item of raw.slice(0, MAX_CAMPOS_ANAMNESIS)) {
+    if (!item || typeof item !== "object") continue;
+    const id = typeof item.id === "string" ? item.id.trim().slice(0, 50) : "";
+    const label =
+      typeof item.label === "string"
+        ? item.label.trim().slice(0, MAX_LABEL_LENGTH)
+        : "";
+    if (!id || !label) continue;
+
+    const tipo = TIPOS_VALIDOS.includes(item.tipo) ? item.tipo : "texto";
+    const seccion = SECCIONES_VALIDAS.includes(item.seccion)
+      ? item.seccion
+      : "personalizado";
+
+    let opciones: string[] | undefined;
+    if (tipo === "selector" && Array.isArray(item.opciones)) {
+      const filtered = item.opciones
+        .filter((o: unknown) => typeof o === "string" && o.trim())
+        .map((o: string) => o.trim().slice(0, MAX_OPCION_LENGTH))
+        .slice(0, MAX_OPCIONES);
+      if (filtered.length > 0) opciones = filtered;
+    }
+
+    result.push({ id, label, tipo, seccion, ...(opciones ? { opciones } : {}) });
+  }
+
+  return result;
+}

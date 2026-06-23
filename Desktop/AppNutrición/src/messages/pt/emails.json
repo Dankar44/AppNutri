@@ -118,6 +118,14 @@
     "liderazgoBoton": "Gerir empresa",
     "footer": "Este email é uma notificação automática de Annonia."
   },
+  "preconsulta": {
+    "subject": "{dietistaNombre} pede que você complete suas informações antes da consulta",
+    "titulo": "Complete suas informações antes da consulta",
+    "saludo": "Olá {pacienteNombre}, {dietistaNombre} pede que você complete um breve questionário antes da consulta.",
+    "instruccion": "Clique no botão para preencher seus dados. Leva apenas alguns minutos e são salvos automaticamente na sua ficha.",
+    "boton": "Completar minhas informações",
+    "footer": "Enviado desde Annonia"
+  },
   "cita": {
     "subjectConfirmada": "Consulta confirmada com {dietistaNombre} — {fecha}",
     "subjectPropuesta": "{dietistaNombre} propõe uma consulta — {fecha}",

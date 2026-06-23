@@ -114,8 +114,14 @@ export function TimePicker({
           onChange={(e) => {
             const formatted = formatTyped(e.target.value);
             setTyped(formatted);
-            const parsed = parseTyped(formatted);
-            if (parsed) onChange(parsed);
+            // Solo confirmamos el valor con 4 dígitos (HH:MM completo). Con 3 dígitos
+            // ("130") NO reinterpretamos a 1:30 mientras se escribe; el blur normaliza
+            // si el usuario se queda en 3 dígitos.
+            const digits = formatted.replace(/[^\d]/g, "");
+            if (digits.length === 4) {
+              const parsed = parseTyped(formatted);
+              if (parsed) onChange(parsed);
+            }
           }}
           onBlur={() => {
             const parsed = parseTyped(typed);

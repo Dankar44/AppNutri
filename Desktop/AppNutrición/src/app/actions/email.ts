@@ -6,6 +6,7 @@ import { hashPin, generarPin } from "@/lib/patient-auth";
 import { getCurrentDietista } from "./auth";
 import { getPaciente } from "./pacientes";
 import { getPlan } from "./planes";
+import { getOrCreatePreconsultaLink } from "./preconsulta";
 import { getTranslations } from "next-intl/server";
 import { generatePlanPDF, type PlanPDFData } from "@/lib/pdf/generate-plan-pdf";
 import { htmlToPdf } from "@/lib/html-to-pdf";
@@ -454,6 +455,71 @@ export async function enviarAccesoPortal(
     await sendEmail({
       to: paciente.email,
       subject: te("accesoPortal.subject", { dietistaNombre }),
+      html,
+      replyTo: dietista.email,
+    });
+    return { ok: true };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : t("general.errorDesconocido");
+    return { ok: false, error: msg };
+  }
+}
+
+/** Envía al paciente el link del formulario de preconsulta (anamnesis) para que lo rellene él (#6). */
+export async function enviarLinkPreconsulta(
+  pacienteId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const t = await getTranslations("validation");
+  const te = await getTranslations("emails");
+  const dietista = await getCurrentDietista();
+  if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
+  if (dietista.isDemo) return { ok: true };
+
+  const paciente = await getPaciente(pacienteId);
+  if (!paciente) return { ok: false, error: t("paciente.pacienteNoEncontrado") };
+  if (!paciente.email) return { ok: false, error: t("paciente.sinEmailRegistrado") };
+
+  const link = await getOrCreatePreconsultaLink(pacienteId);
+  if (!link.ok || !link.url) {
+    return { ok: false, error: link.error || t("general.errorDesconocido") };
+  }
+
+  const pacienteNombre = `${paciente.nombre} ${paciente.apellidos}`.trim();
+  const dietistaNombre = `${dietista.nombre} ${dietista.apellidos}`.trim();
+
+  const html = `
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f9fafb">
+  <div style="max-width:600px;margin:0 auto;padding:32px 16px">
+    <div style="background:#fff;border-radius:12px;border:1px solid #e5e7eb;padding:32px;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+      <div style="text-align:center;margin-bottom:24px">
+        <h1 style="margin:0 0 8px;font-size:22px;color:#111827">${escapeHtml(te("preconsulta.titulo"))}</h1>
+        <p style="margin:0;color:#6b7280;font-size:14px">
+          ${escapeHtml(te("preconsulta.saludo", { pacienteNombre, dietistaNombre }))}
+        </p>
+      </div>
+      <div style="background:#f0fdf4;border-radius:8px;padding:20px;margin-bottom:24px;text-align:center">
+        <p style="margin:0 0 16px;font-size:14px;color:#166534">
+          ${escapeHtml(te("preconsulta.instruccion"))}
+        </p>
+        <a href="${link.url}" style="display:inline-block;background:#16a34a;color:white;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">
+          ${escapeHtml(te("preconsulta.boton"))}
+        </a>
+      </div>
+      <div style="margin-top:24px;text-align:center;color:#9ca3af;font-size:12px">
+        <p style="margin:0">${escapeHtml(te("preconsulta.footer"))}</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  try {
+    await sendEmail({
+      to: paciente.email,
+      subject: te("preconsulta.subject", { dietistaNombre }),
       html,
       replyTo: dietista.email,
     });

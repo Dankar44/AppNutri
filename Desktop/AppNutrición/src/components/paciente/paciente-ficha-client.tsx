@@ -73,6 +73,7 @@ type PacienteSerializado = {
   intolerancias: string[];
   suplementos: string[];
   fichaInformacion: unknown;
+  preconsultaCompletadaAt?: string | null;
   esDemo?: boolean;
   ocultarCalorias?: boolean;
   avisarPorEmail?: boolean;
@@ -311,6 +312,7 @@ export function PacienteFichaClient({
           pacienteId={paciente.id}
           pacienteNombre={`${nombre} ${apellidos}`.trim()}
           pacienteEmail={paciente.email}
+          preconsultaCompletadaAt={paciente.preconsultaCompletadaAt}
           initialFicha={ficha}
           camposAnamnesis={camposAnamnesis}
           resumen={{
