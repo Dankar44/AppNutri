@@ -25,6 +25,7 @@ export default async function SharedPlanPage({ params }: Props) {
     dias: plan.dias.map((dia) => ({
       id: dia.id,
       dia: dia.dia,
+      grupoId: dia.grupoId,
       comidas: dia.comidas.map((comida) => ({
         id: comida.id,
         tipo: comida.tipo,

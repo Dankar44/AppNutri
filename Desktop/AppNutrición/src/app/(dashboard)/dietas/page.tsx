@@ -112,7 +112,7 @@ export default async function DietasPage({ searchParams }: Props) {
                   fotoUrl={grupo.paciente.fotoUrl}
                   size="md"
                 />
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <h2 className="font-semibold truncate">
                     {capitalizarNombre(grupo.paciente.nombre)} {capitalizarNombre(grupo.paciente.apellidos)}
                   </h2>
@@ -120,16 +120,21 @@ export default async function DietasPage({ searchParams }: Props) {
                     <p className="text-muted-foreground">
                       {t("list.planCount", { count: grupo.planes.length })}
                     </p>
-                    {grupo.planes.length > 1 && (
-                      <Link
-                        href={`/pacientes/${grupo.pacienteId}?pestana=plan-alimentacion`}
-                        className="font-medium text-primary hover:underline"
-                      >
-                        {t("list.viewHistory")}
-                      </Link>
-                    )}
+                    <Link
+                      href={`/pacientes/${grupo.pacienteId}?pestana=plan-alimentacion`}
+                      className="font-medium text-primary hover:underline"
+                    >
+                      {t("list.viewHistory")}
+                    </Link>
                   </div>
                 </div>
+                <Link
+                  href={`/dietas/nuevo?pacienteId=${grupo.pacienteId}`}
+                  className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  {t("list.newPlan")}
+                </Link>
               </div>
 
               {/* Mostrar solo la receta (plan) activa por paciente */}

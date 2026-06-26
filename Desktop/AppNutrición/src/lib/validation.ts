@@ -212,3 +212,52 @@ export function validateSlug(value: unknown, maxLength: number): string | null {
   if (!SLUG_REGEX.test(trimmed)) return null;
   return trimmed;
 }
+
+// --- Coherencia de objetivos nutricionales (kcal vs. macros) ---
+// Factores de Atwater: proteína y carbohidratos = 4 kcal/g; grasa = 9 kcal/g.
+export const KCAL_POR_GRAMO = { proteinas: 4, carbohidratos: 4, grasas: 9 } as const;
+
+export function calcularKcalDesdeMacros(
+  proteinas: number,
+  carbohidratos: number,
+  grasas: number
+): number {
+  return (
+    proteinas * KCAL_POR_GRAMO.proteinas +
+    carbohidratos * KCAL_POR_GRAMO.carbohidratos +
+    grasas * KCAL_POR_GRAMO.grasas
+  );
+}
+
+/**
+ * Comprueba si las kcal objetivo cuadran con los gramos de macros (P·4 + C·4 + G·9).
+ * Pensado para AVISAR al nutricionista (no bloquea): evita objetivos imposibles como
+ * "2000 kcal con 500 g de proteína". `tolerancia` es la fracción admitida (0.05 = ±5%).
+ * `aplicable` es false si faltan datos (sin kcal o sin ningún macro), para no avisar en vacío.
+ */
+export function validarCoherenciaMacros(
+  kcal: number | null | undefined,
+  proteinas: number | null | undefined,
+  carbohidratos: number | null | undefined,
+  grasas: number | null | undefined,
+  tolerancia = 0.05
+): {
+  aplicable: boolean;
+  coherente: boolean;
+  kcalMacros: number;
+  kcalObjetivo: number;
+  desviacion: number;
+  desviacionPct: number;
+} {
+  const fin = (v: unknown) => (typeof v === "number" && isFinite(v) && v > 0 ? v : 0);
+  const k = fin(kcal);
+  const p = fin(proteinas);
+  const c = fin(carbohidratos);
+  const g = fin(grasas);
+  const kcalMacros = Math.round(calcularKcalDesdeMacros(p, c, g));
+  const aplicable = k > 0 && (p > 0 || c > 0 || g > 0);
+  const desviacion = kcalMacros - k;
+  const desviacionPct = k > 0 ? desviacion / k : 0;
+  const coherente = !aplicable || Math.abs(desviacionPct) <= tolerancia;
+  return { aplicable, coherente, kcalMacros, kcalObjetivo: k, desviacion, desviacionPct };
+}

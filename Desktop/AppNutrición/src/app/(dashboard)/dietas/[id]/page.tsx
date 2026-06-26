@@ -4,6 +4,7 @@ import { ArrowLeft, Pencil, Share2, Sparkles, Plus } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { AvatarPaciente } from "@/components/avatar-paciente";
 import { getPlan, getPlanesPaciente } from "@/app/actions/planes";
+import { getPlanificaciones } from "@/app/actions/planificaciones";
 import { capitalizarNombre } from "@/lib/utils";
 import { prisma } from "@/lib/prisma";
 import { PlanVisual } from "@/components/paciente/plan-visual";
@@ -23,6 +24,7 @@ export default async function PlanDetailPage({ params }: Props) {
   if (!plan) notFound();
 
   const planesPaciente = await getPlanesPaciente(plan.pacienteId);
+  const planificaciones = await getPlanificaciones(plan.pacienteId);
 
   const MICRO_COLS = [
     "vitaminaA","vitaminaB6","vitaminaB12","vitaminaC","vitaminaD",
@@ -145,6 +147,7 @@ export default async function PlanDetailPage({ params }: Props) {
           dias: plan.dias.map((dia) => ({
             id: dia.id,
             dia: dia.dia,
+            grupoId: dia.grupoId,
             comidas: dia.comidas.map((comida) => ({
               id: comida.id,
               tipo: comida.tipo,
@@ -198,6 +201,19 @@ export default async function PlanDetailPage({ params }: Props) {
         showNuevaDietaButton={false}
         showAguaEjercicio={false}
         showFoodTable={false}
+        planificaciones={(plan.planificacionIds ?? [])
+          .map((pid) => planificaciones.find((p) => p.id === pid))
+          .filter((p): p is (typeof planificaciones)[number] => !!p)
+          .map((p) => {
+            const num = (v: unknown) => (typeof v === "number" && isFinite(v) && v > 0 ? Math.round(v) : null);
+            // Override propio de esta dieta (si el nutri lo editó); si no, los objetivos de la planificación.
+            const ov = plan.objetivosPorPlani?.[p.id];
+            const d = p.datos ?? {};
+            return ov
+              ? { id: p.id, nombre: p.nombre, kcal: num(ov.kcal), proteinas: num(ov.proteinas), carbohidratos: num(ov.carbohidratos), grasas: num(ov.grasas) }
+              : { id: p.id, nombre: p.nombre, kcal: num(d.kcalObjetivo), proteinas: num(d.protGObjetivo), carbohidratos: num(d.carbGObjetivo), grasas: num(d.grasaGObjetivo) };
+          })}
+        objetivosPorDia={plan.objetivosPorDia}
       />
     </div>
   );

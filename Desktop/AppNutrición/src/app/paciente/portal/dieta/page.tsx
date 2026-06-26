@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { capitalizarNombre } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { PlanVisual } from "@/components/paciente/plan-visual";
+import { expandirGruposDeDias } from "@/lib/grupos-dias";
 
 export default async function PatientDietPage() {
   const t = await getTranslations("patient-portal");
@@ -73,6 +74,9 @@ export default async function PatientDietPage() {
     );
   }
 
+  // #75 — expandir grupos: los días miembro reflejan el menú del día representante (no salen vacíos).
+  const dias = await expandirGruposDeDias(plan.id, plan.dias);
+
   const MICRO_COLS = [
     "vitaminaA","vitaminaB6","vitaminaB12","vitaminaC","vitaminaD",
     "vitaminaE","vitaminaK","tiamina","riboflavina","niacina",
@@ -81,7 +85,7 @@ export default async function PatientDietPage() {
     "cobre","manganeso","selenio","fluor",
   ] as const;
   const alimentoIdSet = new Set<string>();
-  for (const dia of plan.dias) {
+  for (const dia of dias) {
     for (const comida of dia.comidas) {
       for (const a of comida.alimentos) {
         if (a.alimento?.id) alimentoIdSet.add(a.alimento.id);
@@ -137,9 +141,10 @@ export default async function PatientDietPage() {
           carbohidratosObjetivo: plan.carbohidratosObjetivo,
           grasasObjetivo: plan.grasasObjetivo,
           createdAt: plan.createdAt as unknown as string,
-          dias: plan.dias.map((dia) => ({
+          dias: dias.map((dia) => ({
             id: dia.id,
             dia: dia.dia,
+            grupoId: dia.grupoId,
             comidas: dia.comidas.map((comida) => ({
               id: comida.id,
               tipo: comida.tipo,

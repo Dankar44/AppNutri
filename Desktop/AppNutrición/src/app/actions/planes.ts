@@ -2,6 +2,9 @@
 
 import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
+import type { PlanificacionDatos } from "./planificaciones";
+import { randomUUID } from "crypto";
+import { expandirGruposDeDias, DIA_ORDEN_SEMANA } from "@/lib/grupos-dias";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
@@ -52,6 +55,10 @@ export interface PlanFormData {
   proteinasObjetivo?: number;
   carbohidratosObjetivo?: number;
   grasasObjetivo?: number;
+  /** #78 (bloque 2) — planificaciones que usa este plan (1 = a todo el plan; varias = elegir por día). */
+  planificacionIds?: string[];
+  /** #78 (bloque 2) — objetivos por planificación propios de ESTA dieta (override editable, no toca la planificación). */
+  objetivosPorPlani?: Record<string, { kcal: number | null; proteinas: number | null; carbohidratos: number | null; grasas: number | null }>;
 }
 
 const DIAS: DiaSemana[] = [
@@ -110,6 +117,47 @@ export async function crearPlan(data: PlanFormData) {
       },
     },
   });
+
+  // #78 (bloque 2) — planificaciones que usa el plan. Validar que son de este paciente/dietista.
+  const planiIds = (data.planificacionIds ?? []).filter(Boolean);
+  if (planiIds.length > 0) {
+    const ph = planiIds.map((_, i) => `$${i + 2}`).join(",");
+    const validas = await prisma.$queryRawUnsafe<{ id: string }[]>(
+      `SELECT id FROM planificaciones WHERE "pacienteId" = $1 AND "dietistaId" = $${planiIds.length + 2} AND id IN (${ph})`,
+      data.pacienteId,
+      ...planiIds,
+      dietista.id,
+    );
+    // Conservar el ORDEN elegido por el nutri (el primero es el "por defecto").
+    const idsOk = planiIds.filter((id) => validas.some((v) => v.id === id));
+    if (idsOk.length > 0) {
+      await prisma.$executeRawUnsafe(
+        `UPDATE planes_alimenticios SET "planificacionIds" = $1 WHERE id = $2`,
+        idsOk,
+        plan.id,
+      );
+      // Con varias, los días arrancan con la primera (el nutri cambia los que quiera).
+      // Con una, los días usan el objetivo global del plan (no hace falta asignarla por día).
+      if (idsOk.length >= 2) {
+        await prisma.$executeRawUnsafe(
+          `UPDATE dias_del_plan SET "planificacionId" = $1 WHERE "planId" = $2`,
+          idsOk[0],
+          plan.id,
+        );
+      }
+      // Override de objetivos por planificación (solo de las válidas), si el nutri los editó al crear.
+      const ov = data.objetivosPorPlani ?? {};
+      const ovFiltrado: Record<string, unknown> = {};
+      for (const id of idsOk) if (ov[id]) ovFiltrado[id] = ov[id];
+      if (Object.keys(ovFiltrado).length > 0) {
+        await prisma.$executeRawUnsafe(
+          `UPDATE planes_alimenticios SET "objetivosPorPlani" = $1::jsonb WHERE id = $2`,
+          JSON.stringify(ovFiltrado),
+          plan.id,
+        );
+      }
+    }
+  }
 
   revalidatePath("/dietas");
   redirect(`/dietas/${plan.id}`);
@@ -236,7 +284,7 @@ export async function getPlan(id: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) return null;
 
-  return prisma.planAlimenticio.findUnique({
+  const plan = await prisma.planAlimenticio.findUnique({
     where: { id, dietistaId: dietista.id },
     include: {
       paciente: true,
@@ -266,6 +314,27 @@ export async function getPlan(id: string) {
       },
     },
   });
+  if (!plan) return null;
+
+  // #78 (1B) — objetivos por día (el "tipo de día" asignado a cada día). Los días sin planificación
+  // no aparecen en el mapa → el consumidor usa los objetivos globales del plan. Aditivo: no rompe nada.
+  const objetivosPorDia = await getObjetivosPorDia(plan.id);
+
+  // #75 — grupos de días (juntar): cada día lleva su grupoId; los miembros reflejan el menú del
+  // representante. Inerte mientras ningún día tenga grupo. Aditivo: no rompe los consumidores.
+  const dias = await expandirGruposDeDias(plan.id, plan.dias);
+
+  // #78 (bloque 2) — planificaciones que usa este plan (columna nueva, fuera del cliente Prisma).
+  const planiRows = await prisma.$queryRawUnsafe<{
+    planificacionIds: string[] | null;
+    objetivosPorPlani: Record<string, { kcal: number | null; proteinas: number | null; carbohidratos: number | null; grasas: number | null }> | null;
+  }[]>(
+    `SELECT "planificacionIds", "objetivosPorPlani" FROM planes_alimenticios WHERE id = $1`,
+    plan.id,
+  );
+  const planificacionIds = planiRows[0]?.planificacionIds ?? [];
+  const objetivosPorPlani = planiRows[0]?.objetivosPorPlani ?? {};
+  return { ...plan, dias, objetivosPorDia, planificacionIds, objetivosPorPlani };
 }
 
 export async function addAlimentoAComida(
@@ -1017,7 +1086,7 @@ export async function getPacienteContextoPlan(pacienteId: string) {
   if (!paciente) return null;
 
   const ahora = new Date();
-  const [planActivo, totalPlanes, ultimaMedida, proximaCita] = await Promise.all([
+  const [planActivo, totalPlanes, ultimaMedida, proximaCita, planiRows] = await Promise.all([
     prisma.planAlimenticio.findFirst({
       where: { pacienteId, dietistaId: dietista.id, activo: true },
       orderBy: { createdAt: "desc" },
@@ -1044,9 +1113,40 @@ export async function getPacienteContextoPlan(pacienteId: string) {
       orderBy: { fechaHora: "asc" },
       select: { id: true, fechaHora: true, motivo: true, estado: true },
     }),
+    // Planificaciones del paciente con sus objetivos ya calculados (JSON): para heredarlos al crear
+    // la dieta (#78-A) y para el selector "¿qué planificación uso?", en la MISMA tanda paralela.
+    // $queryRawUnsafe porque el cliente Prisma local no incluye el modelo Planificacion.
+    prisma.$queryRawUnsafe<
+      {
+        id: string;
+        nombre: string;
+        esDefecto: boolean;
+        datos: { kcalObjetivo?: number; protGObjetivo?: number; carbGObjetivo?: number; grasaGObjetivo?: number } | null;
+      }[]
+    >(
+      `SELECT id, nombre, "esDefecto", datos FROM planificaciones
+       WHERE "pacienteId" = $1 AND "dietistaId" = $2
+       ORDER BY "esDefecto" DESC, "createdAt" ASC`,
+      pacienteId,
+      dietista.id,
+    ),
   ]);
 
-  return { paciente, planActivo, totalPlanes, ultimaMedida, proximaCita };
+  const numObj = (v: unknown) =>
+    typeof v === "number" && isFinite(v) && v > 0 ? Math.round(v) : null;
+  const planificaciones = planiRows.map((p) => ({
+    planificacionId: p.id,
+    nombre: p.nombre,
+    esDefecto: p.esDefecto,
+    kcal: numObj(p.datos?.kcalObjetivo),
+    proteinas: numObj(p.datos?.protGObjetivo),
+    carbohidratos: numObj(p.datos?.carbGObjetivo),
+    grasas: numObj(p.datos?.grasaGObjetivo),
+  }));
+  // Principal (preseleccionada): la marcada por defecto o la primera (ya vienen ordenadas).
+  const objetivosPlanificacion = planificaciones[0] ?? null;
+
+  return { paciente, planActivo, totalPlanes, ultimaMedida, proximaCita, planificaciones, objetivosPlanificacion };
 }
 
 export async function getPlanesPaciente(pacienteId: string) {
@@ -1076,7 +1176,7 @@ export async function getPlanesDetallePaciente(pacienteId: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) return [];
 
-  const planes = await prisma.planAlimenticio.findMany({
+  const planesRaw = await prisma.planAlimenticio.findMany({
     where: { dietistaId: dietista.id, pacienteId },
     orderBy: { createdAt: "desc" },
     include: {
@@ -1118,6 +1218,11 @@ export async function getPlanesDetallePaciente(pacienteId: string) {
       },
     },
   });
+
+  // #75 — Expandir grupos: cada día miembro refleja el menú de su día representante (no sale vacío).
+  const planes = await Promise.all(
+    planesRaw.map(async (p) => ({ ...p, dias: await expandirGruposDeDias(p.id, p.dias) })),
+  );
 
   // Recoger IDs únicos de alimentos de todos los planes
   const alimentoIdSet = new Set<string>();
@@ -1161,6 +1266,7 @@ export async function getPlanesDetallePaciente(pacienteId: string) {
     dias: plan.dias.map((dia) => ({
       id: dia.id,
       dia: dia.dia,
+      grupoId: dia.grupoId,
       comidas: dia.comidas.map((comida) => ({
         id: comida.id,
         tipo: comida.tipo,
@@ -1260,6 +1366,266 @@ export async function asignarPlanComoActual(planId: string) {
 
   revalidatePath(`/pacientes/${plan.pacienteId}`);
   revalidatePath(`/pacientes/${plan.pacienteId}?pestana=plan-alimentacion`);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Planificación por tipo de día — #78 (1B)
+// Cada día del plan puede asignarse a una Planificacion ("tipo de día": descanso, competición,
+// entreno…), de la que hereda sus objetivos kcal/macros. Sin asignar = objetivos globales del plan.
+// La columna dias_del_plan."planificacionId" no está en el cliente Prisma local → SQL crudo.
+// ─────────────────────────────────────────────────────────────────────────
+
+export type ObjetivosDia = {
+  planificacionId: string;
+  nombre: string;
+  kcal: number | null;
+  proteinas: number | null;
+  carbohidratos: number | null;
+  grasas: number | null;
+};
+
+/** Asigna (o quita, con `null`) el "tipo de día" (planificación) de UN día del plan.
+ *  Verifica que el día es de este dietista y que la planificación es del mismo paciente. */
+export async function asignarPlanificacionADia(
+  diaId: string,
+  planificacionId: string | null,
+) {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
+  if (dietista.isDemo) return;
+
+  // El día debe pertenecer a un plan de este dietista.
+  const dia = await prisma.diaDelPlan.findUnique({
+    where: { id: diaId },
+    select: { id: true, planId: true, plan: { select: { dietistaId: true, pacienteId: true } } },
+  });
+  if (!dia || dia.plan.dietistaId !== dietista.id) throw new Error(t("auth.noAutorizado"));
+
+  // Si se asigna una planificación, debe ser del MISMO paciente del plan (y de este dietista).
+  if (planificacionId) {
+    const ok = await prisma.$queryRawUnsafe<{ id: string }[]>(
+      `SELECT id FROM planificaciones WHERE id = $1 AND "pacienteId" = $2 AND "dietistaId" = $3 LIMIT 1`,
+      planificacionId,
+      dia.plan.pacienteId,
+      dietista.id,
+    );
+    if (ok.length === 0) throw new Error(t("auth.noAutorizado"));
+  }
+
+  // UPDATE acotado a ESE día (nunca masivo).
+  await prisma.$executeRawUnsafe(
+    `UPDATE dias_del_plan SET "planificacionId" = $1 WHERE id = $2`,
+    planificacionId,
+    diaId,
+  );
+
+  revalidatePath(`/dietas/${dia.planId}`);
+  revalidatePath(`/pacientes/${dia.plan.pacienteId}`);
+  revalidatePath(`/pacientes/${dia.plan.pacienteId}?pestana=plan-alimentacion`);
+}
+
+/** Objetivos por día de un plan: para cada día CON "tipo de día" asignado, los objetivos
+ *  kcal/macros de esa planificación (leídos de su JSON `datos`). Los días sin asignar no salen
+ *  en el mapa → el consumidor cae a los objetivos globales del plan. */
+export async function getObjetivosPorDia(planId: string): Promise<Record<string, ObjetivosDia>> {
+  // Override por planificación propio de este plan (editado al crear; vale solo para esta dieta).
+  const planRows = await prisma.$queryRawUnsafe<
+    { objetivosPorPlani: Record<string, { kcal?: number | null; proteinas?: number | null; carbohidratos?: number | null; grasas?: number | null }> | null }[]
+  >(`SELECT "objetivosPorPlani" FROM planes_alimenticios WHERE id = $1`, planId);
+  const override = planRows[0]?.objetivosPorPlani ?? {};
+
+  const rows = await prisma.$queryRawUnsafe<
+    { diaId: string; planificacionId: string; nombre: string; datos: PlanificacionDatos | null }[]
+  >(
+    `SELECT d.id AS "diaId", d."planificacionId", p.nombre, p.datos
+     FROM dias_del_plan d
+     JOIN planificaciones p ON p.id = d."planificacionId"
+     WHERE d."planId" = $1`,
+    planId,
+  );
+
+  const num = (v: unknown) =>
+    typeof v === "number" && isFinite(v) && v > 0 ? Math.round(v) : null;
+
+  const out: Record<string, ObjetivosDia> = {};
+  for (const r of rows) {
+    const ov = override[r.planificacionId];
+    const d = r.datos ?? {};
+    out[r.diaId] = ov
+      ? {
+          planificacionId: r.planificacionId,
+          nombre: r.nombre,
+          kcal: num(ov.kcal),
+          proteinas: num(ov.proteinas),
+          carbohidratos: num(ov.carbohidratos),
+          grasas: num(ov.grasas),
+        }
+      : {
+          planificacionId: r.planificacionId,
+          nombre: r.nombre,
+          kcal: num(d.kcalObjetivo),
+          proteinas: num(d.protGObjetivo),
+          carbohidratos: num(d.carbGObjetivo),
+          grasas: num(d.grasaGObjetivo),
+        };
+  }
+  return out;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Juntar días — #75
+// Días que "comen igual" comparten menú: se etiquetan con un grupoId común y el día representante
+// (menor orden de semana) guarda las comidas reales; los demás reflejan ese menú (ver
+// expandirGruposDeDias). La columna grupoId está fuera del cliente Prisma → SQL crudo.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Junta varios días del plan en un grupo que comparte menú. El representante (menor orden de
+ *  semana) conserva su menú; los demás lo PIERDEN y pasan a reflejar el del representante.
+ *  El editor avisa antes de llamar (los días miembro pierden su menú actual). */
+export async function juntarDias(planId: string, diaIds: string[]) {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
+  if (dietista.isDemo) return;
+  if (diaIds.length < 2) return;
+
+  // Los días deben ser de ESTE plan y de este dietista.
+  const dias = await prisma.diaDelPlan.findMany({
+    where: { id: { in: diaIds }, planId, plan: { dietistaId: dietista.id } },
+    select: { id: true, dia: true },
+  });
+  if (dias.length < 2) throw new Error(t("auth.noAutorizado"));
+
+  // Representante = el día de menor orden de semana (donde viven las comidas físicas del grupo).
+  const rep = [...dias].sort(
+    (a, b) => DIA_ORDEN_SEMANA.indexOf(a.dia) - DIA_ORDEN_SEMANA.indexOf(b.dia),
+  )[0];
+  const grupoId = randomUUID();
+  const ids = dias.map((d) => d.id);
+  const miembros = ids.filter((id) => id !== rep.id);
+
+  // El menú que GANA es el del día de ORIGEN (desde el que se pulsó "Juntar con…" = diaIds[0]).
+  // Si ese día no es el representante, copiamos su menú al representante para que sea el que
+  // se refleje en todo el grupo (así "manda" el día desde el que juntas, no el más temprano).
+  const origenId = ids.includes(diaIds[0]) ? diaIds[0] : rep.id;
+  if (origenId !== rep.id) {
+    await copiarDiaADias(origenId, [rep.id], "reemplazar");
+  }
+
+  // 1) Etiquetar todos los días con el mismo grupoId (IN con placeholders, patrón del proyecto).
+  const ph = ids.map((_, i) => `$${i + 2}`).join(",");
+  await prisma.$executeRawUnsafe(
+    `UPDATE dias_del_plan SET "grupoId" = $1 WHERE id IN (${ph})`,
+    grupoId,
+    ...ids,
+  );
+  // 1b) La planificación del día de ORIGEN manda en TODO el grupo (comen igual → mismo objetivo).
+  //     Al separar, cada día conserva esta planificación (separarDia no toca planificacionId).
+  const origenPlaniRows = await prisma.$queryRawUnsafe<{ planificacionId: string | null }[]>(
+    `SELECT "planificacionId" FROM dias_del_plan WHERE id = $1`,
+    origenId,
+  );
+  await prisma.$executeRawUnsafe(
+    `UPDATE dias_del_plan SET "planificacionId" = $1 WHERE id IN (${ph})`,
+    origenPlaniRows[0]?.planificacionId ?? null,
+    ...ids,
+  );
+  // 2) Vaciar el menú de los miembros (reflejarán el del representante en lectura).
+  if (miembros.length > 0) {
+    await prisma.comidaDelDia.deleteMany({ where: { diaId: { in: miembros } } });
+  }
+
+  revalidatePath(`/dietas/${planId}`);
+}
+
+/** Saca un día de su grupo dándole una COPIA propia del menú (no pierde nada). Si el día era el
+ *  representante, el grupo restante recibe una copia del menú en su nuevo representante. Si el
+ *  grupo queda con un solo día, se deshace (un día suelto no es grupo). */
+export async function separarDia(diaId: string) {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
+  if (dietista.isDemo) return;
+
+  // grupoId + plan del día, validando que es de este dietista.
+  const filaRows = await prisma.$queryRawUnsafe<{ grupoId: string | null; planId: string }[]>(
+    `SELECT d."grupoId", d."planId"
+       FROM dias_del_plan d
+       JOIN planes_alimenticios p ON p.id = d."planId"
+      WHERE d.id = $1 AND p."dietistaId" = $2`,
+    diaId,
+    dietista.id,
+  );
+  const fila = filaRows[0];
+  if (!fila) throw new Error(t("auth.noAutorizado"));
+  if (!fila.grupoId) return; // no estaba en ningún grupo
+
+  const grupoRows = await prisma.$queryRawUnsafe<{ id: string; dia: string }[]>(
+    `SELECT id, dia FROM dias_del_plan WHERE "grupoId" = $1`,
+    fila.grupoId,
+  );
+  const ordenados = [...grupoRows].sort(
+    (a, b) => DIA_ORDEN_SEMANA.indexOf(a.dia) - DIA_ORDEN_SEMANA.indexOf(b.dia),
+  );
+  const repActual = ordenados[0];
+  const restantes = ordenados.filter((d) => d.id !== diaId);
+
+  if (diaId !== repActual.id) {
+    // MIEMBRO: copiar el menú del representante a este día (estaba vacío) y sacarlo del grupo.
+    await copiarDiaADias(repActual.id, [diaId], "reemplazar");
+    await prisma.$executeRawUnsafe(`UPDATE dias_del_plan SET "grupoId" = NULL WHERE id = $1`, diaId);
+  } else {
+    // REPRESENTANTE: se lleva las comidas físicas; el grupo restante recibe una copia en su nuevo rep.
+    const nuevoRep = restantes[0];
+    if (nuevoRep) await copiarDiaADias(repActual.id, [nuevoRep.id], "reemplazar");
+    await prisma.$executeRawUnsafe(`UPDATE dias_del_plan SET "grupoId" = NULL WHERE id = $1`, diaId);
+  }
+
+  // Un grupo de un solo día no es grupo: deshacerlo.
+  if (restantes.length <= 1) {
+    await prisma.$executeRawUnsafe(`UPDATE dias_del_plan SET "grupoId" = NULL WHERE "grupoId" = $1`, fila.grupoId);
+  }
+
+  revalidatePath(`/dietas/${fila.planId}`);
+}
+
+/** Deshace un grupo ENTERO: cada día miembro recibe una COPIA propia del menú (el del representante)
+ *  y todos quedan sueltos. No se pierde nada (el representante ya tenía el menú; los demás lo copian). */
+export async function deshacerGrupo(diaId: string) {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
+  if (dietista.isDemo) return;
+
+  const filaRows = await prisma.$queryRawUnsafe<{ grupoId: string | null; planId: string }[]>(
+    `SELECT d."grupoId", d."planId"
+       FROM dias_del_plan d
+       JOIN planes_alimenticios p ON p.id = d."planId"
+      WHERE d.id = $1 AND p."dietistaId" = $2`,
+    diaId,
+    dietista.id,
+  );
+  const fila = filaRows[0];
+  if (!fila) throw new Error(t("auth.noAutorizado"));
+  if (!fila.grupoId) return;
+
+  const grupoRows = await prisma.$queryRawUnsafe<{ id: string; dia: string }[]>(
+    `SELECT id, dia FROM dias_del_plan WHERE "grupoId" = $1`,
+    fila.grupoId,
+  );
+  const ordenados = [...grupoRows].sort(
+    (a, b) => DIA_ORDEN_SEMANA.indexOf(a.dia) - DIA_ORDEN_SEMANA.indexOf(b.dia),
+  );
+  const rep = ordenados[0];
+  const miembros = ordenados.filter((d) => d.id !== rep.id).map((d) => d.id);
+
+  // Cada miembro recibe su propia copia del menú del representante.
+  if (miembros.length > 0) await copiarDiaADias(rep.id, miembros, "reemplazar");
+  // Todos quedan sueltos.
+  await prisma.$executeRawUnsafe(`UPDATE dias_del_plan SET "grupoId" = NULL WHERE "grupoId" = $1`, fila.grupoId);
+
+  revalidatePath(`/dietas/${fila.planId}`);
 }
 
 export async function guardarComoPlantilla(planId: string, nombre: string) {

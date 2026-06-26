@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { asignarPlanComoActual, copiarComidaADias, copiarDiaADias, pegarAlimentoEnComida, type ModoCopia } from "@/app/actions/planes";
+import { asignarPlanComoActual, copiarComidaADias, copiarDiaADias, pegarAlimentoEnComida, juntarDias, separarDia, asignarPlanificacionADia, type ModoCopia } from "@/app/actions/planes";
 import {
   Plus,
   UtensilsCrossed,
@@ -25,6 +25,8 @@ import {
   Copy,
   Download,
   ClipboardPaste,
+  Link2,
+  Unlink,
 } from "lucide-react";
 import { cn, isNextNavigation } from "@/lib/utils";
 import { calcularMacrosPorcion, sumarMacros, convertirAGramos } from "@/lib/macros";
@@ -131,6 +133,7 @@ export type PlanVisualComida = {
 export type PlanVisualDia = {
   id: string;
   dia: string;
+  grupoId?: string | null;
   comidas: PlanVisualComida[];
 };
 
@@ -171,6 +174,8 @@ export function PlanVisual({
   ocultarCalorias = false,
   vistaInicial = "resumen",
   interactionMode = "dashboard",
+  planificaciones = [],
+  objetivosPorDia,
   localCallbacks,
 }: {
   plan: PlanVisualDetalle;
@@ -189,6 +194,10 @@ export function PlanVisual({
   ocultarCalorias?: boolean;
   vistaInicial?: "resumen" | "plan" | "analisis";
   interactionMode?: InteractionMode;
+  /** #78 (1B) — Planificaciones del paciente (para asignar una a cada día) y objetivos resultantes por día.
+   *  kcal/macros opcionales: si vienen, la barra de objetivos cambia al instante al reasignar (optimista). */
+  planificaciones?: { id: string; nombre: string; kcal?: number | null; proteinas?: number | null; carbohidratos?: number | null; grasas?: number | null }[];
+  objetivosPorDia?: Record<string, { planificacionId: string; nombre: string; kcal: number | null; proteinas: number | null; carbohidratos: number | null; grasas: number | null }>;
   localCallbacks?: {
     onAdd: (comidaId: string, item: { alimentoId: string | null; recetaId: string | null; nombre: string; cantidad: number; unidad: string; calorias: number; proteinas: number; carbohidratos: number; grasas: number; fibra?: number; porcion?: number }) => void;
     onRemove: (alimentoEnComidaId: string) => void;
@@ -367,9 +376,144 @@ export function PlanVisual({
     });
   }
 
+  // #75 — Juntar/separar días en el editor.
+  const [juntarModal, setJuntarModal] = useState<{ origenId: string; origenLabel: string } | null>(null);
+  const [separarModal, setSepararModal] = useState<{ grupoDias: PlanVisualDia[] } | null>(null);
+  // UI optimista de juntar/separar: override del grupoId por día (string = grupo local recién creado;
+  // null = recién separado). Se ve AL INSTANTE; el refresh del servidor lo confirma o, si falla, revierte.
+  const [gruposOptimistas, setGruposOptimistas] = useState<Record<string, string | null>>({});
+  // #78 (1B) — UI optimista del selector de planificación por día (valor local hasta el refresh del servidor).
+  const [planiOptimista, setPlaniOptimista] = useState<Record<string, string | null>>({});
+  // grupoId "efectivo" de un día (optimista si hay override; real si no). Para agrupar y decidir botones.
+  const grupoEfectivo = (d: PlanVisualDia): string | null =>
+    d.id in gruposOptimistas ? gruposOptimistas[d.id] : (d.grupoId ?? null);
+
+  function handleConfirmJuntar(ids: string[]) {
+    if (!juntarModal || !selectedPlan) return;
+    const todos = [juntarModal.origenId, ...ids];
+    const grupoLocal = `optg-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+    const prev = gruposOptimistas;
+    const prevPlani = planiOptimista;
+    // La planificación del día de ORIGEN manda en todo el grupo (comen igual → mismo objetivo).
+    const planiOrigen = planiDelDia(juntarModal.origenId) || null;
+    setGruposOptimistas((p) => {
+      const n = { ...p };
+      for (const id of todos) n[id] = grupoLocal;
+      return n;
+    });
+    setPlaniOptimista((p) => {
+      const n = { ...p };
+      for (const id of todos) n[id] = planiOrigen;
+      return n;
+    });
+    setJuntarModal(null); // cerrar el modal AL INSTANTE; el cambio ya se ve por el optimista
+    startCopia(async () => {
+      try {
+        await juntarDias(selectedPlan.id, todos);
+        router.refresh();
+        toast.success(tDiets("copiar.toastJuntado"));
+      } catch (e) {
+        if (isNextNavigation(e)) throw e;
+        setGruposOptimistas(prev); // revertir
+        setPlaniOptimista(prevPlani);
+        toast.error(tDiets("copiar.toastJuntarError"));
+      }
+    });
+  }
+
+  // Separa los días elegidos del grupo (cada uno recibe su copia del menú); el resto sigue junto.
+  // Optimista: se sueltan al instante y, si el servidor falla, se revierte.
+  function handleSepararDias(diaIds: string[]) {
+    if (diaIds.length === 0) return;
+    const prev = gruposOptimistas;
+    setGruposOptimistas((p) => {
+      const n = { ...p };
+      for (const id of diaIds) n[id] = null;
+      return n;
+    });
+    setSepararModal(null); // cerrar el modal AL INSTANTE
+    startCopia(async () => {
+      try {
+        for (const id of diaIds) await separarDia(id);
+        router.refresh();
+        toast.success(tDiets("copiar.toastSeparado"));
+      } catch (e) {
+        if (isNextNavigation(e)) throw e;
+        setGruposOptimistas(prev); // revertir
+        toast.error(tDiets("copiar.toastJuntarError"));
+      }
+    });
+  }
+
+  // Botón "Separar": con 2 días los suelta directo; con 3+ abre el modal para elegir cuáles.
+  function handleSepararClick(grupoDias: PlanVisualDia[]) {
+    if (grupoDias.length <= 2) {
+      handleSepararDias(grupoDias.map((d) => d.id));
+    } else {
+      setSepararModal({ grupoDias });
+    }
+  }
+
+  // #78 (1B) — planificación asignada a un día (optimista si se acaba de cambiar; si no, la del servidor).
+  const planiDelDia = (diaId: string): string =>
+    diaId in planiOptimista ? (planiOptimista[diaId] ?? "") : (objetivosPorDia?.[diaId]?.planificacionId ?? "");
+
+  // Asigna una planificación (o ninguna) a los días dados; se ve al instante y el refresh lo confirma.
+  function handleAsignarPlani(diaIds: string[], planiId: string | null) {
+    if (diaIds.length === 0) return;
+    const prev = planiOptimista;
+    setPlaniOptimista((p) => {
+      const n = { ...p };
+      for (const id of diaIds) n[id] = planiId;
+      return n;
+    });
+    startCopia(async () => {
+      try {
+        for (const id of diaIds) await asignarPlanificacionADia(id, planiId);
+        router.refresh();
+      } catch (e) {
+        if (isNextNavigation(e)) throw e;
+        setPlaniOptimista(prev);
+        toast.error(tDiets("copiar.toastJuntarError"));
+      }
+    });
+  }
+
   useEffect(() => {
     setSelectedDayKey("TODOS");
   }, [plan.id]);
+
+  // Poda del estado optimista: cuando el refresh trae el grupoId real, quita los overrides que ya
+  // coinciden (separado→real null, juntado→real no-null). Igual idea que la poda optimista de alimentos.
+  useEffect(() => {
+    setGruposOptimistas((prev) => {
+      if (Object.keys(prev).length === 0) return prev;
+      const next = { ...prev };
+      let changed = false;
+      for (const d of selectedPlan?.dias ?? []) {
+        if (d.id in next && (next[d.id] === null) === ((d.grupoId ?? null) === null)) {
+          delete next[d.id];
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPlan]);
+
+  // Poda del optimista de planificación: cuando el refresh trae la planificación real del día, quita el override.
+  useEffect(() => {
+    setPlaniOptimista((prev) => {
+      if (Object.keys(prev).length === 0) return prev;
+      const next = { ...prev };
+      let changed = false;
+      for (const [diaId, opt] of Object.entries(prev)) {
+        const real = objetivosPorDia?.[diaId]?.planificacionId ?? null;
+        if ((opt ?? null) === real) { delete next[diaId]; changed = true; }
+      }
+      return changed ? next : prev;
+    });
+  }, [objetivosPorDia]);
 
   async function handleAsignarComoActual() {
     if (!selectedPlan || isPendingAssign) return;
@@ -403,12 +547,103 @@ export function PlanVisual({
     return selectedPlan.dias;
   }, [selectedPlan]);
 
+  // #75 — Pestañas de día agrupadas: los días juntos (mismo grupoId) salen como UNA pestaña
+  // ("Lun·Mar"); los sueltos, individuales. La key de cada pestaña es el día representante.
+  const tabsDias = useMemo(() => {
+    const dias = selectedPlan?.dias ?? [];
+    const idx = (d: string) => DIA_KEYS.indexOf(d as (typeof DIA_KEYS)[number]);
+    const porGrupo = new Map<string, PlanVisualDia[]>();
+    const sueltos: PlanVisualDia[] = [];
+    for (const d of dias) {
+      const g = d.id in gruposOptimistas ? gruposOptimistas[d.id] : (d.grupoId ?? null);
+      if (g) porGrupo.set(g, [...(porGrupo.get(g) ?? []), d]);
+      else sueltos.push(d);
+    }
+    type Tab = { key: string; label: string; diaKeys: string[] };
+    const tabs: Tab[] = sueltos.map((d) => ({ key: d.dia, label: t(`dias.${d.dia}`), diaKeys: [d.dia] }));
+    for (const [, ds] of porGrupo) {
+      const ord = [...ds].sort((a, b) => idx(a.dia) - idx(b.dia));
+      tabs.push({
+        key: ord[0].dia,
+        label: ord.map((d) => t(`dias.${d.dia}`).slice(0, 3)).join("·"),
+        diaKeys: ord.map((d) => d.dia),
+      });
+    }
+    return tabs.sort((a, b) => idx(a.diaKeys[0]) - idx(b.diaKeys[0]));
+  }, [selectedPlan, t, gruposOptimistas]);
+
   const diasVisible = useMemo(() => {
     if (!selectedPlan) return [] as PlanVisualDia[];
     if (isTodos) return selectedPlan.dias;
     const found = selectedPlan.dias.find((d) => d.dia === selectedDayKey);
     return found ? [found] : [];
   }, [selectedPlan, selectedDayKey, isTodos]);
+
+  // #75 — Agrupa los días visibles en bloques: los días con el mismo grupoId (que "comen igual")
+  // forman un solo bloque; el representante (menor orden) aporta el menú (ya reflejado al cargar).
+  const bloquesDias = useMemo(() => {
+    type Bloque = { key: string; dias: PlanVisualDia[]; representante: PlanVisualDia };
+    const porGrupo = new Map<string, PlanVisualDia[]>();
+    const sueltos: PlanVisualDia[] = [];
+    for (const d of diasVisible) {
+      const g = d.id in gruposOptimistas ? gruposOptimistas[d.id] : (d.grupoId ?? null);
+      if (g) {
+        const arr = porGrupo.get(g) ?? [];
+        arr.push(d);
+        porGrupo.set(g, arr);
+      } else {
+        sueltos.push(d);
+      }
+    }
+    const ord = (s: string) => DIA_KEYS.indexOf(s as (typeof DIA_KEYS)[number]);
+    const bloques: Bloque[] = sueltos.map((d) => ({ key: d.id, dias: [d], representante: d }));
+    for (const [g, dias] of porGrupo) {
+      const ds = [...dias].sort((a, b) => ord(a.dia) - ord(b.dia));
+      bloques.push({ key: g, dias: ds, representante: ds[0] });
+    }
+    return bloques.sort((a, b) => ord(a.representante.dia) - ord(b.representante.dia));
+  }, [diasVisible, gruposOptimistas]);
+
+  // #78 — Objetivos a mostrar en la barra superior. En vista de un día: el objetivo de ESE día (su
+  // planificación o el global del plan). En "Todas": agrupado por planificación (qué días usan cada
+  // objetivo). Un solo grupo → barra simple; varios → una fila por planificación (opción B).
+  type ObjBarra = { nombre: string | null; dias: string[]; kcal: number | null; proteinas: number | null; carbohidratos: number | null; grasas: number | null };
+  const objetivosBarra = useMemo<ObjBarra[]>(() => {
+    if (!selectedPlan) return [];
+    const global: ObjBarra = {
+      nombre: null, dias: [],
+      kcal: selectedPlan.caloriasObjetivo, proteinas: selectedPlan.proteinasObjetivo,
+      carbohidratos: selectedPlan.carbohidratosObjetivo, grasas: selectedPlan.grasasObjetivo,
+    };
+    // Objetivo de un día según su planificación EFECTIVA (optimista). Si el prop planificaciones trae
+    // kcal/macros, la barra cambia al instante al reasignar; si no (readonly), cae al dato del servidor.
+    const objDe = (d: PlanVisualDia): ObjBarra => {
+      const pid = planiDelDia(d.id);
+      if (!pid) return { ...global };
+      const p = planificaciones.find((x) => x.id === pid);
+      if (p && (p.kcal != null || p.proteinas != null || p.carbohidratos != null || p.grasas != null)) {
+        return { nombre: p.nombre, dias: [], kcal: p.kcal ?? null, proteinas: p.proteinas ?? null, carbohidratos: p.carbohidratos ?? null, grasas: p.grasas ?? null };
+      }
+      const o = objetivosPorDia?.[d.id];
+      if (o && o.planificacionId === pid) return { nombre: o.nombre, dias: [], kcal: o.kcal, proteinas: o.proteinas, carbohidratos: o.carbohidratos, grasas: o.grasas };
+      return p ? { nombre: p.nombre, dias: [], kcal: null, proteinas: null, carbohidratos: null, grasas: null } : { ...global };
+    };
+    const idx = (s: string) => DIA_KEYS.indexOf(s as (typeof DIA_KEYS)[number]);
+    if (!isTodos) {
+      const d = selectedPlan.dias.find((x) => x.dia === selectedDayKey);
+      return d ? [objDe(d)] : [];
+    }
+    const grupos = new Map<string, { obj: ObjBarra; dias: PlanVisualDia[] }>();
+    for (const d of selectedPlan.dias) {
+      const firma = planiDelDia(d.id) || "global";
+      const g = grupos.get(firma);
+      if (g) g.dias.push(d);
+      else grupos.set(firma, { obj: objDe(d), dias: [d] });
+    }
+    return [...grupos.values()]
+      .map((g) => ({ ...g.obj, dias: [...g.dias].sort((a, b) => idx(a.dia) - idx(b.dia)).map((d) => d.dia) }))
+      .sort((a, b) => (a.dias[0] ? idx(a.dias[0]) : 99) - (b.dias[0] ? idx(b.dias[0]) : 99));
+  }, [selectedPlan, objetivosPorDia, isTodos, selectedDayKey, planiOptimista, planificaciones]);
 
   const diaVista = useMemo<PlanVisualDia | null>(() => {
     if (!selectedPlan) return null;
@@ -649,17 +884,14 @@ export function PlanVisual({
             >
               {t("todas")}
             </button>
-            {DIA_KEYS.map((key) => {
-              const exists = diasDisponibles.some((d) => d.dia === key);
-              const isActive = !isTodos && selectedDayKey === key && vista !== "resumen";
+            {tabsDias.map((tab) => {
+              const isActive = !isTodos && tab.diaKeys.includes(selectedDayKey) && vista !== "resumen";
               return (
                 <button
-                  key={key}
+                  key={tab.key}
                   type="button"
-                  disabled={!exists}
                   onClick={(e) => {
-                    if (!exists) return;
-                    setSelectedDayKey(key);
+                    setSelectedDayKey(tab.key);
                     if (vista === "resumen") setVista("plan");
                     e.currentTarget.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
                   }}
@@ -667,11 +899,10 @@ export function PlanVisual({
                     "flex-1 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors",
                     isActive
                       ? "bg-primary/10 text-primary border border-primary/20"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
-                    !exists && "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-muted-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                   )}
                 >
-                  {t(`dias.${key}`)}
+                  {tab.label}
                 </button>
               );
             })}
@@ -727,34 +958,56 @@ export function PlanVisual({
 
       </div>
 
-      {/* Objetivos de macros — oculto en móvil, la media semanal ya los muestra. Oculto entero si ocultarCalorias. */}
+      {/* #78 — Objetivos: del día seleccionado, o agrupados por planificación en "Todas". Solo desktop. */}
       {!ocultarCalorias && selectedPlan && (() => {
-        const { caloriasObjetivo: co, proteinasObjetivo: po, carbohidratosObjetivo: cho, grasasObjetivo: go } = selectedPlan;
-        const hayObjetivos = co != null || po != null || cho != null || go != null;
-        if (!hayObjetivos) return null;
-        return (
-          <div className="hidden sm:flex items-center gap-3 flex-wrap text-xs">
-            <span className="font-semibold text-muted-foreground uppercase tracking-wide">{t("objetivos")}</span>
-            {co != null && (
+        const bloques = objetivosBarra.filter((b) => b.kcal != null || b.proteinas != null || b.carbohidratos != null || b.grasas != null);
+        if (bloques.length === 0) return null;
+        const chips = (b: ObjBarra) => (
+          <>
+            {b.kcal != null && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 font-medium">
-                <Flame className="w-3 h-3" />{co} kcal
+                <Flame className="w-3 h-3" />{b.kcal} kcal
               </span>
             )}
-            {po != null && (
+            {b.proteinas != null && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium">
-                {po}g {t("macros.proteinas")}
+                {b.proteinas}g {t("macros.proteinas")}
               </span>
             )}
-            {cho != null && (
+            {b.carbohidratos != null && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 font-medium">
-                {cho}g {t("macros.carbos")}
+                {b.carbohidratos}g {t("macros.carbos")}
               </span>
             )}
-            {go != null && (
+            {b.grasas != null && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 font-medium">
-                {go}g {t("macros.grasas")}
+                {b.grasas}g {t("macros.grasas")}
               </span>
             )}
+          </>
+        );
+        if (bloques.length === 1) {
+          return (
+            <div className="hidden sm:flex items-center gap-3 flex-wrap text-xs">
+              <span className="font-semibold text-muted-foreground uppercase tracking-wide">{t("objetivos")}</span>
+              {bloques[0].nombre && <span className="font-medium text-foreground">{bloques[0].nombre}</span>}
+              {chips(bloques[0])}
+            </div>
+          );
+        }
+        return (
+          <div className="hidden sm:block text-xs space-y-1.5">
+            <span className="font-semibold text-muted-foreground uppercase tracking-wide">{t("objetivos")}</span>
+            {bloques.map((b, i) => (
+              <div key={i} className="flex items-center gap-3 flex-wrap">
+                <span className="text-muted-foreground min-w-[7rem]">
+                  {b.nombre && <span className="font-medium text-foreground">{b.nombre}</span>}
+                  {b.nombre && b.dias.length > 0 && " · "}
+                  {b.dias.map((d) => t(`dias.${d}`).slice(0, 3)).join("·")}
+                </span>
+                {chips(b)}
+              </div>
+            ))}
           </div>
         );
       })()}
@@ -851,22 +1104,59 @@ export function PlanVisual({
                 )}
                 {diasVisible.length > 0 ? (
                   isTodos ? (
-                    diasVisible.map((dia) => (
-                      <div key={dia.id}>
-                        <div className="flex items-center justify-between mb-3">
-                          <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                            {t(`dias.${dia.dia}`)}
+                    bloquesDias.map((bloque) => (
+                      <div key={bloque.key}>
+                        <div className="flex items-center justify-between mb-3 gap-2">
+                          <h2 className="text-base font-semibold text-foreground flex items-center gap-2 min-w-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                            <span className="truncate">{bloque.dias.map((d) => t(`dias.${d.dia}`)).join(" · ")}</span>
                           </h2>
                           {esEditable && (
-                            <button
-                              type="button"
-                              onClick={() => handleCopiarDia(dia.id, dia.dia)}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-primary hover:bg-muted transition-colors shrink-0"
-                            >
-                              <Copy className="w-3.5 h-3.5" />
-                              {tDiets("copiar.copiarDia")}
-                            </button>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              {planificaciones.length >= 2 && (
+                                <select
+                                  value={planiDelDia(bloque.representante.id)}
+                                  onChange={(e) => handleAsignarPlani(bloque.dias.map((d) => d.id), e.target.value || null)}
+                                  disabled={isPendingCopia}
+                                  title={tDiets("copiar.planificacionDia")}
+                                  className="px-2.5 py-1 rounded-lg border border-border bg-background text-xs text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+                                >
+                                  <option value="">{tDiets("copiar.sinPlani")}</option>
+                                  {planificaciones.map((p) => (
+                                    <option key={p.id} value={p.id}>{p.nombre}</option>
+                                  ))}
+                                </select>
+                              )}
+                              {bloque.dias.length > 1 ? (
+                                <button
+                                  type="button"
+                                  disabled={isPendingCopia}
+                                  onClick={() => handleSepararClick(bloque.dias)}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-primary hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  <Unlink className="w-3.5 h-3.5" />
+                                  {tDiets("copiar.separarGrupo")}
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  disabled={isPendingCopia}
+                                  onClick={() => setJuntarModal({ origenId: bloque.representante.id, origenLabel: t(`dias.${bloque.representante.dia}`) })}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-primary hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  <Link2 className="w-3.5 h-3.5" />
+                                  {tDiets("copiar.juntarCon")}
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleCopiarDia(bloque.representante.id, bloque.representante.dia)}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-primary hover:bg-muted transition-colors"
+                              >
+                                <Copy className="w-3.5 h-3.5" />
+                                {tDiets("copiar.copiarDia")}
+                              </button>
+                            </div>
                           )}
                         </div>
                         <PlanEditor
@@ -884,7 +1174,7 @@ export function PlanVisual({
                           onPegarAlimento={esEditable ? handlePegarAlimento : undefined}
                           planId={selectedPlan.id}
                           planNombre={selectedPlan.nombre}
-                          dias={[dia as any]}
+                          dias={[bloque.representante as any]}
                           objetivos={{
                             calorias: selectedPlan.caloriasObjetivo ?? undefined,
                             proteinas: selectedPlan.proteinasObjetivo ?? undefined,
@@ -897,15 +1187,56 @@ export function PlanVisual({
                   ) : (
                     <div>
                       {esEditable && diasVisible[0] && (
-                        <div className="flex items-center justify-end mb-3">
-                          <button
-                            type="button"
-                            onClick={() => handleCopiarDia(diasVisible[0].id, diasVisible[0].dia)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-primary hover:bg-muted transition-colors"
-                          >
-                            <Copy className="w-3.5 h-3.5" />
-                            {tDiets("copiar.copiarDia")}
-                          </button>
+                        <div className="flex items-center justify-end gap-2 mb-3">
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {planificaciones.length >= 2 && (
+                              <select
+                                value={planiDelDia(diasVisible[0].id)}
+                                onChange={(e) => {
+                                  const g = grupoEfectivo(diasVisible[0]);
+                                  const ids = g ? (selectedPlan?.dias ?? []).filter((d) => grupoEfectivo(d) === g).map((d) => d.id) : [diasVisible[0].id];
+                                  handleAsignarPlani(ids, e.target.value || null);
+                                }}
+                                disabled={isPendingCopia}
+                                title={tDiets("copiar.planificacionDia")}
+                                className="px-2.5 py-1 rounded-lg border border-border bg-background text-xs text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+                              >
+                                <option value="">{tDiets("copiar.sinPlani")}</option>
+                                {planificaciones.map((p) => (
+                                  <option key={p.id} value={p.id}>{p.nombre}</option>
+                                ))}
+                              </select>
+                            )}
+                            {grupoEfectivo(diasVisible[0]) ? (
+                              <button
+                                type="button"
+                                disabled={isPendingCopia}
+                                onClick={() => handleSepararClick((selectedPlan?.dias ?? []).filter((d) => grupoEfectivo(d) && grupoEfectivo(d) === grupoEfectivo(diasVisible[0])))}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-primary hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <Unlink className="w-3.5 h-3.5" />
+                                {tDiets("copiar.separarGrupo")}
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                disabled={isPendingCopia}
+                                onClick={() => setJuntarModal({ origenId: diasVisible[0].id, origenLabel: t(`dias.${diasVisible[0].dia}`) })}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-primary hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <Link2 className="w-3.5 h-3.5" />
+                                {tDiets("copiar.juntarCon")}
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleCopiarDia(diasVisible[0].id, diasVisible[0].dia)}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-primary hover:bg-muted transition-colors"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                              {tDiets("copiar.copiarDia")}
+                            </button>
+                          </div>
                         </div>
                       )}
                       <PlanEditor
@@ -952,6 +1283,30 @@ export function PlanVisual({
                     tiposComida={copiaModal?.conTipoDestino ? tiposComidaOpciones : undefined}
                     pending={isPendingCopia}
                     onConfirm={handleConfirmCopia}
+                  />
+                  <CopiarADiasModal
+                    open={!!juntarModal}
+                    onClose={() => setJuntarModal(null)}
+                    titulo={tDiets("copiar.juntarTitulo")}
+                    subtitulo={juntarModal ? tDiets("copiar.juntarSubtitulo", { dia: juntarModal.origenLabel }) : undefined}
+                    dias={diasOptions}
+                    excluirDiaId={juntarModal?.origenId}
+                    mostrarModo={false}
+                    confirmLabel={tDiets("copiar.juntarConfirmar")}
+                    pending={isPendingCopia}
+                    onConfirm={(ids) => handleConfirmJuntar(ids)}
+                  />
+                  <CopiarADiasModal
+                    open={!!separarModal}
+                    onClose={() => setSepararModal(null)}
+                    titulo={tDiets("copiar.separarTitulo")}
+                    subtitulo={tDiets("copiar.separarSubtitulo")}
+                    tituloDias={tDiets("copiar.diasDelGrupo")}
+                    dias={(separarModal?.grupoDias ?? []).map((d) => ({ id: d.id, key: d.dia, label: t(`dias.${d.dia}`) }))}
+                    mostrarModo={false}
+                    confirmLabel={tDiets("copiar.separarGrupo")}
+                    pending={isPendingCopia}
+                    onConfirm={(ids) => handleSepararDias(ids)}
                   />
                   <ImportarPlanModal
                     open={importOpen}
@@ -1872,6 +2227,24 @@ function ResumenSemanal({
     [plan.dias]
   );
 
+  // #75 — Agrupa los días juntos (mismo grupoId) en UNA sola tarjeta ("Mié·Jue·Vie·Dom").
+  const bloques = useMemo(() => {
+    const idx = (d: string) => DIA_KEYS.indexOf(d as (typeof DIA_KEYS)[number]);
+    const porGrupo = new Map<string, PlanVisualDia[]>();
+    const sueltos: PlanVisualDia[] = [];
+    for (const d of diasOrdenados) {
+      if (d.grupoId) porGrupo.set(d.grupoId, [...(porGrupo.get(d.grupoId) ?? []), d]);
+      else sueltos.push(d);
+    }
+    type B = { key: string; label: string; rep: PlanVisualDia };
+    const bs: B[] = sueltos.map((d) => ({ key: d.id, label: t(`dias.${d.dia}`), rep: d }));
+    for (const [g, ds] of porGrupo) {
+      const ord = [...ds].sort((a, b) => idx(a.dia) - idx(b.dia));
+      bs.push({ key: g, label: ord.map((d) => t(`dias.${d.dia}`).slice(0, 3)).join("·"), rep: ord[0] });
+    }
+    return bs.sort((a, b) => idx(a.rep.dia) - idx(b.rep.dia));
+  }, [diasOrdenados, t]);
+
   const TIPO_LABELS: Record<string, string> = {
     DESAYUNO: t("comidasCorto.DESAYUNO"),
     MEDIA_MANANA: t("comidasCorto.MEDIA_MANANA"),
@@ -1924,7 +2297,8 @@ function ResumenSemanal({
 
       {/* Grid de días */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-        {diasOrdenados.map((dia) => {
+        {bloques.map((bloque) => {
+          const dia = bloque.rep;
           const macrosList = dia.comidas.flatMap((c) => c.alimentos.map(macrosDeItem));
           const diaTotales = sumarMacros(macrosList);
           const pctCalorias = plan.caloriasObjetivo
@@ -1933,7 +2307,7 @@ function ResumenSemanal({
 
           return (
             <button
-              key={dia.id}
+              key={bloque.key}
               type="button"
               onClick={() => onSelectDay(dia.dia)}
               className="group text-left rounded-2xl border border-border bg-card hover:border-primary/40 hover:shadow-md transition-all overflow-hidden"
@@ -1942,7 +2316,7 @@ function ResumenSemanal({
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-primary" />
                   <h3 className="font-semibold text-foreground">
-                    {t(`dias.${dia.dia}`)}
+                    {bloque.label}
                   </h3>
                 </div>
                 <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors">

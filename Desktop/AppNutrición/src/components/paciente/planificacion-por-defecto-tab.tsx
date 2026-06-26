@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations, useLocale } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import {
   Activity,
   Calendar,
@@ -620,12 +621,20 @@ export function PlanificacionPorDefectoTab({
 }) {
   const t = useTranslations("patients.planificacion");
   const locale = useLocale();
+  const searchParams = useSearchParams();
   const blockIfDemo = useDemoGuard();
 
   /* ─── Planificaciones state ─── */
   const [planificaciones, setPlanificaciones] = useState<Planificacion[]>(initialPlanificaciones);
+  // Deep-link opcional: ?planificacion={id} abre directamente esa planificación (p. ej. desde el
+  // banner "Datos de la planificación actual" al crear una dieta). Si no, la activa o la primera.
+  const planiParam = searchParams.get("planificacion");
   const [selectedPlanId, setSelectedPlanId] = useState<string>(
-    () => initialPlanificaciones.find((p) => p.estado === "activa")?.id ?? initialPlanificaciones[0]?.id ?? ""
+    () =>
+      (planiParam && initialPlanificaciones.some((p) => p.id === planiParam) ? planiParam : "") ||
+      initialPlanificaciones.find((p) => p.estado === "activa")?.id ||
+      initialPlanificaciones[0]?.id ||
+      ""
   );
   const selectedPlan = useMemo(
     () => planificaciones.find((p) => p.id === selectedPlanId) ?? planificaciones[0] ?? null,
@@ -865,7 +874,9 @@ export function PlanificacionPorDefectoTab({
   // Ajuste por objetivo (déficit/superávit). Init: lo guardado o el por defecto del objetivo.
   // Ajuste de déficit/superávit MANUAL: empieza sin aplicar (null). El nutri lo activa
   // pulsando un botón (-10/-15/-20%…) o escribe el EER objetivo a mano.
-  const [ajustePct, setAjustePct] = useState<number | null>(datos.ajusteObjetivoPct ?? null);
+  // Solo se considera un ajuste activo si hay un EER objetivo guardado: evita el botón "fantasma"
+  // (ej. -20% marcado sin que el objetivo refleje el descuento porque el input está vacío).
+  const [ajustePct, setAjustePct] = useState<number | null>(datos.eerObjetivo ? (datos.ajusteObjetivoPct ?? null) : null);
 
   /* --- Macro reference source --- */
   const gDia = t("unidadGDia");
@@ -917,11 +928,11 @@ export function PlanificacionPorDefectoTab({
   const pesoInicialObjetivo = parseKgFromObjetivoDetalle(paciente.objetivoDetalle);
   const grasaInicialActual = latestValue(medidas, "grasaCorporal");
 
-  const [pesoActualInput, setPesoActualInput] = useState(pesoInicialActual != null ? String(pesoInicialActual) : "");
+  const [pesoActualInput, setPesoActualInput] = useState(datos.pesoActual ?? (pesoInicialActual != null ? String(pesoInicialActual) : ""));
   const [pesoObjetivoInput, setPesoObjetivoInput] = useState(
     datos.pesoObjetivo ?? (pesoInicialObjetivo != null ? String(pesoInicialObjetivo) : "")
   );
-  const [grasaActualInput, setGrasaActualInput] = useState(grasaInicialActual != null ? String(grasaInicialActual) : "");
+  const [grasaActualInput, setGrasaActualInput] = useState(datos.grasaActual ?? (grasaInicialActual != null ? String(grasaInicialActual) : ""));
   const [grasaObjetivoInput, setGrasaObjetivoInput] = useState(datos.grasaObjetivo ?? "");
   const [imcObjetivoInput, setImcObjetivoInput] = useState(datos.imcObjetivo ?? "");
 
@@ -1086,55 +1097,93 @@ export function PlanificacionPorDefectoTab({
 
   /* ─── Reset state when switching planification ─── */
   const prevPlanIdRef = useRef(selectedPlanId);
+  // "Foto" de los campos editables tal como se cargaron del plan; sirve para detectar cambios sin
+  // guardar (se compara con `camposActuales`, abajo). Se rehace al cargar un plan y al guardar.
+  const baseCamposRef = useRef<string | null>(null);
   useEffect(() => {
     if (prevPlanIdRef.current === selectedPlanId) return;
     prevPlanIdRef.current = selectedPlanId;
     if (!selectedPlan) return;
     const d = selectedPlan.datos ?? {};
-    setActividadActualLabel(d.actividadActual ?? actividadInicial);
-    setActividadObjetivoLabel(d.actividadObjetivo ?? t("actividadActivo"));
-    setPalCustomActual(d.palCustomActual != null ? String(d.palCustomActual) : "1.5");
-    setPalCustomObjetivo(d.palCustomObjetivo != null ? String(d.palCustomObjetivo) : "1.5");
-    setFormulaMasaGrasa(normalizeGrasaId(d.formulaMasaGrasa ?? GRASA_IDS.PETERSON));
-    setBmrFormula(normalizeBmrId(d.formulaBmr ?? BMR_IDS.OMS));
-    setEerFormula(normalizeEerId(d.formulaEer ?? EER_IDS.IOM_2005));
-    setEerObjetivoInput(d.eerObjetivo ?? "");
-    setAjustePct(d.ajusteObjetivoPct ?? null);
-    setMacroRefIdx(d.macroRefIdx ?? 0);
-    setGrasaPct(d.grasaPct ?? 30);
-    setCarbPct(d.carbPct ?? 50);
-    setProtPct(d.protPct ?? 20);
-    setPesoObjetivoInput(d.pesoObjetivo ?? (pesoInicialObjetivo != null ? String(pesoInicialObjetivo) : ""));
-    setGrasaObjetivoInput(d.grasaObjetivo ?? "");
-    setImcObjetivoInput(d.imcObjetivo ?? "");
-    setFibraFuente(normalizeFibraId(d.fibraFuente ?? "fnb_iom"));
-    setFibraInput(d.fibraCantidad ?? "");
+    const aa = d.actividadActual ?? actividadInicial;
+    const ao = d.actividadObjetivo ?? t("actividadActivo");
+    const pca = d.palCustomActual != null ? String(d.palCustomActual) : "1.5";
+    const pco = d.palCustomObjetivo != null ? String(d.palCustomObjetivo) : "1.5";
+    const mg = normalizeGrasaId(d.formulaMasaGrasa ?? GRASA_IDS.PETERSON);
+    const bmr = normalizeBmrId(d.formulaBmr ?? BMR_IDS.OMS);
+    const eer = normalizeEerId(d.formulaEer ?? EER_IDS.IOM_2005);
+    const eo = d.eerObjetivo ?? "";
+    const aj = d.eerObjetivo ? (d.ajusteObjetivoPct ?? null) : null;
+    const mri = d.macroRefIdx ?? 0;
+    const g = d.grasaPct ?? 30;
+    const c = d.carbPct ?? 50;
+    const p = d.protPct ?? 20;
+    const po = d.pesoObjetivo ?? (pesoInicialObjetivo != null ? String(pesoInicialObjetivo) : "");
+    const go = d.grasaObjetivo ?? "";
+    const io = d.imcObjetivo ?? "";
+    const ff = normalizeFibraId(d.fibraFuente ?? "fnb_iom");
+    const fi = d.fibraCantidad ?? "";
+    const pa = d.pesoActual ?? (pesoInicialActual != null ? String(pesoInicialActual) : "");
+    const ga = d.grasaActual ?? (grasaInicialActual != null ? String(grasaInicialActual) : "");
+    setActividadActualLabel(aa);
+    setActividadObjetivoLabel(ao);
+    setPalCustomActual(pca);
+    setPalCustomObjetivo(pco);
+    setFormulaMasaGrasa(mg);
+    setBmrFormula(bmr);
+    setEerFormula(eer);
+    setEerObjetivoInput(eo);
+    setAjustePct(aj);
+    setMacroRefIdx(mri);
+    setGrasaPct(g);
+    setCarbPct(c);
+    setProtPct(p);
+    setPesoObjetivoInput(po);
+    setGrasaObjetivoInput(go);
+    setImcObjetivoInput(io);
+    setFibraFuente(ff);
+    setFibraInput(fi);
+    setPesoActualInput(pa);
+    setGrasaActualInput(ga);
     setFechaInicioInput(selectedPlan.fechaInicio ? selectedPlan.fechaInicio.slice(0, 7) : "");
     setFechaFinPrevistaInput(selectedPlan.fechaFinPrevista ? selectedPlan.fechaFinPrevista.slice(0, 7) : "");
+    // Rehacer la "foto" con los valores recién cargados (mismas claves y orden que `camposActuales`).
+    baseCamposRef.current = JSON.stringify({ aa, ao, pca, pco, bmr, eer, mg, eo, g, c, p, mri, ff, fi, po, go, io, aj, pa, ga });
   }, [selectedPlanId, selectedPlan, actividadInicial, pesoInicialObjetivo, FORMULAS_MASA_GRASA_GROUPS]);
 
   /* ─── Dirty tracking + manual save ─── */
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const isFirstRender = useRef(true);
+  // Planificación a la que se quiere cambiar habiendo cambios sin guardar (abre el modal de aviso).
+  const [cambioPlanPendiente, setCambioPlanPendiente] = useState<string | null>(null);
 
-  // Mark dirty on any value change (skip first render / plan switch)
+  // "Foto" de los campos editables AHORA. Comparada con `baseCamposRef` (lo cargado/guardado) decide
+  // si hay cambios sin guardar. Es por comparación de VALORES: robusto con cualquier control (inputs,
+  // sliders, dropdowns propios), independiente del orden de efectos, de StrictMode y de cambiar a un
+  // plan con valores idénticos. (Mismas claves y orden que la "foto" del efecto de sincronización.)
+  const camposActuales = JSON.stringify({
+    aa: actividadActualLabel, ao: actividadObjetivoLabel,
+    pca: palCustomActual, pco: palCustomObjetivo,
+    bmr: bmrFormula, eer: eerFormula, mg: formulaMasaGrasa, eo: eerObjetivoInput,
+    g: grasaPct, c: carbPct, p: protPct, mri: macroRefIdx,
+    ff: fibraFuente, fi: fibraInput,
+    po: pesoObjetivoInput, go: grasaObjetivoInput, io: imcObjetivoInput,
+    aj: ajustePct,
+    pa: pesoActualInput, ga: grasaActualInput,
+  });
+  if (baseCamposRef.current === null) baseCamposRef.current = camposActuales; // foto inicial (montaje)
+
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    setIsDirty(true);
-  }, [
-    actividadActualLabel, actividadObjetivoLabel, palCustomActual, palCustomObjetivo,
-    bmrFormula, eerFormula, formulaMasaGrasa, eerObjetivoInput,
-    grasaPct, carbPct, protPct, macroRefIdx,
-    fibraFuente, fibraInput, pesoObjetivoInput, grasaObjetivoInput, imcObjetivoInput,
-    ajustePct,
-  ]);
+    setIsDirty(camposActuales !== baseCamposRef.current);
+  }, [camposActuales]);
 
-  // Reset dirty flag on plan switch
-  useEffect(() => { isFirstRender.current = true; setIsDirty(false); }, [selectedPlanId]);
+  // Aviso del navegador al cerrar/recargar la pestaña con cambios sin guardar.
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
 
   function buildDatosSnapshot(): PlanificacionDatos {
     return {
@@ -1153,9 +1202,16 @@ export function PlanificacionPorDefectoTab({
       macroRefIdx,
       fibraFuente,
       fibraCantidad: fibraInput || undefined,
+      pesoActual: pesoActualInput || undefined,
+      grasaActual: grasaActualInput || undefined,
       pesoObjetivo: pesoObjetivoInput || undefined,
       grasaObjetivo: grasaObjetivoInput || undefined,
       imcObjetivo: imcObjetivoInput || undefined,
+      // #78-A: objetivos absolutos ya calculados, para heredarlos al crear la dieta/IA sin recalcular.
+      kcalObjetivo: macros.kcal || undefined,
+      protGObjetivo: macros.protG || undefined,
+      carbGObjetivo: macros.carbG || undefined,
+      grasaGObjetivo: macros.grasaG || undefined,
     };
   }
 
@@ -1172,6 +1228,7 @@ export function PlanificacionPorDefectoTab({
           : p
       )
     );
+    baseCamposRef.current = camposActuales; // lo guardado pasa a ser la nueva "foto" base
     setIsDirty(false);
     setIsSaving(false);
   }
@@ -1268,8 +1325,17 @@ export function PlanificacionPorDefectoTab({
 
   /* ─── Render ─── */
 
+  // Bloquea "e"/"E"/"+" en los inputs numéricos: type=number los admite (notación científica) pero
+  // aquí no tienen sentido y dejaban valores raros como "63e" que luego no se podían guardar.
+  function bloquearExponencial(ev: React.KeyboardEvent) {
+    const el = ev.target as HTMLElement;
+    if (el instanceof HTMLInputElement && el.type === "number" && ["e", "E", "+"].includes(ev.key)) {
+      ev.preventDefault();
+    }
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" onKeyDown={bloquearExponencial}>
       {/* ====== Section 1: Informaciones del cliente ====== */}
       <section className="bg-card rounded-xl border border-border overflow-hidden">
         <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-3">
@@ -1443,7 +1509,10 @@ export function PlanificacionPorDefectoTab({
               ) : (
                 <button
                   type="button"
-                  onClick={() => setSelectedPlanId(plan.id)}
+                  onClick={() => {
+                    if (plan.id !== selectedPlanId && isDirty) { setCambioPlanPendiente(plan.id); return; }
+                    setSelectedPlanId(plan.id);
+                  }}
                   className={`whitespace-nowrap px-3 py-2 text-sm font-medium border-b-2 transition-colors rounded-t-lg ${
                     isActive
                       ? "border-primary text-primary bg-primary/5"
@@ -1617,6 +1686,42 @@ export function PlanificacionPorDefectoTab({
                 className="px-5 py-2.5 rounded-lg bg-amber-400 text-white text-sm font-semibold hover:bg-amber-500 transition-colors disabled:opacity-50"
               >
                 {t("borrar")}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {cambioPlanPendiente && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={() => setCambioPlanPendiente(null)}>
+          <div className="bg-card rounded-2xl shadow-2xl border border-border w-full max-w-md mx-4 p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2.5">
+                <AlertTriangle className="w-5 h-5 text-amber-500" />
+                <h3 className="text-lg font-bold">{t("avisoCambiosTitulo")}</h3>
+              </div>
+              <button type="button" onClick={() => setCambioPlanPendiente(null)} className="p-1 rounded-lg hover:bg-muted transition-colors">
+                <X className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
+            <p className="text-sm text-muted-foreground mb-6">
+              {t("avisoCambiosSinGuardar")}
+            </p>
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setCambioPlanPendiente(null)}
+                className="px-4 py-2.5 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors"
+              >
+                {t("cancelar")}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setSelectedPlanId(cambioPlanPendiente); setCambioPlanPendiente(null); }}
+                className="px-5 py-2.5 rounded-lg bg-amber-400 text-white text-sm font-semibold hover:bg-amber-500 transition-colors"
+              >
+                {t("avisoCambiosDescartar")}
               </button>
             </div>
           </div>

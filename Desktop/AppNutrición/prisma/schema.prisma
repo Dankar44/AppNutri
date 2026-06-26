@@ -456,6 +456,11 @@ model PlanAlimenticio {
   proteinasObjetivo Float?
   carbohidratosObjetivo Float?
   grasasObjetivo    Float?
+  /// #78 (bloque 2) — planificaciones que usa este plan (subconjunto de las del paciente).
+  planificacionIds String[] @default([])
+  /// #78 (bloque 2) — objetivos por planificación propios de ESTE plan (override editable al crear,
+  /// sin tocar la planificación). Forma: { "<planificacionId>": { kcal, proteinas, carbohidratos, grasas } }
+  objetivosPorPlani Json?
   activo          Boolean   @default(true)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt

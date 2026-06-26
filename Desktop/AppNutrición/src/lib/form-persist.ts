@@ -150,9 +150,10 @@ export function useFormPersist<T extends Record<string, unknown>>(
 export function useUncontrolledFormPersist(
   key: string,
   formRef: RefObject<HTMLFormElement | null>,
-  options?: { enabled?: boolean }
+  options?: { enabled?: boolean; exclude?: string[] }
 ): { wasRestored: boolean; clear: () => void } {
   const enabled = options?.enabled ?? true;
+  const exclude = options?.exclude ?? [];
   const [wasRestored, setWasRestored] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -169,7 +170,9 @@ export function useUncontrolledFormPersist(
     if (!form) return;
 
     requestAnimationFrame(() => {
+      let restauradoAlgo = false;
       for (const [name, value] of Object.entries(saved)) {
+        if (exclude.includes(name)) continue;
         if (value === "" || value === null || value === undefined) continue;
         const el = form.elements.namedItem(name);
         if (!el) continue;
@@ -180,9 +183,10 @@ export function useUncontrolledFormPersist(
             el.value = String(value ?? "");
           }
           el.dispatchEvent(new Event("input", { bubbles: true }));
+          restauradoAlgo = true;
         }
       }
-      setWasRestored(true);
+      if (restauradoAlgo) setWasRestored(true);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, enabled]);
@@ -198,6 +202,7 @@ export function useUncontrolledFormPersist(
       const data: Record<string, unknown> = {};
       const fd = new FormData(f);
       fd.forEach((v, k) => {
+        if (exclude.includes(k)) return;
         data[k] = v;
       });
       if (!isEmptyState(data)) {

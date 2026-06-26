@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { expandirGruposDeDias } from "@/lib/grupos-dias";
 import { getCurrentDietista } from "./auth";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
@@ -86,8 +87,11 @@ export async function getPlanPorToken(token: string) {
 
   if (!enlace) return null;
   if (enlace.expiraEn && enlace.expiraEn < new Date()) return null;
+  // #75 — expandir grupos: los días miembro reflejan el menú del día representante (no salen vacíos).
+  const dias = await expandirGruposDeDias(enlace.plan.id, enlace.plan.dias);
   return {
     ...enlace.plan,
+    dias,
     branding: {
       marcaPdf: enlace.dietista.marcaPdf,
       pdfLogoUrl: enlace.dietista.pdfLogoUrl,

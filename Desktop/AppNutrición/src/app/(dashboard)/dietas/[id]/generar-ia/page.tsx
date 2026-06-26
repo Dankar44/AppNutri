@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { getPlan } from "@/app/actions/planes";
+import { getObjetivosPlanificacionActiva } from "@/app/actions/planificaciones";
 import { getPaciente } from "@/app/actions/pacientes";
 import { checkAIConfigured } from "@/app/actions/ai";
 import { AIConfigBanner } from "@/components/ai/ai-config-banner";
@@ -18,6 +19,9 @@ export default async function GenerarIAPage({ params }: Props) {
 
   const paciente = await getPaciente(plan.pacienteId);
   if (!paciente) notFound();
+
+  // #78-A: si el plan aún no tiene objetivos propios, se heredan de la planificación del paciente.
+  const objPlani = await getObjetivosPlanificacionActiva(plan.pacienteId);
 
   const aiConfigured = await checkAIConfigured();
 
@@ -56,10 +60,10 @@ export default async function GenerarIAPage({ params }: Props) {
             preferencias: paciente.preferencias,
           }}
           defaultObjetivos={{
-            calorias: plan.caloriasObjetivo || 2000,
-            proteinas: plan.proteinasObjetivo || 120,
-            carbohidratos: plan.carbohidratosObjetivo || 250,
-            grasas: plan.grasasObjetivo || 70,
+            calorias: plan.caloriasObjetivo || objPlani?.kcal || 2000,
+            proteinas: plan.proteinasObjetivo || objPlani?.proteinas || 120,
+            carbohidratos: plan.carbohidratosObjetivo || objPlani?.carbohidratos || 250,
+            grasas: plan.grasasObjetivo || objPlani?.grasas || 70,
           }}
         />
       )}

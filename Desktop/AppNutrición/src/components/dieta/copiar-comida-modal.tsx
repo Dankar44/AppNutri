@@ -24,6 +24,7 @@ export function SelectorDiasModo({
   modo,
   onModoChange,
   mostrarModo = true,
+  tituloDias,
 }: {
   dias: DiaOption[];
   excluirIds?: string[];
@@ -32,6 +33,7 @@ export function SelectorDiasModo({
   modo: ModoCopia;
   onModoChange: (m: ModoCopia) => void;
   mostrarModo?: boolean;
+  tituloDias?: string;
 }) {
   const t = useTranslations("diets");
   const seleccionables = dias.filter((d) => !excluirIds.includes(d.id));
@@ -48,7 +50,7 @@ export function SelectorDiasModo({
     <div className="space-y-4">
       <div>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-semibold text-foreground">{t("copiar.aQueDias")}</span>
+          <span className="text-sm font-semibold text-foreground">{tituloDias ?? t("copiar.aQueDias")}</span>
           <button
             type="button"
             onClick={() =>
@@ -147,6 +149,8 @@ export function CopiarADiasModal({
   excluirDiaId,
   pending = false,
   mostrarModo = true,
+  confirmLabel,
+  tituloDias,
   tiposComida,
   tipoOrigen,
   tipoDestinoInicial,
@@ -160,6 +164,9 @@ export function CopiarADiasModal({
   excluirDiaId?: string;
   pending?: boolean;
   mostrarModo?: boolean;
+  /** Texto del botón de confirmar (por defecto "Copiar"). Para reutilizar el selector en "Juntar". */
+  confirmLabel?: string;
+  tituloDias?: string;
   /** Si se pasa, muestra un selector de "en qué comida pegarla" (tipos de comida). */
   tiposComida?: { key: string; label: string }[];
   tipoOrigen?: string;
@@ -242,6 +249,7 @@ export function CopiarADiasModal({
             modo={modo}
             onModoChange={setModo}
             mostrarModo={mostrarModo}
+            tituloDias={tituloDias}
           />
         </div>
 
@@ -260,7 +268,7 @@ export function CopiarADiasModal({
             className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
           >
             <Copy className="w-4 h-4" />
-            {pending ? t("copiar.copiando") : t("copiar.copiar")}
+            {pending ? t("copiar.copiando") : (confirmLabel ?? t("copiar.copiar"))}
           </button>
         </div>
       </div>

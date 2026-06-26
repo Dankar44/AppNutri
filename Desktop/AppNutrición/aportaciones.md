@@ -33,6 +33,8 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 
 **Input adicional (Ainara Martín, mayo 2026):** Ainara ya tiene montado un sistema propio con IA donde sube analíticas y se le extrapolan a un Excel para ver todo el histórico de una vez. Quiere lo mismo integrado en la app: subir analítica → parseo automático → valores extraídos → histórico visual donde se vea la evolución de cada marcador a lo largo del tiempo.
 
+**Input adicional (Jesús, jesusmnutricion — 22 jun 2026):** poder **subir un documento PDF** al paciente (informes, documentos del cliente…). Encaja en la "sección general de archivos" del paciente. Lo piden varios profesionales → demanda repetida.
+
 **Tareas:**
 - [ ] Crear modelo `ArchivoPaciente` en Prisma (id, pacienteId, dietistaId, nombre, tipo, url/base64, categoria, notas, createdAt)
 - [ ] Categorías de archivo: analisis_sangre, estudio_medico, plan_externo, receta_medica, otro
@@ -103,6 +105,10 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 ## 5. Planes por opciones de comida (sin separar por día)
 
 > ⭐ **PRIORIDAD ALTA — a montar ya (hoy/mañana, jun 2026).** Antonio (lead caliente) dice que si se incluye esta opción **migra a sus clientes a Annonia mañana mismo**. La IA ya se está trabajando en paralelo en otra terminal.
+>
+> 🔁 **Antonio RE-pregunta el 15 jun** ("¿incluisteis finalmente la posibilidad de realizar los planes por opciones?") y reitera la señal de conversión: *"si incluyeseis esa opción, mañana mismo estaría migrando a mis clientes a Annonia sin duda; me parece increíble la interfaz y me gusta todo bastante"*. Lead muy listo para convertir → urgencia real.
+>
+> ⚠️ **OJO — no confundir con #55 (ya desplegado).** Lo que está hecho y en producción es el **intercambio por ÍTEM** (#55): dentro de una comida, un alimento/receta tiene alternativas equivalentes ("leche *o* cereales"). Lo que pide Antonio aquí (#5) es distinto: **OPCIONES DE COMIDA COMPLETA** (p. ej. 3 desayunos enteros distintos, todos mismos macros/kcal, y el paciente elige uno). Esta #5 SIGUE PENDIENTE. El primer intento técnico de "modalidad opciones sin días" se revirtió en su día; el enfoque a reabrir está por decidir.
 
 **Estado actual:** Los planes SIEMPRE se organizan por día de la semana (LUNES a DOMINGO). Modelo: `PlanAlimenticio → DiaDelPlan(dia: DiaSemana) → ComidaDelDia → AlimentoEnComida`.
 
@@ -139,13 +145,25 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 
 ---
 
-## 6. Formulario pre-consulta para pacientes
+## 6. Formulario pre-consulta — que el CLIENTE rellene la anamnesis (no el profesional)
 
-**Estado actual:** La anamnesis la rellena el dietista en la pestaña "Información" de cada paciente. Soporta campos personalizados. Hay función de enviar cuestionario por email (`enviarCuestionarioPaciente`), pero es solo informativo, no editable por el paciente.
+> ⭐⭐ **PRIORIDAD MÁXIMA / bloqueante de adopción (Miguel Fernández Morillo — Nutrition Efficiency, 21 jun 2026).** Es de lo que más frena el arranque, sobre todo en consulta ONLINE: el profesional no debería rellenar la anamnesis a mano; debe rellenarla el cliente. Miguel está dando de alta clientas YA y dice que esto le frena todo el trabajo inicial (de hecho da acceso en paralelo a otra herramienta, "Núcleo", por esto). Pérdida de tiempo clara para quien trabaja online.
+
+**Estado actual (VERIFICADO en código, 21 jun 2026):** La anamnesis la rellena el dietista en la pestaña "Información". Existe `enviarCuestionarioPaciente` (`email.ts:171`), pero **NO envía un formulario para que el paciente lo rellene: envía un EMAIL con un RESUMEN de lo que el profesional ya metió** (`buildCuestionarioHtml`: "tu nutricionista ha registrado la siguiente información… si algo no es correcto, responde a este correo"). **No existe ninguna ruta de formulario público/del paciente** para rellenar la anamnesis (confirmado: no hay `/preconsulta` ni equivalente). → El flujo actual no tiene sentido para online: el cliente recibe sus datos ya rellenados, no un cuestionario que completar.
 
 **Petición:** Enviar al paciente un formulario ANTES de la consulta para que complete sus datos (contacto, fecha de nacimiento, alergias, etc.) y no perder tiempo de consulta.
 
 **Input adicional (Alejandra, 2 jun 2026):** Lo pide como "informe de salud pre-entrevista" que el paciente rellene antes de la primera consulta, y recalca que esos datos **se vuelquen automáticamente en los apartados correspondientes** de la ficha (historial médico, alergias, medicamentos, suplementos, actividad física…), no que queden como un documento aparte.
+
+**Input adicional (Miguel Fernández Morillo — Nutrition Efficiency, 21 jun 2026) — flujo completo estilo Nutrium:**
+1. **Alta del cliente mínima:** al registrar, solo nombre completo, género (M/F), fecha de nacimiento y correo; teléfono opcional. El profesional NO mete peso/altura/datos clínicos.
+2. **Enviar la anamnesis al cliente** (por correo y, si hay teléfono, también por mensaje/WhatsApp): le llega un **formulario para que LO RELLENE él** (no un resumen ya hecho).
+3. El cliente rellena su info (peso, altura, objetivo, función intestinal, hábitos…) y **se vuelca automáticamente** en su ficha.
+4. El profesional luego **edita** lo que quiera (la ficha sigue editable como ahora — esa parte se mantiene).
+5. **Encadenar con el cálculo automático:** al tener ya peso + altura + edad + objetivo (rellenados por el cliente), que la pestaña Planificación **calcule sola** el gasto energético/objetivos sin teclear nada (editable después). Enlaza con #78-A (objetivos absolutos heredados).
+6. **Mantener el modo actual** (cuestionario editable por el profesional, sin enviarlo) para quien trabaje presencial. Es decir: AÑADIR el modo "lo rellena el cliente", sin quitar el de ahora.
+
+**Matiz sobre el correo (Guillermo, 21 jun):** no hacer el correo estrictamente obligatorio sin más. Si el cliente no tiene correo, contemplar: enviarlo por otra vía (mensaje/WhatsApp), o avisar/mostrar un error claro, o generar un **link** que el cliente abra para rellenar. A decidir al diseñarlo.
 
 **Tareas:**
 - [ ] Crear ruta pública o autenticada para formulario pre-consulta: `/paciente/portal/preconsulta` o `/preconsulta/[token]`
@@ -157,8 +175,14 @@ Feedback recopilado de un nutricionista argentino (usuario real) tras probar Ann
 - [ ] Notificar al dietista cuando el paciente complete el formulario
 - [ ] El dietista puede revisar y ajustar los datos en consulta
 - [ ] Marcar visualmente qué datos fueron completados por el paciente vs el dietista
+- [ ] **Simplificar el alta del cliente** (Miguel): registrar solo con nombre, género, fecha de nacimiento y correo (teléfono opcional); no exigir peso/altura/datos clínicos al profesional
+- [ ] **Enviar también por mensaje/WhatsApp** si hay teléfono, no solo por email
+- [ ] **Sin correo:** contemplar alternativa (otra vía, error claro o un link abrible) — no bloquear con un correo obligatorio a secas
+- [ ] **Encadenar con Planificación:** que los datos que rellena el cliente (peso/altura/edad/objetivo) disparen el cálculo energético automático (#78-A)
+- [ ] **Mantener el modo actual** (el profesional rellena la ficha sin enviarla) como opción para consulta presencial
 
-**Prioridad:** Alta
+**Relacionado con:** #18 (anamnesis), #78 (objetivos/planificación → cálculo automático), #51 (consentimiento antes de la anamnesis)
+**Prioridad:** ⭐⭐ MÁXIMA — bloqueante de adopción para nutris online (lo piden Miguel, Alejandra y Ainara)
 **Complejidad:** Media-Alta
 
 ---
@@ -537,7 +561,7 @@ Ainara cumplió lo prometido y envió el resumen de TODO lo que pregunta tras **
 |---|----------|-----------|-------------|
 | 1 | Tablas composición por país | Alta | Alta |
 | 5 | Planes por opciones (no por día) | Alta | Alta |
-| 6 | Formulario pre-consulta paciente | Alta | Media-Alta |
+| 6 | Formulario pre-consulta: que el CLIENTE rellene la anamnesis (no el profesional) — ⭐⭐ bloqueante online | MÁXIMA | Media-Alta |
 | 15 | Integrar BEDCA | Alta | Media |
 | 2 | Subir análisis/archivos | Media-Alta | Media |
 | 3 | Combinar tipos de dieta | Media | Baja-Media |
@@ -624,6 +648,23 @@ Ainara cumplió lo prometido y envió el resumen de TODO lo que pregunta tras **
 | 100 | Vista Resumen: mostrar tiempos de comida por día (no "X sin alimentos") | Media | Baja |
 | 101 | Alimentos solicitados para añadir al catálogo (lista acumulativa) | Media | Baja |
 | 102 | Recordatorio de 24h en historia alimentaria con cálculo de ingesta | Media-Alta | Media |
+| 103 | Botón "Notificar al paciente" dentro del plan (por valorar) | Baja | Baja |
+| 104 | Ingestas configurables: renombrar, horas, nº de comidas, pre-entreno | Alta | Media-Alta |
+| 105 | Editor: el buscador no se cierra al añadir (encadenar alimentos) | Alta | Baja |
+| 106 | Importar comida de otro plan eligiendo en qué comida pegarla | Media-Alta | Baja-Media |
+| 107 | PDF: opción de no incluir las notas en la tabla resumen | Media | Baja |
+| 108 | Mostrar la ingesta de agua también en vasos (además de litros) | Media-Baja | Baja |
+| 109 | Pautar objetivos en g/kg de peso (proteína), incl. IA | Media-Alta | Media |
+| 110 | Imágenes (fotos/logos) a Supabase Storage en vez de base64 en la BD — baja el egress | Alta | Media |
+| 111 | Histórico de dietas del paciente accesible y exportable en informe | Media | Media |
+| 112 | El paciente registra la comida REAL que ha comido (diario), no solo cumplido | Media-Alta | Media |
+| 113 | Botón rápido +20% en el ajuste del objetivo (superávit/realimentación) — ✅ desplegado | Baja | Mínima |
+| 114 | BUG citas hora desfasada (zona horaria) — ✅ fix desplegado; citas viejas a mano | Alta | Media-Alta |
+| 115 | Portal paciente: permitir eventos solapados en el horario (hoy borra) | Media | Media |
+| 116 | Horario del nutri: excepciones por fecha (festivos / cambios puntuales) | Media | Alta |
+| 117 | Módulo de entrenamiento/rutinas para el cliente (por valorar, fuera del core) | Por valorar | Alta |
+| 118 | Actividad física en anamnesis como lista (varias actividades + frecuencia) | Media | Baja-Media |
+| 119 | Recordatorios diarios personalizables al paciente (agua, comidas…) | Media | Media-Alta |
 
 ---
 
@@ -944,7 +985,7 @@ En perímetros, se registran 4: cintura, cadera, brazo y abdomen. No existe per�
 
 ## 38. Foto del plato en recetas
 
-**Origen:** Álvaro (nutricionista, LinkedIn) — 27 mayo 2026; Remedios Velasco — 7 jun 2026 (lo pide **sobre todo para las recetas propias del nutricionista**, las que añade él mismo); nutricionista (email) — 8 jun 2026 ("subir una foto del platillo para que el paciente tenga una referencia visual").
+**Origen:** Álvaro (nutricionista, LinkedIn) — 27 mayo 2026; Remedios Velasco — 7 jun 2026 (lo pide **sobre todo para las recetas propias del nutricionista**, las que añade él mismo); nutricionista (email) — 8 jun 2026 ("subir una foto del platillo para que el paciente tenga una referencia visual"); Antonia (nutrivibes.life, Instagram) — 17 jun 2026 ("añadir imágenes a las recetas haría la experiencia mucho más visual para profesional y paciente"); Carmen Florensa (review en PDF, 23 jun 2026 — "aportar fotos para las recetas… que absolutamente todas las recetas tuvieran su imagen de referencia"). **Quinto profesional que lo pide.**
 
 **Estado actual (reverificado 7 jun 2026):** Los alimentos individuales pueden tener imagen (`Alimento.imagenUrl`). Las recetas (`Receta`) **siguen SIN campo de imagen**. Cuando el paciente ve su plan en el portal o en el PDF, no hay foto visual del plato montado.
 
@@ -1242,6 +1283,7 @@ Anna: "Así cada nutri trabaja con su marca dentro de la app y es superrr experi
    - **Solución para el nutri HOY:** poner el límite en el **campo "Carbohidratos (g)" = 100**, no solo en instrucciones de texto. El campo numérico es el objetivo real que sigue la IA.
    - **Tareas:** (a) que las instrucciones de texto tipo "máximo X g de Y" se reflejen en los campos numéricos o se traten como restricción dura; (b) soportar **límites máximos por macro** (no solo objetivo); (c) que el prompt respete "máximo" y no empuje siempre al alza; (d) en el ajuste posterior, si un macro se pasa del límite, recortarlo
 6. **⚠️ Elige carnes/alimentos exóticos al pedir priorizar un grupo (nutricionista, 10 jun 2026, 3 semanas usándola):** al pedir que priorice carnes, en algún día mete **faisán** u otras carnes poco habituales. Mismo patrón que el "aceite de almendras dulces": la IA tira de alimentos raros del catálogo. → Refuerza limpiar/priorizar el catálogo que se ofrece a la IA (alimentos comunes primero) y/o el enfoque "IA libre + matching". NOTA POSITIVA del mismo nutri: la IA "viene muy bien para hacer el menú rápido y luego individualizarlo a cada paciente según sus macros".
+7. **⚠️ No respeta el tipo/textura de dieta + las PATOLOGÍAS no llegan a la IA (nutriciondelargadistancia, 19 jun 2026):** Pidió una **"dieta blanda mecánica"** y la IA le recomendó alimentos sólidos. VERIFICADO en código: el campo `tipoDieta` del formulario y las instrucciones de texto SÍ se concatenan y se pasan al prompt (`prompts.ts`, marcadas como prioridad máxima), así que la indicación **sí llega**, pero la IA no la respeta bien (mismo patrón de adherencia que los puntos 4 y 5). **BUG colateral verificado:** `buildUserPrompt` (`prompts.ts` ~línea 106) **recibe las `patologias` del paciente pero NO las incluye en el prompt** → si la restricción solo está en la patología/ficha y no se escribe en el texto libre, la IA ni la ve (mismo caso que la medicación, #71). Tareas extra: (a) **pasar las patologías al prompt** (hoy se ignoran); (b) reforzar la adherencia al tipo/textura de dieta (blanda mecánica, triturada, astringente…).
 
 **Propuesta de arquitectura (Guillermo, 4 jun 2026) — a valorar:** En vez de pasarle a la IA el catálogo de alimentos para que elija (lo que provoca elecciones raras como "aceite de almendras dulces"), dejar que **la IA genere el plan libremente** (nombre del alimento + cantidad + datos nutricionales que ella estime), y luego **por dentro hacer matching** con el alimento más parecido de nuestra base de datos, ajustando a la cantidad correspondiente.
 
@@ -1461,6 +1503,8 @@ Esto es muy valioso para la tarea #18 (personalizar estructura anamnesis) — te
 ## 51. Documentación de protección de datos (RGPD) personalizada por nutricionista
 
 > ⭐ **PRIORIDAD ALTA / inminente (9 jun 2026).** Varios profesionales han pedido ya el **contrato de encargado de tratamiento (DPA)** Annonia↔nutricionista (José y otros). Guillermo: "lo vamos a hacer dentro de nada". Sacar primero el DPA que Annonia facilita a cada profesional, y en paralelo el almacenamiento de documentos del paciente.
+>
+> 🚧 **BLOQUEANTE DE ADOPCIÓN confirmado (19 jun 2026):** un nutricionista (el de las patologías + protección de datos) dice explícitamente que **sin el acuerdo de tratamiento de los datos de los pacientes NO puede empezar a meter pacientes**. No es solo una petición de funcionalidad: sin el DPA no hay uso real con pacientes → frena la conversión. VERIFICADO: hoy **no existe** ningún documento de encargado de tratamiento que se le pueda facilitar; la política de privacidad pública solo cubre a Annonia como **responsable** de los datos de sus usuarios (los nutris), no como **encargado** respecto a los pacientes. Sube la urgencia: es lo que desbloquea que los leads empiecen a usarla de verdad.
 
 **Origen:** Ainara Martín (ainara_nutri, Instagram) — 29 mayo 2026; José (WhatsApp) — 9 jun 2026 (pide el DPA de encargado de tratamiento).
 
@@ -1512,9 +1556,9 @@ Esto es muy valioso para la tarea #18 (personalizar estructura anamnesis) — te
 
 ## 52. Exportar e importar recetas y composición de alimentos
 
-**Origen:** Ainara Martín (ainara_nutri, Instagram) — 29 mayo 2026
+**Origen:** Ainara Martín (ainara_nutri, Instagram) — 29 mayo 2026; **reinsiste el 17 jun 2026** (es su prioridad: "las bases de datos importables y exportables para unificarlas").
 
-**Estado actual:** Las recetas y alimentos personalizados se crean dentro de la app y no hay forma de exportarlos (para backup o uso fuera de la app) ni de importar datos masivamente (ej: un nutricionista que tiene sus recetas en Excel o en otra app).
+**Estado actual (VERIFICADO en código, 17 jun 2026):** Sigue sin existir import/export de las bases **propias** (recetas y alimentos) en CSV/Excel/JSON. **OJO, no confundir:** SÍ existe `/alimentos/importar`, pero es para **buscar e importar alimentos de una API externa de uno en uno** (`buscarAlimentosAPI`/`importarAlimentoAPI`) — no sirve para exportar tu catálogo ni para importar/unificar una base de datos propia. Las recetas y alimentos personalizados se crean dentro de la app y no hay forma de exportarlos (backup/uso externo) ni de importar datos masivamente (ej: recetas en Excel).
 
 **Petición:** Ainara dice: "estaría muy bien poder descargarse de la app recetas y composición de alimentos y también importarlos."
 
@@ -1570,9 +1614,9 @@ Esto es muy valioso para la tarea #18 (personalizar estructura anamnesis) — te
 
 ## 54. Registro de saciedad/hambre en seguimiento diario
 
-**Origen:** María José Sánchez (@Comiendoavocados) — 29 mayo 2026
+**Origen:** María José Sánchez (@Comiendoavocados) — 29 mayo 2026; Carmen Florensa (review en PDF, 23 jun 2026 — espacio para que el paciente apunte si se quedó con hambre, cansado o hinchado; no sabía si existía → poco visible).
 
-**Estado actual:** El modelo `SeguimientoDiario` registra: cumplimiento del plan, agua, ejercicio (tipo, minutos, kcal, distancia), notas y datos de comidas (`comidasData` JSON). No existe ningún campo para registrar la sensación de saciedad o hambre del paciente tras las comidas.
+**Estado actual (REVERIFICADO 23 jun 2026):** PARCIAL — YA existe un **selector de "sensación"** en el seguimiento diario del paciente (hambre/cansado/hinchado…), pero codificado **dentro del campo `notas`** (`⟦sensacion:tipo⟧`, ver `portal/seguimiento/page.tsx` `extraerSensacion`), no como campo estructurado. Lo que falta para completarlo: (a) que sea **por comida** (no solo del día), (b) **campo estructurado** propio (no embebido en notas, para poder analizarlo), y (c) que el **nutri lo vea bien** en su panel (Carmen, reviewer, no sabía que existía → está poco visible).
 
 **Petición:** Añadir algún tipo de registro para evaluar cómo de saciado se ha quedado el paciente con cada comida, o si se ha quedado con hambre. Información clave para que el nutricionista ajuste las cantidades y la composición del plan.
 
@@ -1726,7 +1770,7 @@ Además, pide un **registro dietético con fotos**: que el paciente pueda subir 
 
 ## 59. Fotos de progreso (antes / después) en métricas
 
-**Origen:** Remedios Velasco (remediosvelascosalazar@gmail.com) — 1 junio 2026; Antonio (antoniofs.nutricion, 4 jun 2026) — lo pide para los que trabajan **online**: apartado para registrar fotos de perfil, de frente y de espalda
+**Origen:** Remedios Velasco (remediosvelascosalazar@gmail.com) — 1 junio 2026; Antonio (antoniofs.nutricion, 4 jun 2026) — lo pide para los que trabajan **online**: apartado para registrar fotos de perfil, de frente y de espalda; Jesús (jesusmnutricion, 22 jun 2026) — "almacenar **fotos de cada revisión**". (Lo piden ya 3+ profesionales.)
 
 **Estado actual:** No existe ninguna funcionalidad de fotos de progreso. No hay campo de foto en `MedidaAntropometrica` ni modelo asociado.
 
@@ -1984,7 +2028,7 @@ Esto refuerza la opción "estructurada" de esta tarea: pasar suplementos (y medi
 
 ## 68. Duplicar receta de la app como receta propia editable
 
-**Origen:** nutricionista por WhatsApp (sin identificar) — 2 junio 2026; nutricionista (email) — 8 jun 2026 ("permitir editar las recetas que ya vienen por defecto en la app, para adaptarlas, sustituir u omitir ingredientes según cada paciente, sin tener que crear una desde cero").
+**Origen:** nutricionista por WhatsApp (sin identificar) — 2 junio 2026; nutricionista (email) — 8 jun 2026 ("permitir editar las recetas que ya vienen por defecto en la app, para adaptarlas, sustituir u omitir ingredientes según cada paciente, sin tener que crear una desde cero"); Carmen Florensa (review en PDF, 23 jun 2026 — "¿el nutricionista puede validar o añadir notas personalizadas dentro de una receta estándar de la app para adaptarla a su paciente?").
 
 **Estado actual (verificado en código):** Las recetas globales ("de la app") solo se pueden marcar como favoritas — **no se pueden editar ni duplicar**. En `/recetas/[id]` el botón Editar solo aparece si `!receta.esGlobal`. Si una nutricionista quiere su versión del "Gazpacho andaluz" con otros ingredientes, tiene que crear la receta desde cero.
 
@@ -2125,6 +2169,8 @@ Esto refuerza la opción "estructurada" de esta tarea: pasar suplementos (y medi
 
 **Caso de uso que plantean:** uno de ellos trabaja en un **club deportivo** y quiere probar si la app "funciona bien en grupos, en equipos y demás". → Uso de Annonia para **equipos deportivos**: gestionar muchos deportistas a la vez, posiblemente con planes compartidos por grupo, vista de equipo, etc. Aún sin petición concreta — recoger qué echan en falta cuando lo prueben. Relacionado con #39 (cuenta profesor: asignación a grupos) por la mecánica de grupos.
 
+**Seguimiento (19 jun 2026):** entrenutris ya probó la app (se dio de alta, creó paciente de prueba). Confirma el plan de **cargar pacientes/jugadores del club** y que lo usarían **las nutris del equipo** con sus pacientes; primero quiere meter a **algunos usuarios de su red** para probar. Pidió pasar la conversación a **WhatsApp** (Instagram no avisa de mensajes y se le mezclan) — se le pasó el WhatsApp del equipo. Feedback concreto: (a) no encontró cómo **generar el plato/plan con IA** → descubribilidad (la generación IA está dentro de un plan); (b) **terminología regional de los alimentos** (Argentina): "plátano→banana", "aguacate→palta" — pide que se adapten **automáticamente por país** al entregar el plan, no a mano ("como el idioma"). Ver #95 (nombres locales de alimentos por país) y #1 (tablas regionales LatAm). Lead caliente de **club deportivo** (LatAm).
+
 ---
 
 ## 72. Link a receta de Instagram/TikTok en las recetas
@@ -2193,18 +2239,21 @@ Esto refuerza la opción "estructurada" de esta tarea: pasar suplementos (y medi
 
 ## 76. Acceso a lista de la compra y enlace compartido desde Entregables
 
-**Origen:** Guillermo (apuntes de reuniones) — 4 junio 2026
+**Origen:** Guillermo (apuntes de reuniones) — 4 junio 2026; Guillermo (nota) — 15 junio 2026 (matiz "sin link" + meterlo dentro de la propia ficha del paciente).
 
-**Estado actual (verificado en código):** El **enlace compartido** del plan (link público tipo `/compartido/...`) se genera desde el editor de dieta (`/dietas/[id]/compartir`). La **lista de la compra** ya es una opción del PDF de entregables, pero el "compartir" (enlace público) solo está accesible desde la sección de dieta, no desde la pestaña Entregables del paciente.
+**Estado actual (verificado en código):** Hoy **"compartir" = generar un enlace público con token** (`/compartido/{token}`, que se copia al portapapeles desde `copyUrl`) y **solo vive dentro del editor de dieta** (`/dietas/[id]/compartir`, panel `compartir-panel.tsx`; también en la action-bar móvil de la dieta). La pestaña **Entregables** de la ficha del paciente ya tiene un toggle `listaCompra` para incluir la lista en el PDF, pero **no** ofrece compartir el enlace ni entregar la lista de la compra de forma independiente. El paciente, por su lado, sí ve su lista de la compra en el portal (`/paciente/portal/dieta/lista-compra`). Resumen: la única vía de "compartir/entregar" desde el lado del nutri es el **enlace público**, y está escondida dentro de la dieta.
 
-**Petición:** Añadir a **Entregables** el acceso al enlace compartido (y a la lista de la compra como entregable propio), que ahora solo está en la sección de dieta. Centralizar todo lo que se entrega al paciente en un mismo sitio.
+**Petición:** Mirar **dónde colocar** el acceso a compartir (lista de la compra, plan, etc.), que ahora solo está dentro de la dieta, para que sea más accesible. Dos ideas:
+1. **Meterlo dentro de la propia ficha del paciente** (pestaña Entregables o sección propia), no solo en el editor de dieta — centralizar todo lo que se entrega al paciente en un mismo sitio.
+2. **"Sin link"** (matiz Guillermo, 15 jun): poder compartir/entregar la lista de la compra **sin depender de generar un enlace público con token** — p. ej. descarga/entrega directa desde la ficha del paciente, o aprovechar que el paciente ya la tiene en su portal. Hoy todo compartir obliga a crear y copiar un link; valorar una vía más directa. *(Concretar el alcance exacto del "sin link" al diseñarlo.)*
 
 **Tareas:**
-- [ ] Añadir en la pestaña Entregables el botón/acceso para generar y copiar el enlace compartido del plan (reutilizar lo de `/dietas/[id]/compartir`)
-- [ ] Permitir compartir/descargar la lista de la compra de forma independiente desde Entregables
-- [ ] Mantener la coherencia con lo que ya existe en el editor de dieta
+- [ ] Añadir en la pestaña Entregables (o en una sección visible de la ficha del paciente) el botón/acceso para generar y copiar el enlace compartido del plan (reutilizar lo de `/dietas/[id]/compartir`)
+- [ ] Permitir compartir/**descargar** la lista de la compra de forma independiente desde Entregables — vía **sin link** (descarga directa / PDF), además del enlace público
+- [ ] Decidir el sitio definitivo del acceso a "compartir" para que no quede escondido solo dentro de la dieta
+- [ ] Mantener la coherencia con lo que ya existe en el editor de dieta y con la lista del portal del paciente
 
-**Archivos:** `src/components/paciente/entregables-tab.tsx`, `src/app/(dashboard)/dietas/[id]/compartir/`
+**Archivos:** `src/components/paciente/entregables-tab.tsx`, `src/components/paciente/shopping-list.tsx`, `src/app/(dashboard)/dietas/[id]/compartir/` (`compartir-panel.tsx`)
 **Prioridad:** Media
 **Complejidad:** Baja
 
@@ -2235,6 +2284,14 @@ Esto refuerza la opción "estructurada" de esta tarea: pasar suplementos (y medi
 **Origen:** Guillermo (apuntes de reuniones) — 4 junio 2026
 
 > ⚠️ **NO confundir con el déficit automático de calorías que se descartó** (esa decisión —ajuste de calorías siempre manual según objetivo del paciente— sigue en pie). Esto es distinto: reutilizar los objetivos YA marcados en la planificación para no escribirlos dos veces.
+
+**🔒 DECISIONES DE DISEÑO CERRADAS (15 jun 2026, Guillermo + nutri por WhatsApp/vídeo):**
+- **Planificación por tipo de día = cada planificación ES un tipo de día** ("Día competición", "Día descanso", "Día entreno"…), con sus kcal/macros. Reutiliza el modelo `Planificacion`, que YA admite varias por paciente (pestañas, crear, copiar). Cada día del plan se asigna a una planificación → **los objetivos pasan a ser POR DÍA** (no un único objetivo global del plan). Ese "objetivos por día" es el **CIMIENTO** del que dependen la Parte A, la Parte C y el resumen nuevo.
+- **Juntar días (#75) es SEPARADO de esto** (Guillermo, confirmado al ver el vídeo del nutri): son DOS EJES independientes → *objetivos* (planificación por tipo de día) ≠ *menú* (agrupar días con la misma comida). El nutri los confundía bajo la palabra "plan"; en Nutrium van juntos, aquí los separamos (más flexible). En la práctica se agrupan días del mismo tipo, pero no se fuerza.
+- **Objetivos al crear la dieta (Parte A): EDITABLES + aviso** "datos de la planificación actual" (NO se bloquean). El "no descuadre" lo garantiza una **validación de coherencia kcal↔macros** (aviso, no bloqueo duro): que P×4 + C×4 + G×9 ≈ kcal (con tolerancia). Hoy NO existe esa validación (se puede guardar 2000 kcal con 500 g de proteína).
+- **Orden de trabajo acordado:** (1) CIMIENTO = planificación por tipo de día → objetivos por día + heredar al crear + validación de coherencia; (2) #104 ingestas configurables (nº de comidas, va antes del reparto); (3) Parte C reparto por comida; (4) #75 juntar días; (5) resumen nuevo (el HTML de Guillermo) al final.
+
+> Verificado en código (15 jun): `Planificacion` ya soporta varias por paciente con CRUD y cálculo de kcal/macros (BMR→EER→ajuste→%→gramos, en `planificacion-por-defecto-tab.tsx`); hoy se usan como FASES TEMPORALES (`fechaInicio`/`fechaFin`), no como tipos de día simultáneos. `PlanAlimenticio` guarda objetivos GLOBALES (no por día). Falta: tipo de día asignado a cada `DiaDelPlan`, objetivos por día, y heredar al crear (hoy solo "aplicar a un plan ya existente").
 
 ### Parte A — Los objetivos de la planificación se autocompletan al crear la dieta
 
@@ -2337,11 +2394,11 @@ Esto refuerza la opción "estructurada" de esta tarea: pasar suplementos (y medi
 
 ## 80. Desglose de macronutrientes (grasas y carbohidratos) en alimentos y análisis
 
-**Origen:** Guillermo (apuntes de reuniones) — 4 junio 2026
+**Origen:** Guillermo (apuntes de reuniones) — 4 junio 2026; Antonia (nutrivibes.life, Instagram) — 17 jun 2026 (al crear un alimento, poder incluir **azúcares** y **grasas saturadas y trans**, "variables que en ciertos casos clínicos sí son relevantes" — demanda profesional externa).
 
 **Estado actual (verificado en código):** El modelo `Alimento` guarda calorías, proteínas, carbohidratos, grasas, fibra, sodio + 24 micronutrientes. Pero **NO hay desglose** de:
-- Grasas → saturadas / monoinsaturadas / poliinsaturadas
-- Carbohidratos → azúcares (simples) / complejos / almidón
+- Grasas → saturadas / monoinsaturadas / poliinsaturadas / **trans** (Antonia)
+- Carbohidratos → **azúcares** (simples) / complejos / almidón
 
 **Petición:** Al elegir un alimento y en el análisis del plan, poder ver de dónde salen los macros: el tipo de grasas (saturadas, poli, monoinsaturadas) y el tipo de hidratos (azúcares simples vs complejos). Que se muestren en el análisis **igual que los micronutrientes** (mismo formato de barras/desglose).
 
@@ -2494,7 +2551,7 @@ Esto refuerza la opción "estructurada" de esta tarea: pasar suplementos (y medi
 
 ## 89. BUG: no se pueden añadir instrucciones (paso a paso) al crear/editar una receta
 
-**Origen:** nutricionista (email) — 8 junio 2026. "Al crear una receta nueva no aparece la opción para agregar el procedimiento; en el plan final el paciente no puede ver cómo prepararla."
+**Origen:** nutricionista (email) — 8 junio 2026 ("al crear una receta nueva no aparece la opción para agregar el procedimiento"); **Antonia (nutrivibes.life, Instagram) — 17 jun 2026** ("al crear una receta hay un cuadro de descripción donde se indica poner los pasos, pero una vez guardada el apartado 'Instrucciones' queda vacío y no encontré cómo completarlo"). **RECONFIRMADO VIVO en código el 17 jun** (`receta-form.tsx:66` sigue con `instrucciones: undefined`; el único textarea es `descripcion`). El resumen de una sesión anterior creía que se había arreglado, pero NO: sigue sin arreglarse.
 
 **Causa raíz (VERIFICADA en código):** En `src/components/receta-form.tsx`, al guardar se hace `instrucciones: undefined` **hardcodeado** (línea ~66) y **no existe ningún `<textarea name="instrucciones">`** en el formulario (el único textarea es `descripcion`). El campo `Receta.instrucciones` existe en el modelo y SÍ se muestra en el plan/PDF si tuviera valor, pero el formulario **nunca lo captura** → ninguna receta creada por el nutri tiene instrucciones. (Esta es también la causa raíz de la #73: las recetas salen sin pasos.)
 
@@ -2503,8 +2560,10 @@ Esto refuerza la opción "estructurada" de esta tarea: pasar suplementos (y medi
 - [ ] Cambiar `instrucciones: undefined` por `instrucciones: (form.get("instrucciones") as string) || undefined`
 - [ ] Verificar que se muestra en el plan, portal del paciente y PDF (el render ya existe)
 - [ ] Traducciones es/pt del label
+- [ ] **Quitar la confusión descripción↔instrucciones** (Antonia): el placeholder de "descripción" sugiere poner ahí los pasos, pero luego el apartado "Instrucciones" sale vacío. Dejar claro qué va en cada campo (descripción = breve; instrucciones = paso a paso).
+- [ ] **Aprovechar el mismo form para las PORCIONES (punto 5 de Antonia):** hoy `receta-form.tsx:46` tiene `const porciones = 1` **hardcodeado** y no hay input → no se puede indicar para cuántas porciones es la receta al crearla (solo se ajusta luego al añadirla al plan). Añadir un input de nº de porciones al crear/editar la receta.
 
-**Relacionado con:** #73 (recetas globales sin pasos — misma raíz)
+**Relacionado con:** #73 (recetas globales sin pasos — misma raíz), #38 (imágenes en recetas — mismo form)
 **Prioridad:** Alta (afecta directamente al entregable: el paciente no ve cómo preparar la receta; y es un arreglo trivial)
 **Complejidad:** Muy baja
 
@@ -2512,7 +2571,7 @@ Esto refuerza la opción "estructurada" de esta tarea: pasar suplementos (y medi
 
 ## 90. BUG: las recetas no suman sus micronutrientes al total del día del plan
 
-**Origen:** nutricionista (email) — 8 junio 2026. "Al incluir recetas propias en el plan, el sistema no suma los micronutrientes al total del día; solo se contabilizan si agrego los ingredientes de forma individual."
+**Origen:** nutricionista (email) — 8 junio 2026. "Al incluir recetas propias en el plan, el sistema no suma los micronutrientes al total del día; solo se contabilizan si agrego los ingredientes de forma individual." **Segundo reporte (16 jun 2026):** otra nutricionista lo ve con la receta "paella mixta" ("no se añaden los micronutrientes en la valoración nutricional… no sé si pasa con más recetas o solo con esa"). → **Es general, no de esa receta: pasa con TODAS las recetas.** Reconfirmado vivo en código el 16 jun (`planes.ts`: `alimentoIdSet` solo añade `a.alimento?.id`; query `FROM alimentos`; el objeto `receta` construido trae macros pero no los 24 micros).
 
 **Causa raíz (VERIFICADA en código):** En `src/app/actions/planes.ts` (agregación de micros del día, función con `MICRO_COLS`), la query de micronutrientes solo recoge **IDs de alimentos** (`if (a.alimento?.id) alimentoIdSet.add(...)` → `SELECT ... FROM alimentos WHERE id IN (...)`) y luego asigna `micros = a.alimento?.id ? microMap[...] : {}`. Para un entry que es **receta** (`a.receta`), `a.alimento?.id` es null → micros `{}`. Además, el `select` de la receta en esa consulta trae `carbohidratos/grasas/fibra/porciones/ingredientes` pero **no los 24 micros** de la receta. → Las recetas (que SÍ tienen sus 24 micros calculados y guardados) **no aportan micros al total diario**; los macros sí, los micros no.
 
@@ -2598,9 +2657,13 @@ Esto refuerza la opción "estructurada" de esta tarea: pasar suplementos (y medi
 
 ## 95. Búsqueda de alimentos más flexible (por palabras en cualquier orden) + sinónimos/alias
 
-**Origen:** Lucía Hernández (LinkedIn) — 9 junio 2026; nutricionista (audio, 3 semanas usándola) — 10 junio 2026.
+**Origen:** Lucía Hernández (LinkedIn) — 9 junio 2026; nutricionista (audio, 3 semanas usándola) — 10 junio 2026; entrenutris (Argentina) — 19 junio 2026 (nombre local del alimento por país, ver abajo).
+
+**Input adicional (entrenutris, Argentina — 19 jun 2026) — nombre LOCAL del alimento por país (presentación):** Pide que, al entregar el plan, los nombres de los alimentos se muestren con el término local del país, sin cambiarlos a mano ("como el idioma"): España "plátano" → Argentina "banana"; España "aguacate" → "palta". Dice que no queda bien entregar a un paciente argentino un plan con los nombres españoles. → Es la cara de **presentación** del sistema de sinónimos/alias: además de encontrar el alimento por su nombre local (búsqueda), poder **mostrar** el nombre regional en plan/PDF/portal según el país del nutri o del paciente (#7). Requiere un mapa de equivalencias regionales (es-ES ↔ es-AR ↔ es-PE…). Enlaza con #1 (tablas regionales LatAm) y #34 (terminología de la UI).
 
 **Input adicional (nutricionista, 10 jun 2026) — relevancia confusa (palabra vs prefijo):** Al buscar "pan" salen antes alimentos como **"Panga"**, o al buscar "salmón" sale **"salmonete"**, en vez del alimento esperado. VERIFICADO: el buscador del editor SÍ reordena por relevancia (`recetas.ts` ~líneas 543-560: exacto > empieza-por > contiene), pero "Panga"/"salmonete" **empiezan por** "pan"/"salmon", así que entran en el mismo nivel que "Pan Blanco" y, al desempatar por longitud, la palabra más corta ("Panga") gana. → Afinar la relevancia para **distinguir "pan" como PALABRA completa** (que esté como token: "Pan Blanco", "Pan integral") de "pan" como mero prefijo de otra palabra ("Panga"): priorizar coincidencia de palabra completa sobre prefijo de cadena.
+
+**Input adicional (nutricionista, 16 jun 2026) — sinónimo vacuno = ternera (caso real):** Pide "carne picada de vacuno con alto % de carne", dice que no la encuentra. VERIFICADO en BD: el catálogo SÍ tiene "Carne Picada De Ternera" en **5% / 10% / 20%** de grasa (ternera = vacuno en España), más "Mixta" y "Mixta Magra". Lo más probable es que buscara **"vacuno"** y no salga nada porque están como **"ternera"**. Caso de manual para los sinónimos: **vacuno ↔ ternera** (y similares: cerdo↔porcino, pollo↔pavo no, pero res↔ternera en LatAm sí). Refuerza la necesidad del campo de sinónimos/alias.
 
 **Estado actual (VERIFICADO en código):** La búsqueda usa `nombreNormalizado` + `normalizarParaBusqueda()`, que **ya quita tildes, pasa a minúsculas y despluraliza** (las tareas #19 "sin tildes" y #45 "plural/singular" ya están cubiertas). PERO la coincidencia es por **subcadena en orden** (LIKE sobre el texto normalizado), así que:
 - "copos de avena" NO encuentra "Avena (copos)" → falla por el **orden de las palabras** y por el "de"/paréntesis.
@@ -2726,6 +2789,7 @@ Lista de alimentos concretos que los nutris echan en falta en la base de datos g
 
 **Pendientes de añadir:**
 - [ ] **Tortitas de legumbres** (nutricionista, 12 jun 2026) — existen "Tortita de arroz" y "Tortita de avena", pero no de legumbres.
+- [x] **Carne picada de vacuno** (nutricionista, 16 jun 2026) — ✅ HECHO (16 jun): añadidas **2 versiones GLOBALES** con macros + **23 micros completos** (valores reales USDA FoodData Central): "Carne Picada De Vacuno (5%)" magra/alto % de carne (FDC 171790: 137 kcal, 21,4 P, 5 G) y "Carne Picada De Vacuno (10%)" estándar (FDC 174030: 176 kcal, 20 P, 10 G). Insertadas directamente en la BD (compartida → ya en producción), `dietistaId` NULL, categoría CARNES, unidad GRAMOS. Pendiente complementario (no bloqueante): sinónimo vacuno↔ternera (#95) para que "vacuno" también devuelva las de ternera.
 - [ ] (Relacionado: panes/alimentos peruanos —pan francés, chiabatta…— pedidos por Betzabe, ver #1; faltan alimentos también reportado en #44)
 
 **Nota:** mientras no estén en el catálogo global, el nutri puede crearlos como **alimento propio** con sus valores y le quedan guardados. Conviene revisar periódicamente esta lista y meterlos al seed global.
@@ -2756,3 +2820,354 @@ Lista de alimentos concretos que los nutris echan en falta en la base de datos g
 **Relacionado con:** #18 (anamnesis / registro 24h de Ainara), #78 (objetivos y macros), #28 (informe nutricional), motor de cálculo de macros existente
 **Prioridad:** Media-Alta (herramienta clásica de valoración inicial; muy útil y reutiliza lo que ya hay)
 **Complejidad:** Media (UI + estructura nuevas, pero el buscador y el cálculo de macros ya existen)
+
+---
+
+## 103. Botón "Notificar al paciente" dentro del propio plan de alimentación
+
+**Origen:** nutricionista (WhatsApp — 15 jun 2026), enseñando cómo lo hace Nutrium (captura). ⚠️ **POR VALORAR — a Guillermo no le convence del todo; queda apuntado como pendiente de decidir.**
+
+**Estado actual:** Para hacerle llegar el plan al paciente o avisarle de que está listo/actualizado, el nutri tiene que ir a la pestaña **Entregables** (enviar plan por email, enviar instrucciones de acceso). No hay un botón directo en el editor del plan.
+
+**Petición:** Un botón **"Notificar"** en el propio plan de alimentación que avise al paciente y le haga llegar el plan directamente, sin pasar por Entregables. En Nutrium el botón muestra además **"Cliente notificado por última vez hace X"** (queda registro de cuándo se le avisó). Más cómodo y rápido.
+
+**Tareas:**
+- [ ] Botón "Notificar al paciente" en el encabezado del editor del plan
+- [ ] Decidir qué hace exactamente: ¿notificación en el portal/campana del paciente? ¿email con el plan? ¿ambas? (reutilizar lo de Entregables)
+- [ ] Mostrar "última vez notificado hace X" junto al botón
+- [ ] Coherencia con el snapshot del plan (#84): tener sentido avisar cuando el plan cambia
+
+**Relacionado con:** #76 (acceso a entregables/compartir desde otras vistas), #97 (notificaciones de la campana), #84 (snapshot del plan al cambiarlo)
+**Prioridad:** Baja — **por valorar** (a Guillermo no le convence de momento)
+**Complejidad:** Baja
+
+---
+
+## 104. Ingestas configurables: renombrar, horas, número de comidas y comidas personalizadas (pre-entreno…)
+
+**Origen:** nutricionista (WhatsApp — 15 jun 2026). Engloba y amplía la #34 (renombrar "Almuerzo").
+
+**Estado actual (VERIFICADO en código):** las comidas de un plan son **6 FIJAS** definidas por el enum `TipoComida` (`DESAYUNO, MEDIA_MANANA, ALMUERZO, MERIENDA, CENA, RECENA` — `schema.prisma:166`). Se crean automáticamente al crear el plan y **no se pueden añadir, quitar ni renombrar**:
+- **Renombrar la ingesta: NO.** El título sale del tipo (traducción). Existe un campo `descripcion` libre por comida (`actualizarDescripcionComida`, `ComidaDelDia.descripcion`), pero es una **nota**, no el nombre de la ingesta.
+- **Editar la hora: NO.** La hora que se ve (`comida-slot.tsx:118,199`) es un **valor por defecto fijo por tipo** (i18n `comidaSlot.horaDefault.*`); `setHora` nunca se llama, **no es editable y no se guarda** (no hay campo `hora` en el modelo ni acción que lo persista).
+- **Añadir una 7ª comida / "pre-entreno": NO.** No hay acción `crearComida`/`eliminarComida` en ningún sitio. El enum **no** tiene `PRE_ENTRENO`/`POST_ENTRENO`/`SNACK`/`OTROS` (ojo: la #34 afirmaba que sí, pero el schema real solo tiene los 6 de arriba).
+
+**Petición:** Que el nutri pueda **renombrar las ingestas**, **editar su hora**, y **añadir/quitar comidas** (ej. montar 7 comidas, con una "Pre-entreno" y otra "Post-entreno"). Como en Nutrium, que en la captura muestra una comida "PRE-ENTRENO (19 pm)".
+
+**Tareas:**
+- [ ] Nº de comidas configurable por día (añadir/quitar ingestas), no fijo en 6
+- [ ] Nombre editable por ingesta (título libre: "Pre-entreno", "Tentempié"…)
+- [ ] Hora editable y **persistida** por ingesta (campo `hora` en `ComidaDelDia` + acción para guardarla; hoy solo es un default visual)
+- [ ] Reordenar comidas (ya existe el campo `orden`)
+- [ ] Decidir modelo: ¿ampliar el enum `TipoComida` o pasar a comidas con **nombre libre + orden** (más flexible y resuelve también la #34)?
+- [ ] Reflejar en: editor, generación con IA (que acepte N comidas), PDF, portal del paciente, link compartido y el checklist de comidas del seguimiento (#84)
+
+**Impacto en los entregables (PDF / portal / compartido) — nota pedida por Guillermo:**
+Estos cambios (este #104 + la planificación por tipo de día #78-B + agrupar días #75) **mueven cuánto ocupa el PDF**, así que hay que **revalidar la maquinaria de salto de página que tocamos hace poco** (no partir una comida entre páginas con `break-inside:avoid` en `tbody/tr`, y los previews que miden la altura real en `entregables-tab.tsx` y `exportar-pdf/exportar-form.tsx`):
+- **Más comidas por día (7+, pre/post-entreno):** más filas → el detalle diario y el resumen semanal crecen → **más páginas**; días que hoy caben en una hoja pasarán a dos. Reverificar que el corte de página sigue sin partir comidas y que los dos previews siguen cuadrando con el PDF real.
+- **Planificación por tipo de día:** ya no hay "un objetivo del plan" sino **varios objetivos (kcal/macros) en la misma semana** → decidir cómo se muestran en portada/resumen (p. ej. un objetivo por tipo de día / por grupo de columnas).
+- **Agrupar días con el mismo menú:** en el resumen semanal, columnas **agrupadas** ("L-X-V") en vez de 7 repetidas → **menos repetición y menos páginas** en planes con días iguales (ventaja). Enlaza con #57 (agrupar comidas repetidas en PDF) y #37 (ocultar filas vacías).
+
+**Archivos:** `prisma/schema.prisma` (`ComidaDelDia`/`TipoComida`), `src/app/actions/planes.ts`, `src/components/dieta/comida-slot.tsx` + editor, `src/lib/pdf/generate-plan-pdf.ts`, previews (`entregables-tab.tsx`, `exportar-form.tsx`), portal y compartido, generación IA.
+**Relacionado con:** #34 (renombrar Almuerzo), #57 (agrupar comidas repetidas en PDF), #37 (filas vacías PDF), #75 (agrupar días), #78 (planificación por tipo de día), #84 (checklist de comidas)
+**Prioridad:** Alta (lo piden y bloquea casos reales: deportistas con pre/post-entreno)
+**Complejidad:** Media-Alta (toca modelo, editor, IA, PDF, portal y seguimiento)
+
+---
+
+## 105. Editor: que el buscador de alimentos NO se cierre al añadir (encadenar varios)
+
+**Origen:** nutricionista (Instagram — 16 jun 2026, feedback muy positivo, valora "copiar alimentos restando el % en kcal"). "Cuando quieres añadir un alimento al desayuno, que no se quite la barra de búsqueda tras añadir un alimento, sino que permanezca abierta para añadir el siguiente."
+
+**Estado actual (VERIFICADO en código):** En `selector-alimento.tsx`, `doSelect()` para la acción "agregar" llama a `onClose()` tras añadir (~líneas 165-170) → el selector se cierra y hay que reabrirlo para cada alimento. Ralentiza montar una comida con varios alimentos.
+
+**Petición:** Que al añadir un alimento el buscador **permanezca abierto** (limpiando query y resultados) para seguir añadiendo el siguiente sin reabrirlo. Cerrar solo manualmente (botón/Esc).
+
+**Tareas:**
+- [ ] En `doSelect`, acción "agregar": NO llamar `onClose()`; limpiar `query`/`alimentos`/`recetas`/`expanded` y devolver el foco al input
+- [ ] Mantener el cierre para "sustituir"/"alternativa" (acciones únicas)
+- [ ] Feedback breve de que se añadió (toast o el contador de la comida), ya que el panel no se cierra
+- [ ] Coherente con lo ya hecho en el panel de equivalencias (#55), donde "+ Alternativa" tampoco cierra
+
+**Archivos:** `src/components/dieta/selector-alimento.tsx`
+**Prioridad:** Alta (agiliza el flujo más repetido al montar dietas; coste bajo)
+**Complejidad:** Baja
+
+---
+
+## 106. Importar comida de OTRO plan eligiendo en qué comida pegarla
+
+**Origen:** nutricionista (Instagram — 16 jun 2026). "Añadiría elegir en qué comida pegar, de forma que pueda pegar el desayuno de una persona en la merienda de otra, o la merienda en la cena de otra."
+
+**Estado actual (VERIFICADO en código):** Copiar una comida **dentro del mismo plan** YA permite elegir el tipo de comida destino (`plan-visual.tsx` `handleCopiarComida` → `conTipoDestino: true`; `CopiarADiasModal` muestra el selector de tipos). PERO **importar una comida de OTRO plan** (`ImportarPlanModal` → `copiarComidaADias(comidaOrigen, díasDestino, modo)`) **NO** pasa tipo de comida destino → se pega manteniendo el tipo (desayuno→desayuno). El caso que pide la nutri es justo entre personas distintas (otro plan).
+
+**Petición:** Que al importar/pegar una comida de otro plan se pueda **elegir el tipo de comida destino** (pegar un desayuno como merienda, etc.), igual que ya se hace dentro del mismo plan.
+
+**Tareas:**
+- [ ] En `ImportarPlanModal`, modo "una comida": mostrar el selector de tipo de comida destino (reutilizar `SelectorDiasModo`/`CopiarADiasModal`, ya existe)
+- [ ] `copiarComidaADias` debe aceptar un `tipoDestino?` opcional y aplicarlo (como la versión de copiar dentro del mismo plan)
+- [ ] Por defecto, el tipo de origen (no cambiar el comportamiento si no se toca)
+
+**Archivos:** `src/components/dieta/importar-plan-modal.tsx`, `src/app/actions/planes.ts` (`copiarComidaADias`), `src/components/dieta/copiar-comida-modal.tsx` (selector ya hecho)
+**Relacionado con:** #31 (copiar comidas entre días — hecho)
+**Prioridad:** Media-Alta (lo piden; el selector ya existe, solo cablearlo al importar)
+**Complejidad:** Baja-Media
+
+---
+
+## 107. PDF: opción de NO incluir las notas (descripción) en la tabla resumen
+
+**Origen:** nutricionista (Instagram — 16 jun 2026). "A la hora de descargar el PDF con el plan, si se pudiese poner la opción de no incluir las notas en la tabla resumen, sería perfecto."
+
+**Estado actual (VERIFICADO en código):** En el resumen semanal del PDF (`generate-plan-pdf.ts`, sección "RESUMEN SEMANAL") se pinta la **descripción/nota de cada comida** (`comida.descripcion`, ~líneas 334/379). Las opciones de PDF (`PDFSectionOptions`) permiten incluir/excluir **secciones enteras** (portada, plan semanal, detalle diario, recomendaciones, lista de compra, cantidades, valores nutricionales), pero **NO** hay una opción fina para excluir solo las notas dentro de la tabla resumen.
+
+**Petición:** Un toggle en las opciones del PDF para **no mostrar las notas/descripción de las comidas en la tabla resumen** (manteniendo el resto).
+
+**Tareas:**
+- [ ] Añadir opción `notasEnResumen?: boolean` (default true = como ahora) a `PDFSectionOptions`
+- [ ] En la sección RESUMEN SEMANAL, ocultar la descripción de la comida cuando esté desactivada
+- [ ] Añadir el toggle en los formularios de exportar PDF (nutri y paciente)
+- [ ] Decidir si afecta también al detalle diario (donde la nota puede tener sentido) o solo al resumen
+
+**Archivos:** `src/lib/pdf/generate-plan-pdf.ts`, `src/components/dieta/exportar-pdf-button.tsx`, `src/app/paciente/portal/exportar-pdf/exportar-form.tsx`, `src/components/paciente/entregables-tab.tsx`
+**Relacionado con:** #4 (PDF), #37 (filas vacías PDF)
+**Prioridad:** Media (mejora concreta y pedida; coste bajo)
+**Complejidad:** Baja
+
+---
+
+## 108. Mostrar la ingesta de agua también en vasos (además de litros)
+
+**Origen:** Antonia (nutrivibes.life, Instagram) — 17 jun 2026.
+
+**Estado actual (VERIFICADO en código):** El agua se muestra solo en ml/litros: seguimiento del paciente (`seguimiento-tab.tsx`, campo `aguaML`), `plan-visual.tsx`, recomendaciones y el PDF del plan (en litros). No hay conversión a vasos.
+
+**Petición:** Mostrar la recomendación/ingesta de agua también en **equivalencia aproximada de vasos** (además de litros), porque suele ser una medida más fácil de interpretar para muchos pacientes.
+
+**Tareas:**
+- [ ] Definir equivalencia de vaso (≈250 ml estándar; fijo o configurable)
+- [ ] Mostrar "X L (≈ Y vasos)" en el seguimiento, en la recomendación de agua y en portal/PDF
+- [ ] Solo presentación; no cambia el dato base (`aguaML`)
+
+**Prioridad:** Media-Baja (mejora de presentación; coste bajo)
+**Complejidad:** Baja
+
+---
+
+## 109. Pautar objetivos en g/kg de peso (proteína sobre todo), no solo %/gramos — incluida la IA
+
+**Origen:** Antonia (nutrivibes.life, Instagram) — 17 jun 2026 ("poder configurar específicamente la proteína en g/kg de peso/día, método habitual para pautar el aporte proteico con precisión"); Lucía Hernández (LinkedIn) — 9 jun 2026 (también preguntó por la calculadora de g de proteína por kg).
+
+**Estado actual (VERIFICADO en código):** La pestaña **Planificación** YA MUESTRA los macros en g/kg (`planificacion-por-defecto-tab.tsx`: `protGKg`/`grasaGKg`/`carbGKg`, columna "g/kg"), pero es un valor **calculado/informativo** a partir de kcal + % + peso, **no un campo donde pautar directamente en g/kg**. Y la **generación con IA** (`ia-generation-form.tsx`) solo acepta gramos absolutos / kcal, **no** g/kg.
+
+**Petición:** Poder **introducir el objetivo** de proteína (y opcionalmente grasa/carbos) directamente en **g/kg de peso/día**, que es el método estándar en clínica/deporte, en lugar de solo por porcentajes o gramos absolutos.
+
+**Tareas:**
+- [ ] Entrada conmutable del objetivo: % / gramos / **g/kg** (calcular gramos absolutos desde el peso del paciente)
+- [ ] La planificación ya muestra g/kg; falta poder **pautarlo de origen**
+- [ ] Llevar g/kg también a la **generación con IA** (hoy solo gramos absolutos)
+
+**Relacionado con:** #78 (objetivos/planificación, reparto de macros)
+**Prioridad:** Media-Alta (método estándar en nutrición clínica y deportiva; lo piden Antonia y Lucía)
+**Complejidad:** Media
+
+---
+
+## 110. Imágenes (fotos de perfil y logos PDF) a Supabase Storage en vez de base64 en la BD — bajar el egress
+
+**Origen (19 jun 2026):** el proyecto Supabase superó la cuota de **egress** del plan gratuito (**16,2 GB / 5 GB**) y Supabase **restringió el servicio con HTTP 402** → **se cayó el login de TODA la app** (local y producción comparten el mismo proyecto Supabase `kzbrugggurcjwxsmutic`). Se resolvió subiendo a **plan Pro** (250 GB de egress). Al investigar se detectó la causa raíz.
+
+**Causa raíz (VERIFICADO en código):** las fotos de perfil (dietista y paciente) y los logos de PDF se guardan como **base64 dentro de la base de datos**, no en almacenamiento de archivos. Cada vez que se abre una ficha, un plan, el portal o se genera un PDF, esas imágenes se transfieren **enteras desde la BD** → dispara el egress. El **File Storage de Supabase está a 0 GB** (no se usa) y la BD pesa solo 91 MB.
+
+**Lo que YA existe (migración a Storage empezada y dejada a medias):**
+- `src/lib/storage.ts`: cliente admin de Storage, buckets `profile-images` y `pdf-logos`, `uploadDietistaPhoto` / `uploadPacientePhoto` / `uploadPdfLogo`, borrados, *path builders*, y helpers `isBase64DataUrl` / `isStorageUrl` / `resolveImageUrl` + `base64ToBuffer` (anotado "for migration script").
+- `src/app/actions/storage-images.ts`: server actions `subirFotoDietista` / `subirLogoPdf` / `subirFotoPaciente(AlCompletar)` que SÍ suben a Storage (validan tipo con `file-type`, rate-limit) y guardan la URL pública en `dietista.logoUrl` / `dietista.pdfLogoUrl` / `paciente.fotoUrl`.
+
+**Lo que FALTA (por eso sigue todo en base64):** los formularios siguen llamando a la ruta VIEJA (base64):
+- `src/app/(dashboard)/ajustes/foto-perfil.tsx` → `actualizarFotoDietista(dataUrl)` (`perfil.ts`, base64)
+- `src/app/(dashboard)/ajustes/logo-pdf-form.tsx` → `actualizarLogoPdf(dataUrl)` (`perfil.ts`, base64)
+- `src/app/paciente/portal/perfil/perfil-form.tsx` → `actualizarFotoPaciente(dataUrl)` (`paciente-auth.ts`, base64)
+
+**Tareas:**
+- [ ] Enchufar los 3 formularios a las server actions de Storage ya existentes (`subirFotoDietista` / `subirLogoPdf` / `subirFotoPaciente`) en vez de las base64. Envían `File`/`FormData`, no `dataUrl`.
+- [ ] Garantizar que la LECTURA admite ambos formatos durante la transición (`resolveImageUrl` ya lo hace: base64 o URL https de Storage). Revisar que TODAS las vistas pasan por ese resolver (ficha, plan, PDF, portal, compartido, email).
+- [ ] **Script de migración** de las imágenes existentes base64 → Storage (`base64ToBuffer` ya preparado): recorrer `dietista.logoUrl`/`pdfLogoUrl` y `paciente.fotoUrl`, subir a Storage y reemplazar por la URL pública. ⚠️ **BD COMPARTIDA con producción** → por lotes + backup antes + probar con transacción/rollback (igual que se hizo en #75).
+- [ ] Retirar las actions base64 (`actualizarFotoDietista` / `actualizarLogoPdf` / `actualizarFotoPaciente`) cuando ya nadie las use.
+- [ ] (Opcional) revisar `Alimento.imagenUrl` y adjuntos por si también inflan el egress.
+
+**Beneficio:** baja el egress drásticamente (imágenes servidas con CDN/caché de Storage, no desde la BD), libera la BD y usa el 1 GB de Storage gratis. Evita que vuelva a pasar el 402.
+
+**Nota:** se trabaja en **OTRA terminal** (Guillermo, 19 jun). No urgente desde que está en Pro (250 GB), pero es la causa raíz del incidente de caída.
+
+**Relacionado con:** infraestructura / coste Supabase; `CLAUDE.md` ("Images stored as base64 data URLs directly in the database").
+**Prioridad:** Alta (provocó la caída total del login; prevención de reincidencia)
+**Complejidad:** Media (el código de Storage ya está hecho; falta enchufar los forms + el script de migración con cuidado en la BD compartida)
+
+---
+
+## 111. Histórico de dietas del paciente accesible y exportable en un informe
+
+**Origen:** nutriciondelargadistancia (Instagram) — 19 jun 2026. "Los informes, ¿se queda el histórico de dietas para poder sacarlo en un informe? En plan dietas del último mes."
+
+**Estado actual (VERIFICADO en código):** Los planes **NO se sobreescriben**: cada `PlanAlimenticio` se guarda con `createdAt` y un flag `activo` (solo uno activo a la vez); los antiguos quedan con `activo:false` y **se conservan en BD**. Los reportes (`reportes/[id]`) ya incluyen la evolución de medidas (peso/IMC/grasa) y el número de planes del paciente. PERO **no hay una vista de "listado de planes anteriores"** en el dashboard ni un **informe que liste las dietas de un periodo** (ej. dietas del último mes). El dato está guardado, pero no expuesto.
+
+**Petición:** Poder consultar el histórico de dietas de un paciente y **sacarlo en un informe** (ej. "dietas del último mes").
+
+**Tareas:**
+- [ ] Vista de histórico de planes del paciente (lista de planes anteriores con fecha; poder abrir/duplicar uno antiguo)
+- [ ] Incluir el histórico de dietas en un informe/PDF (planes de un periodo)
+- [ ] Los datos ya están (los planes se conservan); falta exponerlos en UI e informe
+
+**Relacionado con:** #28 (informe de composición nutricional), reportes/evolución
+**Prioridad:** Media
+**Complejidad:** Media
+
+---
+
+## 112. El paciente puede registrar la comida REAL que ha comido (autorregistro / diario), no solo marcar cumplido
+
+**Origen:** nutriciondelargadistancia (Instagram) — 19 jun 2026. "El paciente solo tiene opción de marcar si lo ha cumplido o no, pero no he visto la forma de que meta sus recetas o platos. Si no come lo que tiene en el plan, ¿cómo puede introducir la comida real que ha hecho?"
+
+**Estado actual (VERIFICADO en código):** En el portal, el paciente **solo puede marcar cumplido/no cumplido** las comidas de su plan (`paciente/portal/seguimiento`, checkbox `cumplido`; `guardarSeguimientoPaciente` guarda en `SeguimientoDiario`). **NO puede registrar la comida real** que ha comido si se sale del plan. El modelo `EntradaDiario` (pacienteId, fecha, tipoComida, alimentoId/recetaId, cantidad, unidad, descripcion, notas) **existe en el schema pero está SIN USAR** (no hay UI ni acción que lo cree desde el portal) — está medio cimentado pero no implementado.
+
+**Petición:** Que el paciente pueda **introducir lo que ha comido de verdad** (sus propios platos/alimentos) cuando no sigue el plan, no solo marcar si cumplió. Así el nutri ve la ingesta real, no solo el % de adherencia.
+
+**Tareas:**
+- [ ] UI en el portal del paciente para añadir alimentos/platos a un diario (buscar alimento + cantidad, o texto libre) por comida y día
+- [ ] Server action con `getCurrentPaciente` que cree `EntradaDiario` (el modelo ya existe)
+- [ ] Que el nutri vea el registro real del paciente (plan vs comido) en el seguimiento
+- [ ] Decidir la relación con el "cumplido/no cumplido" actual (si no cumplió → qué comió)
+
+**Relacionado con:** #54 (saciedad/cómo le sienta cada comida), #102 (recordatorio 24h), seguimiento del paciente
+**Prioridad:** Media-Alta (cierra el bucle del seguimiento: hoy solo sabes si cumplió, no qué comió realmente)
+**Complejidad:** Media (el modelo `EntradaDiario` ya existe; falta UI del portal + action + vista del nutri)
+
+---
+
+## 113. Botón rápido +20% en el ajuste calórico del objetivo (superávit para realimentación)
+
+**Origen:** nutricionista (Instagram) — 19 jun 2026. "En Pacientes → Planificación → Cálculos, en el objetivo del día, que el porcentaje de ajuste automático tenga también **+20%**, para pacientes desnutridos a los que a la larga hay que subir las kcal."
+
+**Estado:** ✅ **DESPLEGADO en producción (commit `a17c3e9`, 19 jun; verificado / 307 + /login 200).** Los botones rápidos de ajuste (`AJUSTE_OPCIONES` en `planificacion-por-defecto-tab.tsx`) iban de −20% a +15% — había asimetría: el déficit llegaba a −20% pero el superávit solo a +15%. Añadido `{ value: 20, label: "+20%" }`. `tsc` OK; `ajusteObjetivoPct` se guarda sin clamp, así que el +20% se aplica y persiste bien. (El EER objetivo ya era editable a mano, pero faltaba el botón rápido.)
+
+**Archivos:** `src/components/paciente/planificacion-por-defecto-tab.tsx`
+**Prioridad:** Baja (mejora pedida; trivial) · **Complejidad:** Mínima (1 línea)
+
+---
+
+## 114. BUG: las citas se ven a una hora distinta (desfasada) en la AGENDA — zona horaria
+
+**Origen:** Yasmine (nutreyas, Instagram) — 21 jun 2026. "Creo la cita el viernes a las 18:00 y me salta a las 20:00. En 'próxima consulta' sale bien, pero en la agenda sale mal."
+
+**Causa raíz REAL (VERIFICADA en código + servidor + datos reales, 22 jun):** son DOS cosas:
+1. **Guardado dependiente del TZ del entorno:** el form manda `fechaHora` como string SIN zona (`` `${fecha}T${hora}:00` ``, `agenda/nueva/page.tsx:159`). `crearCita` hacía `new Date(ese string)`, que se interpreta en el TZ de QUIEN ejecuta el server action: en **producción (servidor UTC, verificado)** "18:00" → 18:00 UTC = se ve **20:00** en Madrid (el caso de Yasmine); en **local (Mac en Madrid)** "18:00" → 16:00 UTC = 18:00 Madrid (bien). Por eso en la BD las citas son una **MEZCLA**: las creadas en local están bien y las creadas en prod están +2h (verano) / +1h (invierno). VERIFICADO con datos reales: citas a 16:00 UTC=18:00 Madrid (bien) conviven con otras a 18:00 UTC=20:00 Madrid (mal).
+2. **Visualización inconsistente:** `minutosDesdeInicio` (agenda) posicionaba con `getHours` (sin Madrid) y varias vistas formateaban sin `timeZone: "Europe/Madrid"` mientras otras sí → la misma cita se veía a distinta hora según la vista.
+
+**✅ DESPLEGADO en producción (22 jun, commit `6ec154a`; verificado / 307 + /login 200). Pendiente: confirmación de Yasmine + corregir a mano las pocas citas futuras desfasadas creadas antes del fix.**
+- **Guardado unificado a Madrid:** nuevo helper `fromMadridLocalString` en `tz.ts`; `crearCita` lo usa en vez de `new Date(string)` → "18:00" se guarda SIEMPRE como 16:00 UTC, en local y en prod (en local no cambia el resultado; en prod lo corrige).
+- **Filtros de rango en Madrid:** `getCitasSemana/Mes/Hoy/Dia` (`citas.ts`) con `fromMadrid`/`toMadridDateStr`.
+- **Posición de la agenda en Madrid:** `minutosDesdeInicio` (`agenda-semanal.tsx` y `agenda-vista-dia.tsx`) con `toMadridTimeStr`.
+- **Todas las vistas a Madrid:** `timeZone: "Europe/Madrid"` (o componentes derivados en Madrid) en modal, sidebar, mensual, día-detalle, `email-citas`, `notificaciones`, `citas-flujo` y portal del paciente (incl. el día de la semana del portal, que en prod UTC daba el día equivocado cerca de medianoche). `tsc` OK. 13 archivos, todos de citas/agenda (no toca el WIP de planificación).
+
+**⚠️ Migración de citas existentes: NO viable de forma masiva (DESCARTADA).** Las citas son una mezcla indistinguible de bien-guardadas (local) y mal-guardadas (prod); no hay forma fiable de saber cuáles corregir. Un script masivo rompería las correctas (verificado con dry-run: quería desplazar las 901, incluidas las buenas). → Tras desplegar, las citas ya creadas mal en prod (+2h; pocas — 31 reales en total, futuras menos) se verán 2h tarde de forma consistente en TODAS las vistas; **corregirlas/reprogramar a mano las próximas afectadas**. Las pasadas dan igual. De aquí en adelante todas se guardan bien. (El seed de demo también guarda en hora-UTC → citas demo +2h; arreglar el seed aparte si se quiere la demo perfecta, no crítico.)
+
+**Pendiente:** que Guillermo lo pruebe en local (crear cita y verla a la hora correcta en agenda/dashboard/portal) → luego desplegar (commit quirúrgico solo de los 13 archivos de citas, sin el WIP).
+
+**Prioridad:** Alta · **Complejidad:** Media-Alta (refactor de zona horaria de toda la agenda; la migración de datos viejos queda fuera por inviable)
+
+---
+
+## 115. Portal del paciente: permitir eventos solapados en el horario (hoy se borra el anterior)
+
+**Origen:** Yasmine (nutreyas, Instagram) — 21 jun 2026. "En el portal del paciente no deja poner un evento por encima de otro: trabajo 09:00-15:00 + almuerzo 10:00-11:00; si pongo el almuerzo, se borra el de trabajo."
+
+**Causa raíz (VERIFICADA en código):** En `src/components/paciente/horario/horario-paciente.tsx` (~línea 156), al guardar se hace `resto = resto.filter(b => !bloquesOverlap(b, nuevo))` → cualquier bloque que solape con el nuevo se ELIMINA (solapar = sobrescribir). No hay forma de tener dos eventos a la vez en la misma franja.
+
+**Solución:**
+- [ ] Permitir bloques solapados (no borrar el que solapa al añadir otro)
+- [ ] Render del horario semanal que muestre los solapados en paralelo (apilar/columnas, como ya hace `layoutCitasDia` en la agenda del nutri)
+- [ ] No toca BD (el horario ya se guarda como Json)
+
+**Relacionado con:** #30 (editar horario del paciente)
+**Prioridad:** Media (caso habitual: eventos dentro de la jornada) · **Complejidad:** Media (lógica + render de solapamiento)
+
+---
+
+## 116. Horario del nutri: excepciones puntuales por fecha (festivos / cambios de una semana)
+
+**Origen:** Yasmine (nutreyas, Instagram) — 21 jun 2026. "Tengo consulta de 16:00-20:00 pero esa semana es festivo martes y miércoles; tengo que borrar el horario y rehacerlo la semana siguiente. No deja modificar semanalmente ni puntualmente."
+
+**Causa raíz (VERIFICADA en código):** `horarioLaboral` (`Dietista.horarioLaboral` Json; estructura en `src/app/actions/horario-laboral.ts` ~línea 16: `DiaLaboral { dia, activo, intervalos }`) es **100% recurrente por día de la semana**, sin concepto de fecha ni excepción. El editor (`horario-laboral-editor.tsx`) solo permite la rejilla semanal. No hay forma de marcar un festivo o un cambio puntual de una semana concreta.
+
+**Petición:** Poder añadir **excepciones por fecha** (festivos / días sin consulta / cambios puntuales) sin tocar el horario recurrente; y que el cálculo de huecos libres respete la excepción esa fecha.
+
+**Tareas:**
+- [ ] Extender la estructura: `{ dias: DiaLaboral[], excepciones?: { fecha, intervalos? }[] }` (Json, sin migración dura)
+- [ ] UI: añadir/quitar excepciones por fecha (calendario), aparte de la rejilla recurrente
+- [ ] Cálculo de huecos/disponibilidad: aplicar la excepción de la fecha con prioridad sobre el recurrente
+- [ ] Reflejar en la agenda y en la reserva de cita del paciente
+
+**Prioridad:** Media (lo piden; molesto cada festivo) · **Complejidad:** Alta (estructura + UI de calendario + lógica de huecos con prioridad fecha > recurrente)
+
+---
+
+## 117. Módulo de entrenamiento / rutinas para el cliente (POR VALORAR — fuera del core de nutrición)
+
+**Origen:** Jesús (jesusmnutricion, Instagram) — 22 jun 2026. "Si quisiera hacer un entrenamiento para un cliente, ¿se puede?"
+
+**Estado actual (VERIFICADO en código):** NO existe. Annonia es de nutrición; solo se registra el ejercicio realizado en el seguimiento diario del paciente (tipo, minutos, kcal, distancia). No hay forma de CREAR rutinas/planes de entrenamiento (ejercicios, series, repeticiones, cargas) para el cliente, ni modelos asociados.
+
+**Petición:** Poder montar planes de entrenamiento para el cliente, además de la dieta (muchos nutricionistas trabajan también el entrenamiento, o son nutri-entrenadores).
+
+**⚠️ POR VALORAR (decisión de producto / scope):** es un módulo GRANDE y fuera del core de nutrición. Decidir si Annonia entra en entrenamiento o se mantiene enfocada solo en nutrición. Recoger si lo piden más profesionales antes de invertir. Si se hace: modelo de rutina (días → ejercicios → series/reps/peso), editor, vista del cliente en el portal y PDF.
+
+**Prioridad:** Por valorar (depende del scope del producto) · **Complejidad:** Alta (módulo nuevo completo)
+
+---
+
+## 118. Actividad física en la anamnesis: lista de actividades con su frecuencia (no un campo de texto)
+
+**Origen:** nutricionista (WhatsApp, +34 642 53 00 93 — 22 jun 2026; feedback muy positivo: "interfaz muy moderna, práctica, no se queda colgada"). Lleva pacientes con varias actividades (pesas, natación, running) y quiere registrarlas por separado con su frecuencia.
+
+**Estado actual (VERIFICADO en código):** En la anamnesis, "Actividad física y estilo de vida" es un **campo de TEXTO único** (`personal.actividadFisica: string`, `ficha-informacion-types.ts:39`). En cambio, el historial médico (medicamentos, alergias, patologías, suplementos…) SÍ son **listas escalables** (`Paciente.medicamentos String[]` etc., línea 201-218 del schema; se pintan con `TagLine` + botón de añadir). Por eso el nutri ve el "botón +" en medicamentos pero no en actividad física.
+
+**Petición:** Aplicar el mismo patrón de **lista escalable (botón "+")** a la actividad física: poder añadir **varias actividades**, cada una con su **frecuencia/horas** (ej. natación 3 h/sem, running 6 h/sem), y que se vean divididas, no todo en un mismo texto.
+
+**Tareas:**
+- [ ] Modelar la actividad física como lista: cada ítem = actividad + frecuencia (h/sem o sesiones/sem). Decidir si `String[]` simple ("Natación · 3 h/sem") o estructura `{actividad, frecuencia}`
+- [ ] UI con el patrón de añadir/quitar de los medicamentos (input + botón, tags/filas)
+- [ ] Migrar/compatibilizar el `actividadFisica` de texto actual
+- [ ] Reflejar donde se use (anamnesis, PDF; y posible uso en el cálculo del gasto si aplica)
+
+**Relacionado con:** #18 (anamnesis personalizable), registro multi-actividad del seguimiento (#9)
+**Prioridad:** Media (mejora concreta; el patrón ya existe en la app) · **Complejidad:** Baja-Media
+
+---
+
+## 119. Recordatorios diarios personalizables para el paciente (beber agua, preparar comidas…)
+
+**Origen:** Carmen Florensa (review en PDF, 23 jun 2026). "¿Está en los planes un sistema de alertas o recordatorios diarios personalizables (por ejemplo, recordar beber agua o preparar las comidas del día siguiente)?"
+
+**Estado actual (VERIFICADO en código):** NO existe. Las notificaciones al paciente (`TipoNotificacion`) son **solo de citas** (CITA_HOY, CITA_CONFIRMADA…) y eventos puntuales; **no hay recordatorios diarios recurrentes ni configurables**, ni cron/push para ello, ni preferencias de recordatorio en el modelo `Paciente`. (Distinto del aviso de cita #74 y del R24h de la anamnesis #102.)
+
+**Petición:** Recordatorios diarios que el nutri (o el paciente) configure: beber agua, tomar suplementos, preparar las comidas del día siguiente, registrar el seguimiento… enviados por push/notificación in-app (y opcionalmente email/WhatsApp).
+
+**Tareas:**
+- [ ] Modelo de recordatorio (texto, hora/frecuencia, destinatario, activo) por paciente o por defecto del nutri
+- [ ] Programación recurrente (cron/scheduler) — evaluar coste e infraestructura
+- [ ] Canal: notificación in-app (campana del portal) y/o email; WhatsApp más adelante (enlaza con #74)
+- [ ] UI para configurarlos (el nutri los pauta; el paciente quizá ajusta los suyos)
+- [ ] Recordatorio de cumplimiento del seguimiento (que el paciente no olvide registrar)
+
+**Relacionado con:** #65 (cumplimiento de suplementos), #74 (avisos por WhatsApp), #54 (registro del paciente)
+**Prioridad:** Media (mejora de adherencia del paciente) · **Complejidad:** Media-Alta (programación recurrente + canales + config)
+
+---
+
+## Bug a revisar · Acceso al portal con email duplicado
+
+**Estado (VERIFICADO en código):** Al crear el acceso del paciente al portal ("Crear contraseña" → `crearAccesoPaciente`, o "Enviar por email" → `enviarAccesoPortal`), si el email ya lo usa OTRO paciente para su portal, el `prisma.accesoPaciente.upsert` falla por el constraint `email @unique` y **revienta con el overlay rojo** en vez de avisar con un toast claro.
+
+**Arreglo propuesto:** antes del upsert, comprobar si existe otro `AccesoPaciente` con ese email (pacienteId distinto) y devolver un aviso amable ("Ese email ya lo usa otro paciente para su portal"), patrón `{ ok:false, error }` sin throw. Aplica a `email.ts` (enviarAccesoPortal) y `paciente-auth.ts` (crearAccesoPaciente).
+
+**Prioridad:** Media (no rompe datos; es UX del error) · **Complejidad:** Baja

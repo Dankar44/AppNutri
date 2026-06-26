@@ -22,12 +22,23 @@ export type PlanificacionDatos = {
   macroRefIdx?: number;
   fibraFuente?: string;
   fibraCantidad?: string;
+  /** Peso y % grasa ACTUALES de esta planificación (independientes de las medidas del paciente):
+   *  el nutri puede ajustarlos por planificación y NO modifican la medida real del paciente. */
+  pesoActual?: string;
+  grasaActual?: string;
   pesoObjetivo?: string;
   grasaObjetivo?: string;
   imcObjetivo?: string;
   /** % de ajuste sobre el gasto según el objetivo (déficit negativo, superávit positivo). Ej: -10.
    *  null = el nutricionista deseleccionó el ajuste (ningún preset aplicado). */
   ajusteObjetivoPct?: number | null;
+  /** Objetivos ABSOLUTOS ya calculados (kcal + gramos), persistidos al guardar la planificación
+   *  para que la dieta y la IA los hereden sin recalcular las fórmulas (BMR/EER viven en el cliente).
+   *  #78-A. Se recalculan en cada guardado desde el useMemo `macros` del editor de planificación. */
+  kcalObjetivo?: number;
+  protGObjetivo?: number;
+  carbGObjetivo?: number;
+  grasaGObjetivo?: number;
 };
 
 export type Planificacion = {
@@ -77,6 +88,44 @@ export async function getPlanificaciones(pacienteId: string): Promise<Planificac
     fechaFinPrevista: r.fechaFinPrevista?.toISOString() ?? null,
     datos: (r.datos ?? {}) as PlanificacionDatos,
   }));
+}
+
+/* ─── Objetivos de la planificación principal (heredar al crear una dieta · #78-A) ─── */
+
+export async function getObjetivosPlanificacionActiva(
+  pacienteId: string
+): Promise<{
+  planificacionId: string;
+  nombre: string;
+  kcal: number | null;
+  proteinas: number | null;
+  carbohidratos: number | null;
+  grasas: number | null;
+} | null> {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return null;
+
+  const planificaciones = await getPlanificaciones(pacienteId);
+  if (planificaciones.length === 0) return null;
+
+  // La principal del paciente: por defecto > activa > primera (getPlanificaciones ya ordena así).
+  const elegida =
+    planificaciones.find((p) => p.esDefecto) ??
+    planificaciones.find((p) => p.estado === "activa") ??
+    planificaciones[0];
+
+  const d = elegida.datos ?? {};
+  const num = (v: unknown) =>
+    typeof v === "number" && isFinite(v) && v > 0 ? Math.round(v) : null;
+
+  return {
+    planificacionId: elegida.id,
+    nombre: elegida.nombre,
+    kcal: num(d.kcalObjetivo),
+    proteinas: num(d.protGObjetivo),
+    carbohidratos: num(d.carbGObjetivo),
+    grasas: num(d.grasaGObjetivo),
+  };
 }
 
 /* ─── Ensure default exists ─── */
