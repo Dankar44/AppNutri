@@ -43,6 +43,7 @@ model Dietista {
   recetas         Receta[]
   planes          PlanAlimenticio[]
   plantillas      Plantilla[]
+  plantillasAnamnesis PlantillaAnamnesis[]
   consultas       Consulta[]
   citas           Cita[]
   enlacesCompartidos EnlaceCompartido[]
@@ -231,6 +232,14 @@ model Paciente {
   preconsultaEnviadaAt    DateTime?
   preconsultaCompletadaAt DateTime?
 
+  /// Plantilla de anamnesis aplicada (#18). Null = anamnesis genérica (4 secciones base + campos globales).
+  plantillaAnamnesisId String?
+  plantillaAnamnesis   PlantillaAnamnesis? @relation(fields: [plantillaAnamnesisId], references: [id], onDelete: SetNull)
+
+  /// Anamnesis PROPIA del paciente (#18 Fase 2B): estructura editada solo para él. Tiene prioridad sobre
+  /// la plantilla. Null = usa su plantilla (tipo) o, si no tiene, la genérica.
+  estructuraAnamnesis  Json?
+
   /// Horario de paciente (guardado como JSONB)
   horario             Json?
   /// Recomendaciones clínicas (guardadas como texto)
@@ -261,6 +270,23 @@ model Paciente {
   googleIntegracion   GoogleIntegracionPaciente?
 
   @@map("pacientes")
+}
+
+model PlantillaAnamnesis {
+  id          String     @id @default(cuid())
+  dietistaId  String
+  dietista    Dietista   @relation(fields: [dietistaId], references: [id], onDelete: Cascade)
+  nombre      String
+  /// Estructura completa de la anamnesis: secciones ordenadas con preguntas fijas (ref al catálogo) o
+  /// propias (custom). Forma del JSON en src/lib/anamnesis-plantillas.ts (EstructuraPlantilla).
+  estructura  Json
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  pacientes   Paciente[]
+
+  @@index([dietistaId])
+  @@map("plantillas_anamnesis")
 }
 
 model Planificacion {

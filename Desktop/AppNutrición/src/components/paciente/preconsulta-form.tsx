@@ -1,54 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import {
-  User,
-  Target,
-  HeartPulse,
-  Calendar,
-  Link2,
-  UtensilsCrossed,
-  ClipboardList,
-  Check,
-  Loader2,
-  Plus,
-  X,
-  Send,
-} from "lucide-react";
+import { User, Target, HeartPulse, Check, Loader2, Plus, X, Send } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { TelefonoInput } from "@/components/telefono-input";
 import { DatePicker } from "@/components/date-picker";
-import { TimePicker } from "@/components/time-picker";
 import { FichaAccordion } from "./ficha-accordion";
-import {
-  FichaLabel,
-  FichaInput,
-  FichaTextarea,
-  FichaSelect,
-  FichaTwoCol,
-} from "./ficha-form-fields";
-import {
-  getSelectSiNoOcasion,
-  getSelectEstadoCivil,
-  getSelectFuncionIntestinal,
-  getSelectCalidadSueno,
-  getSelectTiposDieta,
-  getSelectIngestaAgua,
-  OPCION_VACIA,
-  type FichaInformacionData,
-  type CampoPersonalizadoDefinicion,
-  type SeccionAnamnesis,
-} from "@/lib/ficha-informacion-types";
+import { FichaLabel, FichaInput, FichaSelect, FichaTwoCol } from "./ficha-form-fields";
+import { AnamnesisRenderer } from "./anamnesis-renderer";
+import { HorarioPaciente } from "./horario/horario-paciente";
+import type { FichaInformacionData } from "@/lib/ficha-informacion-types";
 import {
   guardarPreconsultaPorToken,
   guardarPreconsultaPaciente,
+  guardarHorarioPorToken,
   type PreconsultaContext,
   type PreconsultaInput,
 } from "@/app/actions/preconsulta";
-
-const HORA_INPUT_CLS =
-  "w-full h-10 rounded-lg border border-input bg-background px-3 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2";
 
 function emptyFicha(raw: FichaInformacionData | null | undefined): FichaInformacionData {
   const r = raw ?? {};
@@ -127,62 +96,22 @@ function TagField({
   );
 }
 
-function CamposCustomRender({
-  campos,
-  valores,
-  onChange,
-}: {
-  campos: CampoPersonalizadoDefinicion[];
-  valores: Record<string, string>;
-  onChange: (id: string, value: string) => void;
-}) {
-  if (campos.length === 0) return null;
-  return (
-    <>
-      {campos.map((campo) => (
-        <div key={campo.id}>
-          <FichaLabel>{campo.label}</FichaLabel>
-          {campo.tipo === "textarea" ? (
-            <FichaTextarea value={valores[campo.id] ?? ""} onChange={(v) => onChange(campo.id, v)} rows={2} />
-          ) : campo.tipo === "selector" && campo.opciones ? (
-            <FichaSelect
-              value={valores[campo.id] ?? OPCION_VACIA}
-              onChange={(v) => onChange(campo.id, v)}
-              options={[
-                { value: OPCION_VACIA, label: "—" },
-                ...campo.opciones.map((o) => ({ value: o, label: o })),
-              ]}
-            />
-          ) : (
-            <FichaInput value={valores[campo.id] ?? ""} onChange={(v) => onChange(campo.id, v)} />
-          )}
-        </div>
-      ))}
-    </>
-  );
-}
-
 export function PreconsultaForm({
   context,
   modo,
   token,
+  incluyeAnamnesis = true,
+  incluyeHorario = false,
 }: {
   context: PreconsultaContext;
   modo: "token" | "portal";
   token?: string;
+  /** Qué pasos pide el enlace. Si ambos: primero anamnesis, luego horario. */
+  incluyeAnamnesis?: boolean;
+  incluyeHorario?: boolean;
 }) {
   const tp = useTranslations("patients.preconsulta");
-  const t = useTranslations("patients.informacion");
-  const tExtra = useTranslations("patients.informacionExtra");
-  const tSelect = useTranslations("patients");
   const tForm = useTranslations("patients.form");
-
-  const SELECT_SI_NO_OCASION = getSelectSiNoOcasion(tSelect);
-  const SELECT_ESTADO_CIVIL = getSelectEstadoCivil(tSelect);
-  const SELECT_FUNCION_INTESTINAL = getSelectFuncionIntestinal(tSelect);
-  const SELECT_CALIDAD_SUENO = getSelectCalidadSueno(tSelect);
-  const SELECT_TIPOS_DIETA = getSelectTiposDieta(tSelect);
-  const SELECT_INGESTA_AGUA = getSelectIngestaAgua(tSelect);
 
   const p = context.prefill;
   const [datos, setDatos] = useState({
@@ -202,34 +131,20 @@ export function PreconsultaForm({
   const [ficha, setFichaState] = useState<FichaInformacionData>(() => emptyFicha(p.ficha));
 
   const [enviando, setEnviando] = useState(false);
-  const [enviado, setEnviado] = useState(false);
+  const [paso, setPaso] = useState<"anamnesis" | "horario" | "fin">(incluyeAnamnesis ? "anamnesis" : "horario");
 
   function upd(field: string, value: string) {
     setDatos((d) => ({ ...d, [field]: value }));
   }
-  function setField<K extends keyof FichaInformacionData>(section: K, key: string, value: string) {
+  function setField(seccion: keyof FichaInformacionData, key: string, value: string) {
     setFichaState((d) => {
-      const sec = (d[section] as Record<string, string>) || {};
-      return { ...d, [section]: { ...sec, [key]: value } };
+      const sec = (d[seccion] as Record<string, string>) || {};
+      return { ...d, [seccion]: { ...sec, [key]: value } };
     });
   }
   function setCustom(id: string, value: string) {
     setFichaState((d) => ({ ...d, camposPersonalizados: { ...(d.camposPersonalizados ?? {}), [id]: value } }));
   }
-
-  const camposPorSeccion = context.campos.reduce<Record<SeccionAnamnesis, CampoPersonalizadoDefinicion[]>>(
-    (acc, c) => {
-      acc[c.seccion].push(c);
-      return acc;
-    },
-    { consulta: [], personalSocial: [], clinica: [], alimentaria: [], personalizado: [] },
-  );
-
-  const c = ficha.consulta ?? {};
-  const ps = ficha.personalSocial ?? {};
-  const cl = ficha.clinica ?? {};
-  const al = ficha.alimentaria ?? {};
-  const cp = ficha.camposPersonalizados ?? {};
 
   const OBJETIVOS = [
     { value: "PERDER_PESO", label: tForm("objetivoPerderPeso") },
@@ -273,7 +188,7 @@ export function PreconsultaForm({
           ? await guardarPreconsultaPorToken(token ?? "", input)
           : await guardarPreconsultaPaciente(input);
       if (res.ok) {
-        setEnviado(true);
+        setPaso(incluyeHorario ? "horario" : "fin");
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
         toast.error(res.error || tp("errorGuardar"));
@@ -285,7 +200,7 @@ export function PreconsultaForm({
     }
   }
 
-  if (enviado) {
+  if (paso === "fin") {
     return (
       <div className="max-w-2xl mx-auto px-4 py-16 text-center">
         <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto mb-5">
@@ -293,6 +208,34 @@ export function PreconsultaForm({
         </div>
         <h1 className="text-2xl font-bold mb-2">{tp("graciasTitulo")}</h1>
         <p className="text-muted-foreground">{tp("graciasTexto", { dietista: marca })}</p>
+      </div>
+    );
+  }
+
+  if (paso === "horario") {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-8">
+        <header className="text-center mb-6">
+          {context.branding.logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={context.branding.logoUrl} alt={marca} className="h-12 mx-auto mb-4 object-contain" />
+          )}
+          <h1 className="text-2xl font-bold">{tp("horarioTitulo")}</h1>
+          <p className="text-sm text-muted-foreground mt-2">{tp("horarioIntro")}</p>
+        </header>
+        <HorarioPaciente
+          initialEntries={context.horario}
+          onSave={async (entries) => {
+            const res = await guardarHorarioPorToken(token ?? "", entries);
+            if (res.ok) {
+              setPaso("fin");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            } else {
+              toast.error(res.error || tp("errorGuardar"));
+              throw new Error(res.error || "error");
+            }
+          }}
+        />
       </div>
     );
   }
@@ -373,7 +316,7 @@ export function PreconsultaForm({
           </div>
         </FichaAccordion>
 
-        {/* Historial médico */}
+        {/* Historial médico (tags → arrays del paciente) */}
         <FichaAccordion title={tp("historialMedico")} icon={HeartPulse}>
           <p className="text-xs text-muted-foreground -mt-1">{tp("ayudaHistorial")}</p>
           <TagField label={tForm("alergias")} placeholder={tForm("alergiasPlaceholder")} tags={alergias} onChange={setAlergias} addLabel={tForm("anadir")} />
@@ -383,200 +326,13 @@ export function PreconsultaForm({
           <TagField label={tForm("suplementos")} placeholder={tForm("suplementosPlaceholder")} tags={suplementos} onChange={setSuplementos} addLabel={tForm("anadir")} />
         </FichaAccordion>
 
-        {/* Sobre tu consulta */}
-        <FichaAccordion title={t("informacionesConsulta")} icon={Calendar}>
-          <div>
-            <FichaLabel>{t("motivoConsulta")}</FichaLabel>
-            <FichaTextarea value={c.motivo ?? ""} onChange={(v) => setField("consulta", "motivo", v)} rows={2} />
-          </div>
-          <div>
-            <FichaLabel>{t("expectativas")}</FichaLabel>
-            <FichaTextarea value={c.expectativas ?? ""} onChange={(v) => setField("consulta", "expectativas", v)} rows={2} />
-          </div>
-          <div>
-            <FichaLabel>{t("otrasInformaciones")}</FichaLabel>
-            <FichaTextarea value={c.otras ?? ""} onChange={(v) => setField("consulta", "otras", v)} rows={2} />
-          </div>
-          <CamposCustomRender campos={camposPorSeccion.consulta} valores={cp} onChange={setCustom} />
-        </FichaAccordion>
-
-        {/* Historia personal y social */}
-        <FichaAccordion title={t("historiaPersonalSocial")} icon={User}>
-          <div>
-            <FichaLabel>{t("funcionIntestinal")}</FichaLabel>
-            <FichaSelect value={ps.funcionIntestinal || OPCION_VACIA} onChange={(v) => setField("personalSocial", "funcionIntestinal", v)} options={SELECT_FUNCION_INTESTINAL} />
-            {ps.funcionIntestinal === "otro" && (
-              <div className="mt-2">
-                <FichaTextarea value={ps.funcionIntestinalDetalle ?? ""} onChange={(v) => setField("personalSocial", "funcionIntestinalDetalle", v)} rows={2} placeholder={t("especifica")} />
-              </div>
-            )}
-          </div>
-          <div>
-            <FichaLabel>{t("calidadSueno")}</FichaLabel>
-            <FichaSelect value={ps.calidadSueno || OPCION_VACIA} onChange={(v) => setField("personalSocial", "calidadSueno", v)} options={SELECT_CALIDAD_SUENO} />
-            {(ps.calidadSueno === "regular" || ps.calidadSueno === "mala") && (
-              <div className="mt-2">
-                <FichaTextarea value={ps.calidadSuenoDetalle ?? ""} onChange={(v) => setField("personalSocial", "calidadSuenoDetalle", v)} rows={2} placeholder={t("describeProblemaSueno")} />
-              </div>
-            )}
-          </div>
-          <div>
-            <FichaLabel>{t("fumador")}</FichaLabel>
-            <FichaSelect value={ps.fumador || OPCION_VACIA} onChange={(v) => setField("personalSocial", "fumador", v)} options={SELECT_SI_NO_OCASION} />
-            {(ps.fumador === "si" || ps.fumador === "ocasional") && (
-              <div className="mt-2">
-                <FichaTextarea value={ps.fumadorDetalle ?? ""} onChange={(v) => setField("personalSocial", "fumadorDetalle", v)} rows={2} placeholder={t("frecuenciaCantidad")} />
-              </div>
-            )}
-          </div>
-          <div>
-            <FichaLabel>{t("bebeAlcohol")}</FichaLabel>
-            <FichaSelect value={ps.alcohol || OPCION_VACIA} onChange={(v) => setField("personalSocial", "alcohol", v)} options={SELECT_SI_NO_OCASION} />
-            {(ps.alcohol === "si" || ps.alcohol === "ocasional") && (
-              <div className="mt-2">
-                <FichaTextarea value={ps.alcoholDetalle ?? ""} onChange={(v) => setField("personalSocial", "alcoholDetalle", v)} rows={2} placeholder={tExtra("frecuenciaTipoBebida")} />
-              </div>
-            )}
-          </div>
-          <div>
-            <FichaLabel>{t("estadoCivil")}</FichaLabel>
-            <FichaSelect value={ps.estadoCivil || OPCION_VACIA} onChange={(v) => setField("personalSocial", "estadoCivil", v)} options={SELECT_ESTADO_CIVIL} />
-            {ps.estadoCivil === "otro" && (
-              <div className="mt-2">
-                <FichaTextarea value={ps.estadoCivilDetalle ?? ""} onChange={(v) => setField("personalSocial", "estadoCivilDetalle", v)} rows={2} placeholder={t("especifica")} />
-              </div>
-            )}
-          </div>
-          <div>
-            <FichaLabel>{t("actividadFisica")}</FichaLabel>
-            <FichaTextarea value={ps.actividadFisica ?? ""} onChange={(v) => setField("personalSocial", "actividadFisica", v)} rows={2} />
-          </div>
-          <div>
-            <FichaLabel>{t("razaEtnia")}</FichaLabel>
-            <FichaSelect
-              value={ps.raza || OPCION_VACIA}
-              onChange={(v) => setField("personalSocial", "raza", v)}
-              options={[
-                { value: OPCION_VACIA, label: t("seleccionaOpcion") },
-                { value: "caucasica", label: t("razaCaucasica") },
-                { value: "hispana", label: t("razaHispana") },
-                { value: "afrodescendiente", label: t("razaAfrodescendiente") },
-                { value: "asiatica", label: t("razaAsiatica") },
-                { value: "arabe", label: t("razaArabe") },
-                { value: "indigena", label: t("razaIndigena") },
-                { value: "mestiza", label: t("razaMestiza") },
-                { value: "otra", label: t("razaOtra") },
-              ]}
-            />
-            {ps.raza === "otra" && (
-              <div className="mt-2">
-                <FichaInput value={ps.razaDetalle ?? ""} onChange={(v) => setField("personalSocial", "razaDetalle", v)} placeholder={t("especifica")} />
-              </div>
-            )}
-          </div>
-          <div>
-            <FichaLabel>{t("otrasInformaciones")}</FichaLabel>
-            <FichaTextarea value={ps.otrasPersonal ?? ""} onChange={(v) => setField("personalSocial", "otrasPersonal", v)} rows={2} />
-          </div>
-          <CamposCustomRender campos={camposPorSeccion.personalSocial} valores={cp} onChange={setCustom} />
-        </FichaAccordion>
-
-        {/* Historia clínica */}
-        <FichaAccordion title={tExtra("historiaClinica")} icon={Link2}>
-          <div>
-            <FichaLabel>{tExtra("detallePatologias")}</FichaLabel>
-            <FichaTextarea value={cl.patologiasDetalle ?? ""} onChange={(v) => setField("clinica", "patologiasDetalle", v)} rows={3} />
-          </div>
-          <div>
-            <FichaLabel>{tExtra("medicacionTextoLibre")}</FichaLabel>
-            <FichaTextarea value={cl.medicacion ?? ""} onChange={(v) => setField("clinica", "medicacion", v)} rows={2} placeholder={tExtra("ninguna")} />
-          </div>
-          <FichaTwoCol
-            left={
-              <div>
-                <FichaLabel>{tExtra("antecedentesPersonales")}</FichaLabel>
-                <FichaInput value={cl.antecedentesPersonales ?? ""} onChange={(v) => setField("clinica", "antecedentesPersonales", v)} placeholder={tExtra("ninguno")} />
-              </div>
-            }
-            right={
-              <div>
-                <FichaLabel>{tExtra("antecedentesFamiliares")}</FichaLabel>
-                <FichaInput value={cl.antecedentesFamiliares ?? ""} onChange={(v) => setField("clinica", "antecedentesFamiliares", v)} placeholder={tExtra("ninguno")} />
-              </div>
-            }
-          />
-          <div>
-            <FichaLabel>{t("otrasInformaciones")}</FichaLabel>
-            <FichaTextarea value={cl.otrasClinicas ?? ""} onChange={(v) => setField("clinica", "otrasClinicas", v)} rows={2} />
-          </div>
-          <CamposCustomRender campos={camposPorSeccion.clinica} valores={cp} onChange={setCustom} />
-        </FichaAccordion>
-
-        {/* Historia alimentaria */}
-        <FichaAccordion title={tExtra("historiaAlimentaria")} icon={UtensilsCrossed}>
-          <FichaTwoCol
-            left={
-              <div>
-                <FichaLabel>{tExtra("horaLevantarse")}</FichaLabel>
-                <TimePicker value={al.horaLevantarse ?? ""} onChange={(v) => setField("alimentaria", "horaLevantarse", v)} inputClassName={HORA_INPUT_CLS} ariaLabel={tExtra("horaLevantarse")} />
-              </div>
-            }
-            right={
-              <div>
-                <FichaLabel>{tExtra("horaAcostarse")}</FichaLabel>
-                <TimePicker value={al.horaAcostarse ?? ""} onChange={(v) => setField("alimentaria", "horaAcostarse", v)} inputClassName={HORA_INPUT_CLS} ariaLabel={tExtra("horaAcostarse")} />
-              </div>
-            }
-          />
-          <div>
-            <FichaLabel>{tExtra("tiposDieta")}</FichaLabel>
-            <FichaSelect value={al.tiposDieta || OPCION_VACIA} onChange={(v) => setField("alimentaria", "tiposDieta", v)} options={SELECT_TIPOS_DIETA} />
-            {al.tiposDieta === "otra" && (
-              <div className="mt-2">
-                <FichaTextarea value={al.tiposDietaDetalle ?? ""} onChange={(v) => setField("alimentaria", "tiposDietaDetalle", v)} rows={2} placeholder={tExtra("describeTipoDieta")} />
-              </div>
-            )}
-          </div>
-          <div>
-            <FichaLabel>{tExtra("alimentosFavoritos")}</FichaLabel>
-            <FichaInput value={al.alimentosFavoritos ?? ""} onChange={(v) => setField("alimentaria", "alimentosFavoritos", v)} placeholder={tExtra("ninguno")} />
-          </div>
-          <div>
-            <FichaLabel>{tExtra("alimentosRechazados")}</FichaLabel>
-            <FichaInput value={al.alimentosRechazados ?? ""} onChange={(v) => setField("alimentaria", "alimentosRechazados", v)} placeholder={tExtra("ninguno")} />
-          </div>
-          <div>
-            <FichaLabel>{tExtra("deficienciasNutricionales")}</FichaLabel>
-            <FichaSelect
-              value={al.deficiencias || OPCION_VACIA}
-              onChange={(v) => setField("alimentaria", "deficiencias", v)}
-              options={[
-                { value: OPCION_VACIA, label: tExtra("ninguna") },
-                { value: "si", label: tExtra("siDetallar") },
-              ]}
-            />
-            {al.deficiencias === "si" && (
-              <div className="mt-2">
-                <FichaTextarea value={al.deficienciasDetalle ?? ""} onChange={(v) => setField("alimentaria", "deficienciasDetalle", v)} rows={2} placeholder={tExtra("detallaDeficiencias")} />
-              </div>
-            )}
-          </div>
-          <div>
-            <FichaLabel>{tExtra("ingestaAgua")}</FichaLabel>
-            <FichaSelect value={al.ingestaAgua || OPCION_VACIA} onChange={(v) => setField("alimentaria", "ingestaAgua", v)} options={SELECT_INGESTA_AGUA} />
-          </div>
-          <div>
-            <FichaLabel>{t("otrasInformaciones")}</FichaLabel>
-            <FichaTextarea value={al.otrasAlimentaria ?? ""} onChange={(v) => setField("alimentaria", "otrasAlimentaria", v)} rows={2} />
-          </div>
-          <CamposCustomRender campos={camposPorSeccion.alimentaria} valores={cp} onChange={setCustom} />
-        </FichaAccordion>
-
-        {camposPorSeccion.personalizado.length > 0 && (
-          <FichaAccordion title={tExtra("camposPersonalizados")} icon={ClipboardList}>
-            <CamposCustomRender campos={camposPorSeccion.personalizado} valores={cp} onChange={setCustom} />
-          </FichaAccordion>
-        )}
+        {/* Anamnesis: secciones y preguntas según la plantilla del paciente */}
+        <AnamnesisRenderer
+          estructura={context.estructura}
+          data={ficha}
+          onBuiltin={(seccion, campo, value) => setField(seccion as keyof FichaInformacionData, campo, value)}
+          onCustom={setCustom}
+        />
 
         <div className="pt-2">
           <button
@@ -585,7 +341,7 @@ export function PreconsultaForm({
             className="w-full inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
             {enviando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-            {enviando ? tp("enviando") : tp("enviar")}
+            {enviando ? tp("enviando") : incluyeHorario ? tp("siguienteHorario") : tp("enviar")}
           </button>
         </div>
       </form>

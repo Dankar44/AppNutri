@@ -169,6 +169,7 @@
       "pacienteSinConsultaReciente": "Paciente sem consulta recente",
       "pacienteSinMedidasRecientes": "Paciente sem medidas recentes",
       "preconsultaCompletada": "Anamnese preenchida pelo paciente",
+      "horarioCompletado": "Horário preenchido pelo paciente",
       "consulta": "Consulta",
       "ejercicio": "Exercício"
     },
@@ -190,6 +191,7 @@
       "pacienteSinMedidas": "{nombrePaciente} está há mais de 30 dias sem medidas",
       "pacienteRegistroSeguimiento": "{nombrePaciente} registrou seu acompanhamento hoje",
       "preconsultaCompletada": "{nombrePaciente} preencheu sua anamnese",
+      "horarioCompletado": "{nombrePaciente} preencheu o seu horário semanal",
       "motivo": "Motivo: {motivo}"
     }
   },

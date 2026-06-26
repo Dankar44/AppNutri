@@ -10,7 +10,6 @@
     "contrasena": "Senha",
     "profesional": "Profissional",
     "documentos": "Documentos",
-    "anamnesis": "Anamnese",
     "integraciones": "Integrações",
     "pacienteDemo": "Paciente de exemplo",
     "suscripcion": "Assinatura",
@@ -36,10 +35,6 @@
     "documentos": {
       "title": "Personalizar documentos",
       "description": "Escolha as cores, logo e nome da marca dos seus documentos PDF."
-    },
-    "anamnesis": {
-      "title": "Campos da anamnese",
-      "description": "Adicione campos personalizados que aparecerão na ficha de informações de todos os seus pacientes."
     },
     "integraciones": {
       "title": "Integrações",
@@ -190,6 +185,27 @@
       "almuerzo": "Almoço",
       "cena": "Jantar"
     }
+  },
+  "plantillasAnamnesis": {
+    "titulo": "Modelos de anamnese",
+    "descripcion": "Crie anamneses por especialidade (esportiva, digestiva, diabética…) e aplique-as a cada paciente a partir da ficha.",
+    "emptyState": "Você ainda não tem modelos. Crie um para ter anamneses específicas por tipo de paciente.",
+    "crear": "Criar modelo",
+    "nombre": "Nome",
+    "nombrePlaceholder": "Ex: Esportiva",
+    "basarEn": "Basear em",
+    "vacia": "Em branco (seções base)",
+    "crearBoton": "Criar",
+    "cancelar": "Cancelar",
+    "guardarNombre": "Salvar",
+    "editarTitle": "Renomear",
+    "eliminarTitle": "Excluir",
+    "confirmarEliminar": "Excluir este modelo? Os pacientes que o usam voltarão à anamnese genérica.",
+    "toastCreada": "Modelo criado",
+    "toastEliminada": "Modelo excluído",
+    "toastRenombrada": "Modelo atualizado",
+    "toastError": "Não foi possível concluir a ação",
+    "nombreObligatorio": "Escreva um nome"
   },
   "camposAnamnesis": {
     "emptyState": "Você ainda não criou campos personalizados. Os campos que adicionar aqui aparecerão na anamnese de todos os seus pacientes.",

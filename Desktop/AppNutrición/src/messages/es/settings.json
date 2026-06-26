@@ -10,7 +10,6 @@
     "contrasena": "Contraseña",
     "profesional": "Profesional",
     "documentos": "Documentos",
-    "anamnesis": "Anamnesis",
     "integraciones": "Integraciones",
     "pacienteDemo": "Paciente de ejemplo",
     "suscripcion": "Suscripción",
@@ -36,10 +35,6 @@
     "documentos": {
       "title": "Personalizar documentos",
       "description": "Elige los colores, logo y nombre de marca de tus entregables PDF."
-    },
-    "anamnesis": {
-      "title": "Campos de la anamnesis",
-      "description": "Añade campos personalizados que aparecerán en la ficha de información de todos tus pacientes."
     },
     "integraciones": {
       "title": "Integraciones",
@@ -190,6 +185,27 @@
       "almuerzo": "Almuerzo",
       "cena": "Cena"
     }
+  },
+  "plantillasAnamnesis": {
+    "titulo": "Plantillas de anamnesis",
+    "descripcion": "Crea anamnesis por especialidad (deportiva, digestiva, diabética…) y aplícalas a cada paciente desde su ficha.",
+    "emptyState": "Aún no tienes plantillas. Crea una para tener anamnesis específicas por tipo de paciente.",
+    "crear": "Crear plantilla",
+    "nombre": "Nombre",
+    "nombrePlaceholder": "Ej: Deportiva",
+    "basarEn": "Basar en",
+    "vacia": "En blanco (secciones base)",
+    "crearBoton": "Crear",
+    "cancelar": "Cancelar",
+    "guardarNombre": "Guardar",
+    "editarTitle": "Renombrar",
+    "eliminarTitle": "Eliminar",
+    "confirmarEliminar": "¿Eliminar esta plantilla? Los pacientes que la usen volverán a la anamnesis genérica.",
+    "toastCreada": "Plantilla creada",
+    "toastEliminada": "Plantilla eliminada",
+    "toastRenombrada": "Plantilla actualizada",
+    "toastError": "No se pudo completar la acción",
+    "nombreObligatorio": "Escribe un nombre"
   },
   "camposAnamnesis": {
     "emptyState": "No has creado campos personalizados todavía. Los campos que añadas aquí aparecerán en la anamnesis de todos tus pacientes.",

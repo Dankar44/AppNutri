@@ -468,6 +468,7 @@ export async function enviarAccesoPortal(
 /** Envía al paciente el link del formulario de preconsulta (anamnesis) para que lo rellene él (#6). */
 export async function enviarLinkPreconsulta(
   pacienteId: string,
+  inc?: string,
 ): Promise<{ ok: boolean; error?: string }> {
   const t = await getTranslations("validation");
   const te = await getTranslations("emails");
@@ -483,6 +484,7 @@ export async function enviarLinkPreconsulta(
   if (!link.ok || !link.url) {
     return { ok: false, error: link.error || t("general.errorDesconocido") };
   }
+  const url = inc ? `${link.url}?inc=${encodeURIComponent(inc)}` : link.url;
 
   const pacienteNombre = `${paciente.nombre} ${paciente.apellidos}`.trim();
   const dietistaNombre = `${dietista.nombre} ${dietista.apellidos}`.trim();
@@ -504,7 +506,7 @@ export async function enviarLinkPreconsulta(
         <p style="margin:0 0 16px;font-size:14px;color:#166534">
           ${escapeHtml(te("preconsulta.instruccion"))}
         </p>
-        <a href="${link.url}" style="display:inline-block;background:#16a34a;color:white;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">
+        <a href="${url}" style="display:inline-block;background:#16a34a;color:white;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">
           ${escapeHtml(te("preconsulta.boton"))}
         </a>
       </div>

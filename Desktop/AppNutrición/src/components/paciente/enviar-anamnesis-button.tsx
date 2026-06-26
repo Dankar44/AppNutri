@@ -17,19 +17,25 @@ export function EnviarAnamnesisButton({
   const tp = useTranslations("patients.preconsulta");
   const [open, setOpen] = useState(false);
   const [cargando, setCargando] = useState(false);
-  const [url, setUrl] = useState("");
+  const [urlBase, setUrlBase] = useState("");
   const [telefono, setTelefono] = useState<string | null>(null);
   const [copiado, setCopiado] = useState(false);
   const [enviandoEmail, setEnviandoEmail] = useState(false);
+  // Qué se le pide al paciente que rellene.
+  const [incAnamnesis, setIncAnamnesis] = useState(true);
+  const [incHorario, setIncHorario] = useState(false);
+
+  const inc = [incAnamnesis ? "anamnesis" : null, incHorario ? "horario" : null].filter(Boolean).join(",");
+  const url = urlBase && inc ? `${urlBase}?inc=${inc}` : "";
 
   async function abrir() {
     setOpen(true);
-    if (url) return; // ya generado en esta sesión
+    if (urlBase) return; // ya generado en esta sesión
     setCargando(true);
     try {
       const res = await getOrCreatePreconsultaLink(pacienteId);
       if (res.ok && res.url) {
-        setUrl(res.url);
+        setUrlBase(res.url);
         setTelefono(res.telefono ?? null);
       } else {
         toast.error(res.error || tp("errorEnviarEmail"));
@@ -44,6 +50,7 @@ export function EnviarAnamnesisButton({
   }
 
   async function copiar() {
+    if (!url) return;
     try {
       await navigator.clipboard.writeText(url);
       setCopiado(true);
@@ -54,9 +61,10 @@ export function EnviarAnamnesisButton({
   }
 
   async function enviarEmail() {
+    if (!inc) return;
     setEnviandoEmail(true);
     try {
-      const res = await enviarLinkPreconsulta(pacienteId);
+      const res = await enviarLinkPreconsulta(pacienteId, inc);
       if (res.ok) toast.success(tp("emailEnviado"));
       else toast.error(res.error || tp("errorEnviarEmail"));
     } catch {
@@ -67,7 +75,7 @@ export function EnviarAnamnesisButton({
   }
 
   function enviarWhatsapp() {
-    if (!telefono) return;
+    if (!telefono || !url) return;
     const tel = telefono.replace(/[^0-9]/g, "");
     const texto = `${tp("waTexto")} ${url}`;
     window.open(`https://wa.me/${tel}?text=${encodeURIComponent(texto)}`, "_blank");
@@ -81,7 +89,7 @@ export function EnviarAnamnesisButton({
         className="inline-flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors w-fit"
       >
         <ClipboardList className="w-4 h-4" />
-        {tp("botonAbrir")}
+        {tp("botonEnviarPaciente")}
       </button>
 
       {open && (
@@ -101,6 +109,30 @@ export function EnviarAnamnesisButton({
             </div>
             <p className="text-sm text-muted-foreground">{tp("compartirAyuda")}</p>
 
+            {/* Qué quieres que rellene */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{tp("queRellena")}</p>
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={incAnamnesis}
+                  onChange={(e) => setIncAnamnesis(e.target.checked)}
+                  className="h-4 w-4 rounded border-input accent-primary"
+                />
+                {tp("incAnamnesis")}
+              </label>
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={incHorario}
+                  onChange={(e) => setIncHorario(e.target.checked)}
+                  className="h-4 w-4 rounded border-input accent-primary"
+                />
+                {tp("incHorario")}
+              </label>
+              {!inc && <p className="text-xs text-amber-600 dark:text-amber-400">{tp("seleccionaUna")}</p>}
+            </div>
+
             {cargando ? (
               <div className="flex items-center justify-center py-6 text-muted-foreground">
                 <Loader2 className="w-5 h-5 animate-spin mr-2" />
@@ -113,12 +145,14 @@ export function EnviarAnamnesisButton({
                     readOnly
                     value={url}
                     onFocus={(e) => e.target.select()}
+                    placeholder={tp("seleccionaUna")}
                     className="flex-1 h-10 rounded-lg border border-input bg-muted px-3 text-sm text-muted-foreground"
                   />
                   <button
                     type="button"
                     onClick={copiar}
-                    className="px-3 rounded-lg border border-input hover:bg-muted transition-colors inline-flex items-center gap-1.5 text-sm shrink-0"
+                    disabled={!inc}
+                    className="px-3 rounded-lg border border-input hover:bg-muted transition-colors inline-flex items-center gap-1.5 text-sm shrink-0 disabled:opacity-50"
                   >
                     {copiado ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
                     <span className="hidden sm:inline">{copiado ? tp("enlaceCopiado") : tp("copiarEnlace")}</span>
@@ -134,7 +168,7 @@ export function EnviarAnamnesisButton({
                     <button
                       type="button"
                       onClick={enviarEmail}
-                      disabled={enviandoEmail}
+                      disabled={enviandoEmail || !inc}
                       className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 text-sm font-medium"
                     >
                       {enviandoEmail ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
@@ -145,7 +179,8 @@ export function EnviarAnamnesisButton({
                     <button
                       type="button"
                       onClick={enviarWhatsapp}
-                      className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
+                      disabled={!inc}
+                      className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium disabled:opacity-50"
                     >
                       <MessageCircle className="w-4 h-4" />
                       {tp("enviarPorWhatsapp")}

@@ -1,6 +1,6 @@
 /** Datos de la pestaña Información (JSON en pacientes.fichaInformacion) */
 
-export type TipoCampoAnamnesis = "texto" | "textarea" | "selector";
+export type TipoCampoAnamnesis = "texto" | "textarea" | "selector" | "checkbox" | "escala";
 
 export type SeccionAnamnesis =
   | "consulta"
@@ -133,7 +133,7 @@ export const MAX_CAMPOS_ANAMNESIS = 20;
 const MAX_LABEL_LENGTH = 100;
 const MAX_OPCIONES = 20;
 const MAX_OPCION_LENGTH = 100;
-const TIPOS_VALIDOS: TipoCampoAnamnesis[] = ["texto", "textarea", "selector"];
+const TIPOS_VALIDOS: TipoCampoAnamnesis[] = ["texto", "textarea", "selector", "checkbox", "escala"];
 const SECCIONES_VALIDAS: SeccionAnamnesis[] = [
   "consulta",
   "personalSocial",

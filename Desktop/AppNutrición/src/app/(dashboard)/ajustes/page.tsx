@@ -31,9 +31,8 @@ import { PacienteDemoCard } from "./paciente-demo-card";
 import { GoogleLoginCard } from "./google-login-card";
 import { DocumentosPdfSection } from "./documentos-pdf-section";
 import { CambiarPasswordForm } from "./cambiar-password-form";
-import { CamposAnamnesisForm } from "./campos-anamnesis-form";
 import { IdiomaCard } from "./idioma-card";
-import { getCamposAnamnesis, dietistaTienePassword } from "@/app/actions/perfil";
+import { dietistaTienePassword } from "@/app/actions/perfil";
 import { EarlyAdopterBadge } from "@/components/early-adopter-badge";
 import { EmpresaSection } from "./empresa-section";
 import Link from "next/link";
@@ -95,12 +94,11 @@ export default async function AjustesPage({
   const dietista = await getCurrentDietista();
   if (!dietista) redirect("/login");
 
-  const [suscripcion, googleIntegracion, googleLinked, demoEliminado, camposAnamnesis, tienePassword, sp] = await Promise.all([
+  const [suscripcion, googleIntegracion, googleLinked, demoEliminado, tienePassword, sp] = await Promise.all([
     getSuscripcion(),
     getIntegracionNutri(),
     getGoogleIdentityLinked(),
     isDemoEliminado(),
-    getCamposAnamnesis(),
     dietistaTienePassword(),
     searchParams,
   ]);
@@ -270,19 +268,6 @@ export default async function AjustesPage({
                 pdfLogoUrl={dietista.pdfLogoUrl}
                 marcaPdf={dietista.marcaPdf}
               />
-            </div>
-          </section>
-
-          {/* CAMPOS ANAMNESIS */}
-          <section>
-            <SectionHeader
-              id="anamnesis"
-              icon={ClipboardList}
-              title={t("sections.anamnesis.title")}
-              description={t("sections.anamnesis.description")}
-            />
-            <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
-              <CamposAnamnesisForm initialCampos={camposAnamnesis} />
             </div>
           </section>
 

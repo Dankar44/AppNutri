@@ -733,10 +733,10 @@ function EditorModal({
           </div>
         )}
 
-        {/* Nota */}
+        {/* Nota — en las comidas se convierte en "¿qué sueles comer?" (sigue siendo opcional, mismo campo). */}
         <div className="mb-4">
           <label className="block text-[11px] font-medium text-muted-foreground mb-1">
-            {t("notaOpcional")}
+            {draft.color === "comida" ? t("queSuelesComer") : t("notaOpcional")}
           </label>
           <input
             type="text"
@@ -745,7 +745,7 @@ function EditorModal({
             onKeyDown={(e) => {
               if (e.key === "Enter" && draft.actividad.trim()) onSave();
             }}
-            placeholder={t("notaPlaceholder")}
+            placeholder={draft.color === "comida" ? t("queSuelesComerPlaceholder") : t("notaPlaceholder")}
             maxLength={200}
             className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           />

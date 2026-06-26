@@ -12,6 +12,7 @@ import { getFichaSidebar } from "@/app/actions/ficha-sidebar";
 import { ensurePlanificacionDefecto, getPlanificaciones } from "@/app/actions/planificaciones";
 import { getMapaNotificacionesPacientes } from "@/app/actions/notificaciones";
 import { getCamposAnamnesis } from "@/app/actions/perfil";
+import { getEstructuraEfectivaPaciente, getPlantillasAnamnesis } from "@/app/actions/plantillas-anamnesis";
 import { AutoMarkLeidas } from "./auto-mark-leidas";
 
 interface Props {
@@ -32,7 +33,7 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
   const needsMedidas = ["mediciones", "planificacion", "plan-alimentacion"].includes(pestana);
 
   // Paralelizar todas las queries secundarias en un solo Promise.all
-  const [horario, recomendaciones, planesResumen, sidebarData, medidas, planes, planificaciones, mapaNotifs, camposAnamnesis] = await Promise.all([
+  const [horario, recomendaciones, planesResumen, sidebarData, medidas, planes, planificaciones, mapaNotifs, camposAnamnesis, estructuraAnamnesis, plantillasAnamnesis] = await Promise.all([
     getHorarioPaciente(id),
     getRecomendaciones(id),
     getPlanesPaciente(id),
@@ -48,6 +49,8 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
       : [],
     getMapaNotificacionesPacientes(),
     pestana === "informacion" ? getCamposAnamnesis() : Promise.resolve([]),
+    pestana === "informacion" ? getEstructuraEfectivaPaciente(id) : Promise.resolve(null),
+    pestana === "informacion" ? getPlantillasAnamnesis() : Promise.resolve([]),
   ]);
   const notifsPaciente = mapaNotifs[id] || [];
   const t = await getTranslations("patients");
@@ -74,6 +77,8 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
         planesResumen={JSON.parse(JSON.stringify(planesResumen))}
         sidebarData={sidebarData}
         camposAnamnesis={camposAnamnesis}
+        estructuraAnamnesis={estructuraAnamnesis}
+        plantillasAnamnesis={plantillasAnamnesis}
         notifsPorTipo={notifsPaciente.reduce<Record<string, number>>((acc, n) => {
           acc[n.tipo] = (acc[n.tipo] ?? 0) + 1;
           return acc;

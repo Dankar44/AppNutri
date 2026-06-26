@@ -12,6 +12,8 @@ import {
   type CampoPersonalizadoDefinicion,
   type FichaInformacionData,
 } from "@/lib/ficha-informacion-types";
+import { estructuraEfectiva, type EstructuraPlantilla } from "@/lib/anamnesis-plantillas";
+import type { HorarioEntry } from "./paciente-auth";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://annonia.com";
 const OBJETIVOS_VALIDOS: string[] = [
@@ -56,6 +58,8 @@ export interface PreconsultaContext {
     ficha: FichaInformacionData;
   };
   campos: CampoPersonalizadoDefinicion[];
+  estructura: EstructuraPlantilla;
+  horario: HorarioEntry[];
   yaCompletada: boolean;
   branding: {
     nombre: string;
@@ -85,7 +89,10 @@ const PRECONSULTA_SELECT = {
   medicamentos: true,
   suplementos: true,
   fichaInformacion: true,
+  horario: true,
   preconsultaCompletadaAt: true,
+  estructuraAnamnesis: true,
+  plantillaAnamnesis: { select: { estructura: true } },
   dietista: {
     select: {
       nombre: true,
@@ -142,6 +149,7 @@ function mergeFicha(base: FichaInformacionData, incoming: FichaInformacionData):
 
 function buildContext(p: PacientePreconsulta): PreconsultaContext {
   const fecha = p.fechaNacimiento ? p.fechaNacimiento.toISOString().slice(0, 10) : "";
+  const campos = sanitizeCamposAnamnesis(p.dietista.camposAnamnesis);
   return {
     nombre: p.nombre,
     apellidos: p.apellidos,
@@ -160,7 +168,9 @@ function buildContext(p: PacientePreconsulta): PreconsultaContext {
       suplementos: p.suplementos ?? [],
       ficha: (p.fichaInformacion as FichaInformacionData) ?? {},
     },
-    campos: sanitizeCamposAnamnesis(p.dietista.camposAnamnesis),
+    campos,
+    estructura: estructuraEfectiva(p.estructuraAnamnesis ?? null, p.plantillaAnamnesis?.estructura ?? null, campos),
+    horario: Array.isArray(p.horario) ? (p.horario as unknown as HorarioEntry[]) : [],
     yaCompletada: !!p.preconsultaCompletadaAt,
     branding: {
       nombre: `${p.dietista.nombre} ${p.dietista.apellidos}`.trim(),
@@ -310,6 +320,57 @@ export async function guardarPreconsultaPorToken(
     (p.fichaInformacion as FichaInformacionData) ?? {},
     data,
   );
+}
+
+/** Sanea el horario que envía el paciente (entradas por hora). */
+function sanitizeHorario(raw: unknown): HorarioEntry[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((e): e is Record<string, unknown> => !!e && typeof e === "object")
+    .slice(0, 500)
+    .map((e) => ({
+      dia: sStr(typeof e.dia === "string" ? e.dia : "", 20),
+      hora: sStr(typeof e.hora === "string" ? e.hora : "", 10),
+      actividad: sStr(typeof e.actividad === "string" ? e.actividad : "", 80),
+      ...(typeof e.color === "string" && e.color ? { color: sStr(e.color, 20) } : {}),
+      ...(typeof e.nota === "string" && e.nota ? { nota: sStr(e.nota, 200) } : {}),
+    }))
+    .filter((e) => e.dia && e.hora && e.actividad);
+}
+
+/** Guarda el horario semanal que el paciente rellena desde el enlace público y avisa al nutri. */
+export async function guardarHorarioPorToken(
+  token: string,
+  horario: HorarioEntry[],
+): Promise<{ ok: boolean; error?: string }> {
+  const t = await getTranslations("validation");
+  if (!token || typeof token !== "string") return { ok: false, error: t("paciente.pacienteNoEncontrado") };
+  const p = await prisma.paciente.findFirst({
+    where: { preconsultaToken: token, activo: true },
+    select: { id: true, dietistaId: true, nombre: true, apellidos: true },
+  });
+  if (!p) return { ok: false, error: t("paciente.pacienteNoEncontrado") };
+
+  const limpio = sanitizeHorario(horario);
+  await prisma.$queryRawUnsafe(`UPDATE pacientes SET horario = $1::jsonb WHERE id = $2`, JSON.stringify(limpio), p.id);
+
+  const nombrePaciente = `${p.nombre} ${p.apellidos}`.trim();
+  await prisma.notificacion.create({
+    data: {
+      dietistaId: p.dietistaId,
+      pacienteId: p.id,
+      tipo: "PRECONSULTA_COMPLETADA",
+      titulo: t("notificaciones.titulos.horarioCompletado"),
+      mensaje: t("notificaciones.mensajes.horarioCompletado", { nombrePaciente }),
+      tituloKey: "notificaciones.titulos.horarioCompletado",
+      mensajeKey: "notificaciones.mensajes.horarioCompletado",
+      params: { nombrePaciente },
+      enlace: `/pacientes/${p.id}`,
+    },
+  });
+
+  revalidatePath(`/pacientes/${p.id}`);
+  return { ok: true };
 }
 
 // --- Acciones del portal del paciente (sesión propia) ---

@@ -14,6 +14,8 @@ import {
   formatDate,
 } from "@/lib/utils";
 import { PacienteFichaInformacionTab } from "./paciente-ficha-informacion-tab";
+import { estructuraBase, type EstructuraPlantilla } from "@/lib/anamnesis-plantillas";
+import type { PlantillaResumen } from "@/app/actions/plantillas-anamnesis";
 import {
   PacienteFichaMedicionesTab,
   type MedidaSerializada,
@@ -74,6 +76,7 @@ type PacienteSerializado = {
   suplementos: string[];
   fichaInformacion: unknown;
   preconsultaCompletadaAt?: string | null;
+  plantillaAnamnesisId?: string | null;
   esDemo?: boolean;
   ocultarCalorias?: boolean;
   avisarPorEmail?: boolean;
@@ -148,6 +151,8 @@ export function PacienteFichaClient({
   planesResumen = [],
   sidebarData = {},
   camposAnamnesis = [],
+  estructuraAnamnesis = null,
+  plantillasAnamnesis = [],
   notifsPorTipo = {},
   notifsDetalle = [],
 }: {
@@ -161,6 +166,8 @@ export function PacienteFichaClient({
   planesResumen?: PlanResumen[];
   sidebarData?: FichaSidebarData;
   camposAnamnesis?: CampoPersonalizadoDefinicion[];
+  estructuraAnamnesis?: EstructuraPlantilla | null;
+  plantillasAnamnesis?: PlantillaResumen[];
   notifsPorTipo?: Record<string, number>;
   notifsDetalle?: NotifDetalle[];
 }) {
@@ -315,6 +322,9 @@ export function PacienteFichaClient({
           preconsultaCompletadaAt={paciente.preconsultaCompletadaAt}
           initialFicha={ficha}
           camposAnamnesis={camposAnamnesis}
+          estructura={estructuraAnamnesis ?? estructuraBase()}
+          plantillas={plantillasAnamnesis}
+          plantillaActualId={paciente.plantillaAnamnesisId ?? null}
           resumen={{
             patologias: paciente.patologias,
             medicamentos: paciente.medicamentos,

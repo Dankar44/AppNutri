@@ -1,47 +1,28 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import {
-  Calendar,
-  ClipboardList,
-  User,
-  Link2,
-  UtensilsCrossed,
-  Save,
-  Settings,
-  Check,
-  Loader2,
-  AlertCircle,
-  FileDown,
-} from "lucide-react";
-import Link from "next/link";
+import { Check, Loader2, AlertCircle, FileDown, Pencil, X, AlertTriangle } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { toast } from "sonner";
-import type { FichaInformacionData, CampoPersonalizadoDefinicion, SeccionAnamnesis } from "@/lib/ficha-informacion-types";
-import {
-  getSelectSiNoOcasion,
-  getSelectEstadoCivil,
-  getSelectFuncionIntestinal,
-  getSelectCalidadSueno,
-  getSelectTiposDieta,
-  getSelectIngestaAgua,
-  getSelectObjetivosClinicos,
-  OPCION_VACIA,
-} from "@/lib/ficha-informacion-types";
+import type { FichaInformacionData, CampoPersonalizadoDefinicion } from "@/lib/ficha-informacion-types";
 import { guardarFichaInformacionPaciente } from "@/app/actions/pacientes";
 import { EnviarAnamnesisButton } from "./enviar-anamnesis-button";
+import { SelectorPlantillaAnamnesis } from "./selector-plantilla-anamnesis";
+import type { PlantillaResumen } from "@/app/actions/plantillas-anamnesis";
 import { getBrandingDietista } from "@/app/actions/perfil";
 import { generateAnamnesisPDF } from "@/lib/pdf/generate-anamnesis-pdf";
 import { getTheme } from "@/lib/pdf/pdf-themes";
-import { FichaAccordion } from "./ficha-accordion";
-import { TimePicker } from "@/components/time-picker";
+import { downloadPDF } from "@/lib/pdf/pdf-download";
+import { AnamnesisRenderer } from "./anamnesis-renderer";
+import { AnamnesisEditor } from "./anamnesis-editor";
 import {
-  FichaLabel,
-  FichaTextarea,
-  FichaInput,
-  FichaSelect,
-  FichaTwoCol,
-} from "./ficha-form-fields";
+  guardarEstructuraPaciente,
+  guardarComoTipoNuevoPaciente,
+  actualizarTipoDePaciente,
+  getPlantillaAnamnesis,
+} from "@/app/actions/plantillas-anamnesis";
+import { estructuraBase, type EstructuraPlantilla } from "@/lib/anamnesis-plantillas";
 
 type PacienteResumen = {
   patologias: string[];
@@ -51,9 +32,6 @@ type PacienteResumen = {
   objetivo: string | null;
   objetivoDetalle: string | null;
 };
-
-const HORA_INPUT_CLS =
-  "w-full h-10 rounded-lg border border-input bg-background px-3 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2";
 
 const OBJETIVO_MAP: Record<string, string> = {
   PERDER_PESO: "control_peso",
@@ -138,6 +116,9 @@ export function PacienteFichaInformacionTab({
   pacienteEmail,
   preconsultaCompletadaAt,
   initialFicha,
+  estructura,
+  plantillas = [],
+  plantillaActualId = null,
   camposAnamnesis = [],
   resumen,
 }: {
@@ -146,26 +127,35 @@ export function PacienteFichaInformacionTab({
   pacienteEmail: string | null;
   preconsultaCompletadaAt?: string | null;
   initialFicha: FichaInformacionData | null | undefined;
+  estructura: EstructuraPlantilla;
+  plantillas?: PlantillaResumen[];
+  plantillaActualId?: string | null;
   camposAnamnesis?: CampoPersonalizadoDefinicion[];
   resumen: PacienteResumen;
 }) {
   const t = useTranslations("patients.informacion");
   const tExtra = useTranslations("patients.informacionExtra");
-  const tSelect = useTranslations("patients");
   const tPre = useTranslations("patients.preconsulta");
+  const tForm = useTranslations("patients.form");
   const tPdf = useTranslations();
   const locale = useLocale();
 
-  const SELECT_SI_NO_OCASION = getSelectSiNoOcasion(tSelect);
-  const SELECT_ESTADO_CIVIL = getSelectEstadoCivil(tSelect);
-  const SELECT_FUNCION_INTESTINAL = getSelectFuncionIntestinal(tSelect);
-  const SELECT_CALIDAD_SUENO = getSelectCalidadSueno(tSelect);
-  const SELECT_TIPOS_DIETA = getSelectTiposDieta(tSelect);
-  const SELECT_INGESTA_AGUA = getSelectIngestaAgua(tSelect);
-  const SELECT_OBJETIVOS_CLINICOS = getSelectObjetivosClinicos(tSelect);
-
   const [data, setData] = useState(() => mergeInitial(initialFicha, resumen));
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
+
+  const router = useRouter();
+  const [modoEdicion, setModoEdicion] = useState(false);
+  const [estructuraEdit, setEstructuraEdit] = useState<EstructuraPlantilla>(estructura);
+  const [guardando, setGuardando] = useState(false);
+  const [pidiendoNombre, setPidiendoNombre] = useState(false);
+  const [descargandoPdf, setDescargandoPdf] = useState(false);
+  const [nombreNuevo, setNombreNuevo] = useState("");
+  const [showSalirModal, setShowSalirModal] = useState(false);
+  const [bannerVisible, setBannerVisible] = useState(true);
+  const [showCrearModal, setShowCrearModal] = useState(false);
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const [tipoOrigenId, setTipoOrigenId] = useState<string | null>(plantillaActualId);
+  const nombreTipoOrigen = plantillas.find((p) => p.id === tipoOrigenId)?.nombre ?? "";
 
   const dataRef = useRef(data);
   dataRef.current = data;
@@ -240,6 +230,38 @@ export function PacienteFichaInformacionTab({
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
 
+  // En modo edición con cambios sin guardar: avisar al cerrar/refrescar y al navegar (cambiar de pestaña, etc.)
+  useEffect(() => {
+    if (!modoEdicion) return;
+    const hayCambios = () => JSON.stringify(estructuraEdit) !== JSON.stringify(estructura);
+
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hayCambios()) e.preventDefault();
+    };
+    const onClick = (e: MouseEvent) => {
+      if (!hayCambios()) return;
+      const link = (e.target as HTMLElement).closest("a[href]") as HTMLAnchorElement | null;
+      if (!link) return;
+      const href = link.getAttribute("href");
+      if (!href || href.startsWith("#") || href.startsWith("javascript:") || link.target === "_blank") return;
+      try {
+        if (new URL(href, window.location.origin).origin !== window.location.origin) return;
+      } catch {
+        return;
+      }
+      e.preventDefault();
+      e.stopPropagation();
+      setPendingHref(href);
+      setShowSalirModal(true);
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    document.addEventListener("click", onClick, true);
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      document.removeEventListener("click", onClick, true);
+    };
+  }, [modoEdicion, estructuraEdit, estructura]);
+
   function setField<K extends keyof FichaInformacionData>(
     section: K,
     key: string,
@@ -254,18 +276,6 @@ export function PacienteFichaInformacionTab({
       camposPersonalizados: { ...d.camposPersonalizados, [id]: value },
     }));
   }
-
-  const camposPorSeccion = camposAnamnesis.reduce<
-    Record<SeccionAnamnesis, CampoPersonalizadoDefinicion[]>
-  >(
-    (acc, c) => {
-      acc[c.seccion].push(c);
-      return acc;
-    },
-    { consulta: [], personalSocial: [], clinica: [], alimentaria: [], personalizado: [] }
-  );
-
-  const cp = data.camposPersonalizados ?? {};
 
   function guardarManual() {
     clearTimeout(timerRef.current);
@@ -287,7 +297,7 @@ export function PacienteFichaInformacionTab({
       dietistaNombre: branding.nombre,
       clinica: branding.clinica,
       ficha: data,
-      camposCustom: camposAnamnesis,
+      estructura,
       patologias: resumen.patologias,
       medicamentos: resumen.medicamentos,
       alergias: resumen.alergias,
@@ -297,548 +307,333 @@ export function PacienteFichaInformacionTab({
       brandName: branding.marcaPdf,
       locale,
     }, tPdf);
-    const ventana = window.open("", "_blank");
-    if (!ventana) {
-      toast.error(tExtra("permiteVentanasEmergentes"));
-      return;
+    setDescargandoPdf(true);
+    try {
+      const nombre = pacienteNombre.replace(/\s+/g, "-");
+      await downloadPDF(html, `Anamnesis-${nombre}.pdf`);
+    } catch {
+      toast.error(tExtra("errorDescargarPdf"));
+    } finally {
+      setDescargandoPdf(false);
     }
-    ventana.document.write(html);
-    ventana.document.close();
   }
 
-  const c = data.consulta ?? {};
-  const ps = data.personalSocial ?? {};
-  const cl = data.clinica ?? {};
-  const al = data.alimentaria ?? {};
+  function entrarEdicion() {
+    setEstructuraEdit(estructura);
+    setTipoOrigenId(plantillaActualId);
+    setPidiendoNombre(false);
+    setNombreNuevo("");
+    setModoEdicion(true);
+  }
+
+  const hayCambiosEdicion = JSON.stringify(estructuraEdit) !== JSON.stringify(estructura);
+
+  function pedirSalirEdicion() {
+    setPendingHref(null);
+    if (hayCambiosEdicion) setShowSalirModal(true);
+    else setModoEdicion(false);
+  }
+
+  function confirmarSalir() {
+    setShowSalirModal(false);
+    setModoEdicion(false);
+    if (pendingHref) {
+      const h = pendingHref;
+      setPendingHref(null);
+      router.push(h);
+    }
+  }
+
+  function cerrarSalirModal() {
+    setShowSalirModal(false);
+    setPendingHref(null);
+  }
+
+  function empezarDesde(est: EstructuraPlantilla, origenId: string | null = null) {
+    setEstructuraEdit(est);
+    setTipoOrigenId(origenId);
+    setPidiendoNombre(false);
+    setNombreNuevo("");
+    setShowCrearModal(false);
+    setModoEdicion(true);
+  }
+
+  async function desdeTipo(id: string) {
+    const p = await getPlantillaAnamnesis(id);
+    if (p) empezarDesde(p.estructura, id);
+  }
+
+  function finalizarGuardado(res: { ok: boolean; error?: string }) {
+    setGuardando(false);
+    if (res.ok) {
+      toast.success(tPre("guardado"));
+      setModoEdicion(false);
+      setPidiendoNombre(false);
+      router.refresh();
+    } else {
+      toast.error(res.error || tPre("guardado"));
+    }
+  }
+
+  async function guardarSolo() {
+    setGuardando(true);
+    finalizarGuardado(await guardarEstructuraPaciente(pacienteId, estructuraEdit));
+  }
+
+  async function guardarComoNuevo() {
+    if (!nombreNuevo.trim()) return;
+    setGuardando(true);
+    finalizarGuardado(await guardarComoTipoNuevoPaciente(pacienteId, nombreNuevo.trim(), estructuraEdit));
+  }
+
+  async function actualizarTipo() {
+    if (!tipoOrigenId) return;
+    setGuardando(true);
+    finalizarGuardado(await actualizarTipoDePaciente(pacienteId, tipoOrigenId, estructuraEdit));
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {preconsultaCompletadaAt && (
-        <div className="flex items-center gap-2 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-sm px-4 py-2.5">
-          <Check className="w-4 h-4 shrink-0" />
-          {tPre("rellenadaPorPaciente", { fecha: new Date(preconsultaCompletadaAt).toLocaleDateString(locale) })}
+      {preconsultaCompletadaAt && !modoEdicion && bannerVisible && (
+        <div className="flex items-center justify-between gap-2 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 px-3 py-2">
+          <span className="flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-300">
+            <Check className="w-3.5 h-3.5 shrink-0" />
+            {tPre("rellenadaPorPaciente", { fecha: new Date(preconsultaCompletadaAt).toLocaleDateString(locale) })}
+          </span>
+          <button
+            type="button"
+            onClick={() => setBannerVisible(false)}
+            aria-label={tPre("cerrar")}
+            className="shrink-0 text-emerald-700/70 dark:text-emerald-300/70 hover:text-emerald-900 dark:hover:text-emerald-100 transition-colors"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 mb-2 border-b border-border">
-        <div className="flex flex-wrap items-center gap-2">
-          <EnviarAnamnesisButton pacienteId={pacienteId} pacienteEmail={pacienteEmail} />
-          <button
-            type="button"
-            onClick={handleExportarPDF}
-            className="inline-flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors w-fit"
-          >
-            <FileDown className="w-4 h-4" />
-            {t("exportarPdf")}
-          </button>
-        </div>
-        <div className="flex items-center gap-3">
-          <SaveStatusBadge status={saveStatus} />
-          <button
-            type="button"
-            onClick={guardarManual}
-            disabled={saveStatus === "saving"}
-            className="p-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50"
-            title={t("guardarAhora")}
-          >
-            <Save className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
 
-      <div className="space-y-1">
-        {/* ── Informaciones de consulta ── */}
-        <FichaAccordion title={t("informacionesConsulta")} icon={Calendar}>
-          <div>
-            <FichaLabel>{t("motivoConsulta")}</FichaLabel>
-            <FichaTextarea
-              value={c.motivo ?? ""}
-              onChange={(v) => setField("consulta", "motivo", v)}
-              rows={2}
-            />
+      {modoEdicion ? (
+        <>
+          <div className="flex items-center justify-between gap-3 pb-4 mb-2 border-b border-border">
+            <h2 className="text-base font-semibold">{tPre("editar")}</h2>
+            <button
+              type="button"
+              onClick={pedirSalirEdicion}
+              className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors"
+            >
+              <X className="w-4 h-4" />
+              {tPre("cancelar")}
+            </button>
           </div>
-          <div>
-            <FichaLabel>{t("expectativas")}</FichaLabel>
-            <FichaTextarea
-              value={c.expectativas ?? ""}
-              onChange={(v) => setField("consulta", "expectativas", v)}
-              rows={2}
-            />
-          </div>
-          <div>
-            <FichaLabel>{t("objetivosClinicos")}</FichaLabel>
-            <FichaSelect
-              value={c.objetivosClinicos || OPCION_VACIA}
-              onChange={(v) => setField("consulta", "objetivosClinicos", v)}
-              options={SELECT_OBJETIVOS_CLINICOS}
-            />
-            {c.objetivosClinicos && c.objetivosClinicos !== OPCION_VACIA && (
-              <div className="mt-2">
-                <FichaTextarea
-                  value={c.objetivosClinicosDetalle ?? ""}
-                  onChange={(v) =>
-                    setField("consulta", "objetivosClinicosDetalle", v)
-                  }
-                  rows={2}
-                  placeholder={t("detallaObjetivo")}
-                />
-              </div>
-            )}
-          </div>
-          <div>
-            <FichaLabel>{t("otrasInformaciones")}</FichaLabel>
-            <FichaTextarea
-              value={c.otras ?? ""}
-              onChange={(v) => setField("consulta", "otras", v)}
-              rows={2}
-            />
-          </div>
-          <CamposCustomRender campos={camposPorSeccion.consulta} valores={cp} onChange={setCustomField} />
-        </FichaAccordion>
 
-        {/* ── Historia personal y social ── */}
-        <FichaAccordion title={t("historiaPersonalSocial")} icon={User}>
-          <div>
-            <FichaLabel>{t("funcionIntestinal")}</FichaLabel>
-            <FichaSelect
-              value={ps.funcionIntestinal || OPCION_VACIA}
-              onChange={(v) => setField("personalSocial", "funcionIntestinal", v)}
-              options={SELECT_FUNCION_INTESTINAL}
-            />
-            {ps.funcionIntestinal === "otro" && (
-              <div className="mt-2">
-                <FichaTextarea
-                  value={ps.funcionIntestinalDetalle ?? ""}
-                  onChange={(v) =>
-                    setField("personalSocial", "funcionIntestinalDetalle", v)
-                  }
-                  rows={2}
-                  placeholder={t("especifica")}
-                />
-              </div>
-            )}
-          </div>
-          <div>
-            <FichaLabel>{t("calidadSueno")}</FichaLabel>
-            <FichaSelect
-              value={ps.calidadSueno || OPCION_VACIA}
-              onChange={(v) => setField("personalSocial", "calidadSueno", v)}
-              options={SELECT_CALIDAD_SUENO}
-            />
-            {(ps.calidadSueno === "regular" || ps.calidadSueno === "mala") && (
-              <div className="mt-2">
-                <FichaTextarea
-                  value={ps.calidadSuenoDetalle ?? ""}
-                  onChange={(v) =>
-                    setField("personalSocial", "calidadSuenoDetalle", v)
-                  }
-                  rows={2}
-                  placeholder={t("describeProblemaSueno")}
-                />
-              </div>
-            )}
-          </div>
-          <div>
-            <FichaLabel>{t("fumador")}</FichaLabel>
-            <FichaSelect
-              value={ps.fumador || OPCION_VACIA}
-              onChange={(v) => setField("personalSocial", "fumador", v)}
-              options={SELECT_SI_NO_OCASION}
-            />
-            {(ps.fumador === "si" || ps.fumador === "ocasional") && (
-              <div className="mt-2">
-                <FichaTextarea
-                  value={ps.fumadorDetalle ?? ""}
-                  onChange={(v) => setField("personalSocial", "fumadorDetalle", v)}
-                  rows={2}
-                  placeholder={t("frecuenciaCantidad")}
-                />
-              </div>
-            )}
-          </div>
-          <div>
-            <FichaLabel>{t("bebeAlcohol")}</FichaLabel>
-            <FichaSelect
-              value={ps.alcohol || OPCION_VACIA}
-              onChange={(v) => setField("personalSocial", "alcohol", v)}
-              options={SELECT_SI_NO_OCASION}
-            />
-            {(ps.alcohol === "si" || ps.alcohol === "ocasional") && (
-              <div className="mt-2">
-                <FichaTextarea
-                  value={ps.alcoholDetalle ?? ""}
-                  onChange={(v) => setField("personalSocial", "alcoholDetalle", v)}
-                  rows={2}
-                  placeholder={tExtra("frecuenciaTipoBebida")}
-                />
-              </div>
-            )}
-          </div>
-          <div>
-            <FichaLabel>{t("estadoCivil")}</FichaLabel>
-            <FichaSelect
-              value={ps.estadoCivil || OPCION_VACIA}
-              onChange={(v) => setField("personalSocial", "estadoCivil", v)}
-              options={SELECT_ESTADO_CIVIL}
-            />
-            {ps.estadoCivil === "otro" && (
-              <div className="mt-2">
-                <FichaTextarea
-                  value={ps.estadoCivilDetalle ?? ""}
-                  onChange={(v) =>
-                    setField("personalSocial", "estadoCivilDetalle", v)
-                  }
-                  rows={2}
-                  placeholder={t("especifica")}
-                />
-              </div>
-            )}
-          </div>
-          <div>
-            <FichaLabel>{t("actividadFisica")}</FichaLabel>
-            <FichaTextarea
-              value={ps.actividadFisica ?? ""}
-              onChange={(v) => setField("personalSocial", "actividadFisica", v)}
-              rows={2}
-            />
-          </div>
-          <div>
-            <FichaLabel>{t("razaEtnia")}</FichaLabel>
-            <FichaSelect
-              value={ps.raza || OPCION_VACIA}
-              onChange={(v) => setField("personalSocial", "raza", v)}
-              options={[
-                { value: OPCION_VACIA, label: t("seleccionaOpcion") },
-                { value: "caucasica", label: t("razaCaucasica") },
-                { value: "hispana", label: t("razaHispana") },
-                { value: "afrodescendiente", label: t("razaAfrodescendiente") },
-                { value: "asiatica", label: t("razaAsiatica") },
-                { value: "arabe", label: t("razaArabe") },
-                { value: "indigena", label: t("razaIndigena") },
-                { value: "mestiza", label: t("razaMestiza") },
-                { value: "no_indica", label: t("razaOtra") },
-                { value: "otra", label: t("razaOtra") },
-              ]}
-            />
-            {ps.raza === "otra" && (
-              <div className="mt-2">
-                <FichaInput
-                  value={ps.razaDetalle ?? ""}
-                  onChange={(v) => setField("personalSocial", "razaDetalle", v)}
-                  placeholder={t("especifica")}
-                />
-              </div>
-            )}
-          </div>
-          <div>
-            <FichaLabel>{t("otrasInformaciones")}</FichaLabel>
-            <FichaTextarea
-              value={ps.otrasPersonal ?? ""}
-              onChange={(v) => setField("personalSocial", "otrasPersonal", v)}
-              rows={2}
-            />
-          </div>
-          <CamposCustomRender campos={camposPorSeccion.personalSocial} valores={cp} onChange={setCustomField} />
-        </FichaAccordion>
+          <AnamnesisEditor estructura={estructuraEdit} onChange={setEstructuraEdit} />
 
-        {/* ── Historia clínica ── */}
-        <FichaAccordion title={tExtra("historiaClinica")} icon={Link2}>
-          <div className="rounded-lg bg-muted/40 border border-border/60 p-3 mb-3 text-sm">
-            <p className="font-medium text-foreground mb-2">
-              {tExtra("registradoFicha")}
-            </p>
-            <TagLine label={tExtra("patologias")} tags={resumen.patologias} />
-            <TagLine label={tExtra("medicacion")} tags={resumen.medicamentos} />
-            <p className="text-xs text-muted-foreground mt-2">
-              {tExtra("editarListasCompletas")}{" "}
-              <Link href={`/pacientes/${pacienteId}/editar`} className="font-medium text-primary hover:underline">
-                {tExtra("editarPaciente")}
-              </Link>.
-            </p>
+          <div className="flex flex-col gap-2 border-t border-border pt-4 sm:flex-row sm:flex-wrap sm:items-center">
+            <button
+              type="button"
+              onClick={guardarSolo}
+              disabled={guardando}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            >
+              {guardando && <Loader2 className="w-4 h-4 animate-spin" />}
+              {tPre("guardarSoloPaciente")}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setNombreNuevo(""); setPidiendoNombre(true); }}
+              disabled={guardando}
+              className="px-4 py-2 text-sm font-medium rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50"
+            >
+              {tPre("guardarComoTipo")}
+            </button>
+            {tipoOrigenId && (
+              <button
+                type="button"
+                onClick={actualizarTipo}
+                disabled={guardando}
+                className="px-4 py-2 text-sm font-medium rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50"
+              >
+                {tPre("actualizarTipo", { nombre: nombreTipoOrigen })}
+              </button>
+            )}
           </div>
-          <div>
-            <FichaLabel>{tExtra("detallePatologias")}</FichaLabel>
-            <FichaTextarea
-              value={cl.patologiasDetalle ?? ""}
-              onChange={(v) => setField("clinica", "patologiasDetalle", v)}
-              rows={3}
-            />
+        </>
+      ) : (
+        <>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 mb-2 border-b border-border">
+            <div className="flex flex-wrap items-center gap-2">
+              <SelectorPlantillaAnamnesis
+                pacienteId={pacienteId}
+                plantillas={plantillas}
+                valorActual={plantillaActualId}
+                onCrearNueva={() => setShowCrearModal(true)}
+              />
+              <EnviarAnamnesisButton pacienteId={pacienteId} pacienteEmail={pacienteEmail} />
+              <button
+                type="button"
+                onClick={handleExportarPDF}
+                disabled={descargandoPdf}
+                className="inline-flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors w-fit disabled:opacity-60"
+              >
+                {descargandoPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+                {t("exportarPdf")}
+              </button>
+              <button
+                type="button"
+                onClick={entrarEdicion}
+                className="inline-flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors w-fit"
+              >
+                <Pencil className="w-4 h-4" />
+                {tPre("editar")}
+              </button>
+            </div>
+            <SaveStatusBadge status={saveStatus} />
           </div>
-          <div>
-            <FichaLabel>{tExtra("medicacionTextoLibre")}</FichaLabel>
-            <FichaTextarea
-              value={cl.medicacion ?? ""}
-              onChange={(v) => setField("clinica", "medicacion", v)}
-              rows={2}
-              placeholder={tExtra("ninguna")}
-            />
-          </div>
-          <FichaTwoCol
-            left={
-              <div>
-                <FichaLabel>{tExtra("antecedentesPersonales")}</FichaLabel>
-                <FichaInput
-                  value={cl.antecedentesPersonales ?? ""}
-                  onChange={(v) =>
-                    setField("clinica", "antecedentesPersonales", v)
-                  }
-                  placeholder={tExtra("ninguno")}
-                />
-              </div>
-            }
-            right={
-              <div>
-                <FichaLabel>{tExtra("antecedentesFamiliares")}</FichaLabel>
-                <FichaInput
-                  value={cl.antecedentesFamiliares ?? ""}
-                  onChange={(v) =>
-                    setField("clinica", "antecedentesFamiliares", v)
-                  }
-                  placeholder={tExtra("ninguno")}
-                />
-              </div>
-            }
+
+          <AnamnesisRenderer
+            estructura={estructura}
+            data={data}
+            onBuiltin={(seccion, campo, value) => setField(seccion as keyof FichaInformacionData, campo, value)}
+            onCustom={setCustomField}
+            modoNutri
           />
-          <div>
-            <FichaLabel>{t("otrasInformaciones")}</FichaLabel>
-            <FichaTextarea
-              value={cl.otrasClinicas ?? ""}
-              onChange={(v) => setField("clinica", "otrasClinicas", v)}
-              rows={2}
-            />
-          </div>
-          <CamposCustomRender campos={camposPorSeccion.clinica} valores={cp} onChange={setCustomField} />
-        </FichaAccordion>
+        </>
+      )}
 
-        {/* ── Historia alimentaria ── */}
-        <FichaAccordion title={tExtra("historiaAlimentaria")} icon={UtensilsCrossed}>
-          <div className="rounded-lg bg-muted/40 border border-border/60 p-3 mb-3 text-sm">
-            <TagLine label={tExtra("alergias")} tags={resumen.alergias} />
-            <TagLine label={tExtra("intolerancias")} tags={resumen.intolerancias} />
-          </div>
-          <FichaTwoCol
-            left={
-              <div>
-                <FichaLabel>{tExtra("horaLevantarse")}</FichaLabel>
-                <TimePicker
-                  value={al.horaLevantarse ?? ""}
-                  onChange={(v) => setField("alimentaria", "horaLevantarse", v)}
-                  inputClassName={HORA_INPUT_CLS}
-                  ariaLabel={tExtra("horaLevantarse")}
-                />
+      {showSalirModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm px-0 sm:px-4"
+          onClick={cerrarSalirModal}
+        >
+          <div
+            className="bg-card rounded-t-2xl sm:rounded-2xl border border-border shadow-2xl w-full sm:max-w-md p-5 sm:p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-500/15 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
               </div>
-            }
-            right={
-              <div>
-                <FichaLabel>{tExtra("horaAcostarse")}</FichaLabel>
-                <TimePicker
-                  value={al.horaAcostarse ?? ""}
-                  onChange={(v) => setField("alimentaria", "horaAcostarse", v)}
-                  inputClassName={HORA_INPUT_CLS}
-                  ariaLabel={tExtra("horaAcostarse")}
-                />
-              </div>
-            }
-          />
-          <div>
-            <FichaLabel>{tExtra("tiposDieta")}</FichaLabel>
-            <FichaSelect
-              value={al.tiposDieta || OPCION_VACIA}
-              onChange={(v) => setField("alimentaria", "tiposDieta", v)}
-              options={SELECT_TIPOS_DIETA}
-            />
-            {al.tiposDieta === "otra" && (
-              <div className="mt-2">
-                <FichaTextarea
-                  value={al.tiposDietaDetalle ?? ""}
-                  onChange={(v) => setField("alimentaria", "tiposDietaDetalle", v)}
-                  rows={2}
-                  placeholder={tExtra("describeTipoDieta")}
-                />
-              </div>
-            )}
+              <h3 className="text-base sm:text-lg font-semibold">{tForm("cambiosSinGuardar")}</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-5">{tForm("cambiosSinGuardarDescripcionLarga")}</p>
+            <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2">
+              <button
+                type="button"
+                onClick={cerrarSalirModal}
+                className="px-4 py-2.5 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors"
+              >
+                {tForm("seguirEditando")}
+              </button>
+              <button
+                type="button"
+                onClick={confirmarSalir}
+                className="px-4 py-2.5 rounded-lg bg-destructive text-destructive-foreground text-sm font-medium hover:bg-destructive/90 transition-colors"
+              >
+                {tForm("salirSinGuardar")}
+              </button>
+            </div>
           </div>
-          <div>
-            <FichaLabel>{tExtra("alimentosFavoritos")}</FichaLabel>
-            <FichaInput
-              value={al.alimentosFavoritos ?? ""}
-              onChange={(v) => setField("alimentaria", "alimentosFavoritos", v)}
-              placeholder={tExtra("ninguno")}
-            />
-          </div>
-          <div>
-            <FichaLabel>{tExtra("alimentosRechazados")}</FichaLabel>
-            <FichaInput
-              value={al.alimentosRechazados ?? ""}
-              onChange={(v) =>
-                setField("alimentaria", "alimentosRechazados", v)
-              }
-              placeholder={tExtra("ninguno")}
-            />
-          </div>
-          <div>
-            <FichaLabel>{tExtra("alergias")}</FichaLabel>
-            <FichaSelect
-              value={al.alergiasResumen || OPCION_VACIA}
-              onChange={(v) => setField("alimentaria", "alergiasResumen", v)}
-              options={[
-                { value: OPCION_VACIA, label: tExtra("ninguna") },
-                { value: "si", label: tExtra("siDetallar") },
-              ]}
-            />
-            {al.alergiasResumen === "si" && (
-              <div className="mt-2">
-                <FichaTextarea
-                  value={al.alergiasDetalle ?? ""}
-                  onChange={(v) => setField("alimentaria", "alergiasDetalle", v)}
-                  rows={2}
-                  placeholder={tExtra("detallaAlergias")}
-                />
-              </div>
-            )}
-          </div>
-          <div>
-            <FichaLabel>{tExtra("intoleranciasAlimentarias")}</FichaLabel>
-            <FichaSelect
-              value={al.intoleranciasResumen || OPCION_VACIA}
-              onChange={(v) => setField("alimentaria", "intoleranciasResumen", v)}
-              options={[
-                { value: OPCION_VACIA, label: tExtra("ninguna") },
-                { value: "si", label: tExtra("siDetallar") },
-              ]}
-            />
-            {al.intoleranciasResumen === "si" && (
-              <div className="mt-2">
-                <FichaTextarea
-                  value={al.intoleranciasDetalle ?? ""}
-                  onChange={(v) =>
-                    setField("alimentaria", "intoleranciasDetalle", v)
-                  }
-                  rows={2}
-                  placeholder={tExtra("detallaIntolerancias")}
-                />
-              </div>
-            )}
-          </div>
-          <div>
-            <FichaLabel>{tExtra("deficienciasNutricionales")}</FichaLabel>
-            <FichaSelect
-              value={al.deficiencias || OPCION_VACIA}
-              onChange={(v) => setField("alimentaria", "deficiencias", v)}
-              options={[
-                { value: OPCION_VACIA, label: tExtra("ninguna") },
-                { value: "si", label: tExtra("siDetallar") },
-              ]}
-            />
-            {al.deficiencias === "si" && (
-              <div className="mt-2">
-                <FichaTextarea
-                  value={al.deficienciasDetalle ?? ""}
-                  onChange={(v) =>
-                    setField("alimentaria", "deficienciasDetalle", v)
-                  }
-                  rows={2}
-                  placeholder={tExtra("detallaDeficiencias")}
-                />
-              </div>
-            )}
-          </div>
-          <div>
-            <FichaLabel>{tExtra("ingestaAgua")}</FichaLabel>
-            <FichaSelect
-              value={al.ingestaAgua || OPCION_VACIA}
-              onChange={(v) => setField("alimentaria", "ingestaAgua", v)}
-              options={SELECT_INGESTA_AGUA}
-            />
-          </div>
-          <div>
-            <FichaLabel>{t("otrasInformaciones")}</FichaLabel>
-            <FichaTextarea
-              value={al.otrasAlimentaria ?? ""}
-              onChange={(v) => setField("alimentaria", "otrasAlimentaria", v)}
-              rows={2}
-            />
-          </div>
-          <CamposCustomRender campos={camposPorSeccion.alimentaria} valores={cp} onChange={setCustomField} />
-        </FichaAccordion>
+        </div>
+      )}
 
-        {camposPorSeccion.personalizado.length > 0 && (
-          <FichaAccordion title={tExtra("camposPersonalizados")} icon={ClipboardList}>
-            <CamposCustomRender campos={camposPorSeccion.personalizado} valores={cp} onChange={setCustomField} />
-          </FichaAccordion>
-        )}
+      {showCrearModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm px-0 sm:px-4"
+          onClick={() => setShowCrearModal(false)}
+        >
+          <div
+            className="bg-card rounded-t-2xl sm:rounded-2xl border border-border shadow-2xl w-full sm:max-w-md p-5 sm:p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-base sm:text-lg font-semibold mb-1">{tPre("crearNuevaTitulo")}</h3>
+            <p className="text-sm text-muted-foreground mb-4">{tPre("crearNuevaAyuda")}</p>
+            <p className="text-xs font-medium text-muted-foreground mb-2">{tPre("empezarDesde")}</p>
+            <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+              <button
+                type="button"
+                onClick={() => empezarDesde({ secciones: [] })}
+                className="w-full text-left px-3 py-2.5 rounded-lg border border-border hover:border-primary/50 hover:bg-muted/50 text-sm font-medium transition-colors"
+              >
+                {tPre("crearTipoEnBlanco")}
+              </button>
+              <button
+                type="button"
+                onClick={() => empezarDesde(estructuraBase())}
+                className="w-full text-left px-3 py-2.5 rounded-lg border border-border hover:border-primary/50 hover:bg-muted/50 text-sm font-medium transition-colors"
+              >
+                {tPre("desdeGenerica")}
+              </button>
+              {plantillas.length > 0 && (
+                <>
+                  <p className="text-xs text-muted-foreground pt-2">{tPre("desdeExistente")}</p>
+                  {plantillas.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => desdeTipo(p.id)}
+                      className="w-full text-left px-3 py-2 rounded-lg border border-border hover:border-primary/50 hover:bg-muted/50 text-sm transition-colors"
+                    >
+                      {p.nombre}
+                    </button>
+                  ))}
+                </>
+              )}
+            </div>
+            <div className="flex justify-end mt-4">
+              <button
+                type="button"
+                onClick={() => setShowCrearModal(false)}
+                className="px-4 py-2 text-sm rounded-lg border border-border hover:bg-muted transition-colors"
+              >
+                {tPre("cancelar")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-      </div>
-
-      <Link
-        href="/ajustes#anamnesis"
-        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors px-1 py-2"
-      >
-        <Settings className="w-4 h-4" />
-        {tExtra("personalizarCamposAnamnesis")}
-      </Link>
-
-
+      {pidiendoNombre && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm px-0 sm:px-4"
+          onClick={() => setPidiendoNombre(false)}
+        >
+          <div
+            className="bg-card rounded-t-2xl sm:rounded-2xl border border-border shadow-2xl w-full sm:max-w-md p-5 sm:p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-base sm:text-lg font-semibold mb-1">{tPre("guardarComoTipo")}</h3>
+            <p className="text-sm text-muted-foreground mb-3">{tPre("nuevaPlantillaAyuda")}</p>
+            <input
+              value={nombreNuevo}
+              onChange={(e) => setNombreNuevo(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && nombreNuevo.trim()) guardarComoNuevo();
+              }}
+              placeholder={tPre("nombreNuevoTipo")}
+              autoFocus
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                type="button"
+                onClick={() => setPidiendoNombre(false)}
+                className="px-4 py-2 text-sm rounded-lg border border-border hover:bg-muted transition-colors"
+              >
+                {tPre("cancelar")}
+              </button>
+              <button
+                type="button"
+                onClick={guardarComoNuevo}
+                disabled={guardando || !nombreNuevo.trim()}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
+                {guardando && <Loader2 className="w-4 h-4 animate-spin" />}
+                {tPre("crearPlantillaBoton")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  );
-}
-
-function CamposCustomRender({
-  campos,
-  valores,
-  onChange,
-}: {
-  campos: CampoPersonalizadoDefinicion[];
-  valores: Record<string, string>;
-  onChange: (id: string, value: string) => void;
-}) {
-  const tExtra = useTranslations("patients.informacionExtra");
-  if (campos.length === 0) return null;
-  return (
-    <>
-      {campos.map((campo) => (
-        <div key={campo.id}>
-          <FichaLabel>{campo.label}</FichaLabel>
-          {campo.tipo === "textarea" ? (
-            <FichaTextarea
-              value={valores[campo.id] ?? ""}
-              onChange={(v) => onChange(campo.id, v)}
-              rows={2}
-            />
-          ) : campo.tipo === "selector" && campo.opciones ? (
-            <FichaSelect
-              value={valores[campo.id] || OPCION_VACIA}
-              onChange={(v) => onChange(campo.id, v)}
-              options={[
-                { value: OPCION_VACIA, label: tExtra("seleccionaOpcion") },
-                ...campo.opciones.map((o) => ({ value: o, label: o })),
-              ]}
-            />
-          ) : (
-            <FichaInput
-              value={valores[campo.id] ?? ""}
-              onChange={(v) => onChange(campo.id, v)}
-            />
-          )}
-        </div>
-      ))}
-    </>
-  );
-}
-
-function TagLine({ label, tags }: { label: string; tags: string[] }) {
-  const tExtra = useTranslations("patients.informacionExtra");
-  if (!tags.length) {
-    return (
-      <p className="text-muted-foreground">
-        <span className="font-medium text-foreground">{label}:</span> {tExtra("ninguna").toLowerCase()}
-      </p>
-    );
-  }
-  return (
-    <p className="text-muted-foreground mb-1">
-      <span className="font-medium text-foreground">{label}:</span>{" "}
-      {tags.join(", ")}
-    </p>
   );
 }
 
@@ -860,11 +655,5 @@ function SaveStatusBadge({ status }: { status: SaveStatus }) {
       </span>
     );
   }
-  return (
-    <span className="inline-flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
-      <Check className="w-3.5 h-3.5" />
-      {tExtra("guardado")}
-    </span>
-  );
+  return null;
 }
-
