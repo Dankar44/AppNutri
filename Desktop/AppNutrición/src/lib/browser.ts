@@ -30,3 +30,16 @@ export async function getBrowser(): Promise<Browser> {
 
   return browser;
 }
+
+/** Cierra y descarta el navegador compartido (p. ej. tras un crash) para que el siguiente uso lo relance. */
+export async function resetBrowser(): Promise<void> {
+  const b = browser;
+  browser = null;
+  if (b) {
+    try {
+      await b.close();
+    } catch {
+      /* el navegador ya estaba muerto */
+    }
+  }
+}
