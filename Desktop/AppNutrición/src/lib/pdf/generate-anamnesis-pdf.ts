@@ -43,9 +43,20 @@ export interface AnamnesisPDFData {
 
 function fila(label: string, value: string | undefined | null): string {
   if (!value || value === OPCION_VACIA) return "";
+  // Respuestas largas (texto libre) o con saltos → pregunta arriba y respuesta debajo a todo el ancho,
+  // sin truncar la pregunta. Respuestas cortas (selector, sí/no…) → dos columnas.
+  const largo = value.length > 55 || value.includes("\n");
+  if (largo) {
+    return `<tr>
+    <td colspan="2" style="padding:9px 12px 11px">
+      <div style="font-weight:600;font-size:13px;margin-bottom:3px">${esc(label)}</div>
+      <div style="font-size:13px;line-height:1.5;white-space:pre-wrap">${esc(value)}</div>
+    </td>
+  </tr>`;
+  }
   return `<tr>
-    <td style="padding:7px 12px;font-weight:600;vertical-align:top;white-space:nowrap;width:40%;font-size:13px">${esc(label)}</td>
-    <td style="padding:7px 12px;font-size:13px">${esc(value)}</td>
+    <td style="padding:7px 12px;font-weight:600;vertical-align:top;width:38%;font-size:13px">${esc(label)}</td>
+    <td style="padding:7px 12px;font-size:13px;white-space:pre-wrap">${esc(value)}</td>
   </tr>`;
 }
 
