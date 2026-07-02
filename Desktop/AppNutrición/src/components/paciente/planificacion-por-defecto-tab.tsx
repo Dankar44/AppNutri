@@ -922,6 +922,8 @@ export function PlanificacionPorDefectoTab({
   // Edición directa de gramos por macro: buffer mientras se teclea; se aplica al salir del campo
   // (evita que el input "salte" al recalcularse el % en cada tecla).
   const [gramosEdit, setGramosEdit] = useState<{ macro: "grasa" | "carb" | "prot"; val: string } | null>(null);
+  // #78 (g·kg) — edición de gramos por kilo de peso (buffer; al confirmar pasa a gramos → % como gramosEdit).
+  const [gkgEdit, setGkgEdit] = useState<{ macro: "grasa" | "carb" | "prot"; val: string } | null>(null);
 
   /* --- Editable weight/body fat inputs --- */
   const pesoInicialActual = latestValue(medidas, "peso") ?? paciente.peso ?? null;
@@ -1314,6 +1316,24 @@ export function PlanificacionPorDefectoTab({
     if (gramosEdit?.macro === macro) {
       handleGramosChange(macro, gramosEdit.val);
       setGramosEdit(null);
+    }
+  }
+
+  /* ─── Editar g/kg → pasa a gramos (× peso) y reusa la conversión a % ─── */
+  function handleGkgChange(macro: "grasa" | "carb" | "prot", raw: string) {
+    const w = pesoActual;
+    if (!w || w <= 0) return; // sin peso del paciente no se puede derivar
+    const gkg = parseFloat(raw.replace(",", "."));
+    if (!Number.isFinite(gkg) || gkg < 0) return;
+    handleGramosChange(macro, String(gkg * w));
+  }
+  function gkgValue(macro: "grasa" | "carb" | "prot", calc: number): string {
+    return gkgEdit?.macro === macro ? gkgEdit.val : fmt2(calc);
+  }
+  function commitGkg(macro: "grasa" | "carb" | "prot") {
+    if (gkgEdit?.macro === macro) {
+      handleGkgChange(macro, gkgEdit.val);
+      setGkgEdit(null);
     }
   }
 
@@ -2000,7 +2020,20 @@ export function PlanificacionPorDefectoTab({
                       <span className="text-muted-foreground text-xs">g</span>
                     </div>
                   </td>
-                  <td className="py-3 px-4">{fmt2(macros.grasaGKg)} g/kg</td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="number" inputMode="decimal" step="0.1" min={0}
+                        value={gkgValue("grasa", macros.grasaGKg)}
+                        onChange={(e) => setGkgEdit({ macro: "grasa", val: e.target.value })}
+                        onBlur={() => commitGkg("grasa")}
+                        onKeyDown={(e) => { if (e.key === "Enter") commitGkg("grasa"); }}
+                        disabled={!macros.kcal || !pesoActual}
+                        className="w-16 h-8 px-2 rounded-lg border border-border bg-background text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+                      />
+                      <span className="text-muted-foreground text-xs">g/kg</span>
+                    </div>
+                  </td>
                   <td className="py-3 px-4 text-muted-foreground">{macroRef.lipidos}</td>
                 </tr>
 
@@ -2049,7 +2082,20 @@ export function PlanificacionPorDefectoTab({
                       <span className="text-muted-foreground text-xs">g</span>
                     </div>
                   </td>
-                  <td className="py-3 px-4">{fmt2(macros.carbGKg)} g/kg</td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="number" inputMode="decimal" step="0.1" min={0}
+                        value={gkgValue("carb", macros.carbGKg)}
+                        onChange={(e) => setGkgEdit({ macro: "carb", val: e.target.value })}
+                        onBlur={() => commitGkg("carb")}
+                        onKeyDown={(e) => { if (e.key === "Enter") commitGkg("carb"); }}
+                        disabled={!macros.kcal || !pesoActual}
+                        className="w-16 h-8 px-2 rounded-lg border border-border bg-background text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+                      />
+                      <span className="text-muted-foreground text-xs">g/kg</span>
+                    </div>
+                  </td>
                   <td className="py-3 px-4 text-muted-foreground">{macroRef.carbohidratos}</td>
                 </tr>
 
@@ -2097,7 +2143,20 @@ export function PlanificacionPorDefectoTab({
                       <span className="text-muted-foreground text-xs">g</span>
                     </div>
                   </td>
-                  <td className="py-3 px-4">{fmt2(macros.protGKg)} g/kg</td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="number" inputMode="decimal" step="0.1" min={0}
+                        value={gkgValue("prot", macros.protGKg)}
+                        onChange={(e) => setGkgEdit({ macro: "prot", val: e.target.value })}
+                        onBlur={() => commitGkg("prot")}
+                        onKeyDown={(e) => { if (e.key === "Enter") commitGkg("prot"); }}
+                        disabled={!macros.kcal || !pesoActual}
+                        className="w-16 h-8 px-2 rounded-lg border border-border bg-background text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+                      />
+                      <span className="text-muted-foreground text-xs">g/kg</span>
+                    </div>
+                  </td>
                   <td className="py-3 px-4 text-muted-foreground">{macroRef.proteinas}</td>
                 </tr>
               </tbody>
