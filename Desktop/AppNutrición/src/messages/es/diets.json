@@ -421,7 +421,13 @@
     "toastUpdateQuantityError": "Error al actualizar cantidad",
     "toastAlternativasRecalculadas": "{n, plural, one {# alternativa recalculada} other {# alternativas recalculadas}} según la nueva cantidad",
     "toastEquivalenciasGuardadas": "Equivalencias guardadas",
-    "sinNombre": "Sin nombre"
+    "sinNombre": "Sin nombre",
+    "anadirComida": "Añadir comida",
+    "eliminarComida": "Eliminar comida",
+    "anadirComidaDia": "Añadir comida al día",
+    "nombreComidaLabel": "Nombre de la comida",
+    "nombreComidaPlaceholder": "Ej: Preentreno, Media mañana...",
+    "horaComidaLabel": "Hora"
   },
   "alimentoCard": {
     "unitConnector": "de",
@@ -429,9 +435,14 @@
     "or": "o",
     "addAlternativa": "Añadir alternativa",
     "removeAlternativa": "Quitar alternativa",
+    "convertirEnPrincipal": "Convertir en principal (el actual pasa a alternativa)",
     "alternativasLabel": "Alternativas",
     "renombrar": "Editar nombre (solo texto, no cambia macros)",
     "revisarEquivalencias": "Revisar equivalencias",
+    "moverArriba": "Subir",
+    "moverAbajo": "Bajar",
+    "eliminarTodo": "Eliminar el alimento y sus alternativas",
+    "dejarComoPrincipal": "O dejar como principal:",
     "delete": "Eliminar"
   },
   "comidaSlot": {
@@ -441,7 +452,8 @@
       "ALMUERZO": "Almuerzo",
       "MERIENDA": "Merienda",
       "CENA": "Cena",
-      "RECENA": "Recena"
+      "RECENA": "Recena",
+      "OTRA": "Comida"
     },
     "horaDefault": {
       "DESAYUNO": "08:30",
@@ -449,7 +461,8 @@
       "ALMUERZO": "14:00",
       "MERIENDA": "17:30",
       "CENA": "21:00",
-      "RECENA": "23:00"
+      "RECENA": "23:00",
+      "OTRA": "12:00"
     },
     "noFoods": "Sin alimentos",
     "addFood": "Agregar nuevo alimento +",

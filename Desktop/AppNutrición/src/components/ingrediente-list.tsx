@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, Search } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { AlimentoSearch } from "./alimento-search";
+import { SelectorAlimento } from "./dieta/selector-alimento";
 import { CantidadInput } from "./cantidad-input";
 import { MacroBadges } from "./macro-badge";
 import { calcularMacrosPorcion, convertirAGramos, type Macros } from "@/lib/macros";
-import { getCantidadDefault, UNIDAD_LABELS } from "@/lib/units";
-import { buscarAlimentosParaReceta } from "@/app/actions/recetas";
+import { UNIDAD_LABELS } from "@/lib/units";
 
 export interface IngredienteItem {
   alimentoId: string;
@@ -31,29 +30,35 @@ export function IngredienteList({
   porciones,
 }: IngredienteListProps) {
   const t = useTranslations("recipes");
-  function addIngrediente(alimento: {
-    id: string;
+  const [selectorOpen, setSelectorOpen] = useState(false);
+
+  // El SelectorAlimento (modo solo alimentos) ya trae cantidad + unidad + macros/100 g elegidos.
+  function addIngrediente(item: {
+    alimentoId: string | null;
+    recetaId: string | null;
     nombre: string;
+    cantidad: number;
+    unidad: string;
     calorias: number;
     proteinas: number;
     carbohidratos: number;
     grasas: number;
-    porcion: number;
-    unidad: string;
+    porcion?: number;
   }) {
+    if (!item.alimentoId) return; // en recetas solo se añaden alimentos, nunca otras recetas
     onChange([
       ...ingredientes,
       {
-        alimentoId: alimento.id,
-        nombre: alimento.nombre,
-        cantidad: getCantidadDefault(alimento.unidad, alimento.porcion),
-        unidad: alimento.unidad,
-        porcion: alimento.porcion,
+        alimentoId: item.alimentoId,
+        nombre: item.nombre,
+        cantidad: item.cantidad,
+        unidad: item.unidad,
+        porcion: item.porcion ?? 100,
         macrosPor100g: {
-          calorias: alimento.calorias,
-          proteinas: alimento.proteinas,
-          carbohidratos: alimento.carbohidratos,
-          grasas: alimento.grasas,
+          calorias: item.calorias,
+          proteinas: item.proteinas,
+          carbohidratos: item.carbohidratos,
+          grasas: item.grasas,
           fibra: 0,
         },
       },
@@ -75,10 +80,20 @@ export function IngredienteList({
 
   return (
     <div className="space-y-4">
-      <AlimentoSearch
+      <button
+        type="button"
+        onClick={() => setSelectorOpen(true)}
+        className="w-full flex items-center gap-2 px-4 py-3 rounded-lg border border-border bg-background text-left text-muted-foreground hover:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"
+      >
+        <Search className="w-4 h-4 shrink-0" />
+        <span className="text-sm">{t("ingredientes.buscarParaAnadir")}</span>
+      </button>
+
+      <SelectorAlimento
+        open={selectorOpen}
+        onClose={() => setSelectorOpen(false)}
         onSelect={addIngrediente}
-        placeholder={t("ingredientes.buscarParaAnadir")}
-        searchAction={buscarAlimentosParaReceta}
+        soloAlimentos
       />
 
       {ingredientes.length === 0 ? (

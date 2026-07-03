@@ -139,6 +139,38 @@ async function recalcularMacrosReceta(recetaId: string) {
   }
 }
 
+/**
+ * Micronutrientes por 100 g de una lista de alimentos, para calcular EN VIVO los
+ * micros de una receta mientras se editan sus ingredientes (#90 en el editor de recetas).
+ * Devuelve un mapa alimentoId → { <micro>: valor|null } (valores por 100 g).
+ */
+export async function getMicrosAlimentos(
+  ids: string[]
+): Promise<Record<string, Partial<Record<string, number | null>>>> {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return {};
+  const unique = [...new Set(ids)].filter(Boolean);
+  if (unique.length === 0) return {};
+
+  const cols = MICRO_COLUMNS.map((c) => `"${c}"`).join(", ");
+  const placeholders = unique.map((_, i) => `$${i + 1}`).join(", ");
+  const rows = await prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
+    `SELECT id, ${cols} FROM alimentos WHERE id IN (${placeholders})`,
+    ...unique,
+  );
+
+  const out: Record<string, Partial<Record<string, number | null>>> = {};
+  for (const r of rows) {
+    const entry: Partial<Record<string, number | null>> = {};
+    for (const col of MICRO_COLUMNS) {
+      const v = r[col];
+      entry[col] = v === null || v === undefined ? null : Number(v);
+    }
+    out[r.id as string] = entry;
+  }
+  return out;
+}
+
 async function setTiempoPreparacion(recetaId: string, tiempo: number | null) {
   if (tiempo === null) {
     await prisma.$executeRawUnsafe(

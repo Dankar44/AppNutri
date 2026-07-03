@@ -160,7 +160,10 @@ export async function crearPlan(data: PlanFormData) {
   }
 
   revalidatePath("/dietas");
-  redirect(`/dietas/${plan.id}`);
+  revalidatePath(`/pacientes/${data.pacienteId}`);
+  // Tras crear, volver a la ficha del paciente (pestaña Plan de alimentación) en vez de al
+  // menú de dietas: el nutri ve el plan nuevo en contexto del paciente y edita desde ahí.
+  redirect(`/pacientes/${data.pacienteId}?pestana=plan-alimentacion`);
 }
 
 export async function actualizarPlan(id: string, data: Partial<PlanFormData>) {
@@ -352,7 +355,8 @@ export async function addAlimentoAComida(
   await verificarPropietarioComida(comidaId, dietista.id, t);
   cantidad = validateNumber(cantidad, 0.1, LIMITS.CANTIDAD_MAX);
 
-  const count = await prisma.alimentoEnComida.count({ where: { comidaId } });
+  // Orden = último + 1 (no el nº de items: si se borró uno del medio, count colisionaría y el nuevo saldría en medio).
+  const max = await prisma.alimentoEnComida.aggregate({ where: { comidaId }, _max: { orden: true } });
 
   await prisma.alimentoEnComida.create({
     data: {
@@ -361,7 +365,7 @@ export async function addAlimentoAComida(
       recetaId,
       cantidad,
       unidad,
-      orden: count,
+      orden: (max._max.orden ?? -1) + 1,
     },
   });
 }
@@ -377,6 +381,76 @@ export async function removeAlimentoDeComida(alimentoEnComidaId: string) {
   await prisma.alimentoEnComida.delete({
     where: { id: alimentoEnComidaId },
   });
+}
+
+// #27 — Reordenar un alimento dentro de su comida (flechas ↑/↓): intercambia con el vecino
+// y renumera consecutivo (0..n), lo que además repara huecos previos en `orden`.
+export async function moverAlimentoEnComida(
+  alimentoEnComidaId: string,
+  dir: "up" | "down"
+) {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
+  if (dietista.isDemo) return;
+
+  await verificarPropietarioAlimentoEnComida(alimentoEnComidaId, dietista.id, t);
+
+  const item = await prisma.alimentoEnComida.findUnique({
+    where: { id: alimentoEnComidaId },
+    select: { comidaId: true },
+  });
+  if (!item) return;
+
+  const hermanos = await prisma.alimentoEnComida.findMany({
+    where: { comidaId: item.comidaId },
+    orderBy: { orden: "asc" },
+    select: { id: true },
+  });
+  const idx = hermanos.findIndex((h) => h.id === alimentoEnComidaId);
+  const swap = dir === "up" ? idx - 1 : idx + 1;
+  if (idx === -1 || swap < 0 || swap >= hermanos.length) return;
+
+  const ordenados = [...hermanos];
+  [ordenados[idx], ordenados[swap]] = [ordenados[swap], ordenados[idx]];
+
+  await prisma.$transaction(
+    ordenados.map((h, i) =>
+      prisma.alimentoEnComida.update({ where: { id: h.id }, data: { orden: i } })
+    )
+  );
+}
+
+// #27 — Reordenar una comida entera por la lista de ids en el orden deseado (para el
+// arrastre dentro de la comida): asigna orden = posición a cada id que pertenezca a la comida.
+export async function reordenarAlimentosEnComida(comidaId: string, ids: string[]) {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
+  if (dietista.isDemo) return;
+
+  const comida = await prisma.comidaDelDia.findUnique({
+    where: { id: comidaId },
+    include: { diaDelPlan: { include: { plan: { select: { dietistaId: true } } } } },
+  });
+  if (!comida || comida.diaDelPlan.plan.dietistaId !== dietista.id) {
+    throw new Error(t("auth.noAutorizado"));
+  }
+
+  const existentes = await prisma.alimentoEnComida.findMany({
+    where: { comidaId },
+    select: { id: true },
+  });
+  const validos = new Set(existentes.map((e) => e.id));
+  const orden = ids.filter((id) => validos.has(id));
+  // Cualquier id que exista en la comida pero no venga en la lista se deja al final.
+  for (const e of existentes) if (!orden.includes(e.id)) orden.push(e.id);
+
+  await prisma.$transaction(
+    orden.map((id, i) =>
+      prisma.alimentoEnComida.update({ where: { id }, data: { orden: i } })
+    )
+  );
 }
 
 export async function actualizarCantidadAlimento(
@@ -495,6 +569,75 @@ export async function actualizarDescripcionComida(
   });
 }
 
+// #104 — Alias visible y hora de una comida (Fase 1). Ambos opcionales; si nombre queda
+// vacío, se muestra la etiqueta del tipo. Hora se guarda como "HH:MM" (o null si no es válida).
+export async function actualizarMetaComida(
+  comidaId: string,
+  data: { nombre?: string | null; hora?: string | null }
+) {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
+  if (dietista.isDemo) return;
+
+  await verificarPropietarioComida(comidaId, dietista.id, t);
+
+  const patch: { nombre?: string | null; hora?: string | null } = {};
+  if (data.nombre !== undefined) {
+    patch.nombre = (data.nombre ?? "").trim().slice(0, 60) || null;
+  }
+  if (data.hora !== undefined) {
+    const h = (data.hora ?? "").trim();
+    patch.hora = /^([01]?\d|2[0-3]):[0-5]\d$/.test(h) ? h : null;
+  }
+
+  await prisma.comidaDelDia.update({ where: { id: comidaId }, data: patch });
+}
+
+// #104 Fase 2 — Añadir una comida nueva (personalizada) a un día concreto. No afecta a los
+// demás días. Se crea con tipo OTRA; se identifica por su nombre y su hora.
+export async function agregarComida(
+  diaId: string,
+  data?: { nombre?: string; hora?: string }
+) {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
+  if (dietista.isDemo) return null;
+
+  const dia = await prisma.diaDelPlan.findUnique({
+    where: { id: diaId },
+    include: { plan: { select: { dietistaId: true } } },
+  });
+  if (!dia || dia.plan.dietistaId !== dietista.id) {
+    throw new Error(t("auth.noAutorizado"));
+  }
+
+  const max = await prisma.comidaDelDia.aggregate({ where: { diaId }, _max: { orden: true } });
+  const h = (data?.hora ?? "").trim();
+  const comida = await prisma.comidaDelDia.create({
+    data: {
+      diaId,
+      tipo: "OTRA",
+      orden: (max._max.orden ?? -1) + 1,
+      nombre: (data?.nombre ?? "").trim().slice(0, 60) || null,
+      hora: /^([01]?\d|2[0-3]):[0-5]\d$/.test(h) ? h : null,
+    },
+  });
+  return { id: comida.id };
+}
+
+// #104 Fase 2 — Eliminar una comida de un día (sus alimentos y alternativas caen por cascade).
+export async function eliminarComida(comidaId: string) {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
+  if (dietista.isDemo) return;
+
+  await verificarPropietarioComida(comidaId, dietista.id, t);
+  await prisma.comidaDelDia.delete({ where: { id: comidaId } });
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // Alternativas de un ítem ("avena 50 g  o  cereales 70 g") — #5
 // ─────────────────────────────────────────────────────────────────────────
@@ -544,6 +687,103 @@ export async function eliminarAlternativa(alternativaId: string) {
 
   await verificarPropietarioAlternativa(alternativaId, dietista.id, t);
   await prisma.alternativaAlimento.delete({ where: { id: alternativaId } });
+}
+
+// #29 — Promover una alternativa a alimento principal: la alternativa elegida pasa a ser
+// el alimento de la línea y se borra de la lista; las demás alternativas se conservan.
+export async function promoverAlternativa(alternativaId: string) {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
+  if (dietista.isDemo) return;
+
+  await verificarPropietarioAlternativa(alternativaId, dietista.id, t);
+
+  const alt = await prisma.alternativaAlimento.findUnique({
+    where: { id: alternativaId },
+    select: {
+      alimentoEnComidaId: true,
+      alimentoId: true,
+      recetaId: true,
+      cantidad: true,
+      unidad: true,
+      nombrePersonalizado: true,
+    },
+  });
+  if (!alt) return;
+
+  await prisma.$transaction([
+    prisma.alimentoEnComida.update({
+      where: { id: alt.alimentoEnComidaId },
+      data: {
+        alimentoId: alt.alimentoId,
+        recetaId: alt.recetaId,
+        cantidad: alt.cantidad,
+        unidad: alt.unidad,
+        nombrePersonalizado: alt.nombrePersonalizado,
+      },
+    }),
+    prisma.alternativaAlimento.delete({ where: { id: alternativaId } }),
+  ]);
+}
+
+// #29 — Intercambiar una alternativa con el alimento principal: la alternativa pasa a ser
+// principal y el principal pasa a ocupar el hueco de esa alternativa (no se pierde ninguno).
+export async function intercambiarAlternativaPrincipal(alternativaId: string) {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) throw new Error(t("auth.noAutorizado"));
+  if (dietista.isDemo) return;
+
+  await verificarPropietarioAlternativa(alternativaId, dietista.id, t);
+
+  const alt = await prisma.alternativaAlimento.findUnique({
+    where: { id: alternativaId },
+    select: {
+      alimentoEnComidaId: true,
+      alimentoId: true,
+      recetaId: true,
+      cantidad: true,
+      unidad: true,
+      nombrePersonalizado: true,
+    },
+  });
+  if (!alt) return;
+
+  const principal = await prisma.alimentoEnComida.findUnique({
+    where: { id: alt.alimentoEnComidaId },
+    select: {
+      alimentoId: true,
+      recetaId: true,
+      cantidad: true,
+      unidad: true,
+      nombrePersonalizado: true,
+    },
+  });
+  if (!principal) return;
+
+  await prisma.$transaction([
+    prisma.alimentoEnComida.update({
+      where: { id: alt.alimentoEnComidaId },
+      data: {
+        alimentoId: alt.alimentoId,
+        recetaId: alt.recetaId,
+        cantidad: alt.cantidad,
+        unidad: alt.unidad,
+        nombrePersonalizado: alt.nombrePersonalizado,
+      },
+    }),
+    prisma.alternativaAlimento.update({
+      where: { id: alternativaId },
+      data: {
+        alimentoId: principal.alimentoId,
+        recetaId: principal.recetaId,
+        cantidad: principal.cantidad,
+        unidad: principal.unidad,
+        nombrePersonalizado: principal.nombrePersonalizado,
+      },
+    }),
+  ]);
 }
 
 export async function actualizarCantidadAlternativa(alternativaId: string, cantidad: number) {
@@ -636,6 +876,7 @@ const COMIDA_ORDEN: Record<TipoComida, number> = {
   MERIENDA: 3,
   CENA: 4,
   RECENA: 5,
+  OTRA: 6,
 };
 
 /**
@@ -1226,11 +1467,13 @@ export async function getPlanesDetallePaciente(pacienteId: string) {
 
   // Recoger IDs únicos de alimentos de todos los planes
   const alimentoIdSet = new Set<string>();
+  const recetaIdSet = new Set<string>();
   for (const plan of planes) {
     for (const dia of plan.dias) {
       for (const comida of dia.comidas) {
         for (const a of comida.alimentos) {
           if (a.alimento?.id) alimentoIdSet.add(a.alimento.id);
+          if (a.receta?.id) recetaIdSet.add(a.receta.id);
         }
       }
     }
@@ -1253,6 +1496,23 @@ export async function getPlanesDetallePaciente(pacienteId: string) {
     }
   }
 
+  // Micros de las recetas (guardados por porción, igual que sus macros) para que sumen al total del día (#90).
+  const microMapReceta: Record<string, Record<string, number>> = {};
+  if (recetaIdSet.size > 0) {
+    const ids = [...recetaIdSet];
+    const placeholders = ids.map((_, i) => `$${i + 1}`).join(",");
+    const selectCols = MICRO_COLS.map((c) => `"${c}"`).join(",");
+    const rows = await prisma.$queryRawUnsafe<(Record<string, unknown> & { id: string })[]>(
+      `SELECT id, ${selectCols} FROM recetas WHERE id IN (${placeholders})`,
+      ...ids,
+    );
+    for (const row of rows) {
+      const micros: Record<string, number> = {};
+      for (const col of MICRO_COLS) micros[col] = typeof row[col] === "number" ? (row[col] as number) : 0;
+      microMapReceta[row.id] = micros;
+    }
+  }
+
   // Formatear resultado
   const result = planes.map((plan) => ({
     id: plan.id,
@@ -1271,6 +1531,8 @@ export async function getPlanesDetallePaciente(pacienteId: string) {
         id: comida.id,
         tipo: comida.tipo,
         descripcion: comida.descripcion,
+        nombre: comida.nombre,
+        hora: comida.hora,
         alimentos: comida.alimentos.map((a) => {
           const micros = a.alimento?.id ? (microMap[a.alimento.id] || {}) : {};
           return {
@@ -1307,6 +1569,7 @@ export async function getPlanesDetallePaciente(pacienteId: string) {
                   porciones: a.receta.porciones ?? 1,
                   descripcion: a.receta.descripcion ?? null,
                   ingredientes: a.receta.ingredientes?.map((i) => ({ nombre: i.alimento.nombre, cantidad: i.cantidad, unidad: i.unidad })) ?? [],
+                  ...(microMapReceta[a.receta.id] || {}),
                   esPropio: !!a.receta.dietistaId && a.receta.dietistaId === dietista.id,
                 }
               : null,
@@ -1702,6 +1965,8 @@ export async function getPlanPDFData(planId: string): Promise<PlanPDFData | null
       comidas: dia.comidas.map((comida) => ({
         tipo: comida.tipo,
         descripcion: comida.descripcion,
+        nombre: comida.nombre,
+        hora: comida.hora,
         alimentos: comida.alimentos.map((a) => ({
           cantidad: a.cantidad,
           unidad: a.unidad,

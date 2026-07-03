@@ -187,6 +187,15 @@ export function MedidasForm({
         <NumField name="trigliceridos" label={t("trigliceridos")} unit="mg/dL" min={0} max={1000} defaultValue={d("trigliceridos")} />
       </div>
 
+      <SectionTitle>{t("notasTitulo")}</SectionTitle>
+      <textarea
+        name="notas"
+        rows={3}
+        maxLength={1000}
+        placeholder={t("notasPlaceholder")}
+        className="w-full px-3 py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm resize-y"
+      />
+
       <div className="pt-4 flex justify-end gap-3">
         <button
           type="submit"

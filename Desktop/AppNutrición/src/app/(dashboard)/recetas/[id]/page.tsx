@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, Pencil, Clock, Sparkles } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { getReceta } from "@/app/actions/recetas";
+import { convertirAGramos } from "@/lib/macros";
 import { MacroAnalysisCard } from "@/components/alimento/macro-analysis-card";
 import { MicronutrientesCard } from "@/components/alimento/micronutrientes-card";
 import { PorcionesCalculadora } from "@/components/receta/porciones-calculadora";
@@ -20,7 +21,12 @@ export default async function RecetaDetailPage({ params }: Props) {
   const [receta, t] = await Promise.all([getReceta(id), getTranslations("recipes")]);
   if (!receta) notFound();
 
-  const pesoTotal = receta.ingredientes.reduce((acc, ing) => acc + (ing.cantidad || 0), 0);
+  // Peso real en gramos: convertir cada ingrediente según su unidad (ud, ml…) y la porción
+  // del alimento — sumar la cantidad cruda daba "100 g" para "100 ud" (bug).
+  const pesoTotal = receta.ingredientes.reduce(
+    (acc, ing) => acc + convertirAGramos(ing.cantidad || 0, ing.unidad || "GRAMOS", ing.alimento?.porcion || 100),
+    0,
+  );
   const pesoPorPorcion = receta.porciones > 0 ? pesoTotal / receta.porciones : pesoTotal;
 
   return (

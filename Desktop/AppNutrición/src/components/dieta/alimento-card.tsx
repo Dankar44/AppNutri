@@ -1,10 +1,11 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Trash2, GripVertical, Replace, ExternalLink, Image as ImageLinkIcon, Copy, CornerDownRight, X, Pencil, SlidersHorizontal } from "lucide-react";
+import { Trash2, GripVertical, Replace, ExternalLink, Image as ImageLinkIcon, Copy, CornerDownRight, X, Pencil, SlidersHorizontal, ChevronUp, ChevronDown, ArrowUpToLine } from "lucide-react";
 import { RevisionEquivalenciasPanel } from "./revision-equivalencias-panel";
 import { useState, useRef, useEffect } from "react";
-import { useDraggable } from "@dnd-kit/core";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
 import { getUnidadLabel, esUnidadDiscreta } from "@/lib/units";
 import { convertirAGramos } from "@/lib/macros";
@@ -13,6 +14,8 @@ import { CantidadInput } from "@/components/cantidad-input";
 
 interface AlimentoCardProps {
   id: string;
+  /** Comida a la que pertenece; permite distinguir reordenar-dentro de mover-entre al arrastrar. */
+  comidaId: string;
   alimentoRealId?: string | null;
   nombre: string;
   cantidad: number;
@@ -34,12 +37,20 @@ interface AlimentoCardProps {
   interactionMode?: InteractionMode;
   ocultarCalorias?: boolean;
   onRemove: (id: string) => void;
+  /** Reordenar dentro de la comida con flechas ↑/↓ (#27). */
+  onReordenar?: (id: string, dir: "up" | "down") => void;
+  esPrimero?: boolean;
+  esUltimo?: boolean;
   onCantidadChange: (id: string, cantidad: number) => void;
   onBuscarEquivalente?: (alimentoId: string, nombre: string, calorias: number, proteinas: number, carbohidratos: number, grasas: number, cantidad: number, esReceta: boolean) => void;
   onCopiar?: (id: string) => void;
   /** Alternativas equivalentes ("o ...") de este ítem (#5). */
   alternativas?: AlternativaData[];
   onEliminarAlternativa?: (alternativaId: string) => void;
+  /** Promueve una alternativa a alimento principal; las demás alternativas se conservan (#29). */
+  onPromoverAlternativa?: (alternativaId: string) => void;
+  /** Intercambia una alternativa con el principal (swap): la alt pasa a principal y el principal a alternativa (#29). */
+  onConvertirAlternativaEnPrincipal?: (alternativaId: string) => void;
   /** Edita la cantidad de una alternativa ya añadida (#5). */
   onCantidadAlternativaChange?: (alternativaId: string, cantidad: number) => void;
   /** Alias visual de la línea o de una alternativa (solo presentación) (#5). */
@@ -78,6 +89,7 @@ function AlternativaRow({
   onCantidadChange,
   onRenombrar,
   onEliminar,
+  onConvertirEnPrincipal,
 }: {
   alt: AlternativaData;
   interactionMode?: InteractionMode;
@@ -85,6 +97,7 @@ function AlternativaRow({
   onCantidadChange?: (alternativaId: string, cantidad: number) => void;
   onRenombrar?: (id: string, nombre: string, esAlternativa: boolean) => void;
   onEliminar?: (alternativaId: string) => void;
+  onConvertirEnPrincipal?: (alternativaId: string) => void;
 }) {
   const t = useTranslations("diets");
   const [tempCantidad, setTempCantidad] = useState(alt.cantidad);
@@ -204,11 +217,23 @@ function AlternativaRow({
           <Pencil className="w-3 h-3" />
         </button>
       )}
+      {onConvertirEnPrincipal && (
+        <button
+          onClick={() => onConvertirEnPrincipal(alt.id)}
+          title={t("alimentoCard.convertirEnPrincipal")}
+          className="ml-auto p-0.5 rounded hover:bg-primary/10 text-muted-foreground/50 hover:text-primary transition-colors shrink-0"
+        >
+          <ArrowUpToLine className="w-3 h-3" />
+        </button>
+      )}
       {onEliminar && (
         <button
           onClick={() => onEliminar(alt.id)}
           title={t("alimentoCard.removeAlternativa")}
-          className="ml-auto p-0.5 rounded hover:bg-red-50 dark:hover:bg-red-500/10 text-muted-foreground/50 hover:text-red-500 transition-colors shrink-0"
+          className={cn(
+            "p-0.5 rounded hover:bg-red-50 dark:hover:bg-red-500/10 text-muted-foreground/50 hover:text-red-500 transition-colors shrink-0",
+            !onConvertirEnPrincipal && "ml-auto",
+          )}
         >
           <X className="w-3 h-3" />
         </button>
@@ -219,6 +244,7 @@ function AlternativaRow({
 
 export function AlimentoCard({
   id,
+  comidaId,
   alimentoRealId,
   nombre,
   cantidad,
@@ -240,11 +266,16 @@ export function AlimentoCard({
   interactionMode = "dashboard",
   ocultarCalorias = false,
   onRemove,
+  onReordenar,
+  esPrimero = false,
+  esUltimo = false,
   onCantidadChange,
   onBuscarEquivalente,
   onCopiar,
   alternativas,
   onEliminarAlternativa,
+  onPromoverAlternativa,
+  onConvertirAlternativaEnPrincipal,
   onCantidadAlternativaChange,
   onRenombrar,
   onGuardarEquivalencias,
@@ -255,6 +286,7 @@ export function AlimentoCard({
   const [editandoNombre, setEditandoNombre] = useState(false);
   const [tempNombre, setTempNombre] = useState(nombre);
   const [revisionOpen, setRevisionOpen] = useState(false);
+  const [menuEliminarOpen, setMenuEliminarOpen] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout>(null);
 
   useEffect(() => {
@@ -277,15 +309,16 @@ export function AlimentoCard({
     setTempCantidad(cantidad);
   }, [cantidad]);
 
-  const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({
       id,
-      data: { id, nombre, cantidad, unidad, porcion, calorias, proteinas, carbohidratos, grasas },
+      data: { id, comidaId, nombre, cantidad, unidad, porcion, calorias, proteinas, carbohidratos, grasas },
     });
 
-  const style = transform
-    ? { transform: `translate(${transform.x}px, ${transform.y}px)` }
-    : undefined;
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+  };
 
   function handleCantidadChange(value: number) {
     setTempCantidad(value);
@@ -449,6 +482,27 @@ export function AlimentoCard({
         )}
       </div>
 
+      {onReordenar && (
+        <div className="flex flex-col shrink-0">
+          <button
+            onClick={() => onReordenar(id, "up")}
+            disabled={esPrimero}
+            className="px-1 rounded border border-border/60 hover:bg-primary/10 hover:border-primary/30 text-muted-foreground/50 hover:text-primary transition-all disabled:opacity-25 disabled:pointer-events-none"
+            title={t("alimentoCard.moverArriba")}
+          >
+            <ChevronUp className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => onReordenar(id, "down")}
+            disabled={esUltimo}
+            className="px-1 rounded border border-border/60 hover:bg-primary/10 hover:border-primary/30 text-muted-foreground/50 hover:text-primary transition-all disabled:opacity-25 disabled:pointer-events-none"
+            title={t("alimentoCard.moverAbajo")}
+          >
+            <ChevronDown className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {onBuscarEquivalente && (
         <button
           onClick={() => onBuscarEquivalente(
@@ -474,13 +528,56 @@ export function AlimentoCard({
         </button>
       )}
 
-      <button
-        onClick={() => onRemove(id)}
-        className="p-1.5 rounded border border-border/60 hover:bg-red-50 dark:hover:bg-red-500/15 hover:border-red-200 text-muted-foreground/50 hover:text-red-500 transition-all shrink-0"
-        title={t("alimentoCard.delete")}
-      >
-        <Trash2 className="w-4 h-4" />
-      </button>
+      {alternativas && alternativas.length > 0 ? (
+        <div className="relative shrink-0">
+          <button
+            onClick={() => setMenuEliminarOpen((v) => !v)}
+            className="p-1.5 rounded border border-border/60 hover:bg-red-50 dark:hover:bg-red-500/15 hover:border-red-200 text-muted-foreground/50 hover:text-red-500 transition-all"
+            title={t("alimentoCard.delete")}
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+          {menuEliminarOpen && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setMenuEliminarOpen(false)} />
+              <div className="absolute right-0 top-full mt-1 z-50 w-64 rounded-lg border border-border bg-card shadow-lg p-1 text-sm">
+                <button
+                  onClick={() => { setMenuEliminarOpen(false); onRemove(id); }}
+                  className="w-full text-left px-3 py-2 rounded-md hover:bg-red-50 dark:hover:bg-red-500/15 text-red-600 flex items-center gap-2"
+                >
+                  <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                  {t("alimentoCard.eliminarTodo")}
+                </button>
+                {onPromoverAlternativa && (
+                  <>
+                    <div className="px-3 pt-2 pb-1 text-xs text-muted-foreground">
+                      {t("alimentoCard.dejarComoPrincipal")}
+                    </div>
+                    {alternativas.map((alt) => (
+                      <button
+                        key={alt.id}
+                        onClick={() => { setMenuEliminarOpen(false); onPromoverAlternativa(alt.id); }}
+                        className="w-full text-left px-3 py-2 rounded-md hover:bg-primary/10 flex items-center gap-2"
+                      >
+                        <CornerDownRight className="w-3.5 h-3.5 shrink-0 text-muted-foreground/60" />
+                        <span className="truncate">{alt.nombre}</span>
+                      </button>
+                    ))}
+                  </>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      ) : (
+        <button
+          onClick={() => onRemove(id)}
+          className="p-1.5 rounded border border-border/60 hover:bg-red-50 dark:hover:bg-red-500/15 hover:border-red-200 text-muted-foreground/50 hover:text-red-500 transition-all shrink-0"
+          title={t("alimentoCard.delete")}
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      )}
       </div>
 
       {alternativas && alternativas.length > 0 && (
@@ -510,6 +607,7 @@ export function AlimentoCard({
               onCantidadChange={onCantidadAlternativaChange}
               onRenombrar={onRenombrar}
               onEliminar={onEliminarAlternativa}
+              onConvertirEnPrincipal={onConvertirAlternativaEnPrincipal}
             />
           ))}
           {revisionOpen && onGuardarEquivalencias && (

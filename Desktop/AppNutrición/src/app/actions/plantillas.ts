@@ -275,5 +275,7 @@ export async function crearPlanDesdePlantilla(
   }
 
   revalidatePath("/dietas");
-  redirect(`/dietas/${plan.id}`);
+  revalidatePath(`/pacientes/${pacienteId}`);
+  // Igual que crearPlan: tras crear volvemos a la ficha del paciente (pestaña Plan de alimentación).
+  redirect(`/pacientes/${pacienteId}?pestana=plan-alimentacion`);
 }

@@ -1,12 +1,14 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { type MicroKey, VITAMINAS, MINERALES } from "@/lib/micronutrientes";
+import { type MicroKey, getVitaminas, getMinerales } from "@/lib/micronutrientes";
 
 interface Props {
   values: Partial<Record<MicroKey, number | null>>;
   title?: string;
   subtitleSuffix?: string;
+  /** Una sola columna y menos padding, para caber en una barra lateral estrecha. */
+  compact?: boolean;
 }
 
 function Row({
@@ -45,31 +47,33 @@ function Row({
   );
 }
 
-export function MicronutrientesCard({ values, title, subtitleSuffix }: Props) {
+export function MicronutrientesCard({ values, title, subtitleSuffix, compact = false }: Props) {
   const t = useTranslations("foods.micronutrientes");
+  const vitaminas = getVitaminas(t);
+  const minerales = getMinerales(t);
   const displayTitle = title ?? t("titulo");
   const displaySubtitle = subtitleSuffix ?? t("subtituloDdr");
-  const allMicros = [...VITAMINAS, ...MINERALES];
+  const allMicros = [...vitaminas, ...minerales];
   const totalPresentes = allMicros.filter((r) => typeof values[r.key] === "number").length;
 
   if (totalPresentes === 0) return null;
 
   return (
-    <section className="bg-card rounded-xl border border-border p-6 sm:p-8">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold">{displayTitle}</h2>
+    <section className={compact ? "bg-card rounded-xl border border-border p-5" : "bg-card rounded-xl border border-border p-6 sm:p-8"}>
+      <div className={`flex items-center justify-between ${compact ? "mb-3" : "mb-6"}`}>
+        <h2 className={compact ? "text-base font-semibold" : "text-xl font-semibold"}>{displayTitle}</h2>
         <span className="text-xs text-muted-foreground">
           {t("presentes", { presentes: totalPresentes, total: allMicros.length })} · {displaySubtitle}
         </span>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
+      <div className={compact ? "grid grid-cols-1 gap-y-4" : "grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6"}>
         <div>
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
             {t("vitaminas")}
           </h3>
           <div className="divide-y divide-border/50">
-            {VITAMINAS.map((row) => (
+            {vitaminas.map((row) => (
               <Row key={row.key} row={row} actual={values[row.key] ?? null} accent="#7eaadf" />
             ))}
           </div>
@@ -80,7 +84,7 @@ export function MicronutrientesCard({ values, title, subtitleSuffix }: Props) {
             {t("minerales")}
           </h3>
           <div className="divide-y divide-border/50">
-            {MINERALES.map((row) => (
+            {minerales.map((row) => (
               <Row key={row.key} row={row} actual={values[row.key] ?? null} accent="#4ec4a0" />
             ))}
           </div>

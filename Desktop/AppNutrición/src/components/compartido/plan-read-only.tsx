@@ -3,6 +3,7 @@
 import { MacroBadges } from "@/components/macro-badge";
 import { calcularMacrosPorcion, sumarMacros, convertirAGramos } from "@/lib/macros";
 import { formatQuantity } from "@/lib/pdf/generate-plan-pdf";
+import { ordenarComidasPorHora } from "@/lib/comida-horas";
 import { Printer, CookingPot, ExternalLink, Image as ImageLinkIcon, Leaf } from "lucide-react";
 import { useTranslations } from "next-intl";
 
@@ -28,6 +29,8 @@ interface AlimentoData {
 interface ComidaData {
   tipo: string;
   descripcion?: string | null;
+  nombre?: string | null;
+  hora?: string | null;
   alimentos: AlimentoData[];
 }
 
@@ -146,10 +149,11 @@ export function PlanReadOnly({ nombre, pacienteNombre, dias, showPrint = true, b
                 />
               </div>
               <div className="divide-y divide-border">
-                {dia.comidas.map((comida, ci) => (
+                {ordenarComidasPorHora(dia.comidas).map((comida, ci) => (
                   <div key={ci} className="px-4 py-3">
                     <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
-                      {t(`comidaSlot.tipoLabels.${comida.tipo}` as never) || comida.tipo}
+                      {comida.hora ? <span className="tabular-nums mr-1.5">{comida.hora}</span> : null}
+                      {comida.nombre?.trim() || t(`comidaSlot.tipoLabels.${comida.tipo}` as never) || comida.tipo}
                     </h4>
                     {comida.descripcion && (
                       <p className="text-xs text-muted-foreground italic mb-2">{comida.descripcion}</p>

@@ -30,6 +30,8 @@ export default async function SharedPlanPage({ params }: Props) {
         id: comida.id,
         tipo: comida.tipo,
         descripcion: comida.descripcion,
+        nombre: comida.nombre,
+        hora: comida.hora,
         alimentos: comida.alimentos.map((a) => ({
           id: a.id,
           cantidad: a.cantidad,

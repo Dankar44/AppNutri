@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { asignarPlanComoActual, copiarComidaADias, copiarDiaADias, pegarAlimentoEnComida, juntarDias, separarDia, asignarPlanificacionADia, type ModoCopia } from "@/app/actions/planes";
+import { asignarPlanComoActual, copiarComidaADias, copiarDiaADias, pegarAlimentoEnComida, juntarDias, separarDia, asignarPlanificacionADia, agregarComida, type ModoCopia } from "@/app/actions/planes";
 import {
   Plus,
   UtensilsCrossed,
@@ -30,7 +30,9 @@ import {
 } from "lucide-react";
 import { cn, isNextNavigation } from "@/lib/utils";
 import { calcularMacrosPorcion, sumarMacros, convertirAGramos } from "@/lib/macros";
+import { ordenarComidasPorHora } from "@/lib/comida-horas";
 import { PlanEditor } from "@/components/dieta/plan-editor";
+import { HoraSelect } from "@/components/dieta/hora-select";
 import { CopiarADiasModal, type DiaOption } from "@/components/dieta/copiar-comida-modal";
 import { ImportarPlanModal } from "@/components/dieta/importar-plan-modal";
 import { FoodHoverCard, type InteractionMode } from "@/components/food-hover-card";
@@ -127,6 +129,8 @@ export type PlanVisualComida = {
   id: string;
   tipo: string;
   descripcion?: string | null;
+  nombre?: string | null;
+  hora?: string | null;
   alimentos: PlanVisualItem[];
 };
 
@@ -227,6 +231,38 @@ export function PlanVisual({
   const tDiets = useTranslations("diets");
   const esEditable = !readOnly && interactionMode === "dashboard";
   const [isPendingCopia, startCopia] = useTransition();
+  // #104 Fase 2 — modal para añadir una comida (pide nombre y hora) + scroll a la nueva.
+  const [nuevaComidaModal, setNuevaComidaModal] = useState<{ diaId: string } | null>(null);
+  const [nuevaComidaNombre, setNuevaComidaNombre] = useState("");
+  const [nuevaComidaHora, setNuevaComidaHora] = useState("12:00");
+  const [scrollComidaId, setScrollComidaId] = useState<string | null>(null);
+  // Comidas añadidas optimista por día (aparecen al instante; se podan cuando el servidor las confirma).
+  const [comidasNuevasDia, setComidasNuevasDia] = useState<Record<string, Array<PlanVisualComida & { realId?: string | null }>>>({});
+
+  // Tras crear, desplaza la vista a la comida recién añadida (ya visible por el optimismo).
+  useEffect(() => {
+    if (!scrollComidaId) return;
+    const el = document.getElementById(`comida-slot-${scrollComidaId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      setScrollComidaId(null);
+    }
+  }, [scrollComidaId, selectedPlan.dias, comidasNuevasDia]);
+
+  // Poda: cuando el servidor ya trae la comida real (su realId aparece), se retira la optimista.
+  useEffect(() => {
+    const ids = new Set<string>();
+    for (const d of selectedPlan.dias) for (const c of d.comidas) ids.add(c.id);
+    setComidasNuevasDia((prev) => {
+      if (Object.keys(prev).length === 0) return prev;
+      const next: Record<string, Array<PlanVisualComida & { realId?: string | null }>> = {};
+      for (const [diaId, lista] of Object.entries(prev)) {
+        const rest = lista.filter((c) => !(c.realId && ids.has(c.realId)));
+        if (rest.length) next[diaId] = rest;
+      }
+      return next;
+    });
+  }, [selectedPlan.dias]);
   const [copiaModal, setCopiaModal] = useState<{
     tipo: "comida" | "dia";
     sourceId: string;
@@ -302,6 +338,51 @@ export function PlanVisual({
       titulo: tDiets("copiar.copiarDia"),
       subtitulo: t(`dias.${diaKey}` as never),
     });
+  }
+
+  // #104 Fase 2 — abrir el modal de nueva comida (pide nombre y hora).
+  function handleAgregarComidaDia(diaId: string) {
+    setNuevaComidaNombre("");
+    setNuevaComidaHora("12:00");
+    setNuevaComidaModal({ diaId });
+  }
+
+  // Crea la comida con UI optimista: aparece al instante (colocada por hora) y se persiste por
+  // detrás; si falla, se revierte. El botón queda bloqueado durante el guardado (1 sola creación).
+  function confirmarNuevaComida() {
+    if (!nuevaComidaModal || isPendingCopia) return;
+    const { diaId } = nuevaComidaModal;
+    const nombre = nuevaComidaNombre.trim();
+    const hora = nuevaComidaHora;
+    setNuevaComidaModal(null);
+    const tempId = `tmp-comida-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+    const optim: PlanVisualComida & { realId?: string | null } = {
+      id: tempId, realId: null, tipo: "OTRA", descripcion: null, nombre: nombre || null, hora, alimentos: [],
+    };
+    setComidasNuevasDia((prev) => ({ ...prev, [diaId]: [...(prev[diaId] ?? []), optim] }));
+    setScrollComidaId(tempId); // ya visible por el optimismo → scroll inmediato
+    startCopia(async () => {
+      try {
+        const res = await agregarComida(diaId, { nombre: nombre || undefined, hora });
+        if (res?.id) {
+          setComidasNuevasDia((prev) => ({
+            ...prev,
+            [diaId]: (prev[diaId] ?? []).map((c) => (c.id === tempId ? { ...c, realId: res.id } : c)),
+          }));
+        }
+        router.refresh();
+      } catch (error) {
+        if (isNextNavigation(error)) throw error;
+        setComidasNuevasDia((prev) => ({ ...prev, [diaId]: (prev[diaId] ?? []).filter((c) => c.id !== tempId) }));
+      }
+    });
+  }
+
+  // Inyecta las comidas optimistas de un día para pasarlas al editor (que las coloca por hora).
+  function conComidasNuevas<T extends { id: string; comidas: PlanVisualComida[] }>(dia: T): T {
+    const extra = comidasNuevasDia[dia.id];
+    if (!extra || extra.length === 0) return dia;
+    return { ...dia, comidas: [...dia.comidas, ...extra] };
   }
 
   function handleCopiarAlimento(alimentoEnComidaId: string) {
@@ -720,6 +801,12 @@ export function PlanVisual({
           for (const key of MICRO_KEYS) {
             const val = (item.alimento as Record<string, unknown>)[key];
             if (typeof val === "number") microTotals[key] += val * factor;
+          }
+        } else if (item.receta) {
+          // #90 — micros de receta: guardados por porción; se escalan por las porciones servidas (item.cantidad), igual que sus macros.
+          for (const key of MICRO_KEYS) {
+            const val = (item.receta as Record<string, unknown>)[key];
+            if (typeof val === "number") microTotals[key] += val * item.cantidad;
           }
         }
       }
@@ -1156,6 +1243,15 @@ export function PlanVisual({
                                 <Copy className="w-3.5 h-3.5" />
                                 {tDiets("copiar.copiarDia")}
                               </button>
+                              <button
+                                type="button"
+                                onClick={() => handleAgregarComidaDia(bloque.representante.id)}
+                                disabled={isPendingCopia}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-primary hover:bg-muted transition-colors disabled:opacity-50"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                                {tDiets("editor.anadirComidaDia")}
+                              </button>
                             </div>
                           )}
                         </div>
@@ -1174,7 +1270,7 @@ export function PlanVisual({
                           onPegarAlimento={esEditable ? handlePegarAlimento : undefined}
                           planId={selectedPlan.id}
                           planNombre={selectedPlan.nombre}
-                          dias={[bloque.representante as any]}
+                          dias={[conComidasNuevas(bloque.representante) as any]}
                           objetivos={{
                             calorias: selectedPlan.caloriasObjetivo ?? undefined,
                             proteinas: selectedPlan.proteinasObjetivo ?? undefined,
@@ -1236,6 +1332,15 @@ export function PlanVisual({
                               <Copy className="w-3.5 h-3.5" />
                               {tDiets("copiar.copiarDia")}
                             </button>
+                            <button
+                              type="button"
+                              onClick={() => handleAgregarComidaDia(diasVisible[0].id)}
+                              disabled={isPendingCopia}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-primary hover:bg-muted transition-colors disabled:opacity-50"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              {tDiets("editor.anadirComidaDia")}
+                            </button>
                           </div>
                         </div>
                       )}
@@ -1254,7 +1359,7 @@ export function PlanVisual({
                         onPegarAlimento={esEditable ? handlePegarAlimento : undefined}
                         planId={selectedPlan.id}
                         planNombre={selectedPlan.nombre}
-                        dias={[diasVisible[0] as any]}
+                        dias={[conComidasNuevas(diasVisible[0]) as any]}
                         objetivos={{
                           calorias: selectedPlan.caloriasObjetivo ?? undefined,
                           proteinas: selectedPlan.proteinasObjetivo ?? undefined,
@@ -1320,6 +1425,59 @@ export function PlanVisual({
                       toast.success(tDiets("copiar.toastImportado"));
                     }}
                   />
+                  {/* #104 Fase 2 — modal para añadir una comida (nombre + hora). */}
+                  {nuevaComidaModal && (
+                    <div
+                      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+                      onClick={() => setNuevaComidaModal(null)}
+                    >
+                      <div
+                        className="bg-card rounded-xl border border-border shadow-xl w-full max-w-sm p-5"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <h3 className="text-lg font-semibold mb-4">{tDiets("editor.anadirComidaDia")}</h3>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-medium text-muted-foreground mb-1">
+                              {tDiets("editor.nombreComidaLabel")}
+                            </label>
+                            <input
+                              autoFocus
+                              value={nuevaComidaNombre}
+                              onChange={(e) => setNuevaComidaNombre(e.target.value)}
+                              maxLength={60}
+                              placeholder={tDiets("editor.nombreComidaPlaceholder")}
+                              onKeyDown={(e) => { if (e.key === "Enter") confirmarNuevaComida(); }}
+                              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-muted-foreground mb-1">
+                              {tDiets("editor.horaComidaLabel")}
+                            </label>
+                            <HoraSelect value={nuevaComidaHora} onChange={setNuevaComidaHora} />
+                          </div>
+                        </div>
+                        <div className="flex justify-end gap-2 mt-5">
+                          <button
+                            type="button"
+                            onClick={() => setNuevaComidaModal(null)}
+                            className="px-4 py-2 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"
+                          >
+                            {tDiets("copiar.cancelar")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={confirmarNuevaComida}
+                            disabled={isPendingCopia}
+                            className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                          >
+                            {isPendingCopia ? tDiets("copiar.copiando") : tDiets("editor.anadirComida")}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -2368,7 +2526,7 @@ function ResumenSemanal({
                 </div>
 
                 <div className="pt-1 space-y-1.5">
-                  {dia.comidas.filter((c) => c.alimentos.length > 0).map((comida) => {
+                  {ordenarComidasPorHora(dia.comidas.filter((c) => c.alimentos.length > 0)).map((comida) => {
                     const previews = comida.alimentos
                       .map((a) => a.nombrePersonalizado || a.alimento?.nombre || a.receta?.nombre || "")
                       .filter(Boolean)
@@ -2377,7 +2535,7 @@ function ResumenSemanal({
                     return (
                       <div key={comida.id} className="flex items-start gap-2 text-xs">
                         <span className="font-semibold text-muted-foreground w-20 shrink-0">
-                          {TIPO_LABELS[comida.tipo] || comida.tipo}
+                          {comida.nombre?.trim() || TIPO_LABELS[comida.tipo] || comida.tipo}
                         </span>
                         <span className="text-foreground/80 flex-1 line-clamp-1">{previews}</span>
                       </div>

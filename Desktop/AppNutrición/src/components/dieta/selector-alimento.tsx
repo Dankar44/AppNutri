@@ -25,9 +25,12 @@ interface SelectorAlimentoProps {
     proteinas: number;
     carbohidratos: number;
     grasas: number;
+    porcion?: number;
   }) => void;
   comidaId?: string;
   macrosObjetivo?: { calorias: number; proteinas: number; carbohidratos: number; grasas: number };
+  /** Solo alimentos (sin recetas): p. ej. ingredientes de una receta, que no llevan otras recetas. */
+  soloAlimentos?: boolean;
   /** Modo "Sustituir / Alternativa" (abierto desde "Más opciones" de un ítem) (#5). */
   modoSustituirAlternativa?: boolean;
   onSustituir?: (item: { alimentoId: string | null; recetaId: string | null; nombre: string; cantidad: number; unidad: string; calorias: number; proteinas: number; carbohidratos: number; grasas: number }) => void;
@@ -82,7 +85,7 @@ function scaledMacros(
   return { calorias: m.calorias, proteinas: m.proteinas, carbohidratos: m.carbohidratos, grasas: m.grasas };
 }
 
-export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObjetivo, modoSustituirAlternativa = false, onSustituir, onAlternativa }: SelectorAlimentoProps) {
+export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObjetivo, modoSustituirAlternativa = false, onSustituir, onAlternativa, soloAlimentos = false }: SelectorAlimentoProps) {
   const t = useTranslations("diets");
   const [query, setQuery] = useState("");
   const [filtro, setFiltro] = useState<Filtro>("alimentos");
@@ -123,7 +126,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
     buscarAlimentosYRecetas(q, f)
       .then((data) => {
         setAlimentos(data.alimentos);
-        setRecetas(data.recetas);
+        setRecetas(soloAlimentos ? [] : data.recetas);
       })
       .finally(() => setLoading(false));
   }
@@ -157,9 +160,10 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
     proteinas: number,
     carbohidratos: number,
     grasas: number,
+    porcion?: number,
     accion: "agregar" | "sustituir" | "alternativa" = "agregar",
   ) {
-    const item = { alimentoId, recetaId, nombre, cantidad, unidad, calorias, proteinas, carbohidratos, grasas };
+    const item = { alimentoId, recetaId, nombre, cantidad, unidad, calorias, proteinas, carbohidratos, grasas, porcion };
     if (accion === "sustituir" && onSustituir) onSustituir(item);
     else if (accion === "alternativa" && onAlternativa) onAlternativa(item);
     else onSelect(item);
@@ -210,7 +214,8 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
     // En alimentos se guarda la unidad activa del panel (puede haberse cambiado a gramos);
     // en recetas el estado usa "PORCIONES" interno → se guarda la unidad original ("GRAMOS").
     const unidad = expanded.type === "receta" ? unidadOriginal : expanded.unidad;
-    doSelect(alimentoId, recetaId, nombre, expanded.cantidad, unidad, base.calorias, base.proteinas, base.carbohidratos, base.grasas, accion);
+    const porcion = expanded.type === "receta" ? undefined : expanded.porcion;
+    doSelect(alimentoId, recetaId, nombre, expanded.cantidad, unidad, base.calorias, base.proteinas, base.carbohidratos, base.grasas, porcion, accion);
   }
 
   function adjustQty(delta: number) {
@@ -410,13 +415,18 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
             />
           </div>
           <div className="flex flex-wrap gap-1.5 mt-3">
-            {([
-              { id: "alimentos" as const, label: t("selectorAlimento.tabFoods") },
-              { id: "recetas" as const, label: t("selectorAlimento.tabRecipes") },
-              { id: "mis-alimentos" as const, label: t("selectorAlimento.tabMyFoods") },
-              { id: "mis-recetas" as const, label: t("selectorAlimento.tabMyRecipes") },
-              { id: "todos" as const, label: t("selectorAlimento.tabAll") },
-            ]).map((f) => (
+            {(soloAlimentos
+              ? [
+                  { id: "alimentos" as const, label: t("selectorAlimento.tabFoods") },
+                  { id: "mis-alimentos" as const, label: t("selectorAlimento.tabMyFoods") },
+                ]
+              : [
+                  { id: "alimentos" as const, label: t("selectorAlimento.tabFoods") },
+                  { id: "recetas" as const, label: t("selectorAlimento.tabRecipes") },
+                  { id: "mis-alimentos" as const, label: t("selectorAlimento.tabMyFoods") },
+                  { id: "mis-recetas" as const, label: t("selectorAlimento.tabMyRecipes") },
+                  { id: "todos" as const, label: t("selectorAlimento.tabAll") },
+                ]).map((f) => (
               <button
                 key={f.id}
                 type="button"

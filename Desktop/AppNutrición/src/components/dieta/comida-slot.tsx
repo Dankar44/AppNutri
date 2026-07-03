@@ -2,12 +2,14 @@
 
 import { useTranslations } from "next-intl";
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, ChevronRight, Copy, ClipboardPaste } from "lucide-react";
+import { ChevronDown, ChevronRight, Copy, ClipboardPaste, Pencil, Trash2 } from "lucide-react";
 import { useDroppable } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { AlimentoCard } from "./alimento-card";
 import { EquivalentePanel } from "./equivalente-panel";
+import { HoraSelect } from "./hora-select";
 import { cn } from "@/lib/utils";
-import { actualizarDescripcionComida } from "@/app/actions/planes";
+import { actualizarDescripcionComida, actualizarMetaComida } from "@/app/actions/planes";
 import { calcularMacrosPorcion, convertirAGramos } from "@/lib/macros";
 import type { InteractionMode } from "@/components/food-hover-card";
 
@@ -57,12 +59,22 @@ interface ComidaSlotProps {
   comidaId: string;
   tipo: string;
   descripcion?: string | null;
+  /** Alias visible de la comida (#104): si está, sustituye la etiqueta del tipo. */
+  nombre?: string | null;
+  /** Hora "HH:MM" de la comida (#104). */
+  hora?: string | null;
+  /** Notifica el cambio de hora al padre para reordenar en vivo (#104). */
+  onHoraChange?: (comidaId: string, hora: string) => void;
   alimentos: AlimentoEnSlot[];
   onAdd: (comidaId: string) => void;
   onRemove: (alimentoEnComidaId: string) => void;
+  /** Reordenar un alimento dentro de la comida con flechas ↑/↓ (#27). */
+  onReordenar?: (alimentoEnComidaId: string, dir: "up" | "down") => void;
   onCantidadChange: (alimentoEnComidaId: string, cantidad: number) => void;
   onReemplazar?: (alimentoEnComidaId: string, nuevoAlimentoId: string, nombre: string, cantidad: number, esReceta?: boolean) => void;
   onCopiar?: (comidaId: string) => void;
+  /** Elimina toda la comida del día (#104 Fase 2). */
+  onEliminarComida?: () => void;
   onCopiarAlimento?: (alimentoEnComidaId: string) => void;
   /** Nombre del alimento en el "portapapeles" (si hay uno copiado); muestra el botón Pegar. */
   pegarAlimentoLabel?: string | null;
@@ -70,6 +82,10 @@ interface ComidaSlotProps {
   /** Abre el selector para añadir una alternativa a un ítem (#5). */
   onAbrirSelectorAlternativa?: (alimentoEnComidaId: string) => void;
   onEliminarAlternativa?: (alternativaId: string) => void;
+  /** Promueve una alternativa a alimento principal (#29). */
+  onPromoverAlternativa?: (alternativaId: string) => void;
+  /** Intercambia una alternativa con el principal (swap) (#29). */
+  onConvertirAlternativaEnPrincipal?: (alternativaId: string) => void;
   /** Añade el equivalente elegido como alternativa (desde el panel de equivalente). */
   onAgregarAlternativaDirecta?: (alimentoEnComidaId: string, alimentoId: string, nombre: string, cantidad: number, esReceta?: boolean) => void;
   /** Edita la cantidad de una alternativa ya añadida (#5). */
@@ -88,17 +104,24 @@ export function ComidaSlot({
   comidaId,
   tipo,
   descripcion,
+  nombre: nombreInicial,
+  hora: horaInicial,
+  onHoraChange,
   alimentos,
   onAdd,
   onRemove,
+  onReordenar,
   onCantidadChange,
   onReemplazar,
   onCopiar,
+  onEliminarComida,
   onCopiarAlimento,
   pegarAlimentoLabel,
   onPegarAlimento,
   onAbrirSelectorAlternativa,
   onEliminarAlternativa,
+  onPromoverAlternativa,
+  onConvertirAlternativaEnPrincipal,
   onAgregarAlternativaDirecta,
   onCantidadAlternativaChange,
   onRenombrar,
@@ -115,13 +138,41 @@ export function ComidaSlot({
   });
 
   const [desc, setDesc] = useState(descripcion || "");
-  const [hora, setHora] = useState(t(`comidaSlot.horaDefault.${tipo}` as any) || "");
+  const horaDefault = (t(`comidaSlot.horaDefault.${tipo}` as any) as string) || "";
+  // #104 — nombre (alias) y hora editables/persistidos. Si no hay hora propia, se muestra la del tipo.
+  const [hora, setHora] = useState(horaInicial || horaDefault);
+  const [nombreComida, setNombreComida] = useState(nombreInicial || "");
+  const [editandoTitulo, setEditandoTitulo] = useState(false);
+  const metaDebounceRef = useRef<NodeJS.Timeout>(null);
 
   // Sincronizar la nota cuando cambia desde fuera (p. ej. al copiar una comida
   // en modo "Reemplazar", que clona también su descripción).
   useEffect(() => {
     setDesc(descripcion || "");
   }, [descripcion]);
+  useEffect(() => {
+    setNombreComida(nombreInicial || "");
+  }, [nombreInicial]);
+  useEffect(() => {
+    setHora(horaInicial || horaDefault);
+  }, [horaInicial, horaDefault]);
+
+  function handleHoraChange(value: string) {
+    setHora(value);
+    onHoraChange?.(comidaId, value); // reordena en vivo por hora
+    if (metaDebounceRef.current) clearTimeout(metaDebounceRef.current);
+    metaDebounceRef.current = setTimeout(() => {
+      actualizarMetaComida(comidaId, { hora: value });
+    }, 500);
+  }
+
+  function handleNombreChange(value: string) {
+    setNombreComida(value);
+    if (metaDebounceRef.current) clearTimeout(metaDebounceRef.current);
+    metaDebounceRef.current = setTimeout(() => {
+      actualizarMetaComida(comidaId, { nombre: value });
+    }, 700);
+  }
   const [collapsed, setCollapsed] = useState(false);
   const [equivalenteOpen, setEquivalenteOpen] = useState<{
     alimentoEnComidaId: string;
@@ -189,6 +240,7 @@ export function ComidaSlot({
   return (
     <div
       ref={setNodeRef}
+      id={`comida-slot-${comidaId}`}
       className={cn(
         "rounded-2xl border border-border/60 bg-card shadow-md overflow-hidden transition-colors",
         isOver && "ring-2 ring-primary/30 border-primary/30"
@@ -196,10 +248,36 @@ export function ComidaSlot({
     >
       {/* Header */}
       <div className="flex items-center gap-3 sm:gap-4 px-3 sm:px-6 py-3 sm:py-4">
-        <span className="text-sm sm:text-base text-muted-foreground tabular-nums shrink-0">{hora}</span>
-        <h4 className="text-base sm:text-lg font-bold text-foreground flex-1 min-w-0 truncate">
-          {t(`comidaSlot.tipoLabels.${tipo}` as any) || tipo}
-        </h4>
+        {readOnly ? (
+          hora ? (
+            <span className="text-sm sm:text-base text-muted-foreground tabular-nums shrink-0">{hora}</span>
+          ) : null
+        ) : (
+          <HoraSelect value={hora} onChange={handleHoraChange} />
+        )}
+        {!readOnly && editandoTitulo ? (
+          <input
+            autoFocus
+            value={nombreComida}
+            onChange={(e) => handleNombreChange(e.target.value)}
+            onBlur={() => setEditandoTitulo(false)}
+            onKeyDown={(e) => { if (e.key === "Enter") setEditandoTitulo(false); }}
+            placeholder={(t(`comidaSlot.tipoLabels.${tipo}` as any) as string) || tipo}
+            maxLength={60}
+            className="text-base sm:text-lg font-bold text-foreground flex-1 min-w-0 bg-transparent border-b border-primary/50 focus:outline-none"
+          />
+        ) : (
+          <h4
+            className={cn(
+              "text-base sm:text-lg font-bold text-foreground flex-1 min-w-0 truncate flex items-center gap-1.5",
+              !readOnly && "cursor-text",
+            )}
+            onClick={() => { if (!readOnly) setEditandoTitulo(true); }}
+          >
+            <span className="truncate">{nombreComida || (t(`comidaSlot.tipoLabels.${tipo}` as any) || tipo)}</span>
+            {!readOnly && <Pencil className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0" />}
+          </h4>
+        )}
         {!readOnly && onCopiar && (
           <button
             onClick={() => onCopiar(comidaId)}
@@ -208,6 +286,16 @@ export function ComidaSlot({
             className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-primary transition-colors shrink-0"
           >
             <Copy className="w-4 h-4" />
+          </button>
+        )}
+        {!readOnly && onEliminarComida && (
+          <button
+            onClick={onEliminarComida}
+            title={t("editor.eliminarComida")}
+            aria-label={t("editor.eliminarComida")}
+            className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-500/15 text-muted-foreground hover:text-red-500 transition-colors shrink-0"
+          >
+            <Trash2 className="w-4 h-4" />
           </button>
         )}
         <button
@@ -232,10 +320,12 @@ export function ComidaSlot({
                 {t("comidaSlot.noFoods")}
               </div>
             ) : (
-              alimentos.map((a) => (
+              <SortableContext items={alimentos.map((a) => a.id)} strategy={verticalListSortingStrategy}>
+              {alimentos.map((a, idx) => (
                 <div key={a.id}>
                   <AlimentoCard
                     id={a.id}
+                    comidaId={comidaId}
                     alimentoRealId={a.alimentoRealId}
                     nombre={a.nombre}
                     cantidad={a.cantidad}
@@ -258,10 +348,15 @@ export function ComidaSlot({
                     interactionMode={interactionMode}
                     ocultarCalorias={ocultarCalorias}
                     onRemove={onRemove}
+                    onReordenar={readOnly ? undefined : onReordenar}
+                    esPrimero={idx === 0}
+                    esUltimo={idx === alimentos.length - 1}
                     onCantidadChange={onCantidadChange}
                     onCopiar={onCopiarAlimento}
                     alternativas={a.alternativas}
                     onEliminarAlternativa={readOnly ? undefined : onEliminarAlternativa}
+                    onPromoverAlternativa={readOnly ? undefined : onPromoverAlternativa}
+                    onConvertirAlternativaEnPrincipal={readOnly ? undefined : onConvertirAlternativaEnPrincipal}
                     onCantidadAlternativaChange={readOnly ? undefined : onCantidadAlternativaChange}
                     onRenombrar={readOnly ? undefined : onRenombrar}
                     onGuardarEquivalencias={readOnly ? undefined : onGuardarEquivalencias}
@@ -304,7 +399,8 @@ export function ComidaSlot({
                     />
                   )}
                 </div>
-              ))
+              ))}
+              </SortableContext>
             )}
           </div>
 

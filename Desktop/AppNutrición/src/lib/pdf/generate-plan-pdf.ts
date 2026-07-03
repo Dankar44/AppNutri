@@ -3,6 +3,7 @@ import { calcularMacrosPorcion, sumarMacros, macrosVacios, convertirAGramos } fr
 import { type PdfColorTheme, TEMAS_PDF } from "./pdf-themes";
 
 import { UNIDAD_LABELS, UNIDAD_LABELS_FULL, formatQuantity } from "@/lib/units";
+import { ordenarComidasPorHora, horaEfectiva, minutosDeHora } from "@/lib/comida-horas";
 export { UNIDAD_LABELS, UNIDAD_LABELS_FULL, formatQuantity };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -16,7 +17,7 @@ const DIAS_ORDEN = ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO
 
 const TIPO_KEY_MAP: Record<string, string> = {
   DESAYUNO: "desayuno", MEDIA_MANANA: "mediaManana", ALMUERZO: "almuerzo",
-  MERIENDA: "merienda", CENA: "cena", RECENA: "recena",
+  MERIENDA: "merienda", CENA: "cena", RECENA: "recena", OTRA: "otra",
 };
 const TIPOS_ORDEN = ["DESAYUNO", "MEDIA_MANANA", "ALMUERZO", "MERIENDA", "CENA", "RECENA"];
 
@@ -107,6 +108,10 @@ interface AlimentoEnComida {
 interface Comida {
   tipo: string;
   descripcion?: string | null;
+  /** Alias visible (#104): si está, sustituye la etiqueta del tipo. */
+  nombre?: string | null;
+  /** Hora "HH:MM" (#104): si está, sustituye la hora por defecto del tipo. */
+  hora?: string | null;
   alimentos: AlimentoEnComida[];
 }
 
@@ -319,20 +324,37 @@ export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
     for (const d of DIAS_ORDEN) html += `<th>${tt("planDietetico.diaLabels." + DIA_KEY_MAP[d])}</th>`;
     html += `</tr></thead><tbody>`;
 
-    for (const tipo of TIPOS_ORDEN) {
-      html += `<tr><td class="meal-label">${tt("planDietetico.tipoLabels." + TIPO_KEY_MAP[tipo])}</td>`;
+    // #104 — filas por franja de hora (no por tipo). Cada celda muestra el nombre real de
+    // la comida de ese día a esa hora; los días sin comida a esa hora quedan vacíos.
+    const franjasSet = new Set<string>();
+    for (const dia of sortedDias) {
+      for (const c of dia.comidas) {
+        if (c.alimentos.length > 0) franjasSet.add(horaEfectiva(c));
+      }
+    }
+    const franjas = [...franjasSet].sort((a, b) => minutosDeHora(a) - minutosDeHora(b));
+
+    for (const franja of franjas) {
+      html += `<tr><td class="meal-label">${franja}</td>`;
       for (const dia of sortedDias) {
-        const comida = dia.comidas.find((c) => c.tipo === tipo);
-        const items = comida?.alimentos.map((a, aIdx) => {
+        const comida = dia.comidas.find((c) => c.alimentos.length > 0 && horaEfectiva(c) === franja);
+        if (!comida) {
+          html += `<td>-</td>`;
+          continue;
+        }
+        const items = comida.alimentos.map((a, aIdx) => {
           const name = `<span class="sem-main">${escapeHtml(getItemName(a))}</span>`;
           const alts = altLinesHtml(a, tt, sec.cantidadesSemanal);
           if (!sec.cantidadesSemanal) return `<div class="sem-item">${name}${alts}</div>`;
-          const key = overrideKey(dia.dia, tipo, aIdx);
+          const key = overrideKey(dia.dia, comida.tipo, aIdx);
           const qty = resolveDisplay({ cantidad: a.cantidad, unidad: a.unidad }, ov[key], tt);
           return `<div class="sem-item">${name} - ${qty}${alts}</div>`;
         }).join("") || "-";
-        const desc = comida?.descripcion ? escapeHtml(comida.descripcion) : "";
-        html += `<td>${desc ? `<strong style="font-size:8px;">${desc}</strong><br>` : ""}${items}</td>`;
+        const label = comida.nombre?.trim()
+          ? escapeHtml(comida.nombre.trim())
+          : tt("planDietetico.tipoLabels." + TIPO_KEY_MAP[comida.tipo]);
+        const desc = comida.descripcion ? escapeHtml(comida.descripcion) : "";
+        html += `<td><strong style="font-size:8px;color:#3f7d5a;">${label}</strong><br>${desc ? `<strong style="font-size:8px;">${desc}</strong><br>` : ""}${items}</td>`;
       }
       html += `</tr>`;
     }
@@ -346,9 +368,9 @@ export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
       html += `<div class="page">${header}<div class="day-title">${tt("planDietetico.diaLabels." + DIA_KEY_MAP[dia.dia])}</div>`;
       html += `<table class="detail-table"><thead><tr><th style="width:90px">${tt("planDietetico.tabla.comida")}</th><th style="width:160px">${tt("planDietetico.tabla.platos")}</th><th>${tt("planDietetico.tabla.ingredientesYCantidades")}</th></tr></thead>`;
 
-      for (const tipo of TIPOS_ORDEN) {
-        const comida = dia.comidas.find((c) => c.tipo === tipo);
-        if (!comida || comida.alimentos.length === 0) continue;
+      for (const comida of ordenarComidasPorHora(dia.comidas)) {
+        if (comida.alimentos.length === 0) continue;
+        const tipo = comida.tipo;
 
         const rows = comida.alimentos.map((a, aIdx) => {
           const name = getItemName(a);
@@ -372,8 +394,13 @@ export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
         const totalRows = hasDesc ? rows.length + 1 : rows.length;
 
         // Un <tbody> por comida: con break-inside:avoid no se parte entre páginas.
+        // #104 — alias del nutri y hora propia sustituyen al tipo/hora por defecto si existen.
+        const etiquetaComida = comida.nombre?.trim()
+          ? escapeHtml(comida.nombre.trim())
+          : tt("planDietetico.tipoLabels." + TIPO_KEY_MAP[tipo]);
+        const horaComida = horaEfectiva(comida);
         html += `<tbody class="comida-group"><tr>`;
-        html += `<td class="meal-cell" rowspan="${totalRows}"><strong>${tt("planDietetico.tipoLabels." + TIPO_KEY_MAP[tipo])}</strong><br><span class="hora">${tt("planDietetico.horaDefault." + TIPO_KEY_MAP[tipo])}</span></td>`;
+        html += `<td class="meal-cell" rowspan="${totalRows}"><strong>${etiquetaComida}</strong><br><span class="hora">${escapeHtml(horaComida)}</span></td>`;
 
         if (hasDesc) {
           html += `<td class="plato-cell" colspan="2"><strong>${escapeHtml(comida.descripcion!)}</strong></td></tr>`;

@@ -242,6 +242,8 @@ export async function enviarPlanPorEmail(
       comidas: dia.comidas.map((comida) => ({
         tipo: comida.tipo,
         descripcion: comida.descripcion,
+        nombre: comida.nombre,
+        hora: comida.hora,
         alimentos: comida.alimentos.map((a) => ({
           cantidad: a.cantidad,
           unidad: a.unidad,

@@ -12,6 +12,7 @@ import {
   TrendingUp,
   Minus,
   Calculator,
+  Plus,
 } from "lucide-react";
 import {
   Line,
@@ -34,6 +35,7 @@ import { useDemoGuard } from "@/contexts/demo-context";
 export type MedidaSerializada = {
   id: string;
   fecha: string;
+  notas: string | null;
   peso: number | null;
   altura: number | null;
   imc: number | null;
@@ -252,6 +254,8 @@ export function PacienteFichaMedicionesTab({
   const blockIfDemo = useDemoGuard();
   const [vista, setVista] = useState<VistaMedicion>("peso");
   const [valorNuevo, setValorNuevo] = useState("");
+  const [notaNueva, setNotaNueva] = useState("");
+  const [mostrarNota, setMostrarNota] = useState(false);
   const [fechaNueva, setFechaNueva] = useState(
     () => new Date().toISOString().split("T")[0]
   );
@@ -301,9 +305,12 @@ export function PacienteFichaMedicionesTab({
         const key = vista as keyof MedidaFormData;
         if (!(key in METRIC_META)) return;
         const payload: MedidaFormData = { pacienteId, fecha: fechaNueva, [key]: v };
+        if (notaNueva.trim()) payload.notas = notaNueva.trim();
         await crearMedida(payload);
         toast.success(t("medicionRegistrada"));
         setValorNuevo("");
+        setNotaNueva("");
+        setMostrarNota(false);
         router.refresh();
       } catch {
         toast.error(t("noSePudoRegistrar"));
@@ -581,6 +588,26 @@ export function PacienteFichaMedicionesTab({
                     {pending ? "..." : t("registrar")}
                   </button>
                 </div>
+                {mostrarNota ? (
+                  <textarea
+                    value={notaNueva}
+                    onChange={(e) => setNotaNueva(e.target.value)}
+                    rows={2}
+                    maxLength={1000}
+                    autoFocus
+                    placeholder={t("notasPlaceholder")}
+                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm resize-y"
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setMostrarNota(true)}
+                    className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    {t("anadirNota")}
+                  </button>
+                )}
               </div>
 
               <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -687,6 +714,24 @@ export function PacienteFichaMedicionesTab({
                 </div>
               )}
             </>
+          )}
+
+          {medidas.some((m) => m.notas) && (
+            <div className="rounded-xl border border-border bg-card p-5 mt-4">
+              <h3 className="text-sm font-semibold mb-3">{t("notasTitulo")}</h3>
+              <div className="space-y-3">
+                {medidas
+                  .filter((m) => m.notas)
+                  .map((m) => (
+                    <div key={m.id} className="text-sm border-l-2 border-primary/30 pl-3">
+                      <p className="text-xs font-medium text-muted-foreground">
+                        {new Date(m.fecha).toLocaleDateString(tag, { day: "numeric", month: "long", year: "numeric" })}
+                      </p>
+                      <p className="whitespace-pre-wrap text-foreground">{m.notas}</p>
+                    </div>
+                  ))}
+              </div>
+            </div>
           )}
         </main>
       </div>

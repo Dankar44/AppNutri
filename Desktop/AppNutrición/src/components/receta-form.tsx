@@ -1,17 +1,21 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   crearReceta,
   actualizarReceta,
+  getMicrosAlimentos,
   type RecetaFormData,
   type IngredienteData,
 } from "@/app/actions/recetas";
 import { IngredienteList, type IngredienteItem } from "./ingrediente-list";
 import { MacroAnalysisCard } from "./alimento/macro-analysis-card";
+import { MicronutrientesCard } from "./alimento/micronutrientes-card";
+import { MICRO_KEYS, type MicroKey } from "@/lib/micronutrientes";
 import { calcularMacrosPorcion, sumarMacros, convertirAGramos } from "@/lib/macros";
+import { CantidadInput } from "@/components/cantidad-input";
 import { useTranslations } from "next-intl";
 import { isNextNavigation, withTimeout } from "@/lib/utils";
 import { useUncontrolledFormPersist } from "@/lib/form-persist";
@@ -34,6 +38,8 @@ export function RecetaForm({
   const blockIfDemo = useDemoGuard();
   const [loading, setLoading] = useState(false);
   const [ingredientes, setIngredientes] = useState<IngredienteItem[]>(defaultIngredientes);
+  // Micros por 100 g de cada alimento usado (cargados bajo demanda) para sumarlos en vivo.
+  const [microsCache, setMicrosCache] = useState<Record<string, Partial<Record<string, number | null>>>>({});
   const formRef = useRef<HTMLFormElement>(null);
   const { wasRestored, clear: clearDraft } = useUncontrolledFormPersist(
     `receta-${recetaId ?? "nueva"}`,
@@ -43,7 +49,45 @@ export function RecetaForm({
   useEffect(() => {
     if (wasRestored) toast.success(tc("datosRestaurados"));
   }, [wasRestored, tc]);
-  const porciones = 1;
+  const [porciones, setPorciones] = useState<number>(
+    defaultValues?.porciones && defaultValues.porciones > 0 ? defaultValues.porciones : 1,
+  );
+  // Preparación numerada automáticamente: Enter añade el siguiente "N. " y, en un campo
+  // vacío, al enfocar arranca en "1. ". El parser de la vista quita la numeración igual,
+  // así que esto es solo comodidad de escritura.
+  const [instrucciones, setInstrucciones] = useState<string>(defaultValues?.instrucciones ?? "");
+
+  function handleInstruccionesKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key !== "Enter" || e.shiftKey) return;
+    e.preventDefault();
+    const ta = e.currentTarget;
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const before = instrucciones.slice(0, start);
+    const after = instrucciones.slice(end);
+    const n = before.split("\n").filter((l) => l.trim()).length + 1;
+    const insert = `\n${n}. `;
+    setInstrucciones(before + insert + after);
+    requestAnimationFrame(() => {
+      const pos = start + insert.length;
+      ta.selectionStart = ta.selectionEnd = pos;
+    });
+  }
+
+  function handleInstruccionesChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    const val = e.target.value;
+    // Al teclear el primer carácter en un campo vacío, prefijar "1. " (si no escribió ya un número).
+    if (instrucciones.trim() === "" && val.trim() !== "" && !/^\s*\d+[.)]/.test(val)) {
+      const ta = e.currentTarget;
+      setInstrucciones("1. " + val);
+      requestAnimationFrame(() => {
+        ta.selectionStart = ta.selectionEnd = ta.value.length;
+      });
+      return;
+    }
+    setInstrucciones(val);
+  }
+
   const isEdit = !!recetaId;
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -63,7 +107,7 @@ export function RecetaForm({
     const data: RecetaFormData = {
       nombre: form.get("nombre") as string,
       descripcion: (form.get("descripcion") as string) || undefined,
-      instrucciones: undefined,
+      instrucciones: (form.get("instrucciones") as string) || undefined,
       porciones,
       tiempoPreparacion:
         tiempoParsed === null || Number.isNaN(tiempoParsed) ? null : tiempoParsed,
@@ -107,6 +151,43 @@ export function RecetaForm({
     : macrosTotales;
   const pesoTotal = ingredientes.reduce((sum, ing) => sum + convertirAGramos(ing.cantidad || 0, ing.unidad, ing.porcion || 100), 0);
 
+  // Cargar micros/100 g de los alimentos usados (nuevos y precargados al editar).
+  const idsKey = ingredientes.map((i) => i.alimentoId).join(",");
+  useEffect(() => {
+    const ids = ingredientes.map((i) => i.alimentoId).filter(Boolean);
+    if (ids.length === 0) return;
+    getMicrosAlimentos(ids)
+      .then((data) => setMicrosCache((prev) => ({ ...prev, ...data })))
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idsKey]);
+
+  // Micros por porción: se suman escalando por gramos de cada ingrediente y se dividen
+  // por las porciones, igual que los macros de la tarjeta.
+  const microsPorPorcion = useMemo(() => {
+    const acc: Partial<Record<MicroKey, number>> = {};
+    let hay = false;
+    for (const ing of ingredientes) {
+      const micros = microsCache[ing.alimentoId];
+      if (!micros) continue;
+      const gramos = convertirAGramos(ing.cantidad, ing.unidad, ing.porcion || 100);
+      const factor = gramos / 100;
+      for (const k of MICRO_KEYS) {
+        const v = micros[k];
+        if (v === null || v === undefined || !isFinite(v)) continue;
+        acc[k] = (acc[k] ?? 0) + v * factor;
+        hay = true;
+      }
+    }
+    if (!hay) return {};
+    const out: Partial<Record<MicroKey, number>> = {};
+    for (const k of MICRO_KEYS) {
+      if (acc[k] === undefined) continue;
+      out[k] = porciones > 0 ? acc[k]! / porciones : acc[k]!;
+    }
+    return out;
+  }, [ingredientes, microsCache, porciones]);
+
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-6 items-start">
       <div className="space-y-6 min-w-0">
@@ -135,6 +216,19 @@ export function RecetaForm({
             />
           </div>
           <div>
+            <label className="block text-sm font-medium mb-1">{t("form.instruccionesLabel")}</label>
+            <textarea
+              name="instrucciones"
+              rows={5}
+              maxLength={4000}
+              value={instrucciones}
+              onChange={handleInstruccionesChange}
+              onKeyDown={handleInstruccionesKeyDown}
+              placeholder={t("form.instruccionesPlaceholder")}
+              className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y"
+            />
+          </div>
+          <div>
             <label className="block text-sm font-medium mb-1">{t("form.tiempoPreparacion")}</label>
             <input
               name="tiempoPreparacion"
@@ -146,6 +240,18 @@ export function RecetaForm({
               placeholder={t("form.tiempoPlaceholder")}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">{t("form.porcionesLabel")}</label>
+            <CantidadInput
+              value={porciones}
+              onChange={setPorciones}
+              min={1}
+              max={50}
+              redondearA={0.5}
+              className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+            <p className="text-xs text-muted-foreground mt-1">{t("form.porcionesAyuda")}</p>
           </div>
         </div>
       </section>
@@ -196,6 +302,7 @@ export function RecetaForm({
             <p className="font-bold text-base tabular-nums">{Math.round(pesoTotal)} g</p>
           </div>
         </div>
+        <MicronutrientesCard values={microsPorPorcion} title={t("form.microsReceta")} compact />
         {ingredientes.length === 0 && (
           <p className="text-xs text-muted-foreground text-center italic">
             {t("form.anadirIngredientes")}

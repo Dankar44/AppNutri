@@ -171,6 +171,8 @@ enum TipoComida {
   MERIENDA
   CENA
   RECENA
+  /// Comida personalizada añadida a un día concreto (#104 Fase 2); se identifica por su nombre.
+  OTRA
 }
 
 enum DiaSemana {
@@ -376,7 +378,7 @@ model Receta {
   nombreNormalizado String? @map("nombreNormalizado")
   descripcion     String?
   instrucciones   String?
-  porciones       Int       @default(1)
+  porciones       Float     @default(1)
   tiempoPreparacion Int?
   calorias        Float     @default(0)
   proteinas       Float     @default(0)
@@ -494,6 +496,10 @@ model ComidaDelDia {
   tipo        TipoComida
   orden       Int         @default(0)
   descripcion String?
+  /// Alias visible del nutri (#104): si está, sustituye la etiqueta del tipo (p. ej. "Preentreno").
+  nombre      String?
+  /// Hora de la comida en formato "HH:MM" (#104), opcional.
+  hora        String?
 
   alimentos AlimentoEnComida[]
 
