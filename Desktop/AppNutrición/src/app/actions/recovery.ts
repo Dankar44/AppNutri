@@ -23,13 +23,33 @@ function escapeHtml(str: string): string {
 export async function solicitarRecuperacion(email: string, origin: string): Promise<{ ok: boolean }> {
   const normalizedEmail = email.trim().toLowerCase();
 
+  // Buscamos primero en dietistas (para el nombre del saludo). Si no hay fila —cuentas que
+  // aún no han hecho el primer login verificado, cuya ficha se crea de forma perezosa—, la
+  // buscamos directamente en auth.users: de lo contrario esas cuentas nunca podrían recuperar
+  // la contraseña y quedan atascadas (mismo patrón de raíz que el bug de altas #120).
   const dietista = await prisma.dietista.findFirst({
     where: { email: normalizedEmail },
   });
 
-  if (!dietista) return { ok: true };
+  let authId: string | undefined;
+  let nombre = "";
+  if (dietista) {
+    authId = dietista.authId;
+    nombre = dietista.nombre;
+  } else {
+    const rows = await prisma.$queryRawUnsafe<{ id: string; nombre: string | null }[]>(
+      `SELECT id, raw_user_meta_data->>'nombre' AS nombre FROM auth.users WHERE email = $1 LIMIT 1`,
+      normalizedEmail,
+    );
+    if (rows.length > 0) {
+      authId = rows[0].id;
+      nombre = rows[0].nombre || "";
+    }
+  }
 
-  const token = await new SignJWT({ sub: dietista.authId, email: normalizedEmail })
+  if (!authId) return { ok: true };
+
+  const token = await new SignJWT({ sub: authId, email: normalizedEmail })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(RECOVERY_EXPIRY)
@@ -41,7 +61,7 @@ export async function solicitarRecuperacion(email: string, origin: string): Prom
   const te = await getTranslations("emails");
 
   const html = buildRecoveryEmail({
-    nombre: dietista.nombre,
+    nombre,
     resetLink,
     t: (key: string) => te(`recuperarPassword.${key}`),
   });
@@ -87,8 +107,11 @@ export async function resetearPassword(
   }
 
   try {
+    // Al resetear la contraseña desde el enlace enviado a su email, damos el email por
+    // confirmado si no lo estaba: recibir el enlace demuestra control del correo. Así una
+    // cuenta que estaba sin verificar queda desatascada del todo (ya puede iniciar sesión).
     await prisma.$queryRawUnsafe(
-      `UPDATE auth.users SET encrypted_password = crypt($1, gen_salt('bf')), updated_at = NOW() WHERE id = $2::uuid`,
+      `UPDATE auth.users SET encrypted_password = crypt($1, gen_salt('bf')), email_confirmed_at = COALESCE(email_confirmed_at, NOW()), updated_at = NOW() WHERE id = $2::uuid`,
       nuevaPassword,
       verificacion.authId
     );
