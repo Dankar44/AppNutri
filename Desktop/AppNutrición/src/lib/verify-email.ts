@@ -12,7 +12,7 @@ const SECRET = new TextEncoder().encode(
 export async function generateVerifyToken(authId: string, email: string): Promise<string> {
   return new SignJWT({ authId, email })
     .setProtectedHeader({ alg: "HS256" })
-    .setExpirationTime("24h")
+    .setExpirationTime("7d")
     .sign(SECRET);
 }
 
@@ -36,7 +36,7 @@ const TEXTS = {
     body: "Hemos recibido una solicitud para verificar tu cuenta en Annonia. Pulsa el botón de abajo para confirmar tu email.",
     cta: "Verificar email",
     fallback: "Si el botón no funciona, copia y pega este enlace:",
-    expiry: "Este enlace es válido durante 24 horas.",
+    expiry: "Este enlace es válido durante 7 días.",
     ignore: "Si no solicitaste esta cuenta, puedes ignorar este correo.",
     auto: "Este correo es una notificación automática de Annonia.",
   },
@@ -47,7 +47,7 @@ const TEXTS = {
     body: "Recebemos uma solicitação para verificar sua conta no Annonia. Clique no botão abaixo para confirmar seu email.",
     cta: "Verificar email",
     fallback: "Se o botão não funcionar, copie e cole este link:",
-    expiry: "Este link é válido por 24 horas.",
+    expiry: "Este link é válido por 7 dias.",
     ignore: "Se você não solicitou esta conta, pode ignorar este email.",
     auto: "Este email é uma notificação automática do Annonia.",
   },

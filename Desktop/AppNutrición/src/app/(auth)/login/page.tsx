@@ -11,6 +11,7 @@ import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { GoogleGlyph } from "@/components/google-glyph";
 import { InAppBrowserNotice, useInAppBrowser } from "@/components/in-app-browser-notice";
+import { reenviarVerificacion } from "@/app/actions/registro";
 
 export default function LoginPage() {
   return (
@@ -30,6 +31,8 @@ function LoginContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [emailNoConfirmado, setEmailNoConfirmado] = useState(false);
+  const [reenviando, setReenviando] = useState(false);
   const { inApp } = useInAppBrowser();
 
   useEffect(() => {
@@ -57,6 +60,7 @@ function LoginContent() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
+    setEmailNoConfirmado(false);
 
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({
@@ -67,6 +71,7 @@ function LoginContent() {
     if (error) {
       if (error.message?.includes("Email not confirmed")) {
         toast.error(t("login.errorEmailNotConfirmed"));
+        setEmailNoConfirmado(true);
       } else {
         toast.error(t("login.errorInvalidCredentials"));
       }
@@ -76,6 +81,20 @@ function LoginContent() {
 
     toast.success(t("login.successWelcome"));
     window.location.href = "/dashboard";
+  }
+
+  async function handleReenviar() {
+    if (!email) return;
+    setReenviando(true);
+    try {
+      const res = await reenviarVerificacion(email);
+      if (res.ok) toast.success(t("login.reenviarEnviado"));
+      else toast.error(res.error || t("login.errorGenerico"));
+    } catch {
+      toast.error(t("login.errorGenerico"));
+    } finally {
+      setReenviando(false);
+    }
   }
 
   async function handleGoogleLogin() {
@@ -242,6 +261,21 @@ function LoginContent() {
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               {loading ? t("login.submitting") : t("login.submitButton")}
             </button>
+
+            {emailNoConfirmado && (
+              <div className="rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-3 text-sm text-center">
+                <p className="text-amber-800 dark:text-amber-300 mb-2">{t("login.reenviarAyuda")}</p>
+                <button
+                  type="button"
+                  onClick={handleReenviar}
+                  disabled={reenviando}
+                  className="inline-flex items-center gap-2 text-primary font-medium hover:underline disabled:opacity-60"
+                >
+                  {reenviando && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {reenviando ? t("login.reenviarEnviando") : t("login.reenviarVerificacion")}
+                </button>
+              </div>
+            )}
           </form>
 
           <p className="text-center mt-6 text-muted-foreground">

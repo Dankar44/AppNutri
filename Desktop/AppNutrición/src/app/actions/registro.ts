@@ -63,9 +63,18 @@ export async function verificarEmailDisponible(email: string): Promise<{
 
   if (authUser.length > 0) {
     if (!authUser[0].email_confirmed_at) {
+      // Registro a medias (email nunca confirmado): limpiarlo para permitir re-registro.
+      // Antes los DELETE ignoraban el error con .catch → si el borrado fallaba, se devolvía
+      // "disponible" igual y el INSERT posterior chocaba con el UNIQUE de email, dejando al
+      // usuario atascado en "correo en uso" sin salida. Ahora, si no se puede limpiar, se avisa.
       const oldAuthId = authUser[0].id;
-      await prisma.$queryRawUnsafe(`DELETE FROM auth.identities WHERE user_id = $1::uuid`, oldAuthId).catch((e) => console.warn("[registro] Cleanup auth.identities falló:", e));
-      await prisma.$queryRawUnsafe(`DELETE FROM auth.users WHERE id = $1::uuid`, oldAuthId).catch((e) => console.warn("[registro] Cleanup auth.users falló:", e));
+      try {
+        await prisma.$queryRawUnsafe(`DELETE FROM auth.identities WHERE user_id = $1::uuid`, oldAuthId);
+        await prisma.$queryRawUnsafe(`DELETE FROM auth.users WHERE id = $1::uuid`, oldAuthId);
+      } catch (e) {
+        console.error("[registro] No se pudo limpiar el registro a medias:", e);
+        return { disponible: false, error: t("auth.errorRegistro") };
+      }
       return { disponible: true };
     }
     return { disponible: false, error: t("auth.emailYaRegistrado") };
@@ -160,4 +169,46 @@ export async function registrarCuenta(data: {
     console.error("[registro] Error creando cuenta:", e);
     return { ok: false, error: t("auth.errorRegistro") };
   }
+}
+
+/**
+ * Reenvía el email de verificación a una cuenta que aún no ha confirmado su email
+ * (registro a medias). Pensado para el botón "Reenviar" del login cuando sale
+ * "verifica tu email". No revela si el email existe: siempre devuelve ok salvo
+ * fallo de envío (que sí se reporta, gracias al control de errores de Resend).
+ */
+export async function reenviarVerificacion(email: string): Promise<{ ok: boolean; error?: string }> {
+  const t = await getTranslations("validation");
+  const normalized = email.trim().toLowerCase();
+  if (!normalized || !normalized.includes("@")) return { ok: false, error: t("admin.emailNoValido") };
+
+  const headerList = await headers();
+  const forwarded = headerList.get("x-forwarded-for");
+  const ip = forwarded?.split(",")[0]?.trim() || headerList.get("x-real-ip") || "unknown";
+  const rl = checkRateLimit({ key: `reenvio:${ip}`, ...LIMITES.registro });
+  if (!rl.ok) return { ok: false, error: t("auth.rateLimitRegistro") };
+
+  const rows = await prisma.$queryRawUnsafe<{ id: string; nombre: string | null }[]>(
+    `SELECT id, raw_user_meta_data->>'nombre' AS nombre FROM auth.users WHERE email = $1 AND email_confirmed_at IS NULL LIMIT 1`,
+    normalized,
+  );
+
+  // Solo reenviamos si hay una cuenta sin verificar; si no, devolvemos ok igual
+  // (no revelar si el email existe). Un fallo de envío SÍ se reporta.
+  if (rows.length > 0) {
+    try {
+      const proto = headerList.get("x-forwarded-proto") || "https";
+      const host = headerList.get("host") || "localhost:3000";
+      const appUrl = `${proto}://${host}`;
+      let locale: "es" | "pt" = "es";
+      try { const l = await getLocale(); if (l === "pt") locale = "pt"; } catch { /* default es */ }
+      const token = await generateVerifyToken(rows[0].id, normalized);
+      await sendVerificationEmail(normalized, rows[0].nombre || "", token, appUrl, locale);
+    } catch (e) {
+      console.error("[reenviarVerificacion] Error reenviando email:", e);
+      return { ok: false, error: t("auth.errorEnvioVerificacion") };
+    }
+  }
+
+  return { ok: true };
 }

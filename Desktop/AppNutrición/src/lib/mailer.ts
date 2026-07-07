@@ -36,7 +36,12 @@ export async function sendEmail(opts: {
 
   const resend = getResend();
   if (resend) {
-    await resend.emails.send({
+    // El SDK de Resend NO lanza excepción ante errores de API (dominio no
+    // verificado, destinatario rechazado, rebote): devuelve { error }. Si no lo
+    // comprobamos, un envío fallido pasa por bueno y deja cuentas a medias
+    // (p. ej. registros sin verificar). Propagar el error para que el llamante
+    // (registro, etc.) pueda hacer rollback.
+    const { error } = await resend.emails.send({
       from: DEFAULT_FROM,
       to: opts.to,
       subject: opts.subject,
@@ -48,6 +53,9 @@ export async function sendEmail(opts: {
         content_type: a.contentType,
       })),
     });
+    if (error) {
+      throw new Error(`Resend no pudo enviar el email a ${opts.to}: ${error.message ?? JSON.stringify(error)}`);
+    }
     return;
   }
 
