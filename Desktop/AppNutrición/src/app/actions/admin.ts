@@ -11,6 +11,8 @@ import { crearPacienteDemoSiNoExiste } from "@/lib/paciente-demo";
 import { stripe } from "@/lib/stripe";
 import { isNextNavigation } from "@/lib/utils";
 import { sendEmail } from "@/lib/mailer";
+import { headers } from "next/headers";
+import { generateVerifyToken, sendVerificationEmail } from "@/lib/verify-email";
 import { generarSlug } from "@/lib/empresa-utils";
 import {
   sanitizeString,
@@ -185,6 +187,9 @@ export interface DietistaAdminItem {
   suscripcion: { plan: string; estado: string } | null;
   _count: { pacientes: number; planes: number; consultas: number; recetas: number };
   pacientes: PacienteResumen[];
+  authId?: string | null;
+  /** true = cuenta registrada en auth.users pero sin verificar el email y sin ficha en dietistas (ver aportación #124) */
+  incompleta?: boolean;
 }
 
 export async function getDietistasAdmin(busqueda?: string): Promise<DietistaAdminItem[]> {
@@ -274,11 +279,173 @@ export async function getDietistasAdmin(busqueda?: string): Promise<DietistaAdmi
     } catch { /* auth schema might not be accessible */ }
   }
 
-  return dietistas.map((d) => ({
+  const base: DietistaAdminItem[] = dietistas.map((d) => ({
     ...d,
     lastSignIn: (d.authId && signInMap[d.authId]) || null,
     suscripcion: suscMap[d.id] || null,
   }));
+
+  // Cuentas "incompletas": registradas en auth.users pero sin verificar el email y sin
+  // fila en dietistas (la ficha se crea de forma perezosa en el primer login verificado).
+  // No aparecían en el panel → no se podían rescatar. Ver aportación #124.
+  const incompletas = await fetchCuentasIncompletas(search);
+
+  return [...incompletas, ...base];
+}
+
+/** Cuentas en auth.users sin verificar y sin ficha en dietistas (registro a medias). */
+async function fetchCuentasIncompletas(search?: string): Promise<DietistaAdminItem[]> {
+  try {
+    const like = search ? `%${search}%` : null;
+    const rows = await prisma.$queryRawUnsafe<
+      {
+        id: string;
+        email: string;
+        created_at: Date;
+        nombre: string | null;
+        apellidos: string | null;
+        especialidad: string | null;
+        fuente: string | null;
+        creado: string | null;
+      }[]
+    >(
+      `SELECT u.id, u.email, u.created_at,
+              u.raw_user_meta_data->>'nombre' AS nombre,
+              u.raw_user_meta_data->>'apellidos' AS apellidos,
+              u.raw_user_meta_data->>'especialidad' AS especialidad,
+              u.raw_user_meta_data->>'fuenteContacto' AS fuente,
+              u.raw_user_meta_data->>'creadoPor' AS creado
+         FROM auth.users u
+         LEFT JOIN dietistas d ON d."authId" = u.id
+        WHERE u.email_confirmed_at IS NULL
+          AND d.id IS NULL
+          AND ($1::text IS NULL
+               OR lower(u.email) LIKE $1
+               OR lower(u.raw_user_meta_data->>'nombre') LIKE $1
+               OR lower(u.raw_user_meta_data->>'apellidos') LIKE $1)
+        ORDER BY u.created_at DESC`,
+      like,
+    );
+    return rows.map((r) => ({
+      id: r.id,
+      authId: r.id,
+      email: r.email,
+      nombre: r.nombre || "(sin nombre)",
+      apellidos: r.apellidos || "",
+      telefono: null,
+      numColegiado: null,
+      especialidad: r.especialidad || null,
+      clinica: null,
+      creadoPor: r.creado || null,
+      fuenteContacto: r.fuente || null,
+      createdAt: r.created_at,
+      lastAccessAt: null,
+      lastSignIn: null,
+      suscripcion: null,
+      _count: { pacientes: 0, planes: 0, consultas: 0, recetas: 0 },
+      pacientes: [],
+      incompleta: true,
+    }));
+  } catch (e) {
+    console.error("[admin] fetchCuentasIncompletas:", e);
+    return [];
+  }
+}
+
+/** Reenvía el email de verificación a una cuenta incompleta (botón del panel admin). */
+export async function reenviarVerificacionAdmin(authId: string): Promise<{ ok: boolean; error?: string }> {
+  const admin = await requireAdmin();
+  if (!admin) return { ok: false, error: "No autorizado" };
+  try {
+    const rows = await prisma.$queryRawUnsafe<{ email: string; nombre: string | null }[]>(
+      `SELECT email, raw_user_meta_data->>'nombre' AS nombre FROM auth.users WHERE id = $1::uuid AND email_confirmed_at IS NULL LIMIT 1`,
+      authId,
+    );
+    if (rows.length === 0) return { ok: false, error: "La cuenta no existe o ya está verificada" };
+    const h = await headers();
+    const proto = h.get("x-forwarded-proto") || "https";
+    const host = h.get("host") || "annonia.com";
+    const appUrl = `${proto}://${host}`;
+    let locale: "es" | "pt" = "es";
+    try { const l = await getLocale(); if (l === "pt") locale = "pt"; } catch { /* default es */ }
+    const token = await generateVerifyToken(authId, rows[0].email);
+    await sendVerificationEmail(rows[0].email, rows[0].nombre || "", token, appUrl, locale);
+    return { ok: true };
+  } catch (e) {
+    console.error("[admin] reenviarVerificacionAdmin:", e);
+    return { ok: false, error: "No se pudo reenviar el email de verificación" };
+  }
+}
+
+/** Activa manualmente una cuenta incompleta (marca el email como confirmado). */
+export async function activarCuentaAdmin(authId: string): Promise<{ ok: boolean; error?: string }> {
+  const admin = await requireAdmin();
+  if (!admin) return { ok: false, error: "No autorizado" };
+  try {
+    const res = await prisma.$queryRawUnsafe<{ id: string }[]>(
+      `UPDATE auth.users SET email_confirmed_at = NOW(), updated_at = NOW() WHERE id = $1::uuid AND email_confirmed_at IS NULL RETURNING id`,
+      authId,
+    );
+    if (res.length === 0) return { ok: false, error: "La cuenta no existe o ya estaba verificada" };
+    revalidatePath("/admin/dietistas");
+    return { ok: true };
+  } catch (e) {
+    console.error("[admin] activarCuentaAdmin:", e);
+    return { ok: false, error: "No se pudo activar la cuenta" };
+  }
+}
+
+/** Corrige el email de una cuenta incompleta (typos tipo gmail.con) antes de reenviar. */
+export async function corregirEmailCuentaIncompleta(
+  authId: string,
+  nuevoEmail: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const admin = await requireAdmin();
+  if (!admin) return { ok: false, error: "No autorizado" };
+  const email = nuevoEmail.trim().toLowerCase();
+  if (!email || !email.includes("@") || email.length < 5) return { ok: false, error: "Email no válido" };
+  try {
+    const dup = await prisma.$queryRawUnsafe<{ id: string }[]>(
+      `SELECT id FROM auth.users WHERE lower(email) = $1 AND id <> $2::uuid LIMIT 1`,
+      email, authId,
+    );
+    if (dup.length > 0) return { ok: false, error: "Ya existe una cuenta con ese email" };
+    const upd = await prisma.$queryRawUnsafe<{ id: string }[]>(
+      `UPDATE auth.users
+          SET email = $1,
+              raw_user_meta_data = jsonb_set(raw_user_meta_data, '{email}', to_jsonb($1::text)),
+              updated_at = NOW()
+        WHERE id = $2::uuid AND email_confirmed_at IS NULL RETURNING id`,
+      email, authId,
+    );
+    if (upd.length === 0) return { ok: false, error: "La cuenta no existe o ya está verificada" };
+    await prisma.$queryRawUnsafe(
+      `UPDATE auth.identities SET identity_data = jsonb_set(identity_data, '{email}', to_jsonb($1::text)), updated_at = NOW() WHERE user_id = $2::uuid`,
+      email, authId,
+    );
+    revalidatePath("/admin/dietistas");
+    return { ok: true };
+  } catch (e) {
+    console.error("[admin] corregirEmailCuentaIncompleta:", e);
+    return { ok: false, error: "No se pudo corregir el email" };
+  }
+}
+
+/** Elimina una cuenta incompleta (solo si NO tiene ficha en dietistas). */
+export async function eliminarCuentaIncompleta(authId: string): Promise<{ ok: boolean; error?: string }> {
+  const admin = await requireAdmin();
+  if (!admin) return { ok: false, error: "No autorizado" };
+  try {
+    const d = await prisma.dietista.findFirst({ where: { authId }, select: { id: true } });
+    if (d) return { ok: false, error: "Esta cuenta ya tiene ficha; usa el borrado normal del dietista" };
+    await prisma.$queryRawUnsafe(`DELETE FROM auth.identities WHERE user_id = $1::uuid`, authId);
+    await prisma.$queryRawUnsafe(`DELETE FROM auth.users WHERE id = $1::uuid`, authId);
+    revalidatePath("/admin/dietistas");
+    return { ok: true };
+  } catch (e) {
+    console.error("[admin] eliminarCuentaIncompleta:", e);
+    return { ok: false, error: "No se pudo eliminar la cuenta" };
+  }
 }
 
 export interface DietistaDetalle {

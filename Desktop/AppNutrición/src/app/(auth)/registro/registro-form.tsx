@@ -3,11 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Leaf, Eye, EyeOff, Loader2, Info } from "lucide-react";
+import { Leaf, Eye, EyeOff, Loader2, Info, MailCheck, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/language-switcher";
-import { registrarCuenta } from "@/app/actions/registro";
+import { registrarCuenta, reenviarVerificacion } from "@/app/actions/registro";
 import { createClient } from "@/lib/supabase/client";
 import { GoogleGlyph } from "@/components/google-glyph";
 import { InAppBrowserNotice, useInAppBrowser } from "@/components/in-app-browser-notice";
@@ -21,6 +21,8 @@ export default function RegistroForm() {
   const [showPassword, setShowPassword] = useState(false);
   const { inApp } = useInAppBrowser();
   const [showPassword2, setShowPassword2] = useState(false);
+  const [registrado, setRegistrado] = useState(false);
+  const [reenviando, setReenviando] = useState(false);
   const [form, setForm] = useState({
     nombre: "",
     apellidos: "",
@@ -83,7 +85,60 @@ export default function RegistroForm() {
     }
 
     toast.success(t("registro.form.successAccountCreated"));
-    router.push("/login");
+    setRegistrado(true);
+    setLoading(false);
+  }
+
+  async function handleReenviar() {
+    setReenviando(true);
+    try {
+      const res = await reenviarVerificacion(form.email.trim());
+      if (res.ok) toast.success(t("registro.form.exito.reenviado"));
+      else toast.error(res.error || t("registro.form.errorFieldsRequired"));
+    } catch {
+      toast.error(t("registro.form.errorFieldsRequired"));
+    } finally {
+      setReenviando(false);
+    }
+  }
+
+  if (registrado) {
+    return (
+      <div className="min-h-dvh flex items-center justify-center px-4 py-8 pt-safe pb-safe">
+        <div className="w-full max-w-md text-center">
+          <div className="w-16 h-16 rounded-full bg-green-50 dark:bg-green-500/10 flex items-center justify-center mx-auto mb-6">
+            <MailCheck className="w-8 h-8 text-primary" />
+          </div>
+          <h2 className="text-2xl font-bold mb-2">{t("registro.form.exito.titulo")}</h2>
+          <p className="text-muted-foreground mb-1">
+            {t("registro.form.exito.enviadoA", { email: form.email.trim() })}
+          </p>
+          <p className="text-muted-foreground text-sm mb-6">{t("registro.form.exito.instruccion")}</p>
+
+          <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-left mb-6">
+            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+              {t("registro.form.exito.spam")}
+            </p>
+          </div>
+
+          <button
+            onClick={handleReenviar}
+            disabled={reenviando}
+            className="w-full bg-primary text-primary-foreground py-2.5 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 mb-3"
+          >
+            {reenviando && <Loader2 className="w-4 h-4 animate-spin" />}
+            {reenviando ? t("registro.form.exito.reenviando") : t("registro.form.exito.reenviar")}
+          </button>
+          <button
+            onClick={() => router.push("/login")}
+            className="text-sm text-primary font-medium hover:underline"
+          >
+            {t("registro.form.exito.irLogin")}
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

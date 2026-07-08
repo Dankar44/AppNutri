@@ -8,6 +8,7 @@ import { intlTag, type Locale } from "@/i18n/config";
 import type { DietistaAdminItem } from "@/app/actions/admin";
 import { EliminarDietistaButton } from "./eliminar-dietista-button";
 import { EditarDietistaButton } from "./editar-dietista-button";
+import { CuentaIncompletaActions } from "./cuenta-incompleta-actions";
 
 const PLAN_BADGE: Record<string, string> = {
   BASICO: "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400",
@@ -224,6 +225,11 @@ export function DietistasList({ dietistas }: Props) {
                     <span className="font-semibold truncate">
                       {capitalizarNombre(d.nombre)} {capitalizarNombre(d.apellidos)}
                     </span>
+                    {d.incompleta && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium shrink-0 bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400">
+                        Sin verificar
+                      </span>
+                    )}
                     {d.suscripcion && (
                       <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-medium shrink-0 ${PLAN_BADGE[d.suscripcion.plan] || ""}`}>
                         {d.suscripcion.plan === "BASICO" ? t("planBadge.basico") : t("planBadge.pro")}
@@ -286,7 +292,24 @@ export function DietistasList({ dietistas }: Props) {
                 </div>
               </button>
 
-              {isExpanded && (
+              {isExpanded && d.incompleta && (
+                <div className="border-t border-border bg-muted/20 px-5 py-4 space-y-3">
+                  <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
+                    <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+                      Cuenta sin verificar. Se registró el {formatDate(d.createdAt)} y aún no ha confirmado su email, por eso no tiene ficha creada. El email de verificación se le envió correctamente; puedes reenviárselo, activarla a mano (podrá entrar con la contraseña que puso) o corregir el email si estaba mal escrito.
+                    </p>
+                  </div>
+                  {d.authId && (
+                    <CuentaIncompletaActions
+                      authId={d.authId}
+                      email={d.email}
+                      nombre={`${capitalizarNombre(d.nombre)} ${capitalizarNombre(d.apellidos)}`}
+                    />
+                  )}
+                </div>
+              )}
+              {isExpanded && !d.incompleta && (
                 <div className="border-t border-border bg-muted/20">
                   {/* Info extra del dietista */}
                   <div className="px-5 py-3 bg-muted/30 flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
