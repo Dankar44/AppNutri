@@ -316,7 +316,7 @@ async function fetchCuentasIncompletas(search?: string): Promise<DietistaAdminIt
               u.raw_user_meta_data->>'fuenteContacto' AS fuente,
               u.raw_user_meta_data->>'creadoPor' AS creado
          FROM auth.users u
-         LEFT JOIN dietistas d ON d."authId" = u.id
+         LEFT JOIN dietistas d ON d."authId" = u.id::text
         WHERE u.email_confirmed_at IS NULL
           AND d.id IS NULL
           AND ($1::text IS NULL

@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronRight, Users, User, ArrowUpDown, Clock, Instagram, Linkedin, MessageCircle, Filter, Sprout, GraduationCap } from "lucide-react";
+import { ChevronDown, ChevronRight, Users, User, ArrowUpDown, Clock, Instagram, Linkedin, MessageCircle, Filter, Sprout, GraduationCap, MailWarning } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { intlTag, type Locale } from "@/i18n/config";
 import type { DietistaAdminItem } from "@/app/actions/admin";
@@ -116,6 +116,7 @@ export function DietistasList({ dietistas }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>("reciente");
   const [fuenteFilter, setFuenteFilter] = useState<string | null>(null);
   const [creadorFilter, setCreadorFilter] = useState<string | null>(null);
+  const [sinVerificar, setSinVerificar] = useState(false);
 
   function formatDate(d: Date | string) {
     return new Date(d).toLocaleDateString(tag, { day: "numeric", month: "short", year: "numeric" });
@@ -129,8 +130,11 @@ export function DietistasList({ dietistas }: Props) {
     if (creadorFilter) {
       list = list.filter((d) => d.creadoPor && adminDisplayName(d.creadoPor) === creadorFilter);
     }
+    if (sinVerificar) {
+      list = list.filter((d) => d.incompleta);
+    }
     return list;
-  }, [dietistas, fuenteFilter, creadorFilter]);
+  }, [dietistas, fuenteFilter, creadorFilter, sinVerificar]);
 
   const sorted = useMemo(() => sortDietistas(filtered, sortKey), [filtered, sortKey]);
 
@@ -200,6 +204,18 @@ export function DietistasList({ dietistas }: Props) {
               {c.key}
             </button>
           ))}
+          <span className="w-px h-4 bg-border mx-1" />
+          <button
+            onClick={() => setSinVerificar((v) => !v)}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              sinVerificar
+                ? "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            <MailWarning className="w-3.5 h-3.5" />
+            Sin verificar
+          </button>
         </div>
       </div>
 
