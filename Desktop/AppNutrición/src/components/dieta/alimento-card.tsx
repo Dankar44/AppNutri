@@ -434,6 +434,10 @@ export function AlimentoCard({
         <CantidadInput
           value={tempCantidad}
           onChange={handleCantidadChange}
+          // Con equivalencias, guardar solo al confirmar (blur/Enter): así el reescalado de
+          // las alternativas ocurre una vez con el valor final y no se encadena sobre los
+          // valores intermedios del tecleo, que las dejaba todas iguales al principal (#126).
+          commitOnly={!!(alternativas && alternativas.length > 0)}
           className="w-16 sm:w-14 px-2 py-1 sm:px-1.5 sm:py-0.5 text-base sm:text-sm rounded border border-transparent hover:border-border focus:border-primary/50 bg-transparent text-right tabular-nums focus:outline-none focus:ring-1 focus:ring-primary/20"
           min={0}
           max={10000}

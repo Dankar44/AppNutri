@@ -29,6 +29,10 @@ type CantidadInputProps = {
   /** Si se indica, al perder el foco redondea al múltiplo más cercano (p. ej. 0.5
    *  en raciones de receta), para no dejar decimales sin sentido como 1,7 o 1,754. */
   redondearA?: number;
+  /** Si es true, NO emite al padre mientras se teclea: solo al confirmar (blur o Enter).
+   *  Evita persistir valores intermedios del tecleo (p. ej. el "1" antes de "150"), que en
+   *  ítems con equivalencias los reescalaba de forma destructiva dejándolos todos iguales (#126). */
+  commitOnly?: boolean;
 } & Omit<
   InputHTMLAttributes<HTMLInputElement>,
   "value" | "onChange" | "min" | "max" | "type" | "onBlur"
@@ -48,6 +52,8 @@ export function CantidadInput({
   min = 0,
   max = 10000,
   redondearA,
+  commitOnly = false,
+  onKeyDown,
   ...rest
 }: CantidadInputProps) {
   const [texto, setTexto] = useState(() => String(value));
@@ -74,11 +80,16 @@ export function CantidadInput({
       onChange={(e) => {
         const raw = normalizarCantidadTexto(e.target.value);
         setTexto(raw);
+        if (commitOnly) return; // en modo commit no se emite al teclear; solo en blur/Enter
         const n = parseFloat(raw);
         if (esValido(n)) {
           ultimoValido.current = n;
           onChange(n);
         }
+      }}
+      onKeyDown={(e) => {
+        if (commitOnly && e.key === "Enter") e.currentTarget.blur();
+        onKeyDown?.(e);
       }}
       onBlur={() => {
         const n = parseFloat(texto);
