@@ -27,7 +27,7 @@ import {
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
 import type { HorarioEntry } from "@/app/actions/pacientes";
-import { HorarioSemanal } from "@/components/horario-semanal";
+import { HorarioDietistaWrapper } from "@/components/horario-dietista-wrapper";
 import { RecomendacionesCard } from "@/components/recomendaciones-card";
 import { DatePicker } from "@/components/date-picker";
 import { guardarFichaSidebar } from "@/app/actions/ficha-sidebar";
@@ -230,7 +230,7 @@ export function PacienteFichaGeneralTab({
         <p className="text-sm text-muted-foreground mb-3">
           {t("horarioCompartidoHint")}
         </p>
-        <HorarioSemanal initialEntries={horario} readOnly onSave={async () => {}} />
+        <HorarioDietistaWrapper pacienteId={paciente.id} initialEntries={horario} />
       </section>
       <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
