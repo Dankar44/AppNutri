@@ -7,6 +7,7 @@ import { CookingPot, User, ExternalLink, Image as ImageLinkIcon } from "lucide-r
 import { cn } from "@/lib/utils";
 import { calcularMacrosPorcion, convertirAGramos } from "@/lib/macros";
 import { formatQuantity } from "@/lib/units";
+import { etiquetaPorciones, ingredientesDeReceta } from "@/lib/receta-porciones";
 import { useTranslations } from "next-intl";
 
 export type InteractionMode = "dashboard" | "patient" | "shared";
@@ -144,7 +145,19 @@ export function FoodHoverCard({
     );
   })();
 
-  const ingredienteFactor = esReceta ? cantidad / (recetaPorciones || 1) : 1;
+  // Plato (rinde 1): ingredientes escalados a lo que come el paciente. Tanda (bizcocho,
+  // tarro de salsa): receta entera, indicando para cuántas raciones sale.
+  const { factor: ingredienteFactor, rindeRaciones } = esReceta
+    ? ingredientesDeReceta(cantidad, recetaPorciones)
+    : { factor: 1, rindeRaciones: null };
+  const tituloIngredientes = !esReceta
+    ? t("ingredientes")
+    : rindeRaciones
+      ? t("ingredientesRinde", { n: rindeRaciones })
+      : etiquetaPorciones(cantidad, {
+          media: t("ingredientesMediaRacion"),
+          varias: (n) => t("ingredientesRaciones", { n }),
+        }) ?? t("ingredientes");
   const ingredientesVisibles = recetaIngredientes?.slice(0, MAX_INGREDIENTES);
   const ingredientesRestantes = (recetaIngredientes?.length ?? 0) - MAX_INGREDIENTES;
 
@@ -234,7 +247,12 @@ export function FoodHoverCard({
 
               {esReceta && ingredientesVisibles && ingredientesVisibles.length > 0 && (
                 <div className="border-t border-border/50 pt-2">
-                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">{t("ingredientes")}</p>
+                  {/* Cuando las cantidades no son las de la ficha de la receta (media
+                      ración, doble, o una tanda entera) se dice aquí, o el nutri no
+                      entiende por qué no coinciden. */}
+                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">
+                    {tituloIngredientes}
+                  </p>
                   <ul className="space-y-0.5 text-xs text-muted-foreground">
                     {ingredientesVisibles.map((ing, i) => (
                       <li key={i} className="truncate">

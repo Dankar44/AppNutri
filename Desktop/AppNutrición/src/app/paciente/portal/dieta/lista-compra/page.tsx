@@ -23,7 +23,14 @@ export default async function PatientShoppingListPage() {
               alimentos: {
                 include: {
                   alimento: { select: { id: true, nombre: true, categoria: true, porcion: true, unidad: true, enlaceProducto: true, imagenUrl: true } },
-                  receta: { select: { id: true, nombre: true } },
+                  // porciones + ingredientes: la receta se desglosa en la compra en vez
+                  // de salir como una línea suelta que no dice qué comprar.
+                  receta: {
+                    select: {
+                      id: true, nombre: true, porciones: true,
+                      ingredientes: { include: { alimento: { select: { id: true, nombre: true, categoria: true, porcion: true, enlaceProducto: true, imagenUrl: true } } } },
+                    },
+                  },
                 },
               },
             },

@@ -207,6 +207,9 @@ function formatearCantidad(g: number, unidad?: string) {
     const rounded = Number.isInteger(g) ? g : Math.round(g * 10) / 10;
     return `${rounded} ${label}`;
   }
+  // Los ingredientes de una receta escalada bajan del gramo (una pizca de sal):
+  // redondear a entero los dejaba en "0 g".
+  if (g > 0 && g < 1) return `${Math.round(g * 10) / 10} g`;
   const rounded = Math.round(g);
   if (rounded >= 1000) {
     return `${(rounded / 1000).toFixed(rounded % 1000 === 0 ? 0 : 2)} kg`;
@@ -303,7 +306,10 @@ export function ShoppingList({ planId, planNombre, categoriasIniciales }: Shoppi
     for (const cat of categoriasIniciales) {
       for (const item of cat.items) {
         out.push({
-          id: `plan:${cat.categoria}:${item.nombre}`,
+          // La unidad va en el id: un mismo alimento puede salir en dos líneas cuando no
+          // son convertibles ("2 rebanadas" y "30 g" de pan), y `allItems` las mete en un
+          // Map por id — sin la unidad, una de las dos desaparecía de la lista.
+          id: `plan:${cat.categoria}:${item.nombre}:${item.unidad || "GRAMOS"}`,
           nombre: item.nombre,
           categoria: cat.categoria,
           cantidadTotal: item.cantidadTotal,

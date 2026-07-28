@@ -278,7 +278,8 @@ export async function enviarPlanPorEmail(
                 carbohidratos: a.receta.carbohidratos ?? 0,
                 grasas: a.receta.grasas ?? 0,
                 ingredientes: (a.receta.ingredientes ?? []).map((i) => ({
-                  alimento: { nombre: i.alimento.nombre },
+                  // id + categoría: la lista de la compra desglosa la receta y la ordena por sección.
+                  alimento: { id: i.alimento.id, nombre: i.alimento.nombre, categoria: i.alimento.categoria, porcion: i.alimento.porcion, enlaceProducto: i.alimento.enlaceProducto, imagenUrl: i.alimento.imagenUrl },
                   cantidad: i.cantidad,
                   unidad: i.unidad,
                 })),

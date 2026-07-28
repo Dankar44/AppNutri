@@ -3,6 +3,7 @@ dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import pg from "pg";
 import { RECETAS_SEED, type RecetaSeed } from "./data/recetas-seed";
+import { RECETAS_TANDA } from "./data/recetas-tanda";
 import { normalizarParaBusqueda } from "../src/lib/alimento-utils";
 
 const pool = new pg.Pool({
@@ -129,7 +130,14 @@ async function insertarReceta(client: pg.PoolClient, seed: RecetaSeed) {
     return { skipped: true, reason: `sin ingredientes válidos (faltan: ${faltantes.join(", ")})` };
   }
 
+  // Los ingredientes del seed están escritos para `seed.porciones`. Convención de la app:
+  // 1 porción = 1 persona, así que se guardan ya divididos y la receta queda a 1 porción.
+  // Las tandas (bizcochos, salsas de tarro, caldos) se quedan como están: no se pueden
+  // cocinar para una sola persona. Ver scripts/data/recetas-tanda.ts.
   const porciones = seed.porciones;
+  const esTanda = RECETAS_TANDA.has(seed.nombre);
+  const porcionesFinal = esTanda ? porciones : 1;
+  const factorIngredientes = esTanda ? 1 : 1 / porciones;
 
   // Calcular macros / micros agregados por porción
   let cal = 0, prot = 0, carb = 0, gras = 0, fib = 0;
@@ -177,7 +185,7 @@ async function insertarReceta(client: pg.PoolClient, seed: RecetaSeed) {
       seed.nombre,
       seed.descripcion ?? null,
       seed.instrucciones ?? null,
-      porciones,
+      porcionesFinal,
       seed.tiempoPreparacion ?? null,
       Math.round((cal / porciones) * 10) / 10,
       Math.round((prot / porciones) * 10) / 10,
@@ -194,7 +202,7 @@ async function insertarReceta(client: pg.PoolClient, seed: RecetaSeed) {
     await client.query(
       `INSERT INTO receta_ingredientes (id, "recetaId", "alimentoId", cantidad, unidad)
        VALUES ($1, $2, $3, $4, $5::"UnidadMedida")`,
-      [cuid(), recetaId, r.alimento.id, r.cantidad, r.unidad],
+      [cuid(), recetaId, r.alimento.id, Math.round(r.cantidad * factorIngredientes * 100) / 100, r.unidad],
     );
   }
 

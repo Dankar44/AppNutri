@@ -25,6 +25,12 @@ export interface ComidaSeguimiento {
     nombre: string;
     cantidad: number;
     unidad?: string;
+    /**
+     * La línea es una receta: su cantidad son raciones, no gramos (se guarda con
+     * unidad GRAMOS por el default del schema). Opcional: los registros anteriores
+     * a este campo no lo traen y se leen como alimento normal.
+     */
+    esReceta?: boolean;
     cumplido: boolean;
   }[];
   horaReal: string | null;
@@ -62,6 +68,8 @@ export interface AlimentoPlanificado {
   nombre: string;
   cantidad: number;
   unidad: string;
+  /** La cantidad son raciones, no gramos (ver ComidaSeguimiento.esReceta). */
+  esReceta?: boolean;
 }
 
 export interface ComidaPlanificada {
@@ -131,6 +139,7 @@ export async function getComidaDelDiaPaciente(
       nombre: a.nombrePersonalizado || a.alimento?.nombre || a.receta?.nombre || "Alimento",
       cantidad: a.cantidad,
       unidad: a.unidad,
+      esReceta: !!a.receta,
     })),
   }));
 
@@ -190,6 +199,9 @@ export async function guardarSeguimientoPaciente(
             nombre: String(a.nombre).slice(0, 200),
             cantidad: Number(a.cantidad) || 0,
             unidad: a.unidad ? String(a.unidad).slice(0, 20) : undefined,
+            // Sin esto la marca de receta se perdía al guardar y el día quedaba
+            // registrado como "Ensalada César 1g".
+            esReceta: Boolean(a.esReceta),
             cumplido: Boolean(a.cumplido),
           })),
           horaReal: c.horaReal ? String(c.horaReal).slice(0, 10) : null,

@@ -76,8 +76,14 @@ export function RecetasGrid({ recetas }: { recetas: Receta[] }) {
                     {receta.tiempoPreparacion} min
                   </span>
                 )}
-                <span>·</span>
-                <span>{receta.porciones} {t("grid.porc")}</span>
+                {/* Casi todas las recetas son de 1 ración (= 1 persona): decirlo en cada
+                    tarjeta es ruido. Solo se marca la tanda, que sí es información. */}
+                {receta.porciones > 1 && (
+                  <>
+                    <span>·</span>
+                    <span>{t("grid.rinde", { n: receta.porciones })}</span>
+                  </>
+                )}
               </div>
               <MacroBadges
                 calorias={receta.calorias}

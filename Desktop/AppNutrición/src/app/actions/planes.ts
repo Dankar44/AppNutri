@@ -301,12 +301,12 @@ export async function getPlan(id: string) {
                 orderBy: { orden: "asc" },
                 include: {
                   alimento: true,
-                  receta: { include: { ingredientes: { include: { alimento: { select: { nombre: true } } } } } },
+                  receta: { include: { ingredientes: { include: { alimento: { select: { id: true, nombre: true, categoria: true, porcion: true, enlaceProducto: true, imagenUrl: true } } } } } },
                   alternativas: {
                     orderBy: { orden: "asc" },
                     include: {
                       alimento: true,
-                      receta: { include: { ingredientes: { include: { alimento: { select: { nombre: true } } } } } },
+                      receta: { include: { ingredientes: { include: { alimento: { select: { id: true, nombre: true, categoria: true, porcion: true, enlaceProducto: true, imagenUrl: true } } } } } },
                     },
                   },
                 },
@@ -1436,7 +1436,7 @@ export async function getPlanesDetallePaciente(pacienteId: string) {
                       id: true, nombre: true, calorias: true, proteinas: true,
                       carbohidratos: true, grasas: true, fibra: true, porciones: true,
                       descripcion: true, dietistaId: true,
-                      ingredientes: { include: { alimento: { select: { nombre: true } } } },
+                      ingredientes: { include: { alimento: { select: { id: true, nombre: true, categoria: true, porcion: true, enlaceProducto: true, imagenUrl: true } } } },
                     },
                   },
                   alternativas: {
@@ -1446,7 +1446,7 @@ export async function getPlanesDetallePaciente(pacienteId: string) {
                       receta: {
                         select: {
                           id: true, nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true, fibra: true, porciones: true, descripcion: true,
-                          ingredientes: { include: { alimento: { select: { nombre: true } } } },
+                          ingredientes: { include: { alimento: { select: { id: true, nombre: true, categoria: true, porcion: true, enlaceProducto: true, imagenUrl: true } } } },
                         },
                       },
                     },
@@ -1998,7 +1998,8 @@ export async function getPlanPDFData(planId: string): Promise<PlanPDFData | null
                 carbohidratos: a.receta.carbohidratos ?? 0,
                 grasas: a.receta.grasas ?? 0,
                 ingredientes: (a.receta.ingredientes ?? []).map((i) => ({
-                  alimento: { nombre: i.alimento.nombre },
+                  // id + categoría: la lista de la compra desglosa la receta y la ordena por sección.
+                  alimento: { id: i.alimento.id, nombre: i.alimento.nombre, categoria: i.alimento.categoria, porcion: i.alimento.porcion, enlaceProducto: i.alimento.enlaceProducto, imagenUrl: i.alimento.imagenUrl },
                   cantidad: i.cantidad,
                   unidad: i.unidad,
                 })),

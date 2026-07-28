@@ -40,7 +40,7 @@ export default async function ExportarPDFPage() {
                 orderBy: { orden: "asc" },
                 include: {
                   alimento: true,
-                  receta: { include: { ingredientes: { include: { alimento: { select: { nombre: true } } } } } },
+                  receta: { include: { ingredientes: { include: { alimento: { select: { id: true, nombre: true, categoria: true, porcion: true, enlaceProducto: true, imagenUrl: true } } } } } },
                   alternativas: {
                     orderBy: { orden: "asc" },
                     include: {

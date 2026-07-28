@@ -83,6 +83,8 @@
     "alimentoFallback": "Alimento",
     "comidaActualCard": {
       "tuPlan": "Tu plan",
+      "raciones": "{n} raciones",
+      "mediaRacion": "media ración",
       "sinPlanAsignado": "Aún no tienes un plan alimenticio asignado",
       "sinPlanDesc": "Tu nutricionista te asignará un plan personalizado. Te avisaremos en cuanto esté listo.",
       "sinComidaAhora": "Sin comida ahora",
@@ -455,6 +457,8 @@
       "volverHoy": "Volver a hoy"
     },
     "comidaCard": {
+      "raciones": "{n} raciones",
+      "mediaRacion": "media ración",
       "horaReal": "real {hora}",
       "ocultarDetalles": "Ocultar detalles",
       "anadirHoraNotas": "Añadir hora real o notas",

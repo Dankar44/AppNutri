@@ -88,7 +88,13 @@ export async function getPlantillaDetalle(id: string) {
     recetaIds.size > 0
       ? prisma.receta.findMany({
           where: { id: { in: [...recetaIds] } },
-          select: { id: true, nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true, fibra: true, porciones: true },
+          select: {
+            id: true, nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true, fibra: true, porciones: true,
+            // Los ingredientes hacen falta para mostrarlos escalados a las porciones
+            // servidas, igual que en el editor de dietas y en el plan del paciente.
+            descripcion: true,
+            ingredientes: { include: { alimento: { select: { nombre: true } } } },
+          },
         })
       : [],
   ]);

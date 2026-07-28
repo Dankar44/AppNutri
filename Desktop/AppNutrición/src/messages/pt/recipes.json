@@ -70,8 +70,8 @@
     "descripcionPlaceholder": "Breve descrição da receita (opcional)",
     "instruccionesLabel": "Preparo (passo a passo)",
     "instruccionesPlaceholder": "1. Pica a cebola e o alho…\n2. Refoga em fogo médio…",
-    "porcionesLabel": "Número de porções",
-    "porcionesAyuda": "Para quantas porções é a receita? Poderás ajustar ao adicioná-la a um plano.",
+    "porcionesLabel": "Porções que rende (1 porção = 1 pessoa)",
+    "porcionesAyuda": "Os ingredientes abaixo são para este número de porções. O normal é deixar em 1: ao adicionar a receita a um plano indicas quantas porções o paciente come (0,5 · 1 · 2…) e as quantidades são recalculadas automaticamente.",
     "tiempoPreparacion": "Tempo de preparo (minutos)",
     "tiempoPlaceholder": "Ex. 30",
     "ingredientes": "Ingredientes",
@@ -124,7 +124,8 @@
   },
   "grid": {
     "ing": "ing.",
-    "porc": "porç."
+    "porc": "porç.",
+    "rinde": "rende {n} porções"
   },
   "micros": {
     "vitaminaA": "Vitamina A",

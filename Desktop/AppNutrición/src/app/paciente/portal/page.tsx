@@ -226,6 +226,8 @@ export default async function PatientPortalPage() {
         nombre: a.nombrePersonalizado || a.alimento?.nombre || a.receta?.nombre || t("dashboard.alimentoFallback"),
         cantidad: a.cantidad,
         unidad: a.unidad ?? "GRAMOS",
+        // Las recetas se guardan con unidad GRAMOS pero su cantidad son porciones.
+        esReceta: !!a.receta,
       }))
     : [];
 

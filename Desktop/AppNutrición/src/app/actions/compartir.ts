@@ -61,7 +61,7 @@ export async function getPlanPorToken(token: string) {
                     orderBy: { orden: "asc" },
                     include: {
                       alimento: true,
-                      receta: { include: { ingredientes: { include: { alimento: { select: { nombre: true } } } } } },
+                      receta: { include: { ingredientes: { include: { alimento: { select: { id: true, nombre: true, categoria: true, porcion: true, enlaceProducto: true, imagenUrl: true } } } } } },
                       alternativas: {
                         orderBy: { orden: "asc" },
                         include: {
@@ -69,7 +69,7 @@ export async function getPlanPorToken(token: string) {
                           receta: {
                             select: {
                               id: true, nombre: true, calorias: true, proteinas: true, carbohidratos: true, grasas: true, fibra: true, porciones: true, descripcion: true,
-                              ingredientes: { include: { alimento: { select: { nombre: true } } } },
+                              ingredientes: { include: { alimento: { select: { id: true, nombre: true, categoria: true, porcion: true, enlaceProducto: true, imagenUrl: true } } } },
                             },
                           },
                         },

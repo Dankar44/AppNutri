@@ -147,7 +147,7 @@ function AlternativaRow({
       <div className="flex items-center gap-1.5 text-xs rounded-md bg-muted/40 px-2 py-1">
         <CornerDownRight className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
         <span className="w-14 px-1 py-0.5 inline-block text-right tabular-nums">{alt.cantidad}</span>
-        <span className="text-muted-foreground shrink-0">{getUnidadLabel(alt.unidad || "GRAMOS", alt.esReceta)} {t("alimentoCard.unitConnector")}</span>
+        <span className="text-muted-foreground shrink-0">{getUnidadLabel(alt.unidad || "GRAMOS", alt.esReceta, alt.cantidad)} {t("alimentoCard.unitConnector")}</span>
         <span className={cn("font-medium truncate", alt.esReceta ? "text-purple-600 dark:text-purple-400" : "text-foreground/80")}>{alt.nombre}</span>
       </div>
     );
@@ -169,7 +169,7 @@ function AlternativaRow({
       ) : (
         <span className="tabular-nums text-muted-foreground">{alt.cantidad}</span>
       )}
-      <span className="text-muted-foreground shrink-0">{getUnidadLabel(alt.unidad || "GRAMOS", alt.esReceta)} {t("alimentoCard.unitConnector")}</span>
+      <span className="text-muted-foreground shrink-0">{getUnidadLabel(alt.unidad || "GRAMOS", alt.esReceta, alt.cantidad)} {t("alimentoCard.unitConnector")}</span>
       {editandoNombre ? (
         <input
           type="text"
@@ -328,7 +328,7 @@ export function AlimentoCard({
     }, 500);
   }
 
-  const unidadLabel = getUnidadLabel(unidad || "GRAMOS", esReceta);
+  const unidadLabel = getUnidadLabel(unidad || "GRAMOS", esReceta, cantidad);
   const realId = alimentoRealId || id;
   const href = interactionMode === "dashboard"
     ? (esReceta

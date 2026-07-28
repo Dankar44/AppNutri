@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { Scale, Users } from "lucide-react";
+import { ingredientesDeReceta } from "@/lib/receta-porciones";
 
 interface Props {
   pesoTotal: number;
@@ -14,8 +15,10 @@ export function RecetaPesoBadges({ pesoTotal, pesoPorPorcion, porciones }: Props
   const searchParams = useSearchParams();
   const urlPorcionesRaw = searchParams.get("porciones");
   const urlPorcionesNum = urlPorcionesRaw ? Number(urlPorcionesRaw) : NaN;
-  const displayPorciones = Number.isFinite(urlPorcionesNum) && urlPorcionesNum > 0 ? urlPorcionesNum : porciones;
-  const factor = displayPorciones / (porciones || 1);
+  const racionesPedidas = Number.isFinite(urlPorcionesNum) && urlPorcionesNum > 0 ? urlPorcionesNum : porciones;
+  // Misma regla que el plan y el PDF: la tanda se muestra entera, el plato se escala.
+  const { factor, rindeRaciones } = ingredientesDeReceta(racionesPedidas, porciones);
+  const displayPorciones = rindeRaciones ?? racionesPedidas;
   const displayPesoTotal = Math.round(pesoTotal * factor);
 
   return (

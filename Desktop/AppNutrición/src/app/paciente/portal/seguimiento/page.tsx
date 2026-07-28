@@ -419,6 +419,7 @@ function inicializarComidas(comidas: ComidaPlanificada[]): ComidaSeguimiento[] {
       nombre: a.nombre,
       cantidad: a.cantidad,
       unidad: a.unidad,
+      esReceta: a.esReceta,
       cumplido: false,
     })),
     horaReal: null,

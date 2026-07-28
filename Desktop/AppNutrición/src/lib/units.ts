@@ -26,15 +26,24 @@ export const UNIDAD_LABELS_FULL: Record<string, string> = {
 
 export function formatQuantity(cantidad: number, unidad: string): string {
   if (!Number.isFinite(cantidad)) return "—";
-  if (unidad === "GRAMOS") return `${Math.round(cantidad)}g`;
-  if (unidad === "MILILITROS") return `${Math.round(cantidad)}ml`;
+  // Al escalar una receta a media porción salen cantidades por debajo del gramo
+  // (una pizca de sal, un diente de ajo): redondear a entero las mostraba como "0g".
+  if (unidad === "GRAMOS" || unidad === "MILILITROS") {
+    const sufijo = unidad === "GRAMOS" ? "g" : "ml";
+    if (cantidad > 0 && cantidad < 1) return `${Math.round(cantidad * 10) / 10}${sufijo}`;
+    return `${Math.round(cantidad)}${sufijo}`;
+  }
   const label = UNIDAD_LABELS[unidad] || unidad.toLowerCase();
   const rounded = Number.isInteger(cantidad) ? cantidad : Math.round(cantidad * 10) / 10;
   return `${rounded} ${label}`;
 }
 
-export function getUnidadLabel(unidad: string, esReceta?: boolean): string {
-  if (esReceta) return "porc.";
+/**
+ * Etiqueta de unidad para el campo de cantidad. Una receta no se mide en gramos sino en
+ * raciones (1 ración = 1 persona); se pluraliza con la cantidad para no dejar "1 raciones".
+ */
+export function getUnidadLabel(unidad: string, esReceta?: boolean, cantidad?: number): string {
+  if (esReceta) return cantidad === 1 ? "ración" : "raciones";
   return UNIDAD_LABELS[unidad] || "g";
 }
 

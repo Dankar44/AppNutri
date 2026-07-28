@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { formatQuantity } from "@/lib/units";
+import { etiquetaPorciones } from "@/lib/receta-porciones";
 import {
   Check,
   Clock,
@@ -169,7 +170,9 @@ export function ComidaCard({
                 </span>
                 {a.cantidad > 0 && (
                   <span className="text-[11px] text-muted-foreground shrink-0">
-                    {formatQuantity(a.cantidad, a.unidad || "GRAMOS")}
+                    {a.esReceta
+                      ? etiquetaPorciones(a.cantidad, { media: t("mediaRacion"), varias: (n) => t("raciones", { n }) })
+                      : formatQuantity(a.cantidad, a.unidad || "GRAMOS")}
                   </span>
                 )}
               </span>

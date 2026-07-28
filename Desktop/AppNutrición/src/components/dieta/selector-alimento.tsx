@@ -259,7 +259,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
     unidadOriginal: string,
   ) {
     if (!expanded || expanded.id !== itemId) return null;
-    const unitLabel = esReceta ? "porc." : getUnidadLabel(expanded.unidad);
+    const unitLabel = getUnidadLabel(expanded.unidad, esReceta, expanded.cantidad);
     const macros = scaledMacros(base, expanded.cantidad, expanded.unidad, expanded.porcion, esReceta);
     // Sin cantidad válida no se añade: se avisa y se bloquean los botones.
     const minCantidad = esReceta ? 0.5 : 1;

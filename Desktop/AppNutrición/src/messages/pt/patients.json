@@ -504,6 +504,8 @@
     "restaurarCantidad": "Restaurar quantidade",
     "marcarComoLibre": "Marcar como livre",
     "libre": "livre",
+    "porciones": "porções",
+    "porcionesAyudaEntregable": "As receitas medem-se em porções (1 porção = 1 pessoa). Ao alterá-las, os ingredientes do PDF são recalculados.",
     "diaLunes": "Segunda-feira",
     "diaMartes": "Terça-feira",
     "diaMiercoles": "Quarta-feira",
@@ -1147,6 +1149,9 @@
     "cinturaCm": "Cintura (cm)"
   },
   "seguimientoDietista": {
+    "raciones": "{n} porções",
+    "mediaRacion": "meia porção",
+    "unaRacion": "1 porção",
     "tipoLabels": {
       "DESAYUNO": "Café da manhã",
       "MEDIA_MANANA": "Lanche da manhã",

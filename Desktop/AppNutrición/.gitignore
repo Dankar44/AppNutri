@@ -21,3 +21,6 @@ next-env.d.ts
 
 # notas internas (solo local, no versionar)
 /docs/TAREAS.md
+
+# backups de migraciones de datos (dumps locales, no versionar)
+/scripts/backups/

@@ -71,6 +71,8 @@
     "generadoEl": "Generado el {fecha}",
     "alimento": "Alimento",
     "cantidad": "Cantidad",
+    "raciones": "{n} raciones",
+    "mediaRacion": "media ración",
     "dietaTitulo": "Dieta - {nombre} {apellidos}"
   },
   "objetivoLabels": {

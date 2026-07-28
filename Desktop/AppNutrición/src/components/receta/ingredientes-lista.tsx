@@ -5,6 +5,7 @@ import { Droplets, Circle, Diamond, Flame, Carrot, ListChecks } from "lucide-rea
 import { useSearchParams } from "next/navigation";
 import { calcularMacrosPorcion, convertirAGramos } from "@/lib/macros";
 import { formatQuantity } from "@/lib/units";
+import { ingredientesDeReceta } from "@/lib/receta-porciones";
 
 const MACRO_COLORS = {
   grasas: "#f0b845",
@@ -48,8 +49,12 @@ export function IngredientesLista({ ingredientes, porciones, instrucciones }: Pr
   const searchParams = useSearchParams();
   const urlPorcionesRaw = searchParams.get("porciones");
   const urlPorcionesNum = urlPorcionesRaw ? Number(urlPorcionesRaw) : NaN;
-  const factor = Number.isFinite(urlPorcionesNum) && urlPorcionesNum > 0 ? urlPorcionesNum / (porciones || 1) : 1;
-  const displayPorciones = Number.isFinite(urlPorcionesNum) && urlPorcionesNum > 0 ? urlPorcionesNum : porciones;
+  const racionesPedidas = Number.isFinite(urlPorcionesNum) && urlPorcionesNum > 0 ? urlPorcionesNum : porciones;
+  // Misma regla que el plan y el PDF (src/lib/receta-porciones.ts): un plato se escala a
+  // las raciones pedidas; una tanda se muestra entera, porque no se cocina 1/8 de bizcocho.
+  // Sin esto la ficha decía "31 g de harina" donde el PDF dice 250 g para el mismo plato.
+  const { factor, rindeRaciones } = ingredientesDeReceta(racionesPedidas, porciones);
+  const displayPorciones = rindeRaciones ?? racionesPedidas;
 
   const totalPeso = ingredientes.reduce((acc, i) => acc + convertirAGramos(i.cantidad || 0, i.unidad || "GRAMOS", i.alimento.porcion || 100), 0) * factor;
   const pasos = instrucciones ? parseInstrucciones(instrucciones) : [];

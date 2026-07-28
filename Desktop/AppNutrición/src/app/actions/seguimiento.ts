@@ -14,9 +14,19 @@ import { getTranslations } from "next-intl/server";
 
 // ─── Types ───
 
+/**
+ * Cantidad de una línea del seguimiento. Las recetas se guardan con unidad GRAMOS pero
+ * su cantidad son raciones: formatearlas con `formatQuantity` daba "Ensalada César 1g".
+ * Los registros anteriores a `esReceta` no lo traen y se leen como alimento (compatible).
+ */
+function cantidadLinea(a: { cantidad: number; unidad?: string; esReceta?: boolean }): string {
+  if (a.esReceta) return a.cantidad === 1 ? "1 ración" : `${Math.round(a.cantidad * 10) / 10} raciones`;
+  return formatQuantity(a.cantidad, a.unidad || "GRAMOS");
+}
+
 export interface ComidaSeguimientoItem {
   tipo: string;
-  alimentos: { nombre: string; cantidad: number; unidad?: string; cumplido: boolean }[];
+  alimentos: { nombre: string; cantidad: number; unidad?: string; esReceta?: boolean; cumplido: boolean }[];
   horaReal: string | null;
   notas: string | null;
 }
@@ -324,7 +334,7 @@ export async function getActividadesPaciente(
       const comidas = seg.comidasData as Array<{
         tipo: string;
         horaReal?: string | null;
-        alimentos?: Array<{ nombre: string; cantidad: number; unidad?: string; cumplido: boolean }>;
+        alimentos?: Array<{ nombre: string; cantidad: number; unidad?: string; esReceta?: boolean; cumplido: boolean }>;
       }>;
       if (!Array.isArray(comidas)) continue;
 
@@ -357,9 +367,9 @@ export async function getActividadesPaciente(
           const detalles: string[] = [];
           for (const a of comida.alimentos) {
             if (a.cumplido) {
-              detalles.push(`✅ ${a.nombre} (${formatQuantity(a.cantidad, a.unidad || "GRAMOS")})`);
+              detalles.push(`✅ ${a.nombre} (${cantidadLinea(a)})`);
             } else {
-              detalles.push(`❌ ~~${a.nombre} (${formatQuantity(a.cantidad, a.unidad || "GRAMOS")})~~`);
+              detalles.push(`❌ ~~${a.nombre} (${cantidadLinea(a)})~~`);
             }
           }
           actividades.push({
@@ -393,7 +403,7 @@ export async function calcularMacrosDia(pacienteId: string, fecha: string) {
     pacienteId, fecha
   );
   const rawComidas = rows[0]?.comidasData;
-  const comidasData = (Array.isArray(rawComidas) ? rawComidas : null) as Array<{ tipo: string; alimentos?: Array<{ nombre: string; cantidad: number; unidad?: string; cumplido: boolean }> }> | null;
+  const comidasData = (Array.isArray(rawComidas) ? rawComidas : null) as Array<{ tipo: string; alimentos?: Array<{ nombre: string; cantidad: number; unidad?: string; esReceta?: boolean; cumplido: boolean }> }> | null;
   if (!comidasData) return { macros: { calorias: 0, proteinas: 0, carbohidratos: 0, grasas: 0, fibra: 0 }, micro: {} as Record<string, number> };
 
   // Collect all food names that are cumplido

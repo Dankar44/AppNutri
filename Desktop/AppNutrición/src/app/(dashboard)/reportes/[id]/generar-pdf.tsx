@@ -3,6 +3,7 @@
 import { FileDown } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { formatQuantity } from "@/lib/pdf/generate-plan-pdf";
+import { etiquetaPorciones } from "@/lib/receta-porciones";
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -12,7 +13,7 @@ interface DietaDia {
   dia: string;
   comidas: {
     tipo: string;
-    alimentos: { nombre: string; cantidad: number; unidad?: string; enlaceProducto?: string | null; imagenUrl?: string | null }[];
+    alimentos: { nombre: string; cantidad: number; unidad?: string; esReceta?: boolean; enlaceProducto?: string | null; imagenUrl?: string | null }[];
   }[];
 }
 
@@ -199,7 +200,14 @@ export function GenerarPDFButtons({ paciente, medidas, consultas, dieta, brandin
           const nombreHtml = a.enlaceProducto
             ? `<a href="${escapeHtml(a.enlaceProducto)}" target="_blank" style="color:${linkCol};text-decoration:underline;">${escapeHtml(a.nombre)}</a>${imgLink}`
             : `${escapeHtml(a.nombre)}${imgLink}`;
-          html += `<tr><td>${nombreHtml}</td><td>${formatQuantity(a.cantidad, a.unidad || "GRAMOS")}</td></tr>`;
+          // En una receta la cantidad son raciones; con 1 no se escribe nada (se sobreentiende).
+          const cantidadHtml = a.esReceta
+            ? escapeHtml(etiquetaPorciones(a.cantidad, {
+                media: t("pdfContent.mediaRacion"),
+                varias: (n) => t("pdfContent.raciones", { n }),
+              }) ?? "")
+            : formatQuantity(a.cantidad, a.unidad || "GRAMOS");
+          html += `<tr><td>${nombreHtml}</td><td>${cantidadHtml}</td></tr>`;
         }
         html += `</table>`;
       }

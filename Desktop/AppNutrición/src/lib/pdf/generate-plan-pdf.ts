@@ -3,6 +3,7 @@ import { calcularMacrosPorcion, sumarMacros, macrosVacios, convertirAGramos } fr
 import { type PdfColorTheme, TEMAS_PDF } from "./pdf-themes";
 
 import { UNIDAD_LABELS, UNIDAD_LABELS_FULL, formatQuantity } from "@/lib/units";
+import { etiquetaPorciones, ingredientesDeReceta } from "@/lib/receta-porciones";
 import { ordenarComidasPorHora, horaEfectiva, minutosDeHora } from "@/lib/comida-horas";
 export { UNIDAD_LABELS, UNIDAD_LABELS_FULL, formatQuantity };
 
@@ -30,16 +31,37 @@ export interface QuantityOverride {
 export type DisplayOverrides = Record<string, QuantityOverride>;
 
 
+/** Textos de raciones del PDF, para no repetir las claves en cada llamada. */
+function textosRaciones(t: TFunc) {
+  return {
+    media: t("planDietetico.receta.racionMedia"),
+    varias: (n: number) => t("planDietetico.receta.raciones", { n }),
+  };
+}
+
+/**
+ * Cantidad que se imprime de una línea. `null` = no se imprime nada: pasa con las
+ * recetas servidas a 1 ración, donde "1 porción de ensalada" es ruido.
+ */
 function resolveDisplay(
   original: { cantidad: number; unidad: string },
   override: QuantityOverride | undefined,
   t: TFunc,
-): string {
-  if (!override) return formatQuantity(original.cantidad, original.unidad);
-  if (override.libre) return t("planDietetico.libre");
-  const qty = override.cantidad ?? original.cantidad;
-  const unit = override.unidad ?? original.unidad;
+  esReceta = false,
+): string | null {
+  if (override?.libre) return t("planDietetico.libre");
+  const qty = override?.cantidad ?? original.cantidad;
+  const unit = override?.unidad ?? original.unidad;
+  // Las recetas se guardan con unidad GRAMOS (default del schema) pero su cantidad son
+  // raciones: formatearlas como gramos convertía "0,5 raciones" en "1g".
+  if (esReceta && !override?.unidad) return etiquetaPorciones(qty, textosRaciones(t));
   return formatQuantity(qty, unit);
+}
+
+/** Porciones que se sirven de una línea de receta, con el override del entregable aplicado. */
+function porcionesServidas(a: AlimentoEnComida, override: QuantityOverride | undefined): number {
+  if (override?.libre) return a.cantidad;
+  return override?.cantidad ?? a.cantidad;
 }
 
 function overrideKey(dia: string, tipo: string, idx: number): string {
@@ -54,9 +76,9 @@ function altLinesHtml(a: AlimentoEnComida, tt: TFunc, conCantidades = true): str
       const nombre = escapeHtml(getAltNombre(alt));
       if (!nombre) return "";
       const qty = esAltReceta(alt)
-        ? `${alt.cantidad} ${tt("planDietetico.alternativas.rac")}`
+        ? etiquetaPorciones(alt.cantidad, textosRaciones(tt))
         : formatQuantity(alt.cantidad, alt.unidad);
-      const cuerpo = conCantidades ? `${qty} ${nombre}` : nombre;
+      const cuerpo = conCantidades && qty ? `${qty} ${nombre}` : nombre;
       return `<br><span class="alt-line"><span class="alt-o">${tt("planDietetico.alternativas.o")}</span> ${cuerpo}</span>`;
     })
     .join("");
@@ -98,7 +120,8 @@ interface AlimentoEnComida {
   receta: {
     id: string; nombre: string; descripcion?: string | null; instrucciones?: string | null;
     porciones: number; calorias: number; proteinas: number; carbohidratos: number; grasas: number;
-    ingredientes: { alimento: { nombre: string }; cantidad: number; unidad: string }[];
+    /** `categoria` sirve para desglosar la receta en la lista de la compra por secciones. */
+    ingredientes: { alimento: { id?: string; nombre: string; categoria?: string | null; porcion?: number | null; enlaceProducto?: string | null; imagenUrl?: string | null }; cantidad: number; unidad: string }[];
   } | null;
   /** Alias visual del nutri (#5). Las vías mapeadas ya lo resuelven en `nombre`; la cruda (exportador del paciente) lo trae aquí. */
   nombrePersonalizado?: string | null;
@@ -347,8 +370,9 @@ export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
           const alts = altLinesHtml(a, tt, sec.cantidadesSemanal);
           if (!sec.cantidadesSemanal) return `<div class="sem-item">${name}${alts}</div>`;
           const key = overrideKey(dia.dia, comida.tipo, aIdx);
-          const qty = resolveDisplay({ cantidad: a.cantidad, unidad: a.unidad }, ov[key], tt);
-          return `<div class="sem-item">${name} - ${qty}${alts}</div>`;
+          const qty = resolveDisplay({ cantidad: a.cantidad, unidad: a.unidad }, ov[key], tt, !!a.receta);
+          // Sin cantidad (receta de 1 ración) va solo el nombre, sin el guion colgando.
+          return `<div class="sem-item">${name}${qty ? ` - ${qty}` : ""}${alts}</div>`;
         }).join("") || "-";
         const label = comida.nombre?.trim()
           ? escapeHtml(comida.nombre.trim())
@@ -374,13 +398,25 @@ export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
 
         const rows = comida.alimentos.map((a, aIdx) => {
           const name = getItemName(a);
-          const nameHtml = getItemNameHtml(a, tt);
           const key = overrideKey(dia.dia, tipo, aIdx);
-          const qty = resolveDisplay({ cantidad: a.cantidad, unidad: a.unidad }, ov[key], tt);
-          let detail = `${nameHtml}: ${qty}`;
+          const qty = resolveDisplay({ cantidad: a.cantidad, unidad: a.unidad }, ov[key], tt, !!a.receta);
+          // En una receta las raciones no aparecen en ninguna otra columna (la de
+          // ingredientes las sustituye), así que van junto al nombre del plato. Con
+          // 1 ración no se escribe nada: se sobreentiende.
+          const nameHtml = a.receta && qty
+            ? `${getItemNameHtml(a, tt)} <span style="font-weight:400;font-size:9px;color:#8a8a8a;">· ${qty}</span>`
+            : getItemNameHtml(a, tt);
+          let detail = qty ? `${getItemNameHtml(a, tt)}: ${qty}` : getItemNameHtml(a, tt);
           if (a.receta?.ingredientes && a.receta.ingredientes.length > 0) {
-            const ingList = a.receta.ingredientes.map((i) => `${escapeHtml(i.alimento.nombre)}: ${formatQuantity(i.cantidad, i.unidad)}`).join(", ");
-            detail = `<strong>${tt("planDietetico.receta.ingredientes")}</strong> ${ingList}`;
+            // Un plato (rinde 1) se escala a lo que come el paciente. Una tanda (bizcocho,
+            // tarro de salsa) se imprime entera y se dice para cuántas raciones sale:
+            // un octavo de bizcocho no se puede cocinar.
+            const { factor, rindeRaciones } = ingredientesDeReceta(porcionesServidas(a, ov[key]), a.receta.porciones);
+            const ingList = a.receta.ingredientes.map((i) => `${escapeHtml(i.alimento.nombre)}: ${formatQuantity(i.cantidad * factor, i.unidad)}`).join(", ");
+            const rinde = rindeRaciones
+              ? ` <span style="font-style:italic;">(${escapeHtml(tt("planDietetico.receta.rinde", { n: rindeRaciones }))})</span>`
+              : "";
+            detail = `<strong>${tt("planDietetico.receta.ingredientes")}</strong>${rinde} ${ingList}`;
             if (a.receta.instrucciones) {
               detail += `<br><strong>${tt("planDietetico.receta.receta")}</strong> ${escapeHtml(a.receta.instrucciones).replace(/\n/g, "<br>")}`;
             }

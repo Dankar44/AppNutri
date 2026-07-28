@@ -25,11 +25,13 @@
     },
     "receta": {
       "ingredientes": "INGREDIENTES:",
-      "receta": "RECEITA:"
+      "receta": "RECEITA:",
+      "raciones": "{n} porções",
+      "racionMedia": "meia porção",
+      "rinde": "rende {n} porções"
     },
     "alternativas": {
-      "o": "ou",
-      "rac": "rac."
+      "o": "ou"
     },
     "enlaceProducto": {
       "ver": "(ver)",

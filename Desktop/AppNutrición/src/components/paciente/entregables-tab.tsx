@@ -208,6 +208,9 @@ function QuantityEditor({
                             const nombre = a.alimento?.nombre || a.receta?.nombre || "?";
                             const isModified = ov !== undefined;
                             const isLibre = ov?.libre === true;
+                            // Una receta se mide en porciones (1 = 1 persona): no tiene
+                            // sentido el selector de unidades, y va de 0,5 en 0,5.
+                            const esReceta = !!a.receta;
 
                             return (
                               <div key={key} className={cn(
@@ -225,7 +228,7 @@ function QuantityEditor({
                                     <input
                                       type="number"
                                       min={0}
-                                      step="any"
+                                      step={esReceta ? 0.5 : "any"}
                                       value={ov?.cantidad ?? a.cantidad}
                                       onChange={(e) => {
                                         if (e.target.value === "") {
@@ -238,15 +241,21 @@ function QuantityEditor({
                                       }}
                                       className="w-16 px-1.5 py-0.5 rounded border border-border bg-background text-right text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-primary/30"
                                     />
-                                    <select
-                                      value={ov?.unidad ?? a.unidad}
-                                      onChange={(e) => updateOverride(key, { unidad: e.target.value, libre: false })}
-                                      className="w-24 px-1 py-0.5 rounded border border-border bg-background text-xs focus:outline-none focus:ring-1 focus:ring-primary/30"
-                                    >
-                                      {UNIDADES.map((u) => (
-                                        <option key={u} value={u}>{UNIDAD_LABELS_FULL[u]}</option>
-                                      ))}
-                                    </select>
+                                    {esReceta ? (
+                                      <span className="w-24 px-1 text-xs text-muted-foreground" title={t("porcionesAyudaEntregable")}>
+                                        {t("porciones")}
+                                      </span>
+                                    ) : (
+                                      <select
+                                        value={ov?.unidad ?? a.unidad}
+                                        onChange={(e) => updateOverride(key, { unidad: e.target.value, libre: false })}
+                                        className="w-24 px-1 py-0.5 rounded border border-border bg-background text-xs focus:outline-none focus:ring-1 focus:ring-primary/30"
+                                      >
+                                        {UNIDADES.map((u) => (
+                                          <option key={u} value={u}>{UNIDAD_LABELS_FULL[u]}</option>
+                                        ))}
+                                      </select>
+                                    )}
                                   </>
                                 )}
 

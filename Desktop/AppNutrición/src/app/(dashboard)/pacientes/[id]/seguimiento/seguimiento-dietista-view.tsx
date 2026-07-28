@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { getSeguimientoDia, type SeguimientoDia } from "@/app/actions/seguimiento";
 import { formatQuantity } from "@/lib/units";
+import { etiquetaPorciones } from "@/lib/receta-porciones";
 import { useTranslations } from "next-intl";
 import { withTimeout } from "@/lib/utils";
 
@@ -186,7 +187,9 @@ export function SeguimientoDietistaView({ pacienteId }: { pacienteId: string }) 
                             </span>
                             {a.cantidad > 0 && (
                               <span className="text-xs text-muted-foreground">
-                                ({formatQuantity(a.cantidad, a.unidad || "GRAMOS")})
+                                ({a.esReceta
+                                  ? etiquetaPorciones(a.cantidad, { media: t("mediaRacion"), varias: (n) => t("raciones", { n }) }) ?? t("unaRacion")
+                                  : formatQuantity(a.cantidad, a.unidad || "GRAMOS")})
                               </span>
                             )}
                           </li>

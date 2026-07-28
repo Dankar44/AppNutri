@@ -237,6 +237,9 @@
     "grasas": "Gorduras",
     "fibra": "Fibra",
     "ingredientes": "Ingredientes",
+    "ingredientesRaciones": "Ingredientes para {n} porções",
+    "ingredientesMediaRacion": "Ingredientes para meia porção",
+    "ingredientesRinde": "Ingredientes (rende {n} porções)",
     "masIngredientes": "+{count} mais"
   },
   "stock": {

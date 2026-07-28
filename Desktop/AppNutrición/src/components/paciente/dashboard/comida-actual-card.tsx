@@ -5,11 +5,14 @@ import { ArrowRight, Clock, UtensilsCrossed } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { TIPO_LABELS, TIPO_HORAS } from "@/lib/seguimiento";
 import { formatQuantity } from "@/lib/units";
+import { etiquetaPorciones } from "@/lib/receta-porciones";
 
 interface Alimento {
   nombre: string;
   cantidad: number;
   unidad?: string;
+  /** Las recetas se guardan con unidad GRAMOS pero su cantidad son porciones. */
+  esReceta?: boolean;
 }
 
 interface Props {
@@ -107,7 +110,9 @@ export function ComidaActualCard({
               <span className="truncate">{a.nombre}</span>
               {a.cantidad > 0 && (
                 <span className="text-xs text-muted-foreground shrink-0">
-                  {formatQuantity(a.cantidad, a.unidad || "GRAMOS")}
+                  {a.esReceta
+                    ? etiquetaPorciones(a.cantidad, { media: t("mediaRacion"), varias: (n) => t("raciones", { n }) })
+                    : formatQuantity(a.cantidad, a.unidad || "GRAMOS")}
                 </span>
               )}
             </li>

@@ -24,6 +24,9 @@ interface EditorAlimento {
   grasas: number;
   fibra: number;
   porcion: number;
+  /** Raciones que rinde la receta: decide si es un plato (se escala) o una tanda. */
+  recetaPorciones?: number;
+  recetaIngredientes?: { nombre: string; cantidad: number; unidad: string }[];
   /** #5 — passthrough: se conservan al guardar aunque el editor no los muestre aún. */
   nombrePersonalizado?: string | null;
   alternativas?: {
@@ -89,7 +92,10 @@ function diasToPlanData(dias: EditorDia[], id: string, nombre: string, createdAt
                 carbohidratos: a.carbohidratos,
                 grasas: a.grasas,
                 fibra: a.fibra,
-                porciones: 1,
+                // Las de verdad: con `porciones: 1` fijo, una tanda (bizcocho de 8) se
+                // trataba como plato y sus ingredientes salían divididos tras editar.
+                porciones: a.recetaPorciones ?? 1,
+                ingredientes: a.recetaIngredientes ?? [],
               } : null,
             })),
           })),

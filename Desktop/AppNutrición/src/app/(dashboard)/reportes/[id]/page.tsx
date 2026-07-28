@@ -57,6 +57,8 @@ export default async function ReportesPacientePage({ params }: Props) {
               nombre: a.nombrePersonalizado || a.alimento?.nombre || a.receta?.nombre || t("sinNombre"),
               cantidad: a.cantidad,
               unidad: a.unidad ?? "GRAMOS",
+              // Las recetas se guardan con unidad GRAMOS pero su cantidad son porciones.
+              esReceta: !!a.receta,
               enlaceProducto: a.alimento?.enlaceProducto ?? null,
               imagenUrl: a.alimento?.imagenUrl ?? null,
             })),

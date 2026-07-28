@@ -70,8 +70,8 @@
     "descripcionPlaceholder": "Breve descripción de la receta (opcional)",
     "instruccionesLabel": "Preparación (paso a paso)",
     "instruccionesPlaceholder": "1. Pica la cebolla y el ajo…\n2. Sofríe a fuego medio…",
-    "porcionesLabel": "Número de porciones",
-    "porcionesAyuda": "¿Para cuántas raciones es la receta? Podrás ajustarlo al añadirla a un plan.",
+    "porcionesLabel": "Porciones que rinde (1 porción = 1 persona)",
+    "porcionesAyuda": "Los ingredientes de abajo son para este número de porciones. Lo normal es dejarlo en 1: al añadir la receta a un plan indicas cuántas porciones come el paciente (0,5 · 1 · 2…) y las cantidades se recalculan solas.",
     "tiempoPreparacion": "Tiempo de preparación (minutos)",
     "tiempoPlaceholder": "Ej. 30",
     "ingredientes": "Ingredientes",
@@ -124,7 +124,8 @@
   },
   "grid": {
     "ing": "ing.",
-    "porc": "porc."
+    "porc": "porc.",
+    "rinde": "rinde {n} raciones"
   },
   "micros": {
     "vitaminaA": "Vitamina A",

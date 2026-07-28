@@ -81,6 +81,8 @@ export default async function PlantillaDetallePage({ params }: Props) {
                       grasas: receta.grasas,
                       fibra: receta.fibra ?? 0,
                       porciones: receta.porciones ?? 1,
+                      descripcion: receta.descripcion,
+                      ingredientes: receta.ingredientes?.map((i) => ({ nombre: i.alimento.nombre, cantidad: i.cantidad, unidad: i.unidad })) ?? [],
                     }
                   : null,
               };
@@ -113,6 +115,10 @@ export default async function PlantillaDetallePage({ params }: Props) {
               carbohidratos: alimento?.carbohidratos || receta?.carbohidratos || 0,
               grasas: alimento?.grasas || receta?.grasas || 0,
               porcion: alimento?.porcion ?? 100,
+              // Datos de la receta para que, tras editar la plantilla, el plan siga
+              // distinguiendo plato (se escala) de tanda y mostrando los ingredientes.
+              recetaPorciones: receta?.porciones ?? undefined,
+              recetaIngredientes: receta?.ingredientes?.map((i) => ({ nombre: i.alimento.nombre, cantidad: i.cantidad, unidad: i.unidad })) ?? undefined,
               // #5 — passthrough: el editor no los muestra aún, pero NO los pierde al guardar.
               nombrePersonalizado: a.nombrePersonalizado ?? null,
               alternativas: a.alternativas ?? [],
