@@ -72,6 +72,7 @@
     "instruccionesPlaceholder": "1. Pica la cebolla y el ajo…\n2. Sofríe a fuego medio…",
     "porcionesLabel": "Porciones que rinde (1 porción = 1 persona)",
     "porcionesAyuda": "Los ingredientes de abajo son para este número de porciones. Lo normal es dejarlo en 1: al añadir la receta a un plan indicas cuántas porciones come el paciente (0,5 · 1 · 2…) y las cantidades se recalculan solas.",
+    "porcionesAvisoTanda": "Al poner más de 1, esta receta se trata como una tanda: en el plan y en el PDF saldrán los ingredientes enteros con la nota «salen {n} raciones», sin dividir, porque un bizcocho o un tarro de salsa no se cocinan por fracciones. Si es un plato para una persona, déjalo en 1.",
     "tiempoPreparacion": "Tiempo de preparación (minutos)",
     "tiempoPlaceholder": "Ej. 30",
     "ingredientes": "Ingredientes",

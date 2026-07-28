@@ -72,6 +72,7 @@
     "instruccionesPlaceholder": "1. Pica a cebola e o alho…\n2. Refoga em fogo médio…",
     "porcionesLabel": "Porções que rende (1 porção = 1 pessoa)",
     "porcionesAyuda": "Os ingredientes abaixo são para este número de porções. O normal é deixar em 1: ao adicionar a receita a um plano indicas quantas porções o paciente come (0,5 · 1 · 2…) e as quantidades são recalculadas automaticamente.",
+    "porcionesAvisoTanda": "Ao colocar mais de 1, esta receita passa a ser tratada como uma fornada: no plano e no PDF aparecerão os ingredientes inteiros com a nota «rende {n} porções», sem dividir, porque um bolo ou um pote de molho não se cozinham por frações. Se for um prato para uma pessoa, deixa em 1.",
     "tiempoPreparacion": "Tempo de preparo (minutos)",
     "tiempoPlaceholder": "Ex. 30",
     "ingredientes": "Ingredientes",

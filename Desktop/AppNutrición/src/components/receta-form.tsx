@@ -252,6 +252,13 @@ export function RecetaForm({
               className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
             <p className="text-xs text-muted-foreground mt-1">{t("form.porcionesAyuda")}</p>
+            {/* Poner más de 1 tiene una consecuencia que no se ve hasta el entregable:
+                la receta pasa a tratarse como tanda y sus ingredientes no se dividen. */}
+            {porciones > 1 && (
+              <p className="text-xs text-amber-700 dark:text-amber-500 mt-1.5 leading-relaxed">
+                {t("form.porcionesAvisoTanda", { n: porciones })}
+              </p>
+            )}
           </div>
         </div>
       </section>
