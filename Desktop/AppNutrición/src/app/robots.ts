@@ -4,7 +4,7 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
-      allow: ["/landing", "/precios", "/login", "/registro", "/legal/", "/faq", "/software-para-nutricionistas-gratis", "/colaboradores", "/alternativa-a-dietowin", "/alternativa-a-nutrium"],
+      allow: ["/landing", "/precios", "/login", "/registro", "/legal/", "/faq", "/software-para-nutricionistas-gratis", "/colaboradores", "/alternativa-a-dietowin", "/alternativa-a-nutrium", "/novedades"],
       disallow: [
         "/dashboard/",
         "/admin/",

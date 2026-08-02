@@ -1,8 +1,11 @@
 import type { MetadataRoute } from "next";
+import { getUltimaFechaNovedad } from "@/content/novedades";
 
 const BASE = "https://annonia.com";
 
 export default function sitemap(): MetadataRoute.Sitemap {
+  const ultimaNovedad = getUltimaFechaNovedad();
+
   return [
     {
       url: `${BASE}/landing`,
@@ -39,6 +42,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date("2026-04-27"),
       changeFrequency: "monthly",
       priority: 0.9,
+    },
+    {
+      // Se actualiza sola: la fecha sale de la última entrada de novedades.
+      url: `${BASE}/novedades`,
+      lastModified: ultimaNovedad ? new Date(ultimaNovedad) : new Date("2026-07-29"),
+      changeFrequency: "weekly",
+      priority: 0.7,
     },
     {
       url: `${BASE}/colaboradores`,

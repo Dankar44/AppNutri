@@ -10,9 +10,10 @@ import { SidebarWrapper } from "./sidebar-wrapper";
 import { HelpWidget } from "@/components/help/help-widget";
 import { TourWrapper } from "@/components/tour/tour-wrapper";
 import { DemoBanner } from "@/components/demo-banner";
-import { BetaBanner } from "@/components/beta-banner";
+import { BannersDashboard } from "@/components/banners-dashboard";
 import { DemoProvider } from "@/contexts/demo-context";
 import { prisma } from "@/lib/prisma";
+import { getLocale } from "@/i18n/locale";
 
 export default async function DashboardLayout({
   children,
@@ -20,6 +21,7 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const dietista = await getCurrentDietista();
+  const locale = await getLocale();
 
   if (!dietista) {
     redirect("/login");
@@ -53,7 +55,7 @@ export default async function DashboardLayout({
     <DemoProvider isDemo={dietista.isDemo}>
       <TourWrapper audience="dietista">
         {dietista.isDemo && <DemoBanner />}
-        {!dietista.isDemo && <BetaBanner />}
+        {!dietista.isDemo && <BannersDashboard locale={locale} />}
         <div className={`flex min-h-dvh bg-background${dietista.isDemo ? " pt-8" : ""}`}>
           <SidebarWrapper
             dietistaNombre={`${dietista.nombre} ${dietista.apellidos}`}

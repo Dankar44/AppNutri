@@ -18,7 +18,9 @@
     "mensajes": "Mensagens",
     "reportes": "Relatórios",
     "ajustes": "Configurações",
-    "admin": "Admin"
+    "admin": "Admin",
+    "novedades": "Novidades",
+    "novedadesSinLeer": "Há novidades não lidas"
   },
   "sidebar": {
     "dietista": "Nutricionista",

@@ -48,6 +48,7 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/demo") ||
     request.nextUrl.pathname.startsWith("/colaboradores") ||
     request.nextUrl.pathname.startsWith("/faq") ||
+    request.nextUrl.pathname.startsWith("/novedades") ||
     request.nextUrl.pathname.startsWith("/software-para-nutricionistas-gratis") ||
     request.nextUrl.pathname.startsWith("/alternativa-") ||
     // Callbacks OAuth: el code lo procesa el handler, el usuario puede no

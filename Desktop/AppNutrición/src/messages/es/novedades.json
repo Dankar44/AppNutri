@@ -1,0 +1,33 @@
+{
+  "metadata": {
+    "title": "Novedades de Annonia — qué hemos mejorado y dónde está",
+    "description": "Todas las mejoras de Annonia, la más reciente arriba: qué cambia en tu consulta y en qué pantalla encontrarlo.",
+    "ogTitle": "Novedades de Annonia",
+    "ogDescription": "Todas las mejoras de Annonia, la más reciente arriba: qué cambia en tu consulta y dónde encontrarlo."
+  },
+  "hero": {
+    "eyebrow": "Novedades",
+    "titulo": "Lo último que hemos mejorado",
+    "descripcion": "Annonia cambia cada semana con lo que nos cuentan los nutricionistas que la usan. Aquí está cada mejora con su fecha, qué te cambia en la consulta y dónde encontrarla."
+  },
+  "entrada": {
+    "donde": "Dónde está",
+    "nuevo": "Nuevo"
+  },
+  "vacio": "Todavía no hay novedades publicadas.",
+  "feedback": {
+    "titulo": "¿Ves un fallo o tienes una idea?",
+    "descripcion": "Escríbenos y lo miramos. Casi todo lo de esta página salió de lo que nos contaron nutricionistas usando la app en consulta.",
+    "botonEmail": "Escríbenos por email",
+    "botonSoporte": "Escríbenos desde Soporte",
+    "notaEmail": "annonianutri@gmail.com",
+    "notaSoporte": "Se abre tu conversación de Soporte Annonia, en Mensajes.",
+    "asuntoEmail": "Feedback sobre Annonia",
+    "volverPanel": "Volver al panel"
+  },
+  "banner": {
+    "etiqueta": "Nuevo en Annonia:",
+    "enlace": "Ver novedades",
+    "cerrarAriaLabel": "Cerrar aviso de novedades"
+  }
+}

@@ -4,21 +4,20 @@ import { useState, useEffect } from "react";
 import { X, MessageSquare, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-
-const STORAGE_KEY = "annonia-beta-banner-dismissed";
+import { betaDescartado, descartarBeta } from "@/lib/novedades-vistas";
 
 export function BetaBanner() {
   const t = useTranslations("common");
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (!localStorage.getItem(STORAGE_KEY)) {
+    if (!betaDescartado()) {
       setVisible(true);
     }
   }, []);
 
   function dismiss() {
-    localStorage.setItem(STORAGE_KEY, "1");
+    descartarBeta();
     setVisible(false);
   }
 

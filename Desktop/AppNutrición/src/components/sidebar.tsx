@@ -20,6 +20,7 @@ import {
   Wallet,
   MessageSquare,
   Building2,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -27,6 +28,12 @@ import { useTranslations } from "next-intl";
 import { NotificationBell } from "@/components/notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useIsDemo } from "@/contexts/demo-context";
+import { getNovedades } from "@/content/novedades";
+import {
+  EVENTO_NOVEDADES_VISTAS,
+  esNueva,
+  getCorteNovedades,
+} from "@/lib/novedades-vistas";
 
 
 type NavItem = {
@@ -35,6 +42,11 @@ type NavItem = {
   icon: LucideIcon;
   /** Enlace al panel admin (estilo distinto) */
   admin?: boolean;
+  /**
+   * Abre en pestaña nueva. Para páginas que viven fuera del dashboard (la de
+   * novedades es pública): así el nutri las lee sin perder donde estaba.
+   */
+  externo?: boolean;
 };
 
 type NavSection = { title: string; items: NavItem[] };
@@ -75,6 +87,7 @@ function getNavSections(t: (key: string) => string, opts?: { isAdmin?: boolean; 
       items: [
         { href: "/reportes", label: t("navItems.reportes"), icon: FileBarChart },
         { href: "/ajustes", label: t("navItems.ajustes"), icon: Settings },
+        { href: "/novedades", label: t("navItems.novedades"), icon: Sparkles, externo: true },
         ...(opts?.isAdmin
           ? [{ href: "/admin-login", label: t("navItems.admin"), icon: ShieldCheck, admin: true as const }]
           : []),
@@ -105,6 +118,25 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
   const [badges, setBadges] = useState<Record<string, number>>(badgesInit);
 
   useEffect(() => { setMounted(true); }, []);
+
+  // Punto verde de novedades. Vive solo en el navegador (localStorage), aparte
+  // del sistema de notificaciones: un changelog no debe contar como aviso.
+  const [novedadesSinLeer, setNovedadesSinLeer] = useState(false);
+  useEffect(() => {
+    const evaluar = () => {
+      const ultima = getNovedades()[0]?.fecha;
+      setNovedadesSinLeer(!!ultima && esNueva(ultima, getCorteNovedades()));
+    };
+    evaluar();
+    // El evento lo emite la página de novedades al darlas por leídas; `storage`
+    // cubre que se lean en otra pestaña.
+    window.addEventListener(EVENTO_NOVEDADES_VISTAS, evaluar);
+    window.addEventListener("storage", evaluar);
+    return () => {
+      window.removeEventListener(EVENTO_NOVEDADES_VISTAS, evaluar);
+      window.removeEventListener("storage", evaluar);
+    };
+  }, []);
 
   // Sincronizar estado local cuando cambie el SSR (al navegar el server devuelve nuevos counts)
   useEffect(() => {
@@ -245,10 +277,20 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
                   item.href === "/mensajes"
                     ? mensajesCount
                     : (badges[item.href] ?? 0);
+                const puntoNovedades =
+                  item.href === "/novedades" && novedadesSinLeer;
                 return (
                   <Link
                     key={item.href + (admin ? "-admin" : "")}
                     href={item.href}
+                    {...(item.externo
+                      ? {
+                          target: "_blank",
+                          rel: "noopener noreferrer",
+                          // Sin cambio de ruta el drawer móvil no se cerraría solo
+                          onClick: () => setMobileOpen(false),
+                        }
+                      : {})}
                     className={cn(
                       "relative flex items-center gap-3 px-3 py-3 lg:py-2.5 rounded-lg text-sm font-medium transition-colors",
                       admin
@@ -266,9 +308,21 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
                       {badgeCount > 0 && (!collapsed || mobileOpen) ? null : badgeCount > 0 ? (
                         <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500 ring-2 ring-sidebar" />
                       ) : null}
+                      {/* Con el menú plegado, el punto va sobre el icono */}
+                      {puntoNovedades && collapsed && !mobileOpen && (
+                        <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-green-500 ring-2 ring-sidebar" />
+                      )}
                     </span>
                     {(!collapsed || mobileOpen) && (
-                      <span className="flex-1">{item.label}</span>
+                      <span className="flex-1 flex items-center gap-2">
+                        {item.label}
+                        {puntoNovedades && (
+                          <span
+                            aria-label={t("navItems.novedadesSinLeer")}
+                            className="w-2 h-2 rounded-full bg-green-500 shrink-0"
+                          />
+                        )}
+                      </span>
                     )}
                     {badgeCount > 0 && (!collapsed || mobileOpen) && (
                       <span

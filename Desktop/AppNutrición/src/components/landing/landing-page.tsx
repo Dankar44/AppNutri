@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
-  Leaf, ArrowRight, ChevronRight, X, Mail,
+  Leaf, ArrowRight, ChevronRight, Mail,
   Utensils, Fish, Croissant, Salad, Wheat, Vegan, Pizza, Soup, Beef, CupSoda,
   Carrot, Egg, Nut, Cherry, Banana, Bean, Sandwich, IceCreamCone, Apple, Grape, Citrus,
 } from "lucide-react";
@@ -12,8 +12,8 @@ import { cn } from "@/lib/utils";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
 import { NuestraHistoria } from "@/components/landing/nuestra-historia";
 import { MarcasColaboradores } from "@/components/landing/marcas-colaboradores";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { LanguageSwitcher } from "@/components/language-switcher";
+import { PublicHeader } from "@/components/landing/public-header";
+import { PublicFooter } from "@/components/landing/public-footer";
 import { useTranslations } from "next-intl";
 
 const SHOWCASE_LAYOUT = [
@@ -123,8 +123,6 @@ export function LandingPage() {
     a: t(`faqSection.preguntas.${key}.respuesta`),
   }));
 
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const [heroSlide, setHeroSlide] = useState(0);
   const heroRef = useRef<HTMLElement>(null);
 
@@ -140,180 +138,9 @@ export function LandingPage() {
     return () => clearTimeout(id);
   }, [heroSlide]);
 
-  useEffect(() => {
-    function handleScroll() {
-      const heroBottom = heroRef.current?.getBoundingClientRect().bottom ?? 0;
-      setScrolled(heroBottom <= 64);
-    }
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
-    document.body.style.overflow = menuOpen ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
-  }, [menuOpen]);
-
-  const closeMenu = useCallback(() => setMenuOpen(false), []);
-
   return (
     <div className="min-h-screen bg-white dark:bg-[#101117] text-gray-900 dark:text-gray-100 overflow-x-hidden">
-      {/* ─── NAVBAR ─── */}
-      <header
-        className={cn(
-          "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
-          scrolled && "bg-white dark:bg-[#101117] shadow-md dark:shadow-black/30"
-        )}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link href="/landing" className="flex items-center gap-2.5">
-            <Leaf
-              className={cn(
-                "w-7 h-7 transition-colors duration-300",
-                scrolled ? "text-green-600" : "text-white drop-shadow-md"
-              )}
-            />
-            <span
-              className={cn(
-                "text-xl font-bold transition-colors duration-300",
-                scrolled ? "text-gray-900 dark:text-gray-100" : "text-white drop-shadow-md"
-              )}
-            >
-              Annonia
-            </span>
-          </Link>
-
-          <nav className="hidden md:flex items-center gap-8 text-base font-extrabold drop-shadow-md">
-            <a
-              href="#como-funciona"
-              className={cn(
-                "transition-colors duration-300",
-                scrolled ? "text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 drop-shadow-none" : "text-white hover:text-green-200"
-              )}
-            >
-              {t("navbar.comoFunciona")}
-            </a>
-            <Link
-              href="/precios"
-              className={cn(
-                "transition-colors duration-300",
-                scrolled ? "text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 drop-shadow-none" : "text-white hover:text-green-200"
-              )}
-            >
-              {t("navbar.precios")}
-            </Link>
-            <a
-              href="#faq"
-              className={cn(
-                "transition-colors duration-300",
-                scrolled ? "text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 drop-shadow-none" : "text-white hover:text-green-200"
-              )}
-            >
-              {t("navbar.faq")}
-            </a>
-          </nav>
-
-          <div className="hidden md:flex items-center gap-3">
-            <Link
-              href="/login"
-              className={cn(
-                "px-4 py-2 text-base font-extrabold transition-colors duration-300",
-                scrolled ? "text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 drop-shadow-none" : "text-white drop-shadow-md hover:text-green-200"
-              )}
-            >
-              {t("navbar.iniciarSesion")}
-            </Link>
-            <LanguageSwitcher className={cn(
-              scrolled
-                ? "border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                : "border-white/30 bg-white/15 text-white hover:bg-white/25 backdrop-blur-sm"
-            )} />
-            <ThemeToggle className={cn(
-              "!w-9 !h-9 rounded-lg transition-colors",
-              scrolled ? "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300" : "hover:bg-white/15 text-white drop-shadow-md"
-            )} />
-            <Link
-              href="/registro"
-              className="px-5 py-2.5 text-sm font-semibold rounded-xl bg-green-600 text-white hover:bg-green-700 transition-colors shadow-sm shadow-green-600/20"
-            >
-              {t("navbar.empezarGratis")}
-            </Link>
-          </div>
-
-          {/* Hamburger */}
-          <button
-            onClick={() => setMenuOpen((prev) => !prev)}
-            className="md:hidden flex flex-col items-center justify-center w-10 h-10 gap-[5px] z-[60]"
-            aria-label={t("mobileMenu.abrirMenu")}
-          >
-            <span
-              className={cn(
-                "block w-6 h-[2px] rounded-full transition-all duration-300",
-                scrolled ? "bg-gray-800 dark:bg-gray-200" : "bg-white drop-shadow-md",
-                menuOpen && "translate-y-[7px] rotate-45"
-              )}
-            />
-            <span
-              className={cn(
-                "block w-6 h-[2px] rounded-full transition-all duration-300",
-                scrolled ? "bg-gray-800 dark:bg-gray-200" : "bg-white drop-shadow-md",
-                menuOpen && "opacity-0"
-              )}
-            />
-            <span
-              className={cn(
-                "block w-6 h-[2px] rounded-full transition-all duration-300",
-                scrolled ? "bg-gray-800 dark:bg-gray-200" : "bg-white drop-shadow-md",
-                menuOpen && "-translate-y-[7px] -rotate-45"
-              )}
-            />
-          </button>
-        </div>
-      </header>
-
-      {/* Mobile overlay */}
-      <div
-        onClick={closeMenu}
-        className={cn(
-          "fixed inset-0 bg-black/40 z-[55] md:hidden transition-opacity duration-300",
-          menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-        )}
-      />
-
-      {/* Mobile slide-in menu */}
-      <div
-        className="fixed top-0 right-0 w-full h-full bg-white dark:bg-[#17181e] z-[60] shadow-2xl md:hidden overflow-y-auto"
-        style={{
-          transform: menuOpen ? "translateX(0)" : "translateX(100%)",
-          transition: "transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
-        }}
-      >
-        <div className="flex items-center justify-between px-6 h-16">
-          <Link href="/landing" className="flex items-center gap-2" onClick={closeMenu}>
-            <Leaf className="w-6 h-6 text-green-600 dark:text-green-500" />
-            <span className="text-lg font-bold text-green-600 dark:text-green-500">Annonia</span>
-          </Link>
-          <button
-            onClick={closeMenu}
-            className="w-10 h-10 flex items-center justify-center text-gray-800 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white transition-colors"
-            aria-label={t("mobileMenu.cerrarMenu")}
-          >
-            <X className="w-7 h-7" />
-          </button>
-        </div>
-        <nav className="flex flex-col px-6 pt-6">
-          <a href="#como-funciona" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 hover:text-green-700 dark:hover:text-green-400 transition-colors">{t("navbar.comoFunciona")}</a>
-          <Link href="/precios" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 hover:text-green-700 dark:hover:text-green-400 transition-colors">{t("navbar.precios")}</Link>
-          <a href="#faq" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 hover:text-green-700 dark:hover:text-green-400 transition-colors">{t("navbar.faq")}</a>
-          <Link href="/login" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 hover:text-green-700 dark:hover:text-green-400 transition-colors">{t("navbar.iniciarSesion")}</Link>
-          <Link href="/registro" onClick={closeMenu} className="py-5 text-xl font-bold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 hover:text-green-700 dark:hover:text-green-400 transition-colors">{t("navbar.empezarGratis")}</Link>
-          <div className="py-5 flex items-center gap-4">
-            <LanguageSwitcher variant="inline" className="!text-gray-900 dark:!text-gray-100 !text-xl !font-bold hover:!text-green-700 dark:hover:!text-green-400 w-auto" />
-            <ThemeToggle variant="inline" className="!text-gray-900 dark:!text-gray-100 !text-xl !font-bold hover:!text-green-700 dark:hover:!text-green-400" />
-          </div>
-        </nav>
-      </div>
+      <PublicHeader heroRef={heroRef} />
 
       {/* ─── HERO (carrusel) ─── */}
       <section
@@ -731,56 +558,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ─── WAVE white → dark (Footer) ─── */}
-      <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto block -mb-px">
-        <path d="M0 80V50C240 20 480 40 720 60C960 80 1200 70 1440 40V80H0Z" className="fill-[#2d3748] dark:fill-[#0a0b0e]" />
-      </svg>
-
-      {/* ─── FOOTER ─── */}
-      <footer className="bg-[#2d3748] dark:bg-[#0a0b0e]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 mb-12">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Leaf className="w-6 h-6 text-green-400" />
-                <span className="text-lg font-bold text-white">Annonia</span>
-              </div>
-              <p className="text-sm text-gray-400 leading-relaxed max-w-md">
-                {t("footer.descripcion")}
-              </p>
-            </div>
-            <div className="grid grid-cols-3 gap-4 sm:gap-6">
-              <div>
-                <p className="text-sm font-semibold text-white mb-4">{t("footer.producto")}</p>
-                <ul className="space-y-2.5 text-sm text-gray-400">
-                  <li><a href="#como-funciona" className="hover:text-green-300 transition-colors">{t("navbar.comoFunciona")}</a></li>
-                  <li><Link href="/precios" className="hover:text-green-300 transition-colors">{t("navbar.precios")}</Link></li>
-                  <li><a href="#faq" className="hover:text-green-300 transition-colors">{t("navbar.faq")}</a></li>
-                </ul>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-white mb-4">{t("footer.acceso")}</p>
-                <ul className="space-y-2.5 text-sm text-gray-400">
-                  <li><Link href="/login" className="hover:text-green-300 transition-colors">{t("navbar.iniciarSesion")}</Link></li>
-                  <li><Link href="/registro" className="hover:text-green-300 transition-colors">{t("footer.crearCuenta")}</Link></li>
-                  <li><Link href="/paciente/login" className="hover:text-green-300 transition-colors">{t("footer.portalPacientes")}</Link></li>
-                </ul>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-white mb-4">{t("footer.legal")}</p>
-                <ul className="space-y-2.5 text-sm text-gray-400">
-                  <li><Link href="/legal/terminos" className="hover:text-green-300 transition-colors">{t("footer.terminosCondiciones")}</Link></li>
-                  <li><Link href="/legal/privacidad" className="hover:text-green-300 transition-colors">{t("footer.politicaPrivacidad")}</Link></li>
-                  <li><Link href="/legal/cookies" className="hover:text-green-300 transition-colors">{t("footer.politicaCookies")}</Link></li>
-                </ul>
-              </div>
-            </div>
-          </div>
-          <div className="border-t border-white/10 pt-8 text-sm text-gray-500 text-center">
-            {t("footer.copyright", { year: new Date().getFullYear() })}
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
     </div>
   );
 }
