@@ -3,8 +3,15 @@ import puppeteer, { type Browser } from "puppeteer-core";
 let browser: Browser | null = null;
 
 function getChromePath(): string {
+  // Permite fijar la ruta a mano, igual que hace html-to-pdf.ts. Es lo que necesita quien
+  // trabaje en Windows, y también quien tenga Chrome instalado en otro sitio.
+  if (process.env.CHROMIUM_PATH) return process.env.CHROMIUM_PATH;
+
   if (process.platform === "darwin") {
     return "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+  }
+  if (process.platform === "win32") {
+    return "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
   }
   return "/usr/bin/chromium-browser";
 }
