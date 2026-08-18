@@ -12,7 +12,7 @@ import { stripe } from "@/lib/stripe";
 import { isNextNavigation } from "@/lib/utils";
 import { sendEmail } from "@/lib/mailer";
 import { headers } from "next/headers";
-import { checkRateLimit, LIMITES } from "@/lib/rate-limit";
+import { checkRateLimit, estaBloqueado, resetRateLimit, LIMITES } from "@/lib/rate-limit";
 import { generateVerifyToken, sendVerificationEmail } from "@/lib/verify-email";
 import { generarSlug } from "@/lib/empresa-utils";
 import {
@@ -36,27 +36,36 @@ function adminDisplayName(email: string): string {
 export async function loginAdmin(email: string, password: string): Promise<{ error?: string }> {
   const t = await getTranslations("validation");
 
-  // Sin esto se pueden probar contraseñas sin límite contra /admin-login, que está abierto a
-  // internet y da acceso a los datos de todos los nutricionistas. Se limita por IP y por correo:
-  // solo por IP, varias máquinas lo rodean; solo por correo, cualquiera puede bloquear a un admin.
+  // Sin límite se podían probar contraseñas sin fin contra /admin-login, que está abierto a
+  // internet y da acceso a los datos de todos los nutricionistas.
+  //
+  // El contador va SOLO por IP y SOLO cuenta los fallos, y se comprueba DESPUÉS de validar las
+  // credenciales. Es a propósito: si se contara por correo, cualquiera que lea el repositorio
+  // (es público) podría dejar al dueño fuera de su propio panel mandando cinco peticiones con
+  // su dirección. Así, quien sabe la contraseña entra siempre, y quien no la sabe se queda
+  // fuera a los cinco intentos.
   const headerList = await headers();
   const forwarded = headerList.get("x-forwarded-for");
   const ip = forwarded?.split(",")[0]?.trim() || headerList.get("x-real-ip") || "unknown";
-  const porIp = checkRateLimit({ key: `admin-login:ip:${ip}`, ...LIMITES.loginAdmin });
-  const porEmail = checkRateLimit({
-    key: `admin-login:email:${email.toLowerCase().trim()}`,
-    ...LIMITES.loginAdmin,
-  });
-  if (!porIp.ok || !porEmail.ok) {
-    const espera = Math.max(porIp.retryAfter ?? 0, porEmail.retryAfter ?? 0);
-    const minutos = Math.max(1, Math.ceil(espera / 60));
-    return { error: `Demasiados intentos. Inténtalo de nuevo en ${minutos} minutos.` };
+  const clave = `admin-login:ip:${ip}`;
+  const limite = { key: clave, ...LIMITES.loginAdmin };
+
+  // Si esta IP ya agotó sus intentos, ni siquiera se comprueba la contraseña.
+  const bloqueo = estaBloqueado(limite);
+  if (bloqueo.bloqueado) {
+    const minutos = Math.max(1, Math.ceil(bloqueo.retryAfter / 60));
+    return { error: `Demasiados intentos fallidos. Inténtalo de nuevo en ${minutos} minutos.` };
   }
 
   const result = verifyAdminCredentials(email, password);
+
   if (!result) {
+    checkRateLimit(limite);   // solo se apuntan los fallos
     return { error: t("admin.emailOContrasenaIncorrectos") };
   }
+
+  // Credenciales correctas: se borra el historial de fallos de esta IP.
+  resetRateLimit(clave);
   await createAdminSession(email, result.role);
   redirect(result.role === "creator" ? "/admin/crear-cuenta" : "/admin");
 }

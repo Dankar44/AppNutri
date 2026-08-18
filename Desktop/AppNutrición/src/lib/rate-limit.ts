@@ -57,6 +57,30 @@ export function checkRateLimit(opts: CheckOptions): RateLimitResult {
   };
 }
 
+/**
+ * Consulta si una clave está bloqueada SIN registrar el intento.
+ *
+ * checkRateLimit apunta el intento al comprobarlo, lo que sirve para limitar acciones válidas
+ * (enviar mensajes, registrarse). Para un login hace falta lo contrario: mirar si está
+ * bloqueado antes de validar nada, y apuntar solo si el intento resulta fallido.
+ */
+export function estaBloqueado(opts: CheckOptions): { bloqueado: boolean; retryAfter: number } {
+  const ahora = Date.now();
+  const desde = ahora - opts.windowMs;
+  const timestamps = (stores.get(opts.key) ?? []).filter((t) => t > desde);
+  if (timestamps.length < opts.limit) return { bloqueado: false, retryAfter: 0 };
+  const retryAfter = Math.ceil((timestamps[0] + opts.windowMs - ahora) / 1000);
+  return { bloqueado: true, retryAfter: Math.max(retryAfter, 1) };
+}
+
+/**
+ * Borra el contador de una clave. Se usa tras una autenticación correcta, para que los
+ * intentos fallidos previos no cuenten contra quien acaba de demostrar que es quien dice.
+ */
+export function resetRateLimit(key: string): void {
+  stores.delete(key);
+}
+
 function limpiarStoresAntiguos(ahora: number, windowMs: number) {
   const desde = ahora - windowMs;
   for (const [key, timestamps] of stores.entries()) {
