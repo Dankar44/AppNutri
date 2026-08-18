@@ -94,9 +94,9 @@ curl -s localhost:3000/api/health
 Te dice si faltan variables, si la base conecta y **cuántos nutricionistas hay**. En desarrollo
 debe salir **1**. Si salen decenas o cientos, estás en producción: **para y avisa**.
 
-En la propia aplicación: en **Pacientes** verás **un paciente, "Paciente Prueba"** — lo crea la
-aplicación sola al entrar, no es un dato real. Lo que delata producción son *decenas* de
-pacientes o de nutricionistas, no que haya uno.
+En la propia aplicación: en **Pacientes** verás **0 pacientes, o uno llamado "Paciente Prueba"**
+que crea la aplicación sola. Las dos cosas son normales. Lo que delata producción son *decenas* de
+pacientes o de nutricionistas.
 
 Además, cualquier comando de Prisma imprime a qué base se conecta antes de hacer nada:
 
