@@ -45,6 +45,30 @@ Al revés —código nuevo contra base antigua— la aplicación revienta o devu
 en producción cuando tu trabajo se publique. Por eso el script de migración **va en el PR**, no
 en tu máquina: si no está, quien despliegue no sabrá que hacía falta.
 
+### Toda migración se aplica en LOS DOS entornos
+
+Cuando ejecutes una migración en producción, **ejecútala también en desarrollo**. Es una línea
+más:
+
+```bash
+DB=prod npx tsx scripts/mi-migracion.ts     # producción
+DB=dev  npx tsx scripts/mi-migracion.ts     # desarrollo
+```
+
+Si se olvida, pasa esto: el colaborador hace `git pull` y `npx prisma generate`, su cliente
+Prisma espera la columna nueva, su base no la tiene, y le salta un `column ... does not exist`
+que **parece un fallo suyo y no lo es**. Puede perder una tarde antes de sospechar del entorno.
+
+Para comprobar en cualquier momento si los dos esquemas coinciden:
+
+```bash
+npm run db:comparar
+```
+
+Solo lee metadatos, no escribe nada. Si hay diferencias, dice cuáles y en qué lado faltan.
+Merece la pena pasarlo después de cada migración y antes de pedirle al colaborador que pruebe
+algo.
+
 ### Cambios de enum: el error silencioso más traicionero
 Si añades un valor a un enum de Prisma (por ejemplo una unidad de medida nueva), cualquier
 entorno que no haya regenerado su cliente Prisma **reventará** al leer una fila con ese valor:

@@ -230,6 +230,9 @@ de PR.
 - **`prisma generate` falla** con `ERR_REQUIRE_ESM`: estás en Node 20, cambia a Node 22.
 - **Error de tipo `Value 'X' not found in enum`**: alguien cambió el esquema; haz
   `npx prisma generate`.
+- **`column "algo" does not exist`** justo después de un `git pull`: se ha añadido una columna
+  en producción y tu base de desarrollo se ha quedado atrás. **No es un fallo tuyo y no lo
+  arregles tú** (nada de `prisma db push`): avisa y se aplica la migración en tu entorno.
 - **El panel de administración no abre** (`/admin-login`, `/admin/*`): es normal, no hay clave de
   Stripe en desarrollo y `src/lib/stripe.ts` falla al cargarse. `/pagos` y `/ajustes` sí
   funcionan. Si una tarea necesita el panel, pide una clave de prueba.
