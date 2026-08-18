@@ -4,8 +4,15 @@ Annonia es un SaaS para nutricionistas: gestión de pacientes, planes de aliment
 agenda y entregables en PDF. Tiene **dos portales** (panel del nutricionista y portal del
 paciente) con sistemas de autenticación separados.
 
-> Si eres un **colaborador externo**, lee primero `docs/COLABORADOR.md` (entorno y flujo de PRs)
-> y respeta al pie de la letra la sección "Reglas del colaborador" de este documento.
+> **Documentos que acompañan a este:**
+> - `docs/COLABORADOR.md` — montar el entorno y flujo de ramas/PRs (empieza por ahí).
+> - `docs/DESARROLLO.md` — **léelo entero antes de la primera tarea.** Entornos y base de datos,
+>   cómo se despliega, migraciones (y por qué el orden importa), el catálogo de errores que ya
+>   han tumbado la aplicación en producción, y las cuatro preguntas que hay que hacerse antes de
+>   dar un cambio por terminado.
+>
+> Si eres un **colaborador externo**, respeta al pie de la letra la sección "Reglas del
+> colaborador" de aquí abajo.
 
 ---
 
