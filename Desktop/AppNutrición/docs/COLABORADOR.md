@@ -124,6 +124,32 @@ Después crea un paciente de prueba y un plan, que es donde vive casi todo.
 
 ## 7. Flujo de trabajo
 
+### El ciclo completo, de principio a fin
+
+1. **Eliges un issue** de los etiquetados `apta-colaborador` (ver apartado 9) y **te lo asignas**
+   (botón *Assignees* → tú) y lo comentas: "me pongo con esto". Así nadie trabaja en lo mismo.
+2. **Lo lees entero.** Cada issue trae el diagnóstico ya hecho: qué pasa hoy, en qué archivos y
+   líneas está, y las tareas concretas. Si algo no cuadra con el código que ves, **coméntalo en
+   el issue antes de programar**: puede que el diagnóstico se haya quedado viejo.
+3. **Rama nueva** desde `main` actualizado, con el número del issue en el nombre.
+4. **Programas y pruebas** en tu entorno local.
+5. **Abres el PR.** Se rellena sola una plantilla con las preguntas necesarias: qué hace, dónde
+   se ve, cómo probarlo, si toca la base de datos y si necesita variables nuevas. **Rellénala de
+   verdad**: es lo que se usa para revisar y para verificar el cambio después de publicarlo.
+6. Escribe **`Closes #NN`** en la descripción (con el número del issue). Al hacer merge, el issue
+   se cierra solo y queda enlazado.
+7. **Revisión.** Puede que se te pidan cambios: haces commit en la misma rama y el PR se
+   actualiza solo. No abras un PR nuevo.
+8. **Merge y despliegue.** Los hace el dueño del repo. Cuando esté en producción te lo dirá, por
+   si quieres comprobarlo en la web real.
+9. Vuelves al paso 1 con el siguiente issue.
+
+> **Un issue = una rama = un PR.** Si mientras trabajas ves otra cosa que arreglar, **no la metas
+> en el mismo PR**: coméntala en el issue o abre uno nuevo. Los PRs pequeños se revisan y entran
+> en el día; los grandes se atascan una semana.
+
+### Los comandos
+
 ```bash
 git checkout main
 git pull upstream main            # trae los últimos cambios antes de empezar
