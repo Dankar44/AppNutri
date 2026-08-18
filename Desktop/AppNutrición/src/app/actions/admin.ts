@@ -12,6 +12,7 @@ import { stripe } from "@/lib/stripe";
 import { isNextNavigation } from "@/lib/utils";
 import { sendEmail } from "@/lib/mailer";
 import { headers } from "next/headers";
+import { checkRateLimit, LIMITES } from "@/lib/rate-limit";
 import { generateVerifyToken, sendVerificationEmail } from "@/lib/verify-email";
 import { generarSlug } from "@/lib/empresa-utils";
 import {
@@ -34,6 +35,24 @@ function adminDisplayName(email: string): string {
 
 export async function loginAdmin(email: string, password: string): Promise<{ error?: string }> {
   const t = await getTranslations("validation");
+
+  // Sin esto se pueden probar contraseñas sin límite contra /admin-login, que está abierto a
+  // internet y da acceso a los datos de todos los nutricionistas. Se limita por IP y por correo:
+  // solo por IP, varias máquinas lo rodean; solo por correo, cualquiera puede bloquear a un admin.
+  const headerList = await headers();
+  const forwarded = headerList.get("x-forwarded-for");
+  const ip = forwarded?.split(",")[0]?.trim() || headerList.get("x-real-ip") || "unknown";
+  const porIp = checkRateLimit({ key: `admin-login:ip:${ip}`, ...LIMITES.loginAdmin });
+  const porEmail = checkRateLimit({
+    key: `admin-login:email:${email.toLowerCase().trim()}`,
+    ...LIMITES.loginAdmin,
+  });
+  if (!porIp.ok || !porEmail.ok) {
+    const espera = Math.max(porIp.retryAfter ?? 0, porEmail.retryAfter ?? 0);
+    const minutos = Math.max(1, Math.ceil(espera / 60));
+    return { error: `Demasiados intentos. Inténtalo de nuevo en ${minutos} minutos.` };
+  }
+
   const result = verifyAdminCredentials(email, password);
   if (!result) {
     return { error: t("admin.emailOContrasenaIncorrectos") };

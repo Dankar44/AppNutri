@@ -13,7 +13,7 @@
     "db:studio": "prisma studio",
     "db:studio:desarrollo": "set -a && . ./.env.dev.local && set +a && prisma studio",
     "db:generate": "prisma generate",
-    "cron:limpiar-mensajes": "DB=prod npx tsx scripts/limpiar-mensajes.ts",
+    "cron:limpiar-mensajes": "CONFIRMO=BORRAR-EN-PRODUCCION DB=prod npx tsx scripts/limpiar-mensajes.ts",
     "cron:limpiar-mensajes:dry": "DB=prod npx tsx scripts/limpiar-mensajes.ts --dry-run",
     "postinstall": "prisma generate",
     "db:comparar": "npx tsx scripts/comparar-esquemas.ts"

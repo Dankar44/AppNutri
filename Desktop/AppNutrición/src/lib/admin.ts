@@ -1,5 +1,19 @@
 import { cookies, headers } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
+import { createHash, timingSafeEqual } from "crypto";
+
+/**
+ * Compara dos contraseñas en tiempo constante.
+ *
+ * Con `===` la comparación termina en el primer carácter distinto, así que el tiempo de
+ * respuesta filtra cuántos caracteres se han acertado. Se comparan los hash y no las cadenas
+ * porque timingSafeEqual exige que los dos buffers midan lo mismo.
+ */
+function contrasenasIguales(recibida: string, esperada: string): boolean {
+  const a = createHash("sha256").update(recibida).digest();
+  const b = createHash("sha256").update(esperada).digest();
+  return timingSafeEqual(a, b);
+}
 
 export type AdminRole = "admin" | "creator";
 
@@ -23,7 +37,16 @@ function getCreatorEmails(): string[] {
 }
 
 function getSecret() {
-  const secret = process.env.PATIENT_JWT_SECRET || "admin-fallback-secret";
+  // Sin valor por defecto en producción: la cadena estaría publicada en el repositorio y
+  // cualquiera podría firmarse una sesión de administrador válida. Antes se prefiere que la
+  // aplicación no arranque a que arranque abierta.
+  const secret = process.env.PATIENT_JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("PATIENT_JWT_SECRET must be set in production");
+    }
+    return new TextEncoder().encode("admin-dev-only-secret");
+  }
   return new TextEncoder().encode(secret);
 }
 
@@ -43,17 +66,17 @@ export function verifyAdminCredentials(email: string, password: string): { valid
   const e = email.toLowerCase();
 
   const pw1 = cleanEnv(process.env.ADMIN_PASSWORD);
-  if (pw1 && parseEmails(process.env.ADMIN_EMAILS).includes(e) && password === pw1) {
+  if (pw1 && parseEmails(process.env.ADMIN_EMAILS).includes(e) && contrasenasIguales(password, pw1)) {
     return { valid: true, role: "admin" };
   }
 
   const pw2 = cleanEnv(process.env.ADMIN_PASSWORD_2);
-  if (pw2 && parseEmails(process.env.ADMIN_EMAILS_2).includes(e) && password === pw2) {
+  if (pw2 && parseEmails(process.env.ADMIN_EMAILS_2).includes(e) && contrasenasIguales(password, pw2)) {
     return { valid: true, role: "admin" };
   }
 
   const creatorPassword = cleanEnv(process.env.ADMIN_CREATOR_PASSWORD);
-  if (creatorPassword && isCreatorEmail(e) && password === creatorPassword) {
+  if (creatorPassword && isCreatorEmail(e) && contrasenasIguales(password, creatorPassword)) {
     return { valid: true, role: "creator" };
   }
 

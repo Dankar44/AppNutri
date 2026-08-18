@@ -75,4 +75,6 @@ export const LIMITES = {
   subirAdjunto: { limit: 5, windowMs: 60_000 },
   subirImagen: { limit: 10, windowMs: 60_000 },
   registro: { limit: 3, windowMs: 3_600_000 },
+  // El panel da acceso a los datos de todos los nutricionistas: ventana larga y pocos intentos.
+  loginAdmin: { limit: 5, windowMs: 900_000 },
 } as const;

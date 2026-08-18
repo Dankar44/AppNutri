@@ -14,7 +14,7 @@
  *   0 3 * * * cd /ruta/al/proyecto && /usr/bin/npx tsx scripts/limpiar-mensajes.ts >> /var/log/annonia-cron.log 2>&1
  */
 
-import "./_guard";   // salvaguarda: obliga a elegir DB=dev|prod y lo dice en pantalla
+import { esProduccion } from "./_guard";   // salvaguarda: obliga a elegir DB=dev|prod y lo dice en pantalla
 import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
@@ -23,6 +23,18 @@ import pg from "pg";
 import { createClient } from "@supabase/supabase-js";
 
 const DRY_RUN = process.argv.includes("--dry-run");
+
+// Este es el único script que borra ficheros de Storage de forma irreversible. El guard normal
+// solo obliga a elegir base de datos; aquí, si el borrado va de verdad contra producción, se
+// exige además una confirmación explícita. La versión --dry-run no borra nada y no la pide.
+if (!DRY_RUN && esProduccion && process.env.CONFIRMO !== "BORRAR-EN-PRODUCCION") {
+  console.error(
+    "\n✗ ABORTADO: esto borra mensajes y adjuntos de PRODUCCIÓN de forma irreversible.\n" +
+    "  Para revisar sin borrar:  DB=prod npx tsx scripts/limpiar-mensajes.ts --dry-run\n" +
+    "  Para borrar de verdad:    CONFIRMO=BORRAR-EN-PRODUCCION DB=prod npx tsx scripts/limpiar-mensajes.ts\n",
+  );
+  process.exit(1);
+}
 const DIAS_ADJUNTOS = 30;
 const DIAS_MENSAJES = 60;
 const BUCKET = "mensajes-adjuntos";

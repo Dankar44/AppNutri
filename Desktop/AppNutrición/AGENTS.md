@@ -22,8 +22,9 @@ paciente) con sistemas de autenticación separados.
    Si crees que hace falta un campo nuevo, **párate y coméntalo en el issue**: la migración la
    hace el dueño del repo.
 2. **NO ejecutar nada de `scripts/`.** Son migraciones y semillas que escriben en masa;
-   algunas borran datos. Ahora exigen indicar la base (`DB=dev` o `DB=prod`) y avisan por
-   pantalla, pero la regla para un colaborador es simple: no los ejecutes. Si crees que tu tarea
+   algunas borran datos. Solo 7 de 82 exigen indicar la base (`DB=dev` o `DB=prod`); el resto
+   carga `.env.local` sin decir nada, que en la máquina del mantenedor es PRODUCCIÓN. La regla
+   para un colaborador es simple: no los ejecutes. Si crees que tu tarea
    lo necesita, dilo en el issue. Y **nunca** toques nada de `scripts/archivo/` (ver el apartado
    1.5 de `docs/DESARROLLO.md`).
 3. **NO desplegar.** El despliegue lo hace siempre el dueño del repo. No existe pipeline

@@ -5,10 +5,12 @@ node_modules
 /.next-old
 /out
 
-# env files
+# env files — este repositorio es PUBLICO: no versionar ninguna variante
 .env
-.env.local
-.env.*.local
+.env.*
+env.*
+*.bak
+!.env.example
 
 # prisma generated
 /src/generated

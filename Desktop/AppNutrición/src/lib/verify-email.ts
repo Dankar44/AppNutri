@@ -5,6 +5,11 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+// Sin valor por defecto en producción: la cadena estaría publicada en el repositorio y
+// permitiría firmar enlaces de verificación válidos para cualquier correo.
+if (!process.env.PATIENT_JWT_SECRET && process.env.NODE_ENV === "production") {
+  throw new Error("PATIENT_JWT_SECRET must be set in production");
+}
 const SECRET = new TextEncoder().encode(
   (process.env.PATIENT_JWT_SECRET || "annonia-dev-secret") + "-verify-email"
 );

@@ -1,3 +1,23 @@
+/**
+ * ARCHIVADO — NO EJECUTAR. Ver LEEME.md
+ *
+ * Este script hacía `DROP TABLE IF EXISTS planificaciones CASCADE` cargando `.env.local`, que en
+ * la máquina del mantenedor es PRODUCCIÓN. La tabla `planificaciones` está viva (schema.prisma,
+ * model Planificacion) y la usan varias server actions: ejecutarlo borraría las planificaciones
+ * de todos los nutricionistas junto con todo lo que cuelga de ellas.
+ *
+ * Se ha desarmado a propósito. El cuerpo original está en el historial de git si alguna vez
+ * hiciera falta recuperarlo.
+ */
+console.error(
+  "\n✗ Este script está ARCHIVADO y desarmado a propósito: borraba la tabla de planificaciones.\n" +
+  "  Si de verdad necesitas lo que hacía, léelo en el historial de git y escribe un script nuevo\n" +
+  "  con `import \"../_guard-destructivo\";` en la primera línea.\n",
+);
+process.exit(1);
+
+/* CUERPO ORIGINAL (desactivado):
+
 import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
@@ -51,3 +71,6 @@ main().catch((e) => {
   console.error(e);
   process.exit(1);
 });
+
+
+*/

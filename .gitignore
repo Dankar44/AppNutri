@@ -1,2 +1,9 @@
 # Config local de Claude Code (específica de la máquina, no versionar)
 .claude/
+
+# Ficheros de entorno: NUNCA versionar (este repositorio es público)
+.env
+.env.*
+env.*
+*.bak
+!.env.example

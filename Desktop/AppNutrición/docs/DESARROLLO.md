@@ -83,16 +83,27 @@ Tras hacer `pull` de cambios que tocan `schema.prisma`: **`npx prisma generate`*
 
 ### 1.5 Los scripts de `scripts/`: cómo se usan sin destrozar nada
 
-En `scripts/` hay migraciones y semillas. **Ninguno tiene destino por defecto**: hay que decir
-siempre a qué base de datos van, y el propio script lo imprime antes de hacer nada.
+En `scripts/` hay migraciones y semillas.
+
+> ⚠️ **La salvaguarda NO es universal, y esto importa.** Solo los scripts que empiezan por
+> `import "./_guard";` exigen elegir la base de datos. Hoy son **7 de 82**. Los demás hacen
+> `dotenv.config({ path: ".env.local" })` y **nunca leen `DB=`**: si les pones `DB=dev` lo
+> ignoran en silencio y escriben en **producción**, porque en la máquina del mantenedor
+> `.env.local` es producción.
+>
+> **Antes de ejecutar cualquier script, mira su primera línea.** Si no importa el guard, o se lo
+> añades, o sabes exactamente lo que hace.
+
+Los que sí lo llevan exigen decir a dónde van, y lo imprimen antes de hacer nada.
 
 ```bash
 DB=dev  npx tsx scripts/<script>.ts     # desarrollo (datos de prueba, se puede romper)
 DB=prod npx tsx scripts/<script>.ts     # PRODUCCIÓN (datos reales)
 ```
 
-Si te olvidas del `DB=`, el script **aborta** y te lo explica. Si pides `dev` pero la
-configuración apunta a producción (o al revés), **también aborta**. Y los que borran datos exigen
+En un script con guard: si te olvidas del `DB=`, **aborta** y te lo explica; si pides `dev` pero
+la configuración apunta a producción (o al revés), **también aborta**; y si no puede determinar a
+qué base apunta el fichero de entorno, **aborta igualmente** en vez de suponer. Y los que borran datos exigen
 además una confirmación explícita cuando el destino es producción:
 
 ```bash

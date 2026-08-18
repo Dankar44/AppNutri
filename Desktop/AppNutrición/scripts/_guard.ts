@@ -33,6 +33,19 @@ const url = process.env.DATABASE_URL ?? "";
 const ref = url.match(/postgres\.([a-z0-9]+):/)?.[1] ?? "desconocida";
 export const esProduccion = ref === REF_PRODUCCION;
 
+// Si el fichero de entorno no existe o no trae DATABASE_URL, la referencia queda "desconocida"
+// y el dotenv.config del propio script rellenaría la conexión desde .env.local, que es
+// PRODUCCIÓN. Antes de este corte, el guard llegaba a imprimir "desarrollo" y dejaba pasar.
+if (ref === "desconocida") {
+  console.error(`
+✗ ABORTADO: no he podido determinar a qué base de datos apunta ${destino === "dev" ? ".env.dev.local" : ".env.local"}.
+
+Comprueba que el fichero existe y que tiene DATABASE_URL. Se aborta a propósito: seguir
+adelante significaría acabar escribiendo en producción sin saberlo.
+`);
+  process.exit(1);
+}
+
 // Coherencia: que pedir "dev" no acabe escribiendo en producción por un fichero mal configurado.
 if (destino === "dev" && esProduccion) {
   console.error("✗ ABORTADO: has pedido DB=dev pero la conexión apunta a PRODUCCIÓN. Revisa .env.dev.local");
