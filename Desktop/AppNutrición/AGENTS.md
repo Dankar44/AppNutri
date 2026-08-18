@@ -31,9 +31,11 @@ paciente) con sistemas de autenticación separados.
 4. **NO tocar `.env.local` ni pedir credenciales de producción.** La configuración se entrega
    ya hecha. **No pegues su contenido en un issue, en un PR ni en un commit**: el repositorio es
    público.
-5. **NO ejecutar `prisma db push` ni ningún cambio de esquema.** La base de datos de desarrollo
-   es **compartida** entre las personas que trabajan en el proyecto: un cambio de esquema se lo
-   aplicas a todo el mundo a la vez.
+5. **NO ejecutar `prisma db push` ni ningún cambio de esquema.** Tu base de datos de desarrollo
+   tiene que seguir siendo **igual a la de producción**: si le añades o cambias una columna, tu
+   código funcionará en tu máquina y **fallará al desplegarse**, donde esa columna no existe.
+   El orden correcto es script de migración primero, código después, y la migración la hace el
+   dueño del repo.
 6. **NO hacer commit, push ni merge sobre `main`**, y nunca un push forzado. Siempre en tu rama.
 7. **Una tarea = una rama = un PR pequeño.** No mezcles tareas en el mismo PR.
 8. Antes de abrir el PR: **`npx tsc --noEmit` en verde** y probado a mano en el navegador.

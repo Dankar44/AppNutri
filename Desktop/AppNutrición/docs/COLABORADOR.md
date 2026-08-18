@@ -114,8 +114,10 @@ de forma irreversible… y terminaría diciendo «Seed completado». Ese ya est�
 regla es simple: **no ejecutes nada de `scripts/`.** Si crees que una tarea lo necesita, dilo en
 el issue.
 
-Tampoco ejecutes **`prisma db push`**: la base de desarrollo es compartida y se lo cambiarías a
-todo el mundo.
+Tampoco ejecutes **`prisma db push`** ni ningún cambio de esquema. Tu base de desarrollo tiene
+que seguir siendo igual a la de producción: si le cambias una columna, tu código funcionará en tu
+máquina y fallará al desplegarse. El orden correcto es migración primero, código después, y la
+migración la hace el dueño del repo.
 
 ## 7. Flujo de trabajo
 
