@@ -54,7 +54,15 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     formatDetection: { telephone: false },
     icons: {
-      icon: [{ url: "/favicon.ico", sizes: "32x32" }],
+      // Google solo muestra el favicon en los resultados si es un cuadrado MÚLTIPLO DE 48px
+      // (48, 96, 144, 192…). El favicon.ico es de 32x32, así que Google lo descartaba y pintaba
+      // su icono genérico; por eso se declaran primero los PNG de 192 y 512. El .ico se mantiene
+      // al final por compatibilidad con clientes que lo piden por convención.
+      icon: [
+        { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+        { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+        { url: "/favicon.ico", sizes: "32x32" },
+      ],
       apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
     },
     robots: {
