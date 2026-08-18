@@ -28,10 +28,29 @@ paciente) con sistemas de autenticación separados.
    1.5 de `docs/DESARROLLO.md`).
 3. **NO desplegar.** El despliegue lo hace siempre el dueño del repo. No existe pipeline
    automático: lo que entra en `main` es lo que acaba en producción.
-4. **NO tocar `.env` / `.env.local` del repo ni pedir credenciales de producción.** Cada uno
-   usa sus propias claves de desarrollo.
-5. **Una tarea = una rama = un PR pequeño.** No mezcles tareas en el mismo PR.
-6. Antes de abrir el PR: **`npx tsc --noEmit` en verde** y probado a mano en el navegador.
+4. **NO tocar `.env.local` ni pedir credenciales de producción.** La configuración se entrega
+   ya hecha. **No pegues su contenido en un issue, en un PR ni en un commit**: el repositorio es
+   público.
+5. **NO ejecutar `prisma db push` ni ningún cambio de esquema.** La base de datos de desarrollo
+   es **compartida** entre las personas que trabajan en el proyecto: un cambio de esquema se lo
+   aplicas a todo el mundo a la vez.
+6. **NO hacer commit, push ni merge sobre `main`**, y nunca un push forzado. Siempre en tu rama.
+7. **Una tarea = una rama = un PR pequeño.** No mezcles tareas en el mismo PR.
+8. Antes de abrir el PR: **`npx tsc --noEmit` en verde** y probado a mano en el navegador.
+9. **NO tocar sin avisar las "zonas calientes"** (hay trabajo en curso y provocan conflictos):
+   `src/components/dieta/plan-editor.tsx`, `src/components/dieta/comida-slot.tsx`,
+   `src/components/paciente/plan-visual.tsx`,
+   `src/components/paciente/planificacion-por-defecto-tab.tsx`,
+   `src/app/actions/planificaciones.ts`, y `src/messages/es|pt/diets.json` y `patients.json`.
+
+**El código está en `Desktop/AppNutrición/`** (con tilde), no en la raíz del repositorio. Todos
+los comandos se ejecutan desde ahí.
+
+**En desarrollo no funciona** (y no es un fallo que haya que arreglar): el registro desde
+`/registro` y todo lo que envíe correo (no hay servicio configurado), la generación con IA (falta
+`GROQ_API_KEY_1`) y el panel `/admin` (falta la clave de Stripe; `/pagos` y `/ajustes` sí van).
+La aplicación crea sola un "Paciente Prueba" para cada nutricionista: no es un dato real ni un
+bug. Para saber contra qué base estás: `curl -s localhost:3000/api/health`.
 
 ---
 
