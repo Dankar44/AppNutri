@@ -21,9 +21,11 @@ paciente) con sistemas de autenticación separados.
 1. **NO modificar `prisma/schema.prisma`.** Ninguna tarea asignada a un colaborador lo necesita.
    Si crees que hace falta un campo nuevo, **párate y coméntalo en el issue**: la migración la
    hace el dueño del repo.
-2. **NO ejecutar scripts de `scripts/` contra una base de datos que no sea la tuya.** Son
-   migraciones y seeds que escriben datos masivamente. En tu propia base de datos de desarrollo
-   los *seeds* sí son necesarios (ver `docs/COLABORADOR.md`).
+2. **NO ejecutar nada de `scripts/`.** Son migraciones y semillas que escriben en masa;
+   algunas borran datos. Ahora exigen indicar la base (`DB=dev` o `DB=prod`) y avisan por
+   pantalla, pero la regla para un colaborador es simple: no los ejecutes. Si crees que tu tarea
+   lo necesita, dilo en el issue. Y **nunca** toques nada de `scripts/archivo/` (ver el apartado
+   1.5 de `docs/DESARROLLO.md`).
 3. **NO desplegar.** El despliegue lo hace siempre el dueño del repo. No existe pipeline
    automático: lo que entra en `main` es lo que acaba en producción.
 4. **NO tocar `.env` / `.env.local` del repo ni pedir credenciales de producción.** Cada uno

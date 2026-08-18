@@ -27,7 +27,8 @@ Tampoco despliegas tú: **el dueño del repo revisa tu PR y despliega**.
 
 ## 2. Clonar el proyecto
 
-Haz un **fork** del repositorio en GitHub y clónalo. Aviso importante:
+Si tienes acceso de colaborador, **clona el repositorio directamente** y trabaja en ramas dentro
+de él (no necesitas fork). Si no lo tienes, haz un *fork* y clónalo. Aviso importante:
 
 > ⚠️ El código **no está en la raíz** del repositorio, sino en la carpeta
 > **`Desktop/AppNutrición/`** (con tilde). Todos los comandos se ejecutan desde ahí.
@@ -41,86 +42,64 @@ npm install
 
 ---
 
-## 3. Tu propia base de datos (Supabase)
+## 3. Tu configuración: te la damos hecha
 
-1. En [supabase.com](https://supabase.com) crea un **proyecto nuevo** (plan gratuito). Apunta la
-   contraseña de la base de datos que te pida.
-2. En el proyecto, ve a **Project Settings → API** y copia:
-   - **Project URL**
-   - **anon public key**
-   - **service_role key** (es secreta: no la compartas ni la subas al repo)
-3. Ve a **Project Settings → Database → Connection string → URI** y copia la cadena, cambiando
-   `[YOUR-PASSWORD]` por tu contraseña.
+**No tienes que crear ninguna base de datos.** Ya existe un entorno de desarrollo compartido
+(proyecto `Annonia-dev` en Supabase) con el catálogo completo cargado —2.662 alimentos con sus
+micronutrientes y medidas caseras, y 315 recetas con ingredientes e instrucciones— y **cero datos
+reales de pacientes**.
 
----
+Pide el fichero **`.env.local` ya rellenado** y colócalo en `Desktop/AppNutrición/`. Es lo único
+que necesitas.
 
-## 4. Variables de entorno
+> ⚠️ No cambies la `DATABASE_URL` de ese fichero por otra, y no uses nunca credenciales de
+> producción. Con esa configuración, todo lo que ejecutes escribe en la base de desarrollo, que es
+> exactamente lo que queremos.
 
-Copia la plantilla y rellénala:
-
-```bash
-cp .env.example .env.local
-```
-
-**Obligatorias** (sin esto la app no arranca):
-
-| Variable | De dónde sale |
-|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Project URL de tu Supabase |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon public key |
-| `SUPABASE_SECRET_KEY` | service_role key |
-| `DATABASE_URL` | cadena de conexión de tu Supabase |
-| `PATIENT_JWT_SECRET` | invéntala: `openssl rand -hex 32` |
-| `ENCRYPTION_KEY` | invéntala: `openssl rand -hex 32` |
-
-**Opcionales** (déjalas vacías salvo que tu tarea las necesite):
-
-- `GROQ_API_KEY_1/2` — solo para la generación de dietas con IA. Groq tiene plan gratuito.
-- `RESEND_API_KEY` — solo para enviar emails de verdad.
-- `STRIPE_*`, `GOOGLE_*` — pagos y Google Calendar. Para tareas de interfaz no hacen falta.
-- `ADMIN_EMAILS` / `ADMIN_PASSWORD` — solo si necesitas el panel de administración.
-
-`.env.local` está en el `.gitignore`: **nunca** lo subas.
-
----
-
-## 5. Crear las tablas y meter datos de ejemplo
+## 4. Arrancar
 
 ```bash
-npx prisma db push       # crea todas las tablas en TU base de datos
-npx prisma generate      # genera el cliente Prisma (requiere Node 22)
+npx prisma generate     # genera el cliente de base de datos (necesita Node 22)
+npm run dev             # http://localhost:3000
 ```
 
-Para tener alimentos y recetas con los que trabajar (los datos están en el repo):
+Entra con el usuario de pruebas que ya está creado:
 
-```bash
-npx tsx scripts/seed-alimentos-completo.ts
-npx tsx scripts/seed-recetas-app.ts
+- **Correo:** `dev@annonia.dev`
+- **Contraseña:** `desarrollo1234`
+
+> El registro desde `/registro` **no funciona en desarrollo**: la aplicación crea la cuenta,
+> intenta enviar el correo de verificación, falla porque no hay servicio de correo configurado y
+> **deshace la cuenta que acababa de crear**. No es un fallo tuyo. Usa el usuario de arriba.
+
+El entorno arranca **sin pacientes**: créate uno desde la aplicación y móntale un plan de comidas.
+Es la mejor forma de entender qué hace la herramienta antes de tocar código.
+
+## 5. Comprueba que estás en desarrollo (30 segundos)
+
+Antes de cualquier prueba, confírmalo mirando la propia aplicación:
+
+- En **Pacientes** debe haber **0** (o solo los que hayas creado tú).
+- El único nutricionista es *Dev Pruebas*.
+
+Si ves cientos de pacientes o nutricionistas, **estás en producción: para y avisa**.
+
+Además, cualquier comando de Prisma imprime ahora a qué base se conecta antes de hacer nada:
+
+```
+[prisma] base de datos destino: vqjwxzzxmhudsggtsaaw     ← desarrollo, correcto
+[prisma] ⚠️  BASE DE DATOS DESTINO: PRODUCCIÓN …          ← ¡para!
 ```
 
-> Estos seeds leen `DATABASE_URL` de tu `.env.local`, así que van **a tu base de datos**.
-> Si alguno falla, coméntalo en el issue en lugar de improvisar: puede necesitar un ajuste.
-> **Nunca ejecutes nada de `scripts/` apuntando a una base de datos que no sea la tuya.**
+## 6. Qué NO ejecutar nunca
 
----
+En `scripts/` hay migraciones y semillas. **Algunas borran datos y no avisan.** El caso peor:
+`seed-alimentos-completo.ts` borra el catálogo de alimentos y, ejecutado contra producción,
+dejaría ~180.000 líneas de dieta apuntando al vacío en más de 2.000 planes de pacientes reales,
+de forma irreversible… y terminaría diciendo «Seed completado».
 
-## 6. Arrancar
-
-```bash
-npm run dev      # http://localhost:3000
-```
-
-Crea tu cuenta de nutricionista en `http://localhost:3000/registro`. Como el envío de correo no
-está configurado, para poder entrar marca tu usuario como verificado desde el SQL Editor de
-Supabase:
-
-```sql
-update auth.users set email_confirmed_at = now() where email = 'tu@correo.com';
-```
-
-Después crea un paciente de prueba y un plan, que es donde vive casi todo.
-
----
+Regla simple: **no ejecutes nada de `scripts/`.** Si crees que una tarea lo necesita, dilo en el
+issue.
 
 ## 7. Flujo de trabajo
 
@@ -152,7 +131,7 @@ Después crea un paciente de prueba y un plan, que es donde vive casi todo.
 
 ```bash
 git checkout main
-git pull upstream main            # trae los últimos cambios antes de empezar
+git pull origin main              # trae los últimos cambios antes de empezar (upstream si usas fork)
 git checkout -b fix/125-ingredientes-cortados
 # … programas …
 npx tsc --noEmit                 # OBLIGATORIO: tiene que estar en verde

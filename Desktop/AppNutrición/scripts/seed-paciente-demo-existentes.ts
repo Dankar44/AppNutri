@@ -1,3 +1,4 @@
+import "./_guard-destructivo";   // salvaguarda: obliga a elegir DB=dev|prod y lo dice en pantalla
 import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
@@ -230,8 +231,9 @@ async function borrarDemoExistente(client: pg.PoolClient, dietistaId: string) {
     [dietistaId],
   );
   for (const { id } of res.rows) {
-    await client.query(`DELETE FROM pagos WHERE "pacienteId" = $1`, [id]);
-    await client.query(`DELETE FROM pacientes WHERE id = $1`, [id]);
+    await client.query(`DELETE FROM pagos WHERE "pacienteId" = $1 AND EXISTS (SELECT 1 FROM pacientes WHERE id = $1 AND "esDemo" = true)`, [id]);
+    // Salvaguarda: nunca borrar un paciente real que se llame igual que el de demostración.
+    await client.query(`DELETE FROM pacientes WHERE id = $1 AND "esDemo" = true`, [id]);
   }
   return res.rows.length;
 }

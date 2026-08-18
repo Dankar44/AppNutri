@@ -14,6 +14,7 @@
  *   0 3 * * * cd /ruta/al/proyecto && /usr/bin/npx tsx scripts/limpiar-mensajes.ts >> /var/log/annonia-cron.log 2>&1
  */
 
+import "./_guard";   // salvaguarda: obliga a elegir DB=dev|prod y lo dice en pantalla
 import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";

@@ -57,6 +57,36 @@ Tras hacer `pull` de cambios que tocan `schema.prisma`: **`npx prisma generate`*
 
 ---
 
+### 1.5 Los scripts de `scripts/`: cómo se usan sin destrozar nada
+
+En `scripts/` hay migraciones y semillas. **Ninguno tiene destino por defecto**: hay que decir
+siempre a qué base de datos van, y el propio script lo imprime antes de hacer nada.
+
+```bash
+DB=dev  npx tsx scripts/<script>.ts     # desarrollo (datos de prueba, se puede romper)
+DB=prod npx tsx scripts/<script>.ts     # PRODUCCIÓN (datos reales)
+```
+
+Si te olvidas del `DB=`, el script **aborta** y te lo explica. Si pides `dev` pero la
+configuración apunta a producción (o al revés), **también aborta**. Y los que borran datos exigen
+además una confirmación explícita cuando el destino es producción:
+
+```bash
+CONFIRMO=BORRAR-EN-PRODUCCION DB=prod npx tsx scripts/<script>.ts
+```
+
+Esto existe por un incidente real (18 ago 2026): un comando que se creía apuntando a desarrollo
+fue a producción. No hubo daño de milagro. La protección vive en `scripts/_guard.ts` y
+`scripts/_guard-destructivo.ts`; se activa con una línea al principio del script
+(`import "./_guard-destructivo";`).
+
+**`scripts/archivo/` — no ejecutar nada de ahí.** Son scripts que ya cumplieron su función una
+vez y hoy solo pueden destruir. El peor, `seed-alimentos-completo.ts`, borraba el catálogo entero
+de alimentos y dejaba ~180.000 líneas de dieta apuntando al vacío, de forma **irrecuperable**, y
+terminaba imprimiendo «Seed completado». Están ahí solo por historial (ver su `LEEME.md`).
+
+**Si tu tarea parece necesitar un script**, párate y dilo en el issue. Casi nunca hace falta.
+
 ## 2. Cómo se despliega (contexto, aunque no lo hagas tú)
 
 No hay integración continua: **lo que entra en `main` es lo que acaba en producción**. Por eso

@@ -1,3 +1,4 @@
+import "./_guard-destructivo";   // salvaguarda: obliga a elegir DB=dev|prod y lo dice en pantalla
 import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
