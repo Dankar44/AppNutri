@@ -97,9 +97,9 @@ export function IngredientesLista({ ingredientes, porciones, instrucciones }: Pr
                   gramos,
                 );
                 return (
-                  <div key={ing.id} className="flex items-center gap-3 py-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{ing.alimento.nombre}</p>
+                  <div key={ing.id} className="flex flex-wrap items-start gap-3 py-3">
+                    <div className="min-w-0 flex-1 basis-48">
+                      <p className="text-sm font-medium whitespace-normal break-words">{ing.alimento.nombre}</p>
                       <p className="text-xs text-muted-foreground">
                         {formatQuantity(scaledCantidad, ing.unidad || "GRAMOS")}
                         {displayPorciones > 1
@@ -107,7 +107,7 @@ export function IngredientesLista({ ingredientes, porciones, instrucciones }: Pr
                           : ""}
                       </p>
                     </div>
-                    <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                    <div className="flex max-w-full shrink-0 flex-wrap items-center justify-end gap-1.5">
                       <span
                         className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium tabular-nums"
                         style={{ color: MACRO_COLORS.grasas, background: MACRO_COLORS.grasas + "22" }}
