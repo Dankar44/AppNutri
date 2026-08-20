@@ -3,7 +3,7 @@ import { updateSession } from "@/lib/supabase/middleware";
 import { ADMIN_COOKIE, verifyAdminToken } from "@/lib/admin";
 import { locales, type Locale } from "@/i18n/config";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const langParam = request.nextUrl.searchParams.get("lang");

@@ -8,7 +8,7 @@ import { headers } from "next/headers";
  * En desarrollo devuelve el detalle completo: es la forma más rápida de saber contra qué base
  * estás trabajando y qué variables faltan.
  *
- * En producción esta ruta está abierta a internet (el middleware la excluye), así que por
+ * En producción esta ruta está abierta a internet (el proxy la excluye), así que por
  * defecto NO revela ni cuántos nutricionistas hay ni el texto de los errores, que puede llevar
  * dentro la cadena de conexión. Para ver el detalle en producción hay que definir HEALTH_TOKEN
  * en el servidor y llamar con la cabecera `x-health-token`.

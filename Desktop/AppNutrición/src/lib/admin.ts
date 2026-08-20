@@ -9,9 +9,9 @@ import { SignJWT, jwtVerify } from "jose";
  * posición falla.
  *
  * NO se usa `crypto` de Node (createHash/timingSafeEqual) a propósito: este fichero lo importa
- * también `src/middleware.ts`, que corre en Edge Runtime, donde los módulos de Node no existen.
+ * también `src/proxy.ts`, que corre en Edge Runtime, donde los módulos de Node no existen.
  * Importarlo llenaba el arranque de avisos y, si el empaquetador dejara de eliminar el import,
- * rompería el middleware — que es justo lo que protege /admin.
+ * rompería el proxy — que es justo lo que protege /admin.
  */
 function contrasenasIguales(recibida: string, esperada: string): boolean {
   const largo = Math.max(recibida.length, esperada.length);
