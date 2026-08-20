@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
 import type { PlanificacionDatos } from "./planificaciones";
+import { seCreaEnDia, claveComida, type RepartoPorComida } from "@/lib/reparto-comidas";
 import { randomUUID } from "crypto";
 import { expandirGruposDeDias, DIA_ORDEN_SEMANA } from "@/lib/grupos-dias";
 import { revalidatePath } from "next/cache";
@@ -120,6 +121,9 @@ export async function crearPlan(data: PlanFormData) {
 
   // #78 (bloque 2) — planificaciones que usa el plan. Validar que son de este paciente/dietista.
   const planiIds = (data.planificacionIds ?? []).filter(Boolean);
+  // Fuera del if: lo usa también la copia del reparto (#78-C). SOLO ids ya validados — con los
+  // crudos se podría copiar el reparto de una planificación de OTRO paciente del mismo nutri.
+  let idsOk: string[] = [];
   if (planiIds.length > 0) {
     const ph = planiIds.map((_, i) => `$${i + 2}`).join(",");
     const validas = await prisma.$queryRawUnsafe<{ id: string }[]>(
@@ -129,7 +133,7 @@ export async function crearPlan(data: PlanFormData) {
       dietista.id,
     );
     // Conservar el ORDEN elegido por el nutri (el primero es el "por defecto").
-    const idsOk = planiIds.filter((id) => validas.some((v) => v.id === id));
+    idsOk = planiIds.filter((id) => validas.some((v) => v.id === id));
     if (idsOk.length > 0) {
       await prisma.$executeRawUnsafe(
         `UPDATE planes_alimenticios SET "planificacionIds" = $1 WHERE id = $2`,
@@ -159,11 +163,88 @@ export async function crearPlan(data: PlanFormData) {
     }
   }
 
+  // #78-C — El reparto por comida se COPIA en la dieta al crearla (igual que kcal y macros): así
+  // cambiar el reparto en la planificación no altera las dietas ya creadas. Se copia el de la
+  // planificación elegida (la primera) o, si no eligió ninguna, el de la principal del paciente.
+  const repartoRows = await prisma.$queryRawUnsafe<{ reparto: unknown }[]>(
+    idsOk.length > 0
+      ? `SELECT datos->'repartoPorComida' AS reparto FROM planificaciones
+         WHERE id = $1 AND "dietistaId" = $2`
+      : `SELECT datos->'repartoPorComida' AS reparto FROM planificaciones
+         WHERE "pacienteId" = $1 AND "dietistaId" = $2
+         ORDER BY "esDefecto" DESC, "createdAt" ASC LIMIT 1`,
+    idsOk.length > 0 ? idsOk[0] : data.pacienteId,
+    dietista.id,
+  );
+  const repartoOrigen = (repartoRows[0]?.reparto ?? null) as RepartoPorComida | null;
+  if (repartoOrigen) {
+    await prisma.$executeRawUnsafe(
+      `UPDATE planes_alimenticios SET "repartoPorComida" = $1::jsonb WHERE id = $2`,
+      JSON.stringify(repartoOrigen),
+      plan.id,
+    );
+
+    // #78-C — La planificación define la ESTRUCTURA de comidas: si el reparto está activo, la dieta
+    // nace con las comidas que dice el reparto (nombres, horas y solo en los días marcados) en vez
+    // de las 6 fijas de siempre. Así no hay que retocar cada dieta después de crearla.
+    if (repartoOrigen.activo) {
+      const filas = (repartoOrigen.comidas ?? []).filter(
+        (c) => c.incluida && (c.tipo !== "OTRA" || (c.nombre ?? "").trim().length > 0),
+      );
+      if (filas.length > 0) {
+        const dias = await prisma.diaDelPlan.findMany({
+          where: { planId: plan.id },
+          select: { id: true, dia: true },
+        });
+        // Se rehacen las comidas de cada día según el reparto (el plan acaba de crearse: están vacías).
+        await prisma.comidaDelDia.deleteMany({ where: { diaId: { in: dias.map((d) => d.id) } } });
+        const nuevas: { diaId: string; tipo: TipoComida; orden: number; nombre: string | null; hora: string | null }[] = [];
+        for (const d of dias) {
+          let orden = 0;
+          for (const f of filas) {
+            if (!seCreaEnDia(f, d.dia)) continue; // esta comida no se crea en este día
+            nuevas.push({
+              diaId: d.id,
+              tipo: f.tipo as TipoComida,
+              orden: orden++,
+              nombre: (f.nombre ?? "").trim() || null,
+              hora: /^([01]?\d|2[0-3]):[0-5]\d$/.test(f.hora ?? "") ? f.hora! : null,
+            });
+          }
+        }
+        if (nuevas.length > 0) await prisma.comidaDelDia.createMany({ data: nuevas });
+      }
+    }
+  }
+
   revalidatePath("/dietas");
   revalidatePath(`/pacientes/${data.pacienteId}`);
   // Tras crear, volver a la ficha del paciente (pestaña Plan de alimentación) en vez de al
   // menú de dietas: el nutri ve el plan nuevo en contexto del paciente y edita desde ahí.
   redirect(`/pacientes/${data.pacienteId}?pestana=plan-alimentacion`);
+}
+
+/** #78-C — Guarda (o borra, con null) el reparto por comida PROPIO de una dieta. Lo usa la propia
+ *  dieta para editar su reparto (el flujo es: planificación → crear dieta → retocar en la dieta).
+ *  Columna fuera del cliente Prisma → $executeRawUnsafe. */
+export async function guardarRepartoDePlan(
+  planId: string,
+  reparto: RepartoPorComida | null
+): Promise<{ ok: boolean; error?: string }> {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
+  if (dietista.isDemo) return { ok: true };
+
+  await prisma.$executeRawUnsafe(
+    `UPDATE planes_alimenticios SET "repartoPorComida" = $1::jsonb, "updatedAt" = CURRENT_TIMESTAMP
+     WHERE id = $2 AND "dietistaId" = $3`,
+    reparto ? JSON.stringify(reparto) : null,
+    planId,
+    dietista.id,
+  );
+  revalidatePath(`/dietas/${planId}`);
+  return { ok: true };
 }
 
 export async function actualizarPlan(id: string, data: Partial<PlanFormData>) {
@@ -328,16 +409,20 @@ export async function getPlan(id: string) {
   const dias = await expandirGruposDeDias(plan.id, plan.dias);
 
   // #78 (bloque 2) — planificaciones que usa este plan (columna nueva, fuera del cliente Prisma).
+  // #78-C — `repartoPorComida`: copia propia de la dieta. NULL en las dietas anteriores a la
+  // feature: esas siguen leyendo el reparto de la planificación (retrocompatible).
   const planiRows = await prisma.$queryRawUnsafe<{
     planificacionIds: string[] | null;
     objetivosPorPlani: Record<string, { kcal: number | null; proteinas: number | null; carbohidratos: number | null; grasas: number | null }> | null;
+    repartoPorComida: RepartoPorComida | null;
   }[]>(
-    `SELECT "planificacionIds", "objetivosPorPlani" FROM planes_alimenticios WHERE id = $1`,
+    `SELECT "planificacionIds", "objetivosPorPlani", "repartoPorComida" FROM planes_alimenticios WHERE id = $1`,
     plan.id,
   );
   const planificacionIds = planiRows[0]?.planificacionIds ?? [];
   const objetivosPorPlani = planiRows[0]?.objetivosPorPlani ?? {};
-  return { ...plan, dias, objetivosPorDia, planificacionIds, objetivosPorPlani };
+  const repartoPorComida = planiRows[0]?.repartoPorComida ?? null;
+  return { ...plan, dias, objetivosPorDia, planificacionIds, objetivosPorPlani, repartoPorComida };
 }
 
 export async function addAlimentoAComida(
@@ -1394,10 +1479,21 @@ export async function getPlanesPaciente(pacienteId: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) return [];
 
-  return prisma.planAlimenticio.findMany({
+  const planes = await prisma.planAlimenticio.findMany({
     where: { dietistaId: dietista.id, pacienteId },
     orderBy: { createdAt: "desc" },
   });
+  if (planes.length === 0) return [];
+
+  // #78 — `planificacionIds` está fuera del cliente Prisma. Se añade aquí para poder saber en qué
+  // planificación se basa cada dieta (p. ej. no ofrecer aplicarle el reparto de OTRA pauta).
+  const ph = planes.map((_, i) => `$${i + 1}`).join(",");
+  const rows = await prisma.$queryRawUnsafe<{ id: string; planificacionIds: string[] | null }[]>(
+    `SELECT id, "planificacionIds" FROM planes_alimenticios WHERE id IN (${ph})`,
+    ...planes.map((p) => p.id),
+  );
+  const idsPorPlan = new Map(rows.map((r) => [r.id, r.planificacionIds ?? []]));
+  return planes.map((p) => ({ ...p, planificacionIds: idsPorPlan.get(p.id) ?? [] }));
 }
 
 const MICRO_COLS = [
@@ -1460,9 +1556,33 @@ export async function getPlanesDetallePaciente(pacienteId: string) {
     },
   });
 
+  // #78-C — Reparto por comida propio de cada dieta y planificaciones que usa (columnas fuera del
+  // cliente Prisma). NULL en las dietas anteriores a la feature: esas caen al de la planificación.
+  const repartoRows = planesRaw.length
+    ? await prisma.$queryRawUnsafe<{
+        id: string;
+        repartoPorComida: RepartoPorComida | null;
+        planificacionIds: string[] | null;
+      }[]>(
+        `SELECT id, "repartoPorComida", "planificacionIds" FROM planes_alimenticios WHERE id IN (${planesRaw
+          .map((_, i) => `$${i + 1}`)
+          .join(",")})`,
+        ...planesRaw.map((p) => p.id),
+      )
+    : [];
+  const extraPorPlan = new Map(repartoRows.map((r) => [r.id, r]));
+  // Objetivos por día de TODAS las dietas en 2 consultas (no una por dieta).
+  const objetivosPorDiaPorPlan = await getObjetivosPorDiaBatch(planesRaw.map((p) => p.id));
+
   // #75 — Expandir grupos: cada día miembro refleja el menú de su día representante (no sale vacío).
   const planes = await Promise.all(
-    planesRaw.map(async (p) => ({ ...p, dias: await expandirGruposDeDias(p.id, p.dias) })),
+    planesRaw.map(async (p) => ({
+      ...p,
+      repartoPorComida: extraPorPlan.get(p.id)?.repartoPorComida ?? null,
+      planificacionIds: extraPorPlan.get(p.id)?.planificacionIds ?? [],
+      objetivosPorDia: objetivosPorDiaPorPlan[p.id] ?? {},
+      dias: await expandirGruposDeDias(p.id, p.dias),
+    })),
   );
 
   // Recoger IDs únicos de alimentos de todos los planes
@@ -1523,6 +1643,11 @@ export async function getPlanesDetallePaciente(pacienteId: string) {
     carbohidratosObjetivo: plan.carbohidratosObjetivo,
     grasasObjetivo: plan.grasasObjetivo,
     createdAt: plan.createdAt?.toISOString?.() ?? new Date(plan.createdAt).toISOString(),
+    // #78-C — copia propia del reparto + planificaciones de la dieta y objetivos por día, para que
+    // la ficha calcule el cumplimiento por comida IGUAL que /dietas/[id] (misma dieta, mismos números).
+    repartoPorComida: plan.repartoPorComida,
+    planificacionIds: plan.planificacionIds,
+    objetivosPorDia: plan.objetivosPorDia,
     dias: plan.dias.map((dia) => ({
       id: dia.id,
       dia: dia.dia,
@@ -1692,30 +1817,42 @@ export async function asignarPlanificacionADia(
  *  kcal/macros de esa planificación (leídos de su JSON `datos`). Los días sin asignar no salen
  *  en el mapa → el consumidor cae a los objetivos globales del plan. */
 export async function getObjetivosPorDia(planId: string): Promise<Record<string, ObjetivosDia>> {
-  // Override por planificación propio de este plan (editado al crear; vale solo para esta dieta).
+  return (await getObjetivosPorDiaBatch([planId]))[planId] ?? {};
+}
+
+/** Igual que getObjetivosPorDia pero para VARIOS planes con 2 consultas en total (la ficha del
+ *  paciente carga todas las dietas: una llamada por dieta sería un N+1). Devuelve planId → días. */
+export async function getObjetivosPorDiaBatch(
+  planIds: string[]
+): Promise<Record<string, Record<string, ObjetivosDia>>> {
+  if (planIds.length === 0) return {};
+  const ph = planIds.map((_, i) => `$${i + 1}`).join(",");
+
+  // Override por planificación propio de cada plan (editado al crear; vale solo para esa dieta).
   const planRows = await prisma.$queryRawUnsafe<
-    { objetivosPorPlani: Record<string, { kcal?: number | null; proteinas?: number | null; carbohidratos?: number | null; grasas?: number | null }> | null }[]
-  >(`SELECT "objetivosPorPlani" FROM planes_alimenticios WHERE id = $1`, planId);
-  const override = planRows[0]?.objetivosPorPlani ?? {};
+    { id: string; objetivosPorPlani: Record<string, { kcal?: number | null; proteinas?: number | null; carbohidratos?: number | null; grasas?: number | null }> | null }[]
+  >(`SELECT id, "objetivosPorPlani" FROM planes_alimenticios WHERE id IN (${ph})`, ...planIds);
+  const overridePorPlan = new Map(planRows.map((r) => [r.id, r.objetivosPorPlani ?? {}]));
 
   const rows = await prisma.$queryRawUnsafe<
-    { diaId: string; planificacionId: string; nombre: string; datos: PlanificacionDatos | null }[]
+    { planId: string; diaId: string; planificacionId: string; nombre: string; datos: PlanificacionDatos | null }[]
   >(
-    `SELECT d.id AS "diaId", d."planificacionId", p.nombre, p.datos
+    `SELECT d."planId", d.id AS "diaId", d."planificacionId", p.nombre, p.datos
      FROM dias_del_plan d
      JOIN planificaciones p ON p.id = d."planificacionId"
-     WHERE d."planId" = $1`,
-    planId,
+     WHERE d."planId" IN (${ph})`,
+    ...planIds,
   );
 
   const num = (v: unknown) =>
     typeof v === "number" && isFinite(v) && v > 0 ? Math.round(v) : null;
 
-  const out: Record<string, ObjetivosDia> = {};
+  const out: Record<string, Record<string, ObjetivosDia>> = {};
+  for (const id of planIds) out[id] = {};
   for (const r of rows) {
-    const ov = override[r.planificacionId];
+    const ov = (overridePorPlan.get(r.planId) ?? {})[r.planificacionId];
     const d = r.datos ?? {};
-    out[r.diaId] = ov
+    (out[r.planId] ??= {})[r.diaId] = ov
       ? {
           planificacionId: r.planificacionId,
           nombre: r.nombre,

@@ -225,6 +225,23 @@ export async function crearPlanDesdePlantilla(
     },
   });
 
+  // #78-C — Copia del reparto por comida de la planificación principal del paciente, igual que
+  // hace crearPlan: si no, las dietas creadas desde plantilla se quedarían sin snapshot.
+  const repartoRows = await prisma.$queryRawUnsafe<{ reparto: unknown }[]>(
+    `SELECT datos->'repartoPorComida' AS reparto FROM planificaciones
+     WHERE "pacienteId" = $1 AND "dietistaId" = $2
+     ORDER BY "esDefecto" DESC, "createdAt" ASC LIMIT 1`,
+    pacienteId,
+    dietista.id,
+  );
+  if (repartoRows[0]?.reparto) {
+    await prisma.$executeRawUnsafe(
+      `UPDATE planes_alimenticios SET "repartoPorComida" = $1::jsonb WHERE id = $2`,
+      JSON.stringify(repartoRows[0].reparto),
+      plan.id,
+    );
+  }
+
   // 2. Crear días y comidas paso a paso
   for (const dia of datos) {
     const diaCreado = await prisma.diaDelPlan.create({

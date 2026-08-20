@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
 import { getTranslations } from "next-intl/server";
+import type { RepartoPorComida } from "@/lib/reparto-comidas";
 
 /* ─── Types ─── */
 
@@ -39,7 +40,13 @@ export type PlanificacionDatos = {
   protGObjetivo?: number;
   carbGObjetivo?: number;
   grasaGObjetivo?: number;
+  /** #78-C (Fase 1) — Reparto de kcal/macros POR COMIDA sobre las 6 comidas actuales.
+   *  Opcional: si no está activo, la dieta usa solo el objetivo del día. La lógica compartida
+   *  (normalizar + objetivos por comida) vive en `src/lib/reparto-comidas.ts`. */
+  repartoPorComida?: RepartoPorComida;
 };
+
+export type { RepartoComida, RepartoPorComida } from "@/lib/reparto-comidas";
 
 export type Planificacion = {
   id: string;
