@@ -1,18 +1,25 @@
 import { cookies, headers } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
-import { createHash, timingSafeEqual } from "crypto";
-
 /**
  * Compara dos contraseñas en tiempo constante.
  *
  * Con `===` la comparación termina en el primer carácter distinto, así que el tiempo de
- * respuesta filtra cuántos caracteres se han acertado. Se comparan los hash y no las cadenas
- * porque timingSafeEqual exige que los dos buffers midan lo mismo.
+ * respuesta filtra cuántos caracteres se han acertado. Aquí se recorren siempre todos los
+ * caracteres y se acumulan las diferencias con OR, de modo que el tiempo no depende de en qué
+ * posición falla.
+ *
+ * NO se usa `crypto` de Node (createHash/timingSafeEqual) a propósito: este fichero lo importa
+ * también `src/middleware.ts`, que corre en Edge Runtime, donde los módulos de Node no existen.
+ * Importarlo llenaba el arranque de avisos y, si el empaquetador dejara de eliminar el import,
+ * rompería el middleware — que es justo lo que protege /admin.
  */
 function contrasenasIguales(recibida: string, esperada: string): boolean {
-  const a = createHash("sha256").update(recibida).digest();
-  const b = createHash("sha256").update(esperada).digest();
-  return timingSafeEqual(a, b);
+  const largo = Math.max(recibida.length, esperada.length);
+  let diferencia = recibida.length ^ esperada.length;
+  for (let i = 0; i < largo; i++) {
+    diferencia |= (recibida.charCodeAt(i) || 0) ^ (esperada.charCodeAt(i) || 0);
+  }
+  return diferencia === 0;
 }
 
 export type AdminRole = "admin" | "creator";
