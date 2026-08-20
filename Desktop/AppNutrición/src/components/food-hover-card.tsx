@@ -255,7 +255,7 @@ export function FoodHoverCard({
                   </p>
                   <ul className="space-y-0.5 text-xs text-muted-foreground">
                     {ingredientesVisibles.map((ing, i) => (
-                      <li key={i} className="truncate">
+                      <li key={i} className="break-words">
                         {formatQuantity(ing.cantidad * ingredienteFactor, ing.unidad)} {ing.nombre}
                       </li>
                     ))}
