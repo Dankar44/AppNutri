@@ -463,6 +463,11 @@ model PlanAlimenticio {
   /// #78 (bloque 2) — objetivos por planificación propios de ESTE plan (override editable al crear,
   /// sin tocar la planificación). Forma: { "<planificacionId>": { kcal, proteinas, carbohidratos, grasas } }
   objetivosPorPlani Json?
+  /// #78-C — Copia del reparto de kcal/macros POR COMIDA, hecha al crear la dieta (igual que las
+  /// kcal y macros objetivo): cambiar el reparto en la planificación NO altera las dietas ya
+  /// creadas. NULL en las dietas anteriores a la feature → esas caen al de la planificación.
+  /// Forma: { activo: boolean, comidas: [{ tipo, incluida, kcalPct, grasaPct?, carbPct?, protPct? }] }
+  repartoPorComida Json?
   activo          Boolean   @default(true)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
