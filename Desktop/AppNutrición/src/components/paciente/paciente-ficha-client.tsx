@@ -370,6 +370,9 @@ export function PacienteFichaClient({
           planes={planes}
           pacientePeso={paciente.peso}
           pacienteObjetivo={paciente.objetivo}
+          // #78/#78-C — Las planificaciones del paciente: dentro se eligen las de cada dieta para
+          // calcular los objetivos por comida igual que en /dietas/[id].
+          planificaciones={planificaciones}
         />
       )}
 

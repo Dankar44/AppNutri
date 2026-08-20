@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, ChevronRight, Copy, ClipboardPaste, Pencil, Trash2 } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronRight, Copy, ClipboardPaste, Pencil, Trash2 } from "lucide-react";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { AlimentoCard } from "./alimento-card";
@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { actualizarDescripcionComida, actualizarMetaComida } from "@/app/actions/planes";
 import { calcularMacrosPorcion, convertirAGramos } from "@/lib/macros";
 import type { InteractionMode } from "@/components/food-hover-card";
+import type { ObjetivoComida } from "@/lib/reparto-comidas";
 
 interface AlimentoEnSlot {
   id: string;
@@ -98,6 +99,12 @@ interface ComidaSlotProps {
   readOnly?: boolean;
   interactionMode?: InteractionMode;
   ocultarCalorias?: boolean;
+  /** #78-C — objetivo de esta comida según el reparto de la planificación aplicado al día.
+   *  "sinReparto" = hay reparto activo pero esta comida quedó fuera (se avisa y se ofrece añadirla).
+   *  null/ausente = no hay reparto activo: la comida se ve como siempre. */
+  objetivo?: ObjetivoComida | "sinReparto" | null;
+  /** Añade ESTA comida al reparto de la dieta (solo se ofrece si `objetivo` es "sinReparto"). */
+  onAnadirAlReparto?: () => void;
 }
 
 export function ComidaSlot({
@@ -129,6 +136,8 @@ export function ComidaSlot({
   readOnly = false,
   interactionMode = "dashboard",
   ocultarCalorias = false,
+  objetivo = null,
+  onAnadirAlReparto,
 }: ComidaSlotProps) {
   const t = useTranslations("diets");
 
@@ -235,6 +244,17 @@ export function ComidaSlot({
       grasas: Math.round(grasas * 10) / 10,
       fibra: Math.round(fibra * 10) / 10,
     };
+  })();
+
+  // #78-C Fase 2 — cumplimiento del objetivo por comida (reparto de la planificación).
+  const objetivoComida =
+    objetivo && objetivo !== "sinReparto" ? objetivo : null;
+  // Color de la pill de kcal según el desvío: verde dentro de ±5%, ámbar hasta ±15%, rojo más.
+  // Con la comida vacía se queda neutra (mostrar "0 / 400" en rojo de salida no ayuda).
+  const kcalStatus = (() => {
+    if (!objetivoComida || objetivoComida.kcal <= 0 || alimentos.length === 0) return null;
+    const desvio = Math.abs(mealTotals.calorias - objetivoComida.kcal) / objetivoComida.kcal;
+    return desvio <= 0.05 ? "ok" : desvio <= 0.15 ? "aviso" : "desvio";
   })();
 
   return (
@@ -458,23 +478,61 @@ export function ComidaSlot({
           {/* Macro pills — totales por comida, ocultos si ocultarCalorias */}
           {!ocultarCalorias && (
           <div className="px-2 sm:px-4 py-2 sm:py-3 border-t border-border/50 bg-muted/10">
+            {/* Con objetivo por comida las pastillas ponen "X / Y": sin esta leyenda no se entiende
+                que el primer número es lo que llevas y el segundo el objetivo de ESA comida. */}
+            {objetivoComida && (
+              <p className="mb-1.5 text-center text-[10px] sm:text-xs text-muted-foreground">
+                {t("comidaSlot.leyendaObjetivo")}
+              </p>
+            )}
             <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-2">
-              <span className="inline-flex items-center gap-0.5 sm:gap-1 px-2 sm:px-3.5 py-0.5 sm:py-1.5 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[10px] sm:text-sm font-medium">
-                {Math.round(mealTotals.calorias)} kcal
+              {/* Con objetivo del reparto (#78-C): "total / objetivo" y color según desvío. */}
+              <span
+                title={
+                  objetivoComida
+                    ? t("comidaSlot.tooltipObjetivo", {
+                        actual: Math.round(mealTotals.calorias),
+                        objetivo: objetivoComida.kcal,
+                      })
+                    : undefined
+                }
+                className={cn(
+                  "inline-flex items-center gap-0.5 sm:gap-1 px-2 sm:px-3.5 py-0.5 sm:py-1.5 rounded-full text-[10px] sm:text-sm font-medium",
+                  kcalStatus === "ok" && "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400",
+                  kcalStatus === "aviso" && "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400",
+                  kcalStatus === "desvio" && "bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400",
+                  kcalStatus === null && "bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400"
+                )}
+              >
+                {Math.round(mealTotals.calorias)}{objetivoComida ? ` / ${objetivoComida.kcal}` : ""} kcal
               </span>
               <span className="inline-flex items-center gap-0.5 sm:gap-1 px-2 sm:px-3.5 py-0.5 sm:py-1.5 rounded-full bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 text-[10px] sm:text-sm font-medium">
-                G {mealTotals.grasas.toFixed(1)}g
+                G {mealTotals.grasas.toFixed(1)}{objetivoComida?.grasaG != null ? ` / ${objetivoComida.grasaG}` : ""}g
               </span>
               <span className="inline-flex items-center gap-0.5 sm:gap-1 px-2 sm:px-3.5 py-0.5 sm:py-1.5 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 text-[10px] sm:text-sm font-medium">
-                C {mealTotals.carbohidratos.toFixed(1)}g
+                C {mealTotals.carbohidratos.toFixed(1)}{objetivoComida?.carbG != null ? ` / ${objetivoComida.carbG}` : ""}g
               </span>
               <span className="inline-flex items-center gap-0.5 sm:gap-1 px-2 sm:px-3.5 py-0.5 sm:py-1.5 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] sm:text-sm font-medium">
-                P {mealTotals.proteinas.toFixed(1)}g
+                P {mealTotals.proteinas.toFixed(1)}{objetivoComida?.protG != null ? ` / ${objetivoComida.protG}` : ""}g
               </span>
               <span className="inline-flex items-center gap-0.5 sm:gap-1 px-2 sm:px-3.5 py-0.5 sm:py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] sm:text-sm font-medium">
                 F {mealTotals.fibra.toFixed(1)}g
               </span>
             </div>
+            {/* Comida fuera del reparto: se avisa Y se ofrece añadirla de un clic (#78-C). */}
+            {objetivo === "sinReparto" && alimentos.length > 0 && (
+              <div className="mt-1.5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[10px] sm:text-xs text-amber-600 dark:text-amber-400">
+                <span className="inline-flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3 shrink-0" />
+                  {t("comidaSlot.sinObjetivoReparto")}
+                </span>
+                {onAnadirAlReparto && !readOnly && (
+                  <button type="button" onClick={onAnadirAlReparto} className="font-medium text-primary hover:underline">
+                    {t("comidaSlot.anadirAlReparto")}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
           )}
         </>

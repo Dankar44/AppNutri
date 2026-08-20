@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PlanVisual, type PlanVisualDetalle } from "./plan-visual";
+import type { RepartoPorComida } from "@/lib/reparto-comidas";
 
 type MicronutrientesOpcionales = {
   vitaminaA?: number | null;
@@ -93,6 +94,12 @@ type PlanDetalle = {
   grasasObjetivo: number | null;
   createdAt: string;
   dias: PlanDetalleDia[];
+  /** #78-C — Copia del reparto por comida de esta dieta (NULL en las anteriores a la feature). */
+  repartoPorComida?: RepartoPorComida | null;
+  /** #78 — Planificaciones que usa la dieta y objetivos por día: para calcular el cumplimiento por
+   *  comida igual que en /dietas/[id] (si no, esta pantalla usaría las kcal globales del plan). */
+  planificacionIds?: string[];
+  objetivosPorDia?: Record<string, { planificacionId: string; nombre: string; kcal: number | null; proteinas: number | null; carbohidratos: number | null; grasas: number | null }>;
 };
 
 export function PlanDeAlimentacionTab({
@@ -101,12 +108,16 @@ export function PlanDeAlimentacionTab({
   planes,
   pacientePeso,
   pacienteObjetivo,
+  planificaciones = [],
 }: {
   pacienteId: string;
   pacienteNombre: string;
   planes: PlanDetalle[];
   pacientePeso?: number | null;
   pacienteObjetivo?: string | null;
+  /** #78/#78-C — Planificaciones del paciente: objetivos por día y reparto por comida, igual que
+   *  en /dietas/[id]. Sin esto, esta pantalla mostraría otros números para la MISMA dieta. */
+  planificaciones?: { id: string; nombre: string; esDefecto: boolean; estado: string; datos?: { kcalObjetivo?: number; protGObjetivo?: number; carbGObjetivo?: number; grasaGObjetivo?: number; repartoPorComida?: RepartoPorComida } | null }[];
 }) {
   const t = useTranslations("patients.planAlimentacion");
   const router = useRouter();
@@ -313,6 +324,35 @@ export function PlanDeAlimentacionTab({
         showAguaEjercicio={false}
         showFoodTable={false}
         vistaInicial="plan"
+        // #78/#78-C — Mismos datos que /dietas/[id]: planificaciones de la dieta, objetivos por día
+        // y copia propia del reparto. Así la misma dieta muestra los mismos objetivos en las dos pantallas.
+        planificaciones={(selectedPlan.planificacionIds ?? [])
+          .map((pid) => planificaciones.find((p) => p.id === pid))
+          .filter((p): p is (typeof planificaciones)[number] => !!p)
+          .map((p) => {
+            const num = (v: unknown) => (typeof v === "number" && isFinite(v) && v > 0 ? Math.round(v) : null);
+            const d = p.datos ?? {};
+            return {
+              id: p.id,
+              nombre: p.nombre,
+              kcal: num(d.kcalObjetivo),
+              proteinas: num(d.protGObjetivo),
+              carbohidratos: num(d.carbGObjetivo),
+              grasas: num(d.grasaGObjetivo),
+              datos: { repartoPorComida: d.repartoPorComida },
+            };
+          })}
+        objetivosPorDia={selectedPlan.objetivosPorDia}
+        repartoPropio={selectedPlan.repartoPorComida ?? null}
+        repartoFallback={
+          // Solo para dietas anteriores a la feature (sin copia propia).
+          ((selectedPlan.planificacionIds ?? [])
+            .map((pid) => planificaciones.find((p) => p.id === pid))
+            .find(Boolean) ??
+            planificaciones.find((p) => p.esDefecto) ??
+            planificaciones.find((p) => p.estado === "activa") ??
+            planificaciones[0])?.datos?.repartoPorComida ?? null
+        }
       />
     </div>
   );

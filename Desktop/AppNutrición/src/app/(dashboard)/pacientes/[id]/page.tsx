@@ -46,7 +46,11 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
       : [],
     pestana === "planificacion"
       ? ensurePlanificacionDefecto(id).then(() => getPlanificaciones(id))
-      : [],
+      : // #78-C: el plan de alimentación también las necesita, para el reparto por comida
+        // (aquí solo se leen: no se crea la de por defecto si aún no existe).
+        pestana === "plan-alimentacion"
+        ? getPlanificaciones(id)
+        : [],
     getMapaNotificacionesPacientes(),
     pestana === "informacion" ? getCamposAnamnesis() : Promise.resolve([]),
     pestana === "informacion" ? getEstructuraEfectivaPaciente(id) : Promise.resolve(null),

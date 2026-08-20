@@ -19,6 +19,7 @@ import { AnalisisSidebar } from "./analisis-sidebar";
 import { SelectorAlimento } from "./selector-alimento";
 import { MacroBadges } from "@/components/macro-badge";
 import { calcularMacrosPorcion, sumarMacros, convertirAGramos } from "@/lib/macros";
+import type { ObjetivoComida } from "@/lib/reparto-comidas";
 import {
   addAlimentoAComida,
   removeAlimentoDeComida,
@@ -191,6 +192,12 @@ interface PlanEditorProps {
     carbohidratos?: number | null;
     grasas?: number | null;
   };
+  /** #78-C — objetivo por comida (reparto de la planificación aplicado al día), indexado por ID DE
+   *  COMIDA: así dos comidas añadidas con nombres distintos no comparten cuota. null/ausente = sin
+   *  reparto activo. Una comida con alimentos que no esté en el mapa muestra el aviso. */
+  objetivosComida?: Record<string, ObjetivoComida> | null;
+  /** #78-C — Añade una comida suelta al reparto de la dieta (lo orquesta PlanVisual). */
+  onAnadirComidaAlReparto?: (comidaId: string) => void;
   showHeader?: boolean;
   compactHeader?: boolean;
   showDayHeader?: boolean;
@@ -227,6 +234,8 @@ export function PlanEditor({
   planNombre,
   dias,
   objetivos,
+  objetivosComida = null,
+  onAnadirComidaAlReparto,
   showHeader = true,
   compactHeader: _compactHeader = false,
   showDayHeader: _showDayHeader = true,
@@ -1097,6 +1106,17 @@ export function PlanEditor({
                       readOnly={readOnly}
                       interactionMode={interactionMode}
                       ocultarCalorias={ocultarCalorias}
+                      objetivo={
+                        objetivosComida
+                          ? (objetivosComida[comida.id] ??
+                            // Sin objetivo: la comida no está en el reparto (la excluiste, o la
+                            // añadiste a este día y aún no tiene cuota). Se avisa para poder añadirla.
+                            "sinReparto")
+                          : null
+                      }
+                      onAnadirAlReparto={
+                        onAnadirComidaAlReparto ? () => onAnadirComidaAlReparto(comida.id) : undefined
+                      }
                     />
                   ))}
                 </div>

@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { asignarPlanComoActual, copiarComidaADias, copiarDiaADias, pegarAlimentoEnComida, juntarDias, separarDia, asignarPlanificacionADia, agregarComida, type ModoCopia } from "@/app/actions/planes";
+import { asignarPlanComoActual, copiarComidaADias, copiarDiaADias, pegarAlimentoEnComida, juntarDias, separarDia, asignarPlanificacionADia, agregarComida, guardarRepartoDePlan, type ModoCopia } from "@/app/actions/planes";
 import {
   Plus,
   UtensilsCrossed,
@@ -31,6 +31,7 @@ import {
 import { cn, isNextNavigation } from "@/lib/utils";
 import { calcularMacrosPorcion, sumarMacros, convertirAGramos } from "@/lib/macros";
 import { ordenarComidasPorHora } from "@/lib/comida-horas";
+import { objetivosPorComidaDia, claveComida, normalizeReparto, type ObjetivoComida, type RepartoPorComida } from "@/lib/reparto-comidas";
 import { PlanEditor } from "@/components/dieta/plan-editor";
 import { HoraSelect } from "@/components/dieta/hora-select";
 import { CopiarADiasModal, type DiaOption } from "@/components/dieta/copiar-comida-modal";
@@ -180,6 +181,8 @@ export function PlanVisual({
   interactionMode = "dashboard",
   planificaciones = [],
   objetivosPorDia,
+  repartoPropio = null,
+  repartoFallback = null,
   localCallbacks,
 }: {
   plan: PlanVisualDetalle;
@@ -199,9 +202,15 @@ export function PlanVisual({
   vistaInicial?: "resumen" | "plan" | "analisis";
   interactionMode?: InteractionMode;
   /** #78 (1B) — Planificaciones del paciente (para asignar una a cada día) y objetivos resultantes por día.
-   *  kcal/macros opcionales: si vienen, la barra de objetivos cambia al instante al reasignar (optimista). */
-  planificaciones?: { id: string; nombre: string; kcal?: number | null; proteinas?: number | null; carbohidratos?: number | null; grasas?: number | null }[];
+   *  kcal/macros opcionales: si vienen, la barra de objetivos cambia al instante al reasignar (optimista).
+   *  `datos.repartoPorComida` (#78-C): reparto por comida de la planificación, para el cumplimiento en el editor. */
+  planificaciones?: { id: string; nombre: string; kcal?: number | null; proteinas?: number | null; carbohidratos?: number | null; grasas?: number | null; datos?: { repartoPorComida?: RepartoPorComida } | null }[];
   objetivosPorDia?: Record<string, { planificacionId: string; nombre: string; kcal: number | null; proteinas: number | null; carbohidratos: number | null; grasas: number | null }>;
+  /** #78-C — Copia PROPIA del reparto de esta dieta (snapshot hecho al crearla). Si existe, MANDA
+   *  sobre el reparto de la planificación: cambiar la planificación no debe alterar dietas ya creadas. */
+  repartoPropio?: RepartoPorComida | null;
+  /** #78-C — Reparto de la planificación: solo para dietas anteriores a la feature (sin copia propia). */
+  repartoFallback?: RepartoPorComida | null;
   localCallbacks?: {
     onAdd: (comidaId: string, item: { alimentoId: string | null; recetaId: string | null; nombre: string; cantidad: number; unidad: string; calorias: number; proteinas: number; carbohidratos: number; grasas: number; fibra?: number; porcion?: number }) => void;
     onRemove: (alimentoEnComidaId: string) => void;
@@ -538,6 +547,106 @@ export function PlanVisual({
   // #78 (1B) — planificación asignada a un día (optimista si se acaba de cambiar; si no, la del servidor).
   const planiDelDia = (diaId: string): string =>
     diaId in planiOptimista ? (planiOptimista[diaId] ?? "") : (objetivosPorDia?.[diaId]?.planificacionId ?? "");
+
+  // #78-C Fase 2 — objetivo por comida de un día: reparto de SU planificación (o el de la principal
+  // si no tiene asignada) aplicado a los objetivos de ese día. Solo en el dashboard del nutri.
+  // Se pasan las comidas REALES del día: el reparto se renormaliza entre las que existen (si falta
+  // el desayuno o hay un pre-entreno extra, el día sigue cuadrando) y se emparejan por identidad.
+  function objetivosComidaDia(diaId: string): Record<string, ObjetivoComida> | null {
+    if (interactionMode !== "dashboard") return null;
+    const pid = planiDelDia(diaId);
+    const p = pid ? planificaciones.find((x) => x.id === pid) : undefined;
+    // Prioridad: la COPIA propia de la dieta manda siempre (es el snapshot de #78-C, y por eso
+    // cambiar la planificación no altera esta dieta). Solo las dietas anteriores a la feature no la
+    // tienen: esas leen el reparto de la planificación del día, o el de la principal si no resuelve.
+    // `repartoOptimista` es lo que el nutri acaba de añadir desde una comida (se ve al instante).
+    const reparto =
+      repartoOptimista ?? repartoPropio ?? (p ? (p.datos?.repartoPorComida ?? null) : repartoFallback);
+    // Misma prioridad que la barra de objetivos (`objDe`): primero los objetivos que viajan en el
+    // prop `planificaciones` (así al reasignar la planificación de un día cambia al instante, sin
+    // esperar al refresh), luego los del servidor para ese día, y por último los del plan.
+    const o = objetivosPorDia?.[diaId];
+    const dia =
+      p && (p.kcal != null || p.proteinas != null || p.carbohidratos != null || p.grasas != null)
+        ? { kcal: p.kcal, proteinas: p.proteinas, carbohidratos: p.carbohidratos, grasas: p.grasas }
+        : o && o.planificacionId === pid
+          ? { kcal: o.kcal, proteinas: o.proteinas, carbohidratos: o.carbohidratos, grasas: o.grasas }
+          : {
+              kcal: selectedPlan?.caloriasObjetivo,
+              proteinas: selectedPlan?.proteinasObjetivo,
+              carbohidratos: selectedPlan?.carbohidratosObjetivo,
+              grasas: selectedPlan?.grasasObjetivo,
+            };
+    const diaPlan = (selectedPlan?.dias ?? []).find((d) => d.id === diaId);
+    if (!diaPlan) return null;
+    // Comidas REALES del día (incluidas las recién añadidas de forma optimista): el reparto se
+    // renormaliza entre ellas, así el día cuadra aunque falten o sobren comidas.
+    const comidas = conComidasNuevas(diaPlan).comidas.map((c) => ({
+      id: c.id,
+      tipo: c.tipo,
+      nombre: c.nombre,
+    }));
+    return objetivosPorComidaDia(dia, reparto, comidas, diaPlan.dia);
+  }
+
+  // #78-C — "Añadir al reparto" desde una comida que quedó fuera: la incluye en el reparto de ESTA
+  // dieta (si estaba excluida la reactiva; si es una comida añadida, crea su fila con un 10%).
+  // Optimista: se ve al momento y el refresh lo confirma.
+  const [repartoOptimista, setRepartoOptimista] = useState<RepartoPorComida | null>(null);
+  useEffect(() => {
+    setRepartoOptimista(null); // al recargar datos o cambiar de dieta manda lo del servidor
+  }, [repartoPropio, selectedPlan.id]);
+
+  function handleAnadirComidaAlReparto(comidaId: string, diaId: string) {
+    if (!selectedPlan) return;
+    const diaPlan = (selectedPlan.dias ?? []).find((d) => d.id === diaId);
+    const comida = diaPlan ? conComidasNuevas(diaPlan).comidas.find((c) => c.id === comidaId) : null;
+    if (!comida) return;
+
+    const pid = planiDelDia(diaId);
+    const p = pid ? planificaciones.find((x) => x.id === pid) : undefined;
+    const base =
+      repartoOptimista ?? repartoPropio ?? (p ? (p.datos?.repartoPorComida ?? null) : repartoFallback);
+    const partida = normalizeReparto(base);
+    const clave = claveComida(comida);
+    const idx = partida.comidas.findIndex((c) => claveComida(c) === clave);
+    if (idx >= 0) {
+      partida.comidas[idx] = {
+        ...partida.comidas[idx],
+        incluida: true,
+        kcalPct: partida.comidas[idx].kcalPct > 0 ? partida.comidas[idx].kcalPct : 10,
+      };
+    } else {
+      // Los días se deducen de la dieta: si el pre-entreno solo está el lunes y el miércoles, la
+      // fila queda marcada con esos días (así una dieta nueva no lo creará los siete).
+      const diasConEstaComida = (selectedPlan.dias ?? [])
+        .filter((d) => conComidasNuevas(d).comidas.some((c) => claveComida(c) === clave))
+        .map((d) => d.dia);
+      partida.comidas.push({
+        tipo: comida.tipo,
+        nombre: comida.nombre ?? undefined,
+        hora: comida.hora ?? undefined,
+        dias:
+          diasConEstaComida.length > 0 && diasConEstaComida.length < 7 ? diasConEstaComida : undefined,
+        incluida: true,
+        kcalPct: 10,
+      });
+    }
+    const nuevo: RepartoPorComida = { activo: true, comidas: partida.comidas };
+    setRepartoOptimista(nuevo);
+    startCopia(async () => {
+      try {
+        const res = await guardarRepartoDePlan(selectedPlan.id, nuevo);
+        if (res?.ok === false) throw new Error(res.error);
+        toast.success(t("repartoComidaAnadida"));
+        router.refresh();
+      } catch (e) {
+        if (isNextNavigation(e)) throw e;
+        setRepartoOptimista(null);
+        toast.error(t("repartoComidaAnadidaError"));
+      }
+    });
+  }
 
   // Asigna una planificación (o ninguna) a los días dados; se ve al instante y el refresh lo confirma.
   function handleAsignarPlani(diaIds: string[], planiId: string | null) {
@@ -1073,18 +1182,39 @@ export function PlanVisual({
             )}
           </>
         );
+        // #78-C — Si hay reparto por comida, decirlo aquí y dar el camino para cambiarlo: si no, el
+        // nutri ve "380 / 400 kcal" en cada comida sin saber de dónde sale ni dónde se configura.
+        const hayReparto =
+          interactionMode === "dashboard" &&
+          !readOnly &&
+          !!pacienteId && // las plantillas de dieta no tienen paciente: no hay planificación que abrir
+          (selectedPlan?.dias ?? []).some((d) => objetivosComidaDia(d.id) != null);
+        const chipReparto = hayReparto ? (
+          <Link
+            href={`/pacientes/${pacienteId}?pestana=planificacion`}
+            title={t("repartoComidaConfigurar")}
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary font-medium hover:bg-primary/10 transition-colors"
+          >
+            <UtensilsCrossed className="w-3 h-3" />
+            {t("repartoComidaActivo")}
+          </Link>
+        ) : null;
         if (bloques.length === 1) {
           return (
             <div className="hidden sm:flex items-center gap-3 flex-wrap text-xs">
               <span className="font-semibold text-muted-foreground uppercase tracking-wide">{t("objetivos")}</span>
               {bloques[0].nombre && <span className="font-medium text-foreground">{bloques[0].nombre}</span>}
               {chips(bloques[0])}
+              {chipReparto}
             </div>
           );
         }
         return (
           <div className="hidden sm:block text-xs space-y-1.5">
-            <span className="font-semibold text-muted-foreground uppercase tracking-wide">{t("objetivos")}</span>
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="font-semibold text-muted-foreground uppercase tracking-wide">{t("objetivos")}</span>
+              {chipReparto}
+            </div>
             {bloques.map((b, i) => (
               <div key={i} className="flex items-center gap-3 flex-wrap">
                 <span className="text-muted-foreground min-w-[7rem]">
@@ -1277,6 +1407,12 @@ export function PlanVisual({
                             carbohidratos: selectedPlan.carbohidratosObjetivo ?? undefined,
                             grasas: selectedPlan.grasasObjetivo ?? undefined,
                           }}
+                          objetivosComida={objetivosComidaDia(bloque.representante.id)}
+                          onAnadirComidaAlReparto={
+                            esEditable
+                              ? (comidaId) => handleAnadirComidaAlReparto(comidaId, bloque.representante.id)
+                              : undefined
+                          }
                         />
                       </div>
                     ))
@@ -1366,6 +1502,12 @@ export function PlanVisual({
                           carbohidratos: selectedPlan.carbohidratosObjetivo ?? undefined,
                           grasas: selectedPlan.grasasObjetivo ?? undefined,
                         }}
+                        objetivosComida={objetivosComidaDia(diasVisible[0].id)}
+                        onAnadirComidaAlReparto={
+                          esEditable
+                            ? (comidaId) => handleAnadirComidaAlReparto(comidaId, diasVisible[0].id)
+                            : undefined
+                        }
                       />
                     </div>
                   )

@@ -209,11 +209,25 @@ export default async function PlanDetailPage({ params }: Props) {
             // Override propio de esta dieta (si el nutri lo editó); si no, los objetivos de la planificación.
             const ov = plan.objetivosPorPlani?.[p.id];
             const d = p.datos ?? {};
+            // #78-C: el reparto por comida viaja siempre (para el cumplimiento en el editor).
+            const datos = { repartoPorComida: d.repartoPorComida };
             return ov
-              ? { id: p.id, nombre: p.nombre, kcal: num(ov.kcal), proteinas: num(ov.proteinas), carbohidratos: num(ov.carbohidratos), grasas: num(ov.grasas) }
-              : { id: p.id, nombre: p.nombre, kcal: num(d.kcalObjetivo), proteinas: num(d.protGObjetivo), carbohidratos: num(d.carbGObjetivo), grasas: num(d.grasaGObjetivo) };
+              ? { id: p.id, nombre: p.nombre, kcal: num(ov.kcal), proteinas: num(ov.proteinas), carbohidratos: num(ov.carbohidratos), grasas: num(ov.grasas), datos }
+              : { id: p.id, nombre: p.nombre, kcal: num(d.kcalObjetivo), proteinas: num(d.protGObjetivo), carbohidratos: num(d.carbGObjetivo), grasas: num(d.grasaGObjetivo), datos };
           })}
         objetivosPorDia={plan.objetivosPorDia}
+        // #78-C — Copia propia de esta dieta: manda sobre el reparto de la planificación.
+        repartoPropio={plan.repartoPorComida ?? null}
+        repartoFallback={
+          // Solo para dietas anteriores a la feature (sin copia): reparto de la planificación en la
+          // que se basa la dieta y, si no hay, el de la principal del paciente.
+          ((plan.planificacionIds ?? [])
+            .map((pid) => planificaciones.find((p) => p.id === pid))
+            .find(Boolean) ??
+            planificaciones.find((p) => p.esDefecto) ??
+            planificaciones.find((p) => p.estado === "activa") ??
+            planificaciones[0])?.datos?.repartoPorComida ?? null
+        }
       />
     </div>
   );
