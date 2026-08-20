@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations, useLocale } from "next-intl";
 import { useSearchParams } from "next/navigation";
@@ -31,7 +31,7 @@ import {
 import type { FichaInformacionData } from "@/lib/ficha-informacion-types";
 import { MonthPicker } from "@/components/month-picker";
 import type { MedidaSerializada } from "./paciente-ficha-mediciones-tab";
-import type { Planificacion, PlanificacionDatos } from "@/app/actions/planificaciones";
+import type { Planificacion, PlanificacionDatos, RepartoComida } from "@/app/actions/planificaciones";
 import {
   guardarPlanificacion,
   actualizarFechasPlanificacion,
@@ -41,7 +41,10 @@ import {
   eliminarPlanificacion,
 } from "@/app/actions/planificaciones";
 import { useDemoGuard } from "@/contexts/demo-context";
-import { getPlanesPaciente, actualizarPlan } from "@/app/actions/planes";
+import { cn } from "@/lib/utils";
+import { normalizeReparto, repartirKcal, claveComida, DIAS_SEMANA } from "@/lib/reparto-comidas";
+import { horaEfectiva, minutosDeHora, horaEntreComidas } from "@/lib/comida-horas";
+import { getPlanesPaciente, actualizarPlan, guardarRepartoDePlan } from "@/app/actions/planes";
 import { toast } from "sonner";
 
 /* ─── Types ─── */
@@ -138,6 +141,30 @@ const AJUSTE_OPCIONES: { value: number; label: string }[] = [
   { value: 10, label: "+10%" },
   { value: 15, label: "+15%" },
   { value: 20, label: "+20%" },
+];
+
+/* ─── Reparto por comida (#78-C) — lógica compartida en src/lib/reparto-comidas.ts ─── */
+
+/** Presets de reparto de kcal POR COMIDA con nombre (#78-C): distribuciones clásicas de la
+ *  práctica dietética. Comida ausente en el mapa = excluida del reparto. Todas suman 100. */
+const REPARTO_PRESETS: { id: string; kcal: Record<string, number> }[] = [
+  { id: "tradicional5", kcal: { DESAYUNO: 25, MEDIA_MANANA: 10, ALMUERZO: 30, MERIENDA: 10, CENA: 25 } },
+  { id: "completo6", kcal: { DESAYUNO: 25, MEDIA_MANANA: 10, ALMUERZO: 30, MERIENDA: 10, CENA: 20, RECENA: 5 } },
+  { id: "tresComidas", kcal: { DESAYUNO: 30, ALMUERZO: 40, CENA: 30 } },
+  { id: "cuatroComidas", kcal: { DESAYUNO: 25, ALMUERZO: 35, MERIENDA: 10, CENA: 30 } },
+  { id: "desayunoFuerte", kcal: { DESAYUNO: 35, MEDIA_MANANA: 10, ALMUERZO: 30, MERIENDA: 10, CENA: 15 } },
+  { id: "cenaLigera", kcal: { DESAYUNO: 25, MEDIA_MANANA: 10, ALMUERZO: 35, MERIENDA: 15, CENA: 15 } },
+];
+
+/** Presets de distribución de macros con nombre (#78-C, decidido). Valores en % (grasa/carb/prot). */
+type MacroPreset = { id: string; grasa: number; carb: number; prot: number };
+const MACRO_PRESETS: MacroPreset[] = [
+  { id: "equilibrada", grasa: 30, carb: 50, prot: 20 },
+  { id: "zona", grasa: 30, carb: 40, prot: 30 },
+  { id: "carb602020", grasa: 20, carb: 60, prot: 20 },
+  { id: "cetogenica", grasa: 70, carb: 10, prot: 20 },
+  { id: "altaProteina", grasa: 25, carb: 35, prot: 40 },
+  { id: "lowCarb", grasa: 40, carb: 25, prot: 35 },
 ];
 
 /** Map from legacy hardcoded Spanish names to stable formula IDs (for DB migration compat) */
@@ -620,6 +647,8 @@ export function PlanificacionPorDefectoTab({
   pacienteId: string;
 }) {
   const t = useTranslations("patients.planificacion");
+  const tc = useTranslations("diets.comidaSlot.tipoLabels");
+  const tDia = useTranslations("diets.editor.dayLabels");
   const locale = useLocale();
   const searchParams = useSearchParams();
   const blockIfDemo = useDemoGuard();
@@ -925,6 +954,36 @@ export function PlanificacionPorDefectoTab({
   // #78 (g·kg) — edición de gramos por kilo de peso (buffer; al confirmar pasa a gramos → % como gramosEdit).
   const [gkgEdit, setGkgEdit] = useState<{ macro: "grasa" | "carb" | "prot"; val: string } | null>(null);
 
+  /* --- #78-C: Reparto por comida (configuración avanzada) --- */
+  // Solo estado INICIAL (montaje); al cambiar de planificación re-sincroniza el efecto de abajo.
+  const [repartoActivo, setRepartoActivo] = useState(datos.repartoPorComida?.activo ?? false);
+  const [reparto, setReparto] = useState<RepartoComida[]>(() => normalizeReparto(datos.repartoPorComida).comidas);
+  // Fila expandida para editar el override de macros de esa comida (por tipo). null = todas plegadas.
+  const [repartoExpandido, setRepartoExpandido] = useState<string | null>(null);
+  // Panel desplegado (solo visual, independiente de si el reparto está activo). Arranca plegado:
+  // la pestaña es larga y el resumen de la cabecera ya dice lo que hay guardado.
+  const [repartoAbierto, setRepartoAbierto] = useState(false);
+  // Edición directa de kcal / gramos por comida: buffer mientras se teclea, se aplica al salir del
+  // campo (mismo patrón que gramosEdit/gkgEdit de la tabla del día — evita que el input "salte").
+  const [mealKcalEdit, setMealKcalEdit] = useState<{ tipo: string; val: string } | null>(null);
+  const [mealGramEdit, setMealGramEdit] = useState<{ tipo: string; macro: "grasa" | "carb" | "prot"; val: string } | null>(null);
+  // Última comida cuyo % se tecleó: al "cuadrar el resto" se respeta ese valor y se reajustan las demás.
+  const [ultimoPctTocado, setUltimoPctTocado] = useState<string | null>(null);
+  // Formulario de "añadir comida" al reparto (nombre + hora).
+  const [nuevaComidaAbierta, setNuevaComidaAbierta] = useState(false);
+  const [nuevaComidaNombre, setNuevaComidaNombre] = useState("");
+  const [nuevaComidaHora, setNuevaComidaHora] = useState("");
+  // Hueco elegido para la comida nueva (índice en la lista de comidas ya ordenada por hora).
+  const [nuevaComidaPos, setNuevaComidaPos] = useState(0);
+  // Día que se muestra en la tabla: con comidas que no están todos los días, las kcal de cada día
+  // son distintas (cada uno reparte su objetivo entre las comidas que tiene).
+  const [diaVistaReparto, setDiaVistaReparto] = useState<string>(DIAS_SEMANA[0]);
+  // Días en los que va la comida nueva (por defecto todos; se marcan en el propio formulario).
+  const [nuevaComidaDias, setNuevaComidaDias] = useState<string[]>([...DIAS_SEMANA]);
+  // Aviso de "no cuadra al 100%": se lee y se cierra a mano (no un toast que se escapa). Se guarda
+  // la firma de lo avisado: si cambian los días o los %, vuelve a salir porque es info nueva.
+  const [avisoRepartoVisto, setAvisoRepartoVisto] = useState<string | null>(null);
+
   /* --- Editable weight/body fat inputs --- */
   const pesoInicialActual = latestValue(medidas, "peso") ?? paciente.peso ?? null;
   const pesoInicialObjetivo = parseKgFromObjetivoDetalle(paciente.objetivoDetalle);
@@ -1023,27 +1082,417 @@ export function PlanificacionPorDefectoTab({
     };
   }, [eerObjetivoEfectivo, pesoActual, grasaPct, carbPct, protPct]);
 
+  /* ─── #78-C: presets de macros con nombre ─── */
+  // Preset que coincide con la distribución actual del día (o "" = personalizada).
+  const presetActivoId = useMemo(
+    () => MACRO_PRESETS.find((p) => p.grasa === grasaPct && p.carb === carbPct && p.prot === protPct)?.id ?? "",
+    [grasaPct, carbPct, protPct]
+  );
+  function aplicarPreset(id: string) {
+    const p = MACRO_PRESETS.find((x) => x.id === id);
+    if (!p) return;
+    setGrasaPct(p.grasa);
+    setCarbPct(p.carb);
+    setProtPct(p.prot);
+  }
+
+  /* ─── #78-C: reparto por comida — mutadores y cálculo en vivo ─── */
+  // Se identifica por CLAVE (tipo para las fijas, nombre para las añadidas): con varias comidas
+  // propias en el reparto, emparejar por `tipo` las confundiría todas (todas son OTRA).
+  function updateComida(clave: string, patch: Partial<RepartoComida>) {
+    setReparto((prev) => prev.map((c) => (claveComida(c) === clave ? { ...c, ...patch } : c)));
+  }
+  function repartirEquitativamente() {
+    // Todo dentro del updater (y derivado de `prev`) para que sea puro: StrictMode lo invoca
+    // dos veces en dev y un contador externo perdería el reparto del resto en la segunda pasada.
+    setReparto((prev) => {
+      const nIncluidas = prev.filter((c) => c.incluida).length;
+      if (nIncluidas === 0) return prev;
+      const base = Math.floor(100 / nIncluidas);
+      const resto = 100 - base * nIncluidas;
+      let i = 0;
+      return prev.map((c) => {
+        if (!c.incluida) return { ...c, kcalPct: 0 };
+        const val = base + (i < resto ? 1 : 0);
+        i++;
+        return { ...c, kcalPct: val };
+      });
+    });
+  }
+  function heredarMacrosDia(clave: string) {
+    updateComida(clave, { grasaPct: undefined, carbPct: undefined, protPct: undefined });
+  }
+
+  /* ─── Estructura de comidas: la planificación define QUÉ comidas tendrá la dieta (#78-C/#104) ─── */
+
+  // Añade una comida propia al reparto (pre-entreno, snack…). Se identifica por su nombre, así que
+  // no se admiten nombres repetidos. Nace con un 10% y las demás se reajustan al cuadrar.
+  function anadirComidaReparto(nombre: string, hora: string, dias: string[]) {
+    const limpio = nombre.trim().slice(0, 60);
+    if (!limpio) return;
+    const yaExiste = reparto.some(
+      (c) => claveComida(c) === claveComida({ tipo: "OTRA", nombre: limpio })
+    );
+    if (yaExiste) {
+      toast.error(t("repartoComidaRepetida"));
+      return;
+    }
+    // Nace con un 10% y NO se toca el % de las demás (el nutri ya los había decidido): ese día
+    // todas se normalizan solas. El recuadro de aviso de arriba explica en qué % queda cada día.
+    setReparto((prev) => [
+      ...prev,
+      {
+        tipo: "OTRA",
+        nombre: limpio,
+        hora: /^([01]?\d|2[0-3]):[0-5]\d$/.test(hora) ? hora : undefined,
+        dias: dias.length > 0 && dias.length < DIAS_SEMANA.length ? dias : undefined,
+        incluida: true,
+        kcalPct: 10,
+      },
+    ]);
+    setUltimoPctTocado(null);
+  }
+
+  // Huecos donde puede ir una comida nueva, en el orden real del día. Cada hueco lleva la hora que
+  // le corresponde, así el nutri piensa en "entre el desayuno y la comida" y no en horas.
+  const huecosComida = useMemo(() => {
+    // Se calcula desde `reparto` (no de repartoCalc, que se declara más abajo): comidas incluidas
+    // ordenadas por su hora efectiva, que es el orden real del día.
+    const incluidas = [...reparto]
+      .filter((c) => c.incluida)
+      .sort((a, b) => minutosDeHora(horaEfectiva(a)) - minutosDeHora(horaEfectiva(b)))
+      .map((c) => ({ ...c, etiqueta: (c.nombre ?? "").trim() || tc(c.tipo) }));
+    const out: { label: string; hora: string }[] = [];
+    out.push({
+      label: incluidas.length > 0 ? t("repartoPosAntesDe", { comida: incluidas[0].etiqueta }) : t("repartoPosUnica"),
+      hora: horaEntreComidas(null, incluidas[0] ? horaEfectiva(incluidas[0]) : null),
+    });
+    for (let i = 0; i < incluidas.length; i++) {
+      const actual = incluidas[i];
+      const siguiente = incluidas[i + 1];
+      out.push({
+        label: siguiente
+          ? t("repartoPosEntre", { a: actual.etiqueta, b: siguiente.etiqueta })
+          : t("repartoPosDespuesDe", { comida: actual.etiqueta }),
+        hora: horaEntreComidas(horaEfectiva(actual), siguiente ? horaEfectiva(siguiente) : null),
+      });
+    }
+    return out;
+  }, [reparto, t, tc]);
+
+  // Al elegir hueco se propone su hora (editable después: si la cambias, la comida se recoloca).
+  function elegirHuecoComida(idx: number) {
+    setNuevaComidaPos(idx);
+    setNuevaComidaHora(huecosComida[idx]?.hora ?? "");
+  }
+
+  function confirmarNuevaComida() {
+    if (!nuevaComidaNombre.trim()) return;
+    // Nace en todos los días (se ajusta con los cuadraditos) y SIEMPRE con hora: la del hueco
+    // elegido si no se tocó el campo, para que caiga en su sitio en vez de quedar descolocada.
+    anadirComidaReparto(
+      nuevaComidaNombre,
+      nuevaComidaHora || huecosComida[nuevaComidaPos]?.hora || "",
+      nuevaComidaDias,
+    );
+    setNuevaComidaNombre("");
+    setNuevaComidaHora("");
+    setNuevaComidaDias([...DIAS_SEMANA]);
+    setNuevaComidaAbierta(false);
+  }
+
+  function quitarComidaReparto(clave: string) {
+    setReparto((prev) => prev.filter((c) => claveComida(c) !== clave));
+  }
+
+  // Alias visible de una comida FIJA ("Comida" para el Almuerzo): que el reparto hable el mismo
+  // idioma que la dieta, y que la comida se cree ya con ese nombre.
+  function renombrarComidaReparto(clave: string, nombre: string) {
+    setReparto((prev) =>
+      prev.map((c) => (claveComida(c) === clave ? { ...c, nombre: nombre.trim().slice(0, 60) || undefined } : c))
+    );
+  }
+
+  // Días en los que existe una comida (vacío = todos). Permite "pre-entreno solo L-X-V".
+  function toggleDiaComida(clave: string, dia: string) {
+    setReparto((prev) =>
+      prev.map((c) => {
+        if (claveComida(c) !== clave) return c;
+        const actuales = c.dias && c.dias.length > 0 ? c.dias : [...DIAS_SEMANA];
+        const siguiente = actuales.includes(dia)
+          ? actuales.filter((d) => d !== dia)
+          : [...actuales, dia];
+        // Quitar TODOS los días = la comida no va ningún día, o sea, fuera del reparto: se desmarca
+        // (antes se interpretaba como "todos" y los días volvían a encenderse solos).
+        if (siguiente.length === 0) return { ...c, incluida: false, dias: undefined };
+        // Marcar un día en una comida desactivada la vuelve a activar (es lo que el gesto implica).
+        return {
+          ...c,
+          incluida: true,
+          dias: siguiente.length === DIAS_SEMANA.length ? undefined : siguiente,
+        };
+      })
+    );
+  }
+  // Aplica un preset de macros con nombre (la Zona, cetogénica…) SOLO a esta comida (crea su override).
+  function aplicarPresetComida(clave: string, id: string) {
+    const p = MACRO_PRESETS.find((x) => x.id === id);
+    if (!p) return;
+    updateComida(clave, { grasaPct: p.grasa, carbPct: p.carb, protPct: p.prot });
+  }
+
+  // Preset de reparto de kcal que coincide con el estado actual ("" = personalizada). Solo compara
+  // inclusión y % kcal; los overrides de macros por comida son independientes del preset.
+  // Los presets solo hablan de las 6 comidas fijas: con comidas añadidas nunca hay coincidencia
+  // exacta, así que se muestran como "Personalizada" (y no se compara contra ellas).
+  const repartoPresetActivoId = useMemo(
+    () =>
+      reparto.some((c) => c.tipo === "OTRA" && c.incluida)
+        ? ""
+        : REPARTO_PRESETS.find((p) =>
+            reparto
+              .filter((c) => c.tipo !== "OTRA")
+              .every((c) => {
+                const val = p.kcal[c.tipo];
+                return val != null ? c.incluida && c.kcalPct === val : !c.incluida;
+              })
+          )?.id ?? "",
+    [reparto]
+  );
+  function aplicarRepartoPreset(id: string) {
+    const p = REPARTO_PRESETS.find((x) => x.id === id);
+    if (!p) return;
+    setReparto((prev) =>
+      prev.map((c) => {
+        // Las comidas añadidas por el nutri NO se tocan: un preset de las 6 clásicas no debe
+        // borrarle el pre-entreno que acaba de crear.
+        if (c.tipo === "OTRA") return c;
+        const val = p.kcal[c.tipo];
+        return val != null
+          ? { ...c, incluida: true, kcalPct: val }
+          : { ...c, incluida: false, kcalPct: 0 };
+      })
+    );
+  }
+
+  /* ─── #78-C: edición bidireccional (misma interacción que la tabla de macros del día) ─── */
+
+  // Macros EFECTIVOS de una comida: su override propio o, si hereda, la distribución del día.
+  function macrosEfectivos(clave: string): { grasa: number; carb: number; prot: number } {
+    const c = reparto.find((x) => claveComida(x) === clave);
+    return { grasa: c?.grasaPct ?? grasaPct, carb: c?.carbPct ?? carbPct, prot: c?.protPct ?? protPct };
+  }
+
+  // Slider de % kcal de una comida: fija esa comida y re-equilibra las DEMÁS incluidas en
+  // proporción a lo que tenían, cuadrando la suma en 100 exacto (los restos mayores se llevan
+  // el punto sobrante). Equivalente por-comidas del handleSliderDrag de los macros del día.
+  function handleMealSliderDrag(clave: string, newVal: number) {
+    const clamped = Math.max(0, Math.min(100, newVal));
+    setReparto((prev) => {
+      const objetivo = prev.find((c) => claveComida(c) === clave);
+      if (!objetivo?.incluida) return prev;
+      const otras = prev.filter((c) => c.incluida && claveComida(c) !== clave);
+      if (otras.length === 0) return prev.map((c) => (claveComida(c) === clave ? { ...c, kcalPct: clamped } : c));
+      const remaining = 100 - clamped;
+      const otherTotal = otras.reduce((s, c) => s + c.kcalPct, 0);
+      const cuotas = otras.map((c) =>
+        otherTotal === 0 ? remaining / otras.length : (c.kcalPct / otherTotal) * remaining
+      );
+      const nuevos = cuotas.map((q) => Math.floor(q));
+      let sobra = remaining - nuevos.reduce((s, v) => s + v, 0);
+      Array.from(cuotas.keys())
+        .sort((a, b) => (cuotas[b] - Math.floor(cuotas[b])) - (cuotas[a] - Math.floor(cuotas[a])))
+        .forEach((idx) => { if (sobra > 0) { nuevos[idx] += 1; sobra -= 1; } });
+      const porClave = new Map(otras.map((c, i) => [claveComida(c), nuevos[i]]));
+      return prev.map((c) => {
+        const k = claveComida(c);
+        return k === clave ? { ...c, kcalPct: clamped } : porClave.has(k) ? { ...c, kcalPct: porClave.get(k)! } : c;
+      });
+    });
+  }
+
+  // "Cuadrar el resto": deja como está la comida que acabas de teclear y reajusta las demás para
+  // llegar al 100%. Reutiliza el re-equilibrio del slider aplicándolo al valor que ya tiene.
+  function cuadrarResto() {
+    const incluidas = reparto.filter((c) => c.incluida);
+    if (incluidas.length < 2) return;
+    const fija =
+      incluidas.find((c) => claveComida(c) === ultimoPctTocado) ??
+      // Sin nada tecleado aún, se respeta la comida con más peso (suele ser la principal del día).
+      incluidas.reduce((a, b) => (b.kcalPct > a.kcalPct ? b : a));
+    handleMealSliderDrag(claveComida(fija), fija.kcalPct);
+  }
+
+  // kcal de una comida editables → se convierten a % del día y re-equilibran las demás.
+  function handleMealKcalChange(clave: string, raw: string) {
+    if (!macros.kcal || macros.kcal <= 0) return;
+    const kcal = parseFloat(raw.replace(",", "."));
+    if (!Number.isFinite(kcal) || kcal < 0) return;
+    handleMealSliderDrag(clave, Math.round((kcal / macros.kcal) * 100));
+  }
+  function mealKcalValue(clave: string, calc: number): string {
+    return mealKcalEdit?.tipo === clave ? mealKcalEdit.val : String(calc);
+  }
+  function commitMealKcal(clave: string) {
+    if (mealKcalEdit?.tipo === clave) {
+      handleMealKcalChange(clave, mealKcalEdit.val);
+      setMealKcalEdit(null);
+    }
+  }
+
+  // Fija un macro de una comida (crea el override desde los efectivos si heredaba). Con
+  // rebalance, los otros dos macros se reparten el resto en proporción — igual que el día.
+  function setMacroComida(clave: string, macro: "grasa" | "carb" | "prot", val: number, rebalance: boolean) {
+    const eff = macrosEfectivos(clave);
+    const clamped = Math.max(0, Math.min(100, val));
+    const next = { ...eff, [macro]: clamped };
+    if (rebalance) {
+      const [o1, o2] = (["grasa", "carb", "prot"] as const).filter((m) => m !== macro);
+      const remaining = 100 - clamped;
+      const totalOtros = eff[o1] + eff[o2];
+      if (totalOtros === 0) {
+        const half = Math.round(remaining / 2);
+        next[o1] = half;
+        next[o2] = remaining - half;
+      } else {
+        next[o1] = Math.round((eff[o1] / totalOtros) * remaining);
+        next[o2] = remaining - next[o1];
+      }
+    }
+    updateComida(clave, { grasaPct: next.grasa, carbPct: next.carb, protPct: next.prot });
+  }
+
+  // Gramos de un macro de una comida editables → % sobre las kcal de ESA comida, y re-equilibra
+  // sus otros dos macros (misma filosofía que editar los gramos en la tabla del día).
+  function handleMealGramChange(clave: string, macro: "grasa" | "carb" | "prot", raw: string) {
+    const kcalComida = repartoCalc.filas.find((f) => f.clave === clave)?.kcalComida ?? 0;
+    if (kcalComida <= 0) return;
+    const g = parseFloat(raw.replace(",", "."));
+    if (!Number.isFinite(g) || g < 0) return;
+    const kcalPorG = macro === "grasa" ? 9 : 4;
+    setMacroComida(clave, macro, Math.round(((g * kcalPorG) / kcalComida) * 100), true);
+  }
+  function mealGramValue(clave: string, macro: "grasa" | "carb" | "prot", calc: number): string {
+    return mealGramEdit && mealGramEdit.tipo === clave && mealGramEdit.macro === macro
+      ? mealGramEdit.val
+      : String(calc);
+  }
+  function commitMealGram(clave: string, macro: "grasa" | "carb" | "prot") {
+    if (mealGramEdit && mealGramEdit.tipo === clave && mealGramEdit.macro === macro) {
+      handleMealGramChange(clave, macro, mealGramEdit.val);
+      setMealGramEdit(null);
+    }
+  }
+
+  // Cálculo en vivo por comida a partir de los % y del objetivo del día.
+  const repartoCalc = useMemo(() => {
+    // Reparto exacto (restos mayores) sobre las comidas que participan: si los % suman 100, las kcal
+    // de las filas suman el objetivo del día justo, sin el "2484 de 2482" del redondeo simple.
+    // Solo las comidas que existen EL DÍA QUE SE ESTÁ VIENDO, con sus pesos normalizados a 100:
+    // exactamente el mismo cálculo que hace el editor de dietas, para que los números coincidan.
+    const enEsteDia = (c: RepartoComida) =>
+      !c.dias || c.dias.length === 0 || c.dias.includes(diaVistaReparto);
+    const idxActivas = reparto
+      .map((c, i) => ({ c, i }))
+      .filter(({ c }) => c.incluida && c.kcalPct > 0 && enEsteDia(c));
+    const sumaActivas = idxActivas.reduce((sum, { c }) => sum + c.kcalPct, 0);
+    const pesos = idxActivas.map(({ c }) => (sumaActivas > 0 ? (c.kcalPct / sumaActivas) * 100 : 0));
+    const kcalActivas = repartirKcal(macros.kcal, pesos);
+    const kcalPorIdx = new Map(idxActivas.map(({ i }, n) => [i, kcalActivas[n]]));
+    const cuotaPorIdx = new Map(idxActivas.map(({ i }, n) => [i, pesos[n]]));
+
+    const ordenadas = [...reparto]
+      .map((c, i) => ({ c, i }))
+      .sort((a, b) => minutosDeHora(horaEfectiva(a.c)) - minutosDeHora(horaEfectiva(b.c)));
+    const filas = ordenadas.map(({ c, i }) => {
+      const mGrasa = c.grasaPct ?? grasaPct;
+      const mCarb = c.carbPct ?? carbPct;
+      const mProt = c.protPct ?? protPct;
+      const kcalComida = kcalPorIdx.get(i) ?? 0;
+      return {
+        ...c,
+        clave: claveComida(c),
+        enDiaVisto: enEsteDia(c),
+        cuotaReal: cuotaPorIdx.get(i) ?? 0,
+        // Nombre que se muestra: el alias del nutri si lo hay; si no, la etiqueta del tipo.
+        etiqueta: (c.nombre ?? "").trim() || tc(c.tipo),
+        esAnadida: c.tipo === "OTRA",
+        overrideActivo: c.grasaPct != null || c.carbPct != null || c.protPct != null,
+        mGrasa,
+        mCarb,
+        mProt,
+        macroSuma: mGrasa + mCarb + mProt,
+        kcalComida,
+        grasaG: Math.round((kcalComida * mGrasa) / 100 / 9),
+        carbG: Math.round((kcalComida * mCarb) / 100 / 4),
+        protG: Math.round((kcalComida * mProt) / 100 / 4),
+      };
+    });
+    const incluidas = filas.filter((c) => c.incluida);
+    const sumaKcalPct = incluidas.reduce((s, c) => s + c.kcalPct, 0);
+    // Suma POR DÍA: solo cuentan las comidas que existen ese día. Con comidas que no están todos
+    // los días (un pre-entreno los lunes), la suma global no significa nada: lo que importa es si
+    // CADA día cuadra. Y ojo: con % globales es imposible que dos días con distinto nº de comidas
+    // sumen 100 a la vez, por eso el editor renormaliza cada día.
+    const sumaPorDia = DIAS_SEMANA.map((d) => ({
+      dia: d,
+      pct: incluidas.filter((c) => !c.dias || c.dias.length === 0 || c.dias.includes(d))
+        .reduce((s, c) => s + c.kcalPct, 0),
+    }));
+    const hayComidasPorDias = incluidas.some((c) => c.dias && c.dias.length > 0 && c.dias.length < DIAS_SEMANA.length);
+    const diasDescuadrados = sumaPorDia.filter((x) => x.pct !== 100);
+    // Sumar las kcal YA redondeadas de las filas para que el pie cuadre siempre con la tabla.
+    return {
+      filas,
+      sumaKcalPct,
+      sumaPorDia,
+      pctDiaVisto: sumaPorDia.find((x) => x.dia === diaVistaReparto)?.pct ?? sumaKcalPct,
+      // "LMXJVS 110% · D 91%": los días con el mismo % se agrupan para que quepa de un vistazo.
+      detallePorDia: [...new Set(sumaPorDia.map((x) => x.pct))]
+        .sort((a, b) => b - a)
+        .map((pct) => {
+          const dias = sumaPorDia.filter((x) => x.pct === pct);
+          return `${dias.length === DIAS_SEMANA.length ? "" : dias.map((x) => tDia(x.dia).charAt(0)).join("")} ${pct}%`.trim();
+        })
+        .join(" · "),
+      hayComidasPorDias,
+      diasDescuadrados,
+      // Identifica ESTE aviso concreto: si cambia, el aviso descartado vuelve a mostrarse.
+      firmaAviso: diasDescuadrados.map((x) => `${x.dia}:${x.pct}`).join("|"),
+      kcalAsignadas: incluidas.filter((c) => c.enDiaVisto).reduce((s, c) => s + c.kcalComida, 0),
+    };
+  }, [reparto, grasaPct, carbPct, protPct, macros.kcal, diaVistaReparto, tDia]);
+
   /* ─── Aplicar los objetivos calculados (kcal + macros) a una dieta del paciente (#9) ─── */
   const [aplicarAbierto, setAplicarAbierto] = useState(false);
   const [planesPaciente, setPlanesPaciente] = useState<
-    { id: string; nombre: string; activo: boolean; caloriasObjetivo: number | null }[] | null
+    { id: string; nombre: string; activo: boolean; caloriasObjetivo: number | null; planificacionIds: string[] }[] | null
   >(null);
   const [aplicandoPlanId, setAplicandoPlanId] = useState<string | null>(null);
+
+  async function cargarPlanesPaciente() {
+    if (planesPaciente !== null) return;
+    try {
+      const planes = await getPlanesPaciente(pacienteId);
+      setPlanesPaciente(
+        planes.map((p) => ({
+          id: p.id,
+          nombre: p.nombre,
+          activo: p.activo,
+          caloriasObjetivo: p.caloriasObjetivo,
+          planificacionIds: p.planificacionIds ?? [],
+        }))
+      );
+    } catch {
+      setPlanesPaciente([]);
+    }
+  }
 
   async function abrirAplicarObjetivos() {
     if (blockIfDemo()) return;
     if (aplicarAbierto) { setAplicarAbierto(false); return; }
     setAplicarAbierto(true);
-    if (planesPaciente === null) {
-      try {
-        const planes = await getPlanesPaciente(pacienteId);
-        setPlanesPaciente(
-          planes.map((p) => ({ id: p.id, nombre: p.nombre, activo: p.activo, caloriasObjetivo: p.caloriasObjetivo }))
-        );
-      } catch {
-        setPlanesPaciente([]);
-      }
-    }
+    await cargarPlanesPaciente();
   }
 
   async function aplicarObjetivosAPlan(planId: string, planNombre: string) {
@@ -1127,6 +1576,7 @@ export function PlanificacionPorDefectoTab({
     const fi = d.fibraCantidad ?? "";
     const pa = d.pesoActual ?? (pesoInicialActual != null ? String(pesoInicialActual) : "");
     const ga = d.grasaActual ?? (grasaInicialActual != null ? String(grasaInicialActual) : "");
+    const rep = normalizeReparto(d.repartoPorComida);
     setActividadActualLabel(aa);
     setActividadObjetivoLabel(ao);
     setPalCustomActual(pca);
@@ -1147,10 +1597,14 @@ export function PlanificacionPorDefectoTab({
     setFibraInput(fi);
     setPesoActualInput(pa);
     setGrasaActualInput(ga);
+    setRepartoActivo(rep.activo);
+    setReparto(rep.comidas);
+    setRepartoExpandido(null);
+    setRepartoAbierto(false);
     setFechaInicioInput(selectedPlan.fechaInicio ? selectedPlan.fechaInicio.slice(0, 7) : "");
     setFechaFinPrevistaInput(selectedPlan.fechaFinPrevista ? selectedPlan.fechaFinPrevista.slice(0, 7) : "");
     // Rehacer la "foto" con los valores recién cargados (mismas claves y orden que `camposActuales`).
-    baseCamposRef.current = JSON.stringify({ aa, ao, pca, pco, bmr, eer, mg, eo, g, c, p, mri, ff, fi, po, go, io, aj, pa, ga });
+    baseCamposRef.current = JSON.stringify({ aa, ao, pca, pco, bmr, eer, mg, eo, g, c, p, mri, ff, fi, po, go, io, aj, pa, ga, rc: JSON.stringify(rep) });
   }, [selectedPlanId, selectedPlan, actividadInicial, pesoInicialObjetivo, FORMULAS_MASA_GRASA_GROUPS]);
 
   /* ─── Dirty tracking + manual save ─── */
@@ -1172,6 +1626,7 @@ export function PlanificacionPorDefectoTab({
     po: pesoObjetivoInput, go: grasaObjetivoInput, io: imcObjetivoInput,
     aj: ajustePct,
     pa: pesoActualInput, ga: grasaActualInput,
+    rc: JSON.stringify({ activo: repartoActivo, comidas: reparto }),
   });
   if (baseCamposRef.current === null) baseCamposRef.current = camposActuales; // foto inicial (montaje)
 
@@ -1214,6 +1669,9 @@ export function PlanificacionPorDefectoTab({
       protGObjetivo: macros.protG || undefined,
       carbGObjetivo: macros.carbG || undefined,
       grasaGObjetivo: macros.grasaG || undefined,
+      // #78-C: reparto por comida. Se persiste SIEMPRE (también desactivado) para no perder la
+      // configuración del nutri al apagar el toggle y guardar; la dieta solo lo usa si activo=true.
+      repartoPorComida: { activo: repartoActivo, comidas: reparto },
     };
   }
 
@@ -1233,6 +1691,12 @@ export function PlanificacionPorDefectoTab({
     baseCamposRef.current = camposActuales; // lo guardado pasa a ser la nueva "foto" base
     setIsDirty(false);
     setIsSaving(false);
+    // Al guardar se pliega el reparto: confirma visualmente que quedó guardado y deja el resumen.
+    setRepartoAbierto(false);
+    setRepartoExpandido(null);
+    // Aviso al guardar si el reparto no cuadra: guardar no falla (a veces se guarda a medias a
+    // propósito), pero conviene decirlo. Con comidas por días la suma global no aplica, así que se
+    // avisa solo del caso en que el 100% SÍ es alcanzable.
   }
 
   /* ─── Date save handlers ─── */
@@ -1951,17 +2415,34 @@ export function PlanificacionPorDefectoTab({
       <section className="bg-card rounded-xl border border-border overflow-hidden">
         <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <SectionTitle icon={Wheat}>{t("seccionMacronutrientes")}</SectionTitle>
-          <select
-            value={macroRefIdx}
-            onChange={(e) => setMacroRefIdx(Number(e.target.value))}
-            className="px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-          >
-            {MACRO_REF_SOURCES.map((s, i) => (
-              <option key={s.label} value={i}>
-                {s.label}
-              </option>
-            ))}
-          </select>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            {/* Presets de macros con nombre (#78-C) */}
+            <select
+              value={presetActivoId}
+              onChange={(e) => aplicarPreset(e.target.value)}
+              className="px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              title={t("presetTitulo")}
+            >
+              {/* Estado, no acción: se muestra cuando los % no coinciden con ningún preset. */}
+              <option value="" disabled>{t("presetPersonalizada")}</option>
+              {MACRO_PRESETS.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {t(`preset_${p.id}` as never)}
+                </option>
+              ))}
+            </select>
+            <select
+              value={macroRefIdx}
+              onChange={(e) => setMacroRefIdx(Number(e.target.value))}
+              className="px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            >
+              {MACRO_REF_SOURCES.map((s, i) => (
+                <option key={s.label} value={i}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -2214,6 +2695,578 @@ export function PlanificacionPorDefectoTab({
               )}
             </div>
           </div>
+      </section>
+
+      {/* ====== Section 3.5: Reparto por comida (configuración avanzada · #78-C) ======
+           La flecha PLIEGA el panel y el interruptor ACTIVA la función: son cosas distintas.
+           Antes lo hacía todo el interruptor y para cerrar había que desactivar el reparto. */}
+      <section className="bg-card rounded-xl border border-border overflow-hidden">
+        <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-3 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => setRepartoAbierto((v) => !v)}
+            aria-expanded={repartoAbierto}
+            className="flex items-start gap-2 text-left min-w-0 group"
+          >
+            <ChevronDown
+              className={cn(
+                "w-5 h-5 mt-0.5 shrink-0 text-muted-foreground transition-transform group-hover:text-foreground",
+                repartoAbierto && "rotate-180"
+              )}
+            />
+            <span className="min-w-0">
+              <SectionTitle icon={Flame}>{t("repartoTitulo")}</SectionTitle>
+              {/* Plegado y activo: resumen de una línea, para ver lo guardado sin desplegar. */}
+              {!repartoAbierto && repartoActivo ? (
+                <span className="mt-1 block text-xs text-muted-foreground">
+                  {t("repartoResumenLinea", {
+                    n: repartoCalc.filas.filter((c) => c.incluida).length,
+                    pcts: repartoCalc.filas.filter((c) => c.incluida).map((c) => c.kcalPct).join("/"),
+                  })}
+                </span>
+              ) : repartoAbierto ? (
+                <span className="mt-1 block text-xs text-muted-foreground">{t("repartoDescripcion")}</span>
+              ) : null}
+            </span>
+          </button>
+          {/* Interruptor: solo activa/desactiva la función (al activar, abre el panel). */}
+          <button
+            type="button"
+            onClick={() => {
+              // Valor calculado FUERA de los updaters (deben ser puros: StrictMode los invoca dos veces).
+              const activar = !repartoActivo;
+              setRepartoActivo(activar);
+              setRepartoAbierto(activar); // al activar se abre para configurarlo; al desactivar se pliega
+            }}
+            className={cn(
+              "shrink-0 inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-colors",
+              repartoActivo
+                ? "border-primary/40 bg-primary/10 text-primary"
+                : "border-border bg-background text-muted-foreground hover:bg-muted/60"
+            )}
+          >
+            <span
+              className={cn(
+                "relative inline-flex h-5 w-9 items-center rounded-full transition-colors",
+                repartoActivo ? "bg-primary" : "bg-muted-foreground/30"
+              )}
+            >
+              <span
+                className={cn(
+                  "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                  repartoActivo ? "translate-x-4" : "translate-x-0.5"
+                )}
+              />
+            </span>
+            {repartoActivo ? t("repartoActivado") : t("repartoActivar")}
+          </button>
+        </div>
+
+        {repartoAbierto && !repartoActivo && (
+          <div className="px-4 sm:px-5 pb-4 text-xs text-muted-foreground">{t("repartoDesactivado")}</div>
+        )}
+
+        {repartoAbierto && repartoActivo && (
+          <>
+            {macros.kcal <= 0 && (
+              <div className="mx-4 sm:mx-5 mb-3 rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                {t("repartoSinKcal")}
+              </div>
+            )}
+
+            <div className="px-4 sm:px-5 pb-2 flex flex-wrap items-center gap-3">
+              {/* Distribuciones de kcal por comida con nombre propio (tradicional, 3 comidas…) */}
+              <select
+                value={repartoPresetActivoId}
+                onChange={(e) => aplicarRepartoPreset(e.target.value)}
+                className="h-[30px] px-2.5 rounded-lg border border-border bg-background text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/30"
+                title={t("repartoPresetTitulo")}
+              >
+                <option value="" disabled>{t("presetPersonalizada")}</option>
+                {REPARTO_PRESETS.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {t(`repartoPreset_${p.id}` as never)}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={repartirEquitativamente}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-background text-xs font-medium hover:bg-muted/60 transition-colors"
+              >
+                <Percent className="w-3.5 h-3.5" />
+                {t("repartoEquitativo")}
+              </button>
+              {/* Con comidas que no están todos los días hay que elegir QUÉ día se mira: cada uno
+                  reparte su objetivo entre las comidas que tiene, así que las kcal cambian. */}
+              {repartoCalc.hayComidasPorDias && (
+                <label className="inline-flex items-center gap-1.5 text-xs font-medium">
+                  <span className="text-muted-foreground">{t("repartoVerDia")}</span>
+                  <select
+                    value={diaVistaReparto}
+                    onChange={(e) => setDiaVistaReparto(e.target.value)}
+                    className="h-7 px-2 rounded-lg border border-border bg-background text-xs focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  >
+                    {DIAS_SEMANA.map((d) => (
+                      <option key={d} value={d}>{tDia(d)}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {/* % del DÍA QUE SE ESTÁ VIENDO (antes se mostraban todos los días juntos y parecía
+                  un mensaje fijo). Se enseña siempre: si te pasas del 100% conviene saberlo, aunque
+                  por debajo las kcal se reparten proporcionalmente para que el día cuadre. */}
+              {/* Todos los días, agrupados por porcentaje: "LMXJVS 110% · D 91%". Verde solo si
+                  todos reparten el 100%. */}
+              <span
+                className={cn(
+                  "text-xs font-medium",
+                  repartoCalc.diasDescuadrados.length === 0
+                    ? "text-green-600 dark:text-green-400"
+                    : "text-amber-600 dark:text-amber-400"
+                )}
+              >
+                {repartoCalc.hayComidasPorDias
+                  ? t("repartoSumaKcalDias", { detalle: repartoCalc.detallePorDia })
+                  : t("repartoSumaKcal", { pct: repartoCalc.pctDiaVisto })}
+              </span>
+              {/* Acción para cuadrar sin tener que ir comida por comida (teclear a propósito NO
+                  reajusta las demás: así se pueden fijar varias a mano). */}
+              {!repartoCalc.hayComidasPorDias && repartoCalc.sumaKcalPct !== 100 && repartoCalc.filas.filter((c) => c.incluida).length >= 2 && (
+                <button
+                  type="button"
+                  onClick={cuadrarResto}
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  {t("repartoCuadrarResto")}
+                </button>
+              )}
+              {/* Comida marcada pero sin cuota: la suma puede dar 100 y aun así esa comida
+                  no tendría objetivo en la dieta. Avisar aquí, donde se puede corregir. */}
+              {repartoCalc.filas.some((c) => c.incluida && c.kcalPct <= 0) && (
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  {t("repartoComidaSinPct")}
+                </span>
+              )}
+            </div>
+
+            {/* Aviso persistente: se lee entero y se cierra con el botón. Vuelve a aparecer solo si
+                cambia la situación (otros días u otros %), porque entonces es información nueva. */}
+            {repartoCalc.diasDescuadrados.length > 0 && avisoRepartoVisto !== repartoCalc.firmaAviso && (
+              <div className="mx-4 sm:mx-5 mb-3 rounded-lg border border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-500/10 p-3">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+                      {t("repartoAvisoTitulo")}
+                    </p>
+                    <p className="mt-1 text-xs text-amber-800/90 dark:text-amber-300/90">
+                      {t("repartoAvisoDetalle", {
+                        detalle: repartoCalc.diasDescuadrados
+                          .map((x) => `${tDia(x.dia)} ${x.pct}%`)
+                          .join(" · "),
+                      })}
+                    </p>
+                    <p className="mt-1 text-xs text-amber-800/80 dark:text-amber-300/80">
+                      {t("repartoAvisoQueHacer")}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setAvisoRepartoVisto(repartoCalc.firmaAviso)}
+                      className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-semibold hover:bg-amber-700 transition-colors"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      {t("repartoAvisoEntendido")}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="overflow-x-auto">
+              <table className="min-w-[760px] sm:min-w-[980px] w-full text-sm">
+                <thead>
+                  <tr className={thBg}>
+                    <th className={`${thClass} w-[150px] sm:w-[220px] ${stickyColHead}`}>{t("repartoThComida")}</th>
+                    <th className={thClass}>{t("repartoThKcalPct")}</th>
+                    <th className={thClass}>{t("repartoThKcal")}</th>
+                    <th className={thClass}>{t("proteinas")}</th>
+                    <th className={thClass}>{t("carbosCorta")}</th>
+                    <th className={thClass}>{t("lipidos")}</th>
+                    <th className={`${thClass} w-8`}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {repartoCalc.filas.map((c) => (
+                    <Fragment key={c.clave}>
+                      <tr className={cn("border-b border-border", (!c.incluida || !c.enDiaVisto) && "opacity-45")}>
+                        <td className={`py-3 px-2 sm:px-4 ${stickyCol}`}>
+                          <div className="flex items-start gap-2">
+                            <input
+                              type="checkbox"
+                              checked={c.incluida}
+                              onChange={(e) => updateComida(c.clave, { incluida: e.target.checked })}
+                              title={t("repartoIncluirComida")}
+                              className="h-4 w-4 mt-1 rounded border-border accent-primary shrink-0"
+                            />
+                            <div className="min-w-0 flex-1">
+                              {/* Nombre editable: si llamas "Comida" al Almuerzo, el reparto lo llama
+                                  igual que la dieta (antes eran dos vocabularios distintos). */}
+                              <input
+                                value={c.nombre ?? ""}
+                                placeholder={tc(c.tipo)}
+                                maxLength={60}
+                                onChange={(e) => renombrarComidaReparto(c.clave, e.target.value)}
+                                className="w-full bg-transparent font-medium text-xs sm:text-sm outline-none border-b border-transparent hover:border-border focus:border-primary/60 placeholder:text-foreground placeholder:font-medium"
+                              />
+                              {/* Días en los que existe esta comida: gris = no la tiene ese día. */}
+                              <div className="mt-1.5 flex items-center gap-1" title={t("repartoDiasTitulo")}>
+                                {DIAS_SEMANA.map((d) => {
+                                  const activo = !c.dias || c.dias.length === 0 || c.dias.includes(d);
+                                  return (
+                                    <button
+                                      key={d}
+                                      type="button"
+                                      onClick={() => toggleDiaComida(c.clave, d)}
+                                      title={tDia(d)}
+                                      className={cn(
+                                        "w-4 h-4 rounded-[3px] text-[8px] font-bold leading-none transition-colors",
+                                        activo
+                                          ? "bg-primary/80 text-primary-foreground"
+                                          : "bg-muted text-muted-foreground/60 hover:bg-muted-foreground/20"
+                                      )}
+                                    >
+                                      {tDia(d).charAt(0)}
+                                    </button>
+                                  );
+                                })}
+                                {c.esAnadida && (
+                                  <button
+                                    type="button"
+                                    onClick={() => quitarComidaReparto(c.clave)}
+                                    title={t("repartoQuitarComida")}
+                                    className="ml-1 text-muted-foreground hover:text-red-600 transition-colors"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number" inputMode="decimal" min={0} max={100}
+                              value={c.kcalPct}
+                              disabled={!c.incluida}
+                              // Teclear NO reajusta las demás: así se pueden poner varias a mano. Para
+                              // cuadrar el 100% está el enlace "Cuadrar el resto" del aviso de arriba.
+                              onChange={(e) => {
+                                setUltimoPctTocado(c.clave);
+                                handlePctChange((v) => updateComida(c.clave, { kcalPct: v }), e.target.value);
+                              }}
+                              className="w-16 h-8 px-2 rounded-lg border border-border bg-background text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+                            />
+                            <span className="text-muted-foreground">%</span>
+                          </div>
+                          {/* Arrastrar re-equilibra las DEMÁS comidas incluidas (como los sliders del día). */}
+                          <input
+                            type="range" min={0} max={100}
+                            value={c.kcalPct}
+                            disabled={!c.incluida}
+                            onChange={(e) => handleMealSliderDrag(c.clave, parseInt(e.target.value, 10))}
+                            className="macro-slider w-full mt-2 disabled:opacity-40"
+                            style={{ "--slider-color": "var(--primary)", "--slider-pct": `${c.kcalPct}%` } as React.CSSProperties}
+                          />
+                        </td>
+                        <td className="py-3 px-4">
+                          {c.incluida && c.enDiaVisto ? (
+                            <div className="flex items-center gap-1.5">
+                              <input
+                                type="number" inputMode="decimal" min={0}
+                                value={mealKcalValue(c.clave, c.kcalComida)}
+                                onChange={(e) => setMealKcalEdit({ tipo: c.clave, val: e.target.value })}
+                                onBlur={() => commitMealKcal(c.clave)}
+                                onKeyDown={(e) => { if (e.key === "Enter") commitMealKcal(c.clave); }}
+                                disabled={!macros.kcal}
+                                className="w-20 h-8 px-2 rounded-lg border border-border bg-background text-sm text-center font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+                              />
+                              <span className="text-muted-foreground text-xs">kcal</span>
+                            </div>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                        {([
+                          { macro: "prot" as const, calc: c.protG },
+                          { macro: "carb" as const, calc: c.carbG },
+                          { macro: "grasa" as const, calc: c.grasaG },
+                        ]).map((g) => (
+                          <td key={g.macro} className="py-3 px-4">
+                            {c.incluida && c.enDiaVisto ? (
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  type="number" inputMode="decimal" min={0}
+                                  value={mealGramValue(c.clave, g.macro, g.calc)}
+                                  onChange={(e) => setMealGramEdit({ tipo: c.clave, macro: g.macro, val: e.target.value })}
+                                  onBlur={() => commitMealGram(c.clave, g.macro)}
+                                  onKeyDown={(e) => { if (e.key === "Enter") commitMealGram(c.clave, g.macro); }}
+                                  disabled={c.kcalComida <= 0}
+                                  className="w-16 h-8 px-2 rounded-lg border border-border bg-background text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+                                />
+                                <span className="text-muted-foreground text-xs">g</span>
+                              </div>
+                            ) : (
+                              "—"
+                            )}
+                          </td>
+                        ))}
+                        <td className="py-3 px-2">
+                          {c.incluida && (
+                            <button
+                              type="button"
+                              onClick={() => setRepartoExpandido((v) => (v === c.clave ? null : c.clave))}
+                              title={t("repartoAjustarMacros")}
+                              className={cn(
+                                "inline-flex items-center justify-center h-7 w-7 rounded-lg border transition-colors",
+                                c.overrideActivo
+                                  ? "border-primary/40 bg-primary/10 text-primary"
+                                  : "border-border text-muted-foreground hover:bg-muted/60"
+                              )}
+                            >
+                              <ChevronDown className={cn("w-4 h-4 transition-transform", repartoExpandido === c.clave && "rotate-180")} />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                      {c.incluida && repartoExpandido === c.clave && (
+                        <tr className="border-b border-border bg-muted/20">
+                          <td colSpan={7} className="px-4 sm:px-5 py-3">
+                            <div className="flex flex-wrap items-start gap-x-6 gap-y-2">
+                              {/* Ancho FIJO: al crear el override en pleno arrastre cambia el texto
+                                  ("hereda…" → "propios…"); si este bloque cambiara de ancho, los
+                                  sliders se moverían bajo el puntero y el valor saltaría a 100. */}
+                              <div className="flex flex-col gap-1 pt-0.5 w-44 shrink-0">
+                                <span className="text-xs font-medium text-muted-foreground">
+                                  {c.overrideActivo ? t("repartoMacrosPropios") : t("repartoMacrosHeredados")}
+                                </span>
+                                {/* Fórmulas de macros con nombre (la Zona, cetogénica…) para ESTA comida.
+                                    Si la comida hereda, el valor es "__hereda" y NO un preset: si no,
+                                    elegir la fórmula que ya coincide con la del día no dispararía change
+                                    y el clic no haría nada (no se crearía el reparto propio). */}
+                                <select
+                                  value={
+                                    c.overrideActivo
+                                      ? (MACRO_PRESETS.find((p) => p.grasa === c.mGrasa && p.carb === c.mCarb && p.prot === c.mProt)?.id ?? "")
+                                      : "__hereda"
+                                  }
+                                  onChange={(e) =>
+                                    e.target.value === "__hereda"
+                                      ? heredarMacrosDia(c.clave)
+                                      : aplicarPresetComida(c.clave, e.target.value)
+                                  }
+                                  className="h-8 px-2 rounded-lg border border-border bg-background text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                  title={t("presetTitulo")}
+                                >
+                                  <option value="__hereda">{t("repartoPresetDia")}</option>
+                                  <option value="" disabled>{t("presetPersonalizada")}</option>
+                                  {MACRO_PRESETS.map((p) => (
+                                    <option key={p.id} value={p.id}>
+                                      {t(`preset_${p.id}` as never)}
+                                    </option>
+                                  ))}
+                                </select>
+                                {c.overrideActivo && (
+                                  <button
+                                    type="button"
+                                    onClick={() => heredarMacrosDia(c.clave)}
+                                    className="text-xs text-primary hover:underline text-left"
+                                  >
+                                    {t("repartoHeredarDia")}
+                                  </button>
+                                )}
+                              </div>
+                              {/* Editables directamente: el primer cambio crea el reparto propio de la
+                                  comida. El slider re-equilibra los otros dos macros (como el día). */}
+                              {([
+                                { key: "prot" as const, label: t("proteinas"), val: c.mProt, color: "#3B82F6" },
+                                { key: "carb" as const, label: t("carbosCorta"), val: c.mCarb, color: "#F97316" },
+                                { key: "grasa" as const, label: t("lipidos"), val: c.mGrasa, color: "#EAB308" },
+                              ]).map((m) => (
+                                <div key={m.key} className="flex flex-col gap-1 w-28">
+                                  <span className="text-[11px] font-medium" style={{ color: m.color }}>{m.label}</span>
+                                  <div className="flex items-center gap-1">
+                                    <input
+                                      type="number" inputMode="decimal" min={0} max={100}
+                                      value={m.val}
+                                      onChange={(e) => handlePctChange((v) => setMacroComida(c.clave, m.key, v, false), e.target.value)}
+                                      className="w-16 h-8 px-2 rounded-lg border border-border bg-background text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                    />
+                                    <span className="text-muted-foreground text-xs">%</span>
+                                  </div>
+                                  <input
+                                    type="range" min={0} max={100}
+                                    value={m.val}
+                                    onChange={(e) => setMacroComida(c.clave, m.key, parseInt(e.target.value, 10), true)}
+                                    className="macro-slider w-full"
+                                    style={{ "--slider-color": m.color, "--slider-pct": `${m.val}%` } as React.CSSProperties}
+                                  />
+                                </div>
+                              ))}
+                              {c.macroSuma !== 100 && (
+                                <span className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1 pt-0.5">
+                                  <AlertTriangle className="w-3.5 h-3.5" />
+                                  {t("sumaPorcentajes", { pct: c.macroSuma })}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  ))}
+                  {/* Añadir una comida propia (pre-entreno, snack…): la dieta se creará con ella
+                      en los días que marques. Es lo que hace que la planificación defina la estructura. */}
+                  <tr>
+                    <td colSpan={7} className="px-2 sm:px-4 py-3">
+                      {nuevaComidaAbierta ? (
+                        <div className="flex flex-wrap items-end gap-2">
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[11px] font-medium text-muted-foreground">{t("repartoNuevaNombre")}</span>
+                            <input
+                              value={nuevaComidaNombre}
+                              onChange={(e) => setNuevaComidaNombre(e.target.value)}
+                              onKeyDown={(e) => { if (e.key === "Enter") confirmarNuevaComida(); }}
+                              placeholder={t("repartoNuevaNombrePlaceholder")}
+                              maxLength={60}
+                              autoFocus
+                              className="w-44 h-8 px-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            />
+                          </div>
+                          {/* Posición en el día: es como piensa el nutri ("entre el desayuno y la
+                              comida"). Al elegirla se propone la hora que la deja en ese hueco. */}
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[11px] font-medium text-muted-foreground">{t("repartoNuevaPosicion")}</span>
+                            <select
+                              value={nuevaComidaPos}
+                              onChange={(e) => elegirHuecoComida(Number(e.target.value))}
+                              className="h-8 px-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            >
+                              {huecosComida.map((h, i) => (
+                                <option key={i} value={i}>{h.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[11px] font-medium text-muted-foreground">{t("repartoNuevaHora")}</span>
+                            <input
+                              type="time"
+                              value={nuevaComidaHora || huecosComida[nuevaComidaPos]?.hora || ""}
+                              onChange={(e) => setNuevaComidaHora(e.target.value)}
+                              title={t("repartoNuevaHoraTitulo")}
+                              className="h-8 px-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            />
+                          </div>
+                          {/* Días en los que va: se elige aquí mismo, sin tener que crearla y luego
+                              ir a los cuadraditos de la fila. */}
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[11px] font-medium text-muted-foreground">{t("repartoNuevaDias")}</span>
+                            <div className="flex items-center gap-1 h-8">
+                              {DIAS_SEMANA.map((d) => {
+                                const activo = nuevaComidaDias.includes(d);
+                                return (
+                                  <button
+                                    key={d}
+                                    type="button"
+                                    title={tDia(d)}
+                                    onClick={() =>
+                                      setNuevaComidaDias((prev) =>
+                                        prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d],
+                                      )
+                                    }
+                                    className={cn(
+                                      "w-5 h-5 rounded-[3px] text-[9px] font-bold leading-none transition-colors",
+                                      activo
+                                        ? "bg-primary/80 text-primary-foreground"
+                                        : "bg-muted text-muted-foreground/60 hover:bg-muted-foreground/20",
+                                    )}
+                                  >
+                                    {tDia(d).charAt(0)}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={confirmarNuevaComida}
+                            disabled={!nuevaComidaNombre.trim() || nuevaComidaDias.length === 0}
+                            className="h-8 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 disabled:opacity-50"
+                          >
+                            {t("repartoNuevaAnadir")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setNuevaComidaAbierta(false); setNuevaComidaNombre(""); }}
+                            className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
+                          >
+                            {t("cerrar")}
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => { setNuevaComidaAbierta(true); elegirHuecoComida(huecosComida.length - 1); }}
+                          className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          {t("repartoAnadirComida")}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pie: resumen + Guardar aquí mismo. La barra de guardar general queda al final de una
+                pestaña muy larga y desde esta sección no se ve: el nutri no sabía dónde guardar. */}
+            <div className="px-4 sm:px-5 py-3 border-t border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <span className="text-xs text-muted-foreground">
+                {repartoCalc.hayComidasPorDias
+                  ? t("repartoResumenDiaVisto", {
+                      dia: tDia(diaVistaReparto),
+                      n: repartoCalc.filas.filter((c) => c.incluida && c.enDiaVisto).length,
+                      asignadas: repartoCalc.kcalAsignadas,
+                      objetivo: macros.kcal,
+                    })
+                  : t("repartoResumen", { asignadas: repartoCalc.kcalAsignadas, objetivo: macros.kcal })}
+              </span>
+              {isDirty && (
+                <button
+                  type="button"
+                  onClick={handleGuardar}
+                  disabled={isSaving}
+                  className="shrink-0 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-60"
+                >
+                  {isSaving ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                      {t("guardando")}
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      {t("guardarCambios")}
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          </>
+        )}
       </section>
 
       {/* ====== Section 4: Cuantificación de nutrientes ====== */}
