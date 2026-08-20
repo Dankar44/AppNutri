@@ -110,11 +110,11 @@ export function IngredienteList({
               return (
                 <div
                   key={`${ing.alimentoId}-${index}`}
-                  className="flex items-center gap-3 p-3 rounded-lg border border-border bg-background"
+                  className="flex flex-wrap items-center gap-3 p-3 rounded-lg border border-border bg-background"
                 >
-                  <div className="flex-1 min-w-0">
+                  <div className="min-w-0 flex-1 basis-56">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-medium truncate">{ing.nombre}</p>
+                      <p className="text-sm font-medium whitespace-normal break-words">{ing.nombre}</p>
                       <span className="text-xs px-2 py-0.5 rounded-full bg-muted font-semibold tabular-nums text-muted-foreground">
                         {pct.toFixed(0)}%
                       </span>
@@ -128,7 +128,7 @@ export function IngredienteList({
                       />
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="ml-auto flex items-center gap-2 shrink-0">
                     <CantidadInput
                       value={ing.cantidad}
                       onChange={(n) => updateCantidad(index, n)}

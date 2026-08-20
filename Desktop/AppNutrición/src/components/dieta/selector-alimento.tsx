@@ -562,7 +562,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
                         <span className="text-[10px] text-muted-foreground">{t("selectorAlimento.perRacion")}</span>
                       </div>
                       {r.ingredientes.length > 0 && (
-                        <p className="mt-1.5 text-[10px] text-purple-600 dark:text-purple-400 truncate">
+                        <p className="mt-1.5 text-[10px] leading-relaxed whitespace-normal break-words text-purple-600 dark:text-purple-400">
                           {t("selectorAlimento.ingredients")} {r.ingredientes.map((i) => `${i.alimento.nombre}`).join(", ")}
                         </p>
                       )}
