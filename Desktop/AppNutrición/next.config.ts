@@ -13,6 +13,12 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_BUILD_ID: Date.now().toString(),
   },
   serverExternalPackages: ["pg", "puppeteer-core"],
+  // Fija la raíz del proyecto. Sin esto, si en la máquina de alguien hay otro
+  // package-lock.json más arriba (típico: uno suelto en la carpeta del usuario),
+  // Turbopack lo toma como raíz del workspace y avisa en cada arranque.
+  turbopack: {
+    root: import.meta.dirname,
+  },
   experimental: {
     serverActions: {
       bodySizeLimit: "2mb",
