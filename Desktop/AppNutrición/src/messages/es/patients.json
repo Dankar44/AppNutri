@@ -1068,7 +1068,13 @@
     "aplicar": "Aplicar",
     "sinActividades": "Sin actividades",
     "actividad": "actividad",
-    "actividades": "actividades",
+    "actividades": {
+      "trabajo": "Trabajo",
+      "ejercicio": "Ejercicio",
+      "comida": "Comida",
+      "descanso": "Descanso",
+      "otro": "Otro"
+    },
     "copiar": "Copiar",
     "copiarDiaASemana": "Copiar {dia} a toda la semana",
     "hora": "Hora",
@@ -1110,13 +1116,6 @@
       "viernes": "V",
       "sabado": "S",
       "domingo": "D"
-    },
-    "actividades": {
-      "trabajo": "Trabajo",
-      "ejercicio": "Ejercicio",
-      "comida": "Comida",
-      "descanso": "Descanso",
-      "otro": "Otro"
     },
     "plantillas": {
       "semanaLaboral": "Semana laboral típica",
@@ -1265,12 +1264,32 @@
   },
   "demo": {
     "objetivoDetalle": "Perder 5 kg de forma saludable en 3 meses",
-    "preferencias": ["Mediterránea", "Pescado azul", "Verduras de temporada", "Sin ultraprocesados"],
-    "alergias": ["Frutos secos (almendras)", "Polen estacional"],
-    "intolerancias": ["Lactosa (parcial)"],
-    "patologias": ["Hipertensión controlada", "Hipotiroidismo subclínico leve"],
-    "medicamentos": ["Enalapril 10 mg cada 24 h", "Levotiroxina 50 mcg en ayunas"],
-    "suplementos": ["Vitamina D3 1000 UI", "Omega-3 EPA/DHA", "Magnesio bisglicinato"],
+    "preferencias": [
+      "Mediterránea",
+      "Pescado azul",
+      "Verduras de temporada",
+      "Sin ultraprocesados"
+    ],
+    "alergias": [
+      "Frutos secos (almendras)",
+      "Polen estacional"
+    ],
+    "intolerancias": [
+      "Lactosa (parcial)"
+    ],
+    "patologias": [
+      "Hipertensión controlada",
+      "Hipotiroidismo subclínico leve"
+    ],
+    "medicamentos": [
+      "Enalapril 10 mg cada 24 h",
+      "Levotiroxina 50 mcg en ayunas"
+    ],
+    "suplementos": [
+      "Vitamina D3 1000 UI",
+      "Omega-3 EPA/DHA",
+      "Magnesio bisglicinato"
+    ],
     "nota": "Paciente de prueba preconfigurado para que explores las funciones de la app. Puedes editarlo o eliminarlo cuando quieras.",
     "planNames": [
       "Plan inicial — ejemplo",
@@ -1280,7 +1299,11 @@
       "Plan mediterráneo — legumbres"
     ],
     "planificacionNombre": "Planificación por defecto",
-    "consultaMotivos": ["Primera consulta", "Revisión de seguimiento", "Revisión mensual"],
+    "consultaMotivos": [
+      "Primera consulta",
+      "Revisión de seguimiento",
+      "Revisión mensual"
+    ],
     "citaMotivos": [
       "Segunda revisión de seguimiento",
       "Consulta puntual — duda sobre suplementación",
@@ -1297,7 +1320,6 @@
     "seccionMacronutrientes": "Distribución de los macronutrientes",
     "seccionNutrientes": "Cuantificación de nutrientes",
     "seccionDuracion": "Duración",
-
     "thFormula": "Fórmula",
     "thActual": "Actual",
     "thObjetivo": "Objetivo",
@@ -1305,21 +1327,17 @@
     "thTotal": "Total",
     "thFuente": "Fuente",
     "thCantidad": "Cantidad",
-
     "peso": "Peso",
     "pesoReduccion": "Reducción de {kg} kg",
     "pesoGanancia": "Ganancia de {kg} kg",
-
     "masaGrasaCorta": "% Masa grasa",
     "masaGrasaLarga": "Porcentaje de masa grasa",
     "noDefinido": "No definido",
-
     "imcAvisoPesoAltura": "Añade peso y altura en General para calcular",
     "imcDelgadez": "Delgadez",
     "imcEutrofia": "Eutrofia",
     "imcSobrepeso": "Sobrepeso",
     "imcObesidad": "Obesidad",
-
     "actividadCorta": "Actividad",
     "actividadLarga": "Nivel de actividad física",
     "actividadSedentario": "Sedentario",
@@ -1327,12 +1345,10 @@
     "actividadActivo": "Activo",
     "actividadMuyActivo": "Muy activo",
     "actividadPersonalizado": "Personalizado",
-
     "metabolismoCorta": "Met. basal",
     "metabolismoLarga": "Metabolismo basal",
     "necesidadesCorta": "Nec. energéticas",
     "necesidadesLarga": "Necesidades energéticas diarias",
-
     "kcalDia": "{val} kcal/día",
     "unidadKcalDia": "kcal/día",
     "ajusteCalculadoResumen": "Gasto {base} → objetivo {result} kcal/día",
@@ -1345,13 +1361,11 @@
     "dietaActiva": "activa",
     "aplicarObjetivosOk": "Objetivos aplicados a «{plan}»",
     "aplicarObjetivosError": "No se pudieron aplicar los objetivos. Inténtalo de nuevo.",
-
     "lipidos": "Lípidos",
     "carbosCorta": "Carbos",
     "carbosLarga": "Hidratos de carbono",
     "proteinas": "Proteínas",
     "sumaPorcentajes": "La suma de porcentajes es {pct}% (debe ser 100%).",
-
     "presetTitulo": "Aplicar una distribución de macros predefinida",
     "presetPersonalizada": "Personalizada",
     "preset_equilibrada": "Equilibrada (50/20/30)",
@@ -1360,32 +1374,41 @@
     "preset_cetogenica": "Cetogénica",
     "preset_altaProteina": "Alta en proteína",
     "preset_lowCarb": "Baja en carbohidratos",
-
     "repartoTitulo": "Reparto por comida",
-    "repartoDescripcion": "Define qué parte de las calorías y los macros del día va en cada comida. Los gramos se calculan solos a partir del objetivo del día. Cada comida puede heredar la distribución de macros del día o tener la suya propia.",
+    "repartoDescripcion": "Qué parte de las calorías y los macros del día va en cada comida.",
+    "repartoResumenLinea": "{n} comidas · {pcts} % de las calorías",
+    "cerrar": "Cerrar",
+    "repartoDesactivado": "Actívalo para repartir las calorías y los macros del día entre las comidas.",
     "repartoActivar": "Activar",
     "repartoActivado": "Activado",
     "repartoSinKcal": "Aún no hay un objetivo de calorías del día. Rellena el gasto y el objetivo arriba para ver los gramos por comida.",
     "repartoEquitativo": "Repartir equitativamente",
+    "repartoCuadrarResto": "Cuadrar el resto al 100%",
     "repartoSumaKcal": "Reparto de calorías: {pct}% del día",
     "repartoThComida": "Comida",
     "repartoThKcalPct": "% kcal",
     "repartoThKcal": "kcal",
     "repartoAjustarMacros": "Ajustar macros de esta comida",
     "repartoMacrosPropios": "Macros propios de esta comida:",
-    "repartoMacrosHeredados": "Esta comida hereda la distribución de macros del día.",
-    "repartoHeredarDia": "Heredar la del día",
+    "repartoMacrosHeredados": "Usa la distribución de macros del día. Cambia un valor para darle una propia.",
+    "repartoHeredarDia": "Volver a valores predeterminados",
     "repartoResumen": "Repartidas {asignadas} kcal de las {objetivo} kcal del objetivo del día.",
-
+    "repartoComidaSinPct": "Hay una comida marcada con 0%: no tendrá objetivo en la dieta.",
+    "repartoPresetDia": "La del día (predeterminada)",
+    "repartoPresetTitulo": "Aplicar una distribución de calorías por comida predefinida",
+    "repartoPreset_tradicional5": "Tradicional · 5 tomas (25/10/30/10/25)",
+    "repartoPreset_completo6": "Completa · 6 tomas (25/10/30/10/20/5)",
+    "repartoPreset_tresComidas": "3 comidas (30/40/30)",
+    "repartoPreset_cuatroComidas": "4 comidas (25/35/10/30)",
+    "repartoPreset_desayunoFuerte": "Desayuno fuerte (rey, príncipe, mendigo)",
+    "repartoPreset_cenaLigera": "Cena ligera (25/10/35/15/15)",
     "fibra": "Fibra",
-
     "duracionInicio": "Inicio",
     "duracionUltCambio": "Últ. cambio",
     "duracionFinPrevisto": "Fin previsto",
     "planificacionActual": "Planificación actual",
     "seActualizaAlGuardar": "Se actualiza al guardar",
     "seleccionarFin": "Seleccionar fin",
-
     "crearCorta": "Crear",
     "crearPlanificacion": "Crear planificación",
     "crearNuevaPlanificacion": "Crear nueva planificación",
@@ -1393,7 +1416,6 @@
     "crearPlaceholder": "Ej: Plan de definición",
     "copiarPlanificacion": "Copiar la planificación:",
     "sinCopiar": "Sin copiar (vacía)",
-
     "editar": "Editar",
     "eliminar": "Eliminar",
     "cancelar": "Cancelar",
@@ -1403,17 +1425,13 @@
     "avisoCambiosSinGuardar": "Tienes cambios sin guardar en esta planificación. Si cambias o sales, se perderán. ¿Continuar?",
     "avisoCambiosTitulo": "Cambios sin guardar",
     "avisoCambiosDescartar": "Descartar y cambiar",
-
     "confirmarEliminar": "¿Deseas eliminar esta planificación?",
     "confirmarEliminarDesc": "Los planes de alimentación asociados a esta planificación se asociarán a otra planificación existente.",
-
     "buscarFormula": "Buscar fórmula...",
     "sinResultados": "Sin resultados",
-
     "formulaGrupoDirecto": "Cálculo Directo",
     "formulaGrupoBrozek": "Cálculo Indirecto mediante la Fórmula de Brozek",
     "formulaGrupoSiri": "Cálculo Indirecto mediante la Fórmula de Siri",
-
     "ecuacionOms": "Ecuación de la OMS",
     "ecuacionHenry": "Ecuación de Henry",
     "ecuacionHarrisBenedict": "Ecuación de Harris Benedict",
@@ -1433,11 +1451,36 @@
     "ecuacionDurninWomersley": "Ecuación de Durnin y Womersley",
     "ecuacionJackson3": "Ecuación de Jackson et al (3 Pliegues)",
     "ecuacionJackson7": "Ecuación de Jackson et al (7 Pliegues)",
-
     "fibraNhmrc2006": "NHMRC 2006 (actualizado en 2017)",
-    "unidadGDia": "g/día"
+    "unidadGDia": "g/día",
+    "repartoIncluirComida": "Incluir esta comida en el reparto",
+    "repartoQuitarComida": "Quitar esta comida del reparto",
+    "repartoAnadirComida": "Añadir comida (pre-entreno, snack…)",
+    "repartoNuevaNombre": "Nombre",
+    "repartoNuevaNombrePlaceholder": "Pre-entreno",
+    "repartoNuevaHora": "Hora",
+    "repartoNuevaAnadir": "Añadir",
+    "repartoComidaRepetida": "Ya hay una comida con ese nombre en el reparto.",
+    "repartoDiasTitulo": "Días en los que se creará esta comida al montar una dieta nueva",
+    "repartoNuevaPosicion": "¿Dónde va?",
+    "repartoPosAntesDe": "Antes de {comida}",
+    "repartoPosEntre": "Entre {a} y {b}",
+    "repartoPosDespuesDe": "Después de {comida}",
+    "repartoPosUnica": "Única comida del día",
+    "repartoNuevaHoraTitulo": "Hora sugerida por la posición elegida. Si la cambias, la comida se recolocará según la nueva hora.",
+    "repartoResumenPorDias": "Cada día reparte sus {objetivo} kcal entre las comidas que tiene ese día.",
+    "repartoVerDia": "Ver día:",
+    "repartoResumenDiaVisto": "{dia}: {n} comidas · {asignadas} de las {objetivo} kcal del día.",
+    "repartoNuevaDias": "¿Qué días?",
+    "repartoSumaKcalDias": "Por día: {detalle}",
+    "repartoAvisoTitulo": "Hay días que no reparten el 100% de las calorías",
+    "repartoAvisoDetalle": "{detalle}",
+    "repartoAvisoQueHacer": "Puedes ajustar los % de las comidas de esos días para que sumen 100, o dejarlo así: las calorías se reparten proporcionalmente y el total del día siempre cuadra.",
+    "repartoAvisoEntendido": "Entendido"
   },
   "planVisual": {
+    "repartoComidaActivo": "Objetivo por comida activo",
+    "repartoComidaConfigurar": "Los objetivos de cada comida vienen del reparto por comida de la planificación. Pulsa para verlo o cambiarlo.",
     "sinPlan": "Sin plan",
     "sinDatos": "No hay datos para mostrar.",
     "sinDias": "No hay días para mostrar.",
@@ -1570,6 +1613,8 @@
       "minutos": "minutos",
       "actividadFisica": "Actividad física",
       "gastoEnergetico": "Gasto energético diario"
-    }
+    },
+    "repartoComidaAnadida": "Comida añadida al reparto de esta dieta",
+    "repartoComidaAnadidaError": "No se pudo añadir la comida al reparto"
   }
 }

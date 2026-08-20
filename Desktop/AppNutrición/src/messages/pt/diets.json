@@ -467,7 +467,11 @@
     "noFoods": "Sem alimentos",
     "addFood": "Adicionar novo alimento +",
     "notes": "Notas",
-    "notesPlaceholder": "Notas sobre esta refeição..."
+    "notesPlaceholder": "Notas sobre esta refeição...",
+    "leyendaObjetivo": "o que já tem / objetivo desta refeição",
+    "tooltipObjetivo": "Tem {actual} kcal das {objetivo} kcal que cabem a esta refeição",
+    "sinObjetivoReparto": "Sem objetivo na distribuição por refeição do planejamento",
+    "anadirAlReparto": "Adicionar à distribuição"
   },
   "resumenDiario": {
     "calories": "Calorias",
