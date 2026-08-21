@@ -255,6 +255,21 @@ export default function NuevoPlanPage() {
     aplicarObjetivos(plani, true);
   }
 
+  // Al elegir una plantilla, la sección "Objetivos de macros" se desmonta (`{!plantillaId && …}`) y
+  // con ella sus inputs, que NO son controlados por React: se rellenan escribiendo en el DOM. Al
+  // quitar la plantilla la sección vuelve VACÍA aunque el selector siga con su planificación, y
+  // había que re-elegirla a mano para que cargara. Aquí se repueblan solos con la que estuviera
+  // seleccionada (sea la principal o cualquier otra).
+  const teniaPlantilla = useRef(false);
+  useEffect(() => {
+    const habiaAntes = teniaPlantilla.current;
+    teniaPlantilla.current = !!plantillaId;
+    if (plantillaId || !habiaAntes) return; // solo en la transición "con plantilla" → "sin plantilla"
+    if (!planiSelId || planiSelId === SIN_PLAN) return;
+    const plani = (contexto?.planificaciones ?? []).find((x) => x.planificacionId === planiSelId);
+    if (plani) aplicarObjetivos(plani, true);
+  }, [plantillaId, planiSelId, contexto]);
+
   // Objetivos (como strings de input) de varias planificaciones, precargados del contexto.
   function objetivosDeIds(ids: string[]) {
     const s = (v: number | null | undefined) => (v != null ? String(v) : "");
