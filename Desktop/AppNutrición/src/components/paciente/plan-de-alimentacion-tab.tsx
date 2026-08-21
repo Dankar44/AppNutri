@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PlanVisual, type PlanVisualDetalle } from "./plan-visual";
-import type { RepartoPorComida } from "@/lib/reparto-comidas";
+import type { RepartoPorComida, RepartoGuardado } from "@/lib/reparto-comidas";
 
 type MicronutrientesOpcionales = {
   vitaminaA?: number | null;
@@ -94,8 +94,12 @@ type PlanDetalle = {
   grasasObjetivo: number | null;
   createdAt: string;
   dias: PlanDetalleDia[];
-  /** #78-C — Copia del reparto por comida de esta dieta (NULL en las anteriores a la feature). */
-  repartoPorComida?: RepartoPorComida | null;
+  /** #78-C — Copia del reparto por comida de esta dieta (NULL en las anteriores a la feature).
+   *  Un reparto por planificación, más el `global` de los días sin ninguna. */
+  repartoPorComida?: RepartoGuardado | null;
+  /** #78 — Override de objetivos por planificación hecho en esta dieta (manda sobre los de la
+   *  planificación, igual que en /dietas/[id]). */
+  objetivosPorPlani?: Record<string, { kcal?: number; proteinas?: number; carbohidratos?: number; grasas?: number }> | null;
   /** #78 — Planificaciones que usa la dieta y objetivos por día: para calcular el cumplimiento por
    *  comida igual que en /dietas/[id] (si no, esta pantalla usaría las kcal globales del plan). */
   planificacionIds?: string[];
@@ -332,15 +336,12 @@ export function PlanDeAlimentacionTab({
           .map((p) => {
             const num = (v: unknown) => (typeof v === "number" && isFinite(v) && v > 0 ? Math.round(v) : null);
             const d = p.datos ?? {};
-            return {
-              id: p.id,
-              nombre: p.nombre,
-              kcal: num(d.kcalObjetivo),
-              proteinas: num(d.protGObjetivo),
-              carbohidratos: num(d.carbGObjetivo),
-              grasas: num(d.grasaGObjetivo),
-              datos: { repartoPorComida: d.repartoPorComida },
-            };
+            // Override propio de esta dieta si el nutri lo editó; si no, los de la planificación.
+            const ov = selectedPlan.objetivosPorPlani?.[p.id];
+            const datos = { repartoPorComida: d.repartoPorComida };
+            return ov
+              ? { id: p.id, nombre: p.nombre, kcal: num(ov.kcal), proteinas: num(ov.proteinas), carbohidratos: num(ov.carbohidratos), grasas: num(ov.grasas), datos }
+              : { id: p.id, nombre: p.nombre, kcal: num(d.kcalObjetivo), proteinas: num(d.protGObjetivo), carbohidratos: num(d.carbGObjetivo), grasas: num(d.grasaGObjetivo), datos };
           })}
         objetivosPorDia={selectedPlan.objetivosPorDia}
         repartoPropio={selectedPlan.repartoPorComida ?? null}

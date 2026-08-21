@@ -1325,7 +1325,7 @@ export function PlanificacionPorDefectoTab({
       // Gramos con la fórmula compartida (`objetivoDeFila`), la misma que usan las pastillas
       // "llevas / objetivo" de cada comida en el editor de dietas: si aquí se calculara aparte, la
       // tabla y la dieta dirían gramos distintos para la misma comida.
-      const obj = objetivoDeFila(kcalComida, c, {
+      const obj = objetivoDeFila(kcalComida, cuotaPorIdx.get(i) ?? 0, c, {
         proteinas: macros.protG,
         carbohidratos: macros.carbG,
         grasas: macros.grasaG,

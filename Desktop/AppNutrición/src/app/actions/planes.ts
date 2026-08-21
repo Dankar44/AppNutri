@@ -7,8 +7,10 @@ import {
   filasParaDia,
   claveComida,
   nombreNormalizado,
-  renombrarFilaReparto,
+  renombrarFilaEnGuardado,
+  ponerRepartoParaPlani,
   type RepartoPorComida,
+  type RepartoGuardado,
 } from "@/lib/reparto-comidas";
 import { randomUUID } from "crypto";
 import { expandirGruposDeDias, DIA_ORDEN_SEMANA } from "@/lib/grupos-dias";
@@ -172,23 +174,44 @@ export async function crearPlan(data: PlanFormData) {
   // #78-C — El reparto por comida se COPIA en la dieta al crearla (igual que kcal y macros): así
   // cambiar el reparto en la planificación no altera las dietas ya creadas. Se copia el de la
   // planificación elegida (la primera) o, si no eligió ninguna, el de la principal del paciente.
-  const repartoRows = await prisma.$queryRawUnsafe<{ reparto: unknown }[]>(
+  // Con varias planificaciones se copia el reparto de CADA una en su slot (cada día usará el de la
+  // suya); `global` lleva el de la primera, que es la que arrancan usando todos los días, y es
+  // además el único slot que se usa cuando la dieta tiene una sola planificación: en ese caso
+  // `crearPlan` no le asigna `planificacionId` a ningún día.
+  const repartoRows = await prisma.$queryRawUnsafe<{ id: string | null; reparto: unknown }[]>(
     idsOk.length > 0
-      ? `SELECT datos->'repartoPorComida' AS reparto FROM planificaciones
-         WHERE id = $1 AND "dietistaId" = $2`
-      : `SELECT datos->'repartoPorComida' AS reparto FROM planificaciones
+      ? `SELECT id, datos->'repartoPorComida' AS reparto FROM planificaciones
+         WHERE id = ANY($1::text[]) AND "dietistaId" = $2`
+      : `SELECT id, datos->'repartoPorComida' AS reparto FROM planificaciones
          WHERE "pacienteId" = $1 AND "dietistaId" = $2
          ORDER BY "esDefecto" DESC, "createdAt" ASC LIMIT 1`,
-    idsOk.length > 0 ? idsOk[0] : data.pacienteId,
+    idsOk.length > 0 ? idsOk : data.pacienteId,
     dietista.id,
   );
-  const repartoOrigen = (repartoRows[0]?.reparto ?? null) as RepartoPorComida | null;
-  if (repartoOrigen) {
+  const porPlaniOrigen = new Map(
+    repartoRows
+      .filter((r) => r.id && r.reparto)
+      .map((r) => [r.id as string, r.reparto as RepartoPorComida]),
+  );
+  // El de referencia (para `global` y para crear las comidas de la dieta) es el de la primera
+  // planificación elegida, o el único que haya si no se eligió ninguna.
+  const repartoOrigen =
+    (idsOk.length > 0
+      ? porPlaniOrigen.get(idsOk[0])
+      : (repartoRows[0]?.reparto as RepartoPorComida | null)) ?? null;
+  if (repartoOrigen || porPlaniOrigen.size > 0) {
+    const guardado: RepartoGuardado = {
+      v: 2,
+      global: repartoOrigen,
+      porPlani: Object.fromEntries(porPlaniOrigen),
+    };
     await prisma.$executeRawUnsafe(
       `UPDATE planes_alimenticios SET "repartoPorComida" = $1::jsonb WHERE id = $2`,
-      JSON.stringify(repartoOrigen),
+      JSON.stringify(guardado),
       plan.id,
     );
+  }
+  if (repartoOrigen) {
 
     // #78-C — La planificación define la ESTRUCTURA de comidas: si el reparto está activo, la dieta
     // nace con las comidas que dice el reparto (nombres, horas y solo en los días marcados) en vez
@@ -229,23 +252,53 @@ export async function crearPlan(data: PlanFormData) {
 /** #78-C — Guarda (o borra, con null) el reparto por comida PROPIO de una dieta. Lo usa la propia
  *  dieta para editar su reparto (el flujo es: planificación → crear dieta → retocar en la dieta).
  *  Columna fuera del cliente Prisma → $executeRawUnsafe. */
+/**
+ * Guarda el reparto por comida DE UNA DIETA. Nunca toca la planificación: la dieta tiene su propia
+ * copia, y lo que el nutri ajuste aquí es solo de esta dieta.
+ *
+ * Escribe el slot de UNA planificación (o el `global`, para los días que no tienen ninguna
+ * asignada, que es el caso normal cuando la dieta usa una sola). Los demás slots se dejan como
+ * estaban, así dos días con planificaciones distintas no se pisan.
+ */
 export async function guardarRepartoDePlan(
   planId: string,
+  planificacionId: string | null,
   reparto: RepartoPorComida | null
 ): Promise<{ ok: boolean; error?: string }> {
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
-  if (dietista.isDemo) return { ok: true };
+  if (dietista.isDemo) return { ok: false, error: t("general.noDisponibleDemo") };
+
+  const filas = await prisma.$queryRawUnsafe<
+    { repartoPorComida: unknown; planificacionIds: unknown; pacienteId: string }[]
+  >(
+    `SELECT "repartoPorComida", "planificacionIds", "pacienteId" FROM planes_alimenticios
+     WHERE id = $1 AND "dietistaId" = $2`,
+    planId,
+    dietista.id,
+  );
+  if (filas.length === 0) return { ok: false, error: t("plan.planNoEncontrado") };
+
+  const guardado = (filas[0].repartoPorComida ?? null) as RepartoGuardado | null;
+  const conocidos = Array.isArray(filas[0].planificacionIds)
+    ? (filas[0].planificacionIds as string[])
+    : [];
+  // Al pasar del formato viejo al nuevo se siembra el reparto que había en todos los slots, o los
+  // días de las OTRAS planificaciones se quedarían sin el reparto que estaban usando.
+  const nuevo = ponerRepartoParaPlani(guardado, planificacionId, reparto, conocidos);
 
   await prisma.$executeRawUnsafe(
     `UPDATE planes_alimenticios SET "repartoPorComida" = $1::jsonb, "updatedAt" = CURRENT_TIMESTAMP
      WHERE id = $2 AND "dietistaId" = $3`,
-    reparto ? JSON.stringify(reparto) : null,
+    JSON.stringify(nuevo),
     planId,
     dietista.id,
   );
   revalidatePath(`/dietas/${planId}`);
+  // La ficha del paciente es donde `crearPlan` deja al nutri, así que sin esto el editor de allí
+  // seguía sirviendo la página cacheada y parecía que no se había guardado nada.
+  revalidatePath(`/pacientes/${filas[0].pacienteId}`);
   return { ok: true };
 }
 
@@ -416,7 +469,7 @@ export async function getPlan(id: string) {
   const planiRows = await prisma.$queryRawUnsafe<{
     planificacionIds: string[] | null;
     objetivosPorPlani: Record<string, { kcal: number | null; proteinas: number | null; carbohidratos: number | null; grasas: number | null }> | null;
-    repartoPorComida: RepartoPorComida | null;
+    repartoPorComida: RepartoGuardado | null;
   }[]>(
     `SELECT "planificacionIds", "objetivosPorPlani", "repartoPorComida" FROM planes_alimenticios WHERE id = $1`,
     plan.id,
@@ -716,8 +769,8 @@ export async function actualizarMetaComida(
         `SELECT "repartoPorComida" FROM planes_alimenticios WHERE id = $1`,
         actual.diaDelPlan.planId,
       );
-      const guardado = filas[0]?.repartoPorComida as RepartoPorComida | null;
-      const nuevo = renombrarFilaReparto(guardado, actual.nombre, patch.nombre);
+      const guardado = filas[0]?.repartoPorComida as RepartoGuardado | null;
+      const nuevo = renombrarFilaEnGuardado(guardado, actual.nombre, patch.nombre);
       if (nuevo) {
         await prisma.$executeRawUnsafe(
           `UPDATE planes_alimenticios SET "repartoPorComida" = $1::jsonb WHERE id = $2`,
@@ -1649,10 +1702,11 @@ export async function getPlanesDetallePaciente(pacienteId: string) {
   const repartoRows = planesRaw.length
     ? await prisma.$queryRawUnsafe<{
         id: string;
-        repartoPorComida: RepartoPorComida | null;
+        repartoPorComida: RepartoGuardado | null;
         planificacionIds: string[] | null;
+        objetivosPorPlani: Record<string, { kcal?: number; proteinas?: number; carbohidratos?: number; grasas?: number }> | null;
       }[]>(
-        `SELECT id, "repartoPorComida", "planificacionIds" FROM planes_alimenticios WHERE id IN (${planesRaw
+        `SELECT id, "repartoPorComida", "planificacionIds", "objetivosPorPlani" FROM planes_alimenticios WHERE id IN (${planesRaw
           .map((_, i) => `$${i + 1}`)
           .join(",")})`,
         ...planesRaw.map((p) => p.id),
@@ -1668,6 +1722,10 @@ export async function getPlanesDetallePaciente(pacienteId: string) {
       ...p,
       repartoPorComida: extraPorPlan.get(p.id)?.repartoPorComida ?? null,
       planificacionIds: extraPorPlan.get(p.id)?.planificacionIds ?? [],
+      // Override de objetivos por planificación: sin esto la ficha usaba los de la planificación en
+      // crudo y /dietas/[id] el override, así que la MISMA dieta daba objetivos por comida distintos
+      // según por dónde entrases.
+      objetivosPorPlani: extraPorPlan.get(p.id)?.objetivosPorPlani ?? null,
       objetivosPorDia: objetivosPorDiaPorPlan[p.id] ?? {},
       dias: await expandirGruposDeDias(p.id, p.dias),
     })),
@@ -1735,6 +1793,7 @@ export async function getPlanesDetallePaciente(pacienteId: string) {
     // la ficha calcule el cumplimiento por comida IGUAL que /dietas/[id] (misma dieta, mismos números).
     repartoPorComida: plan.repartoPorComida,
     planificacionIds: plan.planificacionIds,
+    objetivosPorPlani: plan.objetivosPorPlani,
     objetivosPorDia: plan.objetivosPorDia,
     dias: plan.dias.map((dia) => ({
       id: dia.id,

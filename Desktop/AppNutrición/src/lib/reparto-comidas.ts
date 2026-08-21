@@ -22,6 +22,14 @@ export type RepartoComida = {
   nombre?: string;
   /** Hora "HH:MM" con la que se creará la comida en la dieta. */
   hora?: string;
+  /** % de kcal propio de esta comida en días concretos (clave = valor de DiaSemana). Manda sobre
+   *  `kcalPct` en los días que aparecen aquí.
+   *
+   *  Solo se usa DENTRO DE UNA DIETA: en la planificación los % son de la semana, porque es una
+   *  plantilla. En una dieta los días son concretos y pueden tener distinto número de comidas, así
+   *  que un único % semanal no puede cuadrar los dos a la vez (3 comidas el martes → 33% cada una;
+   *  4 el miércoles → 25%): al activar el reparto desde la dieta cada día se reparte por separado. */
+  pctPorDia?: Record<string, number>;
   /** Días en los que se CREARÁ esta comida al montar una dieta nueva (valores de DiaSemana).
    *  Vacío/undefined = todos. Es solo una plantilla de creación, NO una restricción: para el cálculo
    *  manda lo que la dieta tiene de verdad, así mover una comida de día no rompe nada ni avisa. */
@@ -45,6 +53,16 @@ export function claveComida(c: { tipo: string; nombre?: string | null }): string
   if (c.tipo !== "OTRA") return c.tipo;
   const n = (c.nombre ?? "").trim().toLowerCase().replace(/\s+/g, " ");
   return `OTRA:${n}`;
+}
+
+/** % de kcal que le toca a esta comida EN ESE DÍA: el propio del día si lo tiene, y si no el de la
+ *  semana. Todo lo que reparta o sume kcal tiene que pasar por aquí, o los días con reparto propio
+ *  saldrían con los números del semanal. */
+export function pctDeFila(fila: RepartoComida, diaSemana?: string | null): number {
+  if (diaSemana && fila.pctPorDia && fila.pctPorDia[diaSemana] != null) {
+    return fila.pctPorDia[diaSemana];
+  }
+  return fila.kcalPct;
 }
 
 /** ¿Se crea esta comida el día indicado al montar una dieta nueva? Sin `dias` (o vacío), todos.
@@ -157,7 +175,7 @@ export function objetivosPorComidaDia(
   const alCero = new Set<string>();
   for (const c of reparto.comidas) {
     if (!c.incluida) continue;
-    if (c.kcalPct <= 0) { alCero.add(claveComida(c)); continue; }
+    if (pctDeFila(c, diaSemana) <= 0) { alCero.add(claveComida(c)); continue; }
     filas.set(claveComida(c), c);
   }
 
@@ -177,16 +195,19 @@ export function objetivosPorComidaDia(
   }
   if (emparejadas.length === 0) return out0;
 
-  const sumaPct = emparejadas.reduce((s, x) => s + x.fila.kcalPct, 0);
+  const sumaPct = emparejadas.reduce((s, x) => s + pctDeFila(x.fila, diaSemana), 0);
   if (sumaPct <= 0) return out0;
   // Los % se aplican TAL CUAL: si el día suma 110% reparte 2730 de 2482 y si suma 78% se queda
   // corto. No se re-escala nada: tapar el descuadre daba números contradictorios ("110% del día"
   // junto a "2482 de 2482") y ocultaba al nutri que su reparto no cuadra.
-  const kcalPorComida = repartirKcal(kcalDia, emparejadas.map((x) => x.fila.kcalPct));
+  const kcalPorComida = repartirKcal(
+    kcalDia,
+    emparejadas.map((x) => pctDeFila(x.fila, diaSemana)),
+  );
 
   const out: Record<string, ObjetivoComida> = { ...out0 };
   emparejadas.forEach(({ cd, fila }, idx) => {
-    out[cd.id] = objetivoDeFila(kcalPorComida[idx], fila, dia);
+    out[cd.id] = objetivoDeFila(kcalPorComida[idx], pctDeFila(fila, diaSemana), fila, dia);
   });
   return out;
 }
@@ -200,10 +221,10 @@ export function objetivosPorComidaDia(
  *  gramos objetivo son lo que el nutri fijó, y así las comidas suman exactamente el día). */
 export function objetivoDeFila(
   kcal: number,
-  fila: Pick<RepartoComida, "kcalPct" | "protPct" | "carbPct" | "grasaPct">,
+  cuota: number,
+  fila: Pick<RepartoComida, "protPct" | "carbPct" | "grasaPct">,
   dia: { proteinas?: number | null; carbohidratos?: number | null; grasas?: number | null },
 ): ObjetivoComida {
-  const cuota = fila.kcalPct; // % literal del día que el nutri asignó a esta comida
   return {
     kcal,
     protG:
@@ -470,4 +491,165 @@ export function anadirFila(
       kcalPct: data.kcalPct ?? 10,
     },
   ];
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * Lo que guarda la DIETA en `planes_alimenticios.repartoPorComida`.
+ *
+ * Formato v1 (dietas creadas antes): un `RepartoPorComida` para toda la dieta.
+ * Formato v2: un reparto POR PLANIFICACIÓN, porque una dieta puede tener
+ * varias y cada día usa la suya (el lunes la de volumen, el martes la de
+ * descanso). El slot `global` es imprescindible y no es un caso raro: con UNA
+ * sola planificación, `crearPlan` no le asigna `planificacionId` a ningún día,
+ * así que el caso normal es "día sin planificación".
+ *
+ * Se leen los dos formatos siempre. No hay migración de datos: la columna es
+ * JSONB y las dietas viejas se siguen entendiendo tal cual.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+export type RepartoGuardadoV2 = {
+  v: 2;
+  /** Para los días sin planificación asignada. */
+  global?: RepartoPorComida | null;
+  porPlani?: Record<string, RepartoPorComida>;
+};
+
+export type RepartoGuardado = RepartoPorComida | RepartoGuardadoV2;
+
+export function esRepartoV2(g: RepartoGuardado | null | undefined): g is RepartoGuardadoV2 {
+  return !!g && typeof g === "object" && (g as RepartoGuardadoV2).v === 2;
+}
+
+/** El reparto que le toca a un día según su planificación. Sin slot propio cae en `global`, que es
+ *  donde vive el reparto de las dietas con una sola planificación (o ninguna). */
+export function repartoParaPlani(
+  guardado: RepartoGuardado | null | undefined,
+  planificacionId?: string | null,
+): RepartoPorComida | null {
+  if (!guardado) return null;
+  if (!esRepartoV2(guardado)) return guardado; // v1: uno solo para toda la dieta
+  if (planificacionId && guardado.porPlani?.[planificacionId]) {
+    return guardado.porPlani[planificacionId];
+  }
+  return guardado.global ?? null;
+}
+
+/** Escribe el reparto de UNA planificación (o el global) dejando los demás como estaban.
+ *
+ *  Al pasar de v1 a v2 se siembra el reparto viejo en `global` y en el slot de todas las
+ *  planificaciones conocidas ANTES de sustituir el editado: si no, los días de las otras
+ *  planificaciones perderían de golpe el reparto que estaban usando, sin que nadie lo pidiera. */
+export function ponerRepartoParaPlani(
+  guardado: RepartoGuardado | null | undefined,
+  planificacionId: string | null | undefined,
+  reparto: RepartoPorComida | null,
+  planificacionIdsConocidos: string[] = [],
+): RepartoGuardadoV2 {
+  let base: RepartoGuardadoV2;
+  if (esRepartoV2(guardado)) {
+    base = { v: 2, global: guardado.global ?? null, porPlani: { ...(guardado.porPlani ?? {}) } };
+  } else if (guardado) {
+    const porPlani: Record<string, RepartoPorComida> = {};
+    for (const id of planificacionIdsConocidos) porPlani[id] = guardado;
+    base = { v: 2, global: guardado, porPlani };
+  } else {
+    base = { v: 2, global: null, porPlani: {} };
+  }
+
+  if (planificacionId) {
+    const porPlani = { ...(base.porPlani ?? {}) };
+    if (reparto) porPlani[planificacionId] = reparto;
+    else delete porPlani[planificacionId];
+    return { ...base, porPlani };
+  }
+  return { ...base, global: reparto };
+}
+
+/** Reparte el 100% de CADA día por separado entre las comidas que ese día tiene, y lo guarda como
+ *  % por día (`pctPorDia`). Es lo que hace "activar el reparto" desde dentro de una dieta: los días
+ *  pueden tener distinto número de comidas, así que un único % semanal no cuadraría los dos a la vez.
+ *
+ *  `comidasPorDia` son las comidas REALES de la dieta, por día de la semana. Las filas que ese día
+ *  no existen no reciben % (se quedan sin entrada, así que ese día no consumen cuota). */
+export function repartoEquitativoPorDia(
+  comidas: RepartoComida[],
+  comidasPorDia: Record<string, { tipo: string; nombre?: string | null }[]>,
+): RepartoComida[] {
+  const pctPorClave = new Map<string, Record<string, number>>();
+  for (const [dia, delDia] of Object.entries(comidasPorDia)) {
+    const claves = [...new Set(delDia.map((c) => claveComida(c)))];
+    if (claves.length === 0) continue;
+    const base = Math.floor(100 / claves.length);
+    const resto = 100 - base * claves.length;
+    claves.forEach((clave, i) => {
+      const prev = pctPorClave.get(clave) ?? {};
+      prev[dia] = base + (i < resto ? 1 : 0);
+      pctPorClave.set(clave, prev);
+    });
+  }
+  return comidas.map((c) => {
+    const clave = claveComida(c);
+    const porDia = pctPorClave.get(clave);
+    if (!porDia) return { ...c, incluida: false, pctPorDia: undefined };
+    const valores = Object.values(porDia);
+    return {
+      ...c,
+      incluida: true,
+      // El % de semana se deja en la media, para que la fila diga algo coherente si algún día
+      // aparece luego sin entrada propia.
+      kcalPct: Math.round(valores.reduce((s, v) => s + v, 0) / valores.length),
+      pctPorDia: porDia,
+    };
+  });
+}
+
+/** Renombra una comida propia en TODOS los repartos que guarde la dieta (el global y el de cada
+ *  planificación): la comida es la misma en todos, y dejar uno con el nombre viejo la sacaría del
+ *  reparto en cuanto ese día usara esa planificación. Devuelve null si no hay nada que cambiar. */
+export function renombrarFilaEnGuardado(
+  guardado: RepartoGuardado | null | undefined,
+  nombreViejo?: string | null,
+  nombreNuevo?: string | null,
+): RepartoGuardado | null {
+  if (!guardado) return null;
+  if (!esRepartoV2(guardado)) return renombrarFilaReparto(guardado, nombreViejo, nombreNuevo);
+
+  let cambiado = false;
+  const global = renombrarFilaReparto(guardado.global, nombreViejo, nombreNuevo);
+  if (global) cambiado = true;
+  const porPlani: Record<string, RepartoPorComida> = {};
+  for (const [id, r] of Object.entries(guardado.porPlani ?? {})) {
+    const nuevo = renombrarFilaReparto(r, nombreViejo, nombreNuevo);
+    if (nuevo) cambiado = true;
+    porPlani[id] = nuevo ?? r;
+  }
+  if (!cambiado) return null;
+  return { v: 2, global: global ?? guardado.global ?? null, porPlani };
+}
+
+/** Firma estable de un reparto, para comparar el borrador optimista de la UI con lo que devuelve el
+ *  servidor. No vale `JSON.stringify`: el objeto viene de una columna JSONB, que reordena las claves,
+ *  así que dos repartos idénticos darían cadenas distintas y el borrador no se podaría nunca. */
+export function firmaReparto(r: RepartoPorComida | null | undefined): string {
+  if (!r) return "";
+  const filas = (r.comidas ?? [])
+    .map((c) =>
+      [
+        claveComida(c),
+        c.incluida ? "1" : "0",
+        c.kcalPct,
+        c.grasaPct ?? "",
+        c.carbPct ?? "",
+        c.protPct ?? "",
+        (c.nombre ?? "").trim(),
+        c.hora ?? "",
+        [...(c.dias ?? [])].sort().join(","),
+        Object.entries(c.pctPorDia ?? {})
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([d, v]) => `${d}:${v}`)
+          .join(","),
+      ].join("|"),
+    )
+    .sort();
+  return `${r.activo ? "1" : "0"}#${filas.join(";")}`;
 }

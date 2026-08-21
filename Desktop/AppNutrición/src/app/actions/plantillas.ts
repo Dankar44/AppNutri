@@ -235,9 +235,11 @@ export async function crearPlanDesdePlantilla(
     dietista.id,
   );
   if (repartoRows[0]?.reparto) {
+    // Formato nuevo: al slot `global`, que es el que usan los días sin planificación asignada — y una
+    // dieta creada desde plantilla nace sin ninguna (ver #142).
     await prisma.$executeRawUnsafe(
       `UPDATE planes_alimenticios SET "repartoPorComida" = $1::jsonb WHERE id = $2`,
-      JSON.stringify(repartoRows[0].reparto),
+      JSON.stringify({ v: 2, global: repartoRows[0].reparto, porPlani: {} }),
       plan.id,
     );
   }

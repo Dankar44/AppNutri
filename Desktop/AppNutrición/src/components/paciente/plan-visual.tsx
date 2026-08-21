@@ -31,7 +31,20 @@ import {
 import { cn, isNextNavigation } from "@/lib/utils";
 import { calcularMacrosPorcion, sumarMacros, convertirAGramos } from "@/lib/macros";
 import { ordenarComidasPorHora } from "@/lib/comida-horas";
-import { objetivosPorComidaDia, claveComida, normalizeReparto, type ObjetivoComida, type RepartoPorComida } from "@/lib/reparto-comidas";
+import {
+  objetivosPorComidaDia,
+  claveComida,
+  normalizeReparto,
+  repartoParaPlani,
+  firmaReparto,
+  type ObjetivoComida,
+  type RepartoPorComida,
+  type RepartoGuardado,
+} from "@/lib/reparto-comidas";
+
+/** Clave del slot de los días SIN planificación asignada, que es el caso normal cuando la dieta usa
+ *  una sola (`crearPlan` no le pone `planificacionId` a ningún día en ese caso). */
+const SLOT_GLOBAL = "__global";
 import { PlanEditor } from "@/components/dieta/plan-editor";
 import { HoraSelect } from "@/components/dieta/hora-select";
 import { CopiarADiasModal, type DiaOption } from "@/components/dieta/copiar-comida-modal";
@@ -207,8 +220,10 @@ export function PlanVisual({
   planificaciones?: { id: string; nombre: string; kcal?: number | null; proteinas?: number | null; carbohidratos?: number | null; grasas?: number | null; datos?: { repartoPorComida?: RepartoPorComida } | null }[];
   objetivosPorDia?: Record<string, { planificacionId: string; nombre: string; kcal: number | null; proteinas: number | null; carbohidratos: number | null; grasas: number | null }>;
   /** #78-C — Copia PROPIA del reparto de esta dieta (snapshot hecho al crearla). Si existe, MANDA
-   *  sobre el reparto de la planificación: cambiar la planificación no debe alterar dietas ya creadas. */
-  repartoPropio?: RepartoPorComida | null;
+   *  sobre el reparto de la planificación: cambiar la planificación no debe alterar dietas ya creadas.
+   *  Lleva un reparto por planificación (y el `global`, para los días sin ninguna asignada); las
+   *  dietas anteriores al cambio de formato guardan uno solo y se leen igual. */
+  repartoPropio?: RepartoGuardado | null;
   /** #78-C — Reparto de la planificación: solo para dietas anteriores a la feature (sin copia propia). */
   repartoFallback?: RepartoPorComida | null;
   localCallbacks?: {
@@ -569,8 +584,7 @@ export function PlanVisual({
     // cambiar la planificación no altera esta dieta). Solo las dietas anteriores a la feature no la
     // tienen: esas leen el reparto de la planificación del día, o el de la principal si no resuelve.
     // `repartoOptimista` es lo que el nutri acaba de añadir desde una comida (se ve al instante).
-    const reparto =
-      repartoOptimista ?? repartoPropio ?? (p ? (p.datos?.repartoPorComida ?? null) : repartoFallback);
+    const reparto = repartoDelDia(diaId);
     // Misma prioridad que la barra de objetivos (`objDe`): primero los objetivos que viajan en el
     // prop `planificaciones` (así al reasignar la planificación de un día cambia al instante, sin
     // esperar al refresh), luego los del servidor para ese día, y por último los del plan.
@@ -601,10 +615,39 @@ export function PlanVisual({
   // #78-C — "Añadir al reparto" desde una comida que quedó fuera: la incluye en el reparto de ESTA
   // dieta (si estaba excluida la reactiva; si es una comida añadida, crea su fila con un 10%).
   // Optimista: se ve al momento y el refresh lo confirma.
-  const [repartoOptimista, setRepartoOptimista] = useState<RepartoPorComida | null>(null);
+  // Un borrador por SLOT (planificación o `global`): dos días con planificaciones distintas tienen
+  // repartos distintos y no pueden compartir un único optimista.
+  const [repartoOptimista, setRepartoOptimista] = useState<Record<string, RepartoPorComida>>({});
   useEffect(() => {
-    setRepartoOptimista(null); // al recargar datos o cambiar de dieta manda lo del servidor
-  }, [repartoPropio, selectedPlan.id]);
+    setRepartoOptimista({}); // otra dieta, otros repartos
+  }, [selectedPlan.id]);
+  // Poda por VALOR (firma estable), no por identidad del objeto: `repartoPropio` es un objeto nuevo
+  // en cada render del servidor, así que comparar referencias hacía que cualquier router.refresh()
+  // de otra acción (añadir un alimento, asignar una planificación) borrara el borrador a medias.
+  useEffect(() => {
+    setRepartoOptimista((prev) => {
+      const claves = Object.keys(prev);
+      if (claves.length === 0) return prev;
+      const pendientes: Record<string, RepartoPorComida> = {};
+      for (const k of claves) {
+        const delServidor = repartoParaPlani(repartoPropio, k === SLOT_GLOBAL ? null : k);
+        if (firmaReparto(delServidor) !== firmaReparto(prev[k])) pendientes[k] = prev[k];
+      }
+      return Object.keys(pendientes).length === claves.length ? prev : pendientes;
+    });
+  }, [repartoPropio]);
+
+  /** Reparto que le toca a un día: el borrador de su slot si hay uno, la copia de la dieta si no, y
+   *  solo en las dietas anteriores a la feature (sin copia) el de la planificación en vivo. */
+  function repartoDelDia(diaId: string): RepartoPorComida | null {
+    const pid = planiDelDia(diaId);
+    const enEdicion = repartoOptimista[pid || SLOT_GLOBAL];
+    if (enEdicion) return enEdicion;
+    const propio = repartoParaPlani(repartoPropio, pid || null);
+    if (propio) return propio;
+    const p = pid ? planificaciones.find((x) => x.id === pid) : undefined;
+    return p ? (p.datos?.repartoPorComida ?? null) : repartoFallback;
+  }
 
   function handleAnadirComidaAlReparto(comidaId: string, diaId: string) {
     if (!selectedPlan) return;
@@ -613,10 +656,7 @@ export function PlanVisual({
     if (!comida) return;
 
     const pid = planiDelDia(diaId);
-    const p = pid ? planificaciones.find((x) => x.id === pid) : undefined;
-    const base =
-      repartoOptimista ?? repartoPropio ?? (p ? (p.datos?.repartoPorComida ?? null) : repartoFallback);
-    const partida = normalizeReparto(base);
+    const partida = normalizeReparto(repartoDelDia(diaId));
     const clave = claveComida(comida);
     const idx = partida.comidas.findIndex((c) => claveComida(c) === clave);
     if (idx >= 0) {
@@ -642,16 +682,21 @@ export function PlanVisual({
       });
     }
     const nuevo: RepartoPorComida = { activo: true, comidas: partida.comidas };
-    setRepartoOptimista(nuevo);
+    const slot = pid || SLOT_GLOBAL;
+    setRepartoOptimista((prev) => ({ ...prev, [slot]: nuevo }));
     startCopia(async () => {
       try {
-        const res = await guardarRepartoDePlan(selectedPlan.id, nuevo);
+        const res = await guardarRepartoDePlan(selectedPlan.id, pid || null, nuevo);
         if (res?.ok === false) throw new Error(res.error);
         toast.success(t("repartoComidaAnadida"));
         router.refresh();
       } catch (e) {
         if (isNextNavigation(e)) throw e;
-        setRepartoOptimista(null);
+        setRepartoOptimista((prev) => {
+          const n = { ...prev };
+          delete n[slot];
+          return n;
+        });
         toast.error(t("repartoComidaAnadidaError"));
       }
     });

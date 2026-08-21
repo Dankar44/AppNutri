@@ -465,8 +465,14 @@ model PlanAlimenticio {
   objetivosPorPlani Json?
   /// #78-C — Copia del reparto de kcal/macros POR COMIDA, hecha al crear la dieta (igual que las
   /// kcal y macros objetivo): cambiar el reparto en la planificación NO altera las dietas ya
-  /// creadas. NULL en las dietas anteriores a la feature → esas caen al de la planificación.
-  /// Forma: { activo: boolean, comidas: [{ tipo, incluida, kcalPct, grasaPct?, carbPct?, protPct? }] }
+  /// creadas, y lo que el nutri ajuste en la dieta no vuelve a la planificación.
+  /// NULL en las dietas anteriores a la feature → esas caen al de la planificación.
+  /// Forma: { v: 2, global?: Reparto, porPlani?: { "<planificacionId>": Reparto } }, donde
+  ///   Reparto = { activo: boolean, comidas: [{ tipo, incluida, kcalPct, pctPorDia?, nombre?, hora?,
+  ///               dias?, grasaPct?, carbPct?, protPct? }] }
+  /// `global` es el de los días SIN planificación asignada, que es el caso normal: con una sola
+  /// planificación, crearPlan no le pone planificacionId a ningún día. Las dietas guardadas antes
+  /// llevan un Reparto suelto (sin `v`) y se siguen leyendo tal cual (ver repartoParaPlani).
   repartoPorComida Json?
   activo          Boolean   @default(true)
   createdAt       DateTime  @default(now())
