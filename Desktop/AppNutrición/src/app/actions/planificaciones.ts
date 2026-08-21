@@ -211,16 +211,25 @@ export async function guardarPlanificacion(
   if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
-  await prisma.$queryRawUnsafe(
+  const filas = await prisma.$queryRawUnsafe<{ pacienteId: string }[]>(
     `UPDATE planificaciones
      SET datos = $1::jsonb,
          "fechaUltimoCambio" = CURRENT_TIMESTAMP,
          "updatedAt" = CURRENT_TIMESTAMP
-     WHERE id = $2 AND "dietistaId" = $3`,
+     WHERE id = $2 AND "dietistaId" = $3
+     RETURNING "pacienteId"`,
     JSON.stringify(datos),
     planId,
     dietista.id
   );
+  // Sin esto, al salir de la pantalla y volver, Next servía la página desde su caché y parecía que
+  // no se había guardado (el dato SÍ estaba en la BD). Se revalida la ficha del paciente y las
+  // dietas, que muestran los objetivos por comida derivados de este reparto.
+  const pacienteId = filas[0]?.pacienteId;
+  if (pacienteId) {
+    revalidatePath(`/pacientes/${pacienteId}`);
+    revalidatePath("/dietas", "layout");
+  }
 }
 
 /* ─── Update dates ─── */
