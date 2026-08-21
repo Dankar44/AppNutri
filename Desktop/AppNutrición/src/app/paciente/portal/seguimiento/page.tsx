@@ -13,7 +13,6 @@ import {
   type ComidaPlanificada,
 } from "@/app/actions/seguimiento-paciente";
 import {
-  TIPOS_ORDEN,
   calcularAguaObjetivo,
 } from "@/lib/seguimiento";
 import { DateNavigator } from "@/components/paciente/seguimiento/date-navigator";
@@ -249,9 +248,11 @@ export default function SeguimientoPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [fecha]);
 
-  const comidasOrdenadas = TIPOS_ORDEN.map((tipo) =>
-    comidasData.findIndex((c) => c.tipo === tipo)
-  ).filter((idx) => idx !== -1);
+  // #104 — Antes esto recorría las 6 comidas fijas, así que una comida propia ("Pre-entreno") no se
+  // le mostraba NUNCA al paciente: no podía marcarla y no contaba para su adherencia. Y con dos
+  // comidas propias el mismo día, `findIndex` por tipo devolvía la misma dos veces. Ahora se
+  // muestran todas, en el orden en que vienen (ya ordenadas por hora).
+  const comidasOrdenadas = comidasData.map((_, idx) => idx);
 
   if (loading) {
     return (
@@ -316,7 +317,8 @@ export default function SeguimientoPage() {
           <div className="divide-y divide-border">
             {comidasOrdenadas.map((comidaIdx) => (
               <ComidaCard
-                key={comidasData[comidaIdx].tipo}
+                // Clave estable que distingue dos comidas propias del mismo día (mismo tipo OTRA).
+                key={`${comidasData[comidaIdx].tipo}-${comidasData[comidaIdx].nombre ?? ""}-${comidaIdx}`}
                 comida={comidasData[comidaIdx]}
                 onToggleAlimento={(ai) => toggleAlimento(comidaIdx, ai)}
                 onChangeHora={(h) => updateHoraReal(comidaIdx, h)}
@@ -415,6 +417,8 @@ function SaveIndicator({ status }: { status: "idle" | "saving" | "saved" | "erro
 function inicializarComidas(comidas: ComidaPlanificada[]): ComidaSeguimiento[] {
   return comidas.map((c) => ({
     tipo: c.tipo,
+    nombre: c.nombre ?? null,
+    hora: c.hora ?? null,
     alimentos: c.alimentos.map((a) => ({
       nombre: a.nombre,
       cantidad: a.cantidad,

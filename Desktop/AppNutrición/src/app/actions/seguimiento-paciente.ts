@@ -3,6 +3,7 @@
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { getCurrentPaciente } from "@/lib/patient-auth";
+import { ordenarComidasPorHora } from "@/lib/comida-horas";
 import { revalidatePath } from "next/cache";
 import {
   sanitizeStringOptional,
@@ -21,6 +22,11 @@ function cuid(): string {
 
 export interface ComidaSeguimiento {
   tipo: string; // DESAYUNO, MEDIA_MANANA, etc.
+  /** #104 — Nombre de la comida ("Pre-entreno"). Las comidas propias (tipo OTRA) se identifican por
+   *  él, y sin él al paciente le salían todas como "Comida". Los registros anteriores no lo traen. */
+  nombre?: string | null;
+  /** Hora prevista de la comida ("HH:MM"). Sin ella se usa la de por defecto de su tipo. */
+  hora?: string | null;
   alimentos: {
     nombre: string;
     cantidad: number;
@@ -74,6 +80,8 @@ export interface AlimentoPlanificado {
 
 export interface ComidaPlanificada {
   tipo: string;
+  nombre?: string | null;
+  hora?: string | null;
   descripcion: string | null;
   alimentos: AlimentoPlanificado[];
 }
@@ -132,8 +140,12 @@ export async function getComidaDelDiaPaciente(
   }
 
   const diaDelPlan = plan.dias[0];
-  const comidas: ComidaPlanificada[] = diaDelPlan.comidas.map((c) => ({
+  // Ordenadas por hora efectiva (no por `orden`): así una comida propia creada después cae en su
+  // sitio del día y no al final.
+  const comidas: ComidaPlanificada[] = ordenarComidasPorHora(diaDelPlan.comidas).map((c) => ({
     tipo: c.tipo,
+    nombre: c.nombre,
+    hora: c.hora,
     descripcion: c.descripcion,
     alimentos: c.alimentos.map((a) => ({
       nombre: a.nombrePersonalizado || a.alimento?.nombre || a.receta?.nombre || "Alimento",

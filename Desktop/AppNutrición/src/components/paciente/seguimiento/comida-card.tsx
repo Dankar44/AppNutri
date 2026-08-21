@@ -18,7 +18,8 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { ComidaSeguimiento } from "@/app/actions/seguimiento-paciente";
-import { TIPO_HORAS, TIPO_LABELS } from "@/lib/seguimiento";
+import { TIPO_LABELS } from "@/lib/seguimiento";
+import { horaEfectiva } from "@/lib/comida-horas";
 
 const TIPO_ICONOS: Record<string, LucideIcon> = {
   DESAYUNO: Coffee,
@@ -84,12 +85,12 @@ export function ComidaCard({
           </span>
           <div className="min-w-0">
             <h3 className="font-semibold text-sm truncate">
-              {TIPO_LABELS[comida.tipo] || comida.tipo}
+              {(comida.nombre ?? "").trim() || TIPO_LABELS[comida.tipo] || comida.tipo}
             </h3>
             <p className="text-[11px] text-muted-foreground flex items-center gap-1">
               <Clock className="w-3 h-3" />
-              {TIPO_HORAS[comida.tipo] || ""}
-              {comida.horaReal && comida.horaReal !== TIPO_HORAS[comida.tipo] && (
+              {horaEfectiva(comida)}
+              {comida.horaReal && comida.horaReal !== horaEfectiva(comida) && (
                 <span className="ml-1 text-muted-foreground/70">· real {comida.horaReal}</span>
               )}
             </p>

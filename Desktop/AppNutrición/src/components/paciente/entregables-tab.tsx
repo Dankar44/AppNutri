@@ -170,7 +170,7 @@ function QuantityEditor({
           const isExpanded = expandedDia === dia.dia;
           const diaOverrideCount = dia.comidas.reduce((count, comida) =>
             count + comida.alimentos.filter((_, aIdx) => {
-              const key = `${dia.dia}-${comida.tipo}-${aIdx}`;
+              const key = `${dia.dia}-${comida.id}-${aIdx}`;
               return overrides[key] !== undefined;
             }).length, 0);
 
@@ -197,13 +197,16 @@ function QuantityEditor({
                   {dia.comidas.map((comida) => {
                     if (comida.alimentos.length === 0) return null;
                     return (
-                      <div key={comida.tipo} className="px-3 py-2">
+                      <div key={comida.id} className="px-3 py-2">
                         <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1.5">
-                          {TIPO_KEYS[comida.tipo] ? t(TIPO_KEYS[comida.tipo]) : comida.tipo}
+                          {/* El nombre que le puso el nutri; si no tiene, la etiqueta de su tipo.
+                              Antes salía el enum en crudo ("OTRA") en la pantalla previa al PDF. */}
+                          {(comida.nombre ?? "").trim() ||
+                            (TIPO_KEYS[comida.tipo] ? t(TIPO_KEYS[comida.tipo]) : comida.tipo)}
                         </p>
                         <div className="space-y-1.5">
                           {comida.alimentos.map((a, aIdx) => {
-                            const key = `${dia.dia}-${comida.tipo}-${aIdx}`;
+                            const key = `${dia.dia}-${comida.id}-${aIdx}`;
                             const ov = overrides[key];
                             const nombre = a.alimento?.nombre || a.receta?.nombre || "?";
                             const isModified = ov !== undefined;

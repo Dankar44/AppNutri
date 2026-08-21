@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { ordenarComidasPorHora } from "@/lib/comida-horas";
 import Link from "next/link";
 import { UtensilsCrossed, ShoppingCart } from "lucide-react";
 import { getTranslations } from "next-intl/server";
@@ -145,9 +146,14 @@ export default async function PatientDietPage() {
             id: dia.id,
             dia: dia.dia,
             grupoId: dia.grupoId,
-            comidas: dia.comidas.map((comida) => ({
+            // #104 — nombre y hora: sin ellas, una comida propia ("Pre-entreno") le salía al paciente
+            // como "Comida" genérica. Y se ordenan por hora efectiva, no por `orden`, para que caigan
+            // en su sitio del día aunque se hayan creado después.
+            comidas: ordenarComidasPorHora(dia.comidas).map((comida) => ({
               id: comida.id,
               tipo: comida.tipo,
+              nombre: comida.nombre,
+              hora: comida.hora,
               descripcion: comida.descripcion,
               alimentos: comida.alimentos.map((a) => ({
                 id: a.id,

@@ -64,8 +64,11 @@ function porcionesServidas(a: AlimentoEnComida, override: QuantityOverride | und
   return override?.cantidad ?? a.cantidad;
 }
 
-function overrideKey(dia: string, tipo: string, idx: number): string {
-  return `${dia}-${tipo}-${idx}`;
+/** Clave del retoque de cantidad de un ítem. Por ID DE COMIDA, no por tipo: dos comidas propias
+ *  (las dos de tipo OTRA) en el mismo día compartían clave, así que cambiar la cantidad en una
+ *  cambiaba la de la otra. */
+function overrideKey(dia: string, comidaId: string, idx: number): string {
+  return `${dia}-${comidaId}-${idx}`;
 }
 
 /** Líneas "o 70 g Cereales" de las alternativas de un ítem (#5). "" si no tiene. */
@@ -129,6 +132,9 @@ interface AlimentoEnComida {
 }
 
 interface Comida {
+  /** ID de la comida: identifica el retoque de cantidad (`overrideKey`). Dos comidas propias del
+   *  mismo día son las dos de tipo OTRA, así que el tipo no sirve como clave. */
+  id: string;
   tipo: string;
   descripcion?: string | null;
   /** Alias visible (#104): si está, sustituye la etiqueta del tipo. */
@@ -360,25 +366,32 @@ export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
     for (const franja of franjas) {
       html += `<tr><td class="meal-label">${franja}</td>`;
       for (const dia of sortedDias) {
-        const comida = dia.comidas.find((c) => c.alimentos.length > 0 && horaEfectiva(c) === franja);
-        if (!comida) {
+        // TODAS las comidas de esa franja, no solo la primera: dos comidas propias sin hora caen las
+        // dos en la misma franja, y con `find` el PDF se comía una entera sin decir nada.
+        const comidasFranja = dia.comidas.filter(
+          (c) => c.alimentos.length > 0 && horaEfectiva(c) === franja,
+        );
+        if (comidasFranja.length === 0) {
           html += `<td>-</td>`;
           continue;
         }
-        const items = comida.alimentos.map((a, aIdx) => {
-          const name = `<span class="sem-main">${escapeHtml(getItemName(a))}</span>`;
-          const alts = altLinesHtml(a, tt, sec.cantidadesSemanal);
-          if (!sec.cantidadesSemanal) return `<div class="sem-item">${name}${alts}</div>`;
-          const key = overrideKey(dia.dia, comida.tipo, aIdx);
-          const qty = resolveDisplay({ cantidad: a.cantidad, unidad: a.unidad }, ov[key], tt, !!a.receta);
-          // Sin cantidad (receta de 1 ración) va solo el nombre, sin el guion colgando.
-          return `<div class="sem-item">${name}${qty ? ` - ${qty}` : ""}${alts}</div>`;
-        }).join("") || "-";
-        const label = comida.nombre?.trim()
-          ? escapeHtml(comida.nombre.trim())
-          : tt("planDietetico.tipoLabels." + TIPO_KEY_MAP[comida.tipo]);
-        const desc = comida.descripcion ? escapeHtml(comida.descripcion) : "";
-        html += `<td><strong style="font-size:8px;color:#3f7d5a;">${label}</strong><br>${desc ? `<strong style="font-size:8px;">${desc}</strong><br>` : ""}${items}</td>`;
+        const bloques = comidasFranja.map((comida) => {
+          const items = comida.alimentos.map((a, aIdx) => {
+            const name = `<span class="sem-main">${escapeHtml(getItemName(a))}</span>`;
+            const alts = altLinesHtml(a, tt, sec.cantidadesSemanal);
+            if (!sec.cantidadesSemanal) return `<div class="sem-item">${name}${alts}</div>`;
+            const key = overrideKey(dia.dia, comida.id, aIdx);
+            const qty = resolveDisplay({ cantidad: a.cantidad, unidad: a.unidad }, ov[key], tt, !!a.receta);
+            // Sin cantidad (receta de 1 ración) va solo el nombre, sin el guion colgando.
+            return `<div class="sem-item">${name}${qty ? ` - ${qty}` : ""}${alts}</div>`;
+          }).join("") || "-";
+          const label = comida.nombre?.trim()
+            ? escapeHtml(comida.nombre.trim())
+            : tt("planDietetico.tipoLabels." + TIPO_KEY_MAP[comida.tipo]);
+          const desc = comida.descripcion ? escapeHtml(comida.descripcion) : "";
+          return `<strong style="font-size:8px;color:#3f7d5a;">${label}</strong><br>${desc ? `<strong style="font-size:8px;">${desc}</strong><br>` : ""}${items}`;
+        });
+        html += `<td>${bloques.join('<div style="height:4px"></div>')}</td>`;
       }
       html += `</tr>`;
     }
@@ -398,7 +411,7 @@ export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
 
         const rows = comida.alimentos.map((a, aIdx) => {
           const name = getItemName(a);
-          const key = overrideKey(dia.dia, tipo, aIdx);
+          const key = overrideKey(dia.dia, comida.id, aIdx);
           const qty = resolveDisplay({ cantidad: a.cantidad, unidad: a.unidad }, ov[key], tt, !!a.receta);
           // En una receta las raciones no aparecen en ninguna otra columna (la de
           // ingredientes las sustituye), así que van junto al nombre del plato. Con

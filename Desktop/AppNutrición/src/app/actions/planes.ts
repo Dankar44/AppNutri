@@ -2368,6 +2368,7 @@ export async function getPlanPDFData(planId: string): Promise<PlanPDFData | null
     dias: plan.dias.map((dia) => ({
       dia: dia.dia,
       comidas: dia.comidas.map((comida) => ({
+        id: comida.id,
         tipo: comida.tipo,
         descripcion: comida.descripcion,
         nombre: comida.nombre,
