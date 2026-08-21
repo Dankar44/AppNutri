@@ -151,12 +151,12 @@ migración la hace el dueño del repo.
 ```bash
 git checkout main
 git pull origin main              # trae los últimos cambios antes de empezar (upstream si usas fork)
-git checkout -b fix/125-ingredientes-cortados
+git checkout -b fix/112-ingredientes-cortados
 # … programas …
 npx tsc --noEmit                 # OBLIGATORIO: tiene que estar en verde
 # … pruebas en el navegador …
 git commit -am "Recetas: los nombres largos de ingrediente ya no se cortan"
-git push origin fix/125-ingredientes-cortados
+git push origin fix/112-ingredientes-cortados
 ```
 
 Y abres el **PR** hacia `main`. No hay tests automáticos en el proyecto: `tsc` y tus pruebas en
@@ -206,17 +206,24 @@ datos** ni pisan el trabajo en curso. Las recomendadas, por orden:
 
 | Issue | Tarea | Buena para |
 |---|---|---|
-| **#112** | Los ingredientes de las recetas se cortan (CSS) | Empezar: es CSS, en 3 archivos, y el resultado se ve al momento |
 | **#114** | Al abrir un plan desde un paciente, el menú lateral salta a "Dietas" | Cambio de una sola función |
-| **#76** | Campo de notas en Mediciones | El backend ya está listo, falta el textarea |
-| **#94** | PDF: opción de no incluir las notas en la tabla resumen | Acotada |
+| **#137** | El seguimiento no cuenta las recetas (0 calorías y macros) | Bug de lógica con el diagnóstico cerrado, y con el patrón ya resuelto en otro sitio del que copiar |
 | **#95** | Mostrar la ingesta de agua también en vasos | Acotada |
-| **#4** | Mejorar el formato del PDF entregable | Ojo: la orientación horizontal no es solo CSS, se fija en el servidor |
-| **#130** | Hacer visibles funciones que ya existen | Varias mejoras pequeñas e independientes |
+| **#94** | PDF: opción de no incluir las notas en la tabla resumen | Acotada |
+| **#27** | Nombre y número de colegiado en la portada del PDF | Acotada |
+| **#138** | Los diálogos de confirmación aparecen descuadrados | CSS, se ve al momento |
+| **#140** | Eliminar un plan parece eliminar al paciente | Texto y UX, poco código |
+| **#76** | Editar las notas ya guardadas en Mediciones | Necesita una acción nueva en el servidor: buen primer paso hacia el backend |
+| **#4** | Mejorar el formato del PDF entregable | Ojo: la orientación horizontal **no** es CSS, se fija en el servidor |
+| **#130** | Hacer visibles funciones que ya existen | Seis acciones, y dos tocan zonas calientes: pide que te la acoten antes |
 | **#44** | Descargar recetas en PDF (recetario) | La más grande y golosa: generador nuevo, sin tocar el esquema |
 
-Cada issue trae el diagnóstico ya hecho. Empieza por **#112**, que sirve para rodar el proceso
-de PR.
+Cada issue trae el diagnóstico ya hecho. Para rodar el proceso de PR, empieza por una de las
+acotadas de arriba (**#114** o **#95**).
+
+> Los issues se identifican **solo por su número de GitHub**, el de la URL. En el cuerpo de cada
+> uno hay una línea que dice de qué aportación de `aportaciones.md` viene; eso es contexto, no un
+> identificador. Usa siempre el número del issue para las ramas y para `Closes #NN`.
 
 ---
 
