@@ -129,13 +129,12 @@ export type ObjetivoComida = {
  *  Es la función que usa el editor de dietas, y hace tres cosas que antes fallaban:
  *  1. Empareja por identidad (`claveComida`): las comidas añadidas se distinguen por su nombre, así
  *     que dos "OTRA" del mismo día no comparten cuota.
- *  2. **Renormaliza según las comidas que ese día EXISTEN**: si el lunes no tiene desayuno (borrado)
- *     o tiene un pre-entreno que otros días no, las cuotas se re-escalan a 100% entre las presentes.
- *     Así el total del día siempre cuadra y no quedan kcal colgadas e invisibles.
- *  3. Reparte las kcal con restos mayores, para que las comidas sumen justo el objetivo del día.
+ *  2. Aplica los % TAL CUAL, sin re-escalar: si las comidas de ese día suman 110% se reparten 2730
+ *     de 2482 kcal, y si suman 78% se queda corto. Tapar el descuadre daba números contradictorios
+ *     y ocultaba al nutri que su reparto no cuadra: quien avisa es la pantalla, no el cálculo.
+ *  3. Reparte las kcal con restos mayores (sin perder ni inventar calorías por el redondeo).
  *
- *  Los macros de una comida que hereda se derivan de su cuota YA renormalizada, para que también
- *  sumen los gramos del día. Devuelve null si no hay reparto activo o el día no tiene kcal. */
+ *  Devuelve null si no hay reparto activo o el día no tiene kcal. */
 export function objetivosPorComidaDia(
   dia: {
     kcal?: number | null;
@@ -168,14 +167,15 @@ export function objetivosPorComidaDia(
 
   const sumaPct = emparejadas.reduce((s, x) => s + x.fila.kcalPct, 0);
   if (sumaPct <= 0) return {};
-  // Cuotas renormalizadas a 100 (en tanto por uno, sin redondear todavía).
-  const pesos = emparejadas.map((x) => (x.fila.kcalPct / sumaPct) * 100);
-  const kcalPorComida = repartirKcal(kcalDia, pesos);
+  // Los % se aplican TAL CUAL: si el día suma 110% reparte 2730 de 2482 y si suma 78% se queda
+  // corto. No se re-escala nada: tapar el descuadre daba números contradictorios ("110% del día"
+  // junto a "2482 de 2482") y ocultaba al nutri que su reparto no cuadra.
+  const kcalPorComida = repartirKcal(kcalDia, emparejadas.map((x) => x.fila.kcalPct));
 
   const out: Record<string, ObjetivoComida> = {};
   emparejadas.forEach(({ cd, fila }, idx) => {
     const kcal = kcalPorComida[idx];
-    const cuota = pesos[idx]; // % del día que le corresponde ya renormalizado
+    const cuota = fila.kcalPct; // % literal del día que el nutri asignó a esta comida
     out[cd.id] = {
       kcal,
       protG:
