@@ -9,6 +9,7 @@ import { asignarPlanComoActual, copiarComidaADias, copiarDiaADias, pegarAlimento
 import {
   Plus,
   UtensilsCrossed,
+  Scale,
   Flame,
   Droplets,
   Circle,
@@ -35,6 +36,7 @@ import {
   objetivosPorComidaDia,
   claveComida,
   normalizeReparto,
+  anadirFila,
   repartoParaPlani,
   firmaReparto,
   type ObjetivoComida,
@@ -46,6 +48,7 @@ import {
  *  una sola (`crearPlan` no le pone `planificacionId` a ningún día en ese caso). */
 const SLOT_GLOBAL = "__global";
 import { PlanEditor } from "@/components/dieta/plan-editor";
+import { RepartoPanel } from "@/components/dieta/reparto-panel";
 import { HoraSelect } from "@/components/dieta/hora-select";
 import { CopiarADiasModal, type DiaOption } from "@/components/dieta/copiar-comida-modal";
 import { ImportarPlanModal } from "@/components/dieta/importar-plan-modal";
@@ -403,6 +406,25 @@ export function PlanVisual({
             [diaId]: (prev[diaId] ?? []).map((c) => (c.id === tempId ? { ...c, realId: res.id } : c)),
           }));
         }
+        // Con el reparto activo, la comida nueva entra en él AL 0%: así aparece en la tabla y en su
+        // pastilla ("137 / 0 kcal") y el nutri le pone el % que quiera. No se le inventa una cuota,
+        // que además descuadraría el día que acababa de cuadrar.
+        const repartoDia = repartoDelDia(diaId);
+        if (repartoDia?.activo && nombre) {
+          const conNueva = anadirFila(repartoDia.comidas, {
+            nombre,
+            hora,
+            dias: [diaDeId(diaId)].filter(Boolean) as string[],
+            kcalPct: 0,
+          });
+          if (conNueva) {
+            const slot = planiDelDia(diaId);
+            await guardarRepartoDePlan(selectedPlan.id, slot || null, {
+              activo: true,
+              comidas: conNueva,
+            });
+          }
+        }
         router.refresh();
       } catch (error) {
         if (isNextNavigation(error)) throw error;
@@ -572,6 +594,39 @@ export function PlanVisual({
   const planiDelDia = (diaId: string): string =>
     diaId in planiOptimista ? (planiOptimista[diaId] ?? "") : (objetivosPorDia?.[diaId]?.planificacionId ?? "");
 
+  /** Día de la semana (LUNES…) de un día del plan. */
+  function diaDeId(diaId: string): string {
+    return (selectedPlan?.dias ?? []).find((d) => d.id === diaId)?.dia ?? "";
+  }
+
+  /** Objetivo (kcal y gramos) de un día. Misma prioridad que la barra de objetivos (`objDe`):
+   *  primero lo que viaja en el prop `planificaciones` (así al reasignar la planificación de un día
+   *  cambia al instante, sin esperar al refresh), luego el dato del servidor para ese día, y por
+   *  último el del plan. Lo comparten el cumplimiento por comida y el panel del reparto, para que no
+   *  haya dos verdades sobre las kcal del día. */
+  function objetivoDelDia(diaId: string): {
+    kcal?: number | null;
+    proteinas?: number | null;
+    carbohidratos?: number | null;
+    grasas?: number | null;
+  } {
+    const pid = planiDelDia(diaId);
+    const p = pid ? planificaciones.find((x) => x.id === pid) : undefined;
+    if (p && (p.kcal != null || p.proteinas != null || p.carbohidratos != null || p.grasas != null)) {
+      return { kcal: p.kcal, proteinas: p.proteinas, carbohidratos: p.carbohidratos, grasas: p.grasas };
+    }
+    const o = objetivosPorDia?.[diaId];
+    if (o && o.planificacionId === pid) {
+      return { kcal: o.kcal, proteinas: o.proteinas, carbohidratos: o.carbohidratos, grasas: o.grasas };
+    }
+    return {
+      kcal: selectedPlan?.caloriasObjetivo,
+      proteinas: selectedPlan?.proteinasObjetivo,
+      carbohidratos: selectedPlan?.carbohidratosObjetivo,
+      grasas: selectedPlan?.grasasObjetivo,
+    };
+  }
+
   // #78-C Fase 2 — objetivo por comida de un día: reparto de SU planificación (o el de la principal
   // si no tiene asignada) aplicado a los objetivos de ese día. Solo en el dashboard del nutri.
   // Se pasan las comidas REALES del día: el reparto se renormaliza entre las que existen (si falta
@@ -585,21 +640,7 @@ export function PlanVisual({
     // tienen: esas leen el reparto de la planificación del día, o el de la principal si no resuelve.
     // `repartoOptimista` es lo que el nutri acaba de añadir desde una comida (se ve al instante).
     const reparto = repartoDelDia(diaId);
-    // Misma prioridad que la barra de objetivos (`objDe`): primero los objetivos que viajan en el
-    // prop `planificaciones` (así al reasignar la planificación de un día cambia al instante, sin
-    // esperar al refresh), luego los del servidor para ese día, y por último los del plan.
-    const o = objetivosPorDia?.[diaId];
-    const dia =
-      p && (p.kcal != null || p.proteinas != null || p.carbohidratos != null || p.grasas != null)
-        ? { kcal: p.kcal, proteinas: p.proteinas, carbohidratos: p.carbohidratos, grasas: p.grasas }
-        : o && o.planificacionId === pid
-          ? { kcal: o.kcal, proteinas: o.proteinas, carbohidratos: o.carbohidratos, grasas: o.grasas }
-          : {
-              kcal: selectedPlan?.caloriasObjetivo,
-              proteinas: selectedPlan?.proteinasObjetivo,
-              carbohidratos: selectedPlan?.carbohidratosObjetivo,
-              grasas: selectedPlan?.grasasObjetivo,
-            };
+    const dia = objetivoDelDia(diaId);
     const diaPlan = (selectedPlan?.dias ?? []).find((d) => d.id === diaId);
     if (!diaPlan) return null;
     // Comidas REALES del día (incluidas las recién añadidas de forma optimista): el reparto se
@@ -612,9 +653,7 @@ export function PlanVisual({
     return objetivosPorComidaDia(dia, reparto, comidas, diaPlan.dia);
   }
 
-  // #78-C — "Añadir al reparto" desde una comida que quedó fuera: la incluye en el reparto de ESTA
-  // dieta (si estaba excluida la reactiva; si es una comida añadida, crea su fila con un 10%).
-  // Optimista: se ve al momento y el refresh lo confirma.
+  /* ─── #78-C — Reparto por comida de ESTA dieta (su propia copia, nunca la planificación) ─── */
   // Un borrador por SLOT (planificación o `global`): dos días con planificaciones distintas tienen
   // repartos distintos y no pueden compartir un único optimista.
   const [repartoOptimista, setRepartoOptimista] = useState<Record<string, RepartoPorComida>>({});
@@ -649,6 +688,8 @@ export function PlanVisual({
     return p ? (p.datos?.repartoPorComida ?? null) : repartoFallback;
   }
 
+  // Una comida que quedó fuera del reparto: se le crea su fila AL 0% y se abre el panel para ponerle
+  // el % que toque. Antes se le metía un 10% a secas, que descuadraba el día sin decir nada.
   function handleAnadirComidaAlReparto(comidaId: string, diaId: string) {
     if (!selectedPlan) return;
     const diaPlan = (selectedPlan.dias ?? []).find((d) => d.id === diaId);
@@ -660,35 +701,44 @@ export function PlanVisual({
     const clave = claveComida(comida);
     const idx = partida.comidas.findIndex((c) => claveComida(c) === clave);
     if (idx >= 0) {
-      partida.comidas[idx] = {
-        ...partida.comidas[idx],
-        incluida: true,
-        kcalPct: partida.comidas[idx].kcalPct > 0 ? partida.comidas[idx].kcalPct : 10,
-      };
+      // Estaba excluida: se reactiva, pero sin cuota, para no descuadrar el día por su cuenta.
+      partida.comidas[idx] = { ...partida.comidas[idx], incluida: true };
     } else {
       // Los días se deducen de la dieta: si el pre-entreno solo está el lunes y el miércoles, la
       // fila queda marcada con esos días (así una dieta nueva no lo creará los siete).
       const diasConEstaComida = (selectedPlan.dias ?? [])
         .filter((d) => conComidasNuevas(d).comidas.some((c) => claveComida(c) === clave))
         .map((d) => d.dia);
-      partida.comidas.push({
-        tipo: comida.tipo,
-        nombre: comida.nombre ?? undefined,
+      const conNueva = anadirFila(partida.comidas, {
+        nombre: (comida.nombre ?? "").trim(),
         hora: comida.hora ?? undefined,
-        dias:
-          diasConEstaComida.length > 0 && diasConEstaComida.length < 7 ? diasConEstaComida : undefined,
-        incluida: true,
-        kcalPct: 10,
+        dias: diasConEstaComida,
+        kcalPct: 0,
       });
+      partida.comidas =
+        conNueva ??
+        // Comida fija sin fila (o sin nombre): se añade su fila directamente.
+        [
+          ...partida.comidas,
+          {
+            tipo: comida.tipo,
+            nombre: comida.nombre ?? undefined,
+            hora: comida.hora ?? undefined,
+            incluida: true,
+            kcalPct: 0,
+          },
+        ];
     }
     const nuevo: RepartoPorComida = { activo: true, comidas: partida.comidas };
     const slot = pid || SLOT_GLOBAL;
     setRepartoOptimista((prev) => ({ ...prev, [slot]: nuevo }));
+    setRepartoSlot(pid);
+    setRepartoDiaVisto(diaPlan?.dia ?? "");
+    setRepartoPanelAbierto(true);
     startCopia(async () => {
       try {
         const res = await guardarRepartoDePlan(selectedPlan.id, pid || null, nuevo);
         if (res?.ok === false) throw new Error(res.error);
-        toast.success(t("repartoComidaAnadida"));
         router.refresh();
       } catch (e) {
         if (isNextNavigation(e)) throw e;
@@ -847,6 +897,117 @@ export function PlanVisual({
     }
     return bloques.sort((a, b) => ord(a.representante.dia) - ord(b.representante.dia));
   }, [diasVisible, gruposOptimistas]);
+
+  /* ─── #78-C — Panel del reparto DENTRO de la dieta ───────────────────────────────────────────
+   * Edita la copia de esta dieta (un reparto por planificación). Nunca escribe en la planificación:
+   * el nutri puede activarlo, añadir comidas y mover los % sin tocar la pauta.
+   */
+  const [repartoPanelAbierto, setRepartoPanelAbierto] = useState(false);
+  const [repartoSlot, setRepartoSlot] = useState<string>("");
+  const [repartoDiaVisto, setRepartoDiaVisto] = useState<string>("");
+  const repartoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /** Día que manda en un grupo (#75): las comidas viven solo en el representante, así que crear una
+   *  comida en un día miembro la dejaría invisible y el siguiente reagrupado se la llevaría. */
+  function representanteDeDia(d: PlanVisualDia): PlanVisualDia {
+    const grupoDe = (x: PlanVisualDia) =>
+      x.id in gruposOptimistas ? gruposOptimistas[x.id] : (x.grupoId ?? null);
+    const g = grupoDe(d);
+    if (!g) return d;
+    const delGrupo = (selectedPlan?.dias ?? []).filter((x) => grupoDe(x) === g);
+    const ord = (k: string) => DIA_KEYS.indexOf(k as (typeof DIA_KEYS)[number]);
+    return [...delGrupo].sort((a, b) => ord(a.dia) - ord(b.dia))[0] ?? d;
+  }
+
+  /** El panel solo tiene sentido sobre una dieta REAL del nutri: las plantillas de dieta no tienen
+   *  paciente y su `plan.id` no es una fila de planes_alimenticios (guardar ahí no encontraría nada),
+   *  y el portal del paciente ni ve objetivos por comida. */
+  const puedeEditarReparto =
+    interactionMode === "dashboard" && !readOnly && !!pacienteId && !localCallbacks;
+
+  /** Slots que existen de verdad en esta dieta: las planificaciones que algún día usa, más el
+   *  "sin planificación" si algún día no tiene ninguna (que es el caso normal con una sola). */
+  const repartoSlots = useMemo(() => {
+    const usados = new Set((selectedPlan?.dias ?? []).map((d) => planiDelDia(d.id)));
+    const out: { id: string; nombre: string }[] = [];
+    if (usados.has("")) out.push({ id: "", nombre: tDiets("reparto.sinPlani") });
+    for (const p of planificaciones) if (usados.has(p.id)) out.push({ id: p.id, nombre: p.nombre });
+    return out;
+  }, [selectedPlan?.dias, planiOptimista, objetivosPorDia, planificaciones, tDiets]);
+
+  /** Días de la dieta que usan el slot abierto, con las comidas reales de su día representante. */
+  const repartoDiasDelSlot = useMemo(() => {
+    return (selectedPlan?.dias ?? [])
+      .filter((d) => planiDelDia(d.id) === repartoSlot)
+      .map((d) => {
+        const rep = representanteDeDia(d);
+        return {
+          id: rep.id,
+          dia: d.dia,
+          comidas: conComidasNuevas(rep).comidas.map((c) => ({
+            id: c.id,
+            tipo: c.tipo,
+            nombre: c.nombre,
+            hora: c.hora,
+          })),
+        };
+      });
+  }, [selectedPlan?.dias, repartoSlot, planiOptimista, objetivosPorDia, comidasNuevasDia, gruposOptimistas]);
+
+  /** ¿El día que se está viendo en el editor tiene reparto activo? Es lo que dice el botón. */
+  const repartoActivoAqui = (() => {
+    const dia = diasVisible[0] ?? (selectedPlan?.dias ?? [])[0];
+    return dia ? !!repartoDelDia(dia.id)?.activo : false;
+  })();
+
+  function abrirRepartoPanel() {
+    const dia = diasVisible[0] ?? (selectedPlan?.dias ?? [])[0];
+    const slot = dia ? planiDelDia(dia.id) : "";
+    setRepartoSlot(slot);
+    setRepartoDiaVisto(dia?.dia ?? "");
+    setRepartoPanelAbierto(true);
+  }
+
+  function cambiarRepartoSlot(slot: string) {
+    setRepartoSlot(slot);
+    const primero = (selectedPlan?.dias ?? []).find((d) => planiDelDia(d.id) === slot);
+    setRepartoDiaVisto(primero?.dia ?? "");
+  }
+
+  /** Guarda el reparto del slot abierto: se ve al instante y se persiste con un pequeño retardo (un
+   *  arrastre de slider son decenas de cambios y no hacen falta decenas de escrituras). */
+  function guardarRepartoPanel(nuevo: RepartoPorComida) {
+    if (!selectedPlan) return;
+    const slot = repartoSlot;
+    const clave = slot || SLOT_GLOBAL;
+    setRepartoOptimista((prev) => ({ ...prev, [clave]: nuevo }));
+    if (repartoSaveRef.current) clearTimeout(repartoSaveRef.current);
+    repartoSaveRef.current = setTimeout(() => {
+      guardarRepartoDePlan(selectedPlan.id, slot || null, nuevo)
+        .then((res) => {
+          if (res?.ok === false) {
+            // Demo o error real: se retira el borrador para no dejar en pantalla algo sin guardar.
+            setRepartoOptimista((prev) => {
+              const n = { ...prev };
+              delete n[clave];
+              return n;
+            });
+            toast.error(res.error ?? tDiets("reparto.guardadoError"));
+            return;
+          }
+          router.refresh();
+        })
+        .catch((e) => {
+          if (isNextNavigation(e)) throw e;
+          setRepartoOptimista((prev) => {
+            const n = { ...prev };
+            delete n[clave];
+            return n;
+          });
+          toast.error(tDiets("reparto.guardadoError"));
+        });
+    }, 700);
+  }
 
   // #78 — Objetivos a mostrar en la barra superior. En vista de un día: el objetivo de ESE día (su
   // planificación o el global del plan). En "Todas": agrupado por planificación (qué días usan cada
@@ -1327,7 +1488,24 @@ export function PlanVisual({
 
               <div className="space-y-4">
                 {esEditable && (
-                  <div className="flex justify-end">
+                  <div className="flex flex-wrap justify-end gap-2">
+                    {/* #78-C — Puerta de entrada al reparto por comidas. Visible siempre (también en
+                        móvil) y diciendo si está activo: si no se ve, para el nutri no existe. */}
+                    {puedeEditarReparto && (
+                      <button
+                        type="button"
+                        onClick={() => (repartoPanelAbierto ? setRepartoPanelAbierto(false) : abrirRepartoPanel())}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors",
+                          repartoActivoAqui
+                            ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/15"
+                            : "border-border text-foreground hover:bg-muted"
+                        )}
+                      >
+                        <Scale className="w-3.5 h-3.5" />
+                        {repartoActivoAqui ? tDiets("reparto.botonActivo") : tDiets("reparto.boton")}
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => setImportOpen(true)}
@@ -1337,6 +1515,25 @@ export function PlanVisual({
                       {tDiets("copiar.importarDeOtroPlan")}
                     </button>
                   </div>
+                )}
+                {puedeEditarReparto && repartoPanelAbierto && (
+                  <RepartoPanel
+                    reparto={repartoOptimista[repartoSlot || SLOT_GLOBAL] ?? repartoParaPlani(repartoPropio, repartoSlot || null)}
+                    onChange={guardarRepartoPanel}
+                    slots={repartoSlots}
+                    slotActivo={repartoSlot}
+                    onSlotChange={cambiarRepartoSlot}
+                    dias={repartoDiasDelSlot}
+                    diaVisto={repartoDiaVisto || repartoDiasDelSlot[0]?.dia || ""}
+                    onDiaVistoChange={setRepartoDiaVisto}
+                    objetivoDia={objetivoDelDia(
+                      repartoDiasDelSlot.find((d) => d.dia === repartoDiaVisto)?.id ??
+                        repartoDiasDelSlot[0]?.id ??
+                        ""
+                    )}
+                    onAnadirComida={handleAgregarComidaDia}
+                    onCerrar={() => setRepartoPanelAbierto(false)}
+                  />
                 )}
                 {esEditable && portapapeles && (
                   <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-primary/40 bg-primary/5 text-sm">

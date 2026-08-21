@@ -470,8 +470,8 @@
     "notesPlaceholder": "Notas sobre esta comida...",
     "leyendaObjetivo": "lo que llevas / objetivo de esta comida",
     "tooltipObjetivo": "Llevas {actual} kcal de las {objetivo} kcal que le tocan a esta comida",
-    "sinObjetivoReparto": "Sin objetivo en el reparto por comida de la planificación",
-    "anadirAlReparto": "Añadir al reparto (10%, todos sus días)"
+    "sinObjetivoReparto": "Sin objetivo en el reparto por comidas",
+    "anadirAlReparto": "Ponerle objetivo"
   },
   "resumenDiario": {
     "calories": "Calorías",
@@ -773,5 +773,30 @@
       "vitaminaE": "Vitamina E",
       "vitaminaK": "Vitamina K"
     }
+  },
+  "reparto": {
+    "titulo": "Reparto por comidas",
+    "boton": "Reparto",
+    "botonActivo": "Reparto activo",
+    "soloEstaDieta": "Solo de esta dieta: no cambia la planificación.",
+    "activar": "Activar el reparto",
+    "activarTexto": "Reparte las calorías del día entre las comidas para tener un objetivo en cada toma. Al activarlo, cada día se reparte a partes iguales entre las comidas que tenga ese día.",
+    "desactivar": "Desactivar",
+    "cerrar": "Cerrar",
+    "planificacion": "Planificación",
+    "sinPlani": "Días sin planificación",
+    "sinDiasEnPlani": "Ningún día de esta dieta usa esta planificación.",
+    "sinKcal": "Este día no tiene calorías objetivo, así que no hay nada que repartir.",
+    "thComida": "Comida",
+    "thPct": "% del día",
+    "thKcal": "kcal",
+    "thMacros": "Objetivo",
+    "pieDia": "{dia}: {pct}% · {kcal} de {objetivo} kcal",
+    "cuadrarResto": "Cuadrar el resto",
+    "repartirIgual": "A partes iguales",
+    "aplicaATodos": "Los cambios se aplican a los {n} días (todos tienen las mismas comidas)",
+    "fueraDelReparto": "Sin objetivo este día: {comidas}",
+    "anadirComida": "Añadir comida al {dia}",
+    "guardadoError": "No se pudo guardar el reparto"
   }
 }

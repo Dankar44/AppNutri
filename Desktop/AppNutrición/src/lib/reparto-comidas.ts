@@ -573,8 +573,30 @@ export function ponerRepartoParaPlani(
  *  no existen no reciben % (se quedan sin entrada, así que ese día no consumen cuota). */
 export function repartoEquitativoPorDia(
   comidas: RepartoComida[],
-  comidasPorDia: Record<string, { tipo: string; nombre?: string | null }[]>,
+  comidasPorDia: Record<string, { tipo: string; nombre?: string | null; hora?: string | null }[]>,
 ): RepartoComida[] {
+  // Filas que faltan para comidas que la dieta SÍ tiene: si no se crean, esas comidas se quedan sin
+  // cuota y el día reparte menos del 100% justo al activar. Se descartan las comidas propias sin
+  // nombre, que no tienen identidad estable (`claveComida` no distinguiría dos).
+  const conFila = new Set(comidas.map((c) => claveComida(c)));
+  const faltan: RepartoComida[] = [];
+  for (const delDia of Object.values(comidasPorDia)) {
+    for (const c of delDia) {
+      const clave = claveComida(c);
+      if (conFila.has(clave)) continue;
+      if (c.tipo === "OTRA" && !(c.nombre ?? "").trim()) continue;
+      conFila.add(clave);
+      faltan.push({
+        tipo: c.tipo,
+        nombre: (c.nombre ?? "").trim() || undefined,
+        hora: (c.hora ?? "").trim() || undefined,
+        incluida: true,
+        kcalPct: 0,
+      });
+    }
+  }
+  comidas = faltan.length > 0 ? [...comidas, ...faltan] : comidas;
+
   const pctPorClave = new Map<string, Record<string, number>>();
   for (const [dia, delDia] of Object.entries(comidasPorDia)) {
     const claves = [...new Set(delDia.map((c) => claveComida(c)))];
@@ -652,4 +674,64 @@ export function firmaReparto(r: RepartoPorComida | null | undefined): string {
     )
     .sort();
   return `${r.activo ? "1" : "0"}#${filas.join(";")}`;
+}
+
+/** Fija el % de una comida EN UN DÍA concreto y re-equilibra las otras comidas de ese día para
+ *  sumar 100 exacto, escribiendo en `pctPorDia`. Es la versión por día de `fijarPctFila`, la que usa
+ *  el panel dentro de la dieta: allí cada día tiene sus propias comidas y su propio 100%.
+ *
+ *  `clavesDelDia` son las comidas que ese día existe de verdad: las filas que no están no reciben
+ *  cuota ese día (y por tanto no consumen kcal del día). */
+export function fijarPctFilaEnDia(
+  comidas: RepartoComida[],
+  clave: string,
+  pct: number,
+  dia: string,
+  clavesDelDia: string[],
+): RepartoComida[] {
+  const clamped = Math.max(0, Math.min(100, Math.round(pct)));
+  const enDia = new Set(clavesDelDia);
+  if (!enDia.has(clave)) return comidas;
+
+  const participan = comidas.filter((c) => c.incluida && enDia.has(claveComida(c)));
+  const otras = participan.filter((c) => claveComida(c) !== clave);
+  const pctFinal = new Map<string, number>([[clave, clamped]]);
+
+  if (otras.length > 0) {
+    const remaining = 100 - clamped;
+    const otherTotal = otras.reduce((s, c) => s + pctDeFila(c, dia), 0);
+    const cuotas = otras.map((c) =>
+      otherTotal === 0 ? remaining / otras.length : (pctDeFila(c, dia) / otherTotal) * remaining,
+    );
+    const nuevos = cuotas.map((q) => Math.floor(q));
+    let sobra = remaining - nuevos.reduce((s, v) => s + v, 0);
+    Array.from(cuotas.keys())
+      .sort((a, b) => cuotas[b] - Math.floor(cuotas[b]) - (cuotas[a] - Math.floor(cuotas[a])))
+      .forEach((idx) => {
+        if (sobra > 0) {
+          nuevos[idx] += 1;
+          sobra -= 1;
+        }
+      });
+    otras.forEach((c, i) => pctFinal.set(claveComida(c), nuevos[i]));
+  }
+
+  return comidas.map((c) => {
+    const k = claveComida(c);
+    if (!pctFinal.has(k)) return c;
+    return { ...c, pctPorDia: { ...(c.pctPorDia ?? {}), [dia]: pctFinal.get(k)! } };
+  });
+}
+
+/** Suma de los % de un día: solo cuentan las comidas que ese día existen. Es lo que se muestra en el
+ *  pie del panel ("lunes 110%"), sin re-escalar nada: si el nutri se pasa, se ve que se pasa. */
+export function sumaPctDia(
+  comidas: RepartoComida[],
+  dia: string,
+  clavesDelDia: string[],
+): number {
+  const enDia = new Set(clavesDelDia);
+  return comidas
+    .filter((c) => c.incluida && enDia.has(claveComida(c)))
+    .reduce((s, c) => s + pctDeFila(c, dia), 0);
 }
