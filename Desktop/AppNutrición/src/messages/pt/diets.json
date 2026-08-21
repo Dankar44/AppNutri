@@ -797,6 +797,12 @@
     "aplicaATodos": "As alterações aplicam-se aos {n} dias (todos têm as mesmas refeições)",
     "fueraDelReparto": "Sem objetivo neste dia: {comidas}",
     "anadirComida": "Adicionar refeição na {dia}",
-    "guardadoError": "Não foi possível salvar a distribuição"
+    "guardadoError": "Não foi possível salvar a distribuição",
+    "comidasCreadas": "Refeições adicionadas conforme o planejamento: {comidas}",
+    "cambioPlaniTitulo": "Há refeições que deixariam de estar previstas",
+    "cambioPlaniTexto": "Com «{plani}» estas refeições não estão na distribuição deste dia. Você pode mantê-las (continuarão na dieta, sem objetivo próprio) ou removê-las.",
+    "conAlimentos": "· {n} alimentos dentro",
+    "mantenerlas": "Manter",
+    "quitarlas": "Remover"
   }
 }

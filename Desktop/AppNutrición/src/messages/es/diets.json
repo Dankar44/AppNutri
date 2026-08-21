@@ -797,6 +797,12 @@
     "aplicaATodos": "Los cambios se aplican a los {n} días (todos tienen las mismas comidas)",
     "fueraDelReparto": "Sin objetivo este día: {comidas}",
     "anadirComida": "Añadir comida al {dia}",
-    "guardadoError": "No se pudo guardar el reparto"
+    "guardadoError": "No se pudo guardar el reparto",
+    "comidasCreadas": "Comidas añadidas según la planificación: {comidas}",
+    "cambioPlaniTitulo": "Hay comidas que dejarían de estar previstas",
+    "cambioPlaniTexto": "Con «{plani}» estas comidas no están en el reparto de este día. Puedes mantenerlas (seguirán en la dieta, sin objetivo propio) o quitarlas.",
+    "conAlimentos": "· {n} alimentos dentro",
+    "mantenerlas": "Mantenerlas",
+    "quitarlas": "Quitarlas"
   }
 }

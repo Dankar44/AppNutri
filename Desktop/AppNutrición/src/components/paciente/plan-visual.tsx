@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { asignarPlanComoActual, copiarComidaADias, copiarDiaADias, pegarAlimentoEnComida, juntarDias, separarDia, asignarPlanificacionADia, agregarComida, guardarRepartoDePlan, type ModoCopia } from "@/app/actions/planes";
+import { asignarPlanComoActual, copiarComidaADias, copiarDiaADias, pegarAlimentoEnComida, juntarDias, separarDia, asignarPlanificacionADia, agregarComida, guardarRepartoDePlan, sincronizarComidasDeDia, eliminarComida, type ModoCopia } from "@/app/actions/planes";
 import {
   Plus,
   UtensilsCrossed,
@@ -37,6 +37,7 @@ import {
   claveComida,
   normalizeReparto,
   anadirFila,
+  filasParaDia,
   repartoParaPlani,
   firmaReparto,
   type ObjetivoComida,
@@ -260,6 +261,12 @@ export function PlanVisual({
   const [isPendingCopia, startCopia] = useTransition();
   // #104 Fase 2 — modal para añadir una comida (pide nombre y hora) + scroll a la nueva.
   const [nuevaComidaModal, setNuevaComidaModal] = useState<{ diaId: string } | null>(null);
+  // #78-C — Aviso antes de cambiar la planificación de un día: qué comidas dejan de estar previstas.
+  const [cambioPlaniModal, setCambioPlaniModal] = useState<{
+    diaIds: string[];
+    planiId: string | null;
+    sobran: { id: string; etiqueta: string; alimentos: number }[];
+  } | null>(null);
   const [nuevaComidaNombre, setNuevaComidaNombre] = useState("");
   const [nuevaComidaHora, setNuevaComidaHora] = useState("12:00");
   const [scrollComidaId, setScrollComidaId] = useState<string | null>(null);
@@ -753,8 +760,46 @@ export function PlanVisual({
   }
 
   // Asigna una planificación (o ninguna) a los días dados; se ve al instante y el refresh lo confirma.
+  /** Comidas del día que la planificación destino NO prevé. Se preguntan antes de cambiar: borrarlas
+   *  a la callada se llevaría un pre-entreno con alimentos dentro, y no hay vuelta atrás. */
+  function comidasQueSobran(diaIds: string[], planiId: string | null) {
+    const destino = planiId
+      ? (repartoParaPlani(repartoPropio, planiId) ??
+        planificaciones.find((p) => p.id === planiId)?.datos?.repartoPorComida ??
+        null)
+      : repartoParaPlani(repartoPropio, null);
+    // Sin reparto activo en el destino, ese día no tiene estructura definida: no sobra nada.
+    if (!destino?.activo) return [];
+    const out: { id: string; etiqueta: string; alimentos: number }[] = [];
+    for (const diaId of diaIds) {
+      const dia = (selectedPlan?.dias ?? []).find((d) => d.id === diaId);
+      if (!dia) continue;
+      const previstas = new Set(filasParaDia(destino, dia.dia).map((f) => claveComida(f)));
+      for (const c of conComidasNuevas(dia).comidas) {
+        if (previstas.has(claveComida(c))) continue;
+        out.push({
+          id: c.id,
+          etiqueta: (c.nombre ?? "").trim() || tDiets(`comidaSlot.tipoLabels.${c.tipo}` as never),
+          alimentos: c.alimentos?.length ?? 0,
+        });
+      }
+    }
+    return out;
+  }
+
   function handleAsignarPlani(diaIds: string[], planiId: string | null) {
     if (diaIds.length === 0) return;
+    const sobran = comidasQueSobran(diaIds, planiId);
+    if (sobran.length > 0) {
+      setCambioPlaniModal({ diaIds, planiId, sobran });
+      return;
+    }
+    aplicarAsignarPlani(diaIds, planiId, []);
+  }
+
+  /** Asigna la planificación, crea las comidas que el nuevo reparto prevé y no existen, y borra solo
+   *  las que el nutri haya decidido quitar en el aviso. */
+  function aplicarAsignarPlani(diaIds: string[], planiId: string | null, quitarComidaIds: string[]) {
     const prev = planiOptimista;
     setPlaniOptimista((p) => {
       const n = { ...p };
@@ -764,6 +809,23 @@ export function PlanVisual({
     startCopia(async () => {
       try {
         for (const id of diaIds) await asignarPlanificacionADia(id, planiId);
+        for (const comidaId of quitarComidaIds) await eliminarComida(comidaId);
+        // Crear las que falten. Una sola llamada por GRUPO: la action resuelve el día representante,
+        // así que llamarla con los 4 días de un grupo haría el mismo trabajo cuatro veces.
+        const representantes = new Set(
+          diaIds
+            .map((id) => (selectedPlan?.dias ?? []).find((d) => d.id === id))
+            .filter((d): d is PlanVisualDia => !!d)
+            .map((d) => representanteDeDia(d).id),
+        );
+        const creadas: string[] = [];
+        for (const id of representantes) {
+          const res = await sincronizarComidasDeDia(id);
+          if (res.ok && res.creadas?.length) creadas.push(...res.creadas);
+        }
+        if (creadas.length > 0) {
+          toast.success(tDiets("reparto.comidasCreadas", { comidas: [...new Set(creadas)].join(", ") }));
+        }
         router.refresh();
       } catch (e) {
         if (isNextNavigation(e)) throw e;
@@ -1799,6 +1861,73 @@ export function PlanVisual({
                       toast.success(tDiets("copiar.toastImportado"));
                     }}
                   />
+                  {/* #78-C — Cambiar la planificación de un día puede dejar comidas fuera de lo
+                      previsto. Se listan con lo que tienen dentro y el nutri decide: nunca se borra
+                      nada por iniciativa propia (eliminarComida borra en cascada y no hay vuelta). */}
+                  {cambioPlaniModal && (
+                    <div
+                      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+                      onClick={() => setCambioPlaniModal(null)}
+                    >
+                      <div
+                        className="bg-card rounded-xl border border-border shadow-xl w-full max-w-md p-5"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <h3 className="text-lg font-semibold mb-2">{tDiets("reparto.cambioPlaniTitulo")}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {tDiets("reparto.cambioPlaniTexto", {
+                            plani:
+                              planificaciones.find((p) => p.id === cambioPlaniModal.planiId)?.nombre ??
+                              tDiets("copiar.sinPlani"),
+                          })}
+                        </p>
+                        <ul className="mt-3 space-y-1 text-sm">
+                          {cambioPlaniModal.sobran.map((c) => (
+                            <li key={c.id} className="flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                              <span className="font-medium">{c.etiqueta}</span>
+                              {c.alimentos > 0 && (
+                                <span className="text-xs text-amber-600 dark:text-amber-400">
+                                  {tDiets("reparto.conAlimentos", { n: c.alimentos })}
+                                </span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="flex flex-wrap justify-end gap-2 mt-5">
+                          <button
+                            type="button"
+                            onClick={() => setCambioPlaniModal(null)}
+                            className="px-4 py-2 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"
+                          >
+                            {tDiets("copiar.cancelar")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const m = cambioPlaniModal;
+                              setCambioPlaniModal(null);
+                              aplicarAsignarPlani(m.diaIds, m.planiId, m.sobran.map((c) => c.id));
+                            }}
+                            className="px-4 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                          >
+                            {tDiets("reparto.quitarlas")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const m = cambioPlaniModal;
+                              setCambioPlaniModal(null);
+                              aplicarAsignarPlani(m.diaIds, m.planiId, []);
+                            }}
+                            className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                          >
+                            {tDiets("reparto.mantenerlas")}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   {/* #104 Fase 2 — modal para añadir una comida (nombre + hora). */}
                   {nuevaComidaModal && (
                     <div

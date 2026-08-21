@@ -5,6 +5,8 @@ import { getCurrentDietista } from "./auth";
 import type { PlanificacionDatos } from "./planificaciones";
 import {
   filasParaDia,
+  repartoParaPlani,
+  esRepartoV2,
   claveComida,
   nombreNormalizado,
   renombrarFilaEnGuardado,
@@ -14,6 +16,7 @@ import {
 } from "@/lib/reparto-comidas";
 import { randomUUID } from "crypto";
 import { expandirGruposDeDias, DIA_ORDEN_SEMANA } from "@/lib/grupos-dias";
+import { ordenarComidasPorHora } from "@/lib/comida-horas";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
@@ -1955,9 +1958,127 @@ export async function asignarPlanificacionADia(
     diaId,
   );
 
+  // Si esta dieta no tenía todavía reparto para esa planificación, se le siembra una COPIA del de la
+  // planificación: a partir de ahí es de la dieta y editarlo aquí no vuelve a la pauta. Sin esto, el
+  // día se quedaba sin objetivos por comida hasta que alguien abriera el panel.
+  let repartoSlot: RepartoPorComida | null = null;
+  if (planificacionId) {
+    const filas = await prisma.$queryRawUnsafe<{ repartoPorComida: unknown; planificacionIds: unknown }[]>(
+      `SELECT "repartoPorComida", "planificacionIds" FROM planes_alimenticios WHERE id = $1`,
+      dia.planId,
+    );
+    const guardado = (filas[0]?.repartoPorComida ?? null) as RepartoGuardado | null;
+    repartoSlot = repartoParaPlani(guardado, planificacionId);
+    const tieneSlot = !!guardado && esRepartoV2(guardado) && !!guardado.porPlani?.[planificacionId];
+    if (!tieneSlot) {
+      const dePlani = await prisma.$queryRawUnsafe<{ reparto: unknown }[]>(
+        `SELECT datos->'repartoPorComida' AS reparto FROM planificaciones WHERE id = $1`,
+        planificacionId,
+      );
+      const semilla = (dePlani[0]?.reparto ?? null) as RepartoPorComida | null;
+      if (semilla) {
+        const conocidos = Array.isArray(filas[0]?.planificacionIds)
+          ? (filas[0].planificacionIds as string[])
+          : [];
+        await prisma.$executeRawUnsafe(
+          `UPDATE planes_alimenticios SET "repartoPorComida" = $1::jsonb WHERE id = $2`,
+          JSON.stringify(ponerRepartoParaPlani(guardado, planificacionId, semilla, conocidos)),
+          dia.planId,
+        );
+        repartoSlot = semilla;
+      }
+    }
+  }
+
   revalidatePath(`/dietas/${dia.planId}`);
   revalidatePath(`/pacientes/${dia.plan.pacienteId}`);
   revalidatePath(`/pacientes/${dia.plan.pacienteId}?pestana=plan-alimentacion`);
+  return { ok: true, reparto: repartoSlot };
+}
+
+/**
+ * #78-C/#104 — Crea en un día las comidas que su reparto prevé y todavía no existen.
+ *
+ * SOLO CREA: nunca borra nada. Quitar comidas automáticamente al cambiar de planificación se
+ * llevaría por delante un pre-entreno con alimentos dentro (y `eliminarComida` borra en cascada),
+ * así que lo que sobra se pregunta en la pantalla, no aquí.
+ *
+ * Idempotente: empareja por identidad (`claveComida`), así que llamarla dos veces no duplica nada.
+ * Trabaja sobre el día REPRESENTANTE del grupo (#75): las comidas de un grupo viven solo ahí, y una
+ * comida creada en un día miembro no se vería y se perdería al reagrupar.
+ */
+export async function sincronizarComidasDeDia(
+  diaId: string,
+): Promise<{ ok: boolean; creadas?: string[]; error?: string }> {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
+  if (dietista.isDemo) return { ok: true, creadas: [] };
+
+  const dia = await prisma.diaDelPlan.findUnique({
+    where: { id: diaId },
+    select: { id: true, dia: true, planId: true, plan: { select: { dietistaId: true, pacienteId: true } } },
+  });
+  if (!dia || dia.plan.dietistaId !== dietista.id) return { ok: false, error: t("auth.noAutorizado") };
+
+  // Día representante y planificación asignada (columnas fuera del cliente Prisma).
+  const filas = await prisma.$queryRawUnsafe<{ id: string; dia: string; grupoId: string | null; planificacionId: string | null }[]>(
+    `SELECT id, dia, "grupoId", "planificacionId" FROM dias_del_plan WHERE "planId" = $1`,
+    dia.planId,
+  );
+  const esta = filas.find((f) => f.id === diaId);
+  let objetivo = esta;
+  if (esta?.grupoId) {
+    const delGrupo = filas.filter((f) => f.grupoId === esta.grupoId);
+    objetivo = [...delGrupo].sort(
+      (a, b) => DIA_ORDEN_SEMANA.indexOf(a.dia) - DIA_ORDEN_SEMANA.indexOf(b.dia),
+    )[0];
+  }
+  if (!objetivo) return { ok: false, error: t("plan.planNoEncontrado") };
+
+  const planRows = await prisma.$queryRawUnsafe<{ repartoPorComida: unknown }[]>(
+    `SELECT "repartoPorComida" FROM planes_alimenticios WHERE id = $1`,
+    dia.planId,
+  );
+  const reparto = repartoParaPlani(
+    (planRows[0]?.repartoPorComida ?? null) as RepartoGuardado | null,
+    objetivo.planificacionId,
+  );
+  const previstas = filasParaDia(reparto, objetivo.dia);
+  if (previstas.length === 0) return { ok: true, creadas: [] };
+
+  const existentes = await prisma.comidaDelDia.findMany({
+    where: { diaId: objetivo.id },
+    select: { id: true, tipo: true, nombre: true, hora: true },
+  });
+  const yaEstan = new Set(existentes.map((c) => claveComida(c)));
+  const aCrear = previstas.filter((f) => !yaEstan.has(claveComida(f)));
+  if (aCrear.length === 0) return { ok: true, creadas: [] };
+
+  await prisma.comidaDelDia.createMany({
+    data: aCrear.map((f) => ({
+      diaId: objetivo!.id,
+      tipo: f.tipo as TipoComida,
+      orden: 0, // se renumera justo después, por hora
+      nombre: (f.nombre ?? "").trim() || null,
+      hora: /^([01]?\d|2[0-3]):[0-5]\d$/.test(f.hora ?? "") ? f.hora! : null,
+    })),
+  });
+
+  // Renumerar `orden` por hora efectiva: el portal del paciente y el PDF ordenan por `orden`, así
+  // que sin esto las comidas nuevas salían al final, fuera de su sitio en el día.
+  const todas = await prisma.comidaDelDia.findMany({
+    where: { diaId: objetivo.id },
+    select: { id: true, tipo: true, hora: true },
+  });
+  const ordenadas = ordenarComidasPorHora(todas);
+  for (let i = 0; i < ordenadas.length; i++) {
+    await prisma.comidaDelDia.update({ where: { id: ordenadas[i].id }, data: { orden: i } });
+  }
+
+  revalidatePath(`/dietas/${dia.planId}`);
+  revalidatePath(`/pacientes/${dia.plan.pacienteId}`);
+  return { ok: true, creadas: aCrear.map((f) => (f.nombre ?? "").trim() || f.tipo) };
 }
 
 /** Objetivos por día de un plan: para cada día CON "tipo de día" asignado, los objetivos
