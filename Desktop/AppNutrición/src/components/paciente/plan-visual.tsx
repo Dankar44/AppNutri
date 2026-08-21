@@ -373,7 +373,16 @@ export function PlanVisual({
     startCopia(async () => {
       try {
         const res = await agregarComida(diaId, { nombre: nombre || undefined, hora });
-        if (res?.id) {
+        // Nombre repetido en ese día: se retira la comida optimista o quedaría de fantasma.
+        if (res && "error" in res && res.error) {
+          setComidasNuevasDia((prev) => ({
+            ...prev,
+            [diaId]: (prev[diaId] ?? []).filter((c) => c.id !== tempId),
+          }));
+          toast.error(res.error);
+          return;
+        }
+        if (res && "id" in res && res.id) {
           setComidasNuevasDia((prev) => ({
             ...prev,
             [diaId]: (prev[diaId] ?? []).map((c) => (c.id === tempId ? { ...c, realId: res.id } : c)),

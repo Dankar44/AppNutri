@@ -46,7 +46,8 @@
   "plan": {
     "planNoEncontrado": "Plano não encontrado",
     "planNoValido": "Plano inválido",
-    "nombreObligatorio": "O nome é obrigatório"
+    "nombreObligatorio": "O nome é obrigatório",
+    "comidaNombreDuplicado": "Já existe outra refeição com esse nome neste dia. Escolha um nome diferente: a distribuição por refeição distingue as refeições próprias pelo nome."
   },
   "cita": {
     "citaNoEncontrada": "Consulta não encontrada",
@@ -230,8 +231,18 @@
     "cumplioComida": "Seguiu o {mealLabel} do dia {fechaStr} às {hora}.",
     "hizoCambiosComida": "Fez alterações no {mealLabel} do dia {fechaStr} às {hora}.",
     "meses": [
-      "janeiro", "fevereiro", "março", "abril", "maio", "junho",
-      "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"
+      "janeiro",
+      "fevereiro",
+      "março",
+      "abril",
+      "maio",
+      "junho",
+      "julho",
+      "agosto",
+      "setembro",
+      "outubro",
+      "novembro",
+      "dezembro"
     ]
   },
   "imagen": {

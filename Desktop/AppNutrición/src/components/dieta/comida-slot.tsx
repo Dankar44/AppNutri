@@ -9,6 +9,7 @@ import { AlimentoCard } from "./alimento-card";
 import { EquivalentePanel } from "./equivalente-panel";
 import { HoraSelect } from "./hora-select";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { actualizarDescripcionComida, actualizarMetaComida } from "@/app/actions/planes";
 import { calcularMacrosPorcion, convertirAGramos } from "@/lib/macros";
 import type { InteractionMode } from "@/components/food-hover-card";
@@ -178,8 +179,14 @@ export function ComidaSlot({
   function handleNombreChange(value: string) {
     setNombreComida(value);
     if (metaDebounceRef.current) clearTimeout(metaDebounceRef.current);
-    metaDebounceRef.current = setTimeout(() => {
-      actualizarMetaComida(comidaId, { nombre: value });
+    metaDebounceRef.current = setTimeout(async () => {
+      // Dos comidas propias con el mismo nombre en un día compartirían fila en el reparto (su
+      // identidad es el nombre), así que el servidor lo rechaza y aquí se vuelve al nombre anterior.
+      const res = await actualizarMetaComida(comidaId, { nombre: value });
+      if (res && "error" in res && res.error) {
+        toast.error(res.error);
+        setNombreComida(nombreInicial || "");
+      }
     }, 700);
   }
   const [collapsed, setCollapsed] = useState(false);

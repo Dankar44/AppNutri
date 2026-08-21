@@ -3,7 +3,13 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
 import type { PlanificacionDatos } from "./planificaciones";
-import { seCreaEnDia, claveComida, type RepartoPorComida } from "@/lib/reparto-comidas";
+import {
+  filasParaDia,
+  claveComida,
+  nombreNormalizado,
+  renombrarFilaReparto,
+  type RepartoPorComida,
+} from "@/lib/reparto-comidas";
 import { randomUUID } from "crypto";
 import { expandirGruposDeDias, DIA_ORDEN_SEMANA } from "@/lib/grupos-dias";
 import { revalidatePath } from "next/cache";
@@ -188,31 +194,27 @@ export async function crearPlan(data: PlanFormData) {
     // nace con las comidas que dice el reparto (nombres, horas y solo en los días marcados) en vez
     // de las 6 fijas de siempre. Así no hay que retocar cada dieta después de crearla.
     if (repartoOrigen.activo) {
-      const filas = (repartoOrigen.comidas ?? []).filter(
-        (c) => c.incluida && (c.tipo !== "OTRA" || (c.nombre ?? "").trim().length > 0),
-      );
-      if (filas.length > 0) {
-        const dias = await prisma.diaDelPlan.findMany({
-          where: { planId: plan.id },
-          select: { id: true, dia: true },
+      const dias = await prisma.diaDelPlan.findMany({
+        where: { planId: plan.id },
+        select: { id: true, dia: true },
+      });
+      const nuevas: { diaId: string; tipo: TipoComida; orden: number; nombre: string | null; hora: string | null }[] = [];
+      for (const d of dias) {
+        // `filasParaDia` es la regla única (la comparte la sincronización al asignar planificación).
+        filasParaDia(repartoOrigen, d.dia).forEach((f, orden) => {
+          nuevas.push({
+            diaId: d.id,
+            tipo: f.tipo as TipoComida,
+            orden,
+            nombre: (f.nombre ?? "").trim() || null,
+            hora: /^([01]?\d|2[0-3]):[0-5]\d$/.test(f.hora ?? "") ? f.hora! : null,
+          });
         });
+      }
+      if (nuevas.length > 0) {
         // Se rehacen las comidas de cada día según el reparto (el plan acaba de crearse: están vacías).
         await prisma.comidaDelDia.deleteMany({ where: { diaId: { in: dias.map((d) => d.id) } } });
-        const nuevas: { diaId: string; tipo: TipoComida; orden: number; nombre: string | null; hora: string | null }[] = [];
-        for (const d of dias) {
-          let orden = 0;
-          for (const f of filas) {
-            if (!seCreaEnDia(f, d.dia)) continue; // esta comida no se crea en este día
-            nuevas.push({
-              diaId: d.id,
-              tipo: f.tipo as TipoComida,
-              orden: orden++,
-              nombre: (f.nombre ?? "").trim() || null,
-              hora: /^([01]?\d|2[0-3]):[0-5]\d$/.test(f.hora ?? "") ? f.hora! : null,
-            });
-          }
-        }
-        if (nuevas.length > 0) await prisma.comidaDelDia.createMany({ data: nuevas });
+        await prisma.comidaDelDia.createMany({ data: nuevas });
       }
     }
   }
@@ -676,7 +678,56 @@ export async function actualizarMetaComida(
     patch.hora = /^([01]?\d|2[0-3]):[0-5]\d$/.test(h) ? h : null;
   }
 
+  const actual = await prisma.comidaDelDia.findUnique({
+    where: { id: comidaId },
+    select: { tipo: true, nombre: true, diaId: true, diaDelPlan: { select: { planId: true } } },
+  });
+  if (!actual) throw new Error(t("plan.planNoEncontrado"));
+
+  // El nombre es la IDENTIDAD de una comida propia para el reparto (`claveComida`): dos comidas con
+  // el mismo nombre en un día casarían con la MISMA fila y su % se contaría dos veces, así que el día
+  // repartiría más kcal de las que tiene.
+  if (patch.nombre && actual.tipo === "OTRA") {
+    const hermanas = await prisma.comidaDelDia.findMany({
+      where: { diaId: actual.diaId, tipo: "OTRA", id: { not: comidaId } },
+      select: { nombre: true },
+    });
+    if (hermanas.some((c) => nombreNormalizado(c.nombre) === nombreNormalizado(patch.nombre))) {
+      return { error: t("plan.comidaNombreDuplicado") };
+    }
+  }
+
   await prisma.comidaDelDia.update({ where: { id: comidaId }, data: patch });
+
+  // Renombrar también su fila en el reparto DE ESTA DIETA, o la comida se queda huérfana y el editor
+  // le pinta "no está en el reparto". Solo si ninguna otra comida del plan seguía usando el nombre
+  // viejo (si la comparten, la fila sigue siendo de ellas).
+  if (patch.nombre !== undefined && actual.tipo === "OTRA" && patch.nombre !== actual.nombre) {
+    const otras = await prisma.comidaDelDia.count({
+      where: {
+        diaDelPlan: { planId: actual.diaDelPlan.planId },
+        tipo: "OTRA",
+        id: { not: comidaId },
+        nombre: actual.nombre,
+      },
+    });
+    if (otras === 0) {
+      const filas = await prisma.$queryRawUnsafe<{ repartoPorComida: unknown }[]>(
+        `SELECT "repartoPorComida" FROM planes_alimenticios WHERE id = $1`,
+        actual.diaDelPlan.planId,
+      );
+      const guardado = filas[0]?.repartoPorComida as RepartoPorComida | null;
+      const nuevo = renombrarFilaReparto(guardado, actual.nombre, patch.nombre);
+      if (nuevo) {
+        await prisma.$executeRawUnsafe(
+          `UPDATE planes_alimenticios SET "repartoPorComida" = $1::jsonb WHERE id = $2`,
+          JSON.stringify(nuevo),
+          actual.diaDelPlan.planId,
+        );
+      }
+    }
+  }
+  return { ok: true };
 }
 
 // #104 Fase 2 — Añadir una comida nueva (personalizada) a un día concreto. No afecta a los
@@ -698,6 +749,17 @@ export async function agregarComida(
     throw new Error(t("auth.noAutorizado"));
   }
 
+  const nombreNuevo = (data?.nombre ?? "").trim().slice(0, 60);
+  if (nombreNuevo) {
+    const hermanas = await prisma.comidaDelDia.findMany({
+      where: { diaId, tipo: "OTRA" },
+      select: { nombre: true },
+    });
+    if (hermanas.some((c) => nombreNormalizado(c.nombre) === nombreNormalizado(nombreNuevo))) {
+      return { error: t("plan.comidaNombreDuplicado") };
+    }
+  }
+
   const max = await prisma.comidaDelDia.aggregate({ where: { diaId }, _max: { orden: true } });
   const h = (data?.hora ?? "").trim();
   const comida = await prisma.comidaDelDia.create({
@@ -705,7 +767,7 @@ export async function agregarComida(
       diaId,
       tipo: "OTRA",
       orden: (max._max.orden ?? -1) + 1,
-      nombre: (data?.nombre ?? "").trim().slice(0, 60) || null,
+      nombre: nombreNuevo || null,
       hora: /^([01]?\d|2[0-3]):[0-5]\d$/.test(h) ? h : null,
     },
   });
@@ -965,19 +1027,38 @@ const COMIDA_ORDEN: Record<TipoComida, number> = {
 };
 
 /**
- * Devuelve el id de la comida de un tipo concreto en un día. Si no existe
- * (planes antiguos o tipos faltantes), la crea con su orden por defecto.
+ * Devuelve el id de la comida equivalente en un día. Si no existe (planes antiguos, tipos que
+ * faltan, o una comida propia que ese día no tiene), la crea.
+ *
+ * Empareja por IDENTIDAD, no solo por tipo: las 6 comidas fijas por su tipo, y las propias (OTRA)
+ * por su nombre normalizado. Emparejar solo por tipo hacía que un día con dos comidas propias
+ * (Pre-entreno y Snack) las fundiera en una al copiar, juntar o separar días: la segunda reutilizaba
+ * la comida que había creado la primera y le sobrescribía el contenido.
  */
-async function obtenerOCrearComidaDelTipo(diaId: string, tipo: TipoComida): Promise<string> {
-  const existente = await prisma.comidaDelDia.findFirst({
-    where: { diaId, tipo },
+async function obtenerOCrearComida(
+  diaId: string,
+  origen: { tipo: TipoComida; nombre?: string | null; hora?: string | null },
+): Promise<string> {
+  const candidatas = await prisma.comidaDelDia.findMany({
+    where: { diaId, tipo: origen.tipo },
     orderBy: { orden: "asc" },
-    select: { id: true },
+    select: { id: true, nombre: true },
   });
+  const existente =
+    origen.tipo === "OTRA"
+      ? candidatas.find((c) => nombreNormalizado(c.nombre) === nombreNormalizado(origen.nombre))
+      : candidatas[0];
   if (existente) return existente.id;
 
+  // Nombre y hora solo se usan al CREAR: si la comida destino ya existía, su hora es la suya.
   const nueva = await prisma.comidaDelDia.create({
-    data: { diaId, tipo, orden: COMIDA_ORDEN[tipo] ?? 0 },
+    data: {
+      diaId,
+      tipo: origen.tipo,
+      orden: COMIDA_ORDEN[origen.tipo] ?? 0,
+      nombre: (origen.nombre ?? "").trim() || null,
+      hora: (origen.hora ?? "").trim() || null,
+    },
     select: { id: true },
   });
   return nueva.id;
@@ -1158,7 +1239,11 @@ export async function copiarComidaADias(
     });
     if (!dia || dia.plan.dietistaId !== dietista.id) continue;
 
-    const destinoComidaId = await obtenerOCrearComidaDelTipo(diaDestinoId, tipo);
+    const destinoComidaId = await obtenerOCrearComida(diaDestinoId, {
+      tipo,
+      nombre: tipo === origen.tipo ? origen.nombre : null,
+      hora: tipo === origen.tipo ? origen.hora : null,
+    });
     await copiarAlimentosAComida(comidaOrigenId, destinoComidaId, modo);
 
     if (modo === "reemplazar") {
@@ -1189,7 +1274,10 @@ export async function copiarDiaADias(
     where: { id: diaOrigenId },
     include: {
       plan: { select: { dietistaId: true } },
-      comidas: { orderBy: { orden: "asc" }, select: { id: true, tipo: true, descripcion: true } },
+      comidas: {
+        orderBy: { orden: "asc" },
+        select: { id: true, tipo: true, descripcion: true, nombre: true, hora: true },
+      },
     },
   });
   if (!origen || origen.plan.dietistaId !== dietista.id) {
@@ -1206,7 +1294,7 @@ export async function copiarDiaADias(
     if (!dia || dia.plan.dietistaId !== dietista.id) continue;
 
     for (const comida of origen.comidas) {
-      const destinoComidaId = await obtenerOCrearComidaDelTipo(diaDestinoId, comida.tipo);
+      const destinoComidaId = await obtenerOCrearComida(diaDestinoId, comida);
       await copiarAlimentosAComida(comida.id, destinoComidaId, modo);
       if (modo === "reemplazar") {
         await prisma.comidaDelDia.update({

@@ -46,7 +46,8 @@
   "plan": {
     "planNoEncontrado": "Plan no encontrado",
     "planNoValido": "Plan no válido",
-    "nombreObligatorio": "El nombre es obligatorio"
+    "nombreObligatorio": "El nombre es obligatorio",
+    "comidaNombreDuplicado": "Ya hay otra comida con ese nombre en este día. Ponle un nombre distinto: el reparto por comida distingue las comidas propias por su nombre."
   },
   "cita": {
     "citaNoEncontrada": "Cita no encontrada",

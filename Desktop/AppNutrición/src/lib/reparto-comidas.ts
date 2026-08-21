@@ -3,6 +3,7 @@
 // dietas (donde se muestra el cumplimiento por comida). Client-safe: sin dependencias de servidor.
 
 import { TIPO_KEYS } from "@/lib/seguimiento";
+import { ordenarComidasPorHora } from "@/lib/comida-horas";
 
 /** Reparto por comida: una fila por comida (valor del enum TipoComida: "DESAYUNO", …). */
 export type RepartoComida = {
@@ -210,4 +211,62 @@ export function objetivosPorComidaDia(
     };
   });
   return out;
+}
+
+/** Nombre de una comida propia normalizado igual que en `claveComida` (para comparar sin
+ *  depender de mayúsculas ni de espacios de más: "Pre-Entreno" == "pre  entreno"). */
+export function nombreNormalizado(nombre?: string | null): string {
+  return (nombre ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+/** Renombra la fila de una comida propia dentro del reparto. La identidad de una comida OTRA es su
+ *  NOMBRE (`claveComida`), así que renombrarla en la dieta sin tocar el reparto la dejaba huérfana y
+ *  el editor le pintaba "no está en el reparto".
+ *
+ *  Devuelve el reparto ya modificado, o `null` si no hay nada que cambiar (no hay fila con ese
+ *  nombre, o ya existe una fila con el nombre nuevo: en ese caso la comida se empareja con ella y
+ *  crear un duplicado sería peor). */
+export function renombrarFilaReparto(
+  reparto: RepartoPorComida | null | undefined,
+  nombreViejo?: string | null,
+  nombreNuevo?: string | null,
+): RepartoPorComida | null {
+  if (!reparto?.comidas?.length) return null;
+  const viejo = nombreNormalizado(nombreViejo);
+  const nuevo = nombreNormalizado(nombreNuevo);
+  if (!viejo || !nuevo || viejo === nuevo) return null;
+
+  const propias = reparto.comidas.filter((c) => c.tipo === "OTRA");
+  if (!propias.some((c) => nombreNormalizado(c.nombre) === viejo)) return null;
+  if (propias.some((c) => nombreNormalizado(c.nombre) === nuevo)) return null;
+
+  return {
+    ...reparto,
+    comidas: reparto.comidas.map((c) =>
+      c.tipo === "OTRA" && nombreNormalizado(c.nombre) === viejo
+        ? { ...c, nombre: (nombreNuevo ?? "").trim() }
+        : c,
+    ),
+  };
+}
+
+/** Filas del reparto que se CREAN en un día concreto, ya en orden cronológico.
+ *
+ *  Es la regla única de "qué comidas tiene que tener este día según el reparto": la usan tanto la
+ *  creación de una dieta nueva como la sincronización al asignarle una planificación a un día, para
+ *  que no puedan divergir. Descarta las no incluidas y las propias sin nombre (sin nombre no tienen
+ *  identidad: `claveComida` no las distinguiría). Ordenadas por hora efectiva para que el `orden` con
+ *  el que se guardan coincida con el orden en que se ven. */
+export function filasParaDia(
+  reparto: RepartoPorComida | null | undefined,
+  diaSemana?: string | null,
+): RepartoComida[] {
+  if (!reparto?.activo) return [];
+  const filas = (reparto.comidas ?? []).filter(
+    (c) =>
+      c.incluida &&
+      (c.tipo !== "OTRA" || (c.nombre ?? "").trim().length > 0) &&
+      seCreaEnDia(c, diaSemana),
+  );
+  return ordenarComidasPorHora(filas);
 }
