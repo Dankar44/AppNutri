@@ -61,7 +61,8 @@
       "almuerzo": "Almoço",
       "merienda": "Lanche",
       "cena": "Jantar",
-      "recena": "Ceia"
+      "recena": "Ceia",
+        "otra": "Outra refeição"
     },
     "horaDefault": {
       "desayuno": "09:00",

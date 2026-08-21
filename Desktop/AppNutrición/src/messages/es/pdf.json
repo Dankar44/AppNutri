@@ -61,7 +61,8 @@
       "almuerzo": "Almuerzo",
       "merienda": "Merienda",
       "cena": "Cena",
-      "recena": "Recena"
+      "recena": "Recena",
+        "otra": "Otra comida"
     },
     "horaDefault": {
       "desayuno": "09:00",
