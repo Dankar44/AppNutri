@@ -186,31 +186,45 @@ export function objetivosPorComidaDia(
 
   const out: Record<string, ObjetivoComida> = { ...out0 };
   emparejadas.forEach(({ cd, fila }, idx) => {
-    const kcal = kcalPorComida[idx];
-    const cuota = fila.kcalPct; // % literal del día que el nutri asignó a esta comida
-    out[cd.id] = {
-      kcal,
-      protG:
-        fila.protPct != null
-          ? Math.round((kcal * fila.protPct) / 100 / 4)
-          : dia.proteinas != null
-            ? Math.round((dia.proteinas * cuota) / 100)
-            : null,
-      carbG:
-        fila.carbPct != null
-          ? Math.round((kcal * fila.carbPct) / 100 / 4)
-          : dia.carbohidratos != null
-            ? Math.round((dia.carbohidratos * cuota) / 100)
-            : null,
-      grasaG:
-        fila.grasaPct != null
-          ? Math.round((kcal * fila.grasaPct) / 100 / 9)
-          : dia.grasas != null
-            ? Math.round((dia.grasas * cuota) / 100)
-            : null,
-    };
+    out[cd.id] = objetivoDeFila(kcalPorComida[idx], fila, dia);
   });
   return out;
+}
+
+/** Objetivo de UNA comida a partir de sus kcal ya repartidas. Fórmula ÚNICA de los gramos, que usan
+ *  tanto las pastillas "llevas / objetivo" del editor como la tabla del reparto: si cada pantalla
+ *  hiciera su cuenta, la tabla diría "P 46 g" y la comida "P 45 g" para lo mismo.
+ *
+ *  Con override de macros en la comida, los gramos salen de SUS % sobre sus kcal. Sin override, se
+ *  hereda la parte proporcional de los gramos del día (no se recalculan desde los % del día: los
+ *  gramos objetivo son lo que el nutri fijó, y así las comidas suman exactamente el día). */
+export function objetivoDeFila(
+  kcal: number,
+  fila: Pick<RepartoComida, "kcalPct" | "protPct" | "carbPct" | "grasaPct">,
+  dia: { proteinas?: number | null; carbohidratos?: number | null; grasas?: number | null },
+): ObjetivoComida {
+  const cuota = fila.kcalPct; // % literal del día que el nutri asignó a esta comida
+  return {
+    kcal,
+    protG:
+      fila.protPct != null
+        ? Math.round((kcal * fila.protPct) / 100 / 4)
+        : dia.proteinas != null
+          ? Math.round((dia.proteinas * cuota) / 100)
+          : null,
+    carbG:
+      fila.carbPct != null
+        ? Math.round((kcal * fila.carbPct) / 100 / 4)
+        : dia.carbohidratos != null
+          ? Math.round((dia.carbohidratos * cuota) / 100)
+          : null,
+    grasaG:
+      fila.grasaPct != null
+        ? Math.round((kcal * fila.grasaPct) / 100 / 9)
+        : dia.grasas != null
+          ? Math.round((dia.grasas * cuota) / 100)
+          : null,
+  };
 }
 
 /** Nombre de una comida propia normalizado igual que en `claveComida` (para comparar sin
@@ -269,4 +283,191 @@ export function filasParaDia(
       seCreaEnDia(c, diaSemana),
   );
   return ordenarComidasPorHora(filas);
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * Presets y mutadores del reparto. Aquí y no en la pantalla de planificación
+ * porque el editor de dietas edita el MISMO reparto (su copia): si cada
+ * pantalla trajera su propia versión del re-equilibrio, acabarían dando
+ * números distintos para lo mismo. Todas las funciones son PURAS
+ * (comidas → comidas nuevas): los updaters de React se invocan dos veces en
+ * StrictMode y cualquier estado externo se perdería en la segunda pasada.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/** Presets de reparto de kcal POR COMIDA con nombre (#78-C): distribuciones clásicas de la
+ *  práctica dietética. Comida ausente en el mapa = excluida del reparto. Todas suman 100. */
+export const REPARTO_PRESETS: { id: string; kcal: Record<string, number> }[] = [
+  { id: "tradicional5", kcal: { DESAYUNO: 25, MEDIA_MANANA: 10, ALMUERZO: 30, MERIENDA: 10, CENA: 25 } },
+  { id: "completo6", kcal: { DESAYUNO: 25, MEDIA_MANANA: 10, ALMUERZO: 30, MERIENDA: 10, CENA: 20, RECENA: 5 } },
+  { id: "tresComidas", kcal: { DESAYUNO: 30, ALMUERZO: 40, CENA: 30 } },
+  { id: "cuatroComidas", kcal: { DESAYUNO: 25, ALMUERZO: 35, MERIENDA: 10, CENA: 30 } },
+  { id: "desayunoFuerte", kcal: { DESAYUNO: 35, MEDIA_MANANA: 10, ALMUERZO: 30, MERIENDA: 10, CENA: 15 } },
+  { id: "cenaLigera", kcal: { DESAYUNO: 25, MEDIA_MANANA: 10, ALMUERZO: 35, MERIENDA: 15, CENA: 15 } },
+];
+
+/** Presets de distribución de macros con nombre (#78-C). Valores en % (grasa/carb/prot). */
+export type MacroPreset = { id: string; grasa: number; carb: number; prot: number };
+export const MACRO_PRESETS: MacroPreset[] = [
+  { id: "equilibrada", grasa: 30, carb: 50, prot: 20 },
+  { id: "zona", grasa: 30, carb: 40, prot: 30 },
+  { id: "carb602020", grasa: 20, carb: 60, prot: 20 },
+  { id: "cetogenica", grasa: 70, carb: 10, prot: 20 },
+  { id: "altaProteina", grasa: 25, carb: 35, prot: 40 },
+  { id: "lowCarb", grasa: 40, carb: 25, prot: 35 },
+];
+
+/** Parchea una fila identificada por su clave (tipo en las fijas, nombre en las propias). */
+export function setFila(
+  comidas: RepartoComida[],
+  clave: string,
+  patch: Partial<RepartoComida>,
+): RepartoComida[] {
+  return comidas.map((c) => (claveComida(c) === clave ? { ...c, ...patch } : c));
+}
+
+/** Esa comida vuelve a heredar los macros del día (se le quitan sus overrides). */
+export function heredarMacrosFila(comidas: RepartoComida[], clave: string): RepartoComida[] {
+  return setFila(comidas, clave, { grasaPct: undefined, carbPct: undefined, protPct: undefined });
+}
+
+export function quitarFila(comidas: RepartoComida[], clave: string): RepartoComida[] {
+  return comidas.filter((c) => claveComida(c) !== clave);
+}
+
+export function renombrarFila(comidas: RepartoComida[], clave: string, nombre: string): RepartoComida[] {
+  return setFila(comidas, clave, { nombre: nombre.trim().slice(0, 60) || undefined });
+}
+
+/** Reparte el 100% a partes iguales entre las comidas incluidas (el punto sobrante va a las
+ *  primeras, así la suma es 100 exacto). */
+export function repartirEquitativo(comidas: RepartoComida[]): RepartoComida[] {
+  const nIncluidas = comidas.filter((c) => c.incluida).length;
+  if (nIncluidas === 0) return comidas;
+  const base = Math.floor(100 / nIncluidas);
+  const resto = 100 - base * nIncluidas;
+  let i = 0;
+  return comidas.map((c) => {
+    if (!c.incluida) return { ...c, kcalPct: 0 };
+    const val = base + (i < resto ? 1 : 0);
+    i++;
+    return { ...c, kcalPct: val };
+  });
+}
+
+/** Marca/desmarca un día de una comida. Quitar TODOS los días = la comida no va ningún día, o sea
+ *  fuera del reparto (antes se interpretaba como "todos" y los días volvían a encenderse solos);
+ *  marcar un día en una comida desactivada la vuelve a activar, que es lo que el gesto implica. */
+export function toggleDiaFila(comidas: RepartoComida[], clave: string, dia: string): RepartoComida[] {
+  return comidas.map((c) => {
+    if (claveComida(c) !== clave) return c;
+    const actuales = c.dias && c.dias.length > 0 ? c.dias : [...DIAS_SEMANA];
+    const siguiente = actuales.includes(dia) ? actuales.filter((d) => d !== dia) : [...actuales, dia];
+    if (siguiente.length === 0) return { ...c, incluida: false, dias: undefined };
+    return {
+      ...c,
+      incluida: true,
+      dias: siguiente.length === DIAS_SEMANA.length ? undefined : siguiente,
+    };
+  });
+}
+
+/** Aplica un preset de kcal. Las comidas propias NO se tocan: un preset de las 6 clásicas no debe
+ *  borrarle al nutri el pre-entreno que acaba de crear. */
+export function aplicarPresetKcal(comidas: RepartoComida[], presetId: string): RepartoComida[] {
+  const p = REPARTO_PRESETS.find((x) => x.id === presetId);
+  if (!p) return comidas;
+  return comidas.map((c) => {
+    if (c.tipo === "OTRA") return c;
+    const val = p.kcal[c.tipo];
+    return val != null ? { ...c, incluida: true, kcalPct: val } : { ...c, incluida: false, kcalPct: 0 };
+  });
+}
+
+/** Aplica un preset de macros con nombre SOLO a esa comida (le crea su override). */
+export function aplicarPresetMacrosFila(
+  comidas: RepartoComida[],
+  clave: string,
+  presetId: string,
+): RepartoComida[] {
+  const p = MACRO_PRESETS.find((x) => x.id === presetId);
+  if (!p) return comidas;
+  return setFila(comidas, clave, { grasaPct: p.grasa, carbPct: p.carb, protPct: p.prot });
+}
+
+/** Preset de kcal que coincide con el estado actual ("" = personalizada). Solo compara inclusión y
+ *  % de kcal. Con comidas propias incluidas nunca hay coincidencia exacta (los presets solo hablan
+ *  de las 6 fijas), así que se muestra como personalizada. */
+export function presetKcalActivo(comidas: RepartoComida[]): string {
+  if (comidas.some((c) => c.tipo === "OTRA" && c.incluida)) return "";
+  return (
+    REPARTO_PRESETS.find((p) =>
+      comidas
+        .filter((c) => c.tipo !== "OTRA")
+        .every((c) => {
+          const val = p.kcal[c.tipo];
+          return val != null ? c.incluida && c.kcalPct === val : !c.incluida;
+        }),
+    )?.id ?? ""
+  );
+}
+
+/** Fija el % de una comida y re-equilibra las DEMÁS incluidas en proporción a lo que tenían,
+ *  cuadrando la suma en 100 exacto (el punto sobrante va a las de mayor parte decimal). Es lo que
+ *  usan el slider y el campo de kcal, y también "cuadrar el resto" (aplicándolo al valor actual). */
+export function fijarPctFila(comidas: RepartoComida[], clave: string, pct: number): RepartoComida[] {
+  const clamped = Math.max(0, Math.min(100, pct));
+  const objetivo = comidas.find((c) => claveComida(c) === clave);
+  if (!objetivo?.incluida) return comidas;
+  const otras = comidas.filter((c) => c.incluida && claveComida(c) !== clave);
+  if (otras.length === 0) return setFila(comidas, clave, { kcalPct: clamped });
+
+  const remaining = 100 - clamped;
+  const otherTotal = otras.reduce((s, c) => s + c.kcalPct, 0);
+  const cuotas = otras.map((c) =>
+    otherTotal === 0 ? remaining / otras.length : (c.kcalPct / otherTotal) * remaining,
+  );
+  const nuevos = cuotas.map((q) => Math.floor(q));
+  let sobra = remaining - nuevos.reduce((s, v) => s + v, 0);
+  Array.from(cuotas.keys())
+    .sort((a, b) => cuotas[b] - Math.floor(cuotas[b]) - (cuotas[a] - Math.floor(cuotas[a])))
+    .forEach((idx) => {
+      if (sobra > 0) {
+        nuevos[idx] += 1;
+        sobra -= 1;
+      }
+    });
+  const porClave = new Map(otras.map((c, i) => [claveComida(c), nuevos[i]]));
+  return comidas.map((c) => {
+    const k = claveComida(c);
+    return k === clave
+      ? { ...c, kcalPct: clamped }
+      : porClave.has(k)
+        ? { ...c, kcalPct: porClave.get(k)! }
+        : c;
+  });
+}
+
+/** Añade una comida propia al reparto. Devuelve `null` si ya hay una con ese nombre (su identidad
+ *  es el nombre: dos iguales compartirían cuota) o si el nombre viene vacío. */
+export function anadirFila(
+  comidas: RepartoComida[],
+  data: { nombre: string; hora?: string; dias?: string[]; kcalPct?: number },
+): RepartoComida[] | null {
+  const limpio = data.nombre.trim().slice(0, 60);
+  if (!limpio) return null;
+  const clave = claveComida({ tipo: "OTRA", nombre: limpio });
+  if (comidas.some((c) => claveComida(c) === clave)) return null;
+  const hora = (data.hora ?? "").trim();
+  const dias = data.dias ?? [];
+  return [
+    ...comidas,
+    {
+      tipo: "OTRA",
+      nombre: limpio,
+      hora: /^([01]?\d|2[0-3]):[0-5]\d$/.test(hora) ? hora : undefined,
+      dias: dias.length > 0 && dias.length < DIAS_SEMANA.length ? dias : undefined,
+      incluida: true,
+      kcalPct: data.kcalPct ?? 10,
+    },
+  ];
 }
