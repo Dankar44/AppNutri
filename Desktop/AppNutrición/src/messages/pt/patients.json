@@ -1495,8 +1495,6 @@
     "repartoAvisoNoMostrar": "Entendido e não mostrar mais este aviso"
   },
   "planVisual": {
-    "repartoComidaActivo": "Objetivo por refeição ativo",
-    "repartoComidaConfigurar": "Os objetivos de cada refeição vêm da distribuição por refeição do planejamento. Clique para ver ou alterar.",
     "sinPlan": "Sem plano",
     "sinDatos": "Não há dados para exibir.",
     "sinDias": "Não há dias para exibir.",

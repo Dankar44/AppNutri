@@ -153,8 +153,10 @@ export function objetivosPorComidaDia(
   // Filas utilizables: incluidas y con cuota. NO se filtra por `dias`: manda lo que el día tiene de
   // verdad, así mover una comida de un día a otro en la dieta sigue funcionando sin tocar la pauta.
   const filas = new Map<string, RepartoComida>();
+  const alCero = new Set<string>();
   for (const c of reparto.comidas) {
-    if (!c.incluida || c.kcalPct <= 0) continue;
+    if (!c.incluida) continue;
+    if (c.kcalPct <= 0) { alCero.add(claveComida(c)); continue; }
     filas.set(claveComida(c), c);
   }
 
@@ -163,16 +165,25 @@ export function objetivosPorComidaDia(
   const emparejadas = comidasDelDia
     .map((cd) => ({ cd, fila: filas.get(claveComida(cd)) }))
     .filter((x): x is { cd: (typeof comidasDelDia)[number]; fila: RepartoComida } => !!x.fila);
-  if (emparejadas.length === 0) return {};
+  // Comidas del día que están en el reparto pero a 0%: objetivo 0, y se muestran como las demás
+  // ("137 / 0 kcal"). ESTE BUCLE NO SE PUEDE QUITAR: si la comida al 0% se cae del mapa, el editor
+  // le pinta "no está en el reparto", que es falso — sí está, con 0%.
+  const out0: Record<string, ObjetivoComida> = {};
+  for (const cd of comidasDelDia) {
+    if (alCero.has(claveComida(cd))) {
+      out0[cd.id] = { kcal: 0, protG: 0, carbG: 0, grasaG: 0 };
+    }
+  }
+  if (emparejadas.length === 0) return out0;
 
   const sumaPct = emparejadas.reduce((s, x) => s + x.fila.kcalPct, 0);
-  if (sumaPct <= 0) return {};
+  if (sumaPct <= 0) return out0;
   // Los % se aplican TAL CUAL: si el día suma 110% reparte 2730 de 2482 y si suma 78% se queda
   // corto. No se re-escala nada: tapar el descuadre daba números contradictorios ("110% del día"
   // junto a "2482 de 2482") y ocultaba al nutri que su reparto no cuadra.
   const kcalPorComida = repartirKcal(kcalDia, emparejadas.map((x) => x.fila.kcalPct));
 
-  const out: Record<string, ObjetivoComida> = {};
+  const out: Record<string, ObjetivoComida> = { ...out0 };
   emparejadas.forEach(({ cd, fila }, idx) => {
     const kcal = kcalPorComida[idx];
     const cuota = fila.kcalPct; // % literal del día que el nutri asignó a esta comida

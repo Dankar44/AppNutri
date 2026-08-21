@@ -247,10 +247,12 @@ export function ComidaSlot({
   })();
 
   // #78-C Fase 2 — cumplimiento del objetivo por comida (reparto de la planificación).
-  const objetivoComida =
-    objetivo && objetivo !== "sinReparto" ? objetivo : null;
+  const objetivoReal = objetivo && objetivo !== "sinReparto" ? objetivo : null;
+  const objetivoComida = objetivoReal;
   // Color de la pill de kcal según el desvío: verde dentro de ±5%, ámbar hasta ±15%, rojo más.
-  // Con la comida vacía se queda neutra (mostrar "0 / 400" en rojo de salida no ayuda).
+  // Con la comida vacía se queda neutra (mostrar "0 / 400" en rojo de salida no ayuda). El guard de
+  // `kcal <= 0` NO se puede quitar: una comida al 0% del reparto daría 0/0 = NaN, y NaN falla los dos
+  // `<=` de abajo, así que caería en rojo. Se ve "137 / 0 kcal" en neutro, sin texto propio.
   const kcalStatus = (() => {
     if (!objetivoComida || objetivoComida.kcal <= 0 || alimentos.length === 0) return null;
     const desvio = Math.abs(mealTotals.calorias - objetivoComida.kcal) / objetivoComida.kcal;

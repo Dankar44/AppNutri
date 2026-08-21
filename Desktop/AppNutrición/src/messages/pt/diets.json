@@ -471,7 +471,7 @@
     "leyendaObjetivo": "o que já tem / objetivo desta refeição",
     "tooltipObjetivo": "Tem {actual} kcal das {objetivo} kcal que cabem a esta refeição",
     "sinObjetivoReparto": "Sem objetivo na distribuição por refeição do planejamento",
-    "anadirAlReparto": "Adicionar à distribuição"
+    "anadirAlReparto": "Adicionar à distribuição (10%, todos os seus dias)"
   },
   "resumenDiario": {
     "calories": "Calorias",

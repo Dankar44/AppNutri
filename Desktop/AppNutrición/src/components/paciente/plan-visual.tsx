@@ -1182,30 +1182,12 @@ export function PlanVisual({
             )}
           </>
         );
-        // #78-C — Si hay reparto por comida, decirlo aquí y dar el camino para cambiarlo: si no, el
-        // nutri ve "380 / 400 kcal" en cada comida sin saber de dónde sale ni dónde se configura.
-        const hayReparto =
-          interactionMode === "dashboard" &&
-          !readOnly &&
-          !!pacienteId && // las plantillas de dieta no tienen paciente: no hay planificación que abrir
-          (selectedPlan?.dias ?? []).some((d) => objetivosComidaDia(d.id) != null);
-        const chipReparto = hayReparto ? (
-          <Link
-            href={`/pacientes/${pacienteId}?pestana=planificacion`}
-            title={t("repartoComidaConfigurar")}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary font-medium hover:bg-primary/10 transition-colors"
-          >
-            <UtensilsCrossed className="w-3 h-3" />
-            {t("repartoComidaActivo")}
-          </Link>
-        ) : null;
         if (bloques.length === 1) {
           return (
             <div className="hidden sm:flex items-center gap-3 flex-wrap text-xs">
               <span className="font-semibold text-muted-foreground uppercase tracking-wide">{t("objetivos")}</span>
               {bloques[0].nombre && <span className="font-medium text-foreground">{bloques[0].nombre}</span>}
               {chips(bloques[0])}
-              {chipReparto}
             </div>
           );
         }
@@ -1213,7 +1195,6 @@ export function PlanVisual({
           <div className="hidden sm:block text-xs space-y-1.5">
             <div className="flex items-center gap-3 flex-wrap">
               <span className="font-semibold text-muted-foreground uppercase tracking-wide">{t("objetivos")}</span>
-              {chipReparto}
             </div>
             {bloques.map((b, i) => (
               <div key={i} className="flex items-center gap-3 flex-wrap">

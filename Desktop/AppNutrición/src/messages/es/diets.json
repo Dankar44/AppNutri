@@ -471,7 +471,7 @@
     "leyendaObjetivo": "lo que llevas / objetivo de esta comida",
     "tooltipObjetivo": "Llevas {actual} kcal de las {objetivo} kcal que le tocan a esta comida",
     "sinObjetivoReparto": "Sin objetivo en el reparto por comida de la planificación",
-    "anadirAlReparto": "Añadir al reparto"
+    "anadirAlReparto": "Añadir al reparto (10%, todos sus días)"
   },
   "resumenDiario": {
     "calories": "Calorías",
