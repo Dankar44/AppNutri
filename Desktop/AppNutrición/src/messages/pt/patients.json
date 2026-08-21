@@ -1473,10 +1473,26 @@
     "repartoResumenDiaVisto": "{dia}: {n} refeições · {asignadas} das {objetivo} kcal do dia.",
     "repartoNuevaDias": "Que dias?",
     "repartoSumaKcalDias": "Por dia: {detalle}",
-    "repartoAvisoTitulo": "Há dias que não distribuem 100% das calorias",
+    "repartoAvisoTitulo": "Há dias que não somam 100% das calorias objetivo",
     "repartoAvisoDetalle": "{detalle}",
-    "repartoAvisoQueHacer": "Pode ajustar os % das refeições desses dias para somarem 100, ou deixar assim: as calorias distribuem-se proporcionalmente e o total do dia bate sempre.",
-    "repartoAvisoEntendido": "Entendido"
+    "repartoAvisoQueHacer": "Cada refeição que adiciona entra com 10%, por isso esses dias distribuem mais (ou menos) do que tinha definido. Verifique e ajuste os % se quiser que bata, ou deixe assim.",
+    "repartoAvisoEntendido": "Entendido",
+    "salirTitulo": "Tem alterações não guardadas",
+    "salirTexto": "Se sair agora perde o que alterou no planejamento (incluindo as refeições que tenha adicionado à distribuição).",
+    "salirGuardando": "Guardar e sair",
+    "salirSinGuardar": "Sair sem guardar",
+    "salirSeguirEditando": "Continuar a editar",
+    "repartoAvisoDetalleTodos": "Todos os dias: {detalle}",
+    "diasIniciales": {
+      "LUNES": "S",
+      "MARTES": "T",
+      "MIERCOLES": "Q",
+      "JUEVES": "Q",
+      "VIERNES": "S",
+      "SABADO": "S",
+      "DOMINGO": "D"
+    },
+    "repartoAvisoNoMostrar": "Entendido e não mostrar mais este aviso"
   },
   "planVisual": {
     "repartoComidaActivo": "Objetivo por refeição ativo",

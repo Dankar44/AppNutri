@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations, useLocale } from "next-intl";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Activity,
   Calendar,
@@ -649,7 +649,10 @@ export function PlanificacionPorDefectoTab({
   const t = useTranslations("patients.planificacion");
   const tc = useTranslations("diets.comidaSlot.tipoLabels");
   const tDia = useTranslations("diets.editor.dayLabels");
+  // Inicial de cada día: en español el miércoles es "X" para distinguirlo del martes.
+  const tIni = useTranslations("patients.planificacion.diasIniciales");
   const locale = useLocale();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const blockIfDemo = useDemoGuard();
 
@@ -983,6 +986,11 @@ export function PlanificacionPorDefectoTab({
   // Aviso de "no cuadra al 100%": se lee y se cierra a mano (no un toast que se escapa). Se guarda
   // la firma de lo avisado: si cambian los días o los %, vuelve a salir porque es info nueva.
   const [avisoRepartoVisto, setAvisoRepartoVisto] = useState<string | null>(null);
+  // "No volver a avisar": se recuerda en el navegador, igual que el aviso de desvío al crear dieta.
+  const [avisoRepartoSilenciado, setAvisoRepartoSilenciado] = useState(false);
+  useEffect(() => {
+    setAvisoRepartoSilenciado(localStorage.getItem("annonia-aviso-reparto-dias") === "off");
+  }, []);
 
   /* --- Editable weight/body fat inputs --- */
   const pesoInicialActual = latestValue(medidas, "peso") ?? paciente.peso ?? null;
@@ -1395,8 +1403,9 @@ export function PlanificacionPorDefectoTab({
     const idxActivas = reparto
       .map((c, i) => ({ c, i }))
       .filter(({ c }) => c.incluida && c.kcalPct > 0 && enEsteDia(c));
-    const sumaActivas = idxActivas.reduce((sum, { c }) => sum + c.kcalPct, 0);
-    const pesos = idxActivas.map(({ c }) => (sumaActivas > 0 ? (c.kcalPct / sumaActivas) * 100 : 0));
+    // % literales (sin re-escalar): la tabla debe mostrar exactamente lo que reparte el día, aunque
+    // se pase o se quede corto. Así el total del pie cuadra con el % de arriba.
+    const pesos = idxActivas.map(({ c }) => c.kcalPct);
     const kcalActivas = repartirKcal(macros.kcal, pesos);
     const kcalPorIdx = new Map(idxActivas.map(({ i }, n) => [i, kcalActivas[n]]));
     const cuotaPorIdx = new Map(idxActivas.map(({ i }, n) => [i, pesos[n]]));
@@ -1452,16 +1461,26 @@ export function PlanificacionPorDefectoTab({
         .sort((a, b) => b - a)
         .map((pct) => {
           const dias = sumaPorDia.filter((x) => x.pct === pct);
-          return `${dias.length === DIAS_SEMANA.length ? "" : dias.map((x) => tDia(x.dia).charAt(0)).join("")} ${pct}%`.trim();
+          return `${dias.length === DIAS_SEMANA.length ? "" : dias.map((x) => tIni(x.dia)).join("")} ${pct}%`.trim();
         })
         .join(" · "),
       hayComidasPorDias,
       diasDescuadrados,
       // Identifica ESTE aviso concreto: si cambia, el aviso descartado vuelve a mostrarse.
       firmaAviso: diasDescuadrados.map((x) => `${x.dia}:${x.pct}`).join("|"),
+      // Detalle legible del descuadre: si son todos los días, no se listan los siete.
+      detalleDescuadre: [...new Set(diasDescuadrados.map((x) => x.pct))]
+        .sort((a, b) => b - a)
+        .map((pct) => {
+          const dias = diasDescuadrados.filter((x) => x.pct === pct);
+          if (dias.length === DIAS_SEMANA.length) return `${pct}%`;
+          return `${dias.map((x) => tDia(x.dia)).join(", ")}: ${pct}%`;
+        })
+        .join(" · "),
+      todosLosDiasIgual: diasDescuadrados.length === DIAS_SEMANA.length,
       kcalAsignadas: incluidas.filter((c) => c.enDiaVisto).reduce((s, c) => s + c.kcalComida, 0),
     };
-  }, [reparto, grasaPct, carbPct, protPct, macros.kcal, diaVistaReparto, tDia]);
+  }, [reparto, grasaPct, carbPct, protPct, macros.kcal, diaVistaReparto, tDia, tIni]);
 
   /* ─── Aplicar los objetivos calculados (kcal + macros) a una dieta del paciente (#9) ─── */
   const [aplicarAbierto, setAplicarAbierto] = useState(false);
@@ -1640,6 +1659,30 @@ export function PlanificacionPorDefectoTab({
     const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
+
+  // Navegación interna (otra pestaña de la ficha, el menú lateral…) con cambios sin guardar:
+  // `beforeunload` NO salta ahí (Next navega sin recargar), así que el trabajo se perdía en
+  // silencio. Se intercepta el clic en el enlace y se pregunta qué hacer.
+  const [navPendiente, setNavPendiente] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isDirty) return;
+    function onClickCapture(e: MouseEvent) {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+      const target = e.target as HTMLElement | null;
+      const a = target?.closest?.("a[href]") as HTMLAnchorElement | null;
+      if (!a) return;
+      const href = a.getAttribute("href") ?? "";
+      // Enlaces externos, anclas o abrir en otra ventana: no son salidas de esta pantalla.
+      if (!href || href.startsWith("#") || href.startsWith("http") || a.target === "_blank") return;
+      // Volver a esta misma pestaña no es salir.
+      if (href.includes("pestana=planificacion")) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setNavPendiente(href);
+    }
+    document.addEventListener("click", onClickCapture, true);
+    return () => document.removeEventListener("click", onClickCapture, true);
   }, [isDirty]);
 
   function buildDatosSnapshot(): PlanificacionDatos {
@@ -2206,6 +2249,55 @@ export function PlanificacionPorDefectoTab({
                 className="px-5 py-2.5 rounded-lg bg-amber-400 text-white text-sm font-semibold hover:bg-amber-500 transition-colors"
               >
                 {t("avisoCambiosDescartar")}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Salir de la pantalla con cambios sin guardar: se ofrece guardar antes de irse (el trabajo
+          se perdía en silencio al pinchar otra pestaña, porque Next navega sin recargar). */}
+      {navPendiente && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={() => setNavPendiente(null)}>
+          <div className="bg-card rounded-2xl shadow-2xl border border-border w-full max-w-md mx-4 p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2.5 mb-4">
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+              <h3 className="text-lg font-bold">{t("salirTitulo")}</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-6">{t("salirTexto")}</p>
+            <div className="flex flex-col sm:flex-row-reverse gap-2">
+              <button
+                type="button"
+                disabled={isSaving}
+                onClick={async () => {
+                  const destino = navPendiente;
+                  await handleGuardar();
+                  setNavPendiente(null);
+                  if (destino) router.push(destino);
+                }}
+                className="px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-60"
+              >
+                {isSaving ? t("guardando") : t("salirGuardando")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const destino = navPendiente;
+                  setIsDirty(false); // para no volver a interceptar al navegar
+                  setNavPendiente(null);
+                  if (destino) router.push(destino);
+                }}
+                className="px-4 py-2.5 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors"
+              >
+                {t("salirSinGuardar")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setNavPendiente(null)}
+                className="px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted transition-colors sm:mr-auto"
+              >
+                {t("salirSeguirEditando")}
               </button>
             </div>
           </div>
@@ -2853,7 +2945,9 @@ export function PlanificacionPorDefectoTab({
 
             {/* Aviso persistente: se lee entero y se cierra con el botón. Vuelve a aparecer solo si
                 cambia la situación (otros días u otros %), porque entonces es información nueva. */}
-            {repartoCalc.diasDescuadrados.length > 0 && avisoRepartoVisto !== repartoCalc.firmaAviso && (
+            {repartoCalc.diasDescuadrados.length > 0 &&
+              !avisoRepartoSilenciado &&
+              avisoRepartoVisto !== repartoCalc.firmaAviso && (
               <div className="mx-4 sm:mx-5 mb-3 rounded-lg border border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-500/10 p-3">
                 <div className="flex items-start gap-2">
                   <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
@@ -2862,23 +2956,33 @@ export function PlanificacionPorDefectoTab({
                       {t("repartoAvisoTitulo")}
                     </p>
                     <p className="mt-1 text-xs text-amber-800/90 dark:text-amber-300/90">
-                      {t("repartoAvisoDetalle", {
-                        detalle: repartoCalc.diasDescuadrados
-                          .map((x) => `${tDia(x.dia)} ${x.pct}%`)
-                          .join(" · "),
-                      })}
+                      {repartoCalc.todosLosDiasIgual
+                        ? t("repartoAvisoDetalleTodos", { detalle: repartoCalc.detalleDescuadre })
+                        : t("repartoAvisoDetalle", { detalle: repartoCalc.detalleDescuadre })}
                     </p>
                     <p className="mt-1 text-xs text-amber-800/80 dark:text-amber-300/80">
                       {t("repartoAvisoQueHacer")}
                     </p>
-                    <button
-                      type="button"
-                      onClick={() => setAvisoRepartoVisto(repartoCalc.firmaAviso)}
-                      className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-semibold hover:bg-amber-700 transition-colors"
-                    >
-                      <Check className="w-3.5 h-3.5" />
-                      {t("repartoAvisoEntendido")}
-                    </button>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setAvisoRepartoVisto(repartoCalc.firmaAviso)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-semibold hover:bg-amber-700 transition-colors"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        {t("repartoAvisoEntendido")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          localStorage.setItem("annonia-aviso-reparto-dias", "off");
+                          setAvisoRepartoSilenciado(true);
+                        }}
+                        className="text-xs font-medium text-amber-800/80 dark:text-amber-300/80 hover:underline"
+                      >
+                        {t("repartoAvisoNoMostrar")}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2937,7 +3041,7 @@ export function PlanificacionPorDefectoTab({
                                           : "bg-muted text-muted-foreground/60 hover:bg-muted-foreground/20"
                                       )}
                                     >
-                                      {tDia(d).charAt(0)}
+                                      {tIni(d)}
                                     </button>
                                   );
                                 })}
@@ -3193,7 +3297,7 @@ export function PlanificacionPorDefectoTab({
                                         : "bg-muted text-muted-foreground/60 hover:bg-muted-foreground/20",
                                     )}
                                   >
-                                    {tDia(d).charAt(0)}
+                                    {tIni(d)}
                                   </button>
                                 );
                               })}
@@ -3234,7 +3338,16 @@ export function PlanificacionPorDefectoTab({
             {/* Pie: resumen + Guardar aquí mismo. La barra de guardar general queda al final de una
                 pestaña muy larga y desde esta sección no se ve: el nutri no sabía dónde guardar. */}
             <div className="px-4 sm:px-5 py-3 border-t border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <span className="text-xs text-muted-foreground">
+              {/* Ámbar cuando lo repartido no coincide con el objetivo del día: es el mismo hecho
+                  que el % de arriba, contado en kcal (antes decía "2482 de 2482" aunque fuera 110%). */}
+              <span
+                className={cn(
+                  "text-xs",
+                  repartoCalc.kcalAsignadas === macros.kcal || macros.kcal <= 0
+                    ? "text-muted-foreground"
+                    : "text-amber-600 dark:text-amber-400 font-medium"
+                )}
+              >
                 {repartoCalc.hayComidasPorDias
                   ? t("repartoResumenDiaVisto", {
                       dia: tDia(diaVistaReparto),
