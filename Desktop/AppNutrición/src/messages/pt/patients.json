@@ -520,7 +520,8 @@
     "comidaCena": "Jantar",
     "comidaRecena": "Ceia",
     "errorEnviarPlan": "Erro ao enviar o plano",
-    "planActualLabel": "atual"
+    "planActualLabel": "atual",
+    "comidaOtra": "Outra refeição"
   },
   "recomendaciones": {
     "ingestaAgua": "Ingestão de água entre as refeições",
@@ -686,7 +687,8 @@
       "vitaminaD": "Vitamina D",
       "vitaminaE": "Vitamina E",
       "vitaminaK": "Vitamina K"
-    }
+    },
+    "tipoOtra": "Outra refeição"
   },
   "portal": {
     "avisarEmailTitulo": "Avisar das consultas por email",
@@ -1157,7 +1159,8 @@
       "ALMUERZO": "Almoço",
       "MERIENDA": "Lanche da tarde",
       "CENA": "Jantar",
-      "RECENA": "Ceia"
+      "RECENA": "Ceia",
+      "OTRA": "Outra refeição"
     },
     "diaAnterior": "Dia anterior",
     "diaSiguiente": "Dia seguinte",

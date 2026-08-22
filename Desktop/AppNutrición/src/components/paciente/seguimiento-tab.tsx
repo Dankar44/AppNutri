@@ -584,7 +584,7 @@ function DayDetail({
     DESAYUNO: "desayuno", MEDIA_MANANA: "media-manana", ALMUERZO: "comida",
     MERIENDA: "merienda", CENA: "cena", RECENA: "recena",
   };
-  type ComidaEntry = { tipo: string; alimentos?: Array<{ nombre: string; cantidad: number; cumplido: boolean }>; horaReal?: string | null; notas?: string | null };
+  type ComidaEntry = { tipo: string; nombre?: string | null; hora?: string | null; alimentos?: Array<{ nombre: string; cantidad: number; cumplido: boolean }>; horaReal?: string | null; notas?: string | null };
   const comidasMap = new Map<string, ComidaEntry>();
   if (rawComidas) {
     for (const c of rawComidas) {
@@ -592,6 +592,26 @@ function DayDetail({
       comidasMap.set(key, c);
     }
   }
+  // #104 — Las 6 fijas de siempre MÁS las comidas propias que el paciente tenga registradas: con la
+  // rejilla fija, un "Pre-entreno" marcado no aparecía y el % de cumplimiento (que sí las cuenta) no
+  // cuadraba con lo que se veía.
+  const extras = (rawComidas ?? [])
+    .filter((c) => !TIPO_TO_KEY[c.tipo])
+    .map((c, i) => ({
+      key: `otra-${i}`,
+      label: ((c as ComidaEntry).nombre ?? "").trim() || t("tipoOtra"),
+      icon: UtensilsCrossed,
+      entry: c as ComidaEntry,
+    }));
+  const celdas = [
+    ...COMIDAS.map((c) => ({
+      key: c.key as string,
+      label: t(c.labelKey),
+      icon: c.icon,
+      entry: comidasMap.get(c.key),
+    })),
+    ...extras,
+  ];
 
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -615,13 +635,17 @@ function DayDetail({
               {t("diarioAlimentario")}
             </h4>
             <div className="grid grid-cols-2 gap-3">
-              {COMIDAS.map(({ key, labelKey, icon: Icon }) => {
-                const mealEntry = comidasMap.get(key);
+              {celdas.map(({ key, label, icon: Icon, entry: mealEntry }) => {
                 const allDone = mealEntry?.alimentos?.every(a => a.cumplido) ?? false;
                 const someDone = mealEntry?.alimentos?.some(a => a.cumplido) ?? false;
                 const isDone = allDone && (mealEntry?.alimentos?.length ?? 0) > 0;
                 const hasChanges = someDone && !allDone;
-                const hora = mealEntry?.horaReal || HORAS_DEFAULT[key] || "";
+                // Las comidas propias no están en HORAS_DEFAULT: se usa su hora prevista (misma
+                // notación "08h30" que el resto de la rejilla).
+                const hora =
+                  mealEntry?.horaReal ||
+                  HORAS_DEFAULT[key] ||
+                  (mealEntry?.hora ? mealEntry.hora.replace(":", "h") : "");
 
                 return (
                   <div
@@ -649,7 +673,7 @@ function DayDetail({
 
                     {/* Meal info */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground">{t(labelKey)}</p>
+                      <p className="text-sm font-semibold text-foreground">{label}</p>
                       <p className="text-xs text-muted-foreground">{hora}</p>
                     </div>
 

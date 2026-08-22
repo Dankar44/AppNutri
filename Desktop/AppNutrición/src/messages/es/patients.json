@@ -520,7 +520,8 @@
     "comidaCena": "Cena",
     "comidaRecena": "Recena",
     "errorEnviarPlan": "Error al enviar el plan",
-    "planActualLabel": "actual"
+    "planActualLabel": "actual",
+    "comidaOtra": "Otra comida"
   },
   "recomendaciones": {
     "ingestaAgua": "Ingesta de agua entre las comidas",
@@ -686,7 +687,8 @@
       "vitaminaD": "Vitamina D",
       "vitaminaE": "Vitamina E",
       "vitaminaK": "Vitamina K"
-    }
+    },
+    "tipoOtra": "Otra comida"
   },
   "portal": {
     "avisarEmailTitulo": "Avisar de las citas por email",
@@ -1157,7 +1159,8 @@
       "ALMUERZO": "Comida",
       "MERIENDA": "Merienda",
       "CENA": "Cena",
-      "RECENA": "Recena"
+      "RECENA": "Recena",
+      "OTRA": "Otra comida"
     },
     "diaAnterior": "Día anterior",
     "diaSiguiente": "Día siguiente",

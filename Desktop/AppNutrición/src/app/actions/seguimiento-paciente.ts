@@ -207,6 +207,10 @@ export async function guardarSeguimientoPaciente(
     ? JSON.stringify(
         data.comidasData.map((c) => ({
           tipo: String(c.tipo).slice(0, 50),
+          // #104 — Sin estos dos, al guardar el día la comida propia perdía su nombre y su hora, y
+          // el paciente la veía como "Comida" a las 12:00 en cuanto marcaba algo.
+          nombre: c.nombre ? String(c.nombre).slice(0, 60) : null,
+          hora: /^([01]?\d|2[0-3]):[0-5]\d$/.test(String(c.hora ?? "")) ? String(c.hora) : null,
           alimentos: (c.alimentos || []).slice(0, 30).map((a) => ({
             nombre: String(a.nombre).slice(0, 200),
             cantidad: Number(a.cantidad) || 0,

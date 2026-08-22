@@ -89,6 +89,8 @@ const DIA_KEYS: Record<string, string> = {
 const TIPO_KEYS: Record<string, string> = {
   DESAYUNO: "comidaDesayuno", MEDIA_MANANA: "comidaMediaManana", ALMUERZO: "comidaComida",
   MERIENDA: "comidaMerienda", CENA: "comidaCena", RECENA: "comidaRecena",
+  // Sin esta entrada, una comida propia sin nombre salía como el enum en crudo ("OTRA").
+  OTRA: "comidaOtra",
 };
 
 const UNIDADES = ["GRAMOS", "MILILITROS", "UNIDAD", "CUCHARADA", "CUCHARADITA", "TAZA", "REBANADA", "PIEZA", "LATA", "LONCHA"] as const;

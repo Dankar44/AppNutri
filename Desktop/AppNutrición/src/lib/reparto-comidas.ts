@@ -104,6 +104,9 @@ export function normalizeReparto(saved?: { activo?: boolean; comidas?: RepartoCo
       nombre: prev?.nombre,
       hora: prev?.hora,
       dias: prev?.dias,
+      // OJO: hay que copiarlo. Se reconstruye la fila campo a campo, así que olvidarlo aquí borraba
+      // los % por día de la dieta y el día volvía a los % de la planificación, sin avisar.
+      pctPorDia: prev?.pctPorDia,
     };
   });
   // Comidas añadidas: se identifican por nombre, así que se descartan las que no lo tengan.
@@ -356,7 +359,17 @@ export function quitarFila(comidas: RepartoComida[], clave: string): RepartoComi
 }
 
 export function renombrarFila(comidas: RepartoComida[], clave: string, nombre: string): RepartoComida[] {
-  return setFila(comidas, clave, { nombre: nombre.trim().slice(0, 60) || undefined });
+  const limpio = nombre.trim().slice(0, 60);
+  // El nombre es la IDENTIDAD de una comida propia: si el nuevo ya lo tiene otra fila, quedarían dos
+  // con la misma clave (compartiendo cuota, y creando dos comidas iguales al montar una dieta).
+  if (limpio) {
+    const nuevaClave = claveComida({ tipo: "OTRA", nombre: limpio });
+    const choca = comidas.some(
+      (c) => c.tipo === "OTRA" && claveComida(c) !== clave && claveComida(c) === nuevaClave,
+    );
+    if (choca) return comidas;
+  }
+  return setFila(comidas, clave, { nombre: limpio || undefined });
 }
 
 /** Reparte el 100% a partes iguales entre las comidas incluidas (el punto sobrante va a las
@@ -381,6 +394,10 @@ export function repartirEquitativo(comidas: RepartoComida[]): RepartoComida[] {
 export function toggleDiaFila(comidas: RepartoComida[], clave: string, dia: string): RepartoComida[] {
   return comidas.map((c) => {
     if (claveComida(c) !== clave) return c;
+    // Comida desactivada: sus días se muestran todos apagados (se desactivó quitándolos), así que el
+    // clic siguiente la reactiva SOLO en ese día. Partiendo de "todos" quedaba justo lo contrario:
+    // el día que acabas de pulsar era el único apagado.
+    if (!c.incluida) return { ...c, incluida: true, dias: [dia] };
     const actuales = c.dias && c.dias.length > 0 ? c.dias : [...DIAS_SEMANA];
     const siguiente = actuales.includes(dia) ? actuales.filter((d) => d !== dia) : [...actuales, dia];
     if (siguiente.length === 0) return { ...c, incluida: false, dias: undefined };
@@ -599,7 +616,16 @@ export function repartoEquitativoPorDia(
 
   const pctPorClave = new Map<string, Record<string, number>>();
   for (const [dia, delDia] of Object.entries(comidasPorDia)) {
-    const claves = [...new Set(delDia.map((c) => claveComida(c)))];
+    // Mismo criterio que arriba: las comidas propias sin nombre no pueden tener fila (no tienen
+    // identidad), así que tampoco cuentan para dividir el día. Si contaran, el 100% se repartiría
+    // entre 5 y solo 4 recibirían cuota: el día se quedaría al 80% recién activado.
+    const claves = [
+      ...new Set(
+        delDia
+          .filter((c) => c.tipo !== "OTRA" || (c.nombre ?? "").trim().length > 0)
+          .map((c) => claveComida(c)),
+      ),
+    ];
     if (claves.length === 0) continue;
     const base = Math.floor(100 / claves.length);
     const resto = 100 - base * claves.length;
@@ -734,4 +760,13 @@ export function sumaPctDia(
   return comidas
     .filter((c) => c.incluida && enDia.has(claveComida(c)))
     .reduce((s, c) => s + pctDeFila(c, dia), 0);
+}
+
+/** Deja el % semanal (`kcalPct`) igual al % que la fila tiene en ese día. Se usa cuando el panel de la
+ *  dieta aplica un cambio a TODOS los días: así el valor de referencia no se queda con el de la pauta,
+ *  que es el que se usaría si algún día apareciera sin entrada propia en `pctPorDia`. */
+export function sincronizarKcalPctConDia(comidas: RepartoComida[], dia: string): RepartoComida[] {
+  return comidas.map((c) =>
+    c.pctPorDia && c.pctPorDia[dia] != null ? { ...c, kcalPct: c.pctPorDia[dia] } : c,
+  );
 }

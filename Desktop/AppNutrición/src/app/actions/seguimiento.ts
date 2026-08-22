@@ -26,6 +26,10 @@ function cantidadLinea(a: { cantidad: number; unidad?: string; esReceta?: boolea
 
 export interface ComidaSeguimientoItem {
   tipo: string;
+  /** #104 — Nombre de la comida propia. Ausente en los registros anteriores al campo. */
+  nombre?: string | null;
+  /** Hora prevista ("HH:MM"). Ausente en los registros anteriores al campo. */
+  hora?: string | null;
   alimentos: { nombre: string; cantidad: number; unidad?: string; esReceta?: boolean; cumplido: boolean }[];
   horaReal: string | null;
   notas: string | null;

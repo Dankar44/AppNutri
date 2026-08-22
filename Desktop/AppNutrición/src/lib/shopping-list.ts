@@ -57,6 +57,8 @@ function aGramos(cantidad: number, unidad: string, porcion?: number | null): num
 }
 
 interface ComidaEnPlan {
+  /** ID de la comida: la clave de los retoques de cantidad la usa (ver `overrideKey` del PDF). */
+  id?: string;
   tipo?: string;
   alimentos: AlimentoEnPlan[];
 }
@@ -115,7 +117,10 @@ export function generarListaCompra(dias: DiaEnPlan[], overrides?: DisplayOverrid
     for (const comida of dia.comidas) {
       for (let aIdx = 0; aIdx < comida.alimentos.length; aIdx++) {
         const a = comida.alimentos[aIdx];
-        const ovKey = dia.dia && comida.tipo ? `${dia.dia}-${comida.tipo}-${aIdx}` : "";
+        // MISMA clave que el PDF (`overrideKey` en generate-plan-pdf.ts): por ID de comida. Con la
+        // clave por tipo, dos comidas propias del mismo día compartían retoques; y si aquí no se usa
+        // la misma que allí, la lista de la compra ignora todos los retoques del nutri.
+        const ovKey = dia.dia && comida.id ? `${dia.dia}-${comida.id}-${aIdx}` : "";
         const ov = ovKey && overrides ? overrides[ovKey] : undefined;
 
         if (ov?.libre) continue;

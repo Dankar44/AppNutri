@@ -803,6 +803,7 @@
     "cambioPlaniTexto": "Com «{plani}» estas refeições não estão na distribuição deste dia. Você pode mantê-las (continuarão na dieta, sem objetivo próprio) ou removê-las.",
     "conAlimentos": "· {n} alimentos dentro",
     "mantenerlas": "Manter",
-    "quitarlas": "Remover"
+    "quitarlas": "Remover",
+    "necesitaNombre": "Dê um nome à refeição para que ela possa ter seu objetivo na distribuição."
   }
 }

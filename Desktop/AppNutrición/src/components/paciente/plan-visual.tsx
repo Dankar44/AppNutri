@@ -39,6 +39,7 @@ import {
   anadirFila,
   filasParaDia,
   repartoParaPlani,
+  esRepartoV2,
   firmaReparto,
   type ObjetivoComida,
   type RepartoPorComida,
@@ -387,6 +388,11 @@ export function PlanVisual({
     if (!nuevaComidaModal || isPendingCopia) return;
     const { diaId } = nuevaComidaModal;
     const nombre = nuevaComidaNombre.trim();
+    // Con el reparto activo la comida necesita nombre para tener su objetivo (es su identidad).
+    if (!nombre && repartoDelDia(diaId)?.activo) {
+      toast.error(tDiets("reparto.necesitaNombre"));
+      return;
+    }
     const hora = nuevaComidaHora;
     setNuevaComidaModal(null);
     const tempId = `tmp-comida-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
@@ -426,6 +432,9 @@ export function PlanVisual({
           });
           if (conNueva) {
             const slot = planiDelDia(diaId);
+            // Si el panel tenía un guardado en cola para este slot, se vuelca primero: si no, llegaba
+            // después con el reparto de antes y se llevaba por delante la comida recién añadida.
+            volcarRepartoPendiente(slot || SLOT_GLOBAL);
             await guardarRepartoDePlan(selectedPlan.id, slot || null, {
               activo: true,
               comidas: conNueva,
@@ -665,7 +674,13 @@ export function PlanVisual({
   // repartos distintos y no pueden compartir un único optimista.
   const [repartoOptimista, setRepartoOptimista] = useState<Record<string, RepartoPorComida>>({});
   useEffect(() => {
-    setRepartoOptimista({}); // otra dieta, otros repartos
+    // Otra dieta, otros repartos: y el panel no puede quedarse abierto sobre el slot de la anterior.
+    // Lo que estuviera pendiente se guarda antes (lleva su propio planId, así que va a su dieta).
+    for (const clave of Object.keys(repartoSaveRef.current)) volcarRepartoPendiente(clave);
+    setRepartoOptimista({});
+    setRepartoPanelAbierto(false);
+    setRepartoSlot("");
+    setRepartoDiaVisto("");
   }, [selectedPlan.id]);
   // Poda por VALOR (firma estable), no por identidad del objeto: `repartoPropio` es un objeto nuevo
   // en cada render del servidor, así que comparar referencias hacía que cualquier router.refresh()
@@ -703,6 +718,11 @@ export function PlanVisual({
     const comida = diaPlan ? conComidasNuevas(diaPlan).comidas.find((c) => c.id === comidaId) : null;
     if (!comida) return;
 
+    if (comida.tipo === "OTRA" && !(comida.nombre ?? "").trim()) {
+      // Sin nombre no hay identidad posible: dos comidas propias sin nombre serían la misma fila.
+      toast.error(tDiets("reparto.necesitaNombre"));
+      return;
+    }
     const pid = planiDelDia(diaId);
     const partida = normalizeReparto(repartoDelDia(diaId));
     const clave = claveComida(comida);
@@ -724,7 +744,7 @@ export function PlanVisual({
       });
       partida.comidas =
         conNueva ??
-        // Comida fija sin fila (o sin nombre): se añade su fila directamente.
+        // Comida fija que no tenía fila: se añade directamente (las propias ya pasaron por anadirFila).
         [
           ...partida.comidas,
           {
@@ -738,6 +758,7 @@ export function PlanVisual({
     }
     const nuevo: RepartoPorComida = { activo: true, comidas: partida.comidas };
     const slot = pid || SLOT_GLOBAL;
+    volcarRepartoPendiente(slot); // que no llegue después un guardado con el reparto de antes
     setRepartoOptimista((prev) => ({ ...prev, [slot]: nuevo }));
     setRepartoSlot(pid);
     setRepartoDiaVisto(diaPlan?.dia ?? "");
@@ -763,28 +784,40 @@ export function PlanVisual({
   /** Comidas del día que la planificación destino NO prevé. Se preguntan antes de cambiar: borrarlas
    *  a la callada se llevaría un pre-entreno con alimentos dentro, y no hay vuelta atrás. */
   function comidasQueSobran(diaIds: string[], planiId: string | null) {
+    // El reparto que va a mandar en esos días: el slot que la dieta ya tenga para esa planificación
+    // y, si no lo tiene, el de la planificación (que es lo que el servidor sembrará). NO se cae al
+    // global: eso comparaba contra un reparto que no tiene nada que ver con el destino.
     const destino = planiId
-      ? (repartoParaPlani(repartoPropio, planiId) ??
+      ? ((esRepartoV2(repartoPropio) ? repartoPropio.porPlani?.[planiId] : null) ??
         planificaciones.find((p) => p.id === planiId)?.datos?.repartoPorComida ??
         null)
       : repartoParaPlani(repartoPropio, null);
     // Sin reparto activo en el destino, ese día no tiene estructura definida: no sobra nada.
     if (!destino?.activo) return [];
-    const out: { id: string; etiqueta: string; alimentos: number }[] = [];
+    // Con días juntados (#75) las comidas viven en el representante, así que varios días del grupo
+    // devolverían LA MISMA comida: se recorren representantes únicos y se deduplica por id, o
+    // "Quitarlas" llamaba dos veces a eliminarComida y la segunda abortaba el cambio a medias.
+    const porId = new Map<string, { id: string; etiqueta: string; alimentos: number }>();
+    const vistos = new Set<string>();
     for (const diaId of diaIds) {
       const dia = (selectedPlan?.dias ?? []).find((d) => d.id === diaId);
       if (!dia) continue;
-      const previstas = new Set(filasParaDia(destino, dia.dia).map((f) => claveComida(f)));
-      for (const c of conComidasNuevas(dia).comidas) {
+      const rep = representanteDeDia(dia);
+      if (vistos.has(rep.id)) continue;
+      vistos.add(rep.id);
+      const previstas = new Set(filasParaDia(destino, rep.dia).map((f) => claveComida(f)));
+      for (const c of conComidasNuevas(rep).comidas) {
         if (previstas.has(claveComida(c))) continue;
-        out.push({
+        // Las comidas optimistas todavía no existen en la BD: no se pueden borrar por id temporal.
+        if (c.id.startsWith("tmp-")) continue;
+        porId.set(c.id, {
           id: c.id,
           etiqueta: (c.nombre ?? "").trim() || tDiets(`comidaSlot.tipoLabels.${c.tipo}` as never),
           alimentos: c.alimentos?.length ?? 0,
         });
       }
     }
-    return out;
+    return [...porId.values()];
   }
 
   function handleAsignarPlani(diaIds: string[], planiId: string | null) {
@@ -809,7 +842,7 @@ export function PlanVisual({
     startCopia(async () => {
       try {
         for (const id of diaIds) await asignarPlanificacionADia(id, planiId);
-        for (const comidaId of quitarComidaIds) await eliminarComida(comidaId);
+        for (const comidaId of new Set(quitarComidaIds)) await eliminarComida(comidaId);
         // Crear las que falten. Una sola llamada por GRUPO: la action resuelve el día representante,
         // así que llamarla con los 4 días de un grupo haría el mismo trabajo cuatro veces.
         const representantes = new Set(
@@ -824,7 +857,12 @@ export function PlanVisual({
           if (res.ok && res.creadas?.length) creadas.push(...res.creadas);
         }
         if (creadas.length > 0) {
-          toast.success(tDiets("reparto.comidasCreadas", { comidas: [...new Set(creadas)].join(", ") }));
+          // La action devuelve el nombre o, si no tiene, el tipo: se traduce aquí para no mostrar el
+          // enum en crudo ("MEDIA_MANANA").
+          const etiquetas = [...new Set(creadas)].map((c) =>
+            /^[A-Z_]+$/.test(c) ? tDiets(`comidaSlot.tipoLabels.${c}` as never) : c,
+          );
+          toast.success(tDiets("reparto.comidasCreadas", { comidas: etiquetas.join(", ") }));
         }
         router.refresh();
       } catch (e) {
@@ -967,7 +1005,12 @@ export function PlanVisual({
   const [repartoPanelAbierto, setRepartoPanelAbierto] = useState(false);
   const [repartoSlot, setRepartoSlot] = useState<string>("");
   const [repartoDiaVisto, setRepartoDiaVisto] = useState<string>("");
-  const repartoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Un temporizador y un borrador pendiente POR SLOT: con uno compartido, editar el reparto de una
+  // planificación y pasar a otra cancelaba el guardado de la primera sin decir nada.
+  const repartoSaveRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const repartoPendienteRef = useRef<
+    Record<string, { planId: string; slot: string | null; reparto: RepartoPorComida }>
+  >({});
 
   /** Día que manda en un grupo (#75): las comidas viven solo en el representante, así que crear una
    *  comida en un día miembro la dejaría invisible y el siguiente reagrupado se la llevaría. */
@@ -1016,6 +1059,10 @@ export function PlanVisual({
       });
   }, [selectedPlan?.dias, repartoSlot, planiOptimista, objetivosPorDia, comidasNuevasDia, gruposOptimistas]);
 
+  /** Día cuyo reparto y objetivos muestra el panel: el visto si sigue en el slot, o el primero. */
+  const diaIdPanel =
+    repartoDiasDelSlot.find((d) => d.dia === repartoDiaVisto)?.id ?? repartoDiasDelSlot[0]?.id ?? "";
+
   /** ¿El día que se está viendo en el editor tiene reparto activo? Es lo que dice el botón. */
   const repartoActivoAqui = (() => {
     const dia = diasVisible[0] ?? (selectedPlan?.dias ?? [])[0];
@@ -1031,6 +1078,7 @@ export function PlanVisual({
   }
 
   function cambiarRepartoSlot(slot: string) {
+    volcarRepartoPendiente(repartoSlot || SLOT_GLOBAL);
     setRepartoSlot(slot);
     const primero = (selectedPlan?.dias ?? []).find((d) => planiDelDia(d.id) === slot);
     setRepartoDiaVisto(primero?.dia ?? "");
@@ -1038,37 +1086,61 @@ export function PlanVisual({
 
   /** Guarda el reparto del slot abierto: se ve al instante y se persiste con un pequeño retardo (un
    *  arrastre de slider son decenas de cambios y no hacen falta decenas de escrituras). */
+  /** Persiste ya el borrador pendiente de un slot (si hay). Hay que llamarlo antes de cualquier otra
+   *  escritura del reparto y al cambiar de slot: con un único temporizador compartido, el cambio
+   *  anterior se cancelaba y se quedaba en pantalla como si estuviera guardado. */
+  function volcarRepartoPendiente(clave: string) {
+    const pend = repartoPendienteRef.current[clave];
+    const timer = repartoSaveRef.current[clave];
+    if (timer) {
+      clearTimeout(timer);
+      delete repartoSaveRef.current[clave];
+    }
+    if (!pend) return;
+    delete repartoPendienteRef.current[clave];
+    persistirReparto(clave, pend.planId, pend.slot, pend.reparto);
+  }
+
+  function persistirReparto(
+    clave: string,
+    planId: string,
+    slot: string | null,
+    nuevo: RepartoPorComida,
+  ) {
+    const revertir = () =>
+      setRepartoOptimista((prev) => {
+        const n = { ...prev };
+        delete n[clave];
+        return n;
+      });
+    guardarRepartoDePlan(planId, slot, nuevo)
+      .then((res) => {
+        if (res?.ok === false) {
+          // Demo o error real: se retira el borrador para no dejar en pantalla algo sin guardar.
+          revertir();
+          toast.error(res.error ?? tDiets("reparto.guardadoError"));
+          return;
+        }
+        router.refresh();
+      })
+      .catch((e) => {
+        if (isNextNavigation(e)) throw e;
+        revertir();
+        toast.error(tDiets("reparto.guardadoError"));
+      });
+  }
+
   function guardarRepartoPanel(nuevo: RepartoPorComida) {
     if (!selectedPlan) return;
     const slot = repartoSlot;
     const clave = slot || SLOT_GLOBAL;
+    // El planId se captura AQUÍ: si el nutri cambia de dieta antes de que salte el temporizador, el
+    // guardado tiene que ir a la dieta en la que estaba editando, no a la nueva.
+    const planId = selectedPlan.id;
     setRepartoOptimista((prev) => ({ ...prev, [clave]: nuevo }));
-    if (repartoSaveRef.current) clearTimeout(repartoSaveRef.current);
-    repartoSaveRef.current = setTimeout(() => {
-      guardarRepartoDePlan(selectedPlan.id, slot || null, nuevo)
-        .then((res) => {
-          if (res?.ok === false) {
-            // Demo o error real: se retira el borrador para no dejar en pantalla algo sin guardar.
-            setRepartoOptimista((prev) => {
-              const n = { ...prev };
-              delete n[clave];
-              return n;
-            });
-            toast.error(res.error ?? tDiets("reparto.guardadoError"));
-            return;
-          }
-          router.refresh();
-        })
-        .catch((e) => {
-          if (isNextNavigation(e)) throw e;
-          setRepartoOptimista((prev) => {
-            const n = { ...prev };
-            delete n[clave];
-            return n;
-          });
-          toast.error(tDiets("reparto.guardadoError"));
-        });
-    }, 700);
+    repartoPendienteRef.current[clave] = { planId, slot: slot || null, reparto: nuevo };
+    if (repartoSaveRef.current[clave]) clearTimeout(repartoSaveRef.current[clave]);
+    repartoSaveRef.current[clave] = setTimeout(() => volcarRepartoPendiente(clave), 700);
   }
 
   // #78 — Objetivos a mostrar en la barra superior. En vista de un día: el objetivo de ESE día (su
@@ -1580,7 +1652,11 @@ export function PlanVisual({
                 )}
                 {puedeEditarReparto && repartoPanelAbierto && (
                   <RepartoPanel
-                    reparto={repartoOptimista[repartoSlot || SLOT_GLOBAL] ?? repartoParaPlani(repartoPropio, repartoSlot || null)}
+                    // `repartoDelDia` y no `repartoParaPlani` a secas: así el panel ve lo MISMO que el
+                    // resto de la pantalla, incluido el reparto heredado de la planificación en las
+                    // dietas anteriores a la feature. Con el otro decía "sin activar" mientras el
+                    // botón decía "Reparto activo", y activarlo cambiaba todos los objetivos.
+                    reparto={repartoDelDia(diaIdPanel)}
                     onChange={guardarRepartoPanel}
                     slots={repartoSlots}
                     slotActivo={repartoSlot}
@@ -1588,11 +1664,7 @@ export function PlanVisual({
                     dias={repartoDiasDelSlot}
                     diaVisto={repartoDiaVisto || repartoDiasDelSlot[0]?.dia || ""}
                     onDiaVistoChange={setRepartoDiaVisto}
-                    objetivoDia={objetivoDelDia(
-                      repartoDiasDelSlot.find((d) => d.dia === repartoDiaVisto)?.id ??
-                        repartoDiasDelSlot[0]?.id ??
-                        ""
-                    )}
+                    objetivoDia={objetivoDelDia(diaIdPanel)}
                     onAnadirComida={handleAgregarComidaDia}
                     onCerrar={() => setRepartoPanelAbierto(false)}
                   />

@@ -2939,7 +2939,10 @@ export function PlanificacionPorDefectoTab({
                               {/* Días en los que existe esta comida: gris = no la tiene ese día. */}
                               <div className="mt-1.5 flex items-center gap-1" title={t("repartoDiasTitulo")}>
                                 {DIAS_SEMANA.map((d) => {
-                                  const activo = !c.dias || c.dias.length === 0 || c.dias.includes(d);
+                                  // Desactivada = ningún día. Sin esto, quitar el último día la
+                                  // desmarcaba y a la vez encendía los siete cuadraditos.
+                                  const activo =
+                                    c.incluida && (!c.dias || c.dias.length === 0 || c.dias.includes(d));
                                   return (
                                     <button
                                       key={d}

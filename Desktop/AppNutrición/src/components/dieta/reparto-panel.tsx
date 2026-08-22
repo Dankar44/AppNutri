@@ -14,10 +14,23 @@ import {
   fijarPctFilaEnDia,
   sumaPctDia,
   repartoEquitativoPorDia,
+  sincronizarKcalPctConDia,
   type RepartoComida,
   type RepartoPorComida,
 } from "@/lib/reparto-comidas";
 import { horaEfectiva, minutosDeHora } from "@/lib/comida-horas";
+
+/** Comidas de un día que pueden tener fila en el reparto: las 6 fijas y las propias CON nombre (el
+ *  nombre es su identidad; sin él no se pueden distinguir dos). Las que no, no consumen cuota. */
+function clavesDeDia(comidas: { tipo: string; nombre?: string | null }[]): string[] {
+  return [
+    ...new Set(
+      comidas
+        .filter((c) => c.tipo !== "OTRA" || (c.nombre ?? "").trim().length > 0)
+        .map((c) => claveComida(c)),
+    ),
+  ];
+}
 
 export type RepartoPanelDia = {
   id: string;
@@ -92,17 +105,17 @@ export function RepartoPanel({
   }, [dias]);
 
   const diaActual = dias.find((d) => d.dia === diaVisto) ?? dias[0];
-  const clavesDelDia = useMemo(
-    () => [...new Set((diaActual?.comidas ?? []).map((c) => claveComida(c)))],
-    [diaActual],
-  );
+  // Si el día que se estaba viendo ya no pertenece a este slot (porque se le acaba de asignar otra
+  // planificación), se cae al primero: si no, la tabla seguía mostrando un día ajeno y los % no
+  // respondían a nada.
+  const diaReal = diaActual?.dia ?? "";
+  const clavesDelDia = useMemo(() => clavesDeDia(diaActual?.comidas ?? []), [diaActual]);
 
   /** ¿Todos los días de este slot tienen las mismas comidas? Entonces editar un % se aplica a todos
    *  (lo normal: una dieta con los 7 días iguales). Si difieren, se toca solo el día visto. */
   const mismasComidas = useMemo(() => {
     if (dias.length <= 1) return true;
-    const firma = (d: RepartoPanelDia) =>
-      [...new Set(d.comidas.map((c) => claveComida(c)))].sort().join("|");
+    const firma = (d: RepartoPanelDia) => clavesDeDia(d.comidas).sort().join("|");
     const primera = firma(dias[0]);
     return dias.every((d) => firma(d) === primera);
   }, [dias]);
@@ -118,10 +131,10 @@ export function RepartoPanel({
     );
     const kcals = repartirKcal(
       kcalDia,
-      ordenadas.map((c) => pctDeFila(c, diaVisto)),
+      ordenadas.map((c) => pctDeFila(c, diaReal)),
     );
     return ordenadas.map((c, i) => {
-      const pct = pctDeFila(c, diaVisto);
+      const pct = pctDeFila(c, diaReal);
       const obj = objetivoDeFila(kcals[i], pct, c, objetivoDia);
       return {
         fila: c,
@@ -134,11 +147,11 @@ export function RepartoPanel({
         grasaG: obj.grasaG,
       };
     });
-  }, [comidas, clavesDelDia, diaVisto, kcalDia, objetivoDia, tc]);
+  }, [comidas, clavesDelDia, diaReal, kcalDia, objetivoDia, tc]);
 
   const sumaPct = useMemo(
-    () => sumaPctDia(comidas, diaVisto, clavesDelDia),
-    [comidas, diaVisto, clavesDelDia],
+    () => sumaPctDia(comidas, diaReal, clavesDelDia),
+    [comidas, diaReal, clavesDelDia],
   );
   const kcalRepartidas = filas.reduce((s, f) => s + f.kcal, 0);
   const cuadra = sumaPct === 100;
@@ -157,12 +170,14 @@ export function RepartoPanel({
     // Con todos los días iguales, el cambio va a los días del slot (es lo que el nutri espera de una
     // dieta con la semana repetida). Si los días tienen comidas distintas, solo al que está viendo:
     // cada uno tiene su propio 100% y propagarlo lo descuadraría.
-    const objetivo = mismasComidas ? dias.map((d) => d.dia) : [diaVisto];
+    const objetivo = mismasComidas ? dias.map((d) => d.dia) : [diaReal];
     let siguientes = reparto.comidas;
     for (const dia of objetivo) {
-      const claves = [...new Set((comidasPorDia[dia] ?? []).map((c) => claveComida(c)))];
+      const claves = clavesDeDia(comidasPorDia[dia] ?? []);
       siguientes = fijarPctFilaEnDia(siguientes, clave, pct, dia, claves);
     }
+    // Aplicado a toda la semana, el % de referencia de la fila se pone al día con el del día editado.
+    if (mismasComidas && diaReal) siguientes = sincronizarKcalPctConDia(siguientes, diaReal);
     onChange({ activo: true, comidas: siguientes });
   }
 
@@ -281,7 +296,7 @@ export function RepartoPanel({
                     onClick={() => onDiaVistoChange(d)}
                     className={cn(
                       "px-2.5 py-1 rounded-lg border text-xs font-medium transition-colors",
-                      d === diaVisto
+                      d === diaReal
                         ? "border-primary/40 bg-primary/10 text-primary"
                         : "border-border bg-card text-muted-foreground hover:text-foreground",
                     )}
@@ -376,7 +391,7 @@ export function RepartoPanel({
                 )}
               >
                 {t("pieDia", {
-                  dia: tDias(diaVisto as never),
+                  dia: tDias((diaReal || diaVisto) as never),
                   pct: sumaPct,
                   kcal: kcalRepartidas,
                   objetivo: Math.round(kcalDia),
@@ -412,7 +427,7 @@ export function RepartoPanel({
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card text-xs font-medium text-foreground hover:bg-muted transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
-                {t("anadirComida", { dia: tDias(diaVisto as never) })}
+                {t("anadirComida", { dia: tDias((diaReal || diaVisto) as never) })}
               </button>
             )}
           </>

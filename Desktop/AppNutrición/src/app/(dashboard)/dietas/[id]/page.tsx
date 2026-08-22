@@ -151,6 +151,11 @@ export default async function PlanDetailPage({ params }: Props) {
             comidas: dia.comidas.map((comida) => ({
               id: comida.id,
               tipo: comida.tipo,
+              // #104 — sin nombre ni hora, esta pantalla mostraba las comidas propias como "Comida"
+              // y en otro orden que la ficha del paciente, y el reparto no las emparejaba (su
+              // identidad es el nombre): la MISMA dieta daba números distintos según por dónde entres.
+              nombre: comida.nombre,
+              hora: comida.hora,
               descripcion: comida.descripcion,
               alimentos: comida.alimentos.map((a) => ({
                 id: a.id,

@@ -130,13 +130,19 @@ export function SeguimientoDietistaView({ pacienteId }: { pacienteId: string }) 
                 <h2 className="text-base font-semibold">{t("comidas")}</h2>
               </div>
               <div className="space-y-3">
-                {TIPOS.map((tipo) => {
-                  const c = comidas.find((x) => x.tipo === tipo);
-                  if (!c || !c.alimentos?.length) return null;
+                {/* #104 — Se recorren las comidas REGISTRADAS, no las 6 fijas: recorriendo los tipos,
+                    una comida propia ("Pre-entreno") no se le mostraba al nutri aunque el paciente la
+                    hubiera marcado, y dos comidas propias del mismo día colapsaban en una. */}
+                {comidas.map((c, idx) => {
+                  if (!c.alimentos?.length) return null;
+                  const tipo = c.tipo;
+                  const etiqueta =
+                    (c.nombre ?? "").trim() ||
+                    (TIPOS.includes(tipo) ? t(`tipoLabels.${tipo}`) : t("tipoLabels.OTRA"));
                   const allDone = c.alimentos.every((a) => a.cumplido);
                   return (
                     <div
-                      key={tipo}
+                      key={`${tipo}-${idx}`}
                       className={`rounded-xl border p-4 ${
                         allDone
                           ? "border-green-300 dark:border-green-500/40 bg-green-50/50 dark:bg-green-950/20"
@@ -145,7 +151,7 @@ export function SeguimientoDietistaView({ pacienteId }: { pacienteId: string }) 
                     >
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="font-semibold text-sm flex items-center gap-2">
-                          {t(`tipoLabels.${tipo}`)}
+                          {etiqueta}
                           {allDone && (
                             <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
                           )}
