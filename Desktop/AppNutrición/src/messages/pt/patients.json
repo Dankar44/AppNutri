@@ -1471,7 +1471,6 @@
     "repartoPosDespuesDe": "Depois de {comida}",
     "repartoPosUnica": "Única refeição do dia",
     "repartoNuevaHoraTitulo": "Hora sugerida pela posição escolhida. Se a alterar, a refeição será recolocada segundo a nova hora.",
-    "repartoResumenPorDias": "Cada dia distribui as suas {objetivo} kcal entre as refeições que tem nesse dia.",
     "repartoVerDia": "Ver dia:",
     "repartoResumenDiaVisto": "{dia}: {n} refeições · {asignadas} das {objetivo} kcal do dia.",
     "repartoNuevaDias": "Que dias?",
@@ -1631,7 +1630,6 @@
       "actividadFisica": "Atividade física",
       "gastoEnergetico": "Gasto energético diário"
     },
-    "repartoComidaAnadida": "Refeição adicionada à distribuição desta dieta",
     "repartoComidaAnadidaError": "Não foi possível adicionar a refeição à distribuição"
   }
 }

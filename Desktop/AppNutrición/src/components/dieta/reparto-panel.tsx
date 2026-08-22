@@ -218,8 +218,8 @@ export function RepartoPanel({
   }
 
   return (
-    <div className="rounded-xl border border-primary/30 bg-primary/[0.03] dark:bg-primary/[0.06] overflow-hidden">
-      <div className="flex items-start justify-between gap-3 px-3 sm:px-4 py-3 border-b border-primary/20">
+    <div className="lg:rounded-xl lg:border lg:border-primary/30 lg:bg-primary/[0.03] lg:dark:bg-primary/[0.06] overflow-hidden">
+      <div className="flex items-start justify-between gap-3 px-0 lg:px-4 py-3 border-b border-border lg:border-primary/20">
         <div className="min-w-0">
           <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
             <Scale className="w-4 h-4 text-primary shrink-0" />
@@ -248,7 +248,7 @@ export function RepartoPanel({
         </div>
       </div>
 
-      <div className="px-3 sm:px-4 py-3 space-y-3">
+      <div className="px-0 lg:px-4 py-3 space-y-3">
         {/* Con varias planificaciones hay que decir SIEMPRE de cuál es la tabla: cada una tiene su
             reparto y los días de las demás no se tocan. */}
         {slots.length > 1 && (
