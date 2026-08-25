@@ -841,8 +841,25 @@ export function PlanVisual({
     });
     startCopia(async () => {
       try {
+        // Lo único que revierte el cambio en pantalla si falla: la asignación.
         for (const id of diaIds) await asignarPlanificacionADia(id, planiId);
-        for (const comidaId of new Set(quitarComidaIds)) await eliminarComida(comidaId);
+      } catch (e) {
+        if (isNextNavigation(e)) throw e;
+        setPlaniOptimista(prev);
+        toast.error(tDiets("copiar.toastJuntarError"));
+        return;
+      }
+      // El resto va aparte: la planificación YA está asignada, así que si algo de esto falla no
+      // tiene sentido deshacerlo en pantalla (quedaría mostrando la planificación anterior).
+      try {
+        for (const comidaId of new Set(quitarComidaIds)) {
+          // Tolerante: si la comida ya no existe (otra pestaña, doble clic), no se aborta el resto.
+          try {
+            await eliminarComida(comidaId);
+          } catch (e) {
+            if (isNextNavigation(e)) throw e;
+          }
+        }
         // Crear las que falten. Una sola llamada por GRUPO: la action resuelve el día representante,
         // así que llamarla con los 4 días de un grupo haría el mismo trabajo cuatro veces.
         const representantes = new Set(
@@ -864,12 +881,11 @@ export function PlanVisual({
           );
           toast.success(tDiets("reparto.comidasCreadas", { comidas: etiquetas.join(", ") }));
         }
-        router.refresh();
       } catch (e) {
         if (isNextNavigation(e)) throw e;
-        setPlaniOptimista(prev);
         toast.error(tDiets("copiar.toastJuntarError"));
       }
+      router.refresh();
     });
   }
 
