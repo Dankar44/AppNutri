@@ -1456,8 +1456,7 @@
     "ecuacionJackson7": "Ecuación de Jackson et al (7 Pliegues)",
     "fibraNhmrc2006": "NHMRC 2006 (actualizado en 2017)",
     "unidadGDia": "g/día",
-    "repartoIncluirComida": "Incluir esta comida en el reparto",
-    "repartoQuitarComida": "Quitar esta comida del reparto",
+    "repartoQuitarComida": "Quitar esta comida del reparto (el resto se recuadra al 100%)",
     "repartoAnadirComida": "Añadir comida (pre-entreno, snack…)",
     "repartoNuevaNombre": "Nombre",
     "repartoNuevaNombrePlaceholder": "Pre-entreno",
@@ -1477,7 +1476,7 @@
     "repartoSumaKcalDias": "Por día: {detalle}",
     "repartoAvisoTitulo": "Hay días que no suman el 100% de las calorías objetivo",
     "repartoAvisoDetalle": "{detalle}",
-    "repartoAvisoQueHacer": "Cada comida que añades entra con un 10%, así que esos días reparten más (o menos) de lo que habías puesto. Compruébalo y ajusta los % si quieres cuadrarlo, o déjalo así.",
+    "repartoAvisoQueHacer": "Suele pasar cuando una comida solo está algunos días: esos días reparten menos. Ajusta los % o pulsa «Cuadrar el resto al 100%», o déjalo así.",
     "repartoAvisoEntendido": "Entendido",
     "salirTitulo": "Tienes cambios sin guardar",
     "salirTexto": "Si sales ahora se perderá lo que has cambiado en la planificación (incluidas las comidas que hayas añadido al reparto).",
@@ -1494,7 +1493,9 @@
       "SABADO": "S",
       "DOMINGO": "D"
     },
-    "repartoAvisoNoMostrar": "Entendido y no volver a mostrar este aviso"
+    "repartoAvisoNoMostrar": "Entendido y no volver a mostrar este aviso",
+    "repartoNuevaQue": "Qué comida",
+    "repartoNuevaPropia": "Comida nueva (pre-entreno, snack…)"
   },
   "planVisual": {
     "sinPlan": "Sin plan",

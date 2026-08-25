@@ -855,3 +855,40 @@ export function repartirIgualEnDia(
     return { ...c, pctPorDia: { ...(c.pctPorDia ?? {}), [dia]: v } };
   });
 }
+
+/** Escala los % de las comidas incluidas para que sumen 100 exacto, conservando sus proporciones
+ *  (restos mayores). Es lo que se hace al quitar una comida del reparto: lo que ella tenía se
+ *  reparte entre las demás en vez de dejar el día corto. */
+export function escalarA100(comidas: RepartoComida[]): RepartoComida[] {
+  const incluidas = comidas.filter((c) => c.incluida);
+  if (incluidas.length === 0) return comidas;
+  const total = incluidas.reduce((s, c) => s + c.kcalPct, 0);
+  const cuotas = incluidas.map((c) => (total === 0 ? 100 / incluidas.length : (c.kcalPct / total) * 100));
+  const nuevos = cuotas.map((q) => Math.floor(q));
+  let sobra = 100 - nuevos.reduce((s, v) => s + v, 0);
+  Array.from(cuotas.keys())
+    .sort((a, b) => cuotas[b] - Math.floor(cuotas[b]) - (cuotas[a] - Math.floor(cuotas[a])))
+    .forEach((idx) => {
+      if (sobra > 0) {
+        nuevos[idx] += 1;
+        sobra -= 1;
+      }
+    });
+  const porClave = new Map(incluidas.map((c, i) => [claveComida(c), nuevos[i]]));
+  return comidas.map((c) =>
+    porClave.has(claveComida(c)) ? { ...c, kcalPct: porClave.get(claveComida(c))! } : c,
+  );
+}
+
+/** Quita una comida del reparto. Las propias se borran; las 6 fijas se marcan como no incluidas
+ *  (normalizeReparto las reinyecta siempre, así que borrarlas del array no serviría de nada) y se
+ *  esconden de la tabla. El % que tenían se reparte entre las que quedan. */
+export function quitarDelReparto(comidas: RepartoComida[], clave: string): RepartoComida[] {
+  const fila = comidas.find((c) => claveComida(c) === clave);
+  if (!fila) return comidas;
+  const sin =
+    fila.tipo === "OTRA"
+      ? quitarFila(comidas, clave)
+      : setFila(comidas, clave, { incluida: false, kcalPct: 0 });
+  return escalarA100(sin);
+}

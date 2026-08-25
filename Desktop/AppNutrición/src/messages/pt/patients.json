@@ -1456,8 +1456,7 @@
     "ecuacionJackson7": "Equação de Jackson et al (7 Dobras)",
     "fibraNhmrc2006": "NHMRC 2006 (atualizado em 2017)",
     "unidadGDia": "g/dia",
-    "repartoIncluirComida": "Incluir esta refeição na distribuição",
-    "repartoQuitarComida": "Remover esta refeição da distribuição",
+    "repartoQuitarComida": "Remover esta refeição da distribuição (o restante volta a somar 100%)",
     "repartoAnadirComida": "Adicionar refeição (pré-treino, snack…)",
     "repartoNuevaNombre": "Nome",
     "repartoNuevaNombrePlaceholder": "Pré-treino",
@@ -1477,7 +1476,7 @@
     "repartoSumaKcalDias": "Por dia: {detalle}",
     "repartoAvisoTitulo": "Há dias que não somam 100% das calorias objetivo",
     "repartoAvisoDetalle": "{detalle}",
-    "repartoAvisoQueHacer": "Cada refeição que adiciona entra com 10%, por isso esses dias distribuem mais (ou menos) do que tinha definido. Verifique e ajuste os % se quiser que bata, ou deixe assim.",
+    "repartoAvisoQueHacer": "Costuma acontecer quando uma refeição só está em alguns dias: esses dias distribuem menos. Ajuste as % ou clique em «Ajustar o restante para 100%», ou deixe assim.",
     "repartoAvisoEntendido": "Entendido",
     "salirTitulo": "Tem alterações não guardadas",
     "salirTexto": "Se sair agora perde o que alterou no planejamento (incluindo as refeições que tenha adicionado à distribuição).",
@@ -1494,7 +1493,9 @@
       "SABADO": "S",
       "DOMINGO": "D"
     },
-    "repartoAvisoNoMostrar": "Entendido e não mostrar mais este aviso"
+    "repartoAvisoNoMostrar": "Entendido e não mostrar mais este aviso",
+    "repartoNuevaQue": "Qual refeição",
+    "repartoNuevaPropia": "Nova refeição (pré-treino, lanche…)"
   },
   "planVisual": {
     "sinPlan": "Sem plano",

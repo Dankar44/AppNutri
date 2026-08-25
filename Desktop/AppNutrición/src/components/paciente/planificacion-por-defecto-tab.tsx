@@ -51,7 +51,7 @@ import {
   MACRO_PRESETS,
   setFila,
   heredarMacrosFila,
-  quitarFila,
+  quitarDelReparto,
   renombrarFila,
   repartirEquitativo,
   toggleDiaFila,
@@ -974,6 +974,8 @@ export function PlanificacionPorDefectoTab({
   // Formulario de "añadir comida" al reparto (nombre + hora).
   const [nuevaComidaAbierta, setNuevaComidaAbierta] = useState(false);
   const [nuevaComidaNombre, setNuevaComidaNombre] = useState("");
+  // Qué comida se añade: "" = una propia nueva; un tipo = recuperar una de las 6 fijas que se quitó.
+  const [nuevaComidaTipo, setNuevaComidaTipo] = useState("");
   const [nuevaComidaHora, setNuevaComidaHora] = useState("");
   // Hueco elegido para la comida nueva (índice en la lista de comidas ya ordenada por hora).
   const [nuevaComidaPos, setNuevaComidaPos] = useState(0);
@@ -1120,10 +1122,16 @@ export function PlanificacionPorDefectoTab({
 
   // Añade una comida propia al reparto (pre-entreno, snack…). Se identifica por su nombre, así que
   // no se admiten nombres repetidos. Nace con un 10% y las demás se reajustan al cuadrar.
+  /** % con el que entra una comida nueva: lo que falte para el 100% (así el reparto sigue cuadrando
+   *  al añadirla) y, si ya está cuadrado, un 10% simbólico que el nutri ajusta. */
+  function pctParaComidaNueva(): number {
+    const suma = reparto.filter((c) => c.incluida).reduce((s, c) => s + c.kcalPct, 0);
+    return suma < 100 ? 100 - suma : 10;
+  }
+
   function anadirComidaReparto(nombre: string, hora: string, dias: string[]) {
-    // Nace con un 10% y NO se toca el % de las demás (el nutri ya los había decidido). El nombre es
-    // su identidad, así que `anadirFila` devuelve null si ya hay una comida con ese nombre.
-    const conNueva = anadirFila(reparto, { nombre, hora, dias });
+    // El nombre es su identidad, así que `anadirFila` devuelve null si ya hay una comida con él.
+    const conNueva = anadirFila(reparto, { nombre, hora, dias, kcalPct: pctParaComidaNueva() });
     if (!conNueva) {
       if (nombre.trim()) toast.error(t("repartoComidaRepetida"));
       return;
@@ -1166,22 +1174,43 @@ export function PlanificacionPorDefectoTab({
   }
 
   function confirmarNuevaComida() {
-    if (!nuevaComidaNombre.trim()) return;
-    // Nace en todos los días (se ajusta con los cuadraditos) y SIEMPRE con hora: la del hueco
-    // elegido si no se tocó el campo, para que caiga en su sitio en vez de quedar descolocada.
-    anadirComidaReparto(
-      nuevaComidaNombre,
-      nuevaComidaHora || huecosComida[nuevaComidaPos]?.hora || "",
-      nuevaComidaDias,
-    );
+    const hora = nuevaComidaHora || huecosComida[nuevaComidaPos]?.hora || "";
+    if (nuevaComidaTipo) {
+      // Recuperar una de las 6 fijas que se había quitado, con la hora y los días elegidos.
+      setReparto((prev) =>
+        setFila(prev, nuevaComidaTipo, {
+          incluida: true,
+          kcalPct: pctParaComidaNueva(),
+          hora: /^([01]?\d|2[0-3]):[0-5]\d$/.test(hora) ? hora : undefined,
+          dias:
+            nuevaComidaDias.length > 0 && nuevaComidaDias.length < DIAS_SEMANA.length
+              ? nuevaComidaDias
+              : undefined,
+        }),
+      );
+    } else {
+      if (!nuevaComidaNombre.trim()) return;
+      // SIEMPRE con hora: la del hueco elegido si no se tocó el campo, para que caiga en su sitio.
+      anadirComidaReparto(nuevaComidaNombre, hora, nuevaComidaDias);
+    }
     setNuevaComidaNombre("");
+    setNuevaComidaTipo("");
     setNuevaComidaHora("");
     setNuevaComidaDias([...DIAS_SEMANA]);
     setNuevaComidaAbierta(false);
   }
 
+  /** Comidas fijas que se quitaron del reparto: se pueden recuperar desde "Añadir comida". */
+  const fijasQuitadas = useMemo(
+    () => reparto.filter((c) => c.tipo !== "OTRA" && !c.incluida).map((c) => c.tipo),
+    [reparto],
+  );
+
+  // Quitar una comida del reparto: las propias se borran, las 6 fijas se marcan como no incluidas
+  // (normalizeReparto las reinyecta siempre) y desaparecen de la tabla. El % que tenía esa comida se
+  // reparte entre las que quedan, para no dejar el día corto sin haberlo pedido.
   function quitarComidaReparto(clave: string) {
-    setReparto((prev) => quitarFila(prev, clave));
+    setReparto((prev) => quitarDelReparto(prev, clave));
   }
 
   // Alias visible de una comida FIJA ("Comida" para el Almuerzo): que el reparto hable el mismo
@@ -2914,18 +2943,13 @@ export function PlanificacionPorDefectoTab({
                   </tr>
                 </thead>
                 <tbody>
-                  {repartoCalc.filas.map((c) => (
+                  {/* Solo las que están en el reparto: las quitadas desaparecen (se recuperan desde
+                      "Añadir comida"), en vez de quedarse ahí ocupando sitio en gris. */}
+                  {repartoCalc.filas.filter((c) => c.incluida).map((c) => (
                     <Fragment key={c.clave}>
                       <tr className={cn("border-b border-border", (!c.incluida || !c.enDiaVisto) && "opacity-45")}>
                         <td className={`py-3 px-2 sm:px-4 ${stickyCol}`}>
                           <div className="flex items-start gap-2">
-                            <input
-                              type="checkbox"
-                              checked={c.incluida}
-                              onChange={(e) => updateComida(c.clave, { incluida: e.target.checked })}
-                              title={t("repartoIncluirComida")}
-                              className="h-4 w-4 mt-1 rounded border-border accent-primary shrink-0"
-                            />
                             <div className="min-w-0 flex-1">
                               {/* Nombre editable: si llamas "Comida" al Almuerzo, el reparto lo llama
                                   igual que la dieta (antes eran dos vocabularios distintos). */}
@@ -2960,16 +2984,14 @@ export function PlanificacionPorDefectoTab({
                                     </button>
                                   );
                                 })}
-                                {c.esAnadida && (
-                                  <button
-                                    type="button"
-                                    onClick={() => quitarComidaReparto(c.clave)}
-                                    title={t("repartoQuitarComida")}
-                                    className="ml-1 text-muted-foreground hover:text-red-600 transition-colors"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => quitarComidaReparto(c.clave)}
+                                  title={t("repartoQuitarComida")}
+                                  className="ml-1 text-muted-foreground hover:text-red-600 transition-colors"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
                               </div>
                             </div>
                           </div>
@@ -3152,18 +3174,37 @@ export function PlanificacionPorDefectoTab({
                     <td colSpan={7} className="px-2 sm:px-4 py-3">
                       {nuevaComidaAbierta ? (
                         <div className="flex flex-wrap items-end gap-2">
-                          <div className="flex flex-col gap-1">
-                            <span className="text-[11px] font-medium text-muted-foreground">{t("repartoNuevaNombre")}</span>
-                            <input
-                              value={nuevaComidaNombre}
-                              onChange={(e) => setNuevaComidaNombre(e.target.value)}
-                              onKeyDown={(e) => { if (e.key === "Enter") confirmarNuevaComida(); }}
-                              placeholder={t("repartoNuevaNombrePlaceholder")}
-                              maxLength={60}
-                              autoFocus
-                              className="w-44 h-8 px-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                            />
-                          </div>
+                          {/* Si se ha quitado alguna de las comidas de siempre, se puede recuperar
+                              desde aquí en vez de tener que reactivarla en otro sitio. */}
+                          {fijasQuitadas.length > 0 && (
+                            <div className="flex flex-col gap-1">
+                              <span className="text-[11px] font-medium text-muted-foreground">{t("repartoNuevaQue")}</span>
+                              <select
+                                value={nuevaComidaTipo}
+                                onChange={(e) => setNuevaComidaTipo(e.target.value)}
+                                className="h-8 px-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                              >
+                                <option value="">{t("repartoNuevaPropia")}</option>
+                                {fijasQuitadas.map((tipo) => (
+                                  <option key={tipo} value={tipo}>{tc(tipo)}</option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
+                          {!nuevaComidaTipo && (
+                            <div className="flex flex-col gap-1">
+                              <span className="text-[11px] font-medium text-muted-foreground">{t("repartoNuevaNombre")}</span>
+                              <input
+                                value={nuevaComidaNombre}
+                                onChange={(e) => setNuevaComidaNombre(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === "Enter") confirmarNuevaComida(); }}
+                                placeholder={t("repartoNuevaNombrePlaceholder")}
+                                maxLength={60}
+                                autoFocus
+                                className="w-44 h-8 px-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                              />
+                            </div>
+                          )}
                           {/* Posición en el día: es como piensa el nutri ("entre el desayuno y la
                               comida"). Al elegirla se propone la hora que la deja en ese hueco. */}
                           <div className="flex flex-col gap-1">
@@ -3221,14 +3262,14 @@ export function PlanificacionPorDefectoTab({
                           <button
                             type="button"
                             onClick={confirmarNuevaComida}
-                            disabled={!nuevaComidaNombre.trim() || nuevaComidaDias.length === 0}
+                            disabled={(!nuevaComidaTipo && !nuevaComidaNombre.trim()) || nuevaComidaDias.length === 0}
                             className="h-8 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 disabled:opacity-50"
                           >
                             {t("repartoNuevaAnadir")}
                           </button>
                           <button
                             type="button"
-                            onClick={() => { setNuevaComidaAbierta(false); setNuevaComidaNombre(""); }}
+                            onClick={() => { setNuevaComidaAbierta(false); setNuevaComidaNombre(""); setNuevaComidaTipo(""); }}
                             className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
                           >
                             {t("cerrar")}
