@@ -808,8 +808,10 @@
     "macro_prot": "Proteínas de esta comida (g)",
     "macro_carb": "Hidratos de esta comida (g)",
     "macro_grasa": "Grasas de esta comida (g)",
-    "heredarMacros": "Volver a la distribución de macros del día",
-    "heredarMacrosCorto": "Heredar",
-    "faltanEnDia": "Al {dia} le faltan: {comidas}"
+    "heredarMacros": "Deshacer el ajuste: que P/C/G de esta comida vuelvan a la proporción del objetivo del día",
+    "heredarMacrosCorto": "Restablecer",
+    "faltanEnDia": "Al {dia} le faltan: {comidas}",
+    "repartirIgualAyuda": "Pone todas las comidas del {dia} al mismo %, hasta el 100% del día",
+    "cuadrarRestoAyuda": "Ajusta las demás comidas para llegar al 100% del día, dejando como está la que tiene más peso"
   }
 }

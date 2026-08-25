@@ -14,6 +14,7 @@ import {
   fijarPctFilaEnDia,
   sumaPctDia,
   repartoEquitativoPorDia,
+  repartirIgualEnDia,
   sincronizarKcalPctConDia,
   heredarMacrosFila,
   macrosPctDeDia,
@@ -187,7 +188,7 @@ export function RepartoPanel({
       .map((c) => (c.nombre ?? "").trim() || tc(c.tipo as never));
   }, [filas, diaActual, tc]);
 
-  function aplicarPct(clave: string, pct: number) {
+  function aplicarPct(clave: string, pct: number, cuadrarA100 = false) {
     if (!reparto) return;
     // Con todos los días iguales, el cambio va a los días del slot (es lo que el nutri espera de una
     // dieta con la semana repetida). Si los días tienen comidas distintas, solo al que está viendo:
@@ -196,7 +197,7 @@ export function RepartoPanel({
     let siguientes = reparto.comidas;
     for (const dia of objetivo) {
       const claves = clavesDeDia(comidasPorDia[dia] ?? []);
-      siguientes = fijarPctFilaEnDia(siguientes, clave, pct, dia, claves);
+      siguientes = fijarPctFilaEnDia(siguientes, clave, pct, dia, claves, cuadrarA100 ? 100 : undefined);
     }
     // Aplicado a toda la semana, el % de referencia de la fila se pone al día con el del día editado.
     if (mismasComidas && diaReal) siguientes = sincronizarKcalPctConDia(siguientes, diaReal);
@@ -208,12 +209,14 @@ export function RepartoPanel({
     // Se deja como está la comida con más peso y se reajustan las demás (mismo criterio que la
     // planificación): así el nutri no pierde el número que acaba de poner.
     const mayor = filas.reduce((a, b) => (b.pct > a.pct ? b : a));
-    aplicarPct(mayor.clave, mayor.pct);
+    aplicarPct(mayor.clave, mayor.pct, true);
   }
 
   function repartirIgual() {
-    if (!reparto) return;
-    onChange({ activo: true, comidas: repartoEquitativoPorDia(reparto.comidas, comidasPorDia) });
+    if (!reparto || !diaReal) return;
+    // Solo el día que se está viendo: con `repartoEquitativoPorDia` se tocaba toda la semana y además
+    // desactivaba las comidas que ese día no existen (adiós al pre-entreno del lunes).
+    onChange({ activo: true, comidas: repartirIgualEnDia(reparto.comidas, diaReal, clavesDelDia) });
   }
 
   function activar() {
@@ -512,12 +515,18 @@ export function RepartoPanel({
                 <button
                   type="button"
                   onClick={cuadrarResto}
+                  title={t("cuadrarRestoAyuda")}
                   className="font-medium text-primary hover:underline"
                 >
                   {t("cuadrarResto")}
                 </button>
               )}
-              <button type="button" onClick={repartirIgual} className="font-medium text-primary hover:underline">
+              <button
+                type="button"
+                onClick={repartirIgual}
+                title={t("repartirIgualAyuda", { dia: tDias((diaReal || diaVisto) as never) })}
+                className="font-medium text-primary hover:underline"
+              >
                 {t("repartirIgual")}
               </button>
               {mismasComidas && dias.length > 1 && (

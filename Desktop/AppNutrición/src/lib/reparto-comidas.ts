@@ -714,6 +714,7 @@ export function fijarPctFilaEnDia(
   pct: number,
   dia: string,
   clavesDelDia: string[],
+  totalDia?: number,
 ): RepartoComida[] {
   const clamped = Math.max(0, Math.min(100, Math.round(pct)));
   const enDia = new Set(clavesDelDia);
@@ -724,7 +725,11 @@ export function fijarPctFilaEnDia(
   const pctFinal = new Map<string, number>([[clave, clamped]]);
 
   if (otras.length > 0) {
-    const remaining = 100 - clamped;
+    // Se conserva el TOTAL que el día ya tenía, no se fuerza el 100%. Si ese día suma 91% porque le
+    // falta una comida que sí está en otros, mover una barra no debe rellenar ese hueco por su
+    // cuenta: cuadrar el día es una decisión explícita ("Cuadrar el resto" / "A partes iguales").
+    const total = totalDia ?? sumaPctDia(comidas, dia, clavesDelDia);
+    const remaining = Math.max(0, total - clamped);
     const otherTotal = otras.reduce((s, c) => s + pctDeFila(c, dia), 0);
     const cuotas = otras.map((c) =>
       otherTotal === 0 ? remaining / otras.length : (pctDeFila(c, dia) / otherTotal) * remaining,
@@ -826,4 +831,27 @@ export function setMacroFila(
 export function gramosAPct(gramos: number, kcalComida: number, macro: "grasa" | "carb" | "prot"): number {
   if (kcalComida <= 0) return 0;
   return Math.round(((gramos * (macro === "grasa" ? 9 : 4)) / kcalComida) * 100);
+}
+
+/** Reparte el 100% a partes iguales entre las comidas de UN día, sin tocar los demás días ni la
+ *  inclusión de ninguna fila. Es lo que hace el enlace "A partes iguales" del panel de la dieta:
+ *  `repartoEquitativoPorDia` no vale ahí porque desactiva las filas que no aparecen en los días que
+ *  se le pasan, y se llevaría por delante el pre-entreno que solo está en otro día. */
+export function repartirIgualEnDia(
+  comidas: RepartoComida[],
+  dia: string,
+  clavesDelDia: string[],
+): RepartoComida[] {
+  const enDia = new Set(clavesDelDia);
+  const participan = comidas.filter((c) => c.incluida && enDia.has(claveComida(c)));
+  if (participan.length === 0) return comidas;
+  const base = Math.floor(100 / participan.length);
+  const resto = 100 - base * participan.length;
+  const pct = new Map<string, number>();
+  participan.forEach((c, i) => pct.set(claveComida(c), base + (i < resto ? 1 : 0)));
+  return comidas.map((c) => {
+    const v = pct.get(claveComida(c));
+    if (v == null) return c;
+    return { ...c, pctPorDia: { ...(c.pctPorDia ?? {}), [dia]: v } };
+  });
 }

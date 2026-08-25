@@ -808,8 +808,10 @@
     "macro_prot": "Proteínas desta refeição (g)",
     "macro_carb": "Carboidratos desta refeição (g)",
     "macro_grasa": "Gorduras desta refeição (g)",
-    "heredarMacros": "Voltar à distribuição de macros do dia",
-    "heredarMacrosCorto": "Herdar",
-    "faltanEnDia": "Faltam na {dia}: {comidas}"
+    "heredarMacros": "Desfazer o ajuste: que P/C/G desta refeição voltem à proporção do objetivo do dia",
+    "heredarMacrosCorto": "Restaurar",
+    "faltanEnDia": "Faltam na {dia}: {comidas}",
+    "repartirIgualAyuda": "Coloca todas as refeições de {dia} na mesma %, até 100% do dia",
+    "cuadrarRestoAyuda": "Ajusta as outras refeições para chegar a 100% do dia, mantendo a de maior peso"
   }
 }
