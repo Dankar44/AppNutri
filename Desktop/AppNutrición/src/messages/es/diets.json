@@ -804,6 +804,12 @@
     "conAlimentos": "· {n} alimentos dentro",
     "mantenerlas": "Mantenerlas",
     "quitarlas": "Quitarlas",
-    "necesitaNombre": "Ponle un nombre a la comida para que pueda tener su objetivo en el reparto."
+    "necesitaNombre": "Ponle un nombre a la comida para que pueda tener su objetivo en el reparto.",
+    "macro_prot": "Proteínas de esta comida (g)",
+    "macro_carb": "Hidratos de esta comida (g)",
+    "macro_grasa": "Grasas de esta comida (g)",
+    "heredarMacros": "Volver a la distribución de macros del día",
+    "heredarMacrosCorto": "Heredar",
+    "faltanEnDia": "Al {dia} le faltan: {comidas}"
   }
 }

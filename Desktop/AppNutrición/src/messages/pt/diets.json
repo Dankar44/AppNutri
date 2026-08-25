@@ -804,6 +804,12 @@
     "conAlimentos": "· {n} alimentos dentro",
     "mantenerlas": "Manter",
     "quitarlas": "Remover",
-    "necesitaNombre": "Dê um nome à refeição para que ela possa ter seu objetivo na distribuição."
+    "necesitaNombre": "Dê um nome à refeição para que ela possa ter seu objetivo na distribuição.",
+    "macro_prot": "Proteínas desta refeição (g)",
+    "macro_carb": "Carboidratos desta refeição (g)",
+    "macro_grasa": "Gorduras desta refeição (g)",
+    "heredarMacros": "Voltar à distribuição de macros do dia",
+    "heredarMacrosCorto": "Herdar",
+    "faltanEnDia": "Faltam na {dia}: {comidas}"
   }
 }

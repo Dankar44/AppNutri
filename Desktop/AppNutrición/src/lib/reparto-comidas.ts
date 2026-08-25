@@ -770,3 +770,60 @@ export function sincronizarKcalPctConDia(comidas: RepartoComida[], dia: string):
     c.pctPorDia && c.pctPorDia[dia] != null ? { ...c, kcalPct: c.pctPorDia[dia] } : c,
   );
 }
+
+/** Distribución de macros del día en %, derivada de sus gramos objetivo. En la dieta el objetivo del
+ *  día viene en gramos (es lo que el nutri fijó), y para editar los macros de una comida hacen falta
+ *  los % de referencia que hereda. */
+export function macrosPctDeDia(dia: {
+  kcal?: number | null;
+  proteinas?: number | null;
+  carbohidratos?: number | null;
+  grasas?: number | null;
+}): { grasa: number; carb: number; prot: number } {
+  const kcal = dia.kcal ?? 0;
+  if (kcal <= 0) return { grasa: 30, carb: 50, prot: 20 };
+  return {
+    grasa: Math.round((((dia.grasas ?? 0) * 9) / kcal) * 100),
+    carb: Math.round((((dia.carbohidratos ?? 0) * 4) / kcal) * 100),
+    prot: Math.round((((dia.proteinas ?? 0) * 4) / kcal) * 100),
+  };
+}
+
+/** Fija el % de UN macro de una comida y re-equilibra los otros dos para que sumen 100 (misma
+ *  interacción que la tabla de macros del día). Se guarda como override de esa comida: a partir de
+ *  ahí no hereda la distribución del día. */
+export function setMacroFila(
+  comidas: RepartoComida[],
+  clave: string,
+  macro: "grasa" | "carb" | "prot",
+  pct: number,
+  macrosDia: { grasa: number; carb: number; prot: number },
+): RepartoComida[] {
+  const fila = comidas.find((c) => claveComida(c) === clave);
+  if (!fila) return comidas;
+  const eff = {
+    grasa: fila.grasaPct ?? macrosDia.grasa,
+    carb: fila.carbPct ?? macrosDia.carb,
+    prot: fila.protPct ?? macrosDia.prot,
+  };
+  const clamped = Math.max(0, Math.min(100, Math.round(pct)));
+  const next = { ...eff, [macro]: clamped };
+  const [o1, o2] = (["grasa", "carb", "prot"] as const).filter((m) => m !== macro);
+  const remaining = 100 - clamped;
+  const totalOtros = eff[o1] + eff[o2];
+  if (totalOtros === 0) {
+    const mitad = Math.round(remaining / 2);
+    next[o1] = mitad;
+    next[o2] = remaining - mitad;
+  } else {
+    next[o1] = Math.round((eff[o1] / totalOtros) * remaining);
+    next[o2] = remaining - next[o1];
+  }
+  return setFila(comidas, clave, { grasaPct: next.grasa, carbPct: next.carb, protPct: next.prot });
+}
+
+/** Gramos de un macro → % sobre las kcal de esa comida (4 kcal/g en proteína e hidratos, 9 en grasa). */
+export function gramosAPct(gramos: number, kcalComida: number, macro: "grasa" | "carb" | "prot"): number {
+  if (kcalComida <= 0) return 0;
+  return Math.round(((gramos * (macro === "grasa" ? 9 : 4)) / kcalComida) * 100);
+}

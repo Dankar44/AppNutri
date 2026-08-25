@@ -15,6 +15,10 @@ import {
   sumaPctDia,
   repartoEquitativoPorDia,
   sincronizarKcalPctConDia,
+  heredarMacrosFila,
+  macrosPctDeDia,
+  setMacroFila,
+  gramosAPct,
   type RepartoComida,
   type RepartoPorComida,
 } from "@/lib/reparto-comidas";
@@ -92,6 +96,13 @@ export function RepartoPanel({
   const tDias = useTranslations("patients.planVisual.dias");
   // Buffer de tecleo: mientras se escribe "1" de "15" no se puede reajustar el resto en cada pulsación.
   const [kcalEdit, setKcalEdit] = useState<{ clave: string; val: string } | null>(null);
+  // Los gramos se teclean en un buffer y se aplican al salir del campo: si se aplicara en cada
+  // pulsación, escribir "150" pasaría por 1 g y 15 g reajustando los otros macros a cada tecla.
+  const [gramEdit, setGramEdit] = useState<{
+    clave: string;
+    macro: "grasa" | "carb" | "prot";
+    val: string;
+  } | null>(null);
 
   const activo = !!reparto?.activo;
   const comidas = reparto?.comidas ?? [];
@@ -145,6 +156,7 @@ export function RepartoPanel({
         protG: obj.protG,
         carbG: obj.carbG,
         grasaG: obj.grasaG,
+        overrideActivo: c.grasaPct != null || c.carbPct != null || c.protPct != null,
       };
     });
   }, [comidas, clavesDelDia, diaReal, kcalDia, objetivoDia, tc]);
@@ -155,6 +167,16 @@ export function RepartoPanel({
   );
   const kcalRepartidas = filas.reduce((s, f) => s + f.kcal, 0);
   const cuadra = sumaPct === 100;
+
+  /** Comidas que el reparto tiene con cuota y que ese día NO existen. Es lo que explica que un día
+   *  no llegue al 100% cuando el reparto viene de la planificación: al martes le falta el pre-entreno
+   *  que sí está el lunes, así que su % se queda sin repartir. Decirlo evita que parezca un error. */
+  const faltanEsteDia = useMemo(() => {
+    const enDia = new Set(clavesDelDia);
+    return comidas
+      .filter((c) => c.incluida && pctDeFila(c, diaReal) > 0 && !enDia.has(claveComida(c)))
+      .map((c) => (c.nombre ?? "").trim() || tc(c.tipo as never));
+  }, [comidas, clavesDelDia, diaReal, tc]);
 
   /** Comidas del día que NO están en el reparto (fila quitada o desmarcada): se listan para que el
    *  nutri sepa por qué no tienen objetivo, en vez de buscarlas en la tabla sin encontrarlas. */
@@ -208,6 +230,44 @@ export function RepartoPanel({
 
   const kcalValue = (clave: string, calc: number) =>
     kcalEdit?.clave === clave ? kcalEdit.val : String(calc);
+
+  /** Bloquea lo que un input numérico admite y no queremos: notación exponencial y signos. Sin esto
+   *  se podía teclear "0e50" en el % y el campo se quedaba con basura mientras el dato iba a 0. */
+  function soloDigitos(ev: React.KeyboardEvent) {
+    if (["e", "E", "+", "-", ".", ","].includes(ev.key)) ev.preventDefault();
+  }
+
+  /** Aplica el % solo si lo tecleado es un número: con el campo en un estado inválido el navegador
+   *  devuelve "", y tomarlo como 0 ponía la comida a cero sin que nadie lo hubiera pedido. */
+  function onPctInput(clave: string, raw: string) {
+    const n = parseInt(raw, 10);
+    if (Number.isNaN(n)) return;
+    aplicarPct(clave, Math.max(0, Math.min(100, n)));
+  }
+
+  const macrosDia = macrosPctDeDia(objetivoDia);
+
+  const gramValue = (clave: string, macro: "grasa" | "carb" | "prot", calc: number | null) =>
+    gramEdit?.clave === clave && gramEdit.macro === macro ? gramEdit.val : String(calc ?? 0);
+
+  /** Gramos de un macro de una comida → % sobre SUS kcal, re-equilibrando sus otros dos macros.
+   *  Queda como override de esa comida: deja de heredar la distribución del día. */
+  function commitGram(clave: string, macro: "grasa" | "carb" | "prot", kcalComida: number) {
+    if (gramEdit?.clave !== clave || gramEdit.macro !== macro) return;
+    const g = parseFloat(gramEdit.val.replace(",", "."));
+    setGramEdit(null);
+    if (!reparto || !Number.isFinite(g) || g < 0 || kcalComida <= 0) return;
+    onChange({
+      activo: true,
+      comidas: setMacroFila(reparto.comidas, clave, macro, gramosAPct(g, kcalComida, macro), macrosDia),
+    });
+  }
+
+  /** Esa comida vuelve a heredar la distribución de macros del día. */
+  function heredarMacros(clave: string) {
+    if (!reparto) return;
+    onChange({ activo: true, comidas: heredarMacrosFila(reparto.comidas, clave) });
+  }
 
   function commitKcal(clave: string) {
     if (kcalEdit?.clave !== clave) return;
@@ -308,13 +368,13 @@ export function RepartoPanel({
             )}
 
             <div className="overflow-x-auto">
-              <table className="min-w-[420px] w-full text-sm">
+              <table className="min-w-[680px] w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs text-muted-foreground">
                     <th className="py-1.5 pr-3 font-medium">{t("thComida")}</th>
                     <th className="py-1.5 px-2 font-medium w-[130px]">{t("thPct")}</th>
                     <th className="py-1.5 px-2 font-medium w-[110px]">{t("thKcal")}</th>
-                    <th className="py-1.5 pl-2 font-medium hidden sm:table-cell">{t("thMacros")}</th>
+                    <th className="py-1.5 pl-2 font-medium">{t("thMacros")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -331,8 +391,10 @@ export function RepartoPanel({
                             inputMode="numeric"
                             min={0}
                             max={100}
+                            step={1}
                             value={f.pct}
-                            onChange={(e) => aplicarPct(f.clave, parseInt(e.target.value, 10) || 0)}
+                            onKeyDown={soloDigitos}
+                            onChange={(e) => onPctInput(f.clave, e.target.value)}
                             className="w-16 h-8 px-2 rounded-lg border border-border bg-background text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary/30"
                           />
                           <span className="text-muted-foreground text-xs">%</span>
@@ -363,6 +425,7 @@ export function RepartoPanel({
                             onChange={(e) => setKcalEdit({ clave: f.clave, val: e.target.value })}
                             onBlur={() => commitKcal(f.clave)}
                             onKeyDown={(e) => {
+                              soloDigitos(e);
                               if (e.key === "Enter") commitKcal(f.clave);
                             }}
                             disabled={kcalDia <= 0}
@@ -371,10 +434,50 @@ export function RepartoPanel({
                           <span className="text-muted-foreground text-xs">kcal</span>
                         </div>
                       </td>
-                      <td className="py-2 pl-2 align-top text-xs text-muted-foreground hidden sm:table-cell whitespace-nowrap">
-                        {f.protG != null && <span>P {f.protG}g</span>}
-                        {f.carbG != null && <span> · C {f.carbG}g</span>}
-                        {f.grasaG != null && <span> · G {f.grasaG}g</span>}
+                      <td className="py-2 pl-2 align-top whitespace-nowrap">
+                        {/* Gramos por comida editables, como en la planificación: al cambiar uno, los
+                            otros dos de ESA comida se reajustan para seguir cuadrando sus kcal. */}
+                        <div className="flex items-center gap-1.5">
+                          {(
+                            [
+                              ["prot", "P", f.protG],
+                              ["carb", "C", f.carbG],
+                              ["grasa", "G", f.grasaG],
+                            ] as const
+                          ).map(([macro, letra, valor]) => (
+                            <span key={macro} className="inline-flex items-center gap-0.5">
+                              <span className="text-xs text-muted-foreground">{letra}</span>
+                              <input
+                                type="number"
+                                inputMode="decimal"
+                                min={0}
+                                value={gramValue(f.clave, macro, valor)}
+                                onChange={(e) =>
+                                  setGramEdit({ clave: f.clave, macro, val: e.target.value })
+                                }
+                                onBlur={() => commitGram(f.clave, macro, f.kcal)}
+                                onKeyDown={(e) => {
+                                  soloDigitos(e);
+                                  if (e.key === "Enter") commitGram(f.clave, macro, f.kcal);
+                                }}
+                                disabled={f.kcal <= 0}
+                                title={t(`macro_${macro}` as never)}
+                                className="w-14 h-8 px-1.5 rounded-lg border border-border bg-background text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+                              />
+                              <span className="text-xs text-muted-foreground">g</span>
+                            </span>
+                          ))}
+                          {f.overrideActivo && (
+                            <button
+                              type="button"
+                              onClick={() => heredarMacros(f.clave)}
+                              title={t("heredarMacros")}
+                              className="text-xs font-medium text-primary hover:underline"
+                            >
+                              {t("heredarMacrosCorto")}
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -397,6 +500,14 @@ export function RepartoPanel({
                   objetivo: Math.round(kcalDia),
                 })}
               </span>
+              {!cuadra && faltanEsteDia.length > 0 && (
+                <span className="text-muted-foreground">
+                  {t("faltanEnDia", {
+                    dia: tDias((diaReal || diaVisto) as never),
+                    comidas: faltanEsteDia.join(", "),
+                  })}
+                </span>
+              )}
               {!cuadra && filas.length >= 2 && (
                 <button
                   type="button"
