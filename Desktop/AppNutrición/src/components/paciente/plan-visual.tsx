@@ -530,6 +530,13 @@ export function PlanVisual({
 
   // #75 — Juntar/separar días en el editor.
   const [juntarModal, setJuntarModal] = useState<{ origenId: string; origenLabel: string } | null>(null);
+  // Aviso previo cuando juntar cambia la planificación (y por tanto el objetivo) de algún día.
+  const [juntarAviso, setJuntarAviso] = useState<{
+    ids: string[];
+    destino: { nombre: string; kcal: number | null };
+    cambios: { dia: string; origen: { nombre: string; kcal: number | null } }[];
+  } | null>(null);
+  const juntarAvisoOrigenRef = useRef<string | null>(null);
   const [separarModal, setSepararModal] = useState<{ grupoDias: PlanVisualDia[] } | null>(null);
   // UI optimista de juntar/separar: override del grupoId por día (string = grupo local recién creado;
   // null = recién separado). Se ve AL INSTANTE; el refresh del servidor lo confirma o, si falla, revierte.
@@ -540,14 +547,54 @@ export function PlanVisual({
   const grupoEfectivo = (d: PlanVisualDia): string | null =>
     d.id in gruposOptimistas ? gruposOptimistas[d.id] : (d.grupoId ?? null);
 
+  /** Nombre y kcal objetivo de la planificación de un día, para poder decirle al nutri qué cambia. */
+  function etiquetaPlaniDeDia(diaId: string): { nombre: string; kcal: number | null } {
+    const pid = planiDelDia(diaId);
+    const p = pid ? planificaciones.find((x) => x.id === pid) : undefined;
+    if (!p) {
+      return {
+        nombre: tDiets("copiar.sinPlani"),
+        kcal: selectedPlan?.caloriasObjetivo ?? null,
+      };
+    }
+    const o = objetivosPorDia?.[diaId];
+    return { nombre: p.nombre, kcal: p.kcal ?? (o?.planificacionId === pid ? o.kcal : null) };
+  }
+
+  /** Juntar días fuerza la planificación del día de origen a todo el grupo. Si algún día iba con otra,
+   *  su objetivo de calorías cambia: eso hay que decirlo antes, no después. */
   function handleConfirmJuntar(ids: string[]) {
     if (!juntarModal || !selectedPlan) return;
-    const todos = [juntarModal.origenId, ...ids];
+    const origenPlani = planiDelDia(juntarModal.origenId);
+    const distintos = ids.filter((id) => planiDelDia(id) !== origenPlani);
+    if (distintos.length > 0) {
+      const destino = etiquetaPlaniDeDia(juntarModal.origenId);
+      juntarAvisoOrigenRef.current = juntarModal.origenId;
+      setJuntarAviso({
+        ids,
+        destino,
+        cambios: distintos.map((id) => ({
+          dia: (selectedPlan.dias ?? []).find((d) => d.id === id)?.dia ?? "",
+          origen: etiquetaPlaniDeDia(id),
+        })),
+      });
+      setJuntarModal(null);
+      return;
+    }
+    ejecutarJuntar(ids);
+  }
+
+  function ejecutarJuntar(ids: string[]) {
+    if (!juntarModal && !juntarAviso) return;
+    if (!selectedPlan) return;
+    const origenId = juntarModal?.origenId ?? juntarAvisoOrigenRef.current;
+    if (!origenId) return;
+    const todos = [origenId, ...ids];
     const grupoLocal = `optg-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
     const prev = gruposOptimistas;
     const prevPlani = planiOptimista;
     // La planificación del día de ORIGEN manda en todo el grupo (comen igual → mismo objetivo).
-    const planiOrigen = planiDelDia(juntarModal.origenId) || null;
+    const planiOrigen = planiDelDia(origenId) || null;
     setGruposOptimistas((p) => {
       const n = { ...p };
       for (const id of todos) n[id] = grupoLocal;
@@ -559,6 +606,7 @@ export function PlanVisual({
       return n;
     });
     setJuntarModal(null); // cerrar el modal AL INSTANTE; el cambio ya se ve por el optimista
+    setJuntarAviso(null);
     startCopia(async () => {
       try {
         await juntarDias(selectedPlan.id, todos);
@@ -1955,6 +2003,58 @@ export function PlanVisual({
                     pending={isPendingCopia}
                     onConfirm={(ids) => handleConfirmJuntar(ids)}
                   />
+                  {/* Juntar días fuerza la planificación del día de origen a todo el grupo: si algún
+                      día iba con otra, su objetivo de calorías cambia y hay que decirlo antes. */}
+                  {juntarAviso && (
+                    <div
+                      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+                      onClick={() => setJuntarAviso(null)}
+                    >
+                      <div
+                        className="bg-card rounded-xl border border-border shadow-xl w-full max-w-md p-5"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <h3 className="text-lg font-semibold mb-2">{tDiets("copiar.juntarAvisoTitulo")}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {tDiets("copiar.juntarAvisoTexto", {
+                            plani: juntarAviso.destino.nombre,
+                            kcal: juntarAviso.destino.kcal ?? "—",
+                          })}
+                        </p>
+                        <ul className="mt-3 space-y-1 text-sm">
+                          {juntarAviso.cambios.map((c) => (
+                            <li key={c.dia} className="flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                              <span>
+                                <span className="font-medium">{t(`dias.${c.dia}` as never)}</span>{" "}
+                                {tDiets("copiar.juntarAvisoLinea", {
+                                  plani: c.origen.nombre,
+                                  kcal: c.origen.kcal ?? "—",
+                                })}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="flex flex-wrap justify-end gap-2 mt-5">
+                          <button
+                            type="button"
+                            onClick={() => setJuntarAviso(null)}
+                            className="px-4 py-2 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"
+                          >
+                            {tDiets("copiar.cancelar")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => ejecutarJuntar(juntarAviso.ids)}
+                            disabled={isPendingCopia}
+                            className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                          >
+                            {tDiets("copiar.juntarConfirmar")}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   <CopiarADiasModal
                     open={!!separarModal}
                     onClose={() => setSepararModal(null)}

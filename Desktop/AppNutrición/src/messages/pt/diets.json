@@ -58,7 +58,10 @@
     "importUnaComida": "Uma refeição",
     "vacio": "vazio",
     "alimentosCount": "{n, plural, one {# alimento} other {# alimentos}}",
-    "importNada": "Este plano não tem alimentos para trazer."
+    "importNada": "Este plano não tem alimentos para trazer.",
+    "juntarAvisoTitulo": "Estes dias vão mudar de planejamento",
+    "juntarAvisoTexto": "Os dias que se juntam comem igual, portanto compartilham objetivo: todo o grupo passará a «{plani}» ({kcal} kcal).",
+    "juntarAvisoLinea": "usa agora «{plani}» ({kcal} kcal)"
   },
   "list": {
     "pageTitle": "Planos alimentares",
