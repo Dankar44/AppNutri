@@ -54,9 +54,10 @@ type Props = {
   onSlotChange: (id: string) => void;
   /** Días de la dieta que usan el slot activo, con sus comidas REALES. */
   dias: RepartoPanelDia[];
-  /** Todos los días del plan: los botones de día no esconden ninguno, aunque use otra planificación
-   *  (al pulsarlo, el panel cambia de reparto). */
-  diasDelPlan?: string[];
+  /** Días del plan agrupados como en las pestañas del editor: los días juntados (#75) van como UN
+   *  botón ("Mar·Mié"), porque comen igual y comparten objetivo, así que su reparto es el mismo.
+   *  No se esconde ninguno aunque use otra planificación: al pulsarlo, el panel cambia de reparto. */
+  gruposDia?: { label: string; dias: string[] }[];
   diaVisto: string;
   onDiaVistoChange: (dia: string) => void;
   /** Objetivo del día visto. Sin kcal no hay nada que repartir. */
@@ -89,7 +90,7 @@ export function RepartoPanel({
   slotActivo,
   onSlotChange,
   dias,
-  diasDelPlan,
+  gruposDia,
   diaVisto,
   onDiaVistoChange,
   objetivoDia,
@@ -125,6 +126,22 @@ export function RepartoPanel({
   // planificación), se cae al primero: si no, la tabla seguía mostrando un día ajeno y los % no
   // respondían a nada.
   const diaReal = diaActual?.dia ?? "";
+  /** Días que se editan a la vez que el visto: los de su grupo (si está juntado con otros, comen lo
+   *  mismo y su reparto tiene que ser el mismo). */
+  const diasDelGrupo = useMemo(
+    () => gruposDia?.find((g) => g.dias.includes(diaReal))?.dias ?? (diaReal ? [diaReal] : []),
+    [gruposDia, diaReal],
+  );
+  /** Cuántos bloques distintos (días sueltos + grupos) usan esta planificación: dos días juntados
+   *  cuentan como uno, o el aviso decía "se aplica a los 2 días" hablando del mismo menú. */
+  const gruposDelSlot = useMemo(() => {
+    const enSlot = new Set(dias.map((d) => d.dia));
+    if (!gruposDia) return enSlot.size;
+    return gruposDia.filter((g) => g.dias.some((d) => enSlot.has(d))).length;
+  }, [dias, gruposDia]);
+
+  const etiquetaDiaVisto =
+    gruposDia?.find((g) => g.dias.includes(diaReal))?.label ?? (diaReal ? tDias(diaReal as never) : "");
   const clavesDelDia = useMemo(() => clavesDeDia(diaActual?.comidas ?? []), [diaActual]);
 
   /** ¿Todos los días de este slot tienen las mismas comidas? Entonces editar un % se aplica a todos
@@ -197,7 +214,7 @@ export function RepartoPanel({
     // Con todos los días iguales, el cambio va a los días del slot (es lo que el nutri espera de una
     // dieta con la semana repetida). Si los días tienen comidas distintas, solo al que está viendo:
     // cada uno tiene su propio 100% y propagarlo lo descuadraría.
-    const objetivo = mismasComidas ? dias.map((d) => d.dia) : [diaReal];
+    const objetivo = mismasComidas ? dias.map((d) => d.dia) : diasDelGrupo;
     let siguientes = reparto.comidas;
     for (const dia of objetivo) {
       const claves = clavesDeDia(comidasPorDia[dia] ?? []);
@@ -220,7 +237,9 @@ export function RepartoPanel({
     if (!reparto || !diaReal) return;
     // Solo el día que se está viendo: con `repartoEquitativoPorDia` se tocaba toda la semana y además
     // desactivaba las comidas que ese día no existen (adiós al pre-entreno del lunes).
-    onChange({ activo: true, comidas: repartirIgualEnDia(reparto.comidas, diaReal, clavesDelDia) });
+    let siguientes = reparto.comidas;
+    for (const dia of diasDelGrupo) siguientes = repartirIgualEnDia(siguientes, dia, clavesDelDia);
+    onChange({ activo: true, comidas: siguientes });
   }
 
   function activar() {
@@ -354,28 +373,32 @@ export function RepartoPanel({
         ) : (
           <>
             {/* Selector de día: los % son de cada día, así que hay que poder ver el de cada uno. */}
-            {(diasDelPlan ?? dias.map((d) => d.dia)).length > 1 && (
+            {(gruposDia?.length ?? dias.length) > 1 && (
               <div className="flex flex-wrap items-center gap-1.5">
-                {DIAS_SEMANA.filter((d) =>
-                  (diasDelPlan ?? dias.map((x) => x.dia)).includes(d),
-                ).map((d) => (
-                  <button
-                    key={d}
-                    type="button"
-                    onClick={() => onDiaVistoChange(d)}
-                    title={dias.some((x) => x.dia === d) ? undefined : t("diaDeOtraPlani")}
-                    className={cn(
-                      "px-2.5 py-1 rounded-lg border text-xs font-medium transition-colors",
-                      d === diaReal
-                        ? "border-primary/40 bg-primary/10 text-primary"
-                        : dias.some((x) => x.dia === d)
-                          ? "border-border bg-card text-muted-foreground hover:text-foreground"
-                          : "border-dashed border-border bg-card text-muted-foreground/60 hover:text-foreground",
-                    )}
-                  >
-                    {tDias(d as never)}
-                  </button>
-                ))}
+                {(gruposDia ?? dias.map((d) => ({ label: tDias(d.dia as never), dias: [d.dia] }))).map(
+                  (g) => {
+                    const activo = g.dias.includes(diaReal);
+                    const enEsteSlot = g.dias.some((d) => dias.some((x) => x.dia === d));
+                    return (
+                      <button
+                        key={g.dias.join("-")}
+                        type="button"
+                        onClick={() => onDiaVistoChange(g.dias[0])}
+                        title={enEsteSlot ? undefined : t("diaDeOtraPlani")}
+                        className={cn(
+                          "px-2.5 py-1 rounded-lg border text-xs font-medium transition-colors",
+                          activo
+                            ? "border-primary/40 bg-primary/10 text-primary"
+                            : enEsteSlot
+                              ? "border-border bg-card text-muted-foreground hover:text-foreground"
+                              : "border-dashed border-border bg-card text-muted-foreground/60 hover:text-foreground",
+                        )}
+                      >
+                        {g.label}
+                      </button>
+                    );
+                  },
+                )}
               </div>
             )}
 
@@ -506,7 +529,7 @@ export function RepartoPanel({
                 )}
               >
                 {t("pieDia", {
-                  dia: tDias((diaReal || diaVisto) as never),
+                  dia: etiquetaDiaVisto,
                   pct: sumaPct,
                   kcal: kcalRepartidas,
                   objetivo: Math.round(kcalDia),
@@ -515,7 +538,7 @@ export function RepartoPanel({
               {!cuadra && faltanEsteDia.length > 0 && (
                 <span className="text-muted-foreground">
                   {t("faltanEnDia", {
-                    dia: tDias((diaReal || diaVisto) as never),
+                    dia: etiquetaDiaVisto,
                     comidas: faltanEsteDia.join(", "),
                   })}
                 </span>
@@ -533,13 +556,13 @@ export function RepartoPanel({
               <button
                 type="button"
                 onClick={repartirIgual}
-                title={t("repartirIgualAyuda", { dia: tDias((diaReal || diaVisto) as never) })}
+                title={t("repartirIgualAyuda", { dia: etiquetaDiaVisto })}
                 className="font-medium text-primary hover:underline"
               >
                 {t("repartirIgual")}
               </button>
-              {mismasComidas && dias.length > 1 && (
-                <span className="text-muted-foreground">{t("aplicaATodos", { n: dias.length })}</span>
+              {mismasComidas && gruposDelSlot > 1 && (
+                <span className="text-muted-foreground">{t("aplicaATodos", { n: gruposDelSlot })}</span>
               )}
             </div>
 
@@ -556,7 +579,7 @@ export function RepartoPanel({
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card text-xs font-medium text-foreground hover:bg-muted transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
-                {t("anadirComida", { dia: tDias((diaReal || diaVisto) as never) })}
+                {t("anadirComida", { dia: etiquetaDiaVisto })}
               </button>
             )}
           </>

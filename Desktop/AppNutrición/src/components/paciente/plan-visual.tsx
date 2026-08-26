@@ -1706,7 +1706,8 @@ export function PlanVisual({
                     slotActivo={repartoSlot}
                     onSlotChange={cambiarRepartoSlot}
                     dias={repartoDiasDelSlot}
-                    diasDelPlan={(selectedPlan?.dias ?? []).map((d) => d.dia)}
+                    // Mismos bloques que las pestañas de arriba: los días juntados van como uno.
+                    gruposDia={tabsDias.map((tb) => ({ label: tb.label, dias: tb.diaKeys }))}
                     diaVisto={repartoDiaVisto || repartoDiasDelSlot[0]?.dia || ""}
                     onDiaVistoChange={cambiarRepartoDiaVisto}
                     objetivoDia={objetivoDelDia(diaIdPanel)}
