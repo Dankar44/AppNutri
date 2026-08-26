@@ -54,6 +54,9 @@ type Props = {
   onSlotChange: (id: string) => void;
   /** Días de la dieta que usan el slot activo, con sus comidas REALES. */
   dias: RepartoPanelDia[];
+  /** Todos los días del plan: los botones de día no esconden ninguno, aunque use otra planificación
+   *  (al pulsarlo, el panel cambia de reparto). */
+  diasDelPlan?: string[];
   diaVisto: string;
   onDiaVistoChange: (dia: string) => void;
   /** Objetivo del día visto. Sin kcal no hay nada que repartir. */
@@ -86,6 +89,7 @@ export function RepartoPanel({
   slotActivo,
   onSlotChange,
   dias,
+  diasDelPlan,
   diaVisto,
   onDiaVistoChange,
   objetivoDia,
@@ -350,18 +354,23 @@ export function RepartoPanel({
         ) : (
           <>
             {/* Selector de día: los % son de cada día, así que hay que poder ver el de cada uno. */}
-            {dias.length > 1 && (
+            {(diasDelPlan ?? dias.map((d) => d.dia)).length > 1 && (
               <div className="flex flex-wrap items-center gap-1.5">
-                {DIAS_SEMANA.filter((d) => dias.some((x) => x.dia === d)).map((d) => (
+                {DIAS_SEMANA.filter((d) =>
+                  (diasDelPlan ?? dias.map((x) => x.dia)).includes(d),
+                ).map((d) => (
                   <button
                     key={d}
                     type="button"
                     onClick={() => onDiaVistoChange(d)}
+                    title={dias.some((x) => x.dia === d) ? undefined : t("diaDeOtraPlani")}
                     className={cn(
                       "px-2.5 py-1 rounded-lg border text-xs font-medium transition-colors",
                       d === diaReal
                         ? "border-primary/40 bg-primary/10 text-primary"
-                        : "border-border bg-card text-muted-foreground hover:text-foreground",
+                        : dias.some((x) => x.dia === d)
+                          ? "border-border bg-card text-muted-foreground hover:text-foreground"
+                          : "border-dashed border-border bg-card text-muted-foreground/60 hover:text-foreground",
                     )}
                   >
                     {tDias(d as never)}

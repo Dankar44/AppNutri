@@ -812,6 +812,7 @@
     "heredarMacrosCorto": "Restablecer",
     "faltanEnDia": "Al {dia} le faltan: {comidas}",
     "repartirIgualAyuda": "Pone todas las comidas del {dia} al mismo %, hasta el 100% del día",
-    "cuadrarRestoAyuda": "Ajusta las demás comidas para llegar al 100% del día, dejando como está la que tiene más peso"
+    "cuadrarRestoAyuda": "Ajusta las demás comidas para llegar al 100% del día, dejando como está la que tiene más peso",
+    "diaDeOtraPlani": "Este día usa otra planificación: al pulsarlo verás su reparto"
   }
 }

@@ -1100,6 +1100,34 @@ export function PlanVisual({
     setRepartoDiaVisto(primero?.dia ?? "");
   }
 
+  /** Cambiar de día en el panel. Si ese día usa otra planificación, el panel cambia de reparto con
+   *  él: así los siete días están siempre a la vista y no hay que ir al selector de planificación
+   *  para ver el de un día concreto. */
+  function cambiarRepartoDiaVisto(dia: string) {
+    const delDia = (selectedPlan?.dias ?? []).find((d) => d.dia === dia);
+    const slot = delDia ? planiDelDia(delDia.id) : repartoSlot;
+    if (slot !== repartoSlot) {
+      volcarRepartoPendiente(repartoSlot || SLOT_GLOBAL);
+      setRepartoSlot(slot);
+    }
+    setRepartoDiaVisto(dia);
+  }
+
+  /** Con el panel abierto, seguir la pestaña de día del editor: si el nutri pasa del lunes al martes
+   *  y el martes usa otra planificación, el panel se quedaba mirando el reparto del lunes. */
+  useEffect(() => {
+    if (!repartoPanelAbierto || isTodos) return;
+    const dia = (selectedPlan?.dias ?? []).find((d) => d.dia === selectedDayKey);
+    if (!dia) return;
+    const slot = planiDelDia(dia.id);
+    setRepartoSlot((prev) => {
+      if (prev !== slot) volcarRepartoPendiente(prev || SLOT_GLOBAL);
+      return slot;
+    });
+    setRepartoDiaVisto(dia.dia);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDayKey, repartoPanelAbierto, isTodos]);
+
   /** Guarda el reparto del slot abierto: se ve al instante y se persiste con un pequeño retardo (un
    *  arrastre de slider son decenas de cambios y no hacen falta decenas de escrituras). */
   /** Persiste ya el borrador pendiente de un slot (si hay). Hay que llamarlo antes de cualquier otra
@@ -1678,8 +1706,9 @@ export function PlanVisual({
                     slotActivo={repartoSlot}
                     onSlotChange={cambiarRepartoSlot}
                     dias={repartoDiasDelSlot}
+                    diasDelPlan={(selectedPlan?.dias ?? []).map((d) => d.dia)}
                     diaVisto={repartoDiaVisto || repartoDiasDelSlot[0]?.dia || ""}
-                    onDiaVistoChange={setRepartoDiaVisto}
+                    onDiaVistoChange={cambiarRepartoDiaVisto}
                     objetivoDia={objetivoDelDia(diaIdPanel)}
                     onAnadirComida={handleAgregarComidaDia}
                     onCerrar={() => setRepartoPanelAbierto(false)}
