@@ -22,6 +22,11 @@ export type RepartoComida = {
   nombre?: string;
   /** Hora "HH:MM" con la que se creará la comida en la dieta. */
   hora?: string;
+  /** Quitada del reparto con la papelera. Las 6 fijas no se pueden borrar del array (normalizeReparto
+   *  las reinyecta siempre), así que se marcan y dejan de pintarse; se recuperan desde "Añadir
+   *  comida". OJO: no es lo mismo que `incluida: false`, que es una comida DESACTIVADA — esa sigue a
+   *  la vista, en gris, para poder reactivarla pulsando uno de sus días. */
+  quitada?: boolean;
   /** % de kcal propio de esta comida en días concretos (clave = valor de DiaSemana). Manda sobre
    *  `kcalPct` en los días que aparecen aquí.
    *
@@ -397,15 +402,14 @@ export function toggleDiaFila(comidas: RepartoComida[], clave: string, dia: stri
     // Comida desactivada: sus días se muestran todos apagados (se desactivó quitándolos), así que el
     // clic siguiente la reactiva SOLO en ese día. Partiendo de "todos" quedaba justo lo contrario:
     // el día que acabas de pulsar era el único apagado.
-    if (!c.incluida) return { ...c, incluida: true, dias: [dia] };
+    if (!c.incluida) return { ...c, incluida: true, quitada: undefined, dias: [dia] };
     const actuales = c.dias && c.dias.length > 0 ? c.dias : [...DIAS_SEMANA];
     const siguiente = actuales.includes(dia) ? actuales.filter((d) => d !== dia) : [...actuales, dia];
-    // Sin ningún día, una comida propia se QUITA del reparto: su fila no se pinta (la tabla solo
-    // muestra las incluidas) y, al no tener papelera ni cuadraditos, quedaba invisible y con su
-    // nombre bloqueado para siempre. Las 6 fijas sí se recuperan desde "Añadir comida".
+    // Sin ningún día, la comida se DESACTIVA y pierde su cuota, pero sigue en la tabla (en gris):
+    // desactivar y eliminar son cosas distintas, y para eliminar está la papelera. Pulsar cualquiera
+    // de sus días la vuelve a activar.
     if (siguiente.length === 0) {
-      if (c.tipo === "OTRA") return null;
-      return { ...c, incluida: false, dias: undefined };
+      return { ...c, incluida: false, dias: undefined, kcalPct: 0 };
     }
     return {
       ...c,
@@ -426,7 +430,9 @@ export function aplicarPresetKcal(comidas: RepartoComida[], presetId: string): R
   return comidas.map((c) => {
     if (c.tipo === "OTRA") return c;
     const val = p.kcal[c.tipo];
-    return val != null ? { ...c, incluida: true, kcalPct: val } : { ...c, incluida: false, kcalPct: 0 };
+    return val != null
+      ? { ...c, incluida: true, quitada: undefined, kcalPct: val }
+      : { ...c, incluida: false, kcalPct: 0 };
   });
 }
 
@@ -694,6 +700,7 @@ export function firmaReparto(r: RepartoPorComida | null | undefined): string {
       [
         claveComida(c),
         c.incluida ? "1" : "0",
+        c.quitada ? "q" : "",
         c.kcalPct,
         c.grasaPct ?? "",
         c.carbPct ?? "",
@@ -903,6 +910,6 @@ export function quitarDelReparto(comidas: RepartoComida[], clave: string): Repar
   const sin =
     fila.tipo === "OTRA"
       ? quitarFila(comidas, clave)
-      : setFila(comidas, clave, { incluida: false, kcalPct: 0 });
+      : setFila(comidas, clave, { incluida: false, kcalPct: 0, quitada: true });
   return escalarA100(sin);
 }

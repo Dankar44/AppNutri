@@ -1182,6 +1182,7 @@ export function PlanificacionPorDefectoTab({
       setReparto((prev) =>
         setFila(prev, nuevaComidaTipo, {
           incluida: true,
+          quitada: undefined,
           kcalPct: pctParaComidaNueva(),
           hora: /^([01]?\d|2[0-3]):[0-5]\d$/.test(hora) ? hora : undefined,
           dias:
@@ -1202,9 +1203,10 @@ export function PlanificacionPorDefectoTab({
     setNuevaComidaAbierta(false);
   }
 
-  /** Comidas fijas que se quitaron del reparto: se pueden recuperar desde "Añadir comida". */
+  /** Comidas fijas que se quitaron con la papelera: se recuperan desde "Añadir comida". Las que
+   *  están solo desactivadas no salen aquí: se reactivan pulsando uno de sus días en la tabla. */
   const fijasQuitadas = useMemo(
-    () => reparto.filter((c) => c.tipo !== "OTRA" && !c.incluida).map((c) => c.tipo),
+    () => reparto.filter((c) => c.tipo !== "OTRA" && c.quitada).map((c) => c.tipo),
     [reparto],
   );
 
@@ -2945,9 +2947,10 @@ export function PlanificacionPorDefectoTab({
                   </tr>
                 </thead>
                 <tbody>
-                  {/* Solo las que están en el reparto: las quitadas desaparecen (se recuperan desde
-                      "Añadir comida"), en vez de quedarse ahí ocupando sitio en gris. */}
-                  {repartoCalc.filas.filter((c) => c.incluida).map((c) => (
+                  {/* Se esconden solo las que se han QUITADO con la papelera (se recuperan desde
+                      "Añadir comida"). Una comida desactivada -sin ningún día marcado- sigue aquí en
+                      gris, para poder reactivarla pulsando uno de sus días. */}
+                  {repartoCalc.filas.filter((c) => !c.quitada).map((c) => (
                     <Fragment key={c.clave}>
                       <tr className={cn("border-b border-border", (!c.incluida || !c.enDiaVisto) && "opacity-45")}>
                         <td className={`py-3 px-2 sm:px-4 ${stickyCol}`}>
