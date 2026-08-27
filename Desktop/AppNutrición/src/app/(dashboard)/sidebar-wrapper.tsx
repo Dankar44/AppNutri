@@ -1,6 +1,7 @@
 "use client";
 
 import { Sidebar } from "@/components/sidebar";
+import type { EspacioActivo } from "@/lib/docencia";
 
 interface SidebarWrapperProps {
   dietistaNombre: string;
@@ -10,6 +11,8 @@ interface SidebarWrapperProps {
   badges?: Record<string, number>;
   isAdmin?: boolean;
   hasEmpresa?: boolean;
+  esProfesor?: boolean;
+  espacioActivo?: EspacioActivo;
 }
 
 export function SidebarWrapper({
@@ -20,6 +23,8 @@ export function SidebarWrapper({
   badges = {},
   isAdmin,
   hasEmpresa,
+  esProfesor,
+  espacioActivo,
 }: SidebarWrapperProps) {
   return (
     <Sidebar
@@ -32,6 +37,8 @@ export function SidebarWrapper({
       badges={badges}
       isAdmin={isAdmin}
       hasEmpresa={hasEmpresa}
+      esProfesor={esProfesor}
+      espacioActivo={espacioActivo}
     />
   );
 }

@@ -1,0 +1,20 @@
+{
+  "panel": {
+    "titulo": "Espacio docente",
+    "sinInstitucion": "Sin institución asignada",
+    "sinLicencia": "Tu cuenta es de profesor, pero todavía no tiene una licencia asignada. Escríbenos y lo resolvemos.",
+    "licenciaCerradaTitulo": "El curso está cerrado",
+    "licenciaCerradaTexto": "Sigues teniendo acceso a tus clases y a tus casos, pero no puedes dar de alta alumnos hasta que se renueve la licencia.",
+    "alumnos": "Alumnos",
+    "profesores": "Profesores",
+    "curso": "Curso",
+    "hasta": "Hasta el {fecha}",
+    "sinFechaFin": "Sin fecha de fin",
+    "enPreparacionTitulo": "En preparación",
+    "enPreparacionClases": "Clases y alta de alumnos",
+    "enPreparacionCasos": "Casos clínicos y su asignación",
+    "enPreparacionCorreccion": "Corrección del trabajo de los alumnos",
+    "irACuentaProfesional": "Acceder a mi cuenta profesional",
+    "irACuentaProfesionalAyuda": "Tus propios pacientes, como cualquier otro nutricionista. Vuelves aquí desde el menú, y la próxima vez que entres aterrizarás otra vez en el espacio docente."
+  }
+}

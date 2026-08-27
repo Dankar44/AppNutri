@@ -4,7 +4,8 @@
     "dietas": "Dietas",
     "acompanamiento": "Acompañamiento",
     "miCentro": "Mi centro",
-    "centroDeControl": "Centro de control"
+    "centroDeControl": "Centro de control",
+    "docencia": "Docencia"
   },
   "navItems": {
     "dashboard": "Dashboard",
@@ -20,7 +21,8 @@
     "ajustes": "Ajustes",
     "admin": "Admin",
     "novedades": "Novedades",
-    "novedadesSinLeer": "Hay novedades sin leer"
+    "novedadesSinLeer": "Hay novedades sin leer",
+    "espacioDocente": "Espacio docente"
   },
   "sidebar": {
     "dietista": "Nutricionista",

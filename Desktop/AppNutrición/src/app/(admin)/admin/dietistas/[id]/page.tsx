@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Mail, Phone, Building2, Award, Users, UtensilsCrossed, Stethoscope, CookingPot, CalendarDays, CreditCard } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Building2, Award, Users, UtensilsCrossed, Stethoscope, CookingPot, CalendarDays, CreditCard, GraduationCap } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { getDietistaDetalle } from "@/app/actions/admin";
 import { capitalizarNombre, formatDate } from "@/lib/utils";
@@ -48,6 +48,17 @@ export default async function DietistaDetallePage({ params }: Props) {
                 {capitalizarNombre(dietista.nombre)} {capitalizarNombre(dietista.apellidos)}
               </h1>
               <p className="text-muted-foreground text-sm mt-1">{t("dietistaDetalle.registradoEl", { date: formatDate(dietista.createdAt) })}</p>
+              {dietista.rolDocente === "PROFESOR" && (
+                <Link
+                  href={dietista.licenciaDocente ? `/admin/universidades/${dietista.licenciaDocente.id}` : "/admin/universidades"}
+                  className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-400 text-xs font-medium hover:bg-indigo-100 dark:hover:bg-indigo-500/25 transition-colors"
+                >
+                  <GraduationCap className="w-3.5 h-3.5" />
+                  {dietista.licenciaDocente
+                    ? t("dietistaDetalle.profesorDe", { institucion: dietista.licenciaDocente.institucion })
+                    : t("dietistaDetalle.profesorSinLicencia")}
+                </Link>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">

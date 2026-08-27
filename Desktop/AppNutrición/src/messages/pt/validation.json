@@ -136,7 +136,8 @@
     "centroNoEncontrado": "Centro não encontrado",
     "maxMiembrosInvalido": "O máximo de membros deve ser entre 1 e 100",
     "slugInvalido": "O slug só pode conter letras minúsculas, números e hífens",
-    "slugDuplicado": "Este slug já está em uso por outro centro"
+    "slugDuplicado": "Este slug já está em uso por outro centro",
+    "camposObligatorios": "Faltam campos obrigatórios"
   },
   "stripe": {
     "sinCuentaStripe": "Você não tem conta Stripe conectada"
@@ -268,5 +269,16 @@
     "yaEresLider": "Já é o líder desta empresa",
     "solicitanteYaEnOtraEmpresa": "O solicitante já pertence a outra empresa",
     "tipoMovimientoInvalido": "Tipo de movimento não válido"
+  },
+  "docencia": {
+    "institucionObligatoria": "O nome da instituição é obrigatório",
+    "minimoUnProfesor": "A licença tem de ter pelo menos um professor",
+    "alumnosNoValido": "O número de licenças de aluno não é válido",
+    "cupoProfesoresMenorQueAlta": "Não pode deixar menos licenças de professor do que as já registadas ({alta})",
+    "cupoAlumnosMenorQueAlta": "Não pode deixar menos licenças de aluno do que as já registadas ({alta})",
+    "licenciaNoEncontrada": "Licença não encontrada",
+    "sinCupoProfesores": "Esta licença já tem os seus {max} professores. Aumente o limite para adicionar mais",
+    "dietistaObligatorio": "Escolha a que nutricionista atribui a função",
+    "yaTieneRolDocente": "Esta conta já tem uma função docente atribuída"
   }
 }

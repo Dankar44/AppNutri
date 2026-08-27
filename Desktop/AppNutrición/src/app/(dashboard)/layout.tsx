@@ -6,6 +6,7 @@ import {
 } from "@/app/actions/notificaciones";
 import { getConversacionesNoLeidasCount } from "@/app/actions/mensajes";
 import { isAdminEmail } from "@/lib/admin";
+import { esProfesor, getEspacioActivo } from "@/app/actions/docencia";
 import { SidebarWrapper } from "./sidebar-wrapper";
 import { HelpWidget } from "@/components/help/help-widget";
 import { TourWrapper } from "@/components/tour/tour-wrapper";
@@ -30,6 +31,8 @@ export default async function DashboardLayout({
   if (!dietista.verificado) {
     redirect("/pendiente");
   }
+
+  const [profesor, espacioActivo] = await Promise.all([esProfesor(), getEspacioActivo()]);
 
   let notifCount = 0;
   let mensajesCount = 0;
@@ -65,6 +68,8 @@ export default async function DashboardLayout({
             badges={badges}
             isAdmin={isAdminEmail(dietista.email)}
             hasEmpresa={!!dietista.empresaId}
+            esProfesor={profesor}
+            espacioActivo={espacioActivo}
           />
           <main className="flex-1 overflow-y-auto min-w-0 bg-background">
             <div className="w-full max-w-none pt-14 lg:pt-6 lg:px-5 pb-safe lg:pb-6">

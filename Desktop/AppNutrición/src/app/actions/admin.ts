@@ -487,6 +487,9 @@ export interface DietistaDetalle {
   clinica: string | null;
   logoUrl: string | null;
   createdAt: Date;
+  /** #39 — Rol docente, para que desde admin se vea de un vistazo si esta cuenta es de profesor. */
+  rolDocente: "PROFESOR" | "ALUMNO" | null;
+  licenciaDocente: { id: string; institucion: string } | null;
   suscripcion: { plan: string; estado: string; fechaInicio: Date; fechaFin: Date | null } | null;
   pacientes: {
     id: string;
@@ -514,6 +517,7 @@ export async function getDietistaDetalle(dietistaId: string): Promise<DietistaDe
   const dietista = await prisma.dietista.findUnique({
     where: { id: dietistaId },
     include: {
+      licenciaDocente: { select: { id: true, institucion: true } },
       pacientes: {
         where: { esDemo: false },
         select: {

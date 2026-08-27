@@ -4,7 +4,8 @@
     "dietas": "Dietas",
     "acompanamiento": "Acompanhamento",
     "miCentro": "Meu centro",
-    "centroDeControl": "Centro de controle"
+    "centroDeControl": "Centro de controle",
+    "docencia": "Docência"
   },
   "navItems": {
     "dashboard": "Dashboard",
@@ -20,7 +21,8 @@
     "ajustes": "Configurações",
     "admin": "Admin",
     "novedades": "Novidades",
-    "novedadesSinLeer": "Há novidades não lidas"
+    "novedadesSinLeer": "Há novidades não lidas",
+    "espacioDocente": "Espaço docente"
   },
   "sidebar": {
     "dietista": "Nutricionista",
@@ -187,7 +189,8 @@
     "closeAriaLabel": "Fechar aviso"
   },
   "demo": {
-    "banner": "Modo demo — as alterações não são salvas"
+    "banner": "Modo demo — as alterações não são salvas",
+    "cta": "Precisa de uma conta? Fale com quem entrou em contacto consigo"
   },
   "generic": {
     "loading": "Carregando...",

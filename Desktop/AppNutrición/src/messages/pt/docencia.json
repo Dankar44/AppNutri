@@ -1,0 +1,20 @@
+{
+  "panel": {
+    "titulo": "Espaço docente",
+    "sinInstitucion": "Sem instituição atribuída",
+    "sinLicencia": "A sua conta é de professor, mas ainda não tem uma licença atribuída. Escreva-nos e resolvemos.",
+    "licenciaCerradaTitulo": "O ano letivo está fechado",
+    "licenciaCerradaTexto": "Continua a ter acesso às suas turmas e aos seus casos, mas não pode registar alunos até que a licença seja renovada.",
+    "alumnos": "Alunos",
+    "profesores": "Professores",
+    "curso": "Ano letivo",
+    "hasta": "Até {fecha}",
+    "sinFechaFin": "Sem data de fim",
+    "enPreparacionTitulo": "Em preparação",
+    "enPreparacionClases": "Turmas e registo de alunos",
+    "enPreparacionCasos": "Casos clínicos e a sua atribuição",
+    "enPreparacionCorreccion": "Correção do trabalho dos alunos",
+    "irACuentaProfesional": "Aceder à minha conta profissional",
+    "irACuentaProfesionalAyuda": "Os seus próprios pacientes, como qualquer outro nutricionista. Volta aqui pelo menu, e da próxima vez que entrar chegará novamente ao espaço docente."
+  }
+}

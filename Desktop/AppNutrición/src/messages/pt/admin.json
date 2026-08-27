@@ -25,7 +25,8 @@
       "suscripciones": "Assinaturas",
       "crearCuenta": "Criar conta",
       "centros": "Centros",
-      "ofertas": "Ofertas"
+      "ofertas": "Ofertas",
+      "universidades": "Universidades"
     },
     "roles": {
       "creator": "Criador de contas",
@@ -203,7 +204,6 @@
     "pacientesSection": {
       "title": "Pacientes ({count})",
       "empty": "Este nutricionista não tem pacientes",
-      "empty": "Este nutricionista não tem pacientes",
       "columns": {
         "paciente": "Paciente",
         "email": "Email",
@@ -214,7 +214,9 @@
         "fechaAlta": "Data de cadastro"
       }
     },
-    "ultimasConsultas": "Últimas consultas"
+    "ultimasConsultas": "Últimas consultas",
+    "profesorDe": "Professor · {institucion}",
+    "profesorSinLicencia": "Professor (sem licença)"
   },
   "crearCuenta": {
     "title": "Criar conta de nutricionista",
@@ -438,5 +440,70 @@
     "toastErrorCrear": "Erro ao criar o centro",
     "toastCentroEditado": "Centro atualizado com sucesso",
     "toastErrorEditar": "Erro ao atualizar o centro"
+  },
+  "universidades": {
+    "title": "Universidades",
+    "subtitle": "{count} licenças docentes",
+    "nueva": "Nova licença",
+    "vacio": "Ainda não há nenhuma licença docente",
+    "inactiva": "Inativa",
+    "crearTitle": "Nova licença docente",
+    "crearSubtitle": "O que se vende a uma universidade: quantos professores e quantos alunos entram no acordo",
+    "toastCreada": "Licença criada",
+    "toastErrorCrear": "Não foi possível criar a licença",
+    "volver": "Voltar a universidades",
+    "cursoEtiqueta": "Ano letivo {curso}",
+    "sinCurso": "Sem ano letivo indicado",
+    "cerradaTitulo": "Licença fechada",
+    "cerradaTexto": "Está desativada ou passou a data de fim. Os professores mantêm a conta e os casos, mas não podem registar alunos.",
+    "profesores": "Professores",
+    "alumnos": "Alunos",
+    "profesoresTitulo": "Professores desta licença",
+    "sinProfesores": "Ainda não há nenhum professor atribuído.",
+    "alumnosTitulo": "Alunos registados",
+    "editarTitulo": "Dados da licença",
+    "ultimoAcceso": "última entrada {fecha}",
+    "nuncaHaEntrado": "nunca entrou",
+    "quitarRol": "Retirar função",
+    "quitarRolTitulo": "Retirar a função de professor?",
+    "quitarRolTexto": "{nombre} deixará de ter espaço docente. A conta NÃO é apagada: continua a ser nutricionista com todos os seus pacientes e dietas.",
+    "toastRolQuitado": "Função de professor retirada",
+    "toastErrorQuitarRol": "Não foi possível retirar a função",
+    "anadirProfesor": "Adicionar um professor",
+    "sinCupoProfesores": "Não restam licenças de professor livres. Aumente o limite para adicionar mais.",
+    "toastProfesorAsignado": "Professor atribuído",
+    "toastErrorAsignar": "Não foi possível atribuir o professor",
+    "toastGuardada": "Licença guardada",
+    "toastErrorGuardar": "Não foi possível guardar as alterações",
+    "form": {
+      "datos": "Dados da licença",
+      "institucion": "Instituição",
+      "institucionPlaceholder": "Universidade Pablo de Olavide",
+      "dominio": "Domínio de correio (opcional)",
+      "dominioPlaceholder": "urjc.es, alumnos.urjc.es",
+      "dominioAyuda": "Serve apenas para avisar quando um correio não é da instituição; nunca impede o registo. Podem indicar-se vários separados por vírgulas, porque professores e alunos costumam ter domínios diferentes.",
+      "maxProfesores": "Licenças de professor",
+      "maxAlumnos": "Licenças de aluno",
+      "curso": "Ano letivo",
+      "fechaFin": "Fim do ano letivo",
+      "fechaFinAyuda": "Passada esta data não se podem registar mais alunos.",
+      "notas": "Notas internas",
+      "submit": "Criar licença",
+      "yaTieneCuenta": "Já tem conta",
+      "cuentaNueva": "Conta nova",
+      "buscarNutricionista": "Procurar por nome ou correio...",
+      "cambiar": "Alterar",
+      "ayudaExistente": "A função é adicionada à conta de sempre. Da próxima vez que entrar chegará ao espaço docente, com os seus pacientes intactos a um clique.",
+      "ayudaNuevo": "É criada a conta completa (espaço docente + conta profissional) e as credenciais são enviadas por correio.",
+      "nombre": "Nome",
+      "apellidos": "Apelidos",
+      "email": "Correio",
+      "password": "Palavra-passe",
+      "avisoDominio": "Este correio não é de {dominios}. Pode registar-se na mesma.",
+      "asignar": "Atribuir como professor",
+      "activa": "Licença ativa",
+      "activaAyuda": "Ao desativá-la, os professores deixam de poder registar alunos, mas mantêm a conta e o trabalho.",
+      "guardar": "Guardar alterações"
+    }
   }
 }

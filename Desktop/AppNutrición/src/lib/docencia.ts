@@ -1,0 +1,68 @@
+/**
+ * #39 (issue #31) — Módulo docente: piezas compartidas entre servidor y cliente.
+ *
+ * Aquí solo hay funciones puras y constantes. Las consultas y las acciones viven en
+ * `src/app/actions/docencia.ts` (profesor) y `admin-docencia.ts` (administración).
+ */
+
+/**
+ * Espacio en el que está trabajando un profesor. Un profesor tiene UNA cuenta con dos
+ * espacios: el docente (sus clases y sus casos) y el profesional (sus propios pacientes,
+ * exactamente igual que cualquier otro nutricionista).
+ *
+ * Por defecto aterriza en el docente; la cookie solo recuerda que ha pedido pasarse al
+ * profesional, para que no le devolvamos al docente en cada carga. NO es un control de
+ * acceso: quién puede entrar al espacio docente lo decide `rolDocente` en la base de datos.
+ */
+export const ESPACIO_COOKIE = "annonia-espacio";
+export type EspacioActivo = "docente" | "profesional";
+
+/**
+ * Curso académico en el formato en el que lo dicen las universidades ("2026/27").
+ * El curso va de septiembre a agosto: en julio de 2027 seguimos en el curso 2026/27.
+ */
+export function cursoActual(hoy: Date = new Date()): string {
+  const anioInicio = hoy.getMonth() >= 8 ? hoy.getFullYear() : hoy.getFullYear() - 1;
+  return `${anioInicio}/${String((anioInicio + 1) % 100).padStart(2, "0")}`;
+}
+
+/**
+ * Una licencia caducada NO echa al profesor: conserva su cuenta, sus casos y el trabajo del
+ * curso pasado. Lo que pierde es la capacidad de dar de alta alumnos hasta que se renueve.
+ */
+export function licenciaVigente(
+  licencia: { activa: boolean; fechaFin: Date | null } | null | undefined,
+  hoy: Date = new Date(),
+): boolean {
+  if (!licencia || !licencia.activa) return false;
+  if (!licencia.fechaFin) return true;
+  return licencia.fechaFin.getTime() >= hoy.getTime();
+}
+
+/**
+ * Dominios de una licencia, ya troceados. El campo guarda una lista separada por comas porque
+ * en la misma universidad el profesor y el alumno tienen dominios distintos: en la Rey Juan
+ * Carlos el profesor es `@urjc.es` y el alumno `@alumnos.urjc.es`.
+ */
+export function dominiosDeLicencia(dominioEmail: string | null | undefined): string[] {
+  if (!dominioEmail) return [];
+  return dominioEmail
+    .split(",")
+    .map((d) => d.trim().toLowerCase().replace(/^@/, ""))
+    .filter(Boolean);
+}
+
+/**
+ * ¿El correo pertenece a alguno de los dominios de la institución?
+ *
+ * Se usa solo para AVISAR, nunca para bloquear: hay profesores de universidad dados de alta con
+ * Gmail, y un bloqueo por dominio los dejaría fuera. La decisión es de Guillermo (27 ago 2026).
+ */
+export function emailDelDominio(email: string, dominioEmail: string | null | undefined): boolean {
+  const dominios = dominiosDeLicencia(dominioEmail);
+  if (dominios.length === 0) return true;
+  const limpio = email.trim().toLowerCase();
+  // `.endsWith(".ua.es")` además de `@ua.es` para que un subdominio (alu.ua.es) cuente como
+  // de la casa cuando solo se ha configurado el dominio principal.
+  return dominios.some((d) => limpio.endsWith(`@${d}`) || limpio.endsWith(`.${d}`));
+}

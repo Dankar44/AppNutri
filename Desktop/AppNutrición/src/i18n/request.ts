@@ -34,13 +34,14 @@ export default getRequestConfig(async () => {
     import(`../messages/${locale}/validation.json`),
     import(`../messages/${locale}/centro.json`),
     import(`../messages/${locale}/novedades.json`),
+    import(`../messages/${locale}/docencia.json`),
   ]);
 
   const namespaces = [
     "common", "auth", "dashboard", "patients", "foods", "recipes", "diets",
     "agenda", "chat", "notifications", "settings", "payments", "reports",
     "admin", "patient-portal", "landing", "pricing", "legal", "help",
-    "emails", "pdf", "validation", "centro", "novedades",
+    "emails", "pdf", "validation", "centro", "novedades", "docencia",
   ];
 
   const messages: Record<string, Record<string, unknown>> = {};

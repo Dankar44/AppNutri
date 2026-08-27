@@ -15,6 +15,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { getCurrentDietista } from "@/app/actions/auth";
+import { esProfesor, getEspacioActivo } from "@/app/actions/docencia";
 import { getProximasCitas } from "@/app/actions/citas";
 import {
   getMetricasDashboard,
@@ -74,6 +75,10 @@ const ACCESOS_RAPIDOS = [
 export default async function DashboardPage() {
   const dietista = await getCurrentDietista();
   if (!dietista) redirect("/login");
+
+  // #39 — Un profesor aterriza en su espacio docente, que es su cuenta principal. Solo se queda
+  // en el panel de nutricionista si ha pulsado «Acceder a mi cuenta profesional» (la cookie).
+  if (await getEspacioActivo() === "docente" && await esProfesor()) redirect("/profesor");
 
   const t = await getTranslations("dashboard");
   const locale = await getLocale();

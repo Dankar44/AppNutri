@@ -25,7 +25,8 @@
       "suscripciones": "Suscripciones",
       "crearCuenta": "Crear cuenta",
       "centros": "Centros",
-      "ofertas": "Ofertas"
+      "ofertas": "Ofertas",
+      "universidades": "Universidades"
     },
     "roles": {
       "creator": "Creador de cuentas",
@@ -213,7 +214,9 @@
         "fechaAlta": "Fecha alta"
       }
     },
-    "ultimasConsultas": "Últimas consultas"
+    "ultimasConsultas": "Últimas consultas",
+    "profesorDe": "Profesor · {institucion}",
+    "profesorSinLicencia": "Profesor (sin licencia)"
   },
   "crearCuenta": {
     "title": "Crear cuenta nutricionista",
@@ -437,5 +440,70 @@
     "toastErrorCrear": "Error al crear el centro",
     "toastCentroEditado": "Centro actualizado correctamente",
     "toastErrorEditar": "Error al actualizar el centro"
+  },
+  "universidades": {
+    "title": "Universidades",
+    "subtitle": "{count} licencias docentes",
+    "nueva": "Nueva licencia",
+    "vacio": "Todavía no hay ninguna licencia docente",
+    "inactiva": "Inactiva",
+    "crearTitle": "Nueva licencia docente",
+    "crearSubtitle": "Lo que se le vende a una universidad: cuántos profesores y cuántos alumnos entran en el trato",
+    "toastCreada": "Licencia creada",
+    "toastErrorCrear": "No se ha podido crear la licencia",
+    "volver": "Volver a universidades",
+    "cursoEtiqueta": "Curso {curso}",
+    "sinCurso": "Sin curso indicado",
+    "cerradaTitulo": "Licencia cerrada",
+    "cerradaTexto": "Está desactivada o ha pasado su fecha de fin. Los profesores conservan su cuenta y sus casos, pero no pueden dar de alta alumnos.",
+    "profesores": "Profesores",
+    "alumnos": "Alumnos",
+    "profesoresTitulo": "Profesores de esta licencia",
+    "sinProfesores": "Todavía no hay ningún profesor asignado.",
+    "alumnosTitulo": "Alumnos dados de alta",
+    "editarTitulo": "Datos de la licencia",
+    "ultimoAcceso": "última entrada {fecha}",
+    "nuncaHaEntrado": "no ha entrado nunca",
+    "quitarRol": "Quitar rol",
+    "quitarRolTitulo": "¿Quitar el rol de profesor?",
+    "quitarRolTexto": "{nombre} dejará de tener espacio docente. Su cuenta NO se borra: sigue siendo nutricionista con todos sus pacientes y sus dietas.",
+    "toastRolQuitado": "Rol de profesor retirado",
+    "toastErrorQuitarRol": "No se ha podido quitar el rol",
+    "anadirProfesor": "Añadir un profesor",
+    "sinCupoProfesores": "No quedan licencias de profesor libres. Sube el cupo para añadir más.",
+    "toastProfesorAsignado": "Profesor asignado",
+    "toastErrorAsignar": "No se ha podido asignar el profesor",
+    "toastGuardada": "Licencia guardada",
+    "toastErrorGuardar": "No se han podido guardar los cambios",
+    "form": {
+      "datos": "Datos de la licencia",
+      "institucion": "Institución",
+      "institucionPlaceholder": "Universidad Pablo de Olavide",
+      "dominio": "Dominio de correo (opcional)",
+      "dominioPlaceholder": "urjc.es, alumnos.urjc.es",
+      "dominioAyuda": "Solo sirve para avisar cuando un correo no es de la institución; nunca impide dar de alta. Se pueden poner varios separados por comas, porque profesores y alumnos suelen tener dominios distintos.",
+      "maxProfesores": "Licencias de profesor",
+      "maxAlumnos": "Licencias de alumno",
+      "curso": "Curso",
+      "fechaFin": "Fin del curso",
+      "fechaFinAyuda": "Pasada esta fecha no se pueden dar más altas de alumno.",
+      "notas": "Notas internas",
+      "submit": "Crear licencia",
+      "yaTieneCuenta": "Ya tiene cuenta",
+      "cuentaNueva": "Cuenta nueva",
+      "buscarNutricionista": "Buscar por nombre o correo...",
+      "cambiar": "Cambiar",
+      "ayudaExistente": "Se le añade el rol a su cuenta de siempre. La próxima vez que entre aterrizará en el espacio docente, con sus pacientes intactos a un clic.",
+      "ayudaNuevo": "Se le crea la cuenta completa (espacio docente + cuenta profesional) y se le envían las credenciales por correo.",
+      "nombre": "Nombre",
+      "apellidos": "Apellidos",
+      "email": "Correo",
+      "password": "Contraseña",
+      "avisoDominio": "Este correo no es de {dominios}. Se puede dar de alta igual.",
+      "asignar": "Asignar como profesor",
+      "activa": "Licencia activa",
+      "activaAyuda": "Al desactivarla, sus profesores dejan de poder dar de alta alumnos, pero conservan su cuenta y su trabajo.",
+      "guardar": "Guardar cambios"
+    }
   }
 }

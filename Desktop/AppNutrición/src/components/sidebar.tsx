@@ -21,8 +21,10 @@ import {
   MessageSquare,
   Building2,
   Sparkles,
+  GraduationCap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { EspacioActivo } from "@/lib/docencia";
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { NotificationBell } from "@/components/notification-bell";
@@ -51,7 +53,10 @@ type NavItem = {
 
 type NavSection = { title: string; items: NavItem[] };
 
-function getNavSections(t: (key: string) => string, opts?: { isAdmin?: boolean; hasEmpresa?: boolean }): NavSection[] {
+function getNavSections(
+  t: (key: string) => string,
+  opts?: { isAdmin?: boolean; hasEmpresa?: boolean; esProfesor?: boolean; espacioActivo?: EspacioActivo },
+): NavSection[] {
   return [
     {
       title: t("nav.gestion"),
@@ -82,6 +87,22 @@ function getNavSections(t: (key: string) => string, opts?: { isAdmin?: boolean; 
           },
         ]
       : []),
+    // #39 — Solo para profesores. Desde el espacio profesional el enlace pasa por /api/espacio
+    // para devolverle de verdad al docente, no solo para enseñarle la página.
+    ...(opts?.esProfesor
+      ? [
+          {
+            title: t("nav.docencia"),
+            items: [
+              {
+                href: opts.espacioActivo === "profesional" ? "/api/espacio?a=docente" : "/profesor",
+                label: t("navItems.espacioDocente"),
+                icon: GraduationCap,
+              },
+            ],
+          },
+        ]
+      : []),
     {
       title: t("nav.centroDeControl"),
       items: [
@@ -105,9 +126,11 @@ interface SidebarProps {
   badges?: Record<string, number>;
   isAdmin?: boolean;
   hasEmpresa?: boolean;
+  esProfesor?: boolean;
+  espacioActivo?: EspacioActivo;
 }
 
-export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCount: mensajesCountInit = 0, badges: badgesInit = {}, isAdmin, hasEmpresa }: SidebarProps) {
+export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCount: mensajesCountInit = 0, badges: badgesInit = {}, isAdmin, hasEmpresa, esProfesor, espacioActivo }: SidebarProps) {
   const t = useTranslations("common");
   const pathname = usePathname();
   const isDemo = useIsDemo();
@@ -254,7 +277,7 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
 
       {/* Nav */}
       <nav className="flex-1 py-4 px-3 overflow-y-auto overscroll-contain">
-        {getNavSections(t, { isAdmin, hasEmpresa }).map((section, sectionIndex) => (
+        {getNavSections(t, { isAdmin, hasEmpresa, esProfesor, espacioActivo }).map((section, sectionIndex) => (
           <div
             key={section.title}
             className={cn(sectionIndex > 0 && "mt-6")}

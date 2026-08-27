@@ -63,6 +63,13 @@ model Dietista {
   solicitudesEmpresa SolicitudEmpresa[]
   movimientosStock   MovimientoStock[]
 
+  /// #39 — Módulo docente. NULL = nutricionista normal (todas las cuentas de hoy).
+  /// El rol SOLO se concede desde /admin: no hay manera de pedirlo al registrarse.
+  rolDocente         RolDocente?
+  licenciaDocenteId  String?
+  licenciaDocente    LicenciaDocente? @relation(fields: [licenciaDocenteId], references: [id], onDelete: SetNull)
+
+  @@index([licenciaDocenteId])
   @@map("dietistas")
 }
 
@@ -991,4 +998,44 @@ model SolicitudColaborador {
 
   @@index([email])
   @@map("solicitudes_colaborador")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// #39 (issue #31) — Módulo docente: cuenta de profesor para universidades
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum RolDocente {
+  PROFESOR
+  ALUMNO
+}
+
+/// Lo que se le vende a una universidad: "3 profesores y 300 alumnos", de septiembre a agosto.
+/// Las licencias de alumno son una BOLSA COMÚN que se reparten los profesores de esta licencia
+/// (no hay cupo fijo por profesor) y cada alumno distinto con acceso consume una — aunque esté
+/// en las clases de dos profesores distintos.
+///
+/// Hoy no hay cobros: la licencia se crea a mano desde /admin. El modelo ya soporta el cobro
+/// futuro (qué se contrató, para cuándo y si sigue activa) para no rehacerlo luego.
+model LicenciaDocente {
+  id            String    @id @default(dbgenerated("gen_random_uuid()::text"))
+  institucion   String
+  /// Dominio de correo de la institución (p. ej. "ua.es"), opcional. Si está, el link de
+  /// invitación de clase solo admite alumnos con ese correo; si es NULL, no restringe nada.
+  dominioEmail  String?
+  maxProfesores Int       @default(1)
+  maxAlumnos    Int       @default(0)
+  /// Curso académico al que corresponde la bolsa, en texto libre ("2026/27").
+  curso         String?
+  fechaInicio   DateTime  @default(now())
+  /// Fin del curso contratado. Pasada esta fecha el profesor conserva su cuenta y sus casos,
+  /// pero no puede dar de alta más alumnos hasta que se renueve.
+  fechaFin      DateTime?
+  activa        Boolean   @default(true)
+  notas         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
+
+  miembros      Dietista[]
+
+  @@map("licencias_docentes")
 }
