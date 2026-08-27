@@ -1,7 +1,6 @@
 "use client";
 
 import { Sidebar } from "@/components/sidebar";
-import type { EspacioActivo } from "@/lib/docencia";
 
 interface SidebarWrapperProps {
   dietistaNombre: string;
@@ -12,7 +11,6 @@ interface SidebarWrapperProps {
   isAdmin?: boolean;
   hasEmpresa?: boolean;
   esProfesor?: boolean;
-  espacioActivo?: EspacioActivo;
 }
 
 export function SidebarWrapper({
@@ -24,7 +22,6 @@ export function SidebarWrapper({
   isAdmin,
   hasEmpresa,
   esProfesor,
-  espacioActivo,
 }: SidebarWrapperProps) {
   return (
     <Sidebar
@@ -38,7 +35,6 @@ export function SidebarWrapper({
       isAdmin={isAdmin}
       hasEmpresa={hasEmpresa}
       esProfesor={esProfesor}
-      espacioActivo={espacioActivo}
     />
   );
 }

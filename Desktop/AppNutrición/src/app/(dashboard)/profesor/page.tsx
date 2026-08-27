@@ -1,6 +1,7 @@
 import { GraduationCap, Users, UserCog, CalendarRange, Briefcase, AlertTriangle } from "lucide-react";
 import { getTranslations } from "next-intl/server";
-import { requireProfesor, entrarEspacioProfesional } from "@/app/actions/docencia";
+import Link from "next/link";
+import { requireProfesor } from "@/app/actions/docencia";
 import type { Metadata } from "next";
 import { cursoActual } from "@/lib/docencia";
 import { formatDate } from "@/lib/utils";
@@ -124,15 +125,13 @@ export default async function ProfesorPage() {
       </section>
 
       <section className="pt-2">
-        <form action={entrarEspacioProfesional}>
-          <button
-            type="submit"
-            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium hover:bg-muted transition-colors"
-          >
-            <Briefcase strokeWidth={1.75} className="w-4 h-4" />
-            {t("panel.irACuentaProfesional")}
-          </button>
-        </form>
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium hover:bg-muted transition-colors"
+        >
+          <Briefcase strokeWidth={1.75} className="w-4 h-4" />
+          {t("panel.irACuentaProfesional")}
+        </Link>
         <p className="text-xs text-muted-foreground mt-2">{t("panel.irACuentaProfesionalAyuda")}</p>
       </section>
     </div>

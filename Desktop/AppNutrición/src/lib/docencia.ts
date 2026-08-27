@@ -6,16 +6,15 @@
  */
 
 /**
- * Espacio en el que está trabajando un profesor. Un profesor tiene UNA cuenta con dos
- * espacios: el docente (sus clases y sus casos) y el profesional (sus propios pacientes,
- * exactamente igual que cualquier otro nutricionista).
+ * El profesor tiene UNA cuenta con dos espacios: el docente (sus clases y sus casos) y el
+ * profesional (sus propios pacientes, igual que cualquier otro nutricionista). Se pasa de uno a
+ * otro con enlaces normales, sin recordar nada: al entrar aterriza siempre en el docente, que es
+ * su cuenta principal, y eso lo decide el login (ver `destinoTrasEntrar`).
  *
- * Por defecto aterriza en el docente; la cookie solo recuerda que ha pedido pasarse al
- * profesional, para que no le devolvamos al docente en cada carga. NO es un control de
- * acceso: quién puede entrar al espacio docente lo decide `rolDocente` en la base de datos.
+ * Hubo una cookie para recordar el espacio y se quitó el 27 ago 2026: el enlace que la borraba
+ * era un GET colgado de un <Link>, y el prefetch de Next lo disparaba solo al entrar el menú en
+ * pantalla, así que la cuenta profesional se cerraba sola. Sin cookie no hay nada que disparar.
  */
-export const ESPACIO_COOKIE = "annonia-espacio";
-export type EspacioActivo = "docente" | "profesional";
 
 /**
  * Curso académico en el formato en el que lo dicen las universidades ("2026/27").

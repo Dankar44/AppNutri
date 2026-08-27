@@ -192,16 +192,6 @@ async function main() {
 
     // ─── 4. Espacio del profesor ───
     console.log("\n── Espacio del profesor ──");
-    // Red de seguridad: quien escriba /dashboard a mano acaba en su espacio docente. Next lo
-    // resuelve con un <meta refresh> porque la respuesta ya ha empezado a enviarse; el camino
-    // bueno (sin parpadeo) es el del login, que decide el destino antes de renderizar nada.
-    const aterrizaje = await pedir("/dashboard", sesion);
-    comprobar(
-      "escribir /dashboard a mano acaba en el espacio docente",
-      aterrizaje.destino.includes("/profesor") || /http-equiv="refresh"[^>]*url=\/profesor/.test(aterrizaje.cuerpo),
-      aterrizaje.destino || `estado ${aterrizaje.estado}`,
-    );
-
     const espacio = await pedir("/profesor", sesion);
     comprobar("el espacio docente responde 200", espacio.estado === 200, `estado ${espacio.estado}`);
     comprobar("muestra la institución", espacio.cuerpo.includes("PRUEBA Universidad Rey Juan Carlos"));
@@ -210,20 +200,19 @@ async function main() {
     comprobar("ofrece el paso a la cuenta profesional", espacio.cuerpo.includes("Acceder a mi cuenta profesional"));
     comprobar("no avisa de curso cerrado (está vigente)", !AVISO_CERRADO.test(espacio.cuerpo));
 
-    // ─── 5. Cambio de espacio ───
-    console.log("\n── Cambio de espacio ──");
-    const aProfesional = await pedir("/api/espacio?a=profesional", sesion);
-    comprobar("ir a la cuenta profesional redirige al panel", aProfesional.destino.includes("/dashboard"), aProfesional.destino);
-    comprobar("y deja puesta la cookie de espacio", aProfesional.cookies.includes("annonia-espacio=profesional"));
+    // ─── 5. Ir y volver entre los dos espacios ───
+    console.log("\n── Los dos espacios ──");
+    comprobar(
+      "el espacio docente enlaza a la cuenta profesional",
+      espacio.cuerpo.includes('href="/dashboard"') && espacio.cuerpo.includes("Acceder a mi cuenta profesional"),
+    );
 
-    const conCookie = `${sesion}; annonia-espacio=profesional`;
-    const panelProfesional = await pedir("/dashboard", conCookie);
-    comprobar("con la cookie, el panel ya no le devuelve al espacio docente", panelProfesional.estado === 200, `estado ${panelProfesional.estado}`);
-    comprobar("y el menú ofrece la vuelta", panelProfesional.cuerpo.includes("/api/espacio?a=docente"));
-
-    const vuelta = await pedir("/api/espacio?a=docente", conCookie);
-    comprobar("la vuelta lleva al espacio docente", vuelta.destino.includes("/profesor"), vuelta.destino);
-    comprobar("y borra la cookie de espacio", /annonia-espacio=;|Max-Age=0|Expires=Thu, 01 Jan 1970/.test(vuelta.cookies));
+    const panelProfesor = await pedir("/dashboard", sesion);
+    comprobar("el panel NO expulsa al profesor", panelProfesor.estado === 200 && !/http-equiv="refresh"/.test(panelProfesor.cuerpo), `estado ${panelProfesor.estado}`);
+    comprobar("y desde el panel el menú lleva al espacio docente", panelProfesor.cuerpo.includes('href="/profesor"'));
+    // Ninguna dirección del menú puede tener efectos secundarios: Next hace prefetch de los
+    // enlaces visibles y los dispararía él solo (por eso se quitó el endpoint de cambio de espacio).
+    comprobar("ningún enlace del menú apunta a un endpoint con efectos", !panelProfesor.cuerpo.includes("/api/espacio"));
 
     // ─── 6. Casos límite del profesor ───
     console.log("\n── Casos límite ──");
@@ -252,8 +241,13 @@ async function main() {
     comprobar("el panel de admin sin sesión redirige", adminSinCookie.estado >= 300 && adminSinCookie.estado < 400, `${adminSinCookie.estado} → ${adminSinCookie.destino}`);
     const profesorSinSesion = await pedir("/profesor");
     comprobar("/profesor sin sesión va a login", profesorSinSesion.destino.includes("/login"), profesorSinSesion.destino);
-    const espacioSinSesion = await pedir("/api/espacio?a=profesional");
-    comprobar("/api/espacio sin sesión lo corta el proxy", espacioSinSesion.destino.includes("/login"), espacioSinSesion.destino);
+    // Redirección abierta: "origin" + "@evil.com" es una URL cuyo host es evil.com.
+    for (const ataque of ["@evil.com", "//evil.com", "/\\evil.com", "https://evil.com"]) {
+      const r = await pedir(`/auth/callback?error=x&next=${encodeURIComponent(ataque)}`);
+      let host = "sin redirección";
+      try { host = new URL(r.destino, BASE).host; } catch { host = "URL inválida"; }
+      comprobar(`el callback no se deja sacar del dominio con next=${ataque}`, host === new URL(BASE).host, host);
+    }
 
     // ─── 8. Portugués (una clave que falte revienta la pantalla) ───
     console.log("\n── Portugués ──");

@@ -4,6 +4,21 @@ import { prisma } from "@/lib/prisma";
 import { getTranslations } from "next-intl/server";
 import { ensureDietistaParaUsuario } from "@/app/actions/auth";
 
+/**
+ * Sanea el parámetro `next` antes de redirigir con él.
+ *
+ * El destino se construye pegando cadenas (`origin + destino`), y ahí una ruta que no empiece por
+ * "/" cambia el host: "annonia.com" + "@evil.com" es una URL cuyo host es evil.com, con el dominio
+ * legítimo colado como usuario. Es una redirección abierta de manual — un enlace que empieza por
+ * annonia.com y acaba en la página de otro. Solo se aceptan rutas internas: una barra, y ni "//"
+ * ni "/\" (que el navegador lee como otro dominio).
+ */
+function rutaInterna(valor: string | null): string {
+  if (!valor || !valor.startsWith("/")) return "/dashboard";
+  if (valor.startsWith("//") || valor.startsWith("/\\")) return "/dashboard";
+  return valor;
+}
+
 function getBaseUrl(req: NextRequest): string {
   const proto = req.headers.get("x-forwarded-proto") || "https";
   const host = req.headers.get("host") || "localhost:3000";
@@ -13,7 +28,7 @@ function getBaseUrl(req: NextRequest): string {
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/dashboard";
+  const next = rutaInterna(searchParams.get("next"));
   // Puede cambiar más abajo: el profesor entra por su espacio docente (#39).
   let destino = next;
   const error = searchParams.get("error");

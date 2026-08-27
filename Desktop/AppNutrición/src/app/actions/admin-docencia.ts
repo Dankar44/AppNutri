@@ -341,7 +341,10 @@ export async function asignarProfesorLicencia(data: {
         password: data.password,
         nombre: data.nombre,
         apellidos: data.apellidos || "",
-        fuenteContacto: `Docencia — ${licencia.institucion}`,
+        // Valor canónico: el filtro "Universidad" de /admin/dietistas compara exacto, y con texto
+        // libre el profesor no aparecía justo en el filtro que existe para encontrarlo. La
+        // institución no se pierde: queda en la licencia y se ve en su ficha.
+        fuenteContacto: "universidad",
       });
       if (!creada.ok || !creada.dietistaId) return { ok: false, error: creada.error };
       dietistaId = creada.dietistaId;
