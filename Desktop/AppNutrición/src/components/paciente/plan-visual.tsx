@@ -284,6 +284,45 @@ export function PlanVisual({
     }
   }, [scrollComidaId, selectedPlan.dias, comidasNuevasDia]);
 
+  // #104 — Nombre y hora recién tecleados de una comida. Viven AQUÍ y no en el slot porque cambiar de
+  // día lo desmonta: el valor se perdía y al volver se veía el nombre viejo hasta que el servidor
+  // refrescaba. Se podan cuando el servidor ya trae ese mismo valor.
+  const [metaOptimista, setMetaOptimista] = useState<
+    Record<string, { nombre?: string | null; hora?: string | null }>
+  >({});
+  function handleMetaComidaChange(
+    comidaId: string,
+    patch: { nombre?: string | null; hora?: string | null },
+  ) {
+    setMetaOptimista((prev) => ({ ...prev, [comidaId]: { ...prev[comidaId], ...patch } }));
+  }
+  useEffect(() => {
+    setMetaOptimista((prev) => {
+      const claves = Object.keys(prev);
+      if (claves.length === 0) return prev;
+      const delServidor = new Map<string, { nombre: string | null; hora: string | null }>();
+      for (const d of selectedPlan.dias) {
+        for (const c of d.comidas) {
+          delServidor.set(c.id, { nombre: c.nombre ?? null, hora: c.hora ?? null });
+        }
+      }
+      const next = { ...prev };
+      let cambia = false;
+      for (const id of claves) {
+        const srv = delServidor.get(id);
+        if (!srv) continue;
+        const o = prev[id];
+        const nombreOk = o.nombre === undefined || (o.nombre || null) === srv.nombre;
+        const horaOk = o.hora === undefined || (o.hora || null) === srv.hora;
+        if (nombreOk && horaOk) {
+          delete next[id];
+          cambia = true;
+        }
+      }
+      return cambia ? next : prev;
+    });
+  }, [selectedPlan.dias]);
+
   // Poda: cuando el servidor ya trae la comida real (su realId aparece), se retira la optimista.
   useEffect(() => {
     const ids = new Set<string>();
@@ -455,6 +494,24 @@ export function PlanVisual({
 
   // Inyecta las comidas optimistas de un día para pasarlas al editor (que las coloca por hora).
   function conComidasNuevas<T extends { id: string; comidas: PlanVisualComida[] }>(dia: T): T {
+    // Nombre/hora tecleados hace un instante: mandan sobre lo que trae el servidor hasta que lo
+    // confirma, así cambiar de día y volver no muestra el valor viejo.
+    const conMeta =
+      Object.keys(metaOptimista).length === 0
+        ? dia
+        : {
+            ...dia,
+            comidas: dia.comidas.map((c) => {
+              const o = metaOptimista[c.id];
+              if (!o) return c;
+              return {
+                ...c,
+                ...(o.nombre !== undefined ? { nombre: o.nombre } : {}),
+                ...(o.hora !== undefined ? { hora: o.hora } : {}),
+              };
+            }),
+          };
+    dia = conMeta as T;
     const extra = comidasNuevasDia[dia.id];
     if (!extra || extra.length === 0) return dia;
     // Las que el servidor ya trae se descartan aquí: la comida optimista pasa a usar el id real en
@@ -1877,6 +1934,7 @@ export function PlanVisual({
                             grasas: selectedPlan.grasasObjetivo ?? undefined,
                           }}
                           objetivosComida={objetivosComidaDia(bloque.representante.id)}
+                          onMetaComidaChange={handleMetaComidaChange}
                           onAnadirComidaAlReparto={
                             esEditable
                               ? (comidaId) => handleAnadirComidaAlReparto(comidaId, bloque.representante.id)
@@ -1972,6 +2030,7 @@ export function PlanVisual({
                           grasas: selectedPlan.grasasObjetivo ?? undefined,
                         }}
                         objetivosComida={objetivosComidaDia(diasVisible[0].id)}
+                        onMetaComidaChange={handleMetaComidaChange}
                         onAnadirComidaAlReparto={
                           esEditable
                             ? (comidaId) => handleAnadirComidaAlReparto(comidaId, diasVisible[0].id)

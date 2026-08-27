@@ -67,6 +67,9 @@ interface ComidaSlotProps {
   hora?: string | null;
   /** Notifica el cambio de hora al padre para reordenar en vivo (#104). */
   onHoraChange?: (comidaId: string, hora: string) => void;
+  /** Avisa al editor del nombre/hora recién tecleados, para que el valor sobreviva a que este slot se
+   *  desmonte (cambiar de día lo desmonta) mientras el servidor confirma. */
+  onMetaChange?: (comidaId: string, patch: { nombre?: string | null; hora?: string | null }) => void;
   alimentos: AlimentoEnSlot[];
   onAdd: (comidaId: string) => void;
   onRemove: (alimentoEnComidaId: string) => void;
@@ -115,6 +118,7 @@ export function ComidaSlot({
   nombre: nombreInicial,
   hora: horaInicial,
   onHoraChange,
+  onMetaChange,
   alimentos,
   onAdd,
   onRemove,
@@ -183,17 +187,23 @@ export function ComidaSlot({
       metaPendienteRef.current = { ...metaPendienteRef.current, ...patch };
       return;
     }
+    const revertir = () => {
+      if (patch.nombre !== undefined) setNombreComida(nombreInicial || "");
+      if (patch.hora !== undefined) setHora(horaInicial || horaDefault);
+      onMetaChange?.(comidaId, {
+        ...(patch.nombre !== undefined ? { nombre: nombreInicial ?? null } : {}),
+        ...(patch.hora !== undefined ? { hora: horaInicial ?? null } : {}),
+      });
+    };
     try {
       const res = await actualizarMetaComida(comidaId, patch);
       if (res && "error" in res && res.error) {
         toast.error(res.error);
-        if (patch.nombre !== undefined) setNombreComida(nombreInicial || "");
-        if (patch.hora !== undefined) setHora(horaInicial || horaDefault);
+        revertir();
       }
     } catch {
       toast.error(t("comidaSlot.metaError"));
-      if (patch.nombre !== undefined) setNombreComida(nombreInicial || "");
-      if (patch.hora !== undefined) setHora(horaInicial || horaDefault);
+      revertir();
     }
   }
 
@@ -209,12 +219,14 @@ export function ComidaSlot({
   function handleHoraChange(value: string) {
     setHora(value);
     onHoraChange?.(comidaId, value); // reordena en vivo por hora
+    onMetaChange?.(comidaId, { hora: value });
     if (horaDebounceRef.current) clearTimeout(horaDebounceRef.current);
     horaDebounceRef.current = setTimeout(() => void guardarMeta({ hora: value }), 500);
   }
 
   function handleNombreChange(value: string) {
     setNombreComida(value);
+    onMetaChange?.(comidaId, { nombre: value });
     if (nombreDebounceRef.current) clearTimeout(nombreDebounceRef.current);
     // Dos comidas propias con el mismo nombre en un día compartirían fila en el reparto (su identidad
     // es el nombre), así que el servidor lo rechaza y aquí se vuelve al nombre anterior.

@@ -198,6 +198,9 @@ interface PlanEditorProps {
   objetivosComida?: Record<string, ObjetivoComida> | null;
   /** #78-C — Añade una comida suelta al reparto de la dieta (lo orquesta PlanVisual). */
   onAnadirComidaAlReparto?: (comidaId: string) => void;
+  /** Nombre/hora recién tecleados de una comida: se sube al contenedor para que el valor sobreviva a
+   *  cambiar de día (que desmonta este editor) mientras el servidor confirma. */
+  onMetaComidaChange?: (comidaId: string, patch: { nombre?: string | null; hora?: string | null }) => void;
   showHeader?: boolean;
   compactHeader?: boolean;
   showDayHeader?: boolean;
@@ -236,6 +239,7 @@ export function PlanEditor({
   objetivos,
   objetivosComida = null,
   onAnadirComidaAlReparto,
+  onMetaComidaChange,
   showHeader = true,
   compactHeader: _compactHeader = false,
   showDayHeader: _showDayHeader = true,
@@ -1084,6 +1088,7 @@ export function PlanEditor({
                       nombre={comida.nombre}
                       hora={comida.hora}
                       onHoraChange={localCallbacks ? undefined : handleHoraComidaChange}
+                      onMetaChange={localCallbacks ? undefined : onMetaComidaChange}
                       alimentos={comida.alimentos}
                       onAdd={handleAddAlimento}
                       onRemove={handleRemoveAlimento}
