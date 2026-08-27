@@ -34,6 +34,9 @@ function comprobar(titulo: string, condicion: boolean, detalle = "") {
   condicion ? ok++ : mal++;
 }
 
+/** El aviso de curso cerrado tal y como se pinta (el texto suelto también viaja en el HTML). */
+const AVISO_CERRADO = /text-amber-900[^>]*>El curso está cerrado/;
+
 /** React parte el texto con comentarios (`1<!-- -->/<!-- -->3`): hay que quitarlos para buscar. */
 function limpio(html: string): string {
   return html.replace(/<!--[\s\S]*?-->/g, "");
@@ -205,7 +208,7 @@ async function main() {
     comprobar("muestra la bolsa de alumnos", espacio.cuerpo.includes("/ 300"));
     comprobar("muestra el curso", espacio.cuerpo.includes("2026/27"));
     comprobar("ofrece el paso a la cuenta profesional", espacio.cuerpo.includes("Acceder a mi cuenta profesional"));
-    comprobar("no avisa de curso cerrado (está vigente)", !espacio.cuerpo.includes("El curso está cerrado</p>"));
+    comprobar("no avisa de curso cerrado (está vigente)", !AVISO_CERRADO.test(espacio.cuerpo));
 
     // ─── 5. Cambio de espacio ───
     console.log("\n── Cambio de espacio ──");
@@ -227,7 +230,15 @@ async function main() {
     await client.query(`UPDATE licencias_docentes SET "fechaFin" = '2026-08-01' WHERE id = $1`, [licenciaId]);
     const cerrada = await pedir("/profesor", sesion);
     comprobar("con el curso cerrado sigue entrando", cerrada.estado === 200, `estado ${cerrada.estado}`);
-    comprobar("y ve el aviso de curso cerrado", cerrada.cuerpo.includes("El curso está cerrado"));
+    comprobar("y ve el aviso de curso cerrado", AVISO_CERRADO.test(cerrada.cuerpo));
+
+    // Una licencia que termina HOY tiene que seguir valiendo hoy: la fecha se elige en un
+    // selector de día y se guarda a medianoche, así que comparar tal cual la daría por caducada
+    // durante todo su último día.
+    await client.query(`UPDATE licencias_docentes SET "fechaFin" = CURRENT_DATE WHERE id = $1`, [licenciaId]);
+    const ultimoDia = await pedir("/profesor", sesion);
+    comprobar("una licencia que acaba hoy sigue valiendo hoy", !AVISO_CERRADO.test(ultimoDia.cuerpo));
+    await client.query(`UPDATE licencias_docentes SET "fechaFin" = '2026-08-01' WHERE id = $1`, [licenciaId]);
 
     await client.query(`UPDATE dietistas SET "licenciaDocenteId" = NULL WHERE id = $1`, [dietistaId]);
     const sinLicencia = await pedir("/profesor", sesion);

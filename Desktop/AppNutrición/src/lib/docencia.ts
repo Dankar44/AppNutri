@@ -36,7 +36,12 @@ export function licenciaVigente(
 ): boolean {
   if (!licencia || !licencia.activa) return false;
   if (!licencia.fechaFin) return true;
-  return licencia.fechaFin.getTime() >= hoy.getTime();
+  // La fecha se elige en un selector de día y se guarda a medianoche, así que comparar tal cual
+  // dejaría la licencia caducada durante todo el día que el administrador ha puesto como último.
+  // Quien escribe "hasta el 31 de agosto" espera que el 31 de agosto siga funcionando.
+  const finDelDia = new Date(licencia.fechaFin);
+  finDelDia.setHours(23, 59, 59, 999);
+  return finDelDia.getTime() >= hoy.getTime();
 }
 
 /**
