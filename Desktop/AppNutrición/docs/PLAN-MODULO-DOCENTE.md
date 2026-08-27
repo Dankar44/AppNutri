@@ -64,7 +64,7 @@ Cada fase lleva su plan de 100+ pasos, verificación cada pocos pasos y **audito
 
 # FASE 1 — El rol existe y se entra por él
 
-Estado: **bloques A a I terminados y verificados** (27 ago 2026). Queda el bloque J, la auditoría.
+Estado: **FASE 1 TERMINADA** (27 ago 2026), auditoría incluida.
 
 Verificación: `npx tsc --noEmit` limpio, `npx next build` con Node 22 limpio, y **43 comprobaciones
 automáticas** que cargan las páginas por HTTP contra la base de desarrollo
@@ -257,26 +257,26 @@ automáticas** que cargan las páginas por HTTP contra la base de desarrollo
 
 ## Bloque J · Auditoría completa de la Fase 1 (147-166)
 
-147. [ ] Releer entero cada fichero nuevo, de arriba abajo.
-148. [ ] Releer cada `diff` de los ficheros modificados.
-149. [ ] Seguridad: ninguna acción de admin sin `requireAdmin`.
-150. [ ] Seguridad: ninguna acción de profesor sin comprobar `rolDocente`.
-151. [ ] Seguridad: la cookie de espacio **no** concede permisos.
-152. [ ] Seguridad: RLS activo en la tabla nueva.
-153. [ ] Datos: ¿qué pasa si se borra una licencia con profesores dentro? (`SET NULL`, verificarlo).
-154. [ ] Datos: ¿qué pasa si se borra un dietista que es profesor?
-155. [ ] Datos: coherencia entre `rolDocente` y `licenciaDocenteId` (¿puede haber rol sin licencia?).
-156. [ ] Casos límite: licencia sin fecha de fin, con fecha pasada, desactivada.
-157. [ ] Casos límite: cupos a 0, cupos enormes, texto larguísimo en institución.
-158. [ ] Casos límite: dominio escrito como `@ua.es`, `UA.ES`, `https://ua.es/`.
-159. [ ] Repaso de la guía de bugs recurrentes, punto por punto.
-160. [ ] Repaso de los patrones de fallo de flujo y UX (¿queda algo escondido?).
-161. [ ] Descubribilidad: ¿un profesor entiende dónde está y cómo se cambia de espacio?
-162. [ ] Implicaciones cruzadas: ¿qué otras pantallas deberían enterarse del rol?
-163. [ ] Rendimiento: consultas añadidas al layout del panel.
-164. [ ] `npx tsc --noEmit` final.
-165. [ ] `npx next build` con Node 22 (el error de compilación no aparece en `tsc`).
-166. [ ] Commits pequeños con rutas explícitas (`git add <ruta>`, nunca `-A` ni `.`).
+147. [x] Releer entero cada fichero nuevo, de arriba abajo.
+148. [x] Releer cada `diff` de los ficheros modificados.
+149. [x] Seguridad: ninguna acción de admin sin `requireAdmin`.
+150. [x] Seguridad: ninguna acción de profesor sin comprobar `rolDocente`.
+151. [x] Seguridad: la cookie de espacio **no** concede permisos.
+152. [x] Seguridad: RLS activo en la tabla nueva.
+153. [x] Datos: ¿qué pasa si se borra una licencia con profesores dentro? (`SET NULL`, verificarlo).
+154. [x] Datos: ¿qué pasa si se borra un dietista que es profesor?
+155. [x] Datos: coherencia entre `rolDocente` y `licenciaDocenteId` (¿puede haber rol sin licencia?).
+156. [x] Casos límite: licencia sin fecha de fin, con fecha pasada, desactivada.
+157. [x] Casos límite: cupos a 0, cupos enormes, texto larguísimo en institución.
+158. [x] Casos límite: dominio escrito como `@ua.es`, `UA.ES`, `https://ua.es/`.
+159. [x] Repaso de la guía de bugs recurrentes, punto por punto.
+160. [x] Repaso de los patrones de fallo de flujo y UX (¿queda algo escondido?).
+161. [x] Descubribilidad: ¿un profesor entiende dónde está y cómo se cambia de espacio?
+162. [x] Implicaciones cruzadas: ¿qué otras pantallas deberían enterarse del rol?
+163. [x] Rendimiento: consultas añadidas al layout del panel.
+164. [x] `npx tsc --noEmit` final.
+165. [x] `npx next build` con Node 22 (el error de compilación no aparece en `tsc`).
+166. [x] Commits pequeños con rutas explícitas (`git add <ruta>`, nunca `-A` ni `.`).
 
 ## Pendiente al cerrar la fase
 
@@ -301,6 +301,24 @@ Cosas que no estaban previstas y se han resuelto o descubierto durante la fase:
 - Las carpetas que empiezan por `_` no generan ruta en el App Router (útil saberlo para diagnósticos).
 - La contraseña de `dev@annonia.dev` que teníamos anotada ya no vale; el script de pruebas crea y
   borra su propia cuenta desechable en vez de depender de ella.
+
+## Auditoría de la Fase 1 (bloque J)
+
+Seis revisores en paralelo con lentes distintas (seguridad, integridad de datos, traducciones,
+convenciones, experiencia de uso y regresiones), y **cada hallazgo verificado por otro agente cuyo
+trabajo era refutarlo**. De 33 hallazgos en bruto, 4 defectos reales; los dos descartados lo fueron
+con argumentos comprobados en el código. Los cuatro, arreglados:
+
+| | Qué era | Gravedad |
+|---|---|---|
+| D1 | El enlace del menú al espacio docente era un GET, y **el prefetch de Next lo disparaba solo**: la cuenta profesional se cerraba sola. Solo se manifestaba en producción. | Alto |
+| D2 | «Dashboard» era un botón muerto para el profesor: enseñaba el panel un instante y le expulsaba. | Alto |
+| D3 | **Redirección abierta** en `/auth/callback`: `?next=@evil.com` sacaba al usuario del dominio. Anterior a esta rama. | Medio |
+| D4 | El profesor creado desde una licencia desaparecía del filtro «Universidad» de `/admin/dietistas`. | Medio |
+
+D1 llevó a **quitar la cookie de espacio y el endpoint entero**: el aterrizaje lo decide el login, así
+que la cookie sobraba, y ahora ninguna dirección del menú tiene efectos secundarios. Los patrones de
+D1 y D3 están anotados en la guía de bugs recurrentes.
 
 ## Fase 1 — pendiente al cerrar
 
