@@ -38,6 +38,23 @@ export type Novedad = {
 
 const NOVEDADES: Novedad[] = [
   {
+    id: "reparto-por-comidas",
+    fecha: "2026-08-27",
+    destacada: true,
+    titulo: {
+      es: "Reparto por comidas: un objetivo de calorías y macros para cada toma",
+      pt: "Distribuição por refeição: um objetivo de calorias e macros para cada refeição",
+    },
+    descripcion: {
+      es: "Ahora puedes decidir qué parte del día va en cada comida, y el plan te dice a cada momento cuánto llevas y cuánto le toca a esa toma. Se configura en la planificación (con distribuciones con nombre como 40/30/30 o cetogénica, o poniendo tú los porcentajes, las calorías o los gramos) y también se puede ajustar dentro de una dieta concreta, sin tocar la pauta del paciente. La planificación pasa a definir además qué comidas tiene el día: puedes quitar las que no uses, añadir las tuyas (pre-entreno, batido, recena…) con su hora y decidir en qué días van, y las dietas nuevas nacen ya con esa estructura. Si un paciente tiene varias planificaciones (día de entreno, día de descanso), cada día usa el reparto de la suya. Y esas comidas propias las ve el paciente con su nombre y a su hora en su portal, en su seguimiento diario y en el PDF.",
+      pt: "Agora podes decidir que parte do dia vai em cada refeição, e o plano diz-te a cada momento quanto já tens e quanto corresponde a essa refeição. Configura-se no planejamento (com distribuições com nome como 40/30/30 ou cetogénica, ou definindo tu as percentagens, as calorias ou os gramas) e também se pode ajustar dentro de uma dieta concreta, sem mexer na pauta do paciente. O planejamento passa a definir também que refeições tem o dia: podes remover as que não uses, adicionar as tuas (pré-treino, batido, ceia…) com a sua hora e decidir em que dias vão, e as dietas novas já nascem com essa estrutura. Se um paciente tem vários planejamentos (dia de treino, dia de descanso), cada dia usa a distribuição do seu. E essas refeições próprias o paciente vê-as com o seu nome e à sua hora no portal, no seu acompanhamento diário e no PDF.",
+    },
+    donde: {
+      es: "En la ficha del paciente, pestaña Planificación → sección «Reparto por comida». Y dentro de una dieta, con el botón «Reparto» que hay sobre las comidas del día.",
+      pt: "Na ficha do paciente, aba Planejamento → secção «Distribuição por refeição». E dentro de uma dieta, com o botão «Distribuição» que está acima das refeições do dia.",
+    },
+  },
+  {
     id: "recetas-por-raciones",
     fecha: "2026-07-29",
     destacada: true,
