@@ -1152,6 +1152,28 @@ Queda por decidir en la implementación: si son dos cuentas vinculadas entre las
 sola cuenta con dos espacios y un cambio de contexto (y en ese caso, qué pasa con la suscripción de
 cada lado). Y se venderá aparte, dirigido a universidades y centros de formación.
 
+**MODELO DE NEGOCIO Y CICLO DEL CURSO (Guillermo, 27 ago 2026) — decidido:**
+- **Paga el profesor**; el objetivo a medio plazo es vender a la **universidad** como institución.
+- Se vende **por licencias, en bolsa**: se contrata "3 profesores y 300 alumnos", "5 profesores y 300
+  alumnos"… Las licencias de alumno son una **bolsa común que se reparten los profesores del plan**,
+  NO un cupo fijo por profesor (no es "un profesor = 60 alumnos"). Los profesores van **dando de alta
+  a los alumnos** y cada alta consume una licencia de la bolsa.
+- **Ciclo del curso:** al acabar el curso **se le quita el acceso al alumno**; el curso siguiente el
+  profesor **se lo vuelve a dar** si toca. El acceso se retira en **agosto** y se concede en
+  **septiembre**; si el alumno se conecta en ese hueco, entra y **ve que no tiene acceso**, con su
+  mensaje.
+- **Al devolverle el acceso a la misma cuenta, sus datos se conservan** (lo que hubiera metido: sus
+  dietas, sus pacientes de prácticas). No se registra de nuevo ni pierde su trabajo.
+- **Salida del alumno al terminar la carrera (futuro):** cuando ya no le van a devolver el acceso, se
+  le ofrece **el primer año con un X% de descuento** para pasarlo a cuenta de pago. El módulo docente
+  es además un canal de captación de nutricionistas nuevos.
+- **Caso a contemplar desde el modelo de datos:** un alumno que YA se compró su cuenta premium y luego
+  el profesor le da acceso de clase **conserva las dos cosas**: su suscripción no se pisa ni se le
+  quita.
+- Hoy **no hay cobros activos** (registros abiertos y todo gratis), así que esto no se implementa con
+  pasarela, pero el modelo de datos tiene que soportarlo (plan contratado, licencias, estado del
+  acceso) para no rehacerlo luego.
+
 **Prioridad:** Alta (abre un nuevo segmento de mercado: universidades y centros de formación)
 **Complejidad:** Alta
 
