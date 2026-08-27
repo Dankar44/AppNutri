@@ -6,7 +6,7 @@ import {
 } from "@/app/actions/notificaciones";
 import { getConversacionesNoLeidasCount } from "@/app/actions/mensajes";
 import { isAdminEmail } from "@/lib/admin";
-import { esProfesor, getEspacioActivo } from "@/app/actions/docencia";
+import { getEspacioActivo } from "@/app/actions/docencia";
 import { SidebarWrapper } from "./sidebar-wrapper";
 import { HelpWidget } from "@/components/help/help-widget";
 import { TourWrapper } from "@/components/tour/tour-wrapper";
@@ -32,7 +32,10 @@ export default async function DashboardLayout({
     redirect("/pendiente");
   }
 
-  const [profesor, espacioActivo] = await Promise.all([esProfesor(), getEspacioActivo()]);
+  // `getCurrentDietista` ya devuelve la fila entera del dietista, así que el rol sale de ahí:
+  // una consulta más en el layout la pagarían TODOS los nutricionistas en cada carga del panel.
+  const profesor = dietista.rolDocente === "PROFESOR";
+  const espacioActivo = await getEspacioActivo();
 
   let notifCount = 0;
   let mensajesCount = 0;
