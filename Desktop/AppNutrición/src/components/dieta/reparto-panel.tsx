@@ -159,9 +159,18 @@ export function RepartoPanel({
     const participantes = comidas.filter(
       (c) => c.incluida && clavesDelDia.includes(claveComida(c)),
     );
-    const ordenadas = [...participantes].sort(
-      (a, b) => minutosDeHora(horaEfectiva(a)) - minutosDeHora(horaEfectiva(b)),
-    );
+    // Se ordena por la hora de la comida REAL del día, que es la que se muestra: ordenando por la de
+    // la fila del reparto, una comida con la hora cambiada en la dieta salía en el sitio equivocado.
+    const conReal = participantes.map((c) => ({
+      c,
+      real: (diaActual?.comidas ?? []).find((x) => claveComida(x) === claveComida(c)),
+    }));
+    const ordenadas = conReal
+      .sort(
+        (a, b) =>
+          minutosDeHora(horaEfectiva(a.real ?? a.c)) - minutosDeHora(horaEfectiva(b.real ?? b.c)),
+      )
+      .map((x) => x.c);
     const kcals = repartirKcal(
       kcalDia,
       ordenadas.map((c) => pctDeFila(c, diaReal)),
@@ -491,7 +500,11 @@ export function RepartoPanel({
                                 type="number"
                                 inputMode="decimal"
                                 min={0}
-                                value={gramValue(f.clave, macro, valor)}
+                                // El día puede no tener objetivo de ese macro (solo kcal y proteínas,
+                                // por ejemplo): entonces no hay nada que repartir y el campo se
+                                // deshabilita, en vez de invitar a teclear sobre un "0" inventado.
+                                value={valor == null ? "" : gramValue(f.clave, macro, valor)}
+                                placeholder={valor == null ? "—" : undefined}
                                 onChange={(e) =>
                                   setGramEdit({ clave: f.clave, macro, val: e.target.value })
                                 }
@@ -500,7 +513,7 @@ export function RepartoPanel({
                                   soloDigitos(e);
                                   if (e.key === "Enter") commitGram(f.clave, macro, f.kcal);
                                 }}
-                                disabled={f.kcal <= 0}
+                                disabled={f.kcal <= 0 || valor == null}
                                 title={t(`macro_${macro}` as never)}
                                 className="w-14 h-8 px-1.5 rounded-lg border border-border bg-background text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
                               />
@@ -564,7 +577,7 @@ export function RepartoPanel({
                 title={t("repartirIgualAyuda", { dia: etiquetaDiaVisto })}
                 className="font-medium text-primary hover:underline"
               >
-                {t("repartirIgual")}
+                {t("repartirIgualDia", { dia: etiquetaDiaVisto })}
               </button>
               {mismasComidas && gruposDelSlot > 1 && (
                 <span className="text-muted-foreground">{t("aplicaATodos", { n: gruposDelSlot })}</span>

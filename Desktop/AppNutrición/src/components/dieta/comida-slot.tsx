@@ -10,7 +10,7 @@ import { EquivalentePanel } from "./equivalente-panel";
 import { HoraSelect } from "./hora-select";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { actualizarDescripcionComida, actualizarMetaComida } from "@/app/actions/planes";
+import { actualizarDescripcionComida } from "@/app/actions/planes";
 import { calcularMacrosPorcion, convertirAGramos } from "@/lib/macros";
 import type { InteractionMode } from "@/components/food-hover-card";
 import type { ObjetivoComida } from "@/lib/reparto-comidas";
@@ -157,15 +157,6 @@ export function ComidaSlot({
   const [hora, setHora] = useState(horaInicial || horaDefault);
   const [nombreComida, setNombreComida] = useState(nombreInicial || "");
   const [editandoTitulo, setEditandoTitulo] = useState(false);
-  // Un temporizador POR CAMPO: con uno compartido, cambiar el nombre cancelaba el guardado pendiente
-  // de la hora (y al revés), así que uno de los dos se perdía.
-  const nombreDebounceRef = useRef<NodeJS.Timeout>(null);
-  const horaDebounceRef = useRef<NodeJS.Timeout>(null);
-  // Una comida recién añadida vive un instante con un id temporal (`tmp-…`) mientras el servidor la
-  // crea: guardar con ese id falla y el cambio se perdía SIN AVISO (issue #131). Lo que se toque en
-  // ese hueco se queda aquí y se envía en cuanto llega el id real.
-  const metaPendienteRef = useRef<{ nombre?: string; hora?: string } | null>(null);
-  const esTemporal = comidaId.startsWith("tmp-");
 
   // Sincronizar la nota cuando cambia desde fuera (p. ej. al copiar una comida
   // en modo "Reemplazar", que clona también su descripción).
@@ -179,58 +170,20 @@ export function ComidaSlot({
     setHora(horaInicial || horaDefault);
   }, [horaInicial, horaDefault]);
 
-  /** Guarda el nombre o la hora. Interfaz optimista: el cambio ya se ve (es estado local) y si el
-   *  servidor lo rechaza o falla, se revierte al valor que había y se avisa. */
-  async function guardarMeta(patch: { nombre?: string; hora?: string }) {
-    if (esTemporal) {
-      // La comida aún no existe en la BD: se encola y se envía al llegar su id real.
-      metaPendienteRef.current = { ...metaPendienteRef.current, ...patch };
-      return;
-    }
-    const revertir = () => {
-      if (patch.nombre !== undefined) setNombreComida(nombreInicial || "");
-      if (patch.hora !== undefined) setHora(horaInicial || horaDefault);
-      onMetaChange?.(comidaId, {
-        ...(patch.nombre !== undefined ? { nombre: nombreInicial ?? null } : {}),
-        ...(patch.hora !== undefined ? { hora: horaInicial ?? null } : {}),
-      });
-    };
-    try {
-      const res = await actualizarMetaComida(comidaId, patch);
-      if (res && "error" in res && res.error) {
-        toast.error(res.error);
-        revertir();
-      }
-    } catch {
-      toast.error(t("comidaSlot.metaError"));
-      revertir();
-    }
-  }
-
-  // Al llegar el id real de una comida recién creada, se envía lo que se hubiera tecleado mientras.
-  useEffect(() => {
-    if (esTemporal || !metaPendienteRef.current) return;
-    const pendiente = metaPendienteRef.current;
-    metaPendienteRef.current = null;
-    void guardarMeta(pendiente);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [comidaId, esTemporal]);
-
+  /* El nombre y la hora NO se guardan aquí: se avisa al contenedor (`onMetaChange`) y él persiste.
+   * Tres razones, las tres eran bugs: este componente se DESMONTA al cambiar de día (se perdía lo
+   * pendiente de enviar), su `comidaId` cambia cuando una comida recién creada recibe su id real (se
+   * remontaba y se perdía igual), y en el editor de PLANTILLAS no hay nada que guardar en la BD —
+   * allí simplemente no llega el callback. */
   function handleHoraChange(value: string) {
     setHora(value);
     onHoraChange?.(comidaId, value); // reordena en vivo por hora
     onMetaChange?.(comidaId, { hora: value });
-    if (horaDebounceRef.current) clearTimeout(horaDebounceRef.current);
-    horaDebounceRef.current = setTimeout(() => void guardarMeta({ hora: value }), 500);
   }
 
   function handleNombreChange(value: string) {
     setNombreComida(value);
     onMetaChange?.(comidaId, { nombre: value });
-    if (nombreDebounceRef.current) clearTimeout(nombreDebounceRef.current);
-    // Dos comidas propias con el mismo nombre en un día compartirían fila en el reparto (su identidad
-    // es el nombre), así que el servidor lo rechaza y aquí se vuelve al nombre anterior.
-    nombreDebounceRef.current = setTimeout(() => void guardarMeta({ nombre: value }), 700);
   }
   const [collapsed, setCollapsed] = useState(false);
   const [equivalenteOpen, setEquivalenteOpen] = useState<{

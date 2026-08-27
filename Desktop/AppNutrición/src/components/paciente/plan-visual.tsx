@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { asignarPlanComoActual, copiarComidaADias, copiarDiaADias, pegarAlimentoEnComida, juntarDias, separarDia, asignarPlanificacionADia, agregarComida, guardarRepartoDePlan, sincronizarComidasDeDia, eliminarComida, type ModoCopia } from "@/app/actions/planes";
+import { asignarPlanComoActual, copiarComidaADias, copiarDiaADias, pegarAlimentoEnComida, juntarDias, separarDia, asignarPlanificacionADia, agregarComida, guardarRepartoDePlan, actualizarMetaComida, sincronizarComidasDeDia, eliminarComida, type ModoCopia } from "@/app/actions/planes";
 import {
   Plus,
   UtensilsCrossed,
@@ -290,12 +290,81 @@ export function PlanVisual({
   const [metaOptimista, setMetaOptimista] = useState<
     Record<string, { nombre?: string | null; hora?: string | null }>
   >({});
+  // Temporizador y borrador pendiente POR COMIDA: viven aquí, no en el slot, porque el slot se
+  // desmonta al cambiar de día y su id cambia al recibir el id real de una comida recién creada.
+  const metaSaveRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const metaPendienteRef = useRef<Record<string, { nombre?: string | null; hora?: string | null }>>({});
+
+  /** Quita el borrador de una comida: vuelve a mandar lo que dice el servidor. Es lo que hay que
+   *  hacer al fallar el guardado — NO escribir un valor "anterior", que con el debounce era el nombre
+   *  a medio teclear y se quedaba pegado para siempre (la poda nunca lo iba a igualar). */
+  function olvidarMetaOptimista(comidaId: string) {
+    setMetaOptimista((prev) => {
+      if (!(comidaId in prev)) return prev;
+      const next = { ...prev };
+      delete next[comidaId];
+      return next;
+    });
+  }
+
+  function persistirMeta(comidaId: string, patch: { nombre?: string | null; hora?: string | null }) {
+    // Una comida recién añadida tiene id temporal hasta que el servidor responde: se resuelve su id
+    // real (la entrada optimista lo lleva) y, si todavía no existe, se deja pendiente.
+    const real = comidaId.startsWith("tmp-")
+      ? Object.values(comidasNuevasDia)
+          .flat()
+          .find((c) => c.id === comidaId)?.realId
+      : comidaId;
+    if (!real) {
+      metaPendienteRef.current[comidaId] = { ...metaPendienteRef.current[comidaId], ...patch };
+      return;
+    }
+    actualizarMetaComida(real, {
+      ...(patch.nombre !== undefined ? { nombre: patch.nombre } : {}),
+      ...(patch.hora !== undefined ? { hora: patch.hora } : {}),
+    })
+      .then((res) => {
+        if (res && "error" in res && res.error) {
+          toast.error(res.error);
+          olvidarMetaOptimista(comidaId);
+        }
+      })
+      .catch((e) => {
+        if (isNextNavigation(e)) throw e;
+        toast.error(tDiets("comidaSlot.metaError"));
+        olvidarMetaOptimista(comidaId);
+      });
+  }
+
   function handleMetaComidaChange(
     comidaId: string,
     patch: { nombre?: string | null; hora?: string | null },
   ) {
     setMetaOptimista((prev) => ({ ...prev, [comidaId]: { ...prev[comidaId], ...patch } }));
+    metaPendienteRef.current[comidaId] = { ...metaPendienteRef.current[comidaId], ...patch };
+    if (metaSaveRef.current[comidaId]) clearTimeout(metaSaveRef.current[comidaId]);
+    metaSaveRef.current[comidaId] = setTimeout(() => {
+      delete metaSaveRef.current[comidaId];
+      const pendiente = metaPendienteRef.current[comidaId];
+      if (!pendiente) return;
+      delete metaPendienteRef.current[comidaId];
+      persistirMeta(comidaId, pendiente);
+    }, 600);
   }
+
+  // Cuando una comida recién creada recibe su id real, se envía lo que se hubiera tecleado mientras.
+  useEffect(() => {
+    for (const [comidaId, pendiente] of Object.entries(metaPendienteRef.current)) {
+      if (!comidaId.startsWith("tmp-") || metaSaveRef.current[comidaId]) continue;
+      const real = Object.values(comidasNuevasDia)
+        .flat()
+        .find((c) => c.id === comidaId)?.realId;
+      if (!real) continue;
+      delete metaPendienteRef.current[comidaId];
+      persistirMeta(comidaId, pendiente);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [comidasNuevasDia]);
   useEffect(() => {
     setMetaOptimista((prev) => {
       const claves = Object.keys(prev);
@@ -453,13 +522,12 @@ export function PlanVisual({
           return;
         }
         if (res && "id" in res && res.id) {
-          // El id pasa a ser el REAL, no solo `realId`: el editor usa `comida.id` para guardar el
-          // nombre y la hora, y con el temporal esas llamadas fallaban en silencio (issue #131).
+          // El `id` se queda como estaba: es la identidad de render de la comida, y cambiarlo la
+          // remontaba (se perdía lo que se estuviera escribiendo). El id real viaja en `realId`, que
+          // es el que se usa para guardar en el servidor.
           setComidasNuevasDia((prev) => ({
             ...prev,
-            [diaId]: (prev[diaId] ?? []).map((c) =>
-              c.id === tempId ? { ...c, id: res.id, realId: res.id } : c,
-            ),
+            [diaId]: (prev[diaId] ?? []).map((c) => (c.id === tempId ? { ...c, realId: res.id } : c)),
           }));
         }
         // Con el reparto activo, la comida nueva entra en él AL 0%: así aparece en la tabla y en su
@@ -514,10 +582,10 @@ export function PlanVisual({
     dia = conMeta as T;
     const extra = comidasNuevasDia[dia.id];
     if (!extra || extra.length === 0) return dia;
-    // Las que el servidor ya trae se descartan aquí: la comida optimista pasa a usar el id real en
-    // cuanto se crea, así que hasta que la poda la retire habría dos filas con la misma clave.
+    // Las que el servidor ya trae se descartan aquí (por id o por su id real): si no, hasta que la
+    // poda las retire se verían dos veces, la optimista y la del servidor.
     const yaEstan = new Set(dia.comidas.map((c) => c.id));
-    const nuevas = extra.filter((c) => !yaEstan.has(c.id));
+    const nuevas = extra.filter((c) => !yaEstan.has(c.id) && !(c.realId && yaEstan.has(c.realId)));
     if (nuevas.length === 0) return dia;
     return { ...dia, comidas: [...dia.comidas, ...nuevas] };
   }
@@ -1188,6 +1256,18 @@ export function PlanVisual({
         };
       });
   }, [selectedPlan?.dias, repartoSlot, planiOptimista, objetivosPorDia, comidasNuevasDia, gruposOptimistas]);
+
+  // Si el slot abierto se queda SIN días (se le reasignó la planificación al último), el panel caía
+  // en el vacío: la tabla salía sin filas y "Desactivar" escribía en un slot que ya no usa nadie.
+  useEffect(() => {
+    if (!repartoPanelAbierto || repartoDiasDelSlot.length > 0) return;
+    const otro = repartoSlots[0];
+    if (!otro) return;
+    setRepartoSlot(otro.id);
+    const primero = (selectedPlan?.dias ?? []).find((d) => planiDelDia(d.id) === otro.id);
+    setRepartoDiaVisto(primero?.dia ?? "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [repartoPanelAbierto, repartoDiasDelSlot.length, repartoSlots]);
 
   /** Día cuyo reparto y objetivos muestra el panel: el visto si sigue en el slot, o el primero. */
   const diaIdPanel =

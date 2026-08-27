@@ -392,7 +392,7 @@ export function repartirEquitativo(comidas: RepartoComida[]): RepartoComida[] {
  *  fuera del reparto (antes se interpretaba como "todos" y los días volvían a encenderse solos);
  *  marcar un día en una comida desactivada la vuelve a activar, que es lo que el gesto implica. */
 export function toggleDiaFila(comidas: RepartoComida[], clave: string, dia: string): RepartoComida[] {
-  return comidas.map((c) => {
+  const out = comidas.map((c): RepartoComida | null => {
     if (claveComida(c) !== clave) return c;
     // Comida desactivada: sus días se muestran todos apagados (se desactivó quitándolos), así que el
     // clic siguiente la reactiva SOLO en ese día. Partiendo de "todos" quedaba justo lo contrario:
@@ -400,13 +400,22 @@ export function toggleDiaFila(comidas: RepartoComida[], clave: string, dia: stri
     if (!c.incluida) return { ...c, incluida: true, dias: [dia] };
     const actuales = c.dias && c.dias.length > 0 ? c.dias : [...DIAS_SEMANA];
     const siguiente = actuales.includes(dia) ? actuales.filter((d) => d !== dia) : [...actuales, dia];
-    if (siguiente.length === 0) return { ...c, incluida: false, dias: undefined };
+    // Sin ningún día, una comida propia se QUITA del reparto: su fila no se pinta (la tabla solo
+    // muestra las incluidas) y, al no tener papelera ni cuadraditos, quedaba invisible y con su
+    // nombre bloqueado para siempre. Las 6 fijas sí se recuperan desde "Añadir comida".
+    if (siguiente.length === 0) {
+      if (c.tipo === "OTRA") return null;
+      return { ...c, incluida: false, dias: undefined };
+    }
     return {
       ...c,
       incluida: true,
       dias: siguiente.length === DIAS_SEMANA.length ? undefined : siguiente,
     };
   });
+  const filas = out.filter((c): c is RepartoComida => c !== null);
+  // Si se ha quitado una comida, el % que tenía se reparte entre las que quedan (igual que la papelera).
+  return filas.length === comidas.length ? filas : escalarA100(filas);
 }
 
 /** Aplica un preset de kcal. Las comidas propias NO se tocan: un preset de las 6 clásicas no debe
@@ -811,18 +820,22 @@ export function setMacroFila(
     carb: fila.carbPct ?? macrosDia.carb,
     prot: fila.protPct ?? macrosDia.prot,
   };
-  const clamped = Math.max(0, Math.min(100, Math.round(pct)));
+  const clamped = Math.max(0, Math.min(100, Math.round(pct * 10) / 10));
   const next = { ...eff, [macro]: clamped };
   const [o1, o2] = (["grasa", "carb", "prot"] as const).filter((m) => m !== macro);
-  const remaining = 100 - clamped;
+  // Se conserva la SUMA que tenía la referencia, no se fuerza 100: el objetivo del día puede no
+  // llevar los tres macros (2000 kcal y solo proteínas es un dato normal) y forzando el 100% tocar
+  // un gramo inventaba objetivos en los otros dos que el nutri no había puesto en ninguna parte.
+  const totalRef = eff.grasa + eff.carb + eff.prot;
   const totalOtros = eff[o1] + eff[o2];
+  const remaining = Math.max(0, totalRef - clamped);
   if (totalOtros === 0) {
-    const mitad = Math.round(remaining / 2);
-    next[o1] = mitad;
-    next[o2] = remaining - mitad;
+    // Los otros dos no tenían objetivo: se quedan a 0 en vez de repartirse lo que sobra.
+    next[o1] = 0;
+    next[o2] = 0;
   } else {
     next[o1] = Math.round((eff[o1] / totalOtros) * remaining);
-    next[o2] = remaining - next[o1];
+    next[o2] = Math.max(0, remaining - next[o1]);
   }
   return setFila(comidas, clave, { grasaPct: next.grasa, carbPct: next.carb, protPct: next.prot });
 }
@@ -830,7 +843,8 @@ export function setMacroFila(
 /** Gramos de un macro → % sobre las kcal de esa comida (4 kcal/g en proteína e hidratos, 9 en grasa). */
 export function gramosAPct(gramos: number, kcalComida: number, macro: "grasa" | "carb" | "prot"): number {
   if (kcalComida <= 0) return 0;
-  return Math.round(((gramos * (macro === "grasa" ? 9 : 4)) / kcalComida) * 100);
+  // Con un decimal: redondeando el % a entero, teclear 80 g devolvía 81 g al salir del campo.
+  return Math.round(((gramos * (macro === "grasa" ? 9 : 4)) / kcalComida) * 1000) / 10;
 }
 
 /** Reparte el 100% a partes iguales entre las comidas de UN día, sin tocar los demás días ni la

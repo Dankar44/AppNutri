@@ -1175,7 +1175,9 @@ export function PlanificacionPorDefectoTab({
 
   function confirmarNuevaComida() {
     const hora = nuevaComidaHora || huecosComida[nuevaComidaPos]?.hora || "";
-    if (nuevaComidaTipo) {
+    // Solo si ese tipo sigue FUERA del reparto: si ya se recuperó (o se aplicó un preset que lo
+    // reactivó), el selector guardaba un valor obsoleto y esto pisaba su hora, sus días y su %.
+    if (nuevaComidaTipo && fijasQuitadas.includes(nuevaComidaTipo)) {
       // Recuperar una de las 6 fijas que se había quitado, con la hora y los días elegidos.
       setReparto((prev) =>
         setFila(prev, nuevaComidaTipo, {

@@ -1206,8 +1206,24 @@ async function meterComidasNuevasEnReparto(
         if (prev) prev.dias.add(c.dia);
         else porClave.set(clave, { tipo: c.tipo, nombre: c.nombre, hora: c.hora, dias: new Set([c.dia]) });
       }
+      // ¿Este reparto lleva % por día? Entonces un día sin entrada propia hereda el % de la semana.
+      const usaPctPorDia = filasReparto.some((f) => f.pctPorDia && Object.keys(f.pctPorDia).length > 0);
       for (const [clave, c] of porClave) {
-        if (filasReparto.some((f) => claveComida(f) === clave)) continue;
+        const existente = filasReparto.find((f) => claveComida(f) === clave);
+        if (existente) {
+          // La comida ya estaba en el reparto pero NO en estos días: si el reparto va por día, hay
+          // que ponerle 0 en ellos, o ese día suma su % semanal de más y se va al 120%.
+          if (!usaPctPorDia) continue;
+          const faltan = [...c.dias].filter((d) => !(existente.pctPorDia && d in existente.pctPorDia));
+          if (faltan.length === 0) continue;
+          const conCero = { ...(existente.pctPorDia ?? {}) };
+          for (const d of faltan) conCero[d] = 0;
+          filasReparto = filasReparto.map((f) =>
+            claveComida(f) === clave ? { ...f, pctPorDia: conCero } : f,
+          );
+          cambiado = true;
+          continue;
+        }
         filasReparto = [
           ...filasReparto,
           {
@@ -1217,6 +1233,10 @@ async function meterComidasNuevasEnReparto(
             dias: [...c.dias],
             incluida: true,
             kcalPct: 0,
+            // Con % por día, la fila nueva entra a 0 en los días en los que se acaba de crear.
+            pctPorDia: usaPctPorDia
+              ? Object.fromEntries([...c.dias].map((d) => [d, 0]))
+              : undefined,
           },
         ];
         cambiado = true;
@@ -2302,23 +2322,14 @@ export async function juntarDias(planId: string, diaIds: string[]) {
   const ids = dias.map((d) => d.id);
   const miembros = ids.filter((id) => id !== rep.id);
 
-  // El menú que GANA es el del día de ORIGEN (desde el que se pulsó "Juntar con…" = diaIds[0]).
-  // Si ese día no es el representante, copiamos su menú al representante para que sea el que
-  // se refleje en todo el grupo (así "manda" el día desde el que juntas, no el más temprano).
   const origenId = ids.includes(diaIds[0]) ? diaIds[0] : rep.id;
-  if (origenId !== rep.id) {
-    await copiarDiaADias(origenId, [rep.id], "reemplazar");
-  }
-
-  // 1) Etiquetar todos los días con el mismo grupoId (IN con placeholders, patrón del proyecto).
   const ph = ids.map((_, i) => `$${i + 2}`).join(",");
-  await prisma.$executeRawUnsafe(
-    `UPDATE dias_del_plan SET "grupoId" = $1 WHERE id IN (${ph})`,
-    grupoId,
-    ...ids,
-  );
-  // 1b) La planificación del día de ORIGEN manda en TODO el grupo (comen igual → mismo objetivo).
-  //     Al separar, cada día conserva esta planificación (separarDia no toca planificacionId).
+
+  // 1) La planificación del día de ORIGEN manda en TODO el grupo (comen igual → mismo objetivo).
+  //    Va ANTES de copiar el menú: al copiar, las comidas que se creen entran en el reparto del slot
+  //    que tenga el día en ese momento, así que con el orden al revés se apuntaban en el reparto de
+  //    la planificación vieja del representante. Al separar, cada día conserva esta planificación
+  //    (separarDia no toca planificacionId).
   const origenPlaniRows = await prisma.$queryRawUnsafe<{ planificacionId: string | null }[]>(
     `SELECT "planificacionId" FROM dias_del_plan WHERE id = $1`,
     origenId,
@@ -2328,7 +2339,21 @@ export async function juntarDias(planId: string, diaIds: string[]) {
     origenPlaniRows[0]?.planificacionId ?? null,
     ...ids,
   );
-  // 2) Vaciar el menú de los miembros (reflejarán el del representante en lectura).
+
+  // 2) El menú que GANA es el del día de ORIGEN (desde el que se pulsó "Juntar con…" = diaIds[0]).
+  //    Si ese día no es el representante, se copia su menú al representante para que sea el que se
+  //    refleje en todo el grupo (así "manda" el día desde el que juntas, no el más temprano).
+  if (origenId !== rep.id) {
+    await copiarDiaADias(origenId, [rep.id], "reemplazar");
+  }
+
+  // 3) Etiquetar todos los días con el mismo grupoId (IN con placeholders, patrón del proyecto).
+  await prisma.$executeRawUnsafe(
+    `UPDATE dias_del_plan SET "grupoId" = $1 WHERE id IN (${ph})`,
+    grupoId,
+    ...ids,
+  );
+  // 4) Vaciar el menú de los miembros (reflejarán el del representante en lectura).
   if (miembros.length > 0) {
     await prisma.comidaDelDia.deleteMany({ where: { diaId: { in: miembros } } });
   }
