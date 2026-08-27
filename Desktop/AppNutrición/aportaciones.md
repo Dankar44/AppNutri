@@ -1142,6 +1142,16 @@ Sección dedicada a la cuenta de tipo "Profesor", pensada para docentes de nutri
 - `prisma/schema.prisma` — nuevos modelos
 - `src/app/(auth)/registro-profesor/` — registro específico o flag en registro existente
 
+**PRECISIÓN (Guillermo, 27 ago 2026): SÍ es un ROL NUEVO, y es la cuenta principal.** No es un
+añadido sobre la cuenta de nutricionista: se crea un rol de profesor y quien entra con él aterriza en
+su dashboard de profesor (clases, casos, alumnos). Lo único que hace de puente es **un botón dentro de
+la cuenta de profesor tipo "Acceder a mi cuenta profesional"**, que lleva a la cuenta normal de
+nutricionista para trabajar con sus propios pacientes como cualquier otro usuario. O sea: lo principal
+es la vista de profesor, y la cuenta normal queda a un clic desde dentro.
+Queda por decidir en la implementación: si son dos cuentas vinculadas entre las que se salta, o una
+sola cuenta con dos espacios y un cambio de contexto (y en ese caso, qué pasa con la suscripción de
+cada lado). Y se venderá aparte, dirigido a universidades y centros de formación.
+
 **Prioridad:** Alta (abre un nuevo segmento de mercado: universidades y centros de formación)
 **Complejidad:** Alta
 
