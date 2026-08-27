@@ -153,7 +153,15 @@ export function ComidaSlot({
   const [hora, setHora] = useState(horaInicial || horaDefault);
   const [nombreComida, setNombreComida] = useState(nombreInicial || "");
   const [editandoTitulo, setEditandoTitulo] = useState(false);
-  const metaDebounceRef = useRef<NodeJS.Timeout>(null);
+  // Un temporizador POR CAMPO: con uno compartido, cambiar el nombre cancelaba el guardado pendiente
+  // de la hora (y al revés), así que uno de los dos se perdía.
+  const nombreDebounceRef = useRef<NodeJS.Timeout>(null);
+  const horaDebounceRef = useRef<NodeJS.Timeout>(null);
+  // Una comida recién añadida vive un instante con un id temporal (`tmp-…`) mientras el servidor la
+  // crea: guardar con ese id falla y el cambio se perdía SIN AVISO (issue #131). Lo que se toque en
+  // ese hueco se queda aquí y se envía en cuanto llega el id real.
+  const metaPendienteRef = useRef<{ nombre?: string; hora?: string } | null>(null);
+  const esTemporal = comidaId.startsWith("tmp-");
 
   // Sincronizar la nota cuando cambia desde fuera (p. ej. al copiar una comida
   // en modo "Reemplazar", que clona también su descripción).
@@ -167,27 +175,50 @@ export function ComidaSlot({
     setHora(horaInicial || horaDefault);
   }, [horaInicial, horaDefault]);
 
+  /** Guarda el nombre o la hora. Interfaz optimista: el cambio ya se ve (es estado local) y si el
+   *  servidor lo rechaza o falla, se revierte al valor que había y se avisa. */
+  async function guardarMeta(patch: { nombre?: string; hora?: string }) {
+    if (esTemporal) {
+      // La comida aún no existe en la BD: se encola y se envía al llegar su id real.
+      metaPendienteRef.current = { ...metaPendienteRef.current, ...patch };
+      return;
+    }
+    try {
+      const res = await actualizarMetaComida(comidaId, patch);
+      if (res && "error" in res && res.error) {
+        toast.error(res.error);
+        if (patch.nombre !== undefined) setNombreComida(nombreInicial || "");
+        if (patch.hora !== undefined) setHora(horaInicial || horaDefault);
+      }
+    } catch {
+      toast.error(t("comidaSlot.metaError"));
+      if (patch.nombre !== undefined) setNombreComida(nombreInicial || "");
+      if (patch.hora !== undefined) setHora(horaInicial || horaDefault);
+    }
+  }
+
+  // Al llegar el id real de una comida recién creada, se envía lo que se hubiera tecleado mientras.
+  useEffect(() => {
+    if (esTemporal || !metaPendienteRef.current) return;
+    const pendiente = metaPendienteRef.current;
+    metaPendienteRef.current = null;
+    void guardarMeta(pendiente);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [comidaId, esTemporal]);
+
   function handleHoraChange(value: string) {
     setHora(value);
     onHoraChange?.(comidaId, value); // reordena en vivo por hora
-    if (metaDebounceRef.current) clearTimeout(metaDebounceRef.current);
-    metaDebounceRef.current = setTimeout(() => {
-      actualizarMetaComida(comidaId, { hora: value });
-    }, 500);
+    if (horaDebounceRef.current) clearTimeout(horaDebounceRef.current);
+    horaDebounceRef.current = setTimeout(() => void guardarMeta({ hora: value }), 500);
   }
 
   function handleNombreChange(value: string) {
     setNombreComida(value);
-    if (metaDebounceRef.current) clearTimeout(metaDebounceRef.current);
-    metaDebounceRef.current = setTimeout(async () => {
-      // Dos comidas propias con el mismo nombre en un día compartirían fila en el reparto (su
-      // identidad es el nombre), así que el servidor lo rechaza y aquí se vuelve al nombre anterior.
-      const res = await actualizarMetaComida(comidaId, { nombre: value });
-      if (res && "error" in res && res.error) {
-        toast.error(res.error);
-        setNombreComida(nombreInicial || "");
-      }
-    }, 700);
+    if (nombreDebounceRef.current) clearTimeout(nombreDebounceRef.current);
+    // Dos comidas propias con el mismo nombre en un día compartirían fila en el reparto (su identidad
+    // es el nombre), así que el servidor lo rechaza y aquí se vuelve al nombre anterior.
+    nombreDebounceRef.current = setTimeout(() => void guardarMeta({ nombre: value }), 700);
   }
   const [collapsed, setCollapsed] = useState(false);
   const [equivalenteOpen, setEquivalenteOpen] = useState<{

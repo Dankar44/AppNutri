@@ -474,7 +474,8 @@
     "leyendaObjetivo": "lo que llevas / objetivo de esta comida",
     "tooltipObjetivo": "Llevas {actual} kcal de las {objetivo} kcal que le tocan a esta comida",
     "sinObjetivoReparto": "Sin objetivo en el reparto por comidas",
-    "anadirAlReparto": "Ponerle objetivo"
+    "anadirAlReparto": "Ponerle objetivo",
+    "metaError": "No se pudo guardar el nombre o la hora de la comida"
   },
   "resumenDiario": {
     "calories": "Calorías",

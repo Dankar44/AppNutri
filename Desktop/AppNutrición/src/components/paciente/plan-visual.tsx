@@ -414,9 +414,13 @@ export function PlanVisual({
           return;
         }
         if (res && "id" in res && res.id) {
+          // El id pasa a ser el REAL, no solo `realId`: el editor usa `comida.id` para guardar el
+          // nombre y la hora, y con el temporal esas llamadas fallaban en silencio (issue #131).
           setComidasNuevasDia((prev) => ({
             ...prev,
-            [diaId]: (prev[diaId] ?? []).map((c) => (c.id === tempId ? { ...c, realId: res.id } : c)),
+            [diaId]: (prev[diaId] ?? []).map((c) =>
+              c.id === tempId ? { ...c, id: res.id, realId: res.id } : c,
+            ),
           }));
         }
         // Con el reparto activo, la comida nueva entra en él AL 0%: así aparece en la tabla y en su
@@ -453,7 +457,12 @@ export function PlanVisual({
   function conComidasNuevas<T extends { id: string; comidas: PlanVisualComida[] }>(dia: T): T {
     const extra = comidasNuevasDia[dia.id];
     if (!extra || extra.length === 0) return dia;
-    return { ...dia, comidas: [...dia.comidas, ...extra] };
+    // Las que el servidor ya trae se descartan aquí: la comida optimista pasa a usar el id real en
+    // cuanto se crea, así que hasta que la poda la retire habría dos filas con la misma clave.
+    const yaEstan = new Set(dia.comidas.map((c) => c.id));
+    const nuevas = extra.filter((c) => !yaEstan.has(c.id));
+    if (nuevas.length === 0) return dia;
+    return { ...dia, comidas: [...dia.comidas, ...nuevas] };
   }
 
   function handleCopiarAlimento(alimentoEnComidaId: string) {

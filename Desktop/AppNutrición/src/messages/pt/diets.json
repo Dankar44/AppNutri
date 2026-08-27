@@ -474,7 +474,8 @@
     "leyendaObjetivo": "o que já tem / objetivo desta refeição",
     "tooltipObjetivo": "Tem {actual} kcal das {objetivo} kcal que cabem a esta refeição",
     "sinObjetivoReparto": "Sem objetivo na distribuição por refeição",
-    "anadirAlReparto": "Definir objetivo"
+    "anadirAlReparto": "Definir objetivo",
+    "metaError": "Não foi possível salvar o nome ou a hora da refeição"
   },
   "resumenDiario": {
     "calories": "Calorias",
