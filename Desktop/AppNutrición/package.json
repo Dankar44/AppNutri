@@ -5,7 +5,7 @@
   "scripts": {
     "predev": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\"",
     "dev": "next dev --turbopack",
-    "dev:desarrollo": "set -a && . ./.env.dev.local && set +a && NEXT_DIST_DIR=.next-dev next dev --turbopack --port 3001",
+    "dev:desarrollo": "node -e \"require('fs').rmSync('.next-dev',{recursive:true,force:true})\" && set -a && . ./.env.dev.local && set +a && NEXT_DIST_DIR=.next-dev next dev --turbopack --port 3001",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

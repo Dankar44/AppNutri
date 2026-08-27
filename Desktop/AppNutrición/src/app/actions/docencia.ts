@@ -102,6 +102,19 @@ export async function getEspacioActivo(): Promise<EspacioActivo> {
 }
 
 /**
+ * A dónde mandar a alguien recién identificado: el profesor entra por su espacio docente.
+ *
+ * Se decide AQUÍ, en el login, y no dejándolo solo en la redirección de /dashboard: cuando el
+ * panel ya ha empezado a enviarse al navegador, Next no puede devolver una redirección de
+ * verdad y la resuelve con un <meta refresh>, así que el profesor vería el panel de
+ * nutricionista durante un segundo antes de saltar. Comprobado el 27 ago 2026.
+ */
+export async function destinoTrasEntrar(): Promise<string> {
+  if (await getEspacioActivo() === "profesional") return "/dashboard";
+  return (await esProfesor()) ? "/profesor" : "/dashboard";
+}
+
+/**
  * Pasa al panel de nutricionista de siempre. La cookie es de SESIÓN: al volver a entrar otro
  * día, el profesor aterriza de nuevo en su espacio docente. Para el camino de vuelta hay un
  * enlace en el menú lateral (/api/espacio?a=docente).

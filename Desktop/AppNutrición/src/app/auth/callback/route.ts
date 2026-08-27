@@ -14,6 +14,8 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/dashboard";
+  // Puede cambiar más abajo: el profesor entra por su espacio docente (#39).
+  let destino = next;
   const error = searchParams.get("error");
   const errorDescription = searchParams.get("error_description");
   const origin = getBaseUrl(req);
@@ -87,6 +89,8 @@ export async function GET(req: NextRequest) {
       const dietista = await ensureDietistaParaUsuario(user);
       if (dietista) {
         console.log(`[auth/callback] ficha asegurada para ${user.email ?? user.id} (id=${dietista.id})`);
+        // #39 — Un profesor aterriza en su espacio docente, salvo que venga a una ruta concreta.
+        if (destino === "/dashboard" && dietista.rolDocente === "PROFESOR") destino = "/profesor";
       } else {
         console.warn(`[auth/callback] ensureDietistaParaUsuario devolvió null para ${user.email ?? user.id}`);
       }
@@ -100,6 +104,6 @@ export async function GET(req: NextRequest) {
     console.error("[auth/callback] exchange sin error pero getUser() no devolvió usuario");
   }
 
-  console.log(`[auth/callback] redirige a ${next}`);
-  return NextResponse.redirect(`${origin}${next}`);
+  console.log(`[auth/callback] redirige a ${destino}`);
+  return NextResponse.redirect(`${origin}${destino}`);
 }
