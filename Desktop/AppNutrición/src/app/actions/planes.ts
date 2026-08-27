@@ -37,14 +37,29 @@ import type { PlanPDFData } from "@/lib/pdf/generate-plan-pdf";
  * Helper: verifica que una comida pertenezca a un plan del dietista actual.
  * Devuelve el dietistaId del plan o null si no se encuentra la cadena.
  */
-async function verificarPropietarioComida(comidaId: string, dietistaId: string, t: (key: string) => string) {
+async function verificarPropietarioComida(
+  comidaId: string,
+  dietistaId: string,
+  t: (key: string) => string,
+): Promise<{ planId: string; pacienteId: string }> {
   const comida = await prisma.comidaDelDia.findUnique({
     where: { id: comidaId },
-    include: { diaDelPlan: { include: { plan: { select: { dietistaId: true } } } } },
+    include: {
+      diaDelPlan: { include: { plan: { select: { dietistaId: true, pacienteId: true } } } },
+    },
   });
   if (!comida || comida.diaDelPlan.plan.dietistaId !== dietistaId) {
     throw new Error(t("auth.noAutorizado"));
   }
+  return { planId: comida.diaDelPlan.planId, pacienteId: comida.diaDelPlan.plan.pacienteId };
+}
+
+/** Revalida las pantallas donde se ve una comida. Sin esto, cambiar su nombre, su hora o sus notas
+ *  se guardaba en la BD pero al salir y volver Next servía la página cacheada con el valor viejo:
+ *  parecía que no se había guardado nada. */
+function revalidarComida(planId: string, pacienteId: string) {
+  revalidatePath(`/dietas/${planId}`);
+  revalidatePath(`/pacientes/${pacienteId}`);
 }
 
 /**
@@ -704,12 +719,13 @@ export async function actualizarDescripcionComida(
   if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
-  await verificarPropietarioComida(comidaId, dietista.id, t);
+  const donde = await verificarPropietarioComida(comidaId, dietista.id, t);
 
   await prisma.comidaDelDia.update({
     where: { id: comidaId },
     data: { descripcion: descripcion.trim().slice(0, 500) || null },
   });
+  revalidarComida(donde.planId, donde.pacienteId);
 }
 
 // #104 — Alias visible y hora de una comida (Fase 1). Ambos opcionales; si nombre queda
@@ -723,7 +739,7 @@ export async function actualizarMetaComida(
   if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
-  await verificarPropietarioComida(comidaId, dietista.id, t);
+  const donde = await verificarPropietarioComida(comidaId, dietista.id, t);
 
   const patch: { nombre?: string | null; hora?: string | null } = {};
   if (data.nombre !== undefined) {
@@ -783,6 +799,7 @@ export async function actualizarMetaComida(
       }
     }
   }
+  revalidarComida(donde.planId, donde.pacienteId);
   return { ok: true };
 }
 

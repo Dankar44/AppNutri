@@ -169,11 +169,16 @@ export function RepartoPanel({
     return ordenadas.map((c, i) => {
       const pct = pctDeFila(c, diaReal);
       const obj = objetivoDeFila(kcals[i], pct, c, objetivoDia);
+      // La etiqueta sale del nombre que tiene la comida EN LA DIETA: si el nutri llamó "desayuno2" al
+      // desayuno en el editor, el panel tiene que llamarlo igual y no "Desayuno".
+      const real = (diaActual?.comidas ?? []).find((x) => claveComida(x) === claveComida(c));
       return {
         fila: c,
         clave: claveComida(c),
-        etiqueta: (c.nombre ?? "").trim() || tc(c.tipo as never),
+        etiqueta:
+          (real?.nombre ?? "").trim() || (c.nombre ?? "").trim() || tc(c.tipo as never),
         pct,
+        hora: horaEfectiva(real ?? c),
         kcal: obj.kcal,
         protG: obj.protG,
         carbG: obj.carbG,
@@ -181,7 +186,7 @@ export function RepartoPanel({
         overrideActivo: c.grasaPct != null || c.carbPct != null || c.protPct != null,
       };
     });
-  }, [comidas, clavesDelDia, diaReal, kcalDia, objetivoDia, tc]);
+  }, [comidas, clavesDelDia, diaReal, kcalDia, objetivoDia, tc, diaActual]);
 
   const sumaPct = useMemo(
     () => sumaPctDia(comidas, diaReal, clavesDelDia),
@@ -417,7 +422,7 @@ export function RepartoPanel({
                     <tr key={f.clave} className="border-t border-border/60">
                       <td className="py-2 pr-3 align-top">
                         <span className="font-medium text-foreground">{f.etiqueta}</span>
-                        <span className="block text-xs text-muted-foreground">{horaEfectiva(f.fila)}</span>
+                        <span className="block text-xs text-muted-foreground">{f.hora}</span>
                       </td>
                       <td className="py-2 px-2 align-top">
                         <div className="flex items-center gap-1.5">
