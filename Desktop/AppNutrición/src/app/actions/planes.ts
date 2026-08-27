@@ -1111,6 +1111,7 @@ const COMIDA_ORDEN: Record<TipoComida, number> = {
 async function obtenerOCrearComida(
   diaId: string,
   origen: { tipo: TipoComida; nombre?: string | null; hora?: string | null },
+  creadas?: { diaId: string; tipo: string; nombre: string | null; hora: string | null }[],
 ): Promise<string> {
   const candidatas = await prisma.comidaDelDia.findMany({
     where: { diaId, tipo: origen.tipo },
@@ -1134,7 +1135,109 @@ async function obtenerOCrearComida(
     },
     select: { id: true },
   });
+  // Quien copia apunta las que se han creado para poder meterlas en el reparto (si está activo).
+  creadas?.push({
+    diaId,
+    tipo: origen.tipo,
+    nombre: (origen.nombre ?? "").trim() || null,
+    hora: (origen.hora ?? "").trim() || null,
+  });
   return nueva.id;
+}
+
+/**
+ * Mete en el reparto de su dieta las comidas que se acaban de crear al copiar, AL 0%, igual que
+ * cuando el nutri añade una comida a mano. Si no, la comida aparecía con "Sin objetivo en el reparto"
+ * y había que ir una por una a darle cuota.
+ *
+ * Solo toca los slots (planificaciones) que ya tienen el reparto activo: si esa dieta no reparte por
+ * comida, no se le activa nada.
+ */
+async function meterComidasNuevasEnReparto(
+  creadas: { diaId: string; tipo: string; nombre: string | null; hora: string | null }[],
+) {
+  if (creadas.length === 0) return;
+  const diaIds = [...new Set(creadas.map((c) => c.diaId))];
+  const filas = await prisma.$queryRawUnsafe<
+    { id: string; dia: string; planId: string; planificacionId: string | null }[]
+  >(
+    `SELECT id, dia, "planId", "planificacionId" FROM dias_del_plan WHERE id IN (${diaIds
+      .map((_, i) => `$${i + 1}`)
+      .join(",")})`,
+    ...diaIds,
+  );
+  const porDia = new Map(filas.map((f) => [f.id, f]));
+  const planIds = [...new Set(filas.map((f) => f.planId))];
+  if (planIds.length === 0) return;
+
+  const planes = await prisma.$queryRawUnsafe<
+    { id: string; repartoPorComida: unknown; planificacionIds: unknown }[]
+  >(
+    `SELECT id, "repartoPorComida", "planificacionIds" FROM planes_alimenticios WHERE id IN (${planIds
+      .map((_, i) => `$${i + 1}`)
+      .join(",")})`,
+    ...planIds,
+  );
+
+  for (const plan of planes) {
+    let guardado = (plan.repartoPorComida ?? null) as RepartoGuardado | null;
+    if (!guardado) continue;
+    const conocidos = Array.isArray(plan.planificacionIds) ? (plan.planificacionIds as string[]) : [];
+    // Agrupar por slot: cada planificación tiene su reparto y solo se toca el de los días afectados.
+    const porSlot = new Map<string, { nombre: string | null; tipo: string; hora: string | null; dia: string }[]>();
+    for (const c of creadas) {
+      const d = porDia.get(c.diaId);
+      if (!d || d.planId !== plan.id) continue;
+      const slot = d.planificacionId ?? "";
+      porSlot.set(slot, [...(porSlot.get(slot) ?? []), { ...c, dia: d.dia }]);
+    }
+    let cambiado = false;
+    for (const [slot, comidas] of porSlot) {
+      const reparto = repartoParaPlani(guardado, slot || null);
+      if (!reparto?.activo) continue; // esa dieta no reparte por comida: no se le activa nada
+      let filasReparto = reparto.comidas;
+      // Agrupadas por identidad: si la misma comida se ha creado en varios días, su fila nace con
+      // todos esos días (es lo que decide en qué días la creará una dieta nueva).
+      const porClave = new Map<string, { tipo: string; nombre: string | null; hora: string | null; dias: Set<string> }>();
+      for (const c of comidas) {
+        if (c.tipo === "OTRA" && !(c.nombre ?? "").trim()) continue; // sin nombre no hay identidad
+        const clave = claveComida(c);
+        const prev = porClave.get(clave);
+        if (prev) prev.dias.add(c.dia);
+        else porClave.set(clave, { tipo: c.tipo, nombre: c.nombre, hora: c.hora, dias: new Set([c.dia]) });
+      }
+      for (const [clave, c] of porClave) {
+        if (filasReparto.some((f) => claveComida(f) === clave)) continue;
+        filasReparto = [
+          ...filasReparto,
+          {
+            tipo: c.tipo,
+            nombre: c.nombre ?? undefined,
+            hora: c.hora ?? undefined,
+            dias: [...c.dias],
+            incluida: true,
+            kcalPct: 0,
+          },
+        ];
+        cambiado = true;
+      }
+      if (filasReparto !== reparto.comidas) {
+        guardado = ponerRepartoParaPlani(
+          guardado,
+          slot || null,
+          { activo: true, comidas: filasReparto },
+          conocidos,
+        );
+      }
+    }
+    if (cambiado) {
+      await prisma.$executeRawUnsafe(
+        `UPDATE planes_alimenticios SET "repartoPorComida" = $1::jsonb WHERE id = $2`,
+        JSON.stringify(guardado),
+        plan.id,
+      );
+    }
+  }
 }
 
 /** ¿Es "el mismo" alimento/receta? Mismo alimentoId + misma unidad, o misma receta. */
@@ -1302,6 +1405,7 @@ export async function copiarComidaADias(
   const tipo: TipoComida =
     tipoDestino && tipoDestino in COMIDA_ORDEN ? (tipoDestino as TipoComida) : origen.tipo;
 
+  const creadas: { diaId: string; tipo: string; nombre: string | null; hora: string | null }[] = [];
   for (const diaDestinoId of diaDestinoIds) {
     // Saltar solo si sería copiar la comida sobre sí misma (mismo día y mismo tipo)
     if (diaDestinoId === origen.diaId && tipo === origen.tipo) continue;
@@ -1312,11 +1416,15 @@ export async function copiarComidaADias(
     });
     if (!dia || dia.plan.dietistaId !== dietista.id) continue;
 
-    const destinoComidaId = await obtenerOCrearComida(diaDestinoId, {
-      tipo,
-      nombre: tipo === origen.tipo ? origen.nombre : null,
-      hora: tipo === origen.tipo ? origen.hora : null,
-    });
+    const destinoComidaId = await obtenerOCrearComida(
+      diaDestinoId,
+      {
+        tipo,
+        nombre: tipo === origen.tipo ? origen.nombre : null,
+        hora: tipo === origen.tipo ? origen.hora : null,
+      },
+      creadas,
+    );
     await copiarAlimentosAComida(comidaOrigenId, destinoComidaId, modo);
 
     if (modo === "reemplazar") {
@@ -1326,6 +1434,8 @@ export async function copiarComidaADias(
       });
     }
   }
+  // Las comidas que la copia acaba de crear entran en el reparto al 0%, como las que se añaden a mano.
+  await meterComidasNuevasEnReparto(creadas);
 }
 
 /**
@@ -1357,6 +1467,7 @@ export async function copiarDiaADias(
     throw new Error(t("auth.noAutorizado"));
   }
 
+  const creadas: { diaId: string; tipo: string; nombre: string | null; hora: string | null }[] = [];
   for (const diaDestinoId of diaDestinoIds) {
     if (diaDestinoId === diaOrigenId) continue;
 
@@ -1367,7 +1478,7 @@ export async function copiarDiaADias(
     if (!dia || dia.plan.dietistaId !== dietista.id) continue;
 
     for (const comida of origen.comidas) {
-      const destinoComidaId = await obtenerOCrearComida(diaDestinoId, comida);
+      const destinoComidaId = await obtenerOCrearComida(diaDestinoId, comida, creadas);
       await copiarAlimentosAComida(comida.id, destinoComidaId, modo);
       if (modo === "reemplazar") {
         await prisma.comidaDelDia.update({
@@ -1377,6 +1488,7 @@ export async function copiarDiaADias(
       }
     }
   }
+  await meterComidasNuevasEnReparto(creadas);
 }
 
 /**
