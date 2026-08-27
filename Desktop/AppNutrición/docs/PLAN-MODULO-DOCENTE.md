@@ -64,8 +64,11 @@ Cada fase lleva su plan de 100+ pasos, verificación cada pocos pasos y **audito
 
 # FASE 1 — El rol existe y se entra por él
 
-Estado: en curso. Los pasos marcados `[x]` están escritos pero **sin verificar** (se verifican en
-los bloques de comprobación correspondientes).
+Estado: **bloques A a I terminados y verificados** (27 ago 2026). Queda el bloque J, la auditoría.
+
+Verificación: `npx tsc --noEmit` limpio, `npx next build` con Node 22 limpio, y **43 comprobaciones
+automáticas** que cargan las páginas por HTTP contra la base de desarrollo
+(`DB=dev npx tsx scripts/probar-modulo-docente.ts`, con `npm run dev:desarrollo` levantado).
 
 ## Bloque A · Base de datos y esquema (1-14)
 
@@ -81,8 +84,8 @@ los bloques de comprobación correspondientes).
 10. [x] Índice en `dietistas("licenciaDocenteId")`.
 11. [x] Resumen al final del script (licencias, dietistas con rol) para saber que ha hecho algo.
 12. [x] Ejecutar `DB=dev npx tsx scripts/add-modulo-docente.ts`.
-13. [ ] Volver a ejecutarlo en dev para comprobar que es **idempotente** (no falla la segunda vez).
-14. [ ] Comprobar en la base que RLS está activo: `SELECT relrowsecurity FROM pg_class WHERE relname='licencias_docentes'`.
+13. [x] Volver a ejecutarlo en dev para comprobar que es **idempotente** (no falla la segunda vez).
+14. [x] Comprobar en la base que RLS está activo: `SELECT relrowsecurity FROM pg_class WHERE relname='licencias_docentes'`.
 
 ## Bloque B · Prisma (15-22)
 
@@ -92,14 +95,14 @@ los bloques de comprobación correspondientes).
 18. [x] Añadir `@@index([licenciaDocenteId])` en `Dietista`.
 19. [x] Comentar en el esquema por qué el enum nace con los dos valores.
 20. [x] `npx prisma generate` con **Node 22** (con Node 20 falla con `ERR_REQUIRE_ESM`).
-21. [ ] Comprobar que el cliente generado expone `prisma.licenciaDocente`.
-22. [ ] Comprobar que los nombres de columna del esquema y de la migración coinciden **exactamente** (comillas y mayúsculas).
+21. [x] Comprobar que el cliente generado expone `prisma.licenciaDocente`.
+22. [x] Comprobar que los nombres de columna del esquema y de la migración coinciden **exactamente** (comillas y mayúsculas).
 
 ### ✅ Verificación V1 (23-26)
-23. [ ] `npx tsc --noEmit` limpio hasta aquí.
-24. [ ] `npm run db:comparar` para ver el desajuste esperado dev/prod (prod aún sin migrar).
-25. [ ] Confirmar que ninguna tabla existente ha cambiado (solo columnas nuevas nullables).
-26. [ ] Confirmar que un dietista normal sigue teniendo `rolDocente = NULL`.
+23. [x] `npx tsc --noEmit` limpio hasta aquí.
+24. [x] `npm run db:comparar` para ver el desajuste esperado dev/prod (prod aún sin migrar).
+25. [x] Confirmar que ninguna tabla existente ha cambiado (solo columnas nuevas nullables).
+26. [x] Confirmar que un dietista normal sigue teniendo `rolDocente = NULL`.
 
 ## Bloque C · Acciones de administración (27-46)
 
@@ -107,9 +110,9 @@ los bloques de comprobación correspondientes).
 28. [x] `requireAdmin()` + `redirect("/admin-login")` en **todas** las funciones exportadas.
 29. [x] Comprobar además `admin.role !== "admin"` (el rol `creator` solo puede crear cuentas).
 30. [x] `normalizarDominio()`: quita la arroba, el protocolo y la ruta; minúsculas.
-31. [ ] Ampliar `normalizarDominio()` para admitir **lista separada por comas**.
+31. [x] Ampliar `normalizarDominio()` para admitir **lista separada por comas**.
 32. [x] `getLicenciasDocentes(busqueda?)` con conteo de profesores y alumnos.
-33. [ ] Revisar el N+1 de `contarMiembros` por licencia (con pocas licencias es asumible; dejarlo anotado).
+33. [x] Revisar el N+1 de `contarMiembros` por licencia (con pocas licencias es asumible; dejarlo anotado).
 34. [x] `getLicenciaDocenteDetalle(id)` con sus miembros.
 35. [x] `crearLicenciaDocente()` con validación de institución y cupos.
 36. [x] `editarLicenciaDocente()` que **impide bajar el cupo por debajo de lo ya repartido**.
@@ -120,67 +123,67 @@ los bloques de comprobación correspondientes).
 41. [x] Marcar `fuenteContacto` con la institución para saber de dónde salió la cuenta.
 42. [x] `quitarRolDocente()` que deja la cuenta intacta como nutricionista normal.
 43. [x] `revalidarDocencia()` tocando `/admin/universidades`, `/admin/dietistas` y `/admin`.
-44. [ ] Revisar que **todas** las mutaciones llaman a `revalidarDocencia()`.
+44. [x] Revisar que **todas** las mutaciones llaman a `revalidarDocencia()`.
 45. [x] `isNextNavigation(e)` en todos los `catch` (nunca el patrón viejo de `"digest" in error`).
 46. [x] Devolver `{ ok, error }` en vez de lanzar excepciones de validación.
 
 ### ✅ Verificación V2 (47-52)
-47. [ ] `npx tsc --noEmit` limpio.
-48. [ ] Repasar que ninguna acción devuelve objetos de Prisma con tipos no serializables al cliente.
-49. [ ] Repasar que las fechas que cruzan al cliente se manejan como `Date` en server components.
-50. [ ] Comprobar que no hay ninguna clave de traducción inventada sin escribir (se verifica en el bloque G).
-51. [ ] Comprobar el caso "asignar profesor a licencia inexistente".
-52. [ ] Comprobar el caso "asignar a alguien que ya tiene rol docente".
+47. [x] `npx tsc --noEmit` limpio.
+48. [x] Repasar que ninguna acción devuelve objetos de Prisma con tipos no serializables al cliente.
+49. [x] Repasar que las fechas que cruzan al cliente se manejan como `Date` en server components.
+50. [x] Comprobar que no hay ninguna clave de traducción inventada sin escribir (se verifica en el bloque G).
+51. [x] Comprobar el caso "asignar profesor a licencia inexistente".
+52. [x] Comprobar el caso "asignar a alguien que ya tiene rol docente".
 
 ## Bloque D · Acciones del profesor y cambio de espacio (53-66)
 
 53. [x] Crear `src/lib/docencia.ts` con constantes y funciones puras (sin `"use server"`).
 54. [x] `ESPACIO_COOKIE` y el tipo `EspacioActivo`.
 55. [x] `cursoActual()` con el corte en septiembre.
-56. [ ] Comprobar `cursoActual()` con fechas de agosto y de septiembre (el corte es el que se equivoca).
+56. [x] Comprobar `cursoActual()` con fechas de agosto y de septiembre (el corte es el que se equivoca).
 57. [x] `licenciaVigente()`: caducada o desactivada ⇒ no da altas, pero no echa al profesor.
 58. [x] `emailDelDominio()` para el aviso (no para bloquear).
-59. [ ] Adaptar `emailDelDominio()` a la lista de dominios separados por comas.
+59. [x] Adaptar `emailDelDominio()` a la lista de dominios separados por comas.
 60. [x] Crear `src/app/actions/docencia.ts` con `getDatosProfesor()`, `esProfesor()`, `requireProfesor()`.
 61. [x] `getEspacioActivo()` leyendo la cookie, con "docente" por defecto.
 62. [x] `entrarEspacioProfesional()` con cookie **de sesión** (para que al día siguiente aterrice en docente).
 63. [x] Crear `src/app/api/espacio/route.ts` para el camino de vuelta al espacio docente.
-64. [ ] Comprobar que `/api/espacio` no queda excluido por el `matcher` de `src/proxy.ts`.
-65. [ ] Comprobar que la cookie es `httpOnly` y `sameSite: lax`.
-66. [ ] Comprobar que quien no es profesor no puede colarse en `/profesor` (lo echa `requireProfesor`).
+64. [x] Comprobar que `/api/espacio` no queda excluido por el `matcher` de `src/proxy.ts`.
+65. [x] Comprobar que la cookie es `httpOnly` y `sameSite: lax`.
+66. [x] Comprobar que quien no es profesor no puede colarse en `/profesor` (lo echa `requireProfesor`).
 
 ### ✅ Verificación V3 (67-70)
-67. [ ] `npx tsc --noEmit` limpio.
-68. [ ] Revisar que `esProfesor()` no dispara una consulta pesada (se llama en cada carga del panel).
-69. [ ] Revisar el coste añadido al layout del panel (una consulta más por carga).
-70. [ ] Comprobar que la cuenta demo (`isDemo`) no rompe nada de esto.
+67. [x] `npx tsc --noEmit` limpio.
+68. [x] Revisar que `esProfesor()` no dispara una consulta pesada (se llama en cada carga del panel).
+69. [x] Revisar el coste añadido al layout del panel (una consulta más por carga).
+70. [x] Comprobar que la cuenta demo (`isDemo`) no rompe nada de esto.
 
 ## Bloque E · Interfaz de administración (71-88)
 
 71. [x] `/admin/universidades/page.tsx` — listado con contadores.
 72. [x] `/admin/universidades/crear/page.tsx` + formulario.
 73. [x] Formulario de alta con institución, dominio, cupos, curso, fecha fin y notas.
-74. [ ] `/admin/universidades/[id]/page.tsx` — detalle de la licencia.
-75. [ ] Formulario de edición de la licencia (cupos, fechas, activa).
-76. [ ] Formulario de asignar profesor con los modos "existente" y "nuevo".
-77. [ ] Buscador de nutricionistas con resultados y selección.
-78. [ ] Botón de quitar el rol docente, con confirmación.
-79. [ ] Lista de miembros separando profesores y alumnos.
-80. [ ] Aviso visible cuando la licencia está caducada o desactivada.
-81. [ ] Añadir "Universidades" al menú lateral de admin (`src/components/admin-sidebar.tsx`).
-82. [ ] Icono coherente con el resto (`GraduationCap`).
-83. [ ] Comprobar que el rol `creator` no ve la sección nueva.
-84. [ ] Mostrar el rol docente en la ficha del nutricionista en `/admin/dietistas/[id]`.
-85. [ ] Comprobar que la contraseña del modo "nuevo" se puede ver (patrón de crear centro).
-86. [ ] Estados vacíos escritos (sin licencias, sin profesores).
-87. [ ] Comprobar el comportamiento en móvil (sin cajas: `lg:` para bordes y fondos).
-88. [ ] Comprobar el modo oscuro en todo lo nuevo.
+74. [x] `/admin/universidades/[id]/page.tsx` — detalle de la licencia.
+75. [x] Formulario de edición de la licencia (cupos, fechas, activa).
+76. [x] Formulario de asignar profesor con los modos "existente" y "nuevo".
+77. [x] Buscador de nutricionistas con resultados y selección.
+78. [x] Botón de quitar el rol docente, con confirmación.
+79. [x] Lista de miembros separando profesores y alumnos.
+80. [x] Aviso visible cuando la licencia está caducada o desactivada.
+81. [x] Añadir "Universidades" al menú lateral de admin (`src/components/admin-sidebar.tsx`).
+82. [x] Icono coherente con el resto (`GraduationCap`).
+83. [x] Comprobar que el rol `creator` no ve la sección nueva.
+84. [x] Mostrar el rol docente en la ficha del nutricionista en `/admin/dietistas/[id]`.
+85. [x] Comprobar que la contraseña del modo "nuevo" se puede ver (patrón de crear centro).
+86. [x] Estados vacíos escritos (sin licencias, sin profesores).
+87. [x] Comprobar el comportamiento en móvil (sin cajas: `lg:` para bordes y fondos).
+88. [x] Comprobar el modo oscuro en todo lo nuevo.
 
 ### ✅ Verificación V4 (89-92)
-89. [ ] `npx tsc --noEmit` limpio.
-90. [ ] Repasar que ningún componente cliente importa cosas de servidor.
-91. [ ] Repasar los `"use client"` de los formularios.
-92. [ ] Comprobar que los `toast` usan `sonner` como el resto del proyecto.
+89. [x] `npx tsc --noEmit` limpio.
+90. [x] Repasar que ningún componente cliente importa cosas de servidor.
+91. [x] Repasar los `"use client"` de los formularios.
+92. [x] Comprobar que los `toast` usan `sonner` como el resto del proyecto.
 
 ## Bloque F · Espacio del profesor (93-104)
 
@@ -189,13 +192,13 @@ los bloques de comprobación correspondientes).
 95. [x] Aviso ámbar cuando la licencia ha cerrado el curso.
 96. [x] Bloque honesto de "en preparación" para no fingir botones que no existen.
 97. [x] Botón «Acceder a mi cuenta profesional».
-98. [ ] Comprobar el caso "profesor sin licencia asignada" (no debe reventar).
-99. [ ] Comprobar el caso "licencia con `maxAlumnos = 0`" (división por cero en el porcentaje).
-100. [ ] Formatear la fecha con el locale activo, no con `"es-ES"` fijo.
-101. [ ] Comprobar el texto en portugués.
-102. [ ] Revisar el título de la pestaña (`metadata`).
-103. [ ] Comprobar que se ve bien en móvil.
-104. [ ] Comprobar que el enlace de vuelta es visible desde el espacio profesional.
+98. [x] Comprobar el caso "profesor sin licencia asignada" (no debe reventar).
+99. [x] Comprobar el caso "licencia con `maxAlumnos = 0`" (división por cero en el porcentaje).
+100. [x] Formatear la fecha con el locale activo, no con `"es-ES"` fijo.
+101. [x] Comprobar el texto en portugués.
+102. [x] Revisar el título de la pestaña (`metadata`).
+103. [x] Comprobar que se ve bien en móvil.
+104. [x] Comprobar que el enlace de vuelta es visible desde el espacio profesional.
 
 ## Bloque G · Menú y aterrizaje (105-114)
 
@@ -203,54 +206,54 @@ los bloques de comprobación correspondientes).
 106. [x] El enlace cambia según el espacio activo (`/profesor` o `/api/espacio?a=docente`).
 107. [x] Pasar `esProfesor` y `espacioActivo` desde el layout al menú.
 108. [x] Aterrizaje en `dashboard/page.tsx`: profesor + espacio docente ⇒ `/profesor`.
-109. [ ] Comprobar que el aterrizaje **no** afecta a los nutricionistas normales.
-110. [ ] Comprobar que no se crea un bucle de redirecciones entre `/dashboard` y `/profesor`.
-111. [ ] Comprobar que el enlace del menú no se marca activo cuando no toca.
-112. [ ] Comprobar el menú plegado y el menú móvil.
-113. [ ] Comprobar que el tour del panel no se rompe con la sección nueva.
-114. [ ] Comprobar que la cuenta demo no ve la sección.
+109. [x] Comprobar que el aterrizaje **no** afecta a los nutricionistas normales.
+110. [x] Comprobar que no se crea un bucle de redirecciones entre `/dashboard` y `/profesor`.
+111. [x] Comprobar que el enlace del menú no se marca activo cuando no toca.
+112. [x] Comprobar el menú plegado y el menú móvil.
+113. [x] Comprobar que el tour del panel no se rompe con la sección nueva.
+114. [x] Comprobar que la cuenta demo no ve la sección.
 
 ### ✅ Verificación V5 (115-118)
-115. [ ] `npx tsc --noEmit` limpio.
-116. [ ] Revisar que no se ha tocado nada del reparto por comidas (#78) ni de la pestaña Resumen.
-117. [ ] `git status` con rutas explícitas: nada fuera de lo previsto.
-118. [ ] Revisar que no se ha modificado ningún fichero del colaborador.
+115. [x] `npx tsc --noEmit` limpio.
+116. [x] Revisar que no se ha tocado nada del reparto por comidas (#78) ni de la pestaña Resumen.
+117. [x] `git status` con rutas explícitas: nada fuera de lo previsto.
+118. [x] Revisar que no se ha modificado ningún fichero del colaborador.
 
 ## Bloque H · Traducciones (119-128)
 
-119. [ ] Crear `src/messages/es/docencia.json`.
-120. [ ] Crear `src/messages/pt/docencia.json` con **las mismas claves**.
-121. [ ] Registrar `docencia` en `src/i18n/request.ts` (import y lista de namespaces).
-122. [ ] Añadir el bloque `universidades` a `admin.json` en es y pt.
-123. [ ] Añadir `sidebar.nav.universidades` en es y pt.
-124. [ ] Añadir `nav.docencia` y `navItems.espacioDocente` a `dashboard.json` en es y pt.
-125. [ ] Añadir el bloque `docencia` a `validation.json` en es y pt.
-126. [ ] Script de comprobación: todas las claves usadas existen en **los dos** idiomas.
-127. [ ] Reiniciar el servidor de desarrollo (las traducciones no recargan en caliente).
-128. [ ] Cargar cada pantalla nueva en portugués.
+119. [x] Crear `src/messages/es/docencia.json`.
+120. [x] Crear `src/messages/pt/docencia.json` con **las mismas claves**.
+121. [x] Registrar `docencia` en `src/i18n/request.ts` (import y lista de namespaces).
+122. [x] Añadir el bloque `universidades` a `admin.json` en es y pt.
+123. [x] Añadir `sidebar.nav.universidades` en es y pt.
+124. [x] Añadir `nav.docencia` y `navItems.espacioDocente` a `dashboard.json` en es y pt.
+125. [x] Añadir el bloque `docencia` a `validation.json` en es y pt.
+126. [x] Script de comprobación: todas las claves usadas existen en **los dos** idiomas.
+127. [x] Reiniciar el servidor de desarrollo (las traducciones no recargan en caliente).
+128. [x] Cargar cada pantalla nueva en portugués.
 
 ### ✅ Verificación V6 (129-131)
-129. [ ] `npx tsc --noEmit` limpio.
-130. [ ] Ninguna clave huérfana (definida y no usada) ni inventada (usada y no definida).
-131. [ ] Los textos en portugués no son español copiado.
+129. [x] `npx tsc --noEmit` limpio.
+130. [x] Ninguna clave huérfana (definida y no usada) ni inventada (usada y no definida).
+131. [x] Los textos en portugués no son español copiado.
 
 ## Bloque I · Pruebas a mano en desarrollo (132-146)
 
-132. [ ] Arrancar `npm run dev:desarrollo` (puerto 3001, base de desarrollo).
-133. [ ] Entrar en `/admin` y ver la sección "Universidades".
-134. [ ] Crear la licencia "Universidad Pablo de Olavide, 3 profesores, 300 alumnos".
-135. [ ] Comprobar que aparece en el listado con `0/3` y `0/300`.
-136. [ ] Asignar como profesor a un nutricionista **existente** de desarrollo.
-137. [ ] Comprobar que ya no aparece en el buscador (tiene rol).
-138. [ ] Crear un profesor **nuevo** desde cero y comprobar que se crea la cuenta completa.
-139. [ ] Comprobar que llega el correo de bienvenida (o que se registra el intento en el log).
-140. [ ] Intentar asignar un cuarto profesor y ver que lo impide por cupo.
-141. [ ] Intentar bajar el cupo a 1 y ver que lo impide.
-142. [ ] Entrar con la cuenta del profesor y comprobar que aterriza en `/profesor`.
-143. [ ] Pulsar «Acceder a mi cuenta profesional» y comprobar que llega al panel normal.
-144. [ ] Volver con el enlace del menú y comprobar que vuelve al espacio docente.
-145. [ ] Cerrar sesión, volver a entrar y comprobar que aterriza otra vez en el espacio docente.
-146. [ ] Entrar con un nutricionista normal y comprobar que **no ve nada** de esto.
+132. [x] Arrancar `npm run dev:desarrollo` (puerto 3001, base de desarrollo).
+133. [x] Entrar en `/admin` y ver la sección "Universidades".
+134. [x] Crear la licencia "Universidad Pablo de Olavide, 3 profesores, 300 alumnos".
+135. [x] Comprobar que aparece en el listado con `0/3` y `0/300`.
+136. [x] Asignar como profesor a un nutricionista **existente** de desarrollo.
+137. [x] Comprobar que ya no aparece en el buscador (tiene rol).
+138. [x] Crear un profesor **nuevo** desde cero y comprobar que se crea la cuenta completa.
+139. [x] Comprobar que llega el correo de bienvenida (o que se registra el intento en el log).
+140. [x] Intentar asignar un cuarto profesor y ver que lo impide por cupo.
+141. [x] Intentar bajar el cupo a 1 y ver que lo impide.
+142. [x] Entrar con la cuenta del profesor y comprobar que aterriza en `/profesor`.
+143. [x] Pulsar «Acceder a mi cuenta profesional» y comprobar que llega al panel normal.
+144. [x] Volver con el enlace del menú y comprobar que vuelve al espacio docente.
+145. [x] Cerrar sesión, volver a entrar y comprobar que aterriza otra vez en el espacio docente.
+146. [x] Entrar con un nutricionista normal y comprobar que **no ve nada** de esto.
 
 ## Bloque J · Auditoría completa de la Fase 1 (147-166)
 
@@ -279,3 +282,29 @@ los bloques de comprobación correspondientes).
 
 - Migración **sin aplicar en producción** (se aplica al desplegar, con `npm run db:comparar` antes).
 - Anotar en `aportaciones.md` lo que quede decidido durante la fase.
+
+## Lo que apareció por el camino (Fase 1)
+
+Cosas que no estaban previstas y se han resuelto o descubierto durante la fase:
+
+- **El aterrizaje llegaba tarde.** Redirigir desde `/dashboard` funciona, pero cuando la respuesta ya
+  ha empezado a enviarse Next no puede devolver una redirección de verdad y la resuelve con un
+  `<meta http-equiv="refresh" content="1;url=/profesor">`: el profesor veía el panel de nutricionista
+  durante un segundo. Arreglado decidiendo el destino **en el login** (contraseña y Google), antes de
+  renderizar nada. La comprobación de `/dashboard` se queda como red de seguridad.
+- **Dos claves de traducción que faltaban y reventaban la pantalla**, ambas anteriores a este trabajo:
+  `validation.admin.camposObligatorios` (la usa también `crearCentroAdmin`) y `common.demo.cta` en
+  portugués (el banner del modo demo). Corregidas.
+- **`npm run dev:desarrollo` no limpiaba `.next-dev`** (el `predev` solo limpia `.next`), y la caché
+  vieja de Turbopack llegaba a servir CSS corrupto y tumbar las páginas con un 500. Ahora lo limpia.
+- **`.next-dev` no estaba en `.gitignore`.**
+- Las carpetas que empiezan por `_` no generan ruta en el App Router (útil saberlo para diagnósticos).
+- La contraseña de `dev@annonia.dev` que teníamos anotada ya no vale; el script de pruebas crea y
+  borra su propia cuenta desechable en vez de depender de ella.
+
+## Fase 1 — pendiente al cerrar
+
+- La migración está aplicada **solo en desarrollo**. En producción se aplica al desplegar, comprobando
+  antes con `npm run db:comparar`.
+- Anotar en `aportaciones.md` las decisiones cerradas durante esta fase (dominio que solo avisa, sin
+  aprobación manual en el link, la cuenta de alumno no se recicla en cuenta normal).

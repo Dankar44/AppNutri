@@ -1174,6 +1174,58 @@ cada lado). Y se venderá aparte, dirigido a universidades y centros de formaci�
   pasarela, pero el modelo de datos tiene que soportarlo (plan contratado, licencias, estado del
   acceso) para no rehacerlo luego.
 
+**DECISIONES CERRADAS Y ESTADO (Guillermo, 27 ago 2026) — Fase 1 IMPLEMENTADA:**
+
+*Cómo se concede el rol:*
+- **Solo desde `/admin`**, nunca en autoservicio: no hay registro de profesor ni forma de pedirlo.
+- Dos caminos, los dos acaban igual: si **ya tiene cuenta** de nutricionista se le añade el rol (la
+  siguiente vez que entre aterriza en el espacio docente, con sus pacientes intactos); si **no la
+  tiene**, se le crea desde admin y nace con las dos cosas, espacio docente y cuenta profesional.
+- Los profesores de una licencia los damos de alta nosotros, no se invitan entre ellos.
+
+*Licencias:*
+- Bolsa por institución: "3 profesores y 300 alumnos", de septiembre a agosto.
+- **Un alumno = una licencia**, aunque esté en las clases de dos profesores distintos.
+- **Sin máximo de alumnos por clase**: el único techo es la bolsa. Si la gastan, que pidan más.
+- Al acabar el curso, el **alumno** pierde el acceso y el **profesor no**: conserva su cuenta y sus
+  casos, pero no puede dar altas hasta que se renueve.
+
+*Alumnos:*
+- Alta por las **dos vías**: metiendo los correos a mano (la principal, es lo que se vende con el
+  aula virtual) y link de invitación de clase. **Sin aprobación manual** de los que entran por link:
+  obligaría al profesor a hacer el trabajo dos veces. Lo que protege el link es el tope de la bolsa
+  y poder cerrarlo.
+- Si el correo **ya tiene cuenta** en Annonia no se crea otra: se vincula y conserva lo suyo,
+  incluida su suscripción si la pagó. Es también la forma de devolver el acceso a un alumno del
+  curso pasado (además del botón de renovar), con todos sus datos.
+- La cuenta de alumno **no se convierte en cuenta normal**: al quitarle el acceso no puede seguir
+  usando Annonia gratis registrándose otra vez. Sale de ahí pagando (con su descuento de recién
+  graduado) o volviendo a tener acceso de clase.
+- El alumno puede tener **sus propios pacientes**, y el profesor no los ve nunca: solo ve las copias
+  de los casos que él ha puesto.
+
+*Casos y corrección:*
+- El alumno **puede editar** los datos del caso, con un aviso de que los puso su profesor.
+- **Nota de 0 a 10 con decimales y comentarios**, con interruptor de compartirlos con el alumno o
+  quedárselos. El alumno los ve en su **aula** dentro de la aplicación, con notificación.
+- **Fecha límite** por caso asignado a una clase (la misma para todos, ajustable a un alumno suelto).
+- El paciente del caso lleva su distintivo, como el "Paciente de ejemplo" que ya existe.
+
+*Dominio de correo de la institución:*
+- Se guarda en la licencia y admite **varios separados por comas** (en la Rey Juan Carlos el profesor
+  es `@urjc.es` y el alumno `@alumnos.urjc.es`), pero **solo avisa, nunca bloquea**: en producción hay
+  profesores de universidad dados de alta con Gmail. El bloqueo duro se activará cuando haya cobros y
+  alguna universidad lo pida.
+
+*Universidades con cuenta a 27 ago 2026 (dato de producción):* Alicante (`ua.es`), Pablo de Olavide
+(`upo.es`, dos profesores que **nunca han entrado**), Rey Juan Carlos (`urjc.es`, dos), UOC
+(`uoc.edu`, dos) y València (`uv.es`).
+
+*Estado:* **Fase 1 hecha** en la rama `feature/cuenta-profesor` — el rol existe, las licencias se
+crean y se conceden desde `/admin`, y el profesor aterriza en su espacio docente con paso a su cuenta
+profesional. Migración aplicada solo en desarrollo. El plan completo por fases está en
+`docs/PLAN-MODULO-DOCENTE.md`.
+
 **Prioridad:** Alta (abre un nuevo segmento de mercado: universidades y centros de formación)
 **Complejidad:** Alta
 
