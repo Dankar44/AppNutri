@@ -11,15 +11,16 @@
  *   2. DB=dev npx tsx scripts/probar-modulo-docente.ts
  *
  * Crea sus propios datos (licencias "PRUEBA …" y una cuenta desechable) y los borra al acabar.
- * NO ejecutar con DB=prod: crearía cuentas y licencias en producción.
+ * Solo funciona con DB=dev: contra producción aborta antes de tocar nada (_guard-solo-dev).
  */
-import "./_guard";
+import "./_guard-solo-dev";
 import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import pg from "pg";
 import { createClient } from "@supabase/supabase-js";
 import { SignJWT } from "jose";
+import { rutaInternaSegura } from "../src/lib/utils";
 
 const BASE = process.env.PRUEBAS_URL ?? "http://localhost:3001";
 const EMAIL_PRUEBA = "profesor.prueba@annonia.dev";
@@ -204,7 +205,7 @@ async function main() {
     console.log("\n── Los dos espacios ──");
     comprobar(
       "el espacio docente enlaza a la cuenta profesional",
-      espacio.cuerpo.includes('href="/dashboard"') && espacio.cuerpo.includes("Acceder a mi cuenta profesional"),
+      /<a[^>]+href="\/dashboard"[^>]*>(?:(?!<\/a>)[\s\S])*Acceder a mi cuenta profesional/.test(espacio.cuerpo),
     );
 
     const panelProfesor = await pedir("/dashboard", sesion);
@@ -241,13 +242,30 @@ async function main() {
     comprobar("el panel de admin sin sesión redirige", adminSinCookie.estado >= 300 && adminSinCookie.estado < 400, `${adminSinCookie.estado} → ${adminSinCookie.destino}`);
     const profesorSinSesion = await pedir("/profesor");
     comprobar("/profesor sin sesión va a login", profesorSinSesion.destino.includes("/login"), profesorSinSesion.destino);
-    // Redirección abierta: "origin" + "@evil.com" es una URL cuyo host es evil.com.
-    for (const ataque of ["@evil.com", "//evil.com", "/\\evil.com", "https://evil.com"]) {
-      const r = await pedir(`/auth/callback?error=x&next=${encodeURIComponent(ataque)}`);
-      let host = "sin redirección";
-      try { host = new URL(r.destino, BASE).host; } catch { host = "URL inválida"; }
-      comprobar(`el callback no se deja sacar del dominio con next=${ataque}`, host === new URL(BASE).host, host);
+    // Redirección abierta. Se prueba la función directamente: la rama del callback que concatena
+    // el destino exige sesión, así que pedirla sin cookie no ejecutaba nada de esto y las
+    // comprobaciones pasaban incluso con el fallo puesto (visto en la auditoría del 28 ago 2026).
+    const ataques = ["@evil.com", "//evil.com", "/\\evil.com", "https://evil.com", "evil.com", "", null];
+    for (const ataque of ataques) {
+      const saneada = rutaInternaSegura(ataque);
+      const host = new URL("https://annonia.com" + saneada).host;
+      comprobar(
+        `next=${JSON.stringify(ataque)} no saca del dominio`,
+        host === "annonia.com" && saneada === "/dashboard",
+        `→ ${saneada} (host ${host})`,
+      );
     }
+    for (const buena of ["/dashboard", "/pacientes/123", "/profesor"]) {
+      comprobar(`una ruta interna se respeta: ${buena}`, rutaInternaSegura(buena) === buena);
+    }
+
+    // Y de extremo a extremo, con sesión, que es la rama que de verdad concatena el destino.
+    const conAtaque = await pedir(`/auth/callback?code=basura&next=${encodeURIComponent("@evil.com")}`, sesion);
+    comprobar(
+      "el callback con sesión tampoco sale del dominio",
+      conAtaque.destino !== "" && new URL(conAtaque.destino, BASE).host === new URL(BASE).host,
+      conAtaque.destino || `estado ${conAtaque.estado} (sin redirección)`,
+    );
 
     // ─── 7bis. La puerta de entrada, /entrar ───
     console.log("\n── La puerta de entrada ──");
@@ -256,6 +274,13 @@ async function main() {
 
     const entrarProfesor = await pedir("/entrar", sesion);
     comprobar("/entrar manda al profesor a su espacio", entrarProfesor.destino.includes("/profesor"), entrarProfesor.destino);
+
+    // El aterrizaje no puede depender de haber entrado por el formulario: quien abre el dominio
+    // con la sesión viva, o vuelve a /login, tiene que acabar igualmente en su espacio.
+    const porElDominio = await pedir("/", sesion);
+    comprobar("abrir el dominio con sesión pasa por la misma puerta", porElDominio.destino.includes("/entrar"), porElDominio.destino);
+    const loginConSesion = await pedir("/login", sesion);
+    comprobar("ir a /login con la sesión viva también", loginConSesion.destino.includes("/entrar"), loginConSesion.destino);
 
     await client.query(`UPDATE dietistas SET "rolDocente" = NULL WHERE id = $1`, [dietistaId]);
     const entrarNormal = await pedir("/entrar", sesion);

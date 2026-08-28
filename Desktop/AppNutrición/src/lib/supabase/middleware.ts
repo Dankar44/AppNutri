@@ -79,7 +79,9 @@ export async function updateSession(request: NextRequest) {
 
   if (user && isAuthPage && !request.nextUrl.pathname.startsWith("/pendiente") && !request.nextUrl.pathname.startsWith("/nueva-password")) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    // #39 — A /entrar y no a /dashboard: ahí se decide si esta cuenta es de profesor. No se puede
+    // consultar la base de datos desde aquí (esto corre en Edge).
+    url.pathname = "/entrar";
     return limpiarDemoObsoleta(NextResponse.redirect(url));
   }
 

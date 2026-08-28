@@ -7,17 +7,11 @@
  * Se puede ejecutar las veces que haga falta: rehace la cuenta y la licencia desde cero.
  * ABORTA si se le apunta a producción: crea una cuenta con una contraseña escrita aquí.
  */
-import "./_guard";
-import { esProduccion } from "./_guard";
+import "./_guard-solo-dev";
 import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import pg from "pg";
-
-if (esProduccion) {
-  console.error("\n✗ ABORTADO: esto es solo para desarrollo. Crearía una cuenta con contraseña conocida en producción.\n");
-  process.exit(1);
-}
 
 const EMAIL = "profesor@annonia.dev";
 const PASS = "profesor1234";

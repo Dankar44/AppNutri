@@ -35,18 +35,12 @@ export interface DatosProfesor {
   puedeDarAltas: boolean;
 }
 
-/**
- * ¿La cuenta que ha iniciado sesión es de profesor? Consulta mínima (solo el rol), pensada
- * para el aterrizaje del panel, que se ejecuta en cada carga.
- */
+/** ¿La cuenta que ha iniciado sesión es de profesor? */
 export async function esProfesor(): Promise<boolean> {
+  // `getCurrentDietista` devuelve la fila entera y está cacheada por petición, así que el rol
+  // sale de ahí: una consulta más aquí la pagaría cualquiera que abra la aplicación.
   const dietista = await getCurrentDietista();
-  if (!dietista) return false;
-  const ficha = await prisma.dietista.findUnique({
-    where: { id: dietista.id },
-    select: { rolDocente: true },
-  });
-  return ficha?.rolDocente === "PROFESOR";
+  return dietista?.rolDocente === "PROFESOR";
 }
 
 /**

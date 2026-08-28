@@ -18,10 +18,10 @@
  *        NEXT_DIST_DIR=.next-dev npx next build && NEXT_DIST_DIR=.next-dev npx next start --port 3001
  *   2. DB=dev npx tsx scripts/probar-modulo-docente-navegador.ts
  *
- * Crea sus propios datos y los borra al terminar. NO ejecutar con DB=prod.
+ * Crea sus propios datos y los borra al terminar. Solo con DB=dev: contra producción aborta.
  * Deja capturas de pantalla en /tmp/annonia-capturas/ para revisarlas a ojo.
  */
-import "./_guard";
+import "./_guard-solo-dev";
 import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";

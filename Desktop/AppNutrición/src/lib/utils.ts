@@ -85,3 +85,21 @@ export const OBJETIVO_LABELS: Record<string, string> = {
   DEPORTIVO: "DEPORTIVO",
   OTRO: "OTRO",
 };
+
+/**
+ * Sanea una ruta que viene de la URL antes de usarla en una redirección.
+ *
+ * Los destinos se construyen pegando cadenas (`origin + ruta`), y ahí un valor que no empiece por
+ * "/" cambia el host: "https://annonia.com" + "@evil.com" es una URL cuyo host es evil.com, con el
+ * dominio legítimo colado como nombre de usuario. Es una redirección abierta: un enlace que empieza
+ * por annonia.com y acaba en la página de otro (phishing muy creíble).
+ *
+ * Solo se aceptan rutas internas: una barra, y ni "//" ni "/\\", que el navegador lee como otro
+ * dominio. Envolverlo en `new URL(valor, origen)` NO protege: "//evil.com" y "https://evil.com"
+ * siguen resolviendo a evil.com por resolución relativa.
+ */
+export function rutaInternaSegura(valor: string | null | undefined, porDefecto = "/dashboard"): string {
+  if (!valor || !valor.startsWith("/")) return porDefecto;
+  if (valor.startsWith("//") || valor.startsWith("/\\")) return porDefecto;
+  return valor;
+}

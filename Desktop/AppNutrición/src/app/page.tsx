@@ -8,7 +8,8 @@ export default async function Home() {
   } = await supabase.auth.getUser();
 
   if (user) {
-    redirect("/dashboard");
+    // #39 — Por la misma puerta que el login: /entrar decide si va al espacio docente o al panel.
+    redirect("/entrar");
   } else {
     redirect("/landing");
   }
