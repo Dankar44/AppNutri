@@ -104,8 +104,9 @@ export async function GET(req: NextRequest) {
       const dietista = await ensureDietistaParaUsuario(user);
       if (dietista) {
         console.log(`[auth/callback] ficha asegurada para ${user.email ?? user.id} (id=${dietista.id})`);
-        // #39 — Un profesor aterriza en su espacio docente, salvo que venga a una ruta concreta.
-        if (destino === "/dashboard" && dietista.rolDocente === "PROFESOR") destino = "/profesor";
+        // #39 — Quien decide a dónde va cada uno es /entrar, en el servidor y en un único sitio:
+        // un profesor acaba en su espacio docente. Si venía a una ruta concreta, se respeta.
+        if (destino === "/dashboard") destino = "/entrar";
       } else {
         console.warn(`[auth/callback] ensureDietistaParaUsuario devolvió null para ${user.email ?? user.id}`);
       }

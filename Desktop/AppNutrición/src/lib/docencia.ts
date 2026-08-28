@@ -9,7 +9,7 @@
  * El profesor tiene UNA cuenta con dos espacios: el docente (sus clases y sus casos) y el
  * profesional (sus propios pacientes, igual que cualquier otro nutricionista). Se pasa de uno a
  * otro con enlaces normales, sin recordar nada: al entrar aterriza siempre en el docente, que es
- * su cuenta principal, y eso lo decide el login (ver `destinoTrasEntrar`).
+ * su cuenta principal, y eso lo decide `/entrar` en el servidor tras identificarse.
  *
  * Hubo una cookie para recordar el espacio y se quitó el 27 ago 2026: el enlace que la borraba
  * era un GET colgado de un <Link>, y el prefetch de Next lo disparaba solo al entrar el menú en

@@ -8,9 +8,13 @@ export function TourWelcome() {
   const t = useTranslations("settings.tours.welcome");
   const ctx = useTour();
   if (!ctx) return null;
-  const { isFirstVisit, dismissWelcome, startTour, audience, tours } = ctx;
+  const { isFirstVisit, dismissWelcome, startTour, audience, tours, pathname } = ctx;
 
   if (!isFirstVisit) return null;
+  // #39 — En el espacio docente no: el tour recorre la cuenta de nutricionista (pacientes,
+  // dietas, agenda) y el profesor aterriza aquí, así que le taparía la pantalla con una guía
+  // de otro sitio. Se le ofrecerá igual en cuanto entre en su cuenta profesional.
+  if (pathname.startsWith("/profesor")) return null;
 
   const firstTourId = tours[0]?.id;
 

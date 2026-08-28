@@ -12,7 +12,6 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { GoogleGlyph } from "@/components/google-glyph";
 import { InAppBrowserNotice, useInAppBrowser } from "@/components/in-app-browser-notice";
 import { reenviarVerificacion } from "@/app/actions/registro";
-import { destinoTrasEntrar } from "@/app/actions/docencia";
 
 export default function LoginPage() {
   return (
@@ -81,8 +80,9 @@ function LoginContent() {
     }
 
     toast.success(t("login.successWelcome"));
-    // El profesor entra por su espacio docente (#39); el resto, al panel de siempre.
-    window.location.href = await destinoTrasEntrar().catch(() => "/dashboard");
+    // A dónde va cada uno lo decide /entrar en el servidor (#39): preguntarlo desde aquí no
+    // funciona, porque la cookie de sesión aún no ha llegado y siempre respondía "/dashboard".
+    window.location.href = "/entrar";
   }
 
   async function handleReenviar() {

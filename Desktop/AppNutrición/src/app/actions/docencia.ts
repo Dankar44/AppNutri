@@ -94,15 +94,3 @@ export async function requireProfesor(): Promise<DatosProfesor> {
   return datos;
 }
 
-/**
- * A dónde mandar a alguien recién identificado: el profesor entra por su espacio docente, que es
- * su cuenta principal. Desde dentro pasa a su cuenta profesional con un enlace.
- *
- * Se decide AQUÍ, en el login, y no redirigiendo desde /dashboard: cuando el panel ya ha empezado
- * a enviarse al navegador, Next no puede devolver una redirección de verdad y la resuelve con un
- * <meta refresh>, así que el profesor veía el panel de nutricionista durante un segundo antes de
- * saltar. Comprobado el 27 ago 2026.
- */
-export async function destinoTrasEntrar(): Promise<string> {
-  return (await esProfesor()) ? "/profesor" : "/dashboard";
-}
