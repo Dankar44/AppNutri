@@ -249,6 +249,24 @@ async function main() {
       comprobar(`el callback no se deja sacar del dominio con next=${ataque}`, host === new URL(BASE).host, host);
     }
 
+    // ─── 7bis. La puerta de entrada, /entrar ───
+    console.log("\n── La puerta de entrada ──");
+    const entrarSinSesion = await pedir("/entrar");
+    comprobar("/entrar sin sesión acaba en el login", entrarSinSesion.destino.includes("/login") || entrarSinSesion.destino.includes("/dashboard"), entrarSinSesion.destino || `estado ${entrarSinSesion.estado}`);
+
+    const entrarProfesor = await pedir("/entrar", sesion);
+    comprobar("/entrar manda al profesor a su espacio", entrarProfesor.destino.includes("/profesor"), entrarProfesor.destino);
+
+    await client.query(`UPDATE dietistas SET "rolDocente" = NULL WHERE id = $1`, [dietistaId]);
+    const entrarNormal = await pedir("/entrar", sesion);
+    comprobar("y a un nutricionista normal, al panel", entrarNormal.destino.includes("/dashboard"), entrarNormal.destino);
+
+    // Una cuenta sin verificar no puede colarse en el espacio docente por la puerta nueva.
+    await client.query(`UPDATE dietistas SET "rolDocente" = 'PROFESOR', verificado = false WHERE id = $1`, [dietistaId]);
+    const sinVerificar = await pedir("/profesor", sesion);
+    comprobar("un profesor sin verificar acaba en pendiente", sinVerificar.destino.includes("/pendiente"), sinVerificar.destino || `estado ${sinVerificar.estado}`);
+    await client.query(`UPDATE dietistas SET verificado = true WHERE id = $1`, [dietistaId]);
+
     // ─── 8. Portugués (una clave que falte revienta la pantalla) ───
     console.log("\n── Portugués ──");
     const ptAdmin = await pedir("/admin/universidades", `${admin}; NEXT_LOCALE=pt`);

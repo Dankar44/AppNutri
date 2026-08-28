@@ -49,8 +49,14 @@ export async function esProfesor(): Promise<boolean> {
   return ficha?.rolDocente === "PROFESOR";
 }
 
-/** Datos del profesor que ha iniciado sesión, o null si esta cuenta no es de profesor. */
-export async function getDatosProfesor(): Promise<DatosProfesor | null> {
+/**
+ * Datos del profesor que ha iniciado sesión, o null si esta cuenta no es de profesor.
+ *
+ * Sin `export` a propósito: en un fichero "use server" cada función exportada es un endpoint
+ * invocable desde el navegador, y esta solo la usa `requireProfesor` aquí al lado. Se exportará
+ * el día que la llame alguien de fuera.
+ */
+async function getDatosProfesor(): Promise<DatosProfesor | null> {
   const dietista = await getCurrentDietista();
   if (!dietista) return null;
 

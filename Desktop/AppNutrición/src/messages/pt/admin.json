@@ -443,7 +443,7 @@
   },
   "universidades": {
     "title": "Universidades",
-    "subtitle": "{count} licenças docentes",
+    "subtitle": "{count, plural, one {# licença docente} other {# licenças docentes}}",
     "nueva": "Nova licença",
     "vacio": "Ainda não há nenhuma licença docente",
     "inactiva": "Inativa",
