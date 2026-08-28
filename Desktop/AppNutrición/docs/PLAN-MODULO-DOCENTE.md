@@ -62,6 +62,52 @@ Cada fase lleva su plan de 100+ pasos, verificación cada pocos pasos y **audito
 
 ---
 
+# FASE 2 — Clases, alumnos y ciclo del curso
+
+Por arrancar. El plan detallado de 100+ pasos se escribe al empezarla; aquí queda lo decidido y lo
+que no se puede olvidar.
+
+## Los alumnos NO son nutricionistas (decidido el 28 ago 2026)
+
+Un alumno vive en la tabla `dietistas` porque usa la misma aplicación, pero **no es un cliente**.
+Hoy el panel de administración no los distingue, y el día que la Pablo de Olavide dé de alta a sus
+200 alumnos eso rompe cosas que importan:
+
+| Dónde | Qué pasaría con 200 alumnos |
+|---|---|
+| `getAdminStats` (`admin.ts:78`) | «Total de nutricionistas» pasaría de ~400 a ~600, y el crecimiento del mes se dispararía. **Las cifras que se usan para vender dejarían de ser ciertas.** |
+| `getRegistrosMensuales` (`admin.ts:132`) | La gráfica de registros contaría los alumnos como altas. |
+| `getDietistasAdmin` (`admin.ts:223`) | El listado mezclaría 200 alumnos con los nutricionistas de verdad. |
+| `getSuscripcionesAdmin`, `getDietistasPendientes`, `/admin/seguimiento` | Lo mismo: recorren todos los dietistas. |
+| `notificaciones.ts` | Genera avisos recorriendo dietistas: 200 alumnos = ruido y trabajo de más. |
+
+**Qué hay que hacer, antes de crear el primer alumno:**
+
+- Excluir `rolDocente = 'ALUMNO'` de las métricas, del listado y de los procesos que recorren
+  nutricionistas — igual que ya se excluye la cuenta demo (`excluirDemo`), que es el patrón a seguir.
+- **Sección propia de alumnos en administración** (petición de Guillermo, 28 ago 2026), no una
+  pestaña dentro de nutricionistas. Con lo que de verdad se quiere mirar de un alumno:
+  - a qué institución y a qué clase pertenece, y con qué profesor;
+  - **estado del acceso**: activo, retirado, y desde cuándo;
+  - **fecha de alta y fecha de renovación** — cuáles se han renovado este curso y cuáles no;
+  - último acceso, para ver quién no ha entrado nunca;
+  - de un vistazo, cuántas licencias de la bolsa están consumidas de verdad.
+- Y decidir si un alumno cuenta como «usuario» en cualquier otro sitio donde se enseñen cifras.
+
+Esto no es un adorno: es lo que evita que el panel de administración deje de servir el día que
+entre la primera universidad de verdad.
+
+## Lo demás de la fase 2
+
+- `Clase` y `AlumnoClase` (la matrícula), con su estado y su curso.
+- Alta de alumnos por las dos vías: a mano metiendo correos (la principal) y link de invitación.
+- Si el correo ya tiene cuenta, se vincula: no se crea otra.
+- Consumo de la bolsa y su contador, con el tope como única protección del link.
+- Pantalla de «no tienes acceso» para el alumno, respetando su suscripción propia si la tiene.
+- Cerrar y renovar curso conservando todos sus datos.
+
+---
+
 # FASE 1 — El rol existe y se entra por él
 
 Estado: **FASE 1 TERMINADA** (27 ago 2026), auditoría incluida.
