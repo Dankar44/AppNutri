@@ -306,6 +306,81 @@ async function main() {
     await esperar(1000);
     comprobar("el menú le devuelve a su espacio", paginaProfesor.url().endsWith("/profesor"), paginaProfesor.url().replace(BASE, ""));
 
+    // ─── 6bis. Alta de un profesor NUEVO desde cero (la otra rama del formulario) ───
+    console.log("\n── Crear un profesor que no tenía cuenta ──");
+    const EMAIL_NUEVO = "profesor.nuevo.prueba@annonia.dev";
+    await client.query(
+      `DELETE FROM dietistas WHERE "authId" IN (SELECT id::text FROM auth.users WHERE email = $1)`, [EMAIL_NUEVO],
+    );
+    await client.query(`DELETE FROM auth.identities WHERE user_id IN (SELECT id FROM auth.users WHERE email = $1)`, [EMAIL_NUEVO]);
+    await client.query(`DELETE FROM auth.users WHERE email = $1`, [EMAIL_NUEVO]);
+
+    // La prueba del cupo de antes dejó la licencia con 1 plaza y 1 profesor: sin sitio libre el
+    // formulario no se pinta (y eso ya está comprobado más arriba). Se le devuelve el cupo.
+    await client.query(`UPDATE licencias_docentes SET "maxProfesores" = 3 WHERE id = $1`, [licencia.id]);
+    await page.goto(`${BASE}/admin/universidades/${licencia.id}`, { waitUntil: "networkidle0" });
+    await pulsar(page, "Cuenta nueva");
+    await esperar(500);
+    await rellenar(page, "Nombre", "Nueva");
+    await rellenar(page, "Apellidos", "Profesora");
+    await rellenar(page, "Correo", EMAIL_NUEVO);
+    await rellenar(page, "Contraseña", "ClaveDePrueba_2026");
+    await pulsar(page, "Asignar como profesor");
+    await esperar(4000);
+
+    const { rows: creado } = await client.query(
+      `SELECT d."rolDocente", d."fuenteContacto", d.verificado, d."licenciaDocenteId",
+              (SELECT count(*)::int FROM auth.users u WHERE u.email = $1) AS en_auth
+       FROM dietistas d WHERE d.email = $1`,
+      [EMAIL_NUEVO],
+    );
+    comprobar("se crea la cuenta entera", creado.length === 1 && creado[0].en_auth === 1);
+    if (creado.length > 0) {
+      comprobar("con su rol de profesor", creado[0].rolDocente === "PROFESOR", String(creado[0].rolDocente));
+      comprobar("verificada y lista para entrar", creado[0].verificado === true);
+      comprobar("atada a la licencia", creado[0].licenciaDocenteId === licencia.id);
+      // El valor tiene que ser el canónico o desaparece del filtro "Universidad" de /admin/dietistas.
+      comprobar("con la fuente de contacto canónica", creado[0].fuenteContacto === "universidad", String(creado[0].fuenteContacto));
+    }
+
+    // Y que de verdad aparece al pulsar el filtro "Universidad", que es para lo que existe: el
+    // filtro es del lado cliente, así que hay que pulsarlo, no basta con cargar la página.
+    await page.goto(`${BASE}/admin/dietistas`, { waitUntil: "networkidle0" });
+    await esperar(1200);
+    const estabaAntes = (await page.content()).includes(EMAIL_NUEVO);
+    comprobar("el profesor nuevo aparece en el listado", estabaAntes);
+    await pulsar(page, "Universidad");
+    await esperar(1200);
+    comprobar("y sigue ahí al filtrar por Universidad", (await page.content()).includes(EMAIL_NUEVO));
+
+    await client.query(`DELETE FROM dietistas WHERE email = $1`, [EMAIL_NUEVO]);
+    await client.query(`DELETE FROM auth.identities WHERE user_id IN (SELECT id FROM auth.users WHERE email = $1)`, [EMAIL_NUEVO]);
+    await client.query(`DELETE FROM auth.users WHERE email = $1`, [EMAIL_NUEVO]);
+
+    // ─── 6ter. Un nutricionista NORMAL entra por el formulario ───
+    // El login manda a /entrar a TODO el mundo, no solo a los profesores: si esto se rompiera,
+    // se quedarían fuera cientos de nutricionistas.
+    console.log("\n── Un nutricionista normal, por el formulario ──");
+    await client.query(`UPDATE dietistas SET "rolDocente" = NULL, "licenciaDocenteId" = NULL WHERE id = $1`, [dietistaId]);
+    // Contexto limpio: una pestaña normal heredaría la sesión del profesor y /login ni siquiera
+    // pintaría el formulario (el middleware la manda directa a /entrar).
+    const contextoLimpio = await navegador.createBrowserContext();
+    const paginaNormal = await contextoLimpio.newPage();
+    await paginaNormal.setViewport({ width: 1440, height: 900 });
+    await paginaNormal.goto(`${BASE}/login`, { waitUntil: "networkidle0" });
+    await paginaNormal.type('input[type="email"]', EMAIL_PRUEBA);
+    await paginaNormal.type('input[type="password"]', PASS_PRUEBA);
+    await Promise.all([
+      paginaNormal.waitForNavigation({ waitUntil: "networkidle0", timeout: 30000 }).catch(() => {}),
+      paginaNormal.evaluate(() => (document.querySelector("form") as HTMLFormElement)?.requestSubmit()),
+    ]);
+    await esperar(4000);
+    comprobar("aterriza en su panel de siempre", paginaNormal.url().endsWith("/dashboard"), paginaNormal.url().replace(BASE, ""));
+    comprobar("y no ve nada de docencia", !(await paginaNormal.content()).includes(">Espacio docente<"));
+    await paginaNormal.close();
+    await contextoLimpio.close();
+    await client.query(`UPDATE dietistas SET "rolDocente" = 'PROFESOR', "licenciaDocenteId" = $1 WHERE id = $2`, [licencia.id, dietistaId]);
+
     // ─── 7. Quitarle el rol desde administración ───
     console.log("\n── Quitar el rol ──");
     await page.goto(`${BASE}/admin/universidades/${licencia.id}`, { waitUntil: "networkidle0" });
