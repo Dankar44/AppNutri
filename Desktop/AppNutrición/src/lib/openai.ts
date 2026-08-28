@@ -3,7 +3,12 @@ import { getTranslations } from "next-intl/server";
 
 // Groq usa la misma API que OpenAI, solo cambia la baseURL
 const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
-const GROQ_MODEL = "llama-3.3-70b-versatile";
+// Groq retiró llama-3.3-70b-versatile (28 ago 2026): dejó de existir de un día para otro y
+// la generación con IA empezó a fallar con «404 The model does not exist or you do not have
+// access to it» para todos los nutricionistas. Se sustituye por gpt-oss-120b, que es el mayor
+// de los disponibles hoy, admite response_format json_object y responde en ~4 s.
+// Si vuelve a desaparecer, la lista viva está en: GET https://api.groq.com/openai/v1/models
+const GROQ_MODEL = "openai/gpt-oss-120b";
 
 function getApiKeys(): string[] {
   const keys: string[] = [];

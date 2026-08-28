@@ -105,10 +105,11 @@ async function generateDays(
       ],
       response_format: { type: "json_object" },
       temperature: 0.9,
-      // Cada lote genera solo 2-3 días (~2.5k tokens). 4096 da margen de sobra y
-      // mantiene la petición (entrada + salida) por debajo del límite de 12.000
-      // tokens/min del tier gratuito de Groq (un 413 si se supera).
-      max_tokens: 4096,
+      // Cada lote genera solo 2-3 días (~2.5k tokens). El límite del modelo actual
+      // (gpt-oss-120b) es de 8.000 tokens/min y ahí entra la petición ENTERA: prompt de
+      // sistema + tabla de alimentos + respuesta. Con un catálogo grande el prompt ronda
+      // los 4.000, así que 3.500 de salida deja margen y evita el 413.
+      max_tokens: 3500,
     });
 
     const content = response.choices[0].message.content;
