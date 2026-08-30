@@ -105,11 +105,17 @@ async function generateDays(
       ],
       response_format: { type: "json_object" },
       temperature: 0.9,
-      // Cada lote genera solo 2-3 días (~2.5k tokens). El límite del modelo actual
-      // (gpt-oss-120b) es de 8.000 tokens/min y ahí entra la petición ENTERA: prompt de
-      // sistema + tabla de alimentos + respuesta. Con un catálogo grande el prompt ronda
-      // los 4.000, así que 3.500 de salida deja margen y evita el 413.
+      // Cada lote genera solo 2-3 días. El límite del modelo (gpt-oss-120b) es de 8.000
+      // tokens/min y ahí entra la petición ENTERA: sistema + tabla de alimentos + respuesta.
       max_tokens: 3500,
+      // OBLIGATORIO con gpt-oss: estos modelos razonan antes de responder y ese razonamiento
+      // consume del mismo presupuesto que la respuesta. Sin esto, con un prompt largo (por
+      // ejemplo instrucciones adicionales detalladas del nutricionista) se gastaban los 3.500
+      // tokens pensando y no llegaban a escribir el JSON: Groq devolvía
+      // «400 Failed to validate JSON» con failed_generation VACÍA, que es justo lo que vieron
+      // las nutricionistas el 29 ago. Con "low" la salida baja de 3.500 a ~1.400 tokens,
+      // produce JSON válido y además tarda la mitad.
+      reasoning_effort: "low",
     });
 
     const content = response.choices[0].message.content;
