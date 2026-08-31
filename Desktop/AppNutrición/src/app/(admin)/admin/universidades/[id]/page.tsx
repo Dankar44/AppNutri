@@ -9,7 +9,7 @@ import { formatDate } from "@/lib/utils";
 import { EditarLicenciaForm } from "./editar-licencia-form";
 import { AsignarProfesorForm } from "./asignar-profesor-form";
 import { QuitarRolButton } from "./quitar-rol-button";
-import { CancelarInvitacionButton } from "./cancelar-invitacion-button";
+import { AccionesInvitacion } from "./acciones-invitacion";
 
 export default async function UniversidadDetallePage({
   params,
@@ -121,9 +121,13 @@ export default async function UniversidadDetallePage({
                   <p className="text-sm truncate">{inv.email}</p>
                   <p className="text-xs text-muted-foreground">
                     {t("invitacionCaduca", { fecha: formatDate(inv.expiraAt) })}
+                    {inv.envios > 1 && <> · {t("invitacionEnviosVeces", { veces: inv.envios })}</>}
+                    {inv.ultimoEnvioAt && <> · {t("invitacionUltimoEnvio", { fecha: formatDate(inv.ultimoEnvioAt) })}</>}
                   </p>
                 </div>
-                <CancelarInvitacionButton id={inv.id} email={inv.email} />
+                <div className="flex items-center gap-3 shrink-0">
+                  <AccionesInvitacion id={inv.id} email={inv.email} />
+                </div>
               </div>
             ))}
           </div>

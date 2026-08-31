@@ -518,6 +518,10 @@
     "toastInvitacionCancelada": "Convite anulado",
     "invitacionesTitulo": "Convites pendentes",
     "invitacionCaduca": "expira a {fecha}",
-    "cancelarInvitacion": "Anular"
+    "cancelarInvitacion": "Anular",
+    "reenviarInvitacion": "Reenviar",
+    "toastInvitacionReenviada": "Convite reenviado (envio n.º {envios})",
+    "invitacionEnviosVeces": "enviado {veces} vezes",
+    "invitacionUltimoEnvio": "último envio {fecha}"
   }
 }

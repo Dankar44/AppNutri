@@ -63,9 +63,11 @@ async function main() {
     await client.query(`DELETE FROM auth.identities WHERE user_id IN (SELECT id FROM auth.users WHERE email = $1)`, [EMAIL_INVITADO]);
     await client.query(`DELETE FROM auth.users WHERE email = $1`, [EMAIL_INVITADO]);
 
-    const { rows: lic } = await client.query(`SELECT id, "maxProfesores" FROM licencias_docentes ORDER BY "createdAt" LIMIT 1`);
+    await client.query(`DELETE FROM licencias_docentes WHERE institucion = 'PRUEBA Invitaciones'`);
+    const { rows: lic } = await client.query(
+      `INSERT INTO licencias_docentes (institucion, "maxProfesores", "maxAlumnos", curso, "fechaFin")
+       VALUES ('PRUEBA Invitaciones', 5, 100, '2026/27', '2027-08-31') RETURNING id`);
     const licenciaId = lic[0].id as string;
-    await client.query(`UPDATE licencias_docentes SET "maxProfesores" = 5 WHERE id = $1`, [licenciaId]);
 
     const adminToken = await new SignJWT({ email: (process.env.ADMIN_EMAILS ?? "").split(",")[0].trim(), role: "admin" })
       .setProtectedHeader({ alg: "HS256" }).setExpirationTime("1d")
@@ -96,6 +98,19 @@ async function main() {
     await page.reload({ waitUntil: "networkidle0" });
     comprobar("el panel muestra la invitación pendiente", (await page.content()).includes(EMAIL_INVITADO));
 
+    console.log("\n── Reenviar la invitación ──");
+    const enlaceAntes = inv[0].token as string;
+    await pulsar(page, "Reenviar");
+    await esperar(3000);
+    const { rows: tras } = await client.query(
+      `SELECT token, envios, "ultimoEnvioAt" FROM invitaciones_docentes WHERE email = $1`, [EMAIL_INVITADO]);
+    comprobar("cuenta los envíos", tras[0].envios === 2, `envíos: ${tras[0].envios}`);
+    comprobar("y guarda cuándo fue el último", tras[0].ultimoEnvioAt !== null);
+    // El enlace NO puede cambiar: el que la persona ya tiene en su correo debe seguir valiendo.
+    comprobar("el enlace sigue siendo el mismo", tras[0].token === enlaceAntes);
+    await page.reload({ waitUntil: "networkidle0" });
+    comprobar("el panel dice que se ha enviado dos veces", (await page.content()).includes("2"));
+
     console.log("\n── El profesor abre el enlace y elige SU contraseña ──");
     const token = inv[0].token as string;
     const pagina2 = await (await navegador.createBrowserContext()).newPage();
@@ -109,7 +124,7 @@ async function main() {
     });
     comprobar("le muestra su correo", correoEnPantalla.valor === EMAIL_INVITADO, correoEnPantalla.valor);
     comprobar("y no lo puede cambiar", correoEnPantalla.bloqueado);
-    comprobar("y la institución", html.includes("Universidad Pablo de Olavide"));
+    comprobar("y la institución", html.includes("PRUEBA Invitaciones"));
 
     await rellenar(pagina2, "Nombre", "Nueva");
     await rellenar(pagina2, "Apellidos", "Profesora");
@@ -169,7 +184,7 @@ async function main() {
     await client.query(`DELETE FROM dietistas WHERE email = $1`, [EMAIL_INVITADO]);
     await client.query(`DELETE FROM auth.identities WHERE user_id IN (SELECT id FROM auth.users WHERE email = $1)`, [EMAIL_INVITADO]);
     await client.query(`DELETE FROM auth.users WHERE email = $1`, [EMAIL_INVITADO]);
-    await client.query(`UPDATE licencias_docentes SET "maxProfesores" = 3 WHERE id = $1`, [licenciaId]);
+    await client.query(`DELETE FROM licencias_docentes WHERE id = $1`, [licenciaId]);
     comprobar("desarrollo queda como estaba", true);
 
     console.log(`\n${mal === 0 ? "✓ TODO CORRECTO" : "✗ HAY FALLOS"} — ${ok} bien, ${mal} mal\n`);

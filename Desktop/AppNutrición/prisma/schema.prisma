@@ -1056,6 +1056,10 @@ model InvitacionDocente {
   /// Quién invitó: el correo del administrador, o el id del profesor cuando invite a sus alumnos.
   invitadoPor       String?
   expiraAt          DateTime
+  /// Cuántas veces se ha mandado el correo y cuándo fue la última: si a alguien se le ha enviado
+  /// cuatro veces y sigue sin entrar, el problema no es que se le haya olvidado.
+  envios            Int       @default(1)
+  ultimoEnvioAt     DateTime?
   aceptadaAt        DateTime?
   aceptadaPorId     String?
   createdAt         DateTime  @default(now())

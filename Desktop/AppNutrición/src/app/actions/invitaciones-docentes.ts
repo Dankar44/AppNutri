@@ -163,6 +163,7 @@ export async function invitarProfesor(data: {
         licenciaDocenteId: licencia.id,
         invitadoPor: admin.email,
         expiraAt,
+        ultimoEnvioAt: new Date(),
       },
     });
 
@@ -178,6 +179,51 @@ export async function invitarProfesor(data: {
   } catch (e) {
     if (isNextNavigation(e)) throw e;
     console.error("[docencia] Error invitando profesor:", e);
+    return { ok: false, error: t("general.errorDesconocido") };
+  }
+}
+
+/**
+ * Vuelve a mandar el correo de una invitación, con el MISMO enlace: si se generase otro, el que
+ * la persona ya tiene dejaría de funcionar sin que nadie se entere. Lleva la cuenta de los envíos
+ * para poder ver que a alguien se le ha insistido varias veces sin resultado.
+ */
+export async function reenviarInvitacionDocente(id: string): Promise<{ ok: boolean; error?: string; envios?: number }> {
+  const admin = await requireAdmin();
+  if (!admin || admin.role !== "admin") redirect("/admin-login");
+
+  const t = await getTranslations("validation");
+  try {
+    const inv = await prisma.invitacionDocente.findUnique({
+      where: { id },
+      select: {
+        token: true, email: true, aceptadaAt: true, expiraAt: true, envios: true,
+        licenciaDocenteId: true,
+        licenciaDocente: { select: { institucion: true } },
+      },
+    });
+    if (!inv) return { ok: false, error: t("docencia.invitacionNoValida") };
+    if (inv.aceptadaAt) return { ok: false, error: t("docencia.invitacionYaUsada") };
+
+    // Se le da cuerda otra vez: si caducó mientras tanto, reenviar sin más no serviría de nada.
+    const expiraAt = new Date(Date.now() + DIAS_DE_VALIDEZ * 24 * 60 * 60 * 1000);
+    const actualizada = await prisma.invitacionDocente.update({
+      where: { id },
+      data: { envios: { increment: 1 }, ultimoEnvioAt: new Date(), expiraAt },
+      select: { envios: true },
+    });
+
+    sendEmail({
+      to: inv.email,
+      subject: `Te han invitado como profesor en Annonia — ${inv.licenciaDocente?.institucion ?? ""}`,
+      html: correoInvitacion(inv.licenciaDocente?.institucion ?? "", `${urlPublica()}/invitacion/${inv.token}`),
+    }).catch((err) => console.error("[docencia] Error reenviando invitación:", err));
+
+    if (inv.licenciaDocenteId) revalidatePath(`/admin/universidades/${inv.licenciaDocenteId}`);
+    return { ok: true, envios: actualizada.envios };
+  } catch (e) {
+    if (isNextNavigation(e)) throw e;
+    console.error("[docencia] Error reenviando invitación:", e);
     return { ok: false, error: t("general.errorDesconocido") };
   }
 }

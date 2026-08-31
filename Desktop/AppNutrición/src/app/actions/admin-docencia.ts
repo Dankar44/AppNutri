@@ -36,7 +36,7 @@ export interface LicenciaDocenteDetalle extends LicenciaDocenteItem {
   notas: string | null;
   createdAt: Date;
   /** Invitaciones enviadas y todavía sin usar. */
-  invitaciones: { id: string; email: string; expiraAt: Date }[];
+  invitaciones: { id: string; email: string; expiraAt: Date; envios: number; ultimoEnvioAt: Date | null }[];
   miembros: {
     id: string;
     nombre: string;
@@ -140,7 +140,7 @@ export async function getLicenciaDocenteDetalle(licenciaId: string): Promise<Lic
       },
       invitaciones: {
         where: { aceptadaAt: null, expiraAt: { gte: new Date() } },
-        select: { id: true, email: true, expiraAt: true },
+        select: { id: true, email: true, expiraAt: true, envios: true, ultimoEnvioAt: true },
         orderBy: { createdAt: "desc" },
       },
     },
