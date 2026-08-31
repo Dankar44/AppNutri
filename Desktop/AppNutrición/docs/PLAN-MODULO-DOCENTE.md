@@ -160,22 +160,22 @@ Arrancado el 30 ago 2026. Verificación cada bloque y auditoría al final, como 
 ### Bloque A · Que un alumno no cuente como nutricionista (1-16)
 *Condición de entrada: esto va ANTES de crear el primer alumno.*
 
-1. [ ] Repasar los tres contadores de `getAdminStats` (`admin.ts:78`) y excluir `rolDocente = 'ALUMNO'`.
-2. [ ] `getRegistrosMensuales`: excluir alumnos de la gráfica de altas.
-3. [ ] `getDietistasAdmin`: fuera del listado de nutricionistas.
-4. [ ] `getSuscripcionesAdmin`: fuera.
-5. [ ] `getDietistasPendientes` y `/admin/verificaciones`: fuera.
-6. [ ] `/admin/seguimiento`: fuera.
-7. [ ] `getActividadGlobal`: comprobar si los cuenta y decidir.
-8. [ ] `notificaciones.ts`: que el generador no recorra alumnos.
-9. [ ] Buscar cualquier otro `dietista.count` o `findMany` que sirva para enseñar cifras.
-10. [ ] Un solo sitio con el filtro (`soloNutricionistas`) en vez de repetirlo en nueve consultas.
-11. [ ] Comprobar que el filtro no se cuela donde SÍ hay que contarlos (la bolsa de la licencia).
-12. [ ] Sembrar 30 alumnos de prueba en desarrollo y mirar el panel antes y después.
-13. [ ] Comprobar que el total de nutricionistas no se mueve al crearlos.
-14. [ ] Comprobar que la gráfica de altas tampoco.
-15. [ ] Comprobar que el listado sigue teniendo los mismos.
-16. [ ] ✅ `tsc` + las tres baterías de la Fase 1 siguen en verde.
+1. [x] Repasar los tres contadores de `getAdminStats` (`admin.ts:78`) y excluir `rolDocente = 'ALUMNO'`.
+2. [x] `getRegistrosMensuales`: excluir alumnos de la gráfica de altas.
+3. [x] `getDietistasAdmin`: fuera del listado de nutricionistas.
+4. [x] `getSuscripcionesAdmin`: fuera.
+5. [x] `getDietistasPendientes` y `/admin/verificaciones`: fuera.
+6. [x] `/admin/seguimiento`: fuera.
+7. [x] `getActividadGlobal`: comprobar si los cuenta y decidir.
+8. [x] `notificaciones.ts`: que el generador no recorra alumnos.
+9. [x] Buscar cualquier otro `dietista.count` o `findMany` que sirva para enseñar cifras.
+10. [x] Un solo sitio con el filtro (`soloNutricionistas`) en vez de repetirlo en nueve consultas.
+11. [x] Comprobar que el filtro no se cuela donde SÍ hay que contarlos (la bolsa de la licencia).
+12. [x] Sembrar 30 alumnos de prueba en desarrollo y mirar el panel antes y después.
+13. [x] Comprobar que el total de nutricionistas no se mueve al crearlos.
+14. [x] Comprobar que la gráfica de altas tampoco.
+15. [x] Comprobar que el listado sigue teniendo los mismos.
+16. [x] ✅ `tsc` + las tres baterías de la Fase 1 siguen en verde.
 
 ### Bloque B · El espacio docente es otro sitio (17-34)
 

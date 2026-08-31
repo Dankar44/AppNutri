@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { soloNutricionistas } from "@/lib/filtros-dietistas";
 import { Eye, Users, UserCheck, Clock, AlertCircle } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { getLocale } from "@/i18n/locale";
@@ -53,7 +54,8 @@ export default async function SeguimientoPage() {
   const demoId = process.env.DEMO_DIETISTA_ID;
   const [dietistas, pacientes] = await Promise.all([
     prisma.dietista.findMany({
-      where: demoId ? { id: { not: demoId } } : {},
+      // Fuera la demo y fuera los alumnos (#39): esta pantalla es para seguir a los clientes.
+      where: soloNutricionistas(),
       select: {
         id: true,
         nombre: true,

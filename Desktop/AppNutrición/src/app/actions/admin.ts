@@ -15,6 +15,7 @@ import { headers } from "next/headers";
 import { checkRateLimit, estaBloqueado, resetRateLimit, LIMITES } from "@/lib/rate-limit";
 import { generateVerifyToken, sendVerificationEmail } from "@/lib/verify-email";
 import { generarSlug } from "@/lib/empresa-utils";
+import { soloNutricionistas, soloNutricionistasAND } from "@/lib/filtros-dietistas";
 import {
   sanitizeString,
   sanitizeStringOptional,
@@ -83,11 +84,10 @@ export async function getAdminStats() {
   const inicioMesActual = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
   const inicioMesAnterior = new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1);
 
-  // Excluimos la cuenta demo del recuento de nutricionistas reales, para que el total
-  // del panel coincida con el resto de vistas (seguimiento, listado). Sin esto, el
-  // panel contaba el dietista demo y los demás sitios no → números distintos.
-  const demoId = process.env.DEMO_DIETISTA_ID;
-  const excluirDemo = demoId ? { id: { not: demoId } } : {};
+  // Fuera la cuenta demo y fuera los ALUMNOS (#39): un alumno usa la aplicación pero no es un
+  // cliente, y contarlo haría que el panel dijese 600 nutricionistas el día que entre una
+  // universidad con 200 alumnos.
+  const excluirDemo = soloNutricionistas();
 
   const [
     totalDietistas,
@@ -140,7 +140,8 @@ export async function getRegistrosMensuales() {
 
   const [dietistas, pacientes] = await Promise.all([
     prisma.dietista.findMany({
-      where: { createdAt: { gte: inicio6Meses } },
+      // Sin los alumnos: si no, la gráfica de altas contaría una clase entera como registros.
+      where: { AND: [soloNutricionistas(), { createdAt: { gte: inicio6Meses } }] },
       select: { createdAt: true },
     }),
     prisma.paciente.findMany({
@@ -226,13 +227,11 @@ export async function getDietistasAdmin(busqueda?: string): Promise<DietistaAdmi
 
   const search = busqueda?.trim().toLowerCase();
 
-  // Excluimos la cuenta demo del listado, igual que en el panel y en seguimiento.
-  const demoId = process.env.DEMO_DIETISTA_ID;
-  const excluirDemo = demoId ? { id: { not: demoId } } : {};
-
+  // Fuera la demo y fuera los alumnos, igual que en el panel y en seguimiento. Va en AND porque
+  // esta consulta ya usa su propio OR para el buscador y se pisarían.
   const dietistas = await prisma.dietista.findMany({
     where: {
-      ...excluirDemo,
+      ...soloNutricionistasAND(),
       ...(search
         ? {
             OR: [
@@ -594,11 +593,13 @@ export async function getActividadGlobal() {
     prisma.consulta.count({ where: { fecha: { gte: inicioMes }, paciente: { esDemo: false } } }),
     prisma.generacionIA.count({ where: { createdAt: { gte: inicioMes } } }),
     prisma.dietista.findMany({
+      where: soloNutricionistas(),
       orderBy: { createdAt: "desc" },
       take: 10,
       select: { id: true, nombre: true, apellidos: true, email: true, createdAt: true },
     }),
     prisma.dietista.findMany({
+      where: soloNutricionistas(),
       select: {
         id: true,
         nombre: true,
@@ -659,11 +660,18 @@ export async function getSuscripcionesAdmin(): Promise<SuscripcionAdminItem[]> {
     const dietistaIds = rows.map((r) => r.dietistaId);
     const dietistas = await prisma.dietista.findMany({
       where: { id: { in: dietistaIds } },
-      select: { id: true, nombre: true, apellidos: true, email: true },
+      select: { id: true, nombre: true, apellidos: true, email: true, rolDocente: true },
     });
-    const dietistaMap = Object.fromEntries(dietistas.map((d) => [d.id, d]));
+    // Fuera los alumnos (#39): esta pantalla es de clientes y la suscripción de un alumno no es
+    // una venta. Se descartan por rol y NO por "no encuentro su ficha": una suscripción huérfana
+    // (dietista borrado) tiene que seguir saliendo con su "?", que es justo la señal de que algo
+    // quedó suelto.
+    const idsDeAlumnos = new Set(dietistas.filter((d) => d.rolDocente === "ALUMNO").map((d) => d.id));
+    const dietistaMap = Object.fromEntries(
+      dietistas.filter((d) => d.rolDocente !== "ALUMNO").map((d) => [d.id, d]),
+    );
 
-    const real: SuscripcionAdminItem[] = rows.map((r) => ({
+    const real: SuscripcionAdminItem[] = rows.filter((r) => !idsDeAlumnos.has(r.dietistaId)).map((r) => ({
       id: r.id,
       plan: r.plan,
       estado: r.estado,
@@ -696,7 +704,10 @@ export async function getDietistasPendientes(): Promise<DietistaPendiente[]> {
 
   return prisma.$queryRawUnsafe<DietistaPendiente[]>(
     `SELECT id, nombre, apellidos, email, "numColegiado", especialidad, "createdAt"
-     FROM dietistas WHERE verificado = false ORDER BY "createdAt" DESC`
+     FROM dietistas
+     WHERE verificado = false
+       AND ("rolDocente" IS NULL OR "rolDocente" <> 'ALUMNO')
+     ORDER BY "createdAt" DESC`
   );
 }
 
