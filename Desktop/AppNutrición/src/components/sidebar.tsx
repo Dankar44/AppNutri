@@ -22,8 +22,10 @@ import {
   Building2,
   Sparkles,
   GraduationCap,
+  Briefcase,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { esRutaDocente } from "@/lib/docencia";
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { NotificationBell } from "@/components/notification-bell";
@@ -52,10 +54,50 @@ type NavItem = {
 
 type NavSection = { title: string; items: NavItem[] };
 
+/**
+ * #39 — El espacio docente es OTRO sitio, no el panel con una sección más: mientras el profesor
+ * está ahí no ve Pacientes, Agenda, Pagos ni Mensajes, que son de su consulta. Lo que sí se queda
+ * es el material (dietas, alimentos y recetas), porque lo comparte con sus alumnos.
+ */
+function seccionesDocentes(t: (key: string) => string, opts?: { isAdmin?: boolean }): NavSection[] {
+  return [
+    {
+      title: t("nav.docencia"),
+      items: [
+        { href: "/profesor", label: t("navItems.inicioDocente"), icon: GraduationCap },
+        // Clases, Alumnos, Casos y Entregas se añaden cuando existan: un menú lleno de sitios
+        // vacíos es peor que uno corto.
+      ],
+    },
+    {
+      title: t("nav.material"),
+      items: [
+        { href: "/dietas", label: t("navItems.dietas"), icon: UtensilsCrossed },
+        { href: "/alimentos", label: t("navItems.alimentos"), icon: Apple },
+        { href: "/recetas", label: t("navItems.recetas"), icon: CookingPot },
+      ],
+    },
+    {
+      title: t("nav.cuenta"),
+      items: [
+        // El paso a su consulta, en el menú y no solo dentro de la página: es donde se busca.
+        { href: "/dashboard", label: t("navItems.miCuentaProfesional"), icon: Briefcase },
+        { href: "/ajustes", label: t("navItems.ajustes"), icon: Settings },
+        { href: "/novedades", label: t("navItems.novedades"), icon: Sparkles, externo: true },
+        ...(opts?.isAdmin
+          ? [{ href: "/admin-login", label: t("navItems.admin"), icon: ShieldCheck, admin: true as const }]
+          : []),
+      ],
+    },
+  ];
+}
+
 function getNavSections(
   t: (key: string) => string,
-  opts?: { isAdmin?: boolean; hasEmpresa?: boolean; esProfesor?: boolean },
+  opts?: { isAdmin?: boolean; hasEmpresa?: boolean; esProfesor?: boolean; enEspacioDocente?: boolean },
 ): NavSection[] {
+  if (opts?.esProfesor && opts.enEspacioDocente) return seccionesDocentes(t, opts);
+
   return [
     {
       title: t("nav.gestion"),
@@ -269,7 +311,7 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
 
       {/* Nav */}
       <nav className="flex-1 py-4 px-3 overflow-y-auto overscroll-contain">
-        {getNavSections(t, { isAdmin, hasEmpresa, esProfesor }).map((section, sectionIndex) => (
+        {getNavSections(t, { isAdmin, hasEmpresa, esProfesor, enEspacioDocente: esRutaDocente(pathname) }).map((section, sectionIndex) => (
           <div
             key={section.title}
             className={cn(sectionIndex > 0 && "mt-6")}

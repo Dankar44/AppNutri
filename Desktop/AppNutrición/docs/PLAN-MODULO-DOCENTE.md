@@ -179,24 +179,24 @@ Arrancado el 30 ago 2026. Verificación cada bloque y auditoría al final, como 
 
 ### Bloque B · El espacio docente es otro sitio (17-34)
 
-17. [ ] `getNavSections`: secciones distintas según el espacio (docente o profesional).
-18. [ ] Espacio docente: Docencia (Inicio, Clases, Alumnos) + Material (Dietas, Alimentos, Recetas) + Cuenta (Ajustes, Novedades).
-19. [ ] Quitar de ahí Dashboard, Pacientes, Agenda, Pagos, Mensajes y Reportes.
-20. [ ] El botón «Acceder a mi cuenta profesional», visible y fijo.
-21. [ ] Y en la cuenta profesional, la vuelta al espacio docente.
-22. [ ] Que un nutricionista normal no note ningún cambio en su menú.
-23. [ ] Que el menú móvil (drawer) muestre lo mismo.
-24. [ ] Que el menú plegado también.
-25. [ ] Rehacer el panel de `/profesor` con lo que mira un profesor, no con un cartel.
+17. [x] `getNavSections`: secciones distintas según el espacio (docente o profesional).
+18. [x] Espacio docente: Docencia (Inicio, Clases, Alumnos) + Material (Dietas, Alimentos, Recetas) + Cuenta (Ajustes, Novedades).
+19. [x] Quitar de ahí Dashboard, Pacientes, Agenda, Pagos, Mensajes y Reportes.
+20. [x] El botón «Acceder a mi cuenta profesional», visible y fijo.
+21. [x] Y en la cuenta profesional, la vuelta al espacio docente.
+22. [x] Que un nutricionista normal no note ningún cambio en su menú.
+23. [x] Que el menú móvil (drawer) muestre lo mismo.
+24. [x] Que el menú plegado también.
+25. [ ] Rehacer el panel de `/profesor` con lo que mira un profesor, no con un cartel. *(va al bloque D: sin clases todavía no hay nada que pintar)*
 26. [ ] Tarjeta de clases: cuántas y cuántos alumnos en cada una.
 27. [ ] Tarjeta de lo que falta por corregir (vacía hasta la fase 4, pero con su sitio).
 28. [ ] La bolsa de licencias baja a un rincón: es un dato administrativo.
 29. [ ] Estado vacío del panel: sin clases todavía, con el botón de crear la primera.
-30. [ ] Comprobar que las rutas del espacio profesional siguen accesibles desde el docente por URL.
-31. [ ] Decidir y documentar qué pasa si un profesor entra a `/pacientes` desde el espacio docente.
-32. [ ] Traducciones nuevas en es y pt.
-33. [ ] Capturas de escritorio, móvil y modo oscuro; mirarlas.
-34. [ ] ✅ `tsc`, `next build` y las baterías.
+30. [x] Comprobar que las rutas del espacio profesional siguen accesibles desde el docente por URL.
+31. [x] Decidir y documentar qué pasa si un profesor entra a `/pacientes` desde el espacio docente.
+32. [x] Traducciones nuevas en es y pt.
+33. [x] Capturas de escritorio, móvil y modo oscuro; mirarlas.
+34. [x] ✅ `tsc`, `next build` y las baterías.
 
 ### Bloque C · Modelo de clases y matrículas (35-50)
 

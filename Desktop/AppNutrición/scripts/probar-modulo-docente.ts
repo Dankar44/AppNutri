@@ -204,13 +204,23 @@ async function main() {
     // ─── 5. Ir y volver entre los dos espacios ───
     console.log("\n── Los dos espacios ──");
     comprobar(
-      "el espacio docente enlaza a la cuenta profesional",
-      /<a[^>]+href="\/dashboard"[^>]*>(?:(?!<\/a>)[\s\S])*Acceder a mi cuenta profesional/.test(espacio.cuerpo),
+      "el menú del espacio docente lleva a su cuenta profesional",
+      /<a[^>]+href="\/dashboard"[^>]*>(?:(?!<\/a>)[\s\S])*Mi cuenta profesional/.test(espacio.cuerpo),
     );
+    // El espacio docente es OTRO sitio: ahí no se ven las cosas de su consulta.
+    for (const fuera of ["/pacientes", "/agenda", "/pagos", "/mensajes", "/reportes"]) {
+      comprobar(`el menú docente no muestra ${fuera}`, !espacio.cuerpo.includes(`href="${fuera}"`));
+    }
+    for (const dentro of ["/dietas", "/alimentos", "/recetas", "/ajustes"]) {
+      comprobar(`pero sí ${dentro}`, espacio.cuerpo.includes(`href="${dentro}"`));
+    }
 
     const panelProfesor = await pedir("/dashboard", sesion);
     comprobar("el panel NO expulsa al profesor", panelProfesor.estado === 200 && !/http-equiv="refresh"/.test(panelProfesor.cuerpo), `estado ${panelProfesor.estado}`);
     comprobar("y desde el panel el menú lleva al espacio docente", panelProfesor.cuerpo.includes('href="/profesor"'));
+    for (const suyo of ["/pacientes", "/agenda", "/pagos", "/mensajes", "/reportes"]) {
+      comprobar(`en su cuenta profesional sí tiene ${suyo}`, panelProfesor.cuerpo.includes(`href="${suyo}"`));
+    }
     // Ninguna dirección del menú puede tener efectos secundarios: Next hace prefetch de los
     // enlaces visibles y los dispararía él solo (por eso se quitó el endpoint de cambio de espacio).
     comprobar("ningún enlace del menú apunta a un endpoint con efectos", !panelProfesor.cuerpo.includes("/api/espacio"));

@@ -292,7 +292,7 @@ async function main() {
       if (/\/api\/(espacio|locale)/.test(r.url())) peticionesRaras.push(`${r.method()} ${r.url().replace(BASE, "")}`);
     });
 
-    await pulsar(paginaProfesor, "Acceder a mi cuenta profesional");
+    await pulsar(paginaProfesor, "Mi cuenta profesional");
     await paginaProfesor.waitForNavigation({ waitUntil: "networkidle0", timeout: 30000 }).catch(() => {});
     await esperar(1000);
     comprobar("llega a su panel de nutricionista", paginaProfesor.url().endsWith("/dashboard"), paginaProfesor.url().replace(BASE, ""));

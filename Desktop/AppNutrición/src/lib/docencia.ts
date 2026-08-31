@@ -89,3 +89,12 @@ export function emailDelDominio(email: string, dominioEmail: string | null | und
   // de la casa cuando solo se ha configurado el dominio principal.
   return dominios.some((d) => limpio.endsWith(`@${d}`) || limpio.endsWith(`.${d}`));
 }
+
+/**
+ * Rutas que pertenecen al espacio docente. El menú se decide por la dirección en la que estás, no
+ * por un estado guardado: así no hay nada que recordar ni que se pueda desincronizar, y el enlace
+ * del menú sigue siendo un enlace normal (un GET con efectos ya nos costó un fallo, 27 ago 2026).
+ */
+export function esRutaDocente(pathname: string): boolean {
+  return pathname === "/profesor" || pathname.startsWith("/profesor/");
+}
