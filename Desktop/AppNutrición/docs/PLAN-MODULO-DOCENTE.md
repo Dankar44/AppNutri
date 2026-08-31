@@ -119,15 +119,30 @@ marcado), pero obliga a **filtrarlo** en `getPacientes` y en todo lo que liste p
 con cuántos alumnos, los casos abiertos con su fecha límite y cuántos han entregado, y lo que le
 queda por corregir. La bolsa de licencias baja a un rincón: es un dato administrativo.
 
-**Sin decidir (preguntado el 28 ago 2026, pendiente de respuesta):**
-1. ¿Mensajería con los alumnos dentro de la aplicación, o basta el correo? (hoy la mensajería es
-   solo con pacientes).
-2. ¿Ajustes en los dos espacios o solo en la cuenta profesional?
-3. ¿El profesor necesita crear dietas dentro del espacio docente (la solución de referencia de un
-   caso), o eso lo hace en su cuenta profesional?
-4. "Alimentos y recetas para compartir con los alumnos": ¿el alumno llega a **ver el catálogo de su
-   profesor**? Hoy cada uno ve el suyo, así que sería funcionalidad nueva y hay que decidir en qué
-   fase entra.
+**Decidido el 30 ago 2026:**
+
+- **Mensajería, fuera.** Ni para profesores ni para alumnos dentro del espacio docente. Los avisos
+  sí se quedan (caso asignado, nota puesta): un aviso no es una conversación.
+- **Ajustes, en los dos espacios.** Es una sola cuenta, y su nombre, su logo y su tema de PDF se
+  usan también en lo docente.
+- **Dietas, sí.** El profesor puede dejar hecha su propia solución del caso.
+- **Alimentos y recetas como en el centro**: los comparte con su clase **o no**, para poder tener
+  los suyos y hacerse la dieta de ejemplo sin enseñarla. **El alumno puede usarlos, copiarlos y
+  modificarlos** (cada uno acaba con su versión; no es solo lectura).
+- **Al quitar el rol a un profesor no se borra nada**: sus clases y casos quedan **archivados**
+  esperando a que vuelva o a que pasen a otro profesor. Para liberar espacio, borrado explícito
+  desde administración, nunca automático.
+
+**El menú del espacio docente (aprobado el 30 ago 2026):**
+
+> **Docencia** — Inicio · Clases · Alumnos · Casos clínicos · Entregas
+> **Material** — Dietas · Alimentos · Recetas
+> **Cuenta** — Ajustes · Novedades
+> y el botón «Acceder a mi cuenta profesional»
+
+Fuera: el Dashboard de nutricionista, Pacientes, Agenda, Pagos, Mensajes y Reportes. Los apartados
+que todavía no existen (Casos clínicos, Entregas) se añaden cuando se construyan, no antes: un
+menú lleno de sitios vacíos es peor que un menú corto.
 
 ## Lo demás de la fase 2
 
@@ -137,6 +152,190 @@ queda por corregir. La bolsa de licencias baja a un rincón: es un dato administ
 - Consumo de la bolsa y su contador, con el tope como única protección del link.
 - Pantalla de «no tienes acceso» para el alumno, respetando su suscripción propia si la tiene.
 - Cerrar y renovar curso conservando todos sus datos.
+
+## Plan de la Fase 2 — 152 pasos
+
+Arrancado el 30 ago 2026. Verificación cada bloque y auditoría al final, como en la Fase 1.
+
+### Bloque A · Que un alumno no cuente como nutricionista (1-16)
+*Condición de entrada: esto va ANTES de crear el primer alumno.*
+
+1. [ ] Repasar los tres contadores de `getAdminStats` (`admin.ts:78`) y excluir `rolDocente = 'ALUMNO'`.
+2. [ ] `getRegistrosMensuales`: excluir alumnos de la gráfica de altas.
+3. [ ] `getDietistasAdmin`: fuera del listado de nutricionistas.
+4. [ ] `getSuscripcionesAdmin`: fuera.
+5. [ ] `getDietistasPendientes` y `/admin/verificaciones`: fuera.
+6. [ ] `/admin/seguimiento`: fuera.
+7. [ ] `getActividadGlobal`: comprobar si los cuenta y decidir.
+8. [ ] `notificaciones.ts`: que el generador no recorra alumnos.
+9. [ ] Buscar cualquier otro `dietista.count` o `findMany` que sirva para enseñar cifras.
+10. [ ] Un solo sitio con el filtro (`soloNutricionistas`) en vez de repetirlo en nueve consultas.
+11. [ ] Comprobar que el filtro no se cuela donde SÍ hay que contarlos (la bolsa de la licencia).
+12. [ ] Sembrar 30 alumnos de prueba en desarrollo y mirar el panel antes y después.
+13. [ ] Comprobar que el total de nutricionistas no se mueve al crearlos.
+14. [ ] Comprobar que la gráfica de altas tampoco.
+15. [ ] Comprobar que el listado sigue teniendo los mismos.
+16. [ ] ✅ `tsc` + las tres baterías de la Fase 1 siguen en verde.
+
+### Bloque B · El espacio docente es otro sitio (17-34)
+
+17. [ ] `getNavSections`: secciones distintas según el espacio (docente o profesional).
+18. [ ] Espacio docente: Docencia (Inicio, Clases, Alumnos) + Material (Dietas, Alimentos, Recetas) + Cuenta (Ajustes, Novedades).
+19. [ ] Quitar de ahí Dashboard, Pacientes, Agenda, Pagos, Mensajes y Reportes.
+20. [ ] El botón «Acceder a mi cuenta profesional», visible y fijo.
+21. [ ] Y en la cuenta profesional, la vuelta al espacio docente.
+22. [ ] Que un nutricionista normal no note ningún cambio en su menú.
+23. [ ] Que el menú móvil (drawer) muestre lo mismo.
+24. [ ] Que el menú plegado también.
+25. [ ] Rehacer el panel de `/profesor` con lo que mira un profesor, no con un cartel.
+26. [ ] Tarjeta de clases: cuántas y cuántos alumnos en cada una.
+27. [ ] Tarjeta de lo que falta por corregir (vacía hasta la fase 4, pero con su sitio).
+28. [ ] La bolsa de licencias baja a un rincón: es un dato administrativo.
+29. [ ] Estado vacío del panel: sin clases todavía, con el botón de crear la primera.
+30. [ ] Comprobar que las rutas del espacio profesional siguen accesibles desde el docente por URL.
+31. [ ] Decidir y documentar qué pasa si un profesor entra a `/pacientes` desde el espacio docente.
+32. [ ] Traducciones nuevas en es y pt.
+33. [ ] Capturas de escritorio, móvil y modo oscuro; mirarlas.
+34. [ ] ✅ `tsc`, `next build` y las baterías.
+
+### Bloque C · Modelo de clases y matrículas (35-50)
+
+35. [ ] Migración: tabla `clases` (profesor, licencia, nombre, curso, token, estado, archivada).
+36. [ ] `ALTER TABLE public.clases ENABLE ROW LEVEL SECURITY` en la misma migración.
+37. [ ] Migración: tabla `alumnos_clase` (matrícula) con estado, alta y baja.
+38. [ ] RLS también en ella.
+39. [ ] Índices por profesor, por licencia y por alumno.
+40. [ ] Clave ajena de la clase a la licencia, con su comportamiento al borrar.
+41. [ ] `Dietista.origenCuenta` para distinguir la cuenta que nació de una clase.
+42. [ ] Idempotencia: ejecutar la migración dos veces.
+43. [ ] Comprobar RLS con `scripts/comprobar-rls.ts`.
+44. [ ] Modelos en `schema.prisma` con sus comentarios.
+45. [ ] `prisma generate` con Node 22 y reiniciar el servidor (el cliente viejo se queda en memoria).
+46. [ ] `npm run db:comparar`: el desajuste esperado y nada más.
+47. [ ] Un alumno = una licencia aunque esté en dos clases: escribir la consulta que lo cuenta.
+48. [ ] Decidir qué pasa con las clases cuando se archiva un profesor.
+49. [ ] Documentar el modelo en el plan.
+50. [ ] ✅ `tsc` y comparación de esquemas.
+
+### Bloque D · Clases (51-68)
+
+51. [ ] `crearClase`, `editarClase`, `archivarClase` en una acción nueva.
+52. [ ] Cada una con `requireProfesor` y comprobando que la clase es suya.
+53. [ ] Que un profesor no pueda tocar la clase de otro (aunque sea de la misma licencia).
+54. [ ] Listado de clases en el espacio docente.
+55. [ ] Ficha de una clase: alumnos, casos y su estado.
+56. [ ] Crear clase: nombre y curso, con el curso por defecto.
+57. [ ] Editar y archivar, con confirmación.
+58. [ ] Estado vacío: sin clases.
+59. [ ] Contador de alumnos por clase.
+60. [ ] `revalidatePath` en todas las mutaciones.
+61. [ ] Traducciones es y pt.
+62. [ ] Comprobar en el navegador: crear, editar y archivar de verdad.
+63. [ ] Comprobar que archivar no borra nada.
+64. [ ] Comprobar los límites de longitud de los campos.
+65. [ ] Comprobar el móvil.
+66. [ ] Comprobar el modo oscuro.
+67. [ ] Capturas y mirarlas.
+68. [ ] ✅ `tsc` + baterías.
+
+### Bloque E · Alta de alumnos (69-92)
+
+69. [ ] Reutilizar `invitaciones_docentes` con `rol = 'ALUMNO'` y la clase a la que entra.
+70. [ ] Añadir `claseId` a la invitación (hoy solo guarda la licencia).
+71. [ ] `invitarAlumnos(claseId, correos[])`: varios de golpe, uno por línea.
+72. [ ] Si el correo ya tiene cuenta: se vincula, **no se crea otra** ni se pisa su suscripción.
+73. [ ] Si ya está en la clase: no duplicar, avisar.
+74. [ ] Consumo de la bolsa: comprobar cupo contando alumnos distintos + invitaciones vivas.
+75. [ ] Mensaje claro cuando la bolsa se agota, con cuántas quedan.
+76. [ ] Correo de invitación al alumno, con el nombre de la clase y del profesor.
+77. [ ] Reenviar y anular, como en profesores.
+78. [ ] La página `/invitacion/[token]` ya sirve: comprobar el texto cuando el rol es ALUMNO.
+79. [ ] Al aceptar: cuenta creada con `origenCuenta` de clase y matrícula activa.
+80. [ ] Link de invitación por clase: `/clase/[token]`.
+81. [ ] Abrir y cerrar el link desde la ficha de la clase.
+82. [ ] El link respeta el tope de la bolsa.
+83. [ ] Aviso (no bloqueo) si el correo no es del dominio de la institución.
+84. [ ] Qué ve alguien que abre un link cerrado o de una clase archivada.
+85. [ ] Listado de alumnos de la clase, con su estado y su último acceso.
+86. [ ] Sacar a un alumno de una clase (sin borrarle la cuenta).
+87. [ ] Traducciones es y pt de todo lo anterior.
+88. [ ] Probar en el navegador el alta por correo, de principio a fin.
+89. [ ] Probar el alta por link, de principio a fin.
+90. [ ] Probar el caso "ya tenía cuenta propia" y que conserva lo suyo.
+91. [ ] Probar el caso "ya está en la clase".
+92. [ ] ✅ `tsc` + baterías + capturas.
+
+### Bloque F · Ciclo del curso (93-112)
+
+93. [ ] `fechaFinCurso` en la clase, con el 31 de agosto por defecto.
+94. [ ] Comprobación perezosa: sin cron, se mira al entrar.
+95. [ ] Estado de la matrícula: activa o retirada, con sus fechas.
+96. [ ] «Cerrar curso» en la clase: retira el acceso a todos.
+97. [ ] «Renovar curso»: devuelve el acceso a los que elija el profesor.
+98. [ ] Al renovar, el alumno conserva TODO su trabajo.
+99. [ ] Devolver el acceso metiendo el correo otra vez (segunda vía, ya acordada).
+100. [ ] Pantalla del alumno sin acceso, con su explicación.
+101. [ ] Un alumno con suscripción propia NO se bloquea.
+102. [ ] Una cuenta nacida de clase no se recicla en cuenta normal.
+103. [ ] Al profesor no se le retira nada cuando cierra el curso.
+104. [ ] Con la licencia caducada, el profesor no puede dar altas pero sí entrar.
+105. [ ] Aviso al profesor de que el curso se cierra pronto.
+106. [ ] Traducciones es y pt.
+107. [ ] Probar: cerrar curso, entrar como alumno, ver el mensaje.
+108. [ ] Probar: renovar y comprobar que vuelve con sus datos.
+109. [ ] Probar el caso del alumno con suscripción propia.
+110. [ ] Probar el borde de la fecha (el último día cuenta entero).
+111. [ ] Capturas de la pantalla de sin acceso.
+112. [ ] ✅ `tsc` + baterías.
+
+### Bloque G · Alumnos en administración (113-124)
+
+113. [ ] Sección propia `/admin/alumnos`, no una pestaña de nutricionistas.
+114. [ ] Institución, clase y profesor de cada alumno.
+115. [ ] Estado del acceso y desde cuándo.
+116. [ ] Fecha de alta y de renovación: quién ha renovado este curso y quién no.
+117. [ ] Último acceso, para ver quién no ha entrado nunca.
+118. [ ] Licencias de la bolsa consumidas de verdad.
+119. [ ] Filtros por institución y por estado.
+120. [ ] Buscador por correo.
+121. [ ] Enlace desde la ficha de la licencia.
+122. [ ] Traducciones es y pt.
+123. [ ] Capturas y mirarlas.
+124. [ ] ✅ `tsc` + baterías.
+
+### Bloque H · Compartir material con la clase (125-136)
+
+125. [ ] Decidir el modelo mirando cómo lo hace el centro (`Empresa`) y reutilizarlo.
+126. [ ] Marcar un alimento o receta como compartido con una clase.
+127. [ ] El alumno los ve, los usa, **los copia y los modifica** (cada uno con su versión).
+128. [ ] Que compartir no sea obligatorio: por defecto, privados.
+129. [ ] Deshacer el compartir sin romper lo que el alumno ya copió.
+130. [ ] Que el material del profesor no se mezcle con el catálogo global.
+131. [ ] Rendimiento: que la lista del alumno no se vuelva lenta.
+132. [ ] Traducciones es y pt.
+133. [ ] Probar como profesor: compartir y dejar de compartir.
+134. [ ] Probar como alumno: ver, usar, copiar y modificar.
+135. [ ] Capturas.
+136. [ ] ✅ `tsc` + baterías.
+
+### Bloque I · Auditoría de la Fase 2 (137-152)
+
+137. [ ] Releer entero cada fichero nuevo.
+138. [ ] Releer cada diff de los modificados.
+139. [ ] Seguridad: ningún profesor ve datos de otra clase ni de otra licencia.
+140. [ ] Seguridad: ningún alumno ve el trabajo de otro alumno.
+141. [ ] Seguridad: los tokens de invitación y de clase, y qué pasa si se filtran.
+142. [ ] Datos: qué ocurre al borrar una clase, una licencia o un profesor.
+143. [ ] Datos: un alumno en dos clases consume una licencia, no dos.
+144. [ ] Casos límite de la bolsa: agotada, ampliada, reducida.
+145. [ ] Casos límite del curso: el último día, curso ya cerrado, licencia caducada.
+146. [ ] Repaso de la guía de bugs recurrentes, punto por punto.
+147. [ ] Descubribilidad: ¿un profesor sabe cómo meter a sus alumnos sin que se lo expliquen?
+148. [ ] Implicaciones cruzadas: dónde más tiene que verse cada cosa.
+149. [ ] Rendimiento con 200 alumnos de verdad en la base.
+150. [ ] `next build` con Node 22.
+151. [ ] Auditoría multiagente con verificación adversarial.
+152. [ ] Arreglar lo que salga y volver a pasar las baterías.
 
 ---
 
