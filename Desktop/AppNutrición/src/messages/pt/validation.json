@@ -279,6 +279,8 @@
     "licenciaNoEncontrada": "Licença não encontrada",
     "sinCupoProfesores": "Esta licença já tem os seus {max} professores. Aumente o limite para adicionar mais",
     "dietistaObligatorio": "Escolha a que nutricionista atribui a função",
-    "yaTieneRolDocente": "Esta conta já tem uma função docente atribuída"
+    "yaTieneRolDocente": "Esta conta já tem uma função docente atribuída",
+    "invitacionNoValida": "Este link já não é válido: pode ter expirado ou já ter sido usado",
+    "invitacionYaUsada": "Esse convite já foi usado"
   }
 }

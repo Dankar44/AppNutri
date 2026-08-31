@@ -503,7 +503,21 @@
       "asignar": "Asignar como profesor",
       "activa": "Licencia activa",
       "activaAyuda": "Al desactivarla, sus profesores dejan de poder dar de alta alumnos, pero conservan su cuenta y su trabajo.",
-      "guardar": "Guardar cambios"
-    }
+      "guardar": "Guardar cambios",
+      "personaContacto": "Persona de contacto (opcional)",
+      "personaContactoPlaceholder": "Nombre, cargo o correo de quien lleva el trato",
+      "invitarPorCorreo": "Invitar por correo",
+      "emailPlaceholder": "profesor@universidad.es",
+      "enviarInvitacion": "Enviar invitación",
+      "ayudaInvitar": "Se le manda un correo para que cree su cuenta con la contraseña que él elija. Si ese correo ya tiene cuenta en Annonia no se crea otra: se le añade el rol y se le avisa."
+    },
+    "contactoEtiqueta": "Contacto: {persona}",
+    "toastInvitacionEnviada": "Invitación enviada por correo",
+    "toastYaTeniaCuenta": "Ya tenía cuenta en Annonia: se le ha dado el rol y se le ha avisado",
+    "toastErrorInvitar": "No se ha podido enviar la invitación",
+    "toastInvitacionCancelada": "Invitación anulada",
+    "invitacionesTitulo": "Invitaciones pendientes",
+    "invitacionCaduca": "caduca el {fecha}",
+    "cancelarInvitacion": "Anular"
   }
 }

@@ -1019,6 +1019,8 @@ enum RolDocente {
 model LicenciaDocente {
   id            String    @id @default(dbgenerated("gen_random_uuid()::text"))
   institucion   String
+  /// Con quién se habla en esa universidad (opcional): nombre, cargo, correo… texto libre.
+  personaContacto String?
   /// Dominio de correo de la institución (p. ej. "ua.es"), opcional. Si está, el link de
   /// invitación de clase solo admite alumnos con ese correo; si es NULL, no restringe nada.
   dominioEmail  String?
@@ -1036,6 +1038,30 @@ model LicenciaDocente {
   updatedAt     DateTime  @default(now()) @updatedAt
 
   miembros      Dietista[]
+  invitaciones  InvitacionDocente[]
 
   @@map("licencias_docentes")
+}
+
+/// Invitación para entrar en el módulo docente. Nadie pone la contraseña de otro: se manda un
+/// correo con un enlace y la persona completa su registro. Guarda el rol porque el mismo
+/// mecanismo sirve para los profesores (fase 1) y para los alumnos (fase 2).
+model InvitacionDocente {
+  id                String    @id @default(dbgenerated("gen_random_uuid()::text"))
+  token             String    @unique
+  email             String
+  rol               RolDocente @default(PROFESOR)
+  licenciaDocenteId String?
+  licenciaDocente   LicenciaDocente? @relation(fields: [licenciaDocenteId], references: [id], onDelete: Cascade)
+  /// Quién invitó: el correo del administrador, o el id del profesor cuando invite a sus alumnos.
+  invitadoPor       String?
+  expiraAt          DateTime
+  aceptadaAt        DateTime?
+  aceptadaPorId     String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @default(now()) @updatedAt
+
+  @@index([email])
+  @@index([licenciaDocenteId])
+  @@map("invitaciones_docentes")
 }

@@ -20,6 +20,7 @@ import { crearCuentaNutricionista } from "./admin";
 export interface LicenciaDocenteItem {
   id: string;
   institucion: string;
+  personaContacto: string | null;
   dominioEmail: string | null;
   maxProfesores: number;
   maxAlumnos: number;
@@ -34,6 +35,8 @@ export interface LicenciaDocenteItem {
 export interface LicenciaDocenteDetalle extends LicenciaDocenteItem {
   notas: string | null;
   createdAt: Date;
+  /** Invitaciones enviadas y todavía sin usar. */
+  invitaciones: { id: string; email: string; expiraAt: Date }[];
   miembros: {
     id: string;
     nombre: string;
@@ -108,6 +111,7 @@ export async function getLicenciasDocentes(busqueda?: string): Promise<LicenciaD
     licencias.map(async (l) => ({
       id: l.id,
       institucion: l.institucion,
+      personaContacto: l.personaContacto,
       dominioEmail: l.dominioEmail,
       maxProfesores: l.maxProfesores,
       maxAlumnos: l.maxAlumnos,
@@ -134,6 +138,11 @@ export async function getLicenciaDocenteDetalle(licenciaId: string): Promise<Lic
         },
         orderBy: [{ rolDocente: "asc" }, { createdAt: "asc" }],
       },
+      invitaciones: {
+        where: { aceptadaAt: null, expiraAt: { gte: new Date() } },
+        select: { id: true, email: true, expiraAt: true },
+        orderBy: { createdAt: "desc" },
+      },
     },
   });
   if (!licencia) return null;
@@ -141,6 +150,7 @@ export async function getLicenciaDocenteDetalle(licenciaId: string): Promise<Lic
   return {
     id: licencia.id,
     institucion: licencia.institucion,
+    personaContacto: licencia.personaContacto,
     dominioEmail: licencia.dominioEmail,
     maxProfesores: licencia.maxProfesores,
     maxAlumnos: licencia.maxAlumnos,
@@ -150,6 +160,7 @@ export async function getLicenciaDocenteDetalle(licenciaId: string): Promise<Lic
     activa: licencia.activa,
     notas: licencia.notas,
     createdAt: licencia.createdAt,
+    invitaciones: licencia.invitaciones,
     miembros: licencia.miembros,
     ...(await contarMiembros(licencia.id)),
   };
@@ -157,6 +168,7 @@ export async function getLicenciaDocenteDetalle(licenciaId: string): Promise<Lic
 
 export async function crearLicenciaDocente(data: {
   institucion: string;
+  personaContacto?: string;
   dominioEmail?: string;
   maxProfesores: number;
   maxAlumnos: number;
@@ -185,6 +197,7 @@ export async function crearLicenciaDocente(data: {
     const licencia = await prisma.licenciaDocente.create({
       data: {
         institucion,
+        personaContacto: sanitizeStringOptional(data.personaContacto, 200) || null,
         dominioEmail: normalizarDominio(data.dominioEmail),
         maxProfesores,
         maxAlumnos,
@@ -206,6 +219,7 @@ export async function editarLicenciaDocente(
   licenciaId: string,
   data: {
     institucion: string;
+    personaContacto?: string;
     dominioEmail?: string;
     maxProfesores: number;
     maxAlumnos: number;
@@ -247,6 +261,7 @@ export async function editarLicenciaDocente(
       where: { id: licenciaId },
       data: {
         institucion,
+        personaContacto: sanitizeStringOptional(data.personaContacto, 200) || null,
         dominioEmail: normalizarDominio(data.dominioEmail),
         maxProfesores,
         maxAlumnos,

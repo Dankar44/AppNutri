@@ -42,6 +42,9 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/legal") ||
     request.nextUrl.pathname.startsWith("/compartido") ||
     request.nextUrl.pathname.startsWith("/preconsulta") ||
+    // #39 — El enlace de invitación docente: quien lo abre todavía no tiene cuenta, así que no
+    // puede pasar por el login. Lo que autoriza es el token, que se valida en la propia página.
+    request.nextUrl.pathname.startsWith("/invitacion") ||
     request.nextUrl.pathname.startsWith("/paciente") ||
     request.nextUrl.pathname.startsWith("/admin-login") ||
     request.nextUrl.pathname.startsWith("/admin") ||

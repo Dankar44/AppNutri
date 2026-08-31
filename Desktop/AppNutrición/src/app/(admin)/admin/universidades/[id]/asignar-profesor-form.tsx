@@ -2,10 +2,11 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Loader2, UserPlus, User, Eye, EyeOff, AlertTriangle } from "lucide-react";
+import { Search, Loader2, Mail, User, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { asignarProfesorLicencia, buscarDietistasParaDocencia } from "@/app/actions/admin-docencia";
+import { invitarProfesor } from "@/app/actions/invitaciones-docentes";
 import { emailDelDominio } from "@/lib/docencia";
 import { cn } from "@/lib/utils";
 
@@ -29,20 +30,16 @@ export function AsignarProfesorForm({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  const [modo, setModo] = useState<"existente" | "nuevo">("existente");
+  const [modo, setModo] = useState<"existente" | "invitar">("existente");
   const [busqueda, setBusqueda] = useState("");
   const [resultados, setResultados] = useState<DietistaOption[]>([]);
   const [buscando, setBuscando] = useState(false);
   const [seleccionado, setSeleccionado] = useState<DietistaOption | null>(null);
 
-  const [nombre, setNombre] = useState("");
-  const [apellidos, setApellidos] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [verPassword, setVerPassword] = useState(false);
 
   // Solo un aviso: el dominio nunca impide dar de alta (hay profesores de universidad con Gmail).
-  const correoElegido = modo === "nuevo" ? email : (seleccionado?.email ?? "");
+  const correoElegido = modo === "invitar" ? email : (seleccionado?.email ?? "");
   const avisoDominio =
     dominios.length > 0 &&
     correoElegido.includes("@") &&
@@ -67,24 +64,28 @@ export function AsignarProfesorForm({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
+      if (modo === "invitar") {
+        const result = await invitarProfesor({ licenciaId, email });
+        if (result.ok) {
+          // Si ese correo ya era usuario de Annonia no se le manda a registrarse: se le da el rol.
+          toast.success(result.resultado === "asignada" ? t("toastYaTeniaCuenta") : t("toastInvitacionEnviada"));
+          setEmail("");
+          router.refresh();
+        } else {
+          toast.error(result.error || t("toastErrorInvitar"));
+        }
+        return;
+      }
+
       const result = await asignarProfesorLicencia({
         licenciaId,
-        modo,
+        modo: "existente",
         dietistaId: seleccionado?.id,
-        nombre: modo === "nuevo" ? nombre : undefined,
-        apellidos: modo === "nuevo" ? apellidos : undefined,
-        email: modo === "nuevo" ? email : undefined,
-        password: modo === "nuevo" ? password : undefined,
       });
-
       if (result.ok) {
         toast.success(t("toastProfesorAsignado"));
         setSeleccionado(null);
         setBusqueda("");
-        setNombre("");
-        setApellidos("");
-        setEmail("");
-        setPassword("");
         router.refresh();
       } else {
         toast.error(result.error || t("toastErrorAsignar"));
@@ -123,16 +124,16 @@ export function AsignarProfesorForm({
         </button>
         <button
           type="button"
-          onClick={() => setModo("nuevo")}
+          onClick={() => setModo("invitar")}
           className={cn(
             "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-            modo === "nuevo"
+            modo === "invitar"
               ? "bg-indigo-100 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-400"
               : "bg-muted text-muted-foreground hover:text-foreground",
           )}
         >
-          <UserPlus className="w-4 h-4" />
-          {t("form.cuentaNueva")}
+          <Mail className="w-4 h-4" />
+          {t("form.invitarPorCorreo")}
         </button>
       </div>
 
@@ -197,29 +198,6 @@ export function AsignarProfesorForm({
         </div>
       ) : (
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">{t("form.nombre")}</label>
-              <input
-                type="text"
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
-                required
-                maxLength={100}
-                className={input}
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">{t("form.apellidos")}</label>
-              <input
-                type="text"
-                value={apellidos}
-                onChange={(e) => setApellidos(e.target.value)}
-                maxLength={100}
-                className={input}
-              />
-            </div>
-          </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground">{t("form.email")}</label>
             <input
@@ -227,30 +205,11 @@ export function AsignarProfesorForm({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              placeholder={t("form.emailPlaceholder")}
               className={input}
             />
           </div>
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">{t("form.password")}</label>
-            <div className="relative mt-1">
-              <input
-                type={verPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                minLength={6}
-                required
-                className="w-full rounded-lg border border-border bg-background px-3 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
-              />
-              <button
-                type="button"
-                onClick={() => setVerPassword(!verPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                {verPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-          <p className="text-xs text-muted-foreground">{t("form.ayudaNuevo")}</p>
+          <p className="text-xs text-muted-foreground">{t("form.ayudaInvitar")}</p>
         </div>
       )}
 
@@ -263,11 +222,11 @@ export function AsignarProfesorForm({
 
       <button
         type="submit"
-        disabled={isPending || (modo === "existente" && !seleccionado)}
+        disabled={isPending || (modo === "existente" ? !seleccionado : !email)}
         className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
       >
-        {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
-        {t("form.asignar")}
+        {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : modo === "invitar" ? <Mail className="w-4 h-4" /> : <User className="w-4 h-4" />}
+        {modo === "invitar" ? t("form.enviarInvitacion") : t("form.asignar")}
       </button>
     </form>
   );

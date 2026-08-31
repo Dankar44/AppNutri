@@ -10,6 +10,7 @@ import { editarLicenciaDocente } from "@/app/actions/admin-docencia";
 interface LicenciaEditable {
   id: string;
   institucion: string;
+  personaContacto: string | null;
   dominioEmail: string | null;
   maxProfesores: number;
   maxAlumnos: number;
@@ -26,9 +27,15 @@ export function EditarLicenciaForm({ licencia }: { licencia: LicenciaEditable })
   const [isPending, startTransition] = useTransition();
 
   const [institucion, setInstitucion] = useState(licencia.institucion);
+  const [personaContacto, setPersonaContacto] = useState(licencia.personaContacto ?? "");
   const [dominioEmail, setDominioEmail] = useState(licencia.dominioEmail ?? "");
-  const [maxProfesores, setMaxProfesores] = useState(licencia.maxProfesores);
-  const [maxAlumnos, setMaxAlumnos] = useState(licencia.maxAlumnos);
+  // Texto mientras se edita: con un input numérico, escribir junto al valor que ya había dejaba
+  // "0200" o "13" en vez de lo tecleado.
+  const [maxProfesores, setMaxProfesores] = useState(String(licencia.maxProfesores));
+  const [maxAlumnos, setMaxAlumnos] = useState(String(licencia.maxAlumnos));
+
+  const alEnfocarNumero = (e: React.FocusEvent<HTMLInputElement>) => e.target.select();
+  const soloDigitos = (v: string) => v.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
   const [curso, setCurso] = useState(licencia.curso ?? "");
   const [fechaFin, setFechaFin] = useState(licencia.fechaFin ?? "");
   const [activa, setActiva] = useState(licencia.activa);
@@ -39,9 +46,10 @@ export function EditarLicenciaForm({ licencia }: { licencia: LicenciaEditable })
     startTransition(async () => {
       const result = await editarLicenciaDocente(licencia.id, {
         institucion,
+        personaContacto: personaContacto || undefined,
         dominioEmail: dominioEmail || undefined,
-        maxProfesores,
-        maxAlumnos,
+        maxProfesores: Number(maxProfesores || 0),
+        maxAlumnos: Number(maxAlumnos || 0),
         curso: curso || undefined,
         fechaFin: fechaFin || undefined,
         activa,
@@ -74,6 +82,18 @@ export function EditarLicenciaForm({ licencia }: { licencia: LicenciaEditable })
       </div>
 
       <div>
+        <label className="text-xs font-medium text-muted-foreground">{t("form.personaContacto")}</label>
+        <input
+          type="text"
+          value={personaContacto}
+          onChange={(e) => setPersonaContacto(e.target.value)}
+          maxLength={200}
+          placeholder={t("form.personaContactoPlaceholder")}
+          className={input}
+        />
+      </div>
+
+      <div>
         <label className="text-xs font-medium text-muted-foreground">{t("form.dominio")}</label>
         <input
           type="text"
@@ -90,20 +110,22 @@ export function EditarLicenciaForm({ licencia }: { licencia: LicenciaEditable })
         <div>
           <label className="text-xs font-medium text-muted-foreground">{t("form.maxProfesores")}</label>
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
             value={maxProfesores}
-            onChange={(e) => setMaxProfesores(Math.max(1, Number(e.target.value)))}
-            min={1}
+            onChange={(e) => setMaxProfesores(soloDigitos(e.target.value))}
+            onFocus={alEnfocarNumero}
             className={input}
           />
         </div>
         <div>
           <label className="text-xs font-medium text-muted-foreground">{t("form.maxAlumnos")}</label>
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
             value={maxAlumnos}
-            onChange={(e) => setMaxAlumnos(Math.max(0, Number(e.target.value)))}
-            min={0}
+            onChange={(e) => setMaxAlumnos(soloDigitos(e.target.value))}
+            onFocus={alEnfocarNumero}
             className={input}
           />
         </div>

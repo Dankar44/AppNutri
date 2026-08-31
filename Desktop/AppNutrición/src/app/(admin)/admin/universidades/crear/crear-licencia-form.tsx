@@ -6,7 +6,7 @@ import { GraduationCap, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { crearLicenciaDocente } from "@/app/actions/admin-docencia";
-import { cursoActual } from "@/lib/docencia";
+import { cursoQueSeContrata, finDeCursoPorDefecto } from "@/lib/docencia";
 
 export function CrearLicenciaForm() {
   const t = useTranslations("admin.universidades");
@@ -14,21 +14,29 @@ export function CrearLicenciaForm() {
   const [isPending, startTransition] = useTransition();
 
   const [institucion, setInstitucion] = useState("");
+  const [personaContacto, setPersonaContacto] = useState("");
   const [dominioEmail, setDominioEmail] = useState("");
-  const [maxProfesores, setMaxProfesores] = useState(1);
-  const [maxAlumnos, setMaxAlumnos] = useState(0);
-  const [curso, setCurso] = useState(cursoActual());
-  const [fechaFin, setFechaFin] = useState("");
+  // Los cupos se guardan como texto mientras se escriben: con un número, al teclear junto al
+  // valor que ya había salía "0200" o "13" en vez de lo que se quería (visto el 30 ago 2026).
+  const [maxProfesores, setMaxProfesores] = useState("1");
+  const [maxAlumnos, setMaxAlumnos] = useState("0");
+  const [curso, setCurso] = useState(cursoQueSeContrata());
+  const [fechaFin, setFechaFin] = useState(finDeCursoPorDefecto());
   const [notas, setNotas] = useState("");
+
+  /** Selecciona lo que hay al entrar en el campo, para que al escribir se reemplace. */
+  const alEnfocarNumero = (e: React.FocusEvent<HTMLInputElement>) => e.target.select();
+  const soloDigitos = (v: string) => v.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
       const result = await crearLicenciaDocente({
         institucion,
+        personaContacto: personaContacto || undefined,
         dominioEmail: dominioEmail || undefined,
-        maxProfesores,
-        maxAlumnos,
+        maxProfesores: Number(maxProfesores || 0),
+        maxAlumnos: Number(maxAlumnos || 0),
         curso: curso || undefined,
         fechaFin: fechaFin || undefined,
         notas: notas || undefined,
@@ -67,6 +75,18 @@ export function CrearLicenciaForm() {
         </div>
 
         <div>
+          <label className="text-xs font-medium text-muted-foreground">{t("form.personaContacto")}</label>
+          <input
+            type="text"
+            value={personaContacto}
+            onChange={(e) => setPersonaContacto(e.target.value)}
+            maxLength={200}
+            placeholder={t("form.personaContactoPlaceholder")}
+            className={input}
+          />
+        </div>
+
+        <div>
           <label className="text-xs font-medium text-muted-foreground">{t("form.dominio")}</label>
           <input
             type="text"
@@ -83,20 +103,22 @@ export function CrearLicenciaForm() {
           <div>
             <label className="text-xs font-medium text-muted-foreground">{t("form.maxProfesores")}</label>
             <input
-              type="number"
+              type="text"
+              inputMode="numeric"
               value={maxProfesores}
-              onChange={(e) => setMaxProfesores(Math.max(1, Number(e.target.value)))}
-              min={1}
+              onChange={(e) => setMaxProfesores(soloDigitos(e.target.value))}
+              onFocus={alEnfocarNumero}
               className={input}
             />
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground">{t("form.maxAlumnos")}</label>
             <input
-              type="number"
+              type="text"
+              inputMode="numeric"
               value={maxAlumnos}
-              onChange={(e) => setMaxAlumnos(Math.max(0, Number(e.target.value)))}
-              min={0}
+              onChange={(e) => setMaxAlumnos(soloDigitos(e.target.value))}
+              onFocus={alEnfocarNumero}
               className={input}
             />
           </div>

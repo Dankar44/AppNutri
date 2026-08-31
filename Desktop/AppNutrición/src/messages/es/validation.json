@@ -279,6 +279,8 @@
     "licenciaNoEncontrada": "No se ha encontrado la licencia",
     "sinCupoProfesores": "Esta licencia ya tiene sus {max} profesores. Sube el cupo para añadir más",
     "dietistaObligatorio": "Elige a qué nutricionista le das el rol",
-    "yaTieneRolDocente": "Esta cuenta ya tiene un rol docente asignado"
+    "yaTieneRolDocente": "Esta cuenta ya tiene un rol docente asignado",
+    "invitacionNoValida": "Este enlace ya no es válido: puede haber caducado o haberse usado",
+    "invitacionYaUsada": "Esa invitación ya se ha usado"
   }
 }

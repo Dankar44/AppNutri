@@ -191,6 +191,23 @@ async function main() {
     await pulsar(page, "Crear licencia");
     await esperar(3000);
 
+    // El cero (o el uno) que ya había no puede quedarse pegado a lo que se teclea: escribir 200
+    // sobre un campo que ponía 0 daba "0200", y 3 sobre un 1 daba 13 (visto el 30 ago 2026).
+    // Sin funciones declaradas dentro del evaluate: tsx las compila con un ayudante (__name) que
+    // no existe en el navegador y revienta.
+    const cuposEscritos = await page.evaluate(() => {
+      const etiquetas = Array.from(document.querySelectorAll("label"));
+      const prof = etiquetas.find((x) => x.textContent?.trim().startsWith("Licencias de profesor"));
+      const alum = etiquetas.find((x) => x.textContent?.trim().startsWith("Licencias de alumno"));
+      return {
+        profesores: (prof?.parentElement?.querySelector("input") as HTMLInputElement | null)?.value ?? "",
+        alumnos: (alum?.parentElement?.querySelector("input") as HTMLInputElement | null)?.value ?? "",
+      };
+    });
+    comprobar("el cupo escrito es el que se ve, sin ceros pegados",
+      cuposEscritos.profesores === "3" && cuposEscritos.alumnos === "300",
+      `profesores "${cuposEscritos.profesores}", alumnos "${cuposEscritos.alumnos}"`);
+
     const { rows: creada } = await client.query(
       `SELECT id, institucion, "dominioEmail", "maxProfesores", "maxAlumnos", curso, notas
        FROM licencias_docentes WHERE institucion = 'PRUEBA Universidad Pablo de Olavide'`,
@@ -306,56 +323,9 @@ async function main() {
     await esperar(1000);
     comprobar("el menú le devuelve a su espacio", paginaProfesor.url().endsWith("/profesor"), paginaProfesor.url().replace(BASE, ""));
 
-    // ─── 6bis. Alta de un profesor NUEVO desde cero (la otra rama del formulario) ───
-    console.log("\n── Crear un profesor que no tenía cuenta ──");
-    const EMAIL_NUEVO = "profesor.nuevo.prueba@annonia.dev";
-    await client.query(
-      `DELETE FROM dietistas WHERE "authId" IN (SELECT id::text FROM auth.users WHERE email = $1)`, [EMAIL_NUEVO],
-    );
-    await client.query(`DELETE FROM auth.identities WHERE user_id IN (SELECT id FROM auth.users WHERE email = $1)`, [EMAIL_NUEVO]);
-    await client.query(`DELETE FROM auth.users WHERE email = $1`, [EMAIL_NUEVO]);
-
-    // La prueba del cupo de antes dejó la licencia con 1 plaza y 1 profesor: sin sitio libre el
-    // formulario no se pinta (y eso ya está comprobado más arriba). Se le devuelve el cupo.
-    await client.query(`UPDATE licencias_docentes SET "maxProfesores" = 3 WHERE id = $1`, [licencia.id]);
-    await page.goto(`${BASE}/admin/universidades/${licencia.id}`, { waitUntil: "networkidle0" });
-    await pulsar(page, "Cuenta nueva");
-    await esperar(500);
-    await rellenar(page, "Nombre", "Nueva");
-    await rellenar(page, "Apellidos", "Profesora");
-    await rellenar(page, "Correo", EMAIL_NUEVO);
-    await rellenar(page, "Contraseña", "ClaveDePrueba_2026");
-    await pulsar(page, "Asignar como profesor");
-    await esperar(4000);
-
-    const { rows: creado } = await client.query(
-      `SELECT d."rolDocente", d."fuenteContacto", d.verificado, d."licenciaDocenteId",
-              (SELECT count(*)::int FROM auth.users u WHERE u.email = $1) AS en_auth
-       FROM dietistas d WHERE d.email = $1`,
-      [EMAIL_NUEVO],
-    );
-    comprobar("se crea la cuenta entera", creado.length === 1 && creado[0].en_auth === 1);
-    if (creado.length > 0) {
-      comprobar("con su rol de profesor", creado[0].rolDocente === "PROFESOR", String(creado[0].rolDocente));
-      comprobar("verificada y lista para entrar", creado[0].verificado === true);
-      comprobar("atada a la licencia", creado[0].licenciaDocenteId === licencia.id);
-      // El valor tiene que ser el canónico o desaparece del filtro "Universidad" de /admin/dietistas.
-      comprobar("con la fuente de contacto canónica", creado[0].fuenteContacto === "universidad", String(creado[0].fuenteContacto));
-    }
-
-    // Y que de verdad aparece al pulsar el filtro "Universidad", que es para lo que existe: el
-    // filtro es del lado cliente, así que hay que pulsarlo, no basta con cargar la página.
-    await page.goto(`${BASE}/admin/dietistas`, { waitUntil: "networkidle0" });
-    await esperar(1200);
-    const estabaAntes = (await page.content()).includes(EMAIL_NUEVO);
-    comprobar("el profesor nuevo aparece en el listado", estabaAntes);
-    await pulsar(page, "Universidad");
-    await esperar(1200);
-    comprobar("y sigue ahí al filtrar por Universidad", (await page.content()).includes(EMAIL_NUEVO));
-
-    await client.query(`DELETE FROM dietistas WHERE email = $1`, [EMAIL_NUEVO]);
-    await client.query(`DELETE FROM auth.identities WHERE user_id IN (SELECT id FROM auth.users WHERE email = $1)`, [EMAIL_NUEVO]);
-    await client.query(`DELETE FROM auth.users WHERE email = $1`, [EMAIL_NUEVO]);
+    // El alta de un profesor que no tenía cuenta ya no se hace poniéndole la contraseña: se le
+    // invita por correo y él elige la suya. Ese camino lo cubre entero
+    // scripts/probar-invitaciones-docentes.ts.
 
     // ─── 6ter. Un nutricionista NORMAL entra por el formulario ───
     // El login manda a /entrar a TODO el mundo, no solo a los profesores: si esto se rompiera,

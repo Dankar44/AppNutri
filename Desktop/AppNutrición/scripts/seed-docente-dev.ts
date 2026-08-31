@@ -15,9 +15,51 @@ import pg from "pg";
 
 const EMAIL = "profesor@annonia.dev";
 const PASS = "profesor1234";
+/** Nutricionista normal, sin rol: para probar el alta de un profesor que "ya tiene cuenta". */
+const EMAIL_NUTRI = "nutricionista@annonia.dev";
+const PASS_NUTRI = "nutri1234";
 const INSTITUCION = "Universidad Pablo de Olavide";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL!, ssl: { rejectUnauthorized: false } });
+
+/** Crea (o rehace) una cuenta de nutricionista con contraseña conocida. */
+async function crearCuenta(client: pg.PoolClient, email: string, pass: string, nombre: string, apellidos: string) {
+  const { rows: viejos } = await client.query(`SELECT id FROM auth.users WHERE email = $1`, [email]);
+  for (const v of viejos) {
+    await client.query(`DELETE FROM dietistas WHERE "authId" = $1`, [v.id]);
+    await client.query(`DELETE FROM auth.identities WHERE user_id = $1::uuid`, [v.id]);
+    await client.query(`DELETE FROM auth.users WHERE id = $1::uuid`, [v.id]);
+  }
+  const { rows: u } = await client.query(
+    `INSERT INTO auth.users (
+       instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+       created_at, updated_at, raw_app_meta_data, raw_user_meta_data, is_sso_user, is_anonymous,
+       confirmation_token, recovery_token, email_change_token_new, email_change,
+       email_change_token_current, reauthentication_token, phone_change, phone_change_token
+     ) VALUES (
+       '00000000-0000-0000-0000-000000000000', gen_random_uuid(), 'authenticated', 'authenticated',
+       $1, crypt($2, gen_salt('bf')), NOW(), NOW(), NOW(),
+       '{"provider":"email","providers":["email"]}',
+       jsonb_build_object('nombre', $3::text, 'apellidos', $4::text, 'email_verified', true, 'phone_verified', false),
+       false, false, '', '', '', '', '', '', '', ''
+     ) RETURNING id`,
+    [email, pass, nombre, apellidos],
+  );
+  const authId = u[0].id as string;
+  await client.query(
+    `INSERT INTO auth.identities (id, user_id, provider_id, provider, identity_data, last_sign_in_at, created_at, updated_at)
+     VALUES (gen_random_uuid(), $1::uuid, $1::text, 'email',
+       jsonb_build_object('sub',$1::text,'email',$2::text,'email_verified',true,'provider','email'),
+       NOW(), NOW(), NOW())`,
+    [authId, email],
+  );
+  const { rows: die } = await client.query(
+    `INSERT INTO dietistas (id, "authId", email, nombre, apellidos, verificado, "fuenteContacto", "createdAt", "updatedAt")
+     VALUES (gen_random_uuid()::text, $1, $2, $3, $4, true, 'universidad', NOW(), NOW()) RETURNING id`,
+    [authId, email, nombre, apellidos],
+  );
+  return die[0].id as string;
+}
 
 async function main() {
   const client = await pool.connect();
@@ -72,12 +114,16 @@ async function main() {
       [lic[0].id, dietistaId],
     );
 
+    await crearCuenta(client, EMAIL_NUTRI, PASS_NUTRI, "Ana", "Nutricionista");
+
     console.log(`
 ✓ Listo para probar en desarrollo
 
   Licencia:  ${INSTITUCION} — 3 profesores y 200 alumnos, curso 2026/27
-  Profesor:  ${EMAIL}
-  Clave:     ${PASS}
+
+  Profesor (ya con rol):      ${EMAIL}  /  ${PASS}
+  Nutricionista normal:       ${EMAIL_NUTRI}  /  ${PASS_NUTRI}
+     └ sin rol docente, para probar el alta de "ya tiene cuenta"
 
   1. npm run dev:desarrollo          (puerto 3001)
   2. http://localhost:3001/login     y entra con esas credenciales

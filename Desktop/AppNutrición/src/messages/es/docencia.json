@@ -16,5 +16,22 @@
     "enPreparacionCorreccion": "Corrección del trabajo de los alumnos",
     "irACuentaProfesional": "Acceder a mi cuenta profesional",
     "irACuentaProfesionalAyuda": "Tus propios pacientes, como cualquier otro nutricionista. Vuelves aquí desde el menú, y la próxima vez que entres aterrizarás otra vez en el espacio docente."
+  },
+  "invitacion": {
+    "titulo": "Crea tu cuenta de profesor",
+    "explicacion": "Elige tu contraseña y ya está: entrarás directamente en tu espacio docente.",
+    "correo": "Correo",
+    "nombre": "Nombre",
+    "apellidos": "Apellidos",
+    "contrasena": "Contraseña",
+    "contrasenaAyuda": "Al menos 6 caracteres. La eliges tú; nadie más la conoce.",
+    "mostrar": "Mostrar contraseña",
+    "ocultar": "Ocultar contraseña",
+    "crearCuenta": "Crear mi cuenta",
+    "cuentaCreada": "Cuenta creada. Ya puedes entrar.",
+    "errorGenerico": "No se ha podido crear la cuenta",
+    "noValidaTitulo": "Este enlace ya no vale",
+    "noValidaTexto": "Puede que haya caducado o que ya lo hayas usado. Pide que te lo vuelvan a enviar.",
+    "irALogin": "Ir a iniciar sesión"
   }
 }

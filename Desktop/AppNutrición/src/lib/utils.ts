@@ -103,3 +103,19 @@ export function rutaInternaSegura(valor: string | null | undefined, porDefecto =
   if (valor.startsWith("//") || valor.startsWith("/\\")) return porDefecto;
   return valor;
 }
+
+/**
+ * Dominio público de la aplicación, para los enlaces que van dentro de un correo.
+ *
+ * `NEXT_PUBLIC_APP_URL` está puesta a `http://localhost:3000` en los ficheros de entorno locales,
+ * lo cual está bien mientras se programa, pero **un correo con un enlace a localhost no le sirve
+ * a nadie**. Si el proceso corre en producción y esa variable sigue apuntando a localhost, se
+ * ignora y se usa el dominio de verdad. Comprobado el 30 ago 2026.
+ */
+export function urlPublica(): string {
+  const configurada = (process.env.NEXT_PUBLIC_APP_URL ?? "").trim().replace(/\/$/, "");
+  const esLocal = /localhost|127\.0\.0\.1/.test(configurada);
+  if (!configurada) return "https://annonia.com";
+  if (esLocal && process.env.NODE_ENV === "production") return "https://annonia.com";
+  return configurada;
+}

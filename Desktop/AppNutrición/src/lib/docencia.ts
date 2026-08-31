@@ -26,6 +26,25 @@ export function cursoActual(hoy: Date = new Date()): string {
 }
 
 /**
+ * El curso que se está CONTRATANDO, que no siempre es el que está en marcha: a partir de junio
+ * ya se vende el que empieza en septiembre. En agosto de 2026 se contrata el 2026/27, no el
+ * 2025/26 que está acabando. (Guillermo, 30 ago 2026: "el curso pone 25/26, será 26/27, ¿no?")
+ */
+export function cursoQueSeContrata(hoy: Date = new Date()): string {
+  const anioInicio = hoy.getMonth() >= 5 ? hoy.getFullYear() : hoy.getFullYear() - 1;
+  return `${anioInicio}/${String((anioInicio + 1) % 100).padStart(2, "0")}`;
+}
+
+/**
+ * Fin del curso que se contrata, en formato de campo de fecha (YYYY-MM-DD): el 31 de agosto con
+ * el que acaba ese curso. Para el 2026/27, el 31 de agosto de 2027.
+ */
+export function finDeCursoPorDefecto(hoy: Date = new Date()): string {
+  const anioFin = Number(cursoQueSeContrata(hoy).slice(0, 4)) + 1;
+  return `${anioFin}-08-31`;
+}
+
+/**
  * Una licencia caducada NO echa al profesor: conserva su cuenta, sus casos y el trabajo del
  * curso pasado. Lo que pierde es la capacidad de dar de alta alumnos hasta que se renueve.
  */

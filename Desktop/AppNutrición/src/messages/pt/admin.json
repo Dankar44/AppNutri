@@ -503,7 +503,21 @@
       "asignar": "Atribuir como professor",
       "activa": "Licença ativa",
       "activaAyuda": "Ao desativá-la, os professores deixam de poder registar alunos, mas mantêm a conta e o trabalho.",
-      "guardar": "Guardar alterações"
-    }
+      "guardar": "Guardar alterações",
+      "personaContacto": "Pessoa de contacto (opcional)",
+      "personaContactoPlaceholder": "Nome, cargo ou correio de quem trata do acordo",
+      "invitarPorCorreo": "Convidar por correio",
+      "emailPlaceholder": "professor@universidade.pt",
+      "enviarInvitacion": "Enviar convite",
+      "ayudaInvitar": "É enviado um correio para que crie a conta com a palavra-passe que escolher. Se esse correio já tiver conta na Annonia não se cria outra: é-lhe atribuída a função e é avisado."
+    },
+    "contactoEtiqueta": "Contacto: {persona}",
+    "toastInvitacionEnviada": "Convite enviado por correio",
+    "toastYaTeniaCuenta": "Já tinha conta na Annonia: foi-lhe atribuída a função e foi avisado",
+    "toastErrorInvitar": "Não foi possível enviar o convite",
+    "toastInvitacionCancelada": "Convite anulado",
+    "invitacionesTitulo": "Convites pendentes",
+    "invitacionCaduca": "expira a {fecha}",
+    "cancelarInvitacion": "Anular"
   }
 }

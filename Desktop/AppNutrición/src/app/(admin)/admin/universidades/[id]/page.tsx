@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, Users, UserCog, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Users, UserCog, AlertTriangle, Mail } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireAdmin } from "@/lib/admin";
 import { getLicenciaDocenteDetalle } from "@/app/actions/admin-docencia";
@@ -9,6 +9,7 @@ import { formatDate } from "@/lib/utils";
 import { EditarLicenciaForm } from "./editar-licencia-form";
 import { AsignarProfesorForm } from "./asignar-profesor-form";
 import { QuitarRolButton } from "./quitar-rol-button";
+import { CancelarInvitacionButton } from "./cancelar-invitacion-button";
 
 export default async function UniversidadDetallePage({
   params,
@@ -45,6 +46,11 @@ export default async function UniversidadDetallePage({
           {licencia.curso ? t("cursoEtiqueta", { curso: licencia.curso }) : t("sinCurso")}
           {dominios.length > 0 && <> · {dominios.map((d) => `@${d}`).join(" · ")}</>}
         </p>
+        {licencia.personaContacto && (
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {t("contactoEtiqueta", { persona: licencia.personaContacto })}
+          </p>
+        )}
       </div>
 
       {!vigente && (
@@ -82,7 +88,7 @@ export default async function UniversidadDetallePage({
 
       <section className="mb-8">
         <h2 className="text-lg font-semibold mb-3">{t("profesoresTitulo")}</h2>
-        {profesores.length === 0 ? (
+        {profesores.length === 0 && licencia.invitaciones.length === 0 ? (
           <p className="text-sm text-muted-foreground mb-4">{t("sinProfesores")}</p>
         ) : (
           <div className="border border-border rounded-xl divide-y divide-border overflow-hidden mb-4">
@@ -106,9 +112,26 @@ export default async function UniversidadDetallePage({
           </div>
         )}
 
+        {licencia.invitaciones.length > 0 && (
+          <div className="border border-dashed border-border rounded-xl divide-y divide-border overflow-hidden mb-4">
+            {licencia.invitaciones.map((inv) => (
+              <div key={inv.id} className="flex items-center gap-3 px-4 py-3">
+                <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm truncate">{inv.email}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("invitacionCaduca", { fecha: formatDate(inv.expiraAt) })}
+                  </p>
+                </div>
+                <CancelarInvitacionButton id={inv.id} email={inv.email} />
+              </div>
+            ))}
+          </div>
+        )}
+
         <AsignarProfesorForm
           licenciaId={licencia.id}
-          sinCupo={licencia.profesores >= licencia.maxProfesores}
+          sinCupo={licencia.profesores + licencia.invitaciones.length >= licencia.maxProfesores}
           dominios={dominios}
         />
       </section>
@@ -135,6 +158,7 @@ export default async function UniversidadDetallePage({
           licencia={{
             id: licencia.id,
             institucion: licencia.institucion,
+            personaContacto: licencia.personaContacto,
             dominioEmail: licencia.dominioEmail,
             maxProfesores: licencia.maxProfesores,
             maxAlumnos: licencia.maxAlumnos,
