@@ -97,6 +97,38 @@ Hoy el panel de administración no los distingue, y el día que la Pablo de Olav
 Esto no es un adorno: es lo que evita que el panel de administración deje de servir el día que
 entre la primera universidad de verdad.
 
+## El espacio docente es OTRO sitio, no el panel con una sección más (Guillermo, 28 ago 2026)
+
+Al probar la Fase 1 quedó claro que lo entregado se queda corto: es el menú de nutricionista con
+"Espacio docente" añadido. Lo que se quiere es que el botón «Acceder a mi cuenta profesional`»
+**cambie el dashboard entero**, y que mientras esté en el espacio docente no vea lo que no le sirve.
+
+**Fuera del espacio docente:** el Dashboard de nutricionista, **Pacientes**, **Agenda** y **Pagos**.
+**Se queda:** **Alimentos** y **Recetas** — material que el profesor comparte con sus alumnos.
+**Entra:** clases, alumnos, casos clínicos y **entregas** (qué caso tiene cada clase, su fecha
+límite, quién ha entregado y qué falta por corregir).
+**Reportes:** se quita del espacio docente. Son informes de pacientes reales; lo que un profesor
+mira ahí son las entregas y las notas.
+
+**Requisito de fondo, y es el más importante:** los **casos de clase no se mezclan nunca con los
+pacientes reales del profesor**. Los casos viven solo en el espacio docente; su lista de "Pacientes"
+de la cuenta profesional sigue siendo la suya. Encaja con el modelo (el caso es un `Paciente`
+marcado), pero obliga a **filtrarlo** en `getPacientes` y en todo lo que liste pacientes.
+
+**El dashboard docente** deja de ser un cartel y pasa a mostrar lo que mira un profesor: sus clases
+con cuántos alumnos, los casos abiertos con su fecha límite y cuántos han entregado, y lo que le
+queda por corregir. La bolsa de licencias baja a un rincón: es un dato administrativo.
+
+**Sin decidir (preguntado el 28 ago 2026, pendiente de respuesta):**
+1. ¿Mensajería con los alumnos dentro de la aplicación, o basta el correo? (hoy la mensajería es
+   solo con pacientes).
+2. ¿Ajustes en los dos espacios o solo en la cuenta profesional?
+3. ¿El profesor necesita crear dietas dentro del espacio docente (la solución de referencia de un
+   caso), o eso lo hace en su cuenta profesional?
+4. "Alimentos y recetas para compartir con los alumnos": ¿el alumno llega a **ver el catálogo de su
+   profesor**? Hoy cada uno ve el suyo, así que sería funcionalidad nueva y hay que decidir en qué
+   fase entra.
+
 ## Lo demás de la fase 2
 
 - `Clase` y `AlumnoClase` (la matrícula), con su estado y su curso.
