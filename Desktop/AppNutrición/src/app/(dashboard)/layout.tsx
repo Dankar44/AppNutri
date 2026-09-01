@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getCurrentDietista, getDietistaAunqueNoPuedaEntrar, signOut } from "@/app/actions/auth";
+import { getCurrentDietista, signOut } from "@/app/actions/auth";
 import {
   getNotificacionesCount,
   getBadgesNavegacion,
@@ -14,16 +14,14 @@ import { BannersDashboard } from "@/components/banners-dashboard";
 import { DemoProvider } from "@/contexts/demo-context";
 import { prisma } from "@/lib/prisma";
 import { getLocale } from "@/i18n/locale";
-import { alumnoPuedeEntrar } from "@/lib/docencia-acceso";
+import { revisarCursoDelAlumno } from "@/lib/docencia-acceso";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // `getCurrentDietista` ya devuelve null al alumno con el curso terminado, y aquí hay que
-  // distinguir "no hay sesión" (→ login) de "sesión válida pero el curso acabó" (→ explicárselo).
-  const dietista = (await getCurrentDietista()) ?? (await getDietistaAunqueNoPuedaEntrar());
+  const dietista = await getCurrentDietista();
   const locale = await getLocale();
 
   if (!dietista) {
@@ -39,10 +37,12 @@ export default async function DashboardLayout({
   const profesor = dietista.rolDocente === "PROFESOR";
 
   // El curso se cierra solo, sin tarea programada: se mira aquí, que es el único momento en el
-  // que importa. La consulta solo la pagan los alumnos, no los cientos de nutricionistas.
-  if (dietista.rolDocente === "ALUMNO") {
-    const { puede } = await alumnoPuedeEntrar(dietista);
-    if (!puede) redirect("/curso-terminado");
+  // que importa. Al alumno no se le echa — si se ha quedado sin clases pasa a cuenta normal y se
+  // le enseña el aviso una vez. La consulta la pagan los alumnos y los exalumnos con el aviso sin
+  // ver, no los cientos de nutricionistas.
+  if (dietista.rolDocente === "ALUMNO" || (dietista.exAlumnoDesde && !dietista.avisoFinCursoVisto)) {
+    const { avisoPendiente } = await revisarCursoDelAlumno(dietista);
+    if (avisoPendiente) redirect("/curso-terminado");
   }
 
   let notifCount = 0;

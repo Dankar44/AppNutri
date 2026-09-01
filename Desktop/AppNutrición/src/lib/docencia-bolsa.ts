@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma/client";
+import { inicioDeHoy } from "@/lib/docencia";
 
 /**
  * #39 — Cuántas licencias de alumno consume una institución de verdad.
@@ -9,8 +10,11 @@ import type { Prisma } from "@/generated/prisma/client";
  *
  * 1. **Un alumno = una licencia**, aunque esté en las clases de dos profesores distintos. Por eso
  *    se cuentan alumnos distintos y no matrículas.
- * 2. **Solo cuentan los que tienen el acceso activo** y en clases no archivadas. A quien se le
- *    retiró al acabar el curso no ocupa plaza: su sitio queda libre, y sus datos siguen intactos.
+ * 2. **Solo cuentan los que tienen el acceso activo y en clases vivas.** A quien se le retiró al
+ *    acabar el curso no ocupa plaza: su sitio queda libre, y sus datos siguen intactos. Una clase
+ *    archivada no cuenta, y una cuyo curso ya pasó tampoco: si no se descontara, la bolsa de una
+ *    facultad seguiría llena de los alumnos del año anterior hasta que a alguien se le ocurriera
+ *    archivar las clases a mano (encontrado al probar el ciclo del curso, 1 sep 2026).
  * 3. **Las invitaciones sin usar también reservan.** Si no, se mandarían doscientas invitaciones
  *    para cincuenta plazas y el problema aparecería al aceptarlas, cuando ya es tarde.
  *
@@ -21,6 +25,15 @@ import type { Prisma } from "@/generated/prisma/client";
 
 type ClientePrisma = Prisma.TransactionClient | typeof prisma;
 
+/** Clases que de verdad están en marcha: ni archivadas ni con el curso ya pasado. */
+function claseViva(licenciaId: string): Prisma.ClaseWhereInput {
+  return {
+    licenciaDocenteId: licenciaId,
+    archivada: false,
+    OR: [{ fechaFinCurso: null }, { fechaFinCurso: { gte: inicioDeHoy() } }],
+  };
+}
+
 export async function contarAlumnosDeLicencia(
   licenciaId: string,
   cliente: ClientePrisma = prisma,
@@ -28,10 +41,7 @@ export async function contarAlumnosDeLicencia(
   // Se cuentan MATRÍCULAS activas y se agrupan por alumno: así el alumno que está en las clases de
   // dos profesores de la misma facultad sale una vez, no dos.
   const alumnos = await cliente.alumnoClase.findMany({
-    where: {
-      activa: true,
-      clase: { licenciaDocenteId: licenciaId, archivada: false },
-    },
+    where: { activa: true, clase: claseViva(licenciaId) },
     select: { alumnoId: true },
     distinct: ["alumnoId"],
   });
@@ -89,11 +99,7 @@ export async function alumnoYaOcupaPlaza(
   cliente: ClientePrisma = prisma,
 ): Promise<boolean> {
   const matricula = await cliente.alumnoClase.findFirst({
-    where: {
-      alumnoId,
-      activa: true,
-      clase: { licenciaDocenteId: licenciaId, archivada: false },
-    },
+    where: { alumnoId, activa: true, clase: claseViva(licenciaId) },
     select: { id: true },
   });
   return matricula !== null;

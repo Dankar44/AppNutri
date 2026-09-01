@@ -99,3 +99,17 @@ export async function requireProfesor(): Promise<DatosProfesor> {
   return datos;
 }
 
+
+/**
+ * Da por visto el aviso de fin de curso y le manda a su cuenta. Lo llama el formulario de
+ * `/curso-terminado`, que es lo único que hay ahí.
+ */
+export async function marcarAvisoFinCursoVisto(): Promise<void> {
+  const dietista = await getCurrentDietista();
+  if (!dietista) redirect("/login");
+  await prisma.dietista.update({
+    where: { id: dietista.id },
+    data: { avisoFinCursoVisto: true },
+  }).catch((e) => console.error("[docencia] No se pudo marcar el aviso como visto:", e));
+  redirect("/dashboard");
+}

@@ -28,10 +28,10 @@ export async function getSuscripcion(): Promise<Suscripcion | null> {
 
     if (rows.length > 0) return rows[0];
 
-    // Una cuenta nacida en una clase NO estrena suscripción por asomarse a los ajustes: aparecería
-    // en el panel de administración como si fuese una venta, y la facultad ya paga por su bolsa.
-    // (Quien ya era nutricionista antes de que su profesor le metiese en clase no entra por aquí.)
-    if (dietista.cuentaDeClase) return null;
+    // Un alumno NO estrena suscripción por asomarse a los ajustes: aparecería en el panel de
+    // administración como si fuese una venta, y su plaza ya la paga su facultad. En cuanto deja
+    // de ser alumno pasa a ser una cuenta normal y se le crea como a cualquiera.
+    if (dietista.rolDocente === "ALUMNO") return null;
 
     if (dietista.isDemo) {
       return {
@@ -60,8 +60,8 @@ export async function cambiarPlan(nuevoPlan: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
-  // Su plaza la paga su facultad: no hay plan que cambiar.
-  if (dietista.cuentaDeClase) return;
+  // Su plaza la paga su facultad: mientras esté en clase no hay plan que cambiar.
+  if (dietista.rolDocente === "ALUMNO") return;
 
   if (nuevoPlan !== "BASICO" && nuevoPlan !== "PROFESIONAL") {
     throw new Error(t("plan.planNoValido"));

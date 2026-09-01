@@ -175,36 +175,12 @@ export const getCurrentDietista = cache(async function getCurrentDietista() {
     verificado = true;
   }
 
-  const ficha = { ...dietista, verificado, isDemo: false as const };
-
-  // Un alumno con el curso terminado no puede seguir trabajando. La comprobación va AQUÍ y no
-  // solo en el layout del panel porque una server action es un POST que no vuelve a pintar el
-  // layout: sin esto, el alumno expulsado seguía pudiendo crear planes, mandar correos desde
-  // nuestro dominio o gastar la cuota de IA llamando a las acciones a mano (auditoría 1 sep 2026).
-  // Solo lo pagan los alumnos: para todos los demás no hay ninguna consulta extra.
-  if (ficha.rolDocente === "ALUMNO") {
-    const { alumnoPuedeEntrar } = await import("@/lib/docencia-acceso");
-    if (!(await alumnoPuedeEntrar(ficha)).puede) return null;
-  }
-
-  return ficha;
+  // Al alumno no se le echa nunca (Guillermo, 1 sep 2026): al quedarse sin clases pasa a cuenta
+  // normal, y eso se resuelve en el layout del panel. Aquí no hay a quién cerrarle la puerta.
+  return { ...dietista, verificado, isDemo: false as const };
 });
 
-/**
- * La ficha del dietista **sin** comprobar si su curso sigue vivo. Solo para las dos pantallas que
- * tienen que hablarle precisamente a quien ya no puede entrar: el layout del panel, que le manda a
- * /curso-terminado, y esa misma página. Cualquier otro uso se salta el control de acceso.
- */
-export const getDietistaAunqueNoPuedaEntrar = cache(async function getDietistaAunqueNoPuedaEntrar() {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
-  if (!data.user) return null;
-  const dietista = await prisma.dietista.findUnique({ where: { authId: data.user.id } });
-  if (!dietista) return null;
-  // Misma forma que `getCurrentDietista` para que el layout no tenga que distinguir cuál de las
-  // dos le ha respondido. Una sesión demo nunca llega aquí: no tiene usuario de Supabase.
-  return { ...dietista, verificado: dietista.verificado, isDemo: false as const };
-});
+
 
 export async function getGoogleIdentityLinked(): Promise<{ email: string } | null> {
   try {

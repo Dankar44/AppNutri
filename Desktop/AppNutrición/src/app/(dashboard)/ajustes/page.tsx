@@ -101,6 +101,8 @@ export default async function AjustesPage({
   const locale = await getLocale();
   // Solo se pregunta por la clase si es alumno: los demás no pagan la consulta.
   const claseDelAlumno = dietista.rolDocente === "ALUMNO" ? await claseVivaDeAlumno(dietista.id) : null;
+  // Solo mientras está en clase: al dejar de serlo, la cuenta es suya y hace con ella lo que quiera.
+  const esAlumnoEnClase = dietista.cuentaDeClase && dietista.rolDocente === "ALUMNO";
 
   const [suscripcion, googleIntegracion, googleLinked, demoEliminado, tienePassword, sp] = await Promise.all([
     getSuscripcion(),
@@ -424,12 +426,12 @@ export default async function AjustesPage({
                   {t("eliminarCuenta.titulo")}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {dietista.cuentaDeClase
+                  {esAlumnoEnClase
                     ? tDocencia("ajustesAlumno.noSePuedeBorrar")
                     : t("eliminarCuenta.descripcion")}
                 </p>
               </div>
-              {!dietista.cuentaDeClase && <EliminarCuentaButton />}
+              {!esAlumnoEnClase && <EliminarCuentaButton />}
             </div>
           </section>
         </main>

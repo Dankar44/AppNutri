@@ -147,14 +147,13 @@
     "cursoTerminadoAviso": "Este curso ya ha terminado, así que dar de alta a alguien no serviría de nada: no podría entrar. Edita la clase y pon una fecha de fin nueva para empezar otro curso."
   },
   "cursoTerminado": {
-    "titulo": "Tu curso ha terminado",
-    "explicacion": "Tu acceso a Annonia venía de tu clase, y ese curso ya está cerrado.",
-    "explicacionConFecha": "Tu acceso a Annonia venía de tu clase, y ese curso terminó el {fecha}.",
-    "nadaSeBorra": "No se ha borrado nada. Tus dietas y tus casos siguen guardados tal y como los dejaste, por si vuelves a entrar el curso que viene.",
-    "hablaConProfesor": "Si este curso sigues en clase, díselo a {profesor}: puede devolverte el acceso en un momento.",
-    "hablaConTuCentro": "Si este curso sigues en clase, díselo a tu profesor: puede devolverte el acceso en un momento.",
-    "cerrarSesion": "Cerrar sesión",
-    "escribenos": "¿Has acabado la carrera y quieres seguir usando Annonia por tu cuenta? Escríbenos a info@annonia.com."
+    "titulo": "Se ha acabado tu año escolar",
+    "explicacion": "Tu clase ya está cerrada, así que dejas de ver el material de tu profesor y sus casos.",
+    "explicacionConFecha": "Tu clase se cerró el {fecha}, así que dejas de ver el material de tu profesor y sus casos.",
+    "laCuentaSeQueda": "Pero la cuenta es tuya y se queda contigo: por haber sido de los primeros, la tienes gratis. Puedes seguir usando Annonia con tus propios pacientes.",
+    "nadaSeBorra": "No se ha borrado nada. Tus dietas y tus casos siguen guardados tal y como los dejaste.",
+    "entrar": "Entrar a mi cuenta",
+    "siVuelves": "Si el curso que viene vuelves a tener clase, tu profesor solo tiene que volver a meter tu correo y todo aparece otra vez."
   },
   "ajustesAlumno": {
     "etiqueta": "Cuenta de clase",

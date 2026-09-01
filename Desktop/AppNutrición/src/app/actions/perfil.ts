@@ -62,10 +62,12 @@ export async function eliminarCuenta() {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
-  // Una cuenta nacida en una clase no se borra a sí misma: se llevaría por delante el trabajo
-  // que su profesor tiene que corregir, y dejaría el correo libre para hacerse una cuenta
-  // normal, que es justo lo que se decidió que no pasara. Quien la da de baja es el profesor.
-  if (dietista.cuentaDeClase) throw new Error(t("docencia.cuentaDeClaseNoSeBorra"));
+  // Mientras está en clase no se borra a sí misma: se llevaría por delante el trabajo que su
+  // profesor tiene que corregir. Cuando deja de ser alumno la cuenta es suya del todo y puede
+  // hacer con ella lo que quiera, como cualquiera.
+  if (dietista.cuentaDeClase && dietista.rolDocente === "ALUMNO") {
+    throw new Error(t("docencia.cuentaDeClaseNoSeBorra"));
+  }
 
   const authId = dietista.authId;
 

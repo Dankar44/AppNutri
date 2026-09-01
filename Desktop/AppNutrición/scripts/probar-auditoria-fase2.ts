@@ -110,7 +110,8 @@ async function limpiar(client: pg.PoolClient) {
 async function ocupadas(client: pg.PoolClient, licenciaId: string): Promise<number> {
   const { rows } = await client.query(
     `SELECT COUNT(DISTINCT ac."alumnoId")::int n FROM alumnos_clase ac JOIN clases c ON c.id = ac."claseId"
-      WHERE ac.activa AND c."licenciaDocenteId" = $1 AND c.archivada = false`, [licenciaId]);
+      WHERE ac.activa AND c."licenciaDocenteId" = $1 AND c.archivada = false
+        AND (c."fechaFinCurso" IS NULL OR c."fechaFinCurso" >= CURRENT_DATE)`, [licenciaId]);
   return rows[0].n;
 }
 
@@ -118,7 +119,8 @@ async function libres(client: pg.PoolClient, licenciaId: string): Promise<number
   const { rows } = await client.query(
     `SELECT GREATEST(0, l."maxAlumnos"
        - (SELECT COUNT(DISTINCT ac."alumnoId") FROM alumnos_clase ac JOIN clases c ON c.id = ac."claseId"
-           WHERE ac.activa AND c."licenciaDocenteId" = l.id AND c.archivada = false)
+           WHERE ac.activa AND c."licenciaDocenteId" = l.id AND c.archivada = false
+             AND (c."fechaFinCurso" IS NULL OR c."fechaFinCurso" >= CURRENT_DATE))
        - (SELECT COUNT(DISTINCT i.email) FROM invitaciones_docentes i JOIN clases c2 ON c2.id = i."claseId"
            WHERE i.rol = 'ALUMNO' AND i."aceptadaAt" IS NULL AND i."expiraAt" >= NOW()
              AND i."licenciaDocenteId" = l.id AND c2.archivada = false))::int AS n
@@ -338,7 +340,7 @@ async function main() {
     comprobar("y no dice que las clases estén 'en preparación'",
       !(await texto(profe)).includes("Clases y alta de alumnos"));
 
-    console.log("\n── Un alumno expulsado no puede usar la aplicación por detrás ──");
+    console.log("\n── Al alumno sin clase no se le echa: pasa a cuenta normal ──");
     const expulsado = await crearCuenta(client, `expulsado@${DOMINIO}`,
       { rolDocente: "ALUMNO", licenciaDocenteId: licenciaId, cuentaDeClase: true });
     const claseVieja = await crearClase("clase del curso pasado");
@@ -348,16 +350,18 @@ async function main() {
       [claseVieja, expulsado]);
     const suPagina = await sesionDe(navegador, `expulsado@${DOMINIO}`);
     await suPagina.goto(`${BASE}/dashboard`, { waitUntil: "networkidle0" });
-    await esperar(1500);
-    comprobar("no entra al panel", suPagina.url().includes("/curso-terminado"), suPagina.url());
-    // Las server actions son POST que no pasan por el layout: el control tiene que estar en la
-    // sesión, no en la pantalla. Se comprueba con un endpoint que usa la misma puerta.
-    const respuesta = await suPagina.evaluate(async (base) => {
-      const r = await fetch(`${base}/api/sidebar-counts`, { credentials: "include" });
-      return { status: r.status, cuerpo: await r.text() };
-    }, BASE);
-    comprobar("y las llamadas de dentro le devuelven vacío",
-      respuesta.cuerpo.includes('"mensajesCount":0'), `${respuesta.status} ${respuesta.cuerpo.slice(0, 80)}`);
+    await esperar(1800);
+    comprobar("se le enseña el aviso de fin de curso", suPagina.url().includes("/curso-terminado"), suPagina.url());
+    const { rows: convertido } = await client.query(
+      `SELECT "rolDocente", "exAlumnoDesde", "cuentaDeClase" FROM dietistas WHERE id = $1`, [expulsado]);
+    comprobar("y pasa a cuenta normal", convertido[0].rolDocente === null);
+    comprobar("marcado como exalumno", convertido[0].exAlumnoDesde !== null);
+    comprobar("sin perder que su cuenta nació en un aula", convertido[0].cuentaDeClase === true);
+    await pulsar(suPagina, "Entrar a mi cuenta");
+    await esperar(3000);
+    comprobar("y entra a su cuenta como cualquiera", suPagina.url().endsWith("/dashboard"), suPagina.url());
+    comprobar("su plaza ya no la ocupa", (await ocupadas(client, licenciaId)) === 2,
+      `${await ocupadas(client, licenciaId)} ocupadas`);
   } finally {
     await limpiar(client);
     client.release();

@@ -54,11 +54,15 @@ export function licenciaVigente(
 ): boolean {
   if (!licencia || !licencia.activa) return false;
   if (!licencia.fechaFin) return true;
-  // La fecha se elige en un selector de día y se guarda a medianoche, así que comparar tal cual
-  // dejaría la licencia caducada durante todo el día que el administrador ha puesto como último.
-  // Quien escribe "hasta el 31 de agosto" espera que el 31 de agosto siga funcionando.
+  // La fecha se elige en un selector de día y se guarda a medianoche UTC, así que comparar tal
+  // cual dejaría la licencia caducada durante todo el día que el administrador ha puesto como
+  // último. Quien escribe "hasta el 31 de agosto" espera que el 31 de agosto siga funcionando.
+  //
+  // El final del día se calcula en UTC, no en la hora del servidor: si no, el resultado cambia
+  // según dónde esté corriendo la aplicación, y en España, entre medianoche y las dos de la
+  // mañana, una licencia que acababa hoy salía caducada (visto el 2 sep 2026).
   const finDelDia = new Date(licencia.fechaFin);
-  finDelDia.setHours(23, 59, 59, 999);
+  finDelDia.setUTCHours(23, 59, 59, 999);
   return finDelDia.getTime() >= hoy.getTime();
 }
 
@@ -120,14 +124,18 @@ export const RUTAS_COMPARTIDAS = ["/dietas", "/alimentos", "/recetas", "/ajustes
 export function cursoTerminado(fechaFinCurso: Date | null | undefined, hoy: Date = new Date()): boolean {
   if (!fechaFinCurso) return false;
   const finDelDia = new Date(fechaFinCurso);
-  finDelDia.setHours(23, 59, 59, 999);
+  finDelDia.setUTCHours(23, 59, 59, 999);
   return finDelDia.getTime() < hoy.getTime();
 }
 
-/** El primer instante del día de hoy: el corte con el que se filtran los cursos vivos en la BD. */
+/**
+ * El primer instante del día de hoy en UTC: el corte con el que se filtran los cursos vivos en la
+ * base de datos. Es el equivalente en consulta a `cursoTerminado`, y por eso también va en UTC —
+ * las dos formas de preguntar lo mismo tienen que contestar lo mismo a cualquier hora.
+ */
 export function inicioDeHoy(hoy: Date = new Date()): Date {
   const d = new Date(hoy);
-  d.setHours(0, 0, 0, 0);
+  d.setUTCHours(0, 0, 0, 0);
   return d;
 }
 

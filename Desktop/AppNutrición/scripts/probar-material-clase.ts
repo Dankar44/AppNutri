@@ -250,6 +250,12 @@ async function main() {
       `INSERT INTO suscripciones (id, "dietistaId", plan, estado, "fechaInicio", "createdAt", "updatedAt")
        VALUES (gen_random_uuid()::text, $1, 'PROFESIONAL', 'ACTIVA', NOW(), NOW(), NOW())`, [alumnoId]);
     const alumno2 = await sesionDe(navegador, `alumno@${DOMINIO}`);
+    await alumno2.goto(`${BASE}/dashboard`, { waitUntil: "networkidle0" });
+    await esperar(1800);
+    // Al quedarse sin clase pasa a cuenta normal y ve el aviso una vez; se le da a entrar.
+    comprobar("primero ve el aviso de fin de curso", alumno2.url().includes("/curso-terminado"), alumno2.url());
+    await pulsar(alumno2, "Entrar a mi cuenta");
+    await esperar(3000);
     await alumno2.goto(`${BASE}/alimentos?busqueda=${MARCA}`, { waitUntil: "networkidle0" });
     await esperar(1500);
     visible = await texto(alumno2);

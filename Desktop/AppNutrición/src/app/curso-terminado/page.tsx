@@ -1,32 +1,33 @@
 import { redirect } from "next/navigation";
-import { GraduationCap, Archive } from "lucide-react";
+import { GraduationCap, Archive, Gift } from "lucide-react";
 import { getTranslations } from "next-intl/server";
-import { getDietistaAunqueNoPuedaEntrar, signOut } from "@/app/actions/auth";
+import { getCurrentDietista } from "@/app/actions/auth";
+import { marcarAvisoFinCursoVisto } from "@/app/actions/docencia";
 import { prisma } from "@/lib/prisma";
-import { alumnoPuedeEntrar } from "@/lib/docencia-acceso";
 import { formatDate } from "@/lib/utils";
 import { getLocale } from "@/i18n/locale";
 
 export const dynamic = "force-dynamic";
 
 /**
- * #39 — Lo que ve un alumno cuando su curso ya ha terminado.
+ * #39 — El aviso de que su año escolar ha terminado.
  *
- * Es una puerta cerrada, no un borrado: lo primero que tiene que leer es que su trabajo sigue ahí.
- * Quien todavía tiene el curso en marcha no debe poder ni asomarse a esta página, así que se
- * comprueba igual que en el panel y se le devuelve a su sitio.
+ * No es una puerta cerrada: se le enseña UNA vez y entra a su cuenta como cualquier otro. Lo
+ * primero que tiene que leer es que no se ha borrado nada y que la cuenta se le queda.
+ *
+ * OJO — lo de "gratis de por vida" es de esta época, cuando todo es gratis. Cuando haya pasarela
+ * de pago hay que volver aquí y decidir qué pasa con el alumno que termina la carrera.
  */
 export default async function CursoTerminadoPage() {
-  const dietista = await getDietistaAunqueNoPuedaEntrar();
+  const dietista = await getCurrentDietista();
   if (!dietista) redirect("/login");
-
-  const { puede } = await alumnoPuedeEntrar(dietista);
-  if (puede) redirect("/dashboard");
+  // Quien no tiene el aviso pendiente no pinta nada aquí.
+  if (!dietista.exAlumnoDesde || dietista.avisoFinCursoVisto) redirect("/dashboard");
 
   const t = await getTranslations("docencia");
   const locale = await getLocale();
 
-  // La última clase por la que entró, para poder decirle a quién dirigirse.
+  // La última clase por la que entró, para poder nombrarla.
   const ultima = await prisma.alumnoClase.findFirst({
     where: { alumnoId: dietista.id },
     orderBy: [{ activa: "desc" }, { altaAt: "desc" }],
@@ -34,14 +35,12 @@ export default async function CursoTerminadoPage() {
       clase: {
         select: {
           nombre: true, curso: true, fechaFinCurso: true,
-          profesor: { select: { nombre: true, apellidos: true, email: true } },
           licenciaDocente: { select: { institucion: true } },
         },
       },
     },
   });
   const clase = ultima?.clase ?? null;
-  const profesor = clase ? `${clase.profesor.nombre} ${clase.profesor.apellidos}`.trim() : null;
 
   return (
     <div className="min-h-dvh flex items-center justify-center bg-background p-4">
@@ -66,29 +65,28 @@ export default async function CursoTerminadoPage() {
               : t("cursoTerminado.explicacion")}
           </p>
 
+          <div className="flex gap-3 rounded-lg bg-primary/5 border border-primary/20 p-3">
+            <Gift className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+            <p className="text-sm">{t("cursoTerminado.laCuentaSeQueda")}</p>
+          </div>
+
           <div className="flex gap-3 rounded-lg bg-muted/60 p-3">
             <Archive className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
             <p className="text-sm text-muted-foreground">{t("cursoTerminado.nadaSeBorra")}</p>
           </div>
 
-          <p className="text-sm text-muted-foreground">
-            {profesor
-              ? t("cursoTerminado.hablaConProfesor", { profesor })
-              : t("cursoTerminado.hablaConTuCentro")}
-          </p>
-
-          <form action={signOut}>
+          <form action={marcarAvisoFinCursoVisto}>
             <button
               type="submit"
               className="w-full bg-primary text-primary-foreground px-5 py-2.5 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
             >
-              {t("cursoTerminado.cerrarSesion")}
+              {t("cursoTerminado.entrar")}
             </button>
           </form>
         </div>
 
         <p className="text-xs text-muted-foreground text-center mt-4">
-          {t("cursoTerminado.escribenos")}
+          {t("cursoTerminado.siVuelves")}
         </p>
       </div>
     </div>

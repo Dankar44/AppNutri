@@ -162,38 +162,60 @@ async function main() {
     const { rows: subs } = await client.query(`SELECT COUNT(*)::int n FROM suscripciones WHERE "dietistaId" = $1`, [alDentro]);
     comprobar("asomarse a ajustes NO le crea una suscripción", subs[0].n === 0, `${subs[0].n} suscripciones`);
 
-    console.log("\n── Cuando el curso ya ha pasado ──");
+    console.log("\n── Cuando el curso ya ha pasado: aviso, no puerta cerrada ──");
     page = await sesionDe(navegador, `fuera@${DOMINIO}`);
     await page.goto(`${BASE}/entrar`, { waitUntil: "networkidle0" });
     await esperar(1800);
-    comprobar("no entra al panel", page.url().includes("/curso-terminado"), page.url());
+    comprobar("se le enseña el aviso", page.url().includes("/curso-terminado"), page.url());
     visible = await texto(page);
-    comprobar("se le explica por qué", visible.includes("Tu curso ha terminado"));
-    comprobar("lo primero que lee es que no se ha borrado nada", visible.includes("No se ha borrado nada"));
-    comprobar("se le dice a quién pedírselo", visible.includes(MARCA));
-    comprobar("puede cerrar sesión", visible.includes("Cerrar sesión"));
+    comprobar("se le explica que su año escolar terminó", visible.includes("Se ha acabado tu año escolar"));
+    comprobar("se le dice que la cuenta se le queda", /la tienes gratis/i.test(visible));
+    comprobar("y que no se ha borrado nada", visible.includes("No se ha borrado nada"));
+    comprobar("puede entrar a su cuenta", visible.includes("Entrar a mi cuenta"));
+    const { rows: yaNoEsAlumno } = await client.query(
+      `SELECT "rolDocente", "exAlumnoDesde" FROM dietistas WHERE id = $1`, [alFuera]);
+    comprobar("deja de ser alumno y pasa a cuenta normal", yaNoEsAlumno[0].rolDocente === null);
+    comprobar("queda anotado desde cuándo", yaNoEsAlumno[0].exAlumnoDesde !== null);
     const { rows: suyo } = await client.query(`SELECT COUNT(*)::int n FROM pacientes WHERE "dietistaId" = $1`, [alFuera]);
     comprobar("su trabajo sigue en su sitio", suyo[0].n === 1);
-    await page.goto(`${BASE}/dashboard`, { waitUntil: "networkidle0" });
-    await esperar(1500);
-    comprobar("tampoco entra escribiendo la ruta", page.url().includes("/curso-terminado"), page.url());
+
+    console.log("\n── Y al darle a entrar, usa la aplicación como cualquiera ──");
+    await pulsar(page, "Entrar a mi cuenta");
+    await esperar(3500);
+    comprobar("entra al panel", page.url().endsWith("/dashboard"), page.url());
     await page.goto(`${BASE}/pacientes`, { waitUntil: "networkidle0" });
     await esperar(1500);
-    comprobar("ni por otra pantalla del panel", page.url().includes("/curso-terminado"), page.url());
+    comprobar("y a sus pacientes", page.url().endsWith("/pacientes"), page.url());
+    const paginaPacientes = await texto(page);
+    comprobar("con su caso de prácticas dentro", paginaPacientes.includes("Caso"),
+      paginaPacientes.split("\n").slice(0, 4).join(" / "));
+    await page.goto(`${BASE}/dashboard`, { waitUntil: "networkidle0" });
+    await esperar(1500);
+    comprobar("y el aviso ya no vuelve a salir", page.url().endsWith("/dashboard"), page.url());
 
-    console.log("\n── A quien ya era nutricionista no se le toca ──");
+    console.log("\n── A quien ya era nutricionista no se le cambia el rol ni se le avisa ──");
     page = await sesionDe(navegador, `nutri@${DOMINIO}`);
     await page.goto(`${BASE}/entrar`, { waitUntil: "networkidle0" });
     await esperar(1800);
-    comprobar("sigue entrando aunque su clase acabara", page.url().endsWith("/dashboard"), page.url());
+    comprobar("entra directo, sin aviso ninguno", page.url().endsWith("/dashboard"), page.url());
+    const { rows: nutriTrasCurso } = await client.query(
+      `SELECT "rolDocente", "cuentaDeClase", "exAlumnoDesde" FROM dietistas WHERE id = $1`, [alNutri]);
+    comprobar("y su cuenta sigue sin ser de clase", nutriTrasCurso[0].cuentaDeClase === false);
+    comprobar("se le quita el rol de alumno, que ya no es", nutriTrasCurso[0].rolDocente === null);
+    comprobar("pero sin marcarle como exalumno: nunca fue una cuenta de clase",
+      nutriTrasCurso[0].exAlumnoDesde === null);
 
-    console.log("\n── Y a quien se ha quedado con Annonia, tampoco ──");
+    console.log("\n── Y quien ya tenía suscripción propia, igual ──");
     page = await sesionDe(navegador, `paga@${DOMINIO}`);
     await page.goto(`${BASE}/entrar`, { waitUntil: "networkidle0" });
     await esperar(1800);
+    // Nació en una clase, así que sí ve el aviso; lo que se comprueba es que después entra.
+    comprobar("ve el aviso y luego entra", page.url().includes("/curso-terminado"), page.url());
+    await pulsar(page, "Entrar a mi cuenta");
+    await esperar(3000);
     comprobar("con su suscripción entra como cualquier cliente", page.url().endsWith("/dashboard"), page.url());
 
-    console.log("\n── La pantalla de curso terminado no es un callejón para quien sí puede ──");
+    console.log("\n── El aviso no le sale a quien sigue en clase ──");
     page = await sesionDe(navegador, `dentro@${DOMINIO}`);
     await page.goto(`${BASE}/curso-terminado`, { waitUntil: "networkidle0" });
     await esperar(1500);
@@ -231,7 +253,7 @@ async function main() {
     page = await sesionDe(navegador, `dentro@${DOMINIO}`);
     await page.goto(`${BASE}/dashboard`, { waitUntil: "networkidle0" });
     await esperar(1800);
-    comprobar("el alumno al que se le cerró el curso queda fuera", page.url().includes("/curso-terminado"), page.url());
+    comprobar("el alumno al que se le cerró el curso ve el aviso", page.url().includes("/curso-terminado"), page.url());
 
     console.log("\n── Una clase archivada también cierra la puerta ──");
     await client.query(`UPDATE alumnos_clase SET activa = true, "bajaAt" = NULL WHERE "claseId" = $1`, [claseViva]);
@@ -239,7 +261,7 @@ async function main() {
     page = await sesionDe(navegador, `dentro@${DOMINIO}`);
     await page.goto(`${BASE}/dashboard`, { waitUntil: "networkidle0" });
     await esperar(1800);
-    comprobar("con la clase archivada tampoco entra", page.url().includes("/curso-terminado"), page.url());
+    comprobar("con la clase archivada también se le avisa", page.url().includes("/curso-terminado"), page.url());
 
     console.log("\n── Y una licencia caducada, igual ──");
     await client.query(`UPDATE clases SET archivada = false WHERE id = $1`, [claseViva]);
@@ -247,7 +269,7 @@ async function main() {
     page = await sesionDe(navegador, `dentro@${DOMINIO}`);
     await page.goto(`${BASE}/dashboard`, { waitUntil: "networkidle0" });
     await esperar(1800);
-    comprobar("si la facultad no ha renovado, el alumno no entra", page.url().includes("/curso-terminado"), page.url());
+    comprobar("si la facultad no ha renovado, al alumno se le avisa", page.url().includes("/curso-terminado"), page.url());
     const profe2 = await sesionDe(navegador, `profe@${DOMINIO}`);
     await profe2.goto(`${BASE}/profesor`, { waitUntil: "networkidle0" });
     await esperar(1500);

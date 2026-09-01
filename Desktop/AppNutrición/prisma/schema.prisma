@@ -71,6 +71,10 @@ model Dietista {
   /// La cuenta nació de una clase. No se convierte en cuenta normal: al quitarle el acceso al
   /// acabar el curso, registrarse otra vez con ese correo no le devolvería el uso gratis.
   cuentaDeClase      Boolean   @default(false)
+  /// Cuándo dejó de ser alumno (se quedó sin clases vivas y pasó a cuenta normal).
+  exAlumnoDesde       DateTime?
+  /// Si ya se le enseñó el aviso de que su año escolar terminó y la cuenta se le queda.
+  avisoFinCursoVisto  Boolean   @default(false)
   clasesImpartidas   Clase[]
   matriculas         AlumnoClase[]
 

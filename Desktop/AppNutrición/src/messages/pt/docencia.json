@@ -148,13 +148,12 @@
   },
   "cursoTerminado": {
     "titulo": "O seu ano letivo terminou",
-    "explicacion": "O seu acesso à Annonia vinha da sua turma, e esse ano letivo já está fechado.",
-    "explicacionConFecha": "O seu acesso à Annonia vinha da sua turma, e esse ano letivo terminou a {fecha}.",
-    "nadaSeBorra": "Não se apagou nada. As suas dietas e os seus casos continuam guardados tal como os deixou, caso volte a entrar no próximo ano.",
-    "hablaConProfesor": "Se este ano continua na turma, diga-o a {profesor}: pode devolver-lhe o acesso num instante.",
-    "hablaConTuCentro": "Se este ano continua na turma, diga-o ao seu professor: pode devolver-lhe o acesso num instante.",
-    "cerrarSesion": "Terminar sessão",
-    "escribenos": "Terminou o curso e quer continuar a usar a Annonia por sua conta? Escreva-nos para info@annonia.com."
+    "explicacion": "A sua turma já está fechada, por isso deixa de ver o material do seu professor e os casos dele.",
+    "explicacionConFecha": "A sua turma fechou a {fecha}, por isso deixa de ver o material do seu professor e os casos dele.",
+    "laCuentaSeQueda": "Mas a conta é sua e fica consigo: por ter sido dos primeiros, tem-na gratuita. Pode continuar a usar a Annonia com os seus próprios pacientes.",
+    "nadaSeBorra": "Não se apagou nada. As suas dietas e os seus casos continuam guardados tal como os deixou.",
+    "entrar": "Entrar na minha conta",
+    "siVuelves": "Se no próximo ano voltar a ter turma, o seu professor só tem de pôr o seu correio outra vez e tudo reaparece."
   },
   "ajustesAlumno": {
     "etiqueta": "Conta de turma",
