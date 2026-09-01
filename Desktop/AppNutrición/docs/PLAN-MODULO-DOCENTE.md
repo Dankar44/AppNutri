@@ -297,11 +297,53 @@ pantalla más lenta, 2,3 s (`scripts/probar-carga-docente.ts`).
 **Estado: FASE 2 TERMINADA.** 361 comprobaciones automáticas en 13 baterías, `tsc` y `next build`
 limpios, RLS en las 38 tablas.
 
+### Fase 2.1 — lo que salió al probarlo (1-2 sep 2026)
+
+Guillermo probó la fase 2 en el navegador y de ahí salieron **tres decisiones de producto** y una
+tanda de arreglos.
+
+**Decisión 1 — al alumno no se le echa nunca.** Lo que pierde al salir de una clase es la clase:
+el material del profesor, sus casos y sus entregas. Su cuenta, sus dietas y sus pacientes de
+prácticas son suyos y sigue entrando. Cuando se queda sin ninguna clase viva deja de ser alumno y
+pasa a cuenta normal, con un aviso que ve una sola vez.
+
+> ⚠️ **Lo de "gratis de por vida" es de esta época.** Cuando haya pasarela de pago hay que volver
+> a `/curso-terminado` y decidir qué pasa con el alumno que termina la carrera. Está también en la
+> memoria del proyecto (`project_alumnos_gratis_de_por_vida`).
+
+Esto **anula** la regla anterior de que una cuenta nacida en clase nunca se convierte en cuenta
+normal. Mientras todo sea gratis no hay agujero; en cuanto se cobre, vuelve a serlo.
+
+**Decisión 2 — una clase puede tener varios profesores.** En una facultad la misma asignatura la
+llevan dos o tres. `clases.profesorId` se queda como quien la creó (a quien el alumno ve como su
+profesor) y `profesores_clase` dice quién más la lleva, el creador incluido, para que el permiso
+se compruebe en un solo sitio.
+
+**Decisión 3 — el alumno tiene su aula**, con las mismas dos puertas que el profesor: su aula y su
+cuenta profesional. Durante la carrera muchos ya empiezan a ver gente de verdad.
+
+**Arreglos de lo que probó:** el menú encendía dos sitios a la vez; Ajustes y Novedades sacaban
+del espacio docente; al alumno le ponía «Nutricionista»; abrir el enlace de invitación en el
+navegador del profesor creaba la cuenta y le devolvía a SU espacio; y los alumnos retirados se
+quedaban mezclados sin forma de sacarlos de la lista.
+
+**Dos fallos que salieron al escribir las pruebas:**
+
+- Una clase con el curso ya pasado seguía ocupando plazas de la bolsa: la facultad se quedaba con
+  la bolsa llena de los alumnos del año anterior hasta que alguien archivara las clases a mano.
+- Las fechas de día se comparaban con la hora del servidor, así que el resultado cambiaba según
+  dónde corriese la aplicación: en España, entre medianoche y las dos, una licencia que acababa
+  hoy salía caducada. Ahora se comparan en UTC, que es como están guardadas.
+
+**Estado: 14 baterías, 406 comprobaciones.** `tsc` y `next build` limpios, RLS en las 39 tablas.
+
 ### Pendiente de la fase 2
 
 - Las migraciones **no** están aplicadas en producción (esperan a que Guillermo pida el despliegue):
   `add-modulo-docente`, `add-licencia-persona-contacto`, `add-invitaciones-docentes`,
-  `add-invitacion-reenvios`, `add-clases-docentes` y `add-recetas-compartido`.
+  `add-invitacion-reenvios`, `add-clases-docentes`, `add-recetas-compartido`, `add-exalumno` y
+  `add-profesores-clase`. Se comprueba con `DB=prod npx tsx scripts/comprobar-migraciones-docentes.ts`,
+  que solo lee.
 - `/api/pdf` no pide sesión: **preexistente y ajeno a este módulo**, pero cualquiera en internet
   puede hacer trabajar a nuestro Chrome. Contado a Guillermo aparte.
 - El portal del paciente del alumno expulsado sigue en pie (sus pacientes de prácticas pueden
