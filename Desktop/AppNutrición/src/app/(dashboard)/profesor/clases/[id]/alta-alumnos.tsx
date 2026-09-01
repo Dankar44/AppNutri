@@ -14,12 +14,16 @@ export function AltaAlumnos({
   enlace,
   enlaceAbierto,
   puedeDarAltas,
+  cursoTerminado,
 }: {
   claseId: string;
   plazasLibres: number | null;
   enlace: string | null;
   enlaceAbierto: boolean;
+  /** De la licencia de la facultad: si está caducada, no se dan altas en ninguna clase. */
   puedeDarAltas: boolean;
+  /** De esta clase en concreto: su curso ya pasó. Se dice aparte porque se arregla de otra forma. */
+  cursoTerminado: boolean;
 }) {
   const t = useTranslations("docencia");
   const router = useRouter();
@@ -74,10 +78,10 @@ export function AltaAlumnos({
     }
   }
 
-  if (!puedeDarAltas) {
+  if (cursoTerminado || !puedeDarAltas) {
     return (
       <p className="text-sm text-muted-foreground border border-dashed border-border rounded-xl p-4">
-        {t("alumnos.cursoCerrado")}
+        {cursoTerminado ? t("alumnos.cursoTerminadoAviso") : t("alumnos.cursoCerrado")}
       </p>
     );
   }

@@ -76,7 +76,12 @@
     "sinAlumnosTexto": "O registo de alunos chega no passo seguinte.",
     "ultimoAcceso": "última entrada {fecha}",
     "nuncaHaEntrado": "nunca entrou",
-    "accesoRetirado": "Acesso retirado"
+    "accesoRetirado": "Acesso retirado",
+    "cerrarCurso": "Fechar o ano letivo",
+    "cerrarCursoTexto": "{n, plural, one {# aluno deixará de entrar} other {Os # alunos deixarão de entrar}}, mas NÃO se apaga nada: o trabalho continua guardado e os lugares voltam à bolsa para o próximo ano. Pode devolver-lhes o acesso um a um.",
+    "cursoCerradoHecho": "{n, plural, =0 {Não havia nenhum aluno ativo} one {# aluno saiu do ano letivo} other {# alunos saíram do ano letivo}}",
+    "cursoTerminadoTitulo": "Este ano letivo já terminou",
+    "cursoTerminadoTexto": "Os seus alunos já não podem entrar. Se começar um ano novo com esta turma, edite-a e coloque uma nova data de fim."
   },
   "clasePublica": {
     "titulo": "Junte-se à turma",
@@ -122,6 +127,24 @@
     "retirarTexto": "{nombre} deixará de entrar, mas NÃO se apaga nada: as suas dietas e os seus pacientes de práticas continuam lá, e o lugar fica livre. Pode devolvê-lo quando quiser.",
     "devolverTexto": "{nombre} volta a entrar com todo o seu trabalho tal como o deixou. Ocupará um lugar da licença.",
     "accesoRetirado": "Acesso retirado",
-    "accesoDevuelto": "Acesso devolvido"
+    "accesoDevuelto": "Acesso devolvido",
+    "cursoTerminadoAviso": "Este ano letivo já terminou, por isso registar alguém não serviria de nada: não conseguiria entrar. Edite a turma e coloque uma nova data de fim para começar outro ano."
+  },
+  "cursoTerminado": {
+    "titulo": "O seu ano letivo terminou",
+    "explicacion": "O seu acesso à Annonia vinha da sua turma, e esse ano letivo já está fechado.",
+    "explicacionConFecha": "O seu acesso à Annonia vinha da sua turma, e esse ano letivo terminou a {fecha}.",
+    "nadaSeBorra": "Não se apagou nada. As suas dietas e os seus casos continuam guardados tal como os deixou, caso volte a entrar no próximo ano.",
+    "hablaConProfesor": "Se este ano continua na turma, diga-o a {profesor}: pode devolver-lhe o acesso num instante.",
+    "hablaConTuCentro": "Se este ano continua na turma, diga-o ao seu professor: pode devolver-lhe o acesso num instante.",
+    "cerrarSesion": "Terminar sessão",
+    "escribenos": "Terminou o curso e quer continuar a usar a Annonia por sua conta? Escreva-nos para info@annonia.com."
+  },
+  "ajustesAlumno": {
+    "etiqueta": "Conta de turma",
+    "titulo": "A sua turma",
+    "descripcion": "O seu acesso à Annonia vem daqui: paga-o a sua faculdade, não tem de contratar nada.",
+    "hasta": "O ano letivo termina a {fecha}",
+    "noSePuedeBorrar": "A sua conta foi criada pela sua faculdade para as suas práticas, por isso não a pode apagar: o seu professor tem de poder corrigir o que entregar. Se quiser sair, diga-lho."
   }
 }

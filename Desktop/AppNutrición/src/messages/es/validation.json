@@ -287,6 +287,8 @@
     "claseNoEncontrada": "No se ha encontrado esa clase",
     "sinCorreos": "Escribe al menos un correo",
     "sinPlazas": "No quedan plazas libres en la licencia",
-    "enlaceClaseNoValido": "Este enlace ya no está disponible"
+    "enlaceClaseNoValido": "Este enlace ya no está disponible",
+    "cursoTerminado": "Este curso ya ha terminado. Cambia la fecha de fin de curso para volver a dar de alta alumnos.",
+    "cuentaDeClaseNoSeBorra": "Esta cuenta la gestiona tu facultad: no se puede borrar desde aquí."
   }
 }

@@ -287,6 +287,8 @@
     "claseNoEncontrada": "Não foi encontrada essa turma",
     "sinCorreos": "Escreva pelo menos um correio",
     "sinPlazas": "Não restam lugares livres na licença",
-    "enlaceClaseNoValido": "Este link já não está disponível"
+    "enlaceClaseNoValido": "Este link já não está disponível",
+    "cursoTerminado": "Este ano letivo já terminou. Altere a data de fim para voltar a registar alunos.",
+    "cuentaDeClaseNoSeBorra": "Esta conta é gerida pela sua faculdade: não pode ser apagada a partir daqui."
   }
 }

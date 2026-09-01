@@ -14,9 +14,12 @@ import {
   Building2,
 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
+import { getLocale } from "@/i18n/locale";
+import { formatDate } from "@/lib/utils";
 import { TourSettings } from "@/components/tour/tour-settings";
 import { getCurrentDietista, getGoogleIdentityLinked } from "@/app/actions/auth";
 import { getSuscripcion } from "@/app/actions/suscripcion";
+import { claseVivaDeAlumno } from "@/lib/docencia-acceso";
 import { getIntegracionNutri } from "@/app/actions/google-integracion";
 import { isDemoEliminado } from "@/app/actions/pacientes";
 import { redirect } from "next/navigation";
@@ -94,6 +97,11 @@ export default async function AjustesPage({
   const dietista = await getCurrentDietista();
   if (!dietista) redirect("/login");
 
+  const tDocencia = await getTranslations("docencia");
+  const locale = await getLocale();
+  // Solo se pregunta por la clase si es alumno: los demás no pagan la consulta.
+  const claseDelAlumno = dietista.rolDocente === "ALUMNO" ? await claseVivaDeAlumno(dietista.id) : null;
+
   const [suscripcion, googleIntegracion, googleLinked, demoEliminado, tienePassword, sp] = await Promise.all([
     getSuscripcion(),
     getIntegracionNutri(),
@@ -143,6 +151,11 @@ export default async function AjustesPage({
             {suscripcion && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-muted text-[11px] font-medium text-muted-foreground">
                 {t("page.plan", { plan: suscripcion.plan })}
+              </span>
+            )}
+            {claseDelAlumno && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-medium">
+                {tDocencia("ajustesAlumno.etiqueta")}
               </span>
             )}
           </div>
@@ -321,6 +334,31 @@ export default async function AjustesPage({
             <PacienteDemoCard demoEliminado={demoEliminado} />
           </section>
 
+          {/* CUENTA DE CLASE — en vez del plan: su plaza la paga su facultad */}
+          {claseDelAlumno && (
+            <section>
+              <SectionHeader
+                id="clase"
+                icon={GraduationCap}
+                title={tDocencia("ajustesAlumno.titulo")}
+                description={tDocencia("ajustesAlumno.descripcion")}
+              />
+              <div className="bg-card rounded-xl border border-border p-5 sm:p-6 space-y-1">
+                <p className="font-medium">{claseDelAlumno.nombre}</p>
+                <p className="text-sm text-muted-foreground">
+                  {[claseDelAlumno.institucion, claseDelAlumno.curso].filter(Boolean).join(" · ")}
+                </p>
+                {claseDelAlumno.fechaFinCurso && (
+                  <p className="text-sm text-muted-foreground">
+                    {tDocencia("ajustesAlumno.hasta", {
+                      fecha: formatDate(claseDelAlumno.fechaFinCurso, locale),
+                    })}
+                  </p>
+                )}
+              </div>
+            </section>
+          )}
+
           {/* SUSCRIPCIÓN */}
           {suscripcion && (
             <section>
@@ -386,10 +424,12 @@ export default async function AjustesPage({
                   {t("eliminarCuenta.titulo")}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {t("eliminarCuenta.descripcion")}
+                  {dietista.cuentaDeClase
+                    ? tDocencia("ajustesAlumno.noSePuedeBorrar")
+                    : t("eliminarCuenta.descripcion")}
                 </p>
               </div>
-              <EliminarCuentaButton />
+              {!dietista.cuentaDeClase && <EliminarCuentaButton />}
             </div>
           </section>
         </main>

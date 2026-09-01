@@ -28,6 +28,11 @@ export async function getSuscripcion(): Promise<Suscripcion | null> {
 
     if (rows.length > 0) return rows[0];
 
+    // Una cuenta nacida en una clase NO estrena suscripción por asomarse a los ajustes: aparecería
+    // en el panel de administración como si fuese una venta, y la facultad ya paga por su bolsa.
+    // (Quien ya era nutricionista antes de que su profesor le metiese en clase no entra por aquí.)
+    if (dietista.cuentaDeClase) return null;
+
     if (dietista.isDemo) {
       return {
         id: "demo", dietistaId: dietista.id,
@@ -55,6 +60,8 @@ export async function cambiarPlan(nuevoPlan: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
+  // Su plaza la paga su facultad: no hay plan que cambiar.
+  if (dietista.cuentaDeClase) return;
 
   if (nuevoPlan !== "BASICO" && nuevoPlan !== "PROFESIONAL") {
     throw new Error(t("plan.planNoValido"));

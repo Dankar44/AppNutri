@@ -98,3 +98,23 @@ export function emailDelDominio(email: string, dominioEmail: string | null | und
 export function esRutaDocente(pathname: string): boolean {
   return pathname === "/profesor" || pathname.startsWith("/profesor/");
 }
+
+/**
+ * ¿Se ha acabado ya el curso de una clase?
+ *
+ * Misma regla que la licencia: quien escribe "hasta el 31 de agosto" espera que el 31 de agosto
+ * todavía se pueda entrar. Sin fecha, el curso no termina solo; lo cierra el profesor.
+ */
+export function cursoTerminado(fechaFinCurso: Date | null | undefined, hoy: Date = new Date()): boolean {
+  if (!fechaFinCurso) return false;
+  const finDelDia = new Date(fechaFinCurso);
+  finDelDia.setHours(23, 59, 59, 999);
+  return finDelDia.getTime() < hoy.getTime();
+}
+
+/** El primer instante del día de hoy: el corte con el que se filtran los cursos vivos en la BD. */
+export function inicioDeHoy(hoy: Date = new Date()): Date {
+  const d = new Date(hoy);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}

@@ -2,10 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, Archive, ArchiveRestore, Loader2, X } from "lucide-react";
+import { Pencil, Archive, ArchiveRestore, Loader2, X, CalendarOff } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
-import { editarClase, archivarClase } from "@/app/actions/clases";
+import { editarClase, archivarClase, cerrarCursoDeClase } from "@/app/actions/clases";
 import { ConfirmModal } from "@/components/confirm-modal";
 
 interface ClaseEditable {
@@ -15,6 +15,7 @@ interface ClaseEditable {
   /** Ya en YYYY-MM-DD, listo para el campo de fecha. */
   fechaFinCurso: string | null;
   archivada: boolean;
+  alumnosActivos: number;
 }
 
 export function AccionesClase({ clase }: { clase: ClaseEditable }) {
@@ -23,6 +24,7 @@ export function AccionesClase({ clase }: { clase: ClaseEditable }) {
   const [isPending, startTransition] = useTransition();
   const [editando, setEditando] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
+  const [cerrandoCurso, setCerrandoCurso] = useState(false);
 
   const [nombre, setNombre] = useState(clase.nombre);
   const [curso, setCurso] = useState(clase.curso ?? "");
@@ -55,6 +57,19 @@ export function AccionesClase({ clase }: { clase: ClaseEditable }) {
     });
   }
 
+  function cerrarCurso() {
+    startTransition(async () => {
+      const result = await cerrarCursoDeClase(clase.id);
+      if (result.ok) {
+        toast.success(t("clases.cursoCerradoHecho", { n: result.alumnos ?? 0 }));
+        setCerrandoCurso(false);
+        router.refresh();
+      } else {
+        toast.error(result.error || t("clases.errorGuardar"));
+      }
+    });
+  }
+
   const input =
     "mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30";
   const boton =
@@ -67,6 +82,12 @@ export function AccionesClase({ clase }: { clase: ClaseEditable }) {
           <Pencil className="w-4 h-4" />
           {t("clases.editar")}
         </button>
+        {!clase.archivada && clase.alumnosActivos > 0 && (
+          <button type="button" onClick={() => setCerrandoCurso(true)} className={boton}>
+            <CalendarOff className="w-4 h-4" />
+            {t("clases.cerrarCurso")}
+          </button>
+        )}
         <button type="button" onClick={() => setConfirmando(true)} className={boton}>
           {clase.archivada ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
           {clase.archivada ? t("clases.desarchivar") : t("clases.archivar")}
@@ -120,6 +141,16 @@ export function AccionesClase({ clase }: { clase: ClaseEditable }) {
           </form>
         </div>
       )}
+
+      <ConfirmModal
+        open={cerrandoCurso}
+        title={t("clases.cerrarCurso")}
+        description={t("clases.cerrarCursoTexto", { n: clase.alumnosActivos })}
+        confirmLabel={t("clases.cerrarCurso")}
+        loading={isPending}
+        onConfirm={cerrarCurso}
+        onCancel={() => setCerrandoCurso(false)}
+      />
 
       <ConfirmModal
         open={confirmando}

@@ -14,6 +14,7 @@ import { BannersDashboard } from "@/components/banners-dashboard";
 import { DemoProvider } from "@/contexts/demo-context";
 import { prisma } from "@/lib/prisma";
 import { getLocale } from "@/i18n/locale";
+import { alumnoPuedeEntrar } from "@/lib/docencia-acceso";
 
 export default async function DashboardLayout({
   children,
@@ -34,6 +35,13 @@ export default async function DashboardLayout({
   // `getCurrentDietista` ya devuelve la fila entera del dietista, así que el rol sale de ahí:
   // una consulta más en el layout la pagarían TODOS los nutricionistas en cada carga del panel.
   const profesor = dietista.rolDocente === "PROFESOR";
+
+  // El curso se cierra solo, sin tarea programada: se mira aquí, que es el único momento en el
+  // que importa. La consulta solo la pagan los alumnos, no los cientos de nutricionistas.
+  if (dietista.rolDocente === "ALUMNO") {
+    const { puede } = await alumnoPuedeEntrar(dietista);
+    if (!puede) redirect("/curso-terminado");
+  }
 
   let notifCount = 0;
   let mensajesCount = 0;

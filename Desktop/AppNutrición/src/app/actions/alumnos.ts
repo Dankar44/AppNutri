@@ -19,7 +19,7 @@ import { isNextNavigation, urlPublica } from "@/lib/utils";
 import { sanitizeString } from "@/lib/validation";
 import { sendEmail } from "@/lib/mailer";
 import { plazasLibresDeLicencia, alumnoYaOcupaPlaza } from "@/lib/docencia-bolsa";
-import { emailDelDominio } from "@/lib/docencia";
+import { emailDelDominio, cursoTerminado } from "@/lib/docencia";
 import { requireProfesor } from "./docencia";
 
 const DIAS_DE_VALIDEZ = 30;
@@ -76,10 +76,12 @@ export async function invitarAlumnos(data: {
 
   const clase = await prisma.clase.findFirst({
     where: { id: data.claseId, profesorId: profesor.dietistaId, archivada: false },
-    select: { id: true, nombre: true, licenciaDocenteId: true },
+    select: { id: true, nombre: true, licenciaDocenteId: true, fechaFinCurso: true },
   });
   if (!clase) return { ok: false, error: t("docencia.claseNoEncontrada") };
   if (!clase.licenciaDocenteId) return { ok: false, error: t("docencia.licenciaNoEncontrada") };
+  // Con el curso pasado, dar de alta no serviría de nada: el alumno no podría ni entrar.
+  if (cursoTerminado(clase.fechaFinCurso)) return { ok: false, error: t("docencia.cursoTerminado") };
 
   const correos = [...new Set(
     data.correos.split(/[\n,;]+/).map((c) => sanitizeString(c, 200).toLowerCase().trim()).filter(Boolean),
@@ -186,9 +188,12 @@ export async function cambiarAccesoAlumno(
 
   const clase = await prisma.clase.findFirst({
     where: { id: claseId, profesorId: profesor.dietistaId },
-    select: { id: true, licenciaDocenteId: true },
+    select: { id: true, licenciaDocenteId: true, fechaFinCurso: true },
   });
   if (!clase) return { ok: false, error: t("docencia.claseNoEncontrada") };
+  if (activa && cursoTerminado(clase.fechaFinCurso)) {
+    return { ok: false, error: t("docencia.cursoTerminado") };
+  }
 
   try {
     // Devolver el acceso consume plaza otra vez, salvo que ya la ocupe por la clase de otro profesor.

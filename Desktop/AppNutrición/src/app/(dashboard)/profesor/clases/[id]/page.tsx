@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Users, Archive, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Users, Archive, AlertTriangle, CalendarOff } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireProfesor } from "@/app/actions/docencia";
 import { getClase } from "@/app/actions/clases";
 import { formatDate } from "@/lib/utils";
+import { cursoTerminado } from "@/lib/docencia";
 import { getLocale } from "@/i18n/locale";
 import { AccionesClase } from "./acciones-clase";
 import { AltaAlumnos } from "./alta-alumnos";
@@ -24,6 +25,7 @@ export default async function ClaseDetallePage({
   const t = await getTranslations("docencia");
   const locale = await getLocale();
   const plazasLibres = await getPlazasLibres();
+  const terminado = cursoTerminado(clase.fechaFinCurso);
 
   return (
     <div className="space-y-6">
@@ -50,6 +52,7 @@ export default async function ClaseDetallePage({
             curso: clase.curso,
             fechaFinCurso: clase.fechaFinCurso ? clase.fechaFinCurso.toISOString().slice(0, 10) : null,
             archivada: clase.archivada,
+            alumnosActivos: clase.alumnosActivos,
           }}
         />
       </div>
@@ -64,6 +67,16 @@ export default async function ClaseDetallePage({
         </div>
       )}
 
+      {terminado && !clase.archivada && (
+        <div className="flex gap-3 rounded-xl border border-border bg-muted/50 p-4">
+          <CalendarOff className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+          <div className="text-sm">
+            <p className="font-medium">{t("clases.cursoTerminadoTitulo")}</p>
+            <p className="text-muted-foreground mt-0.5">{t("clases.cursoTerminadoTexto")}</p>
+          </div>
+        </div>
+      )}
+
       {!clase.archivada && (
         <AltaAlumnos
           claseId={clase.id}
@@ -71,6 +84,7 @@ export default async function ClaseDetallePage({
           enlace={clase.enlaceInvitacion}
           enlaceAbierto={clase.invitacionAbierta && clase.enlaceInvitacion !== null}
           puedeDarAltas={profesor.puedeDarAltas}
+          cursoTerminado={terminado}
         />
       )}
 

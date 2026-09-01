@@ -218,3 +218,34 @@ export async function getClase(claseId: string): Promise<ClaseDetalle | null> {
     })),
   };
 }
+
+/**
+ * Cerrar el curso: retira de golpe el acceso a todos los alumnos de la clase.
+ *
+ * Es lo que hace el profesor en junio. No borra nada — el trabajo de los alumnos sigue ahí, y
+ * ellos verán una pantalla que se lo explica — y devuelve todas esas plazas a la bolsa para el
+ * curso siguiente. Se puede deshacer alumno a alumno devolviéndoles el acceso.
+ */
+export async function cerrarCursoDeClase(
+  claseId: string,
+): Promise<{ ok: boolean; error?: string; alumnos?: number }> {
+  const profesor = await requireProfesor();
+  const t = await getTranslations("validation");
+
+  if (!(await claseDelProfesor(claseId, profesor.dietistaId))) {
+    return { ok: false, error: t("docencia.claseNoEncontrada") };
+  }
+
+  try {
+    const { count } = await prisma.alumnoClase.updateMany({
+      where: { claseId, activa: true },
+      data: { activa: false, bajaAt: new Date() },
+    });
+    revalidarClases(claseId);
+    return { ok: true, alumnos: count };
+  } catch (e) {
+    if (isNextNavigation(e)) throw e;
+    console.error("[docencia] Error cerrando el curso:", e);
+    return { ok: false, error: t("general.errorDesconocido") };
+  }
+}
