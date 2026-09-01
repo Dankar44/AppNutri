@@ -92,6 +92,12 @@ async function getDatosProfesor(): Promise<DatosProfesor | null> {
   };
 }
 
+/** ¿Es alumno de alguna clase? Sale de la ficha que ya está en memoria: sin consulta extra. */
+export async function esAlumno(): Promise<boolean> {
+  const dietista = await getCurrentDietista();
+  return dietista?.rolDocente === "ALUMNO";
+}
+
 /** Igual que `getDatosProfesor`, pero echa a quien no sea profesor. Para las páginas de /profesor. */
 export async function requireProfesor(): Promise<DatosProfesor> {
   const datos = await getDatosProfesor();

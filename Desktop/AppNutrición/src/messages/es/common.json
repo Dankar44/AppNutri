@@ -7,7 +7,8 @@
     "centroDeControl": "Centro de control",
     "docencia": "Docencia",
     "material": "Material",
-    "cuenta": "Cuenta"
+    "cuenta": "Cuenta",
+    "aula": "Aula"
   },
   "navItems": {
     "dashboard": "Dashboard",
@@ -27,7 +28,8 @@
     "espacioDocente": "Espacio docente",
     "inicioDocente": "Inicio",
     "miCuentaProfesional": "Mi cuenta profesional",
-    "clases": "Clases"
+    "clases": "Clases",
+    "misClases": "Mis clases"
   },
   "sidebar": {
     "dietista": "Nutricionista",

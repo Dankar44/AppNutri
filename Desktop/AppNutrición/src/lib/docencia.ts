@@ -101,12 +101,14 @@ export function emailDelDominio(email: string, dominioEmail: string | null | und
  */
 export function esRutaDocente(pathname: string, espacio?: string | null): boolean {
   if (pathname === "/profesor" || pathname.startsWith("/profesor/")) return true;
+  if (pathname === "/aula" || pathname.startsWith("/aula/")) return true;
   // Dietas, alimentos y recetas son de los dos espacios: las usa el profesor con su clase y el
   // nutricionista con sus pacientes. Como la dirección es la misma, el enlace del menú docente
   // lleva `?espacio=docente` y así al entrar ahí no se le cambia el menú por el de nutricionista,
   // que era lo que hacía desaparecer "Clases" al primer clic. Sigue siendo un enlace normal, sin
   // efectos: el prefetch puede dispararlo tantas veces como quiera.
-  return espacio === "docente" && RUTAS_COMPARTIDAS.some((r) => pathname === r || pathname.startsWith(`${r}/`));
+  return (espacio === "docente" || espacio === "aula")
+    && RUTAS_COMPARTIDAS.some((r) => pathname === r || pathname.startsWith(`${r}/`));
 }
 
 /**

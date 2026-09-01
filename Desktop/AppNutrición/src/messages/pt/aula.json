@@ -1,0 +1,11 @@
+{
+  "titulo": "A minha sala",
+  "subtitulo": "{n, plural, one {Está em # turma} other {Está em # turmas}}",
+  "subtituloSinClases": "Não está em nenhuma turma neste momento",
+  "vaciaTitulo": "Ainda não está em nenhuma turma",
+  "vaciaTexto": "Quando o seu professor o registar, a turma aparecerá aqui com os casos e as entregas.",
+  "hasta": "Até {fecha}",
+  "queHayAqui": "Aqui verá os casos que o professor lhe atribua e o que lhe entregar. Os alimentos e receitas dele estão em Material.",
+  "pasadasTitulo": "{n, plural, one {# turma anterior} other {# turmas anteriores}}",
+  "pasadasTexto": "O seu trabalho desses anos continua guardado: só deixou de ver o material da turma."
+}

@@ -1,0 +1,11 @@
+{
+  "titulo": "Mi aula",
+  "subtitulo": "{n, plural, one {Estás en # clase} other {Estás en # clases}}",
+  "subtituloSinClases": "No estás en ninguna clase ahora mismo",
+  "vaciaTitulo": "Todavía no estás en ninguna clase",
+  "vaciaTexto": "Cuando tu profesor te dé de alta, la clase aparecerá aquí con sus casos y sus entregas.",
+  "hasta": "Hasta el {fecha}",
+  "queHayAqui": "Aquí verán los casos que te asigne tu profesor y lo que le entregues. Sus alimentos y recetas los tienes en Material.",
+  "pasadasTitulo": "{n, plural, one {# clase anterior} other {# clases anteriores}}",
+  "pasadasTexto": "Tu trabajo de esos cursos sigue guardado: solo has dejado de ver el material de la clase."
+}

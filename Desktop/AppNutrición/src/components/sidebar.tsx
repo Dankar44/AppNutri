@@ -94,11 +94,54 @@ function seccionesDocentes(t: (key: string) => string, opts?: { isAdmin?: boolea
   ];
 }
 
+/**
+ * #39 — El menú del alumno.
+ *
+ * Tiene los mismos dos espacios que el profesor (Guillermo, 1 sep 2026): su aula, con las clases
+ * en las que está, y su cuenta profesional, porque durante la carrera muchos ya empiezan a ver
+ * gente de verdad. El material es el mismo: lo que su profesor comparte le sale ahí mezclado con
+ * lo suyo, etiquetado.
+ */
+function seccionesAlumno(t: (key: string) => string): NavSection[] {
+  return [
+    {
+      title: t("nav.aula"),
+      items: [
+        { href: "/aula", label: t("navItems.misClases"), icon: GraduationCap },
+        // Los casos y las entregas se añaden cuando existan.
+      ],
+    },
+    {
+      title: t("nav.material"),
+      items: [
+        { href: "/dietas?espacio=aula", label: t("navItems.dietas"), icon: UtensilsCrossed },
+        { href: "/alimentos?espacio=aula", label: t("navItems.alimentos"), icon: Apple },
+        { href: "/recetas?espacio=aula", label: t("navItems.recetas"), icon: CookingPot },
+      ],
+    },
+    {
+      title: t("nav.cuenta"),
+      items: [
+        { href: "/dashboard", label: t("navItems.miCuentaProfesional"), icon: Briefcase },
+        { href: "/ajustes?espacio=aula", label: t("navItems.ajustes"), icon: Settings },
+        { href: "/novedades?espacio=aula", label: t("navItems.novedades"), icon: Sparkles, externo: true },
+      ],
+    },
+  ];
+}
+
 function getNavSections(
   t: (key: string) => string,
-  opts?: { isAdmin?: boolean; hasEmpresa?: boolean; esProfesor?: boolean; enEspacioDocente?: boolean },
+  opts?: {
+    isAdmin?: boolean;
+    hasEmpresa?: boolean;
+    esProfesor?: boolean;
+    esAlumno?: boolean;
+    enEspacioDocente?: boolean;
+  },
 ): NavSection[] {
   if (opts?.esProfesor && opts.enEspacioDocente) return seccionesDocentes(t, opts);
+  if (opts?.esAlumno && opts.enEspacioDocente) return seccionesAlumno(t);
 
   return [
     {
@@ -178,12 +221,12 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
   // De todas las direcciones del menú, la que más encaja con donde estamos. Se calcula una vez
   // para que dos enlaces encadenados (/profesor y /profesor/clases) no se enciendan los dos.
   const rutaActiva = useMemo(() => {
-    const todas = getNavSections(() => "", { isAdmin, hasEmpresa, esProfesor, enEspacioDocente })
+    const todas = getNavSections(() => "", { isAdmin, hasEmpresa, esProfesor, esAlumno, enEspacioDocente })
       .flatMap((s) => s.items.map((i) => i.href.split("?")[0]));
     return todas
       .filter((r) => pathname === r || pathname.startsWith(r + "/"))
       .sort((a, b) => b.length - a.length)[0];
-  }, [pathname, isAdmin, hasEmpresa, esProfesor, enEspacioDocente]);
+  }, [pathname, isAdmin, hasEmpresa, esProfesor, esAlumno, enEspacioDocente]);
   const isDemo = useIsDemo();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -328,7 +371,7 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
 
       {/* Nav */}
       <nav className="flex-1 py-4 px-3 overflow-y-auto overscroll-contain">
-        {getNavSections(t, { isAdmin, hasEmpresa, esProfesor, enEspacioDocente }).map((section, sectionIndex) => (
+        {getNavSections(t, { isAdmin, hasEmpresa, esProfesor, esAlumno, enEspacioDocente }).map((section, sectionIndex) => (
           <div
             key={section.title}
             className={cn(sectionIndex > 0 && "mt-6")}

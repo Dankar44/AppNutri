@@ -148,7 +148,7 @@ async function main() {
     let page = await sesionDe(navegador, `dentro@${DOMINIO}`);
     await page.goto(`${BASE}/entrar`, { waitUntil: "networkidle0" });
     await esperar(1500);
-    comprobar("el alumno entra al panel", page.url().endsWith("/dashboard"), page.url());
+    comprobar("el alumno entra a su aula", page.url().endsWith("/aula"), page.url());
 
     console.log("\n── Ajustes de un alumno ──");
     await page.goto(`${BASE}/ajustes`, { waitUntil: "networkidle0" });

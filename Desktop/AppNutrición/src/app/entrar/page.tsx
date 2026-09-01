@@ -1,9 +1,12 @@
 import { redirect } from "next/navigation";
 import { esProfesor } from "@/app/actions/docencia";
+import { getCurrentDietista } from "@/app/actions/auth";
+import { revisarCursoDelAlumno } from "@/lib/docencia-acceso";
 
 /**
  * #39 — Puerta de entrada tras identificarse: decide en el servidor a dónde va cada uno.
- * Un profesor aterriza en su espacio docente, que es su cuenta principal; el resto, al panel.
+ * Un profesor aterriza en su espacio docente y un alumno en su aula, que son sus cuentas
+ * principales; el resto, al panel de siempre.
  *
  * Existe por dos motivos, los dos comprobados el 27 y 28 de agosto de 2026:
  *
@@ -21,5 +24,16 @@ import { esProfesor } from "@/app/actions/docencia";
 export const dynamic = "force-dynamic";
 
 export default async function EntrarPage() {
-  redirect((await esProfesor()) ? "/profesor" : "/dashboard");
+  if (await esProfesor()) redirect("/profesor");
+
+  const dietista = await getCurrentDietista();
+  if (dietista?.rolDocente === "ALUMNO") {
+    // Se resuelve aquí y no en el panel: si se mirase después, un alumno cuyo curso acabó
+    // aterrizaría un momento en el aula antes de que le dijeran que ya no está en clase.
+    const { sigueEnClase, avisoPendiente } = await revisarCursoDelAlumno(dietista);
+    if (sigueEnClase) redirect("/aula");
+    if (avisoPendiente) redirect("/curso-terminado");
+  }
+
+  redirect("/dashboard");
 }
