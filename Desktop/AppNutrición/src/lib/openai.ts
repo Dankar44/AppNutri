@@ -82,11 +82,26 @@ export async function callWithRetry<T>(
         msg.includes("rate limit") ||
         msg.includes("too many requests");
 
-      if (!isRateLimit) {
+      // Fallo transitorio del modelo, no de la petición: a veces se enreda y no devuelve un JSON
+      // válido, y al repetir la misma llamada sale bien (la temperatura es 0.9, así que cada
+      // intento es distinto). Antes esto no se reintentaba y el error subía tal cual, así que era
+      // el nutricionista quien reintentaba a mano: "me sigue saliendo el mismo error, aunque si
+      // intento 3-4 veces me deja" (reportado el 31 ago 2026).
+      const isJsonInvalido =
+        msg.includes("json_validate_failed") ||
+        msg.includes("failed to validate json") ||
+        msg.includes("no generó respuesta");
+
+      if (!isRateLimit && !isJsonInvalido) {
         throw err;
       }
 
       consecutiveRateLimits++;
+
+      // Ante un JSON inválido no hay que esperar: el problema no es la cuota, es que esa
+      // respuesta concreta salió mal. Se reintenta enseguida, y con la siguiente clave por
+      // la rotación.
+      if (isJsonInvalido && !isRateLimit) continue;
 
       const ciclosCompletos = Math.floor(consecutiveRateLimits / keys.length);
       const waitMs = Math.min(3000 + ciclosCompletos * 5000, 30000);
