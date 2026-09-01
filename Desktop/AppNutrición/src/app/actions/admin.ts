@@ -706,7 +706,7 @@ export async function getDietistasPendientes(): Promise<DietistaPendiente[]> {
     `SELECT id, nombre, apellidos, email, "numColegiado", especialidad, "createdAt"
      FROM dietistas
      WHERE verificado = false
-       AND ("rolDocente" IS NULL OR "rolDocente" <> 'ALUMNO')
+       AND ("rolDocente" IS NULL OR "rolDocente" <> 'ALUMNO' OR "cuentaDeClase" = false)
      ORDER BY "createdAt" DESC`
   );
 }

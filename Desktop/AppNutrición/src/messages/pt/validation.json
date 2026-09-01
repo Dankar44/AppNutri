@@ -290,6 +290,8 @@
     "sinPlazas": "Não restam lugares livres na licença",
     "enlaceClaseNoValido": "Este link já não está disponível",
     "cursoTerminado": "Este ano letivo já terminou. Altere a data de fim para voltar a registar alunos.",
-    "cuentaDeClaseNoSeBorra": "Esta conta é gerida pela sua faculdade: não pode ser apagada a partir daqui."
+    "cuentaDeClaseNoSeBorra": "Esta conta é gerida pela sua faculdade: não pode ser apagada a partir daqui.",
+    "contrasenaDeSuCuenta": "Esse correio já tem conta na Annonia: escreva a palavra-passe da sua conta para entrar na turma.",
+    "noCabenAlDesarchivar": "Não cabem: ao desarquivá-la voltam {vuelven} alunos e só restam {libres} lugares livres. Amplie a licença ou retire antes alguns alunos."
   }
 }

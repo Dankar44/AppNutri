@@ -198,7 +198,11 @@ async function main() {
     comprobar("muestra la institución", espacio.cuerpo.includes("PRUEBA Universidad Rey Juan Carlos"));
     comprobar("muestra la bolsa de alumnos", espacio.cuerpo.includes("/ 300"));
     comprobar("muestra el curso", espacio.cuerpo.includes("2026/27"));
-    comprobar("ofrece el paso a la cuenta profesional", espacio.cuerpo.includes("Acceder a mi cuenta profesional"));
+    // Ojo: `cuerpo` es el HTML entero, y next-intl mete ahí TODOS los textos del namespace. Buscar
+    // una frase suelta da falsos positivos; hay que buscar el enlace, que solo está si se pinta.
+    comprobar("ofrece el paso a la cuenta profesional",
+      /<a[^>]+href="\/dashboard"/.test(espacio.cuerpo));
+    comprobar("y una puerta a sus clases", /<a[^>]+href="\/profesor\/clases"/.test(espacio.cuerpo));
     comprobar("no avisa de curso cerrado (está vigente)", !AVISO_CERRADO.test(espacio.cuerpo));
 
     // ─── 5. Ir y volver entre los dos espacios ───
@@ -211,9 +215,13 @@ async function main() {
     for (const fuera of ["/pacientes", "/agenda", "/pagos", "/mensajes", "/reportes"]) {
       comprobar(`el menú docente no muestra ${fuera}`, !espacio.cuerpo.includes(`href="${fuera}"`));
     }
-    for (const dentro of ["/dietas", "/alimentos", "/recetas", "/ajustes"]) {
-      comprobar(`pero sí ${dentro}`, espacio.cuerpo.includes(`href="${dentro}"`));
+    // El material lleva la marca del espacio para que al entrar no se le cambie el menú por el de
+    // nutricionista y desaparezca "Clases" (auditoría 1 sep 2026).
+    for (const dentro of ["/dietas", "/alimentos", "/recetas"]) {
+      comprobar(`pero sí ${dentro}, con la marca del espacio`,
+        espacio.cuerpo.includes(`href="${dentro}?espacio=docente"`));
     }
+    comprobar("y ajustes", espacio.cuerpo.includes('href="/ajustes"'));
 
     const panelProfesor = await pedir("/dashboard", sesion);
     comprobar("el panel NO expulsa al profesor", panelProfesor.estado === 200 && !/http-equiv="refresh"/.test(panelProfesor.cuerpo), `estado ${panelProfesor.estado}`);

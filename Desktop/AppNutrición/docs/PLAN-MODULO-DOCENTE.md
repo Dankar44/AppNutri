@@ -252,104 +252,60 @@ Arrancado el 30 ago 2026. Verificación cada bloque y auditoría al final, como 
 67. [ ] Capturas y mirarlas.
 68. [x] ✅ `tsc` + baterías.
 
-### Bloque E · Alta de alumnos (69-92)
+### Bloques E a I — hechos (1 sep 2026)
 
-69. [ ] Reutilizar `invitaciones_docentes` con `rol = 'ALUMNO'` y la clase a la que entra.
-70. [ ] Añadir `claseId` a la invitación (hoy solo guarda la licencia).
-71. [ ] `invitarAlumnos(claseId, correos[])`: varios de golpe, uno por línea.
-72. [ ] Si el correo ya tiene cuenta: se vincula, **no se crea otra** ni se pisa su suscripción.
-73. [ ] Si ya está en la clase: no duplicar, avisar.
-74. [ ] Consumo de la bolsa: comprobar cupo contando alumnos distintos + invitaciones vivas.
-75. [ ] Mensaje claro cuando la bolsa se agota, con cuántas quedan.
-76. [ ] Correo de invitación al alumno, con el nombre de la clase y del profesor.
-77. [ ] Reenviar y anular, como en profesores.
-78. [ ] La página `/invitacion/[token]` ya sirve: comprobar el texto cuando el rol es ALUMNO.
-79. [ ] Al aceptar: cuenta creada con `origenCuenta` de clase y matrícula activa.
-80. [ ] Link de invitación por clase: `/clase/[token]`.
-81. [ ] Abrir y cerrar el link desde la ficha de la clase.
-82. [ ] El link respeta el tope de la bolsa.
-83. [ ] Aviso (no bloqueo) si el correo no es del dominio de la institución.
-84. [ ] Qué ve alguien que abre un link cerrado o de una clase archivada.
-85. [ ] Listado de alumnos de la clase, con su estado y su último acceso.
-86. [ ] Sacar a un alumno de una clase (sin borrarle la cuenta).
-87. [ ] Traducciones es y pt de todo lo anterior.
-88. [ ] Probar en el navegador el alta por correo, de principio a fin.
-89. [ ] Probar el alta por link, de principio a fin.
-90. [ ] Probar el caso "ya tenía cuenta propia" y que conserva lo suyo.
-91. [ ] Probar el caso "ya está en la clase".
-92. [ ] ✅ `tsc` + baterías + capturas.
+**Bloque E · Alta de alumnos (69-92).** Las dos vías: pegar correos (uno por línea) y el enlace de
+clase. Nadie pone la contraseña de nadie. Si el correo ya tiene cuenta se le matricula sin tocar
+nada de lo suyo; un alumno nuevo se crea SIN suscripción. Retirar el acceso no borra nada y
+devuelve la plaza. La invitación por correo le habla al alumno como alumno.
+*76 comprobaciones nuevas.*
 
-### Bloque F · Ciclo del curso (93-112)
+**Bloque F · Ciclo del curso (93-112).** El curso se cierra solo, al entrar, sin tarea programada.
+Pantalla `/curso-terminado` que empieza diciendo que no se ha borrado nada. No se echa: al
+profesor, ni a quien ya era nutricionista, ni a quien tiene suscripción propia. «Cerrar el curso»
+retira a todos de una vez. Aviso 30 días antes. Una cuenta de clase no se borra a sí misma ni
+estrena suscripción al abrir Ajustes. *30 comprobaciones.*
 
-93. [ ] `fechaFinCurso` en la clase, con el 31 de agosto por defecto.
-94. [ ] Comprobación perezosa: sin cron, se mira al entrar.
-95. [ ] Estado de la matrícula: activa o retirada, con sus fechas.
-96. [ ] «Cerrar curso» en la clase: retira el acceso a todos.
-97. [ ] «Renovar curso»: devuelve el acceso a los que elija el profesor.
-98. [ ] Al renovar, el alumno conserva TODO su trabajo.
-99. [ ] Devolver el acceso metiendo el correo otra vez (segunda vía, ya acordada).
-100. [ ] Pantalla del alumno sin acceso, con su explicación.
-101. [ ] Un alumno con suscripción propia NO se bloquea.
-102. [ ] Una cuenta nacida de clase no se recicla en cuenta normal.
-103. [ ] Al profesor no se le retira nada cuando cierra el curso.
-104. [ ] Con la licencia caducada, el profesor no puede dar altas pero sí entrar.
-105. [ ] Aviso al profesor de que el curso se cierra pronto.
-106. [ ] Traducciones es y pt.
-107. [ ] Probar: cerrar curso, entrar como alumno, ver el mensaje.
-108. [ ] Probar: renovar y comprobar que vuelve con sus datos.
-109. [ ] Probar el caso del alumno con suscripción propia.
-110. [ ] Probar el borde de la fecha (el último día cuenta entero).
-111. [ ] Capturas de la pantalla de sin acceso.
-112. [ ] ✅ `tsc` + baterías.
+**Bloque G · Alumnos en administración (113-124).** `/admin/alumnos` con institución, clase,
+profesor, alta, último acceso y estado; filtros y buscador en la dirección; consumo real de la
+bolsa por institución; aviso de los que nunca han entrado. *19 comprobaciones.*
 
-### Bloque G · Alumnos en administración (113-124)
+**Bloque H · Compartir material (125-136).** Misma mecánica que el centro (`compartido`), añadida a
+`recetas`. El alumno lo ve etiquetado, lo abre y lo copia a lo suyo; lo no compartido no se ve ni
+por la dirección. Al acabar el curso pierde el material del profesor pero conserva sus copias.
+*36 comprobaciones, cinco de ellas sobre el centro, que no es de este módulo pero comparte
+mecanismo.*
 
-113. [ ] Sección propia `/admin/alumnos`, no una pestaña de nutricionistas.
-114. [ ] Institución, clase y profesor de cada alumno.
-115. [ ] Estado del acceso y desde cuándo.
-116. [ ] Fecha de alta y de renovación: quién ha renovado este curso y quién no.
-117. [ ] Último acceso, para ver quién no ha entrado nunca.
-118. [ ] Licencias de la bolsa consumidas de verdad.
-119. [ ] Filtros por institución y por estado.
-120. [ ] Buscador por correo.
-121. [ ] Enlace desde la ficha de la licencia.
-122. [ ] Traducciones es y pt.
-123. [ ] Capturas y mirarlas.
-124. [ ] ✅ `tsc` + baterías.
+**Bloque I · Auditoría (137-152).** Cinco revisiones adversarias en paralelo (bolsa, aislamiento
+entre cuentas, cierre de curso, altas, producto/interfaz) → **27 arreglos**, todos con prueba que
+los cubre. Lo gordo:
 
-### Bloque H · Compartir material con la clase (125-136)
+| Qué | Dónde | Qué pasaba |
+|---|---|---|
+| Las acciones no pasan por el layout | `auth.ts` | El alumno con el curso cerrado seguía creando planes, mandando correos y gastando IA |
+| Borrado antes de comprobar el dueño | `recetas.ts` | Cualquiera vaciaba de ingredientes la receta de cualquiera |
+| Comprobar-y-escribir sin transacción | `docencia-bolsa.ts` | Cinco altas a la vez entraban en la última plaza |
+| Desarchivar no miraba el cupo | `clases.ts` | Archivar + llenar otra + desarchivar = doble de alumnos que los vendidos |
+| Vincular una cuenta ajena sin permiso | `clase-publica.ts` | Con el enlace se metía en el aula la cuenta de otro nutricionista |
+| Rollback incompleto | `invitaciones-docentes.ts` | Un fallo a medias dejaba el correo inservible para siempre |
+| Dos contadores del mismo número | `docencia.ts` | El panel decía 300/300 y la clase «300 libres» |
+| El menú se caía en el material | `sidebar.tsx` | Al pulsar Alimentos desaparecía «Clases» |
 
-125. [ ] Decidir el modelo mirando cómo lo hace el centro (`Empresa`) y reutilizarlo.
-126. [ ] Marcar un alimento o receta como compartido con una clase.
-127. [ ] El alumno los ve, los usa, **los copia y los modifica** (cada uno con su versión).
-128. [ ] Que compartir no sea obligatorio: por defecto, privados.
-129. [ ] Deshacer el compartir sin romper lo que el alumno ya copió.
-130. [ ] Que el material del profesor no se mezcle con el catálogo global.
-131. [ ] Rendimiento: que la lista del alumno no se vuelva lenta.
-132. [ ] Traducciones es y pt.
-133. [ ] Probar como profesor: compartir y dejar de compartir.
-134. [ ] Probar como alumno: ver, usar, copiar y modificar.
-135. [ ] Capturas.
-136. [ ] ✅ `tsc` + baterías.
+Rendimiento medido con 200 alumnos, 8 clases y 4 profesores: la cuenta de la bolsa, 38 ms; la
+pantalla más lenta, 2,3 s (`scripts/probar-carga-docente.ts`).
 
-### Bloque I · Auditoría de la Fase 2 (137-152)
+**Estado: FASE 2 TERMINADA.** 361 comprobaciones automáticas en 13 baterías, `tsc` y `next build`
+limpios, RLS en las 38 tablas.
 
-137. [ ] Releer entero cada fichero nuevo.
-138. [ ] Releer cada diff de los modificados.
-139. [ ] Seguridad: ningún profesor ve datos de otra clase ni de otra licencia.
-140. [ ] Seguridad: ningún alumno ve el trabajo de otro alumno.
-141. [ ] Seguridad: los tokens de invitación y de clase, y qué pasa si se filtran.
-142. [ ] Datos: qué ocurre al borrar una clase, una licencia o un profesor.
-143. [ ] Datos: un alumno en dos clases consume una licencia, no dos.
-144. [ ] Casos límite de la bolsa: agotada, ampliada, reducida.
-145. [ ] Casos límite del curso: el último día, curso ya cerrado, licencia caducada.
-146. [ ] Repaso de la guía de bugs recurrentes, punto por punto.
-147. [ ] Descubribilidad: ¿un profesor sabe cómo meter a sus alumnos sin que se lo expliquen?
-148. [ ] Implicaciones cruzadas: dónde más tiene que verse cada cosa.
-149. [ ] Rendimiento con 200 alumnos de verdad en la base.
-150. [ ] `next build` con Node 22.
-151. [ ] Auditoría multiagente con verificación adversarial.
-152. [ ] Arreglar lo que salga y volver a pasar las baterías.
+### Pendiente de la fase 2
+
+- Las migraciones **no** están aplicadas en producción (esperan a que Guillermo pida el despliegue):
+  `add-modulo-docente`, `add-licencia-persona-contacto`, `add-invitaciones-docentes`,
+  `add-invitacion-reenvios`, `add-clases-docentes` y `add-recetas-compartido`.
+- `/api/pdf` no pide sesión: **preexistente y ajeno a este módulo**, pero cualquiera en internet
+  puede hacer trabajar a nuestro Chrome. Contado a Guillermo aparte.
+- El portal del paciente del alumno expulsado sigue en pie (sus pacientes de prácticas pueden
+  entrar con su PIN). Es coherente con "no se borra nada", pero conviene decidirlo en la fase 3.
 
 ---
 

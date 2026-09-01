@@ -99,6 +99,12 @@ export const LIMITES = {
   subirAdjunto: { limit: 5, windowMs: 60_000 },
   subirImagen: { limit: 10, windowMs: 60_000 },
   registro: { limit: 3, windowMs: 3_600_000 },
+  // Altas por el enlace de una clase: si ese enlace se filtra, sin tope alguien podría crear
+  // cuentas hasta agotar la bolsa que ha pagado la universidad. Mucho más alto que el registro
+  // normal a propósito: una clase entera se apunta a la vez y desde la MISMA red de la facultad,
+  // así que un límite bajo dejaría fuera a media clase. Quien pone el tope de verdad es la bolsa;
+  // esto solo evita que un enlace filtrado se agote en dos minutos.
+  apuntarseAClase: { limit: 60, windowMs: 3_600_000 },
   // El panel da acceso a los datos de todos los nutricionistas: ventana larga y pocos intentos.
   loginAdmin: { limit: 5, windowMs: 900_000 },
 } as const;

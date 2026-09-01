@@ -60,7 +60,16 @@ const MINERALES_FILTER = [
 ];
 const ALL_MICRO_FILTERS = [...VITAMINAS_FILTER, ...MINERALES_FILTER];
 
-export function AlimentosFilter({ misAlimentosCount, tieneEmpresa = false }: { misAlimentosCount: number; tieneEmpresa?: boolean }) {
+export function AlimentosFilter({
+  misAlimentosCount,
+  tieneEmpresa = false,
+  /** "centro", "clase" o null: con quién comparte esta persona. Va como texto, no como componente. */
+  fuenteCompartida = null,
+}: {
+  misAlimentosCount: number;
+  tieneEmpresa?: boolean;
+  fuenteCompartida?: "centro" | "clase" | null;
+}) {
   const t = useTranslations("foods");
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -187,7 +196,7 @@ export function AlimentosFilter({ misAlimentosCount, tieneEmpresa = false }: { m
               <span className="ml-1 text-xs opacity-80">({misAlimentosCount})</span>
             )}
           </button>
-          {tieneEmpresa && (
+          {(tieneEmpresa || fuenteCompartida) && (
             <button
               onClick={() => {
                 const params = new URLSearchParams(searchParams.toString());
@@ -198,7 +207,7 @@ export function AlimentosFilter({ misAlimentosCount, tieneEmpresa = false }: { m
               aria-pressed={fuenteCentro}
               className={`flex-1 sm:flex-none px-3 py-2 text-sm font-medium transition-colors ${fuenteCentro ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
             >
-              {t("filter.centro")}
+              {fuenteCompartida === "clase" ? t("filter.deMiClase") : t("filter.centro")}
             </button>
           )}
         </div>

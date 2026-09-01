@@ -84,8 +84,10 @@ async function main() {
            '{"provider":"email","providers":["email"]}', '{}'::jsonb, false, false, '','','','','','','','')
          RETURNING id`, [email]);
       await client.query(
-        `INSERT INTO dietistas (id, "authId", email, nombre, apellidos, verificado, "rolDocente", "licenciaDocenteId", "createdAt", "updatedAt")
-         VALUES (gen_random_uuid()::text, $1, $2, 'Alumno', $3, true, 'ALUMNO', $4, NOW(), NOW())`,
+        // `cuentaDeClase` marca las cuentas NACIDAS en una clase, que son las que no cuentan como
+        // clientes. Las tres vías de alta reales la ponen siempre.
+        `INSERT INTO dietistas (id, "authId", email, nombre, apellidos, verificado, "rolDocente", "licenciaDocenteId", "cuentaDeClase", "createdAt", "updatedAt")
+         VALUES (gen_random_uuid()::text, $1, $2, 'Alumno', $3, true, 'ALUMNO', $4, true, NOW(), NOW())`,
         [u[0].id, email, `Numero${i}`, licenciaId]);
     }
     const { rows: creados } = await client.query(

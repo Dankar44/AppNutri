@@ -15,6 +15,7 @@ import { getTranslations } from "next-intl/server";
 import { isNextNavigation, urlPublica } from "@/lib/utils";
 import { sanitizeString, sanitizeStringOptional } from "@/lib/validation";
 import { cursoQueSeContrata, finDeCursoPorDefecto } from "@/lib/docencia";
+import { plazasLibresDeLicencia } from "@/lib/docencia-bolsa";
 import { requireProfesor } from "./docencia";
 
 function revalidarClases(claseId?: string) {
@@ -147,11 +148,36 @@ export async function archivarClase(
   const profesor = await requireProfesor();
   const t = await getTranslations("validation");
 
-  if (!(await claseDelProfesor(claseId, profesor.dietistaId))) {
-    return { ok: false, error: t("docencia.claseNoEncontrada") };
-  }
+  const clase = await claseDelProfesor(claseId, profesor.dietistaId);
+  if (!clase) return { ok: false, error: t("docencia.claseNoEncontrada") };
 
   try {
+    // Desarchivar devuelve el acceso a todos los alumnos de esa clase de golpe, y eso vuelve a
+    // consumir plazas. Sin esta comprobación se podía duplicar la bolsa vendida: llenar una clase,
+    // archivarla (el contador cae a cero), llenar otra y desarchivar la primera. 600 alumnos con
+    // acceso sobre 300 vendidos (auditoría 1 sep 2026).
+    if (!archivar && clase.licenciaDocenteId) {
+      const vuelven = await prisma.alumnoClase.count({
+        where: {
+          claseId,
+          activa: true,
+          // Los que ya ocupan plaza por la clase de otro profesor no cuentan otra vez.
+          alumno: {
+            matriculas: {
+              none: {
+                activa: true,
+                clase: { licenciaDocenteId: clase.licenciaDocenteId, archivada: false, id: { not: claseId } },
+              },
+            },
+          },
+        },
+      });
+      const libres = await plazasLibresDeLicencia(clase.licenciaDocenteId);
+      if (vuelven > libres) {
+        return { ok: false, error: t("docencia.noCabenAlDesarchivar", { vuelven, libres }) };
+      }
+    }
+
     await prisma.clase.update({
       where: { id: claseId },
       data: { archivada: archivar, archivadaAt: archivar ? new Date() : null },

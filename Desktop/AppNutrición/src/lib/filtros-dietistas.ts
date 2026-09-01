@@ -19,7 +19,10 @@ export function soloNutricionistas(): Prisma.DietistaWhereInput {
   const demoId = process.env.DEMO_DIETISTA_ID;
   return {
     ...(demoId ? { id: { not: demoId } } : {}),
-    OR: [{ rolDocente: null }, { rolDocente: { not: "ALUMNO" } }],
+    // Se descuentan solo las cuentas NACIDAS en una clase. Un nutricionista que ya tenía su cuenta
+    // y al que su profesor mete en el aula sigue siendo un cliente de verdad: descontarlo por
+    // llevar el rol de alumno lo borraba de las cifras con las que se vende (auditoría 1 sep 2026).
+    OR: [{ rolDocente: null }, { rolDocente: { not: "ALUMNO" } }, { cuentaDeClase: false }],
   };
 }
 

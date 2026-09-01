@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Users, Archive, AlertTriangle, CalendarOff } from "lucide-react";
+import { ArrowLeft, Users, Archive, AlertTriangle, CalendarOff, CalendarClock } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireProfesor } from "@/app/actions/docencia";
 import { getClase } from "@/app/actions/clases";
 import { formatDate } from "@/lib/utils";
-import { cursoTerminado } from "@/lib/docencia";
+import { cursoTerminado, diasDeCursoQueQuedan } from "@/lib/docencia";
 import { getLocale } from "@/i18n/locale";
 import { AccionesClase } from "./acciones-clase";
 import { AltaAlumnos } from "./alta-alumnos";
@@ -26,6 +26,9 @@ export default async function ClaseDetallePage({
   const locale = await getLocale();
   const plazasLibres = await getPlazasLibres();
   const terminado = cursoTerminado(clase.fechaFinCurso);
+  // Avisar ANTES, no el día que sus alumnos se quedan fuera y le llaman por teléfono.
+  const diasQueQuedan = diasDeCursoQueQuedan(clase.fechaFinCurso);
+  const acabaPronto = !terminado && diasQueQuedan !== null && diasQueQuedan <= 30;
 
   return (
     <div className="space-y-6">
@@ -58,7 +61,7 @@ export default async function ClaseDetallePage({
       </div>
 
       {clase.archivada && (
-        <div className="flex gap-3 rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-4">
+        <div className="flex gap-3 py-4 lg:p-4 lg:rounded-xl lg:border lg:border-amber-200 dark:lg:border-amber-500/30 lg:bg-amber-50 dark:lg:bg-amber-500/10 border-b border-border lg:border-b-0">
           <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
           <div className="text-sm">
             <p className="font-medium text-amber-900 dark:text-amber-200">{t("clases.archivadaTitulo")}</p>
@@ -67,8 +70,22 @@ export default async function ClaseDetallePage({
         </div>
       )}
 
+      {acabaPronto && !clase.archivada && clase.alumnosActivos > 0 && (
+        <div className="flex gap-3 py-4 lg:p-4 lg:rounded-xl lg:border lg:border-amber-200 dark:lg:border-amber-500/30 lg:bg-amber-50 dark:lg:bg-amber-500/10 border-b border-border lg:border-b-0">
+          <CalendarClock className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <div className="text-sm">
+            <p className="font-medium text-amber-900 dark:text-amber-200">
+              {t("clases.acabaProntoTitulo", { dias: diasQueQuedan })}
+            </p>
+            <p className="text-amber-800/80 dark:text-amber-200/70 mt-0.5">
+              {t("clases.acabaProntoTexto", { n: clase.alumnosActivos })}
+            </p>
+          </div>
+        </div>
+      )}
+
       {terminado && !clase.archivada && (
-        <div className="flex gap-3 rounded-xl border border-border bg-muted/50 p-4">
+        <div className="flex gap-3 py-4 lg:p-4 lg:rounded-xl lg:border lg:border-border lg:bg-muted/50 border-b border-border lg:border-b-0">
           <CalendarOff className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
           <div className="text-sm">
             <p className="font-medium">{t("clases.cursoTerminadoTitulo")}</p>
@@ -94,7 +111,7 @@ export default async function ClaseDetallePage({
         </h2>
 
         {clase.alumnos.length === 0 ? (
-          <div className="text-center py-10 border border-dashed border-border rounded-xl">
+          <div className="text-center py-10 lg:border lg:border-dashed lg:border-border lg:rounded-xl">
             <Users strokeWidth={1.5} className="w-10 h-10 text-muted-foreground/40 mx-auto mb-2" />
             <p className="text-sm font-medium">{t("clases.sinAlumnosTitulo")}</p>
             <p className="text-xs text-muted-foreground mt-1">{t("clases.sinAlumnosTexto")}</p>

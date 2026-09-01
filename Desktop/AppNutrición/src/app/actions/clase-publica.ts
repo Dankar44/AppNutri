@@ -11,9 +11,13 @@
 import { prisma } from "@/lib/prisma";
 import { getTranslations } from "next-intl/server";
 import { isNextNavigation } from "@/lib/utils";
-import { sanitizeString, sanitizeStringOptional } from "@/lib/validation";
-import { dominiosDeLicencia } from "@/lib/docencia";
-import { plazasLibresDeLicencia, alumnoYaOcupaPlaza } from "@/lib/docencia-bolsa";
+import { headers } from "next/headers";
+import { createClient } from "@supabase/supabase-js";
+import { sanitizeString, sanitizeStringOptional, validateEmail } from "@/lib/validation";
+import { checkRateLimit, LIMITES } from "@/lib/rate-limit";
+import { getLocale } from "@/i18n/locale";
+import { dominiosDeLicencia, licenciaVigente } from "@/lib/docencia";
+import { plazasLibresDeLicencia, conPlazaDeLaBolsa } from "@/lib/docencia-bolsa";
 import { crearPacienteDemoSiNoExiste } from "@/lib/paciente-demo";
 
 export interface ClasePublica {
@@ -31,16 +35,19 @@ export async function getClasePorToken(token: string): Promise<ClasePublica | nu
     select: {
       id: true, nombre: true, archivada: true, invitacionAbierta: true,
       fechaFinCurso: true, licenciaDocenteId: true,
-      licenciaDocente: { select: { institucion: true, dominioEmail: true, activa: true } },
+      licenciaDocente: { select: { institucion: true, dominioEmail: true, activa: true, fechaFin: true } },
     },
   });
-  if (!clase || clase.archivada || !clase.invitacionAbierta) return null;
+  // Sin licencia no hay bolsa que respetar, así que no se admiten altas: solo pasa si a alguien
+  // le borran la licencia por SQL (la relación se queda en NULL), pero sin esto no habría tope.
+  if (!clase || clase.archivada || !clase.invitacionAbierta || !clase.licenciaDocenteId) return null;
   if (clase.fechaFinCurso) {
     const fin = new Date(clase.fechaFinCurso);
     fin.setHours(23, 59, 59, 999);
     if (fin.getTime() < Date.now()) return null;
   }
-  if (clase.licenciaDocente && !clase.licenciaDocente.activa) return null;
+  // `activa` no basta: una licencia del curso pasado sigue activa pero con la fecha pasada.
+  if (!licenciaVigente(clase.licenciaDocente)) return null;
 
   return {
     nombre: clase.nombre,
@@ -62,19 +69,20 @@ export async function apuntarseAClase(data: {
   password: string;
 }): Promise<{ ok: boolean; error?: string; yaTeniaCuenta?: boolean }> {
   const t = await getTranslations("validation");
+  const locale = await getLocale();
 
   const clase = await prisma.clase.findUnique({
     where: { tokenInvitacion: data.token },
     select: {
       id: true, archivada: true, invitacionAbierta: true, fechaFinCurso: true,
       licenciaDocenteId: true, profesorId: true,
-      licenciaDocente: { select: { activa: true } },
+      licenciaDocente: { select: { activa: true, fechaFin: true } },
     },
   });
-  if (!clase || clase.archivada || !clase.invitacionAbierta) {
+  if (!clase || clase.archivada || !clase.invitacionAbierta || !clase.licenciaDocenteId) {
     return { ok: false, error: t("docencia.enlaceClaseNoValido") };
   }
-  if (clase.licenciaDocente && !clase.licenciaDocente.activa) {
+  if (!licenciaVigente(clase.licenciaDocente)) {
     return { ok: false, error: t("docencia.enlaceClaseNoValido") };
   }
   if (clase.fechaFinCurso) {
@@ -83,38 +91,56 @@ export async function apuntarseAClase(data: {
     if (fin.getTime() < Date.now()) return { ok: false, error: t("docencia.enlaceClaseNoValido") };
   }
 
-  const email = sanitizeString(data.email, 200).toLowerCase().trim();
-  if (!email || !email.includes("@")) return { ok: false, error: t("admin.emailNoValido") };
+  const email = validateEmail(sanitizeString(data.email, 200).normalize("NFC"));
+  if (!email) return { ok: false, error: t("admin.emailNoValido") };
   const nombre = sanitizeString(data.nombre, 100);
   if (!nombre) return { ok: false, error: t("admin.nombreObligatorio") };
   const apellidos = sanitizeStringOptional(data.apellidos, 100) ?? "";
 
-  const existente = await prisma.dietista.findUnique({ where: { email }, select: { id: true, rolDocente: true } });
-
-  // La plaza se comprueba justo antes de ocuparla, no antes de pedir los datos: entre que se abre
-  // la página y se envía el formulario pueden haberse apuntado otros.
-  if (clase.licenciaDocenteId) {
-    const yaDentro = existente
-      ? await alumnoYaOcupaPlaza(clase.licenciaDocenteId, existente.id)
-      : false;
-    if (!yaDentro && (await plazasLibresDeLicencia(clase.licenciaDocenteId)) <= 0) {
-      return { ok: false, error: t("docencia.sinPlazas") };
-    }
+  // Sin tope, un enlace filtrado deja crear cuentas hasta agotar la bolsa que paga la facultad.
+  const cabeceras = await headers();
+  const ip = cabeceras.get("x-forwarded-for")?.split(",")[0]?.trim()
+    || cabeceras.get("x-real-ip") || "desconocida";
+  if (!checkRateLimit({ key: `clase:${ip}`, ...LIMITES.apuntarseAClase }).ok) {
+    return { ok: false, error: t("auth.rateLimitRegistro") };
   }
+
+  const existente = await prisma.dietista.findUnique({
+    where: { email },
+    select: { id: true, authId: true, rolDocente: true },
+  });
 
   try {
     if (existente) {
-      await prisma.$transaction([
-        prisma.alumnoClase.upsert({
-          where: { claseId_alumnoId: { claseId: clase.id, alumnoId: existente.id } },
-          create: { claseId: clase.id, alumnoId: existente.id },
-          update: { activa: true, bajaAt: null },
-        }),
-        prisma.dietista.updateMany({
-          where: { id: existente.id, rolDocente: null },
-          data: { rolDocente: "ALUMNO", licenciaDocenteId: clase.licenciaDocenteId },
-        }),
-      ]);
+      // Que el correo tenga cuenta no demuestra que quien rellena el formulario sea su dueño: sin
+      // esto, cualquiera con el enlace de la clase metía en el aula la cuenta de otro y le gastaba
+      // una plaza a la facultad (auditoría 1 sep 2026). Se le pide su contraseña de siempre.
+      const suApp = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        { auth: { persistSession: false, autoRefreshToken: false } },
+      );
+      const { error } = await suApp.auth.signInWithPassword({ email, password: data.password ?? "" });
+      if (error) return { ok: false, error: t("docencia.contrasenaDeSuCuenta") };
+
+      const hecho = await conPlazaDeLaBolsa(
+        clase.licenciaDocenteId,
+        { alumnoId: existente.id, email },
+        async (tx) => {
+          await tx.alumnoClase.upsert({
+            where: { claseId_alumnoId: { claseId: clase.id, alumnoId: existente.id } },
+            create: { claseId: clase.id, alumnoId: existente.id },
+            update: { activa: true, bajaAt: null },
+          });
+          // Solo se le pone el rol si no tenía ninguno, y `cuentaDeClase` se queda en false: su
+          // cuenta sigue siendo suya, no nace de esta clase.
+          await tx.dietista.updateMany({
+            where: { id: existente.id, rolDocente: null },
+            data: { rolDocente: "ALUMNO", licenciaDocenteId: clase.licenciaDocenteId },
+          });
+        },
+      );
+      if (!hecho.ok) return { ok: false, error: t("docencia.sinPlazas") };
       return { ok: true, yaTeniaCuenta: true };
     }
 
@@ -126,32 +152,34 @@ export async function apuntarseAClase(data: {
     );
     if (existingAuth.length > 0) return { ok: false, error: t("admin.yaExisteUsuarioEmail") };
 
-    const authRows = await prisma.$queryRawUnsafe<{ id: string }[]>(
-      `INSERT INTO auth.users (
-         instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
-         created_at, updated_at, raw_app_meta_data, raw_user_meta_data, is_sso_user, is_anonymous,
-         confirmation_token, recovery_token, email_change_token_new, email_change,
-         email_change_token_current, reauthentication_token, phone_change, phone_change_token
-       ) VALUES (
-         '00000000-0000-0000-0000-000000000000', gen_random_uuid(), 'authenticated', 'authenticated',
-         $1, crypt($2, gen_salt('bf')), NOW(), NOW(), NOW(),
-         '{"provider":"email","providers":["email"]}',
-         jsonb_build_object('nombre', $3::text, 'apellidos', $4::text, 'email_verified', true, 'phone_verified', false),
-         false, false, '', '', '', '', '', '', '', ''
-       ) RETURNING id`,
-      email, data.password, nombre, apellidos,
-    );
-    const authId = authRows[0].id;
+    // La plaza se coge dentro de la transacción, justo antes de crear la cuenta: entre que se
+    // abre la página y se envía el formulario pueden haberse apuntado otros.
+    const alta = await conPlazaDeLaBolsa(clase.licenciaDocenteId, { email }, async (tx) => {
+      const authRows = await tx.$queryRawUnsafe<{ id: string }[]>(
+        `INSERT INTO auth.users (
+           instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+           created_at, updated_at, raw_app_meta_data, raw_user_meta_data, is_sso_user, is_anonymous,
+           confirmation_token, recovery_token, email_change_token_new, email_change,
+           email_change_token_current, reauthentication_token, phone_change, phone_change_token
+         ) VALUES (
+           '00000000-0000-0000-0000-000000000000', gen_random_uuid(), 'authenticated', 'authenticated',
+           $1, crypt($2, gen_salt('bf')), NOW(), NOW(), NOW(),
+           '{"provider":"email","providers":["email"]}',
+           jsonb_build_object('nombre', $3::text, 'apellidos', $4::text, 'email_verified', true, 'phone_verified', false),
+           false, false, '', '', '', '', '', '', '', ''
+         ) RETURNING id`,
+        email, data.password, nombre, apellidos,
+      );
+      const authId = authRows[0].id;
 
-    try {
-      await prisma.$queryRawUnsafe(
+      await tx.$queryRawUnsafe(
         `INSERT INTO auth.identities (id, user_id, provider_id, provider, identity_data, last_sign_in_at, created_at, updated_at)
          VALUES (gen_random_uuid(), $1::uuid, $1::text, 'email',
            jsonb_build_object('sub',$1::text,'email',$2::text,'email_verified',true,'provider','email'),
            NOW(), NOW(), NOW())`,
         authId, email,
       );
-      const alumno = await prisma.dietista.create({
+      const alumno = await tx.dietista.create({
         data: {
           authId, email, nombre, apellidos,
           verificado: true,
@@ -161,15 +189,16 @@ export async function apuntarseAClase(data: {
           cuentaDeClase: true,
         },
       });
-      await prisma.alumnoClase.create({ data: { claseId: clase.id, alumnoId: alumno.id } });
-      crearPacienteDemoSiNoExiste(prisma, alumno.id, "es").catch(() => {});
-      return { ok: true };
-    } catch (err) {
-      // Sin esto, ese correo quedaría bloqueado para siempre con un usuario sin ficha.
-      await prisma.$queryRawUnsafe(`DELETE FROM auth.identities WHERE user_id = $1::uuid`, authId).catch(() => {});
-      await prisma.$queryRawUnsafe(`DELETE FROM auth.users WHERE id = $1::uuid`, authId).catch(() => {});
-      throw err;
-    }
+      await tx.alumnoClase.create({ data: { claseId: clase.id, alumnoId: alumno.id } });
+      return alumno.id;
+    });
+    // Todo lo de arriba va en una sola transacción: si algo falla, no queda ni el usuario de
+    // autenticación ni la ficha a medias. Antes se limpiaba a mano y la ficha se quedaba, con lo
+    // que ese correo se volvía inservible para siempre (auditoría 1 sep 2026).
+    if (!alta.ok) return { ok: false, error: t("docencia.sinPlazas") };
+
+    crearPacienteDemoSiNoExiste(prisma, alta.valor, locale).catch(() => {});
+    return { ok: true };
   } catch (e) {
     if (isNextNavigation(e)) throw e;
     console.error("[docencia] Error apuntando a la clase:", e);

@@ -290,6 +290,8 @@
     "sinPlazas": "No quedan plazas libres en la licencia",
     "enlaceClaseNoValido": "Este enlace ya no está disponible",
     "cursoTerminado": "Este curso ya ha terminado. Cambia la fecha de fin de curso para volver a dar de alta alumnos.",
-    "cuentaDeClaseNoSeBorra": "Esta cuenta la gestiona tu facultad: no se puede borrar desde aquí."
+    "cuentaDeClaseNoSeBorra": "Esta cuenta la gestiona tu facultad: no se puede borrar desde aquí.",
+    "contrasenaDeSuCuenta": "Ese correo ya tiene cuenta en Annonia: escribe la contraseña de tu cuenta para entrar en la clase.",
+    "noCabenAlDesarchivar": "No caben: al desarchivarla vuelven {vuelven} alumnos y solo quedan {libres} plazas libres. Amplía la licencia o retira antes a algunos alumnos."
   }
 }

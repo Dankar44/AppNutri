@@ -18,6 +18,10 @@ export default async function ClasesPage({
   const clases = await getMisClases(verArchivadas);
   const t = await getTranslations("docencia");
   const locale = await getLocale();
+  // Sin esto, quien archiva su única clase lee "todavía no tienes ninguna clase" y piensa que la
+  // ha perdido. Solo se pregunta cuando la lista sale vacía.
+  const hayArchivadas =
+    clases.length === 0 && !verArchivadas ? (await getMisClases(true)).length > 0 : false;
 
   return (
     <div className="space-y-6">
@@ -28,14 +32,28 @@ export default async function ClasesPage({
             {profesor.licencia?.institucion ?? t("panel.sinInstitucion")}
           </p>
         </div>
-        <CrearClaseBoton puedeCrear={profesor.puedeDarAltas} />
+        <div className="flex items-center gap-3">
+          {/* Arriba, junto al título: abajo del todo no se ve, y es donde va a mirar quien ha
+              archivado una clase y no la encuentra. */}
+          <Link
+            href={verArchivadas ? "/profesor/clases" : "/profesor/clases?archivadas=1"}
+            className="text-sm text-muted-foreground hover:text-foreground whitespace-nowrap"
+          >
+            {verArchivadas ? t("clases.ocultarArchivadas") : t("clases.verArchivadas")}
+          </Link>
+          <CrearClaseBoton puedeCrear={profesor.puedeDarAltas} />
+        </div>
       </div>
 
       {clases.length === 0 ? (
         <div className="text-center py-14">
           <GraduationCap strokeWidth={1.5} className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
-          <p className="font-medium">{t("clases.vaciaTitulo")}</p>
-          <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">{t("clases.vaciaTexto")}</p>
+          <p className="font-medium">
+            {hayArchivadas ? t("clases.soloArchivadasTitulo") : t("clases.vaciaTitulo")}
+          </p>
+          <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
+            {hayArchivadas ? t("clases.soloArchivadasTexto") : t("clases.vaciaTexto")}
+          </p>
         </div>
       ) : (
         <div className="lg:grid lg:grid-cols-2 lg:gap-4 divide-y divide-border lg:divide-y-0">
@@ -74,12 +92,6 @@ export default async function ClasesPage({
         </div>
       )}
 
-      <Link
-        href={verArchivadas ? "/profesor/clases" : "/profesor/clases?archivadas=1"}
-        className="inline-block text-sm text-muted-foreground hover:text-foreground"
-      >
-        {verArchivadas ? t("clases.ocultarArchivadas") : t("clases.verArchivadas")}
-      </Link>
     </div>
   );
 }

@@ -44,7 +44,8 @@
     "grasasPor100g": "Gorduras /100g",
     "min": "Mín",
     "max": "Máx",
-    "centro": "Centro"
+    "centro": "Centro",
+    "deMiClase": "Da minha turma"
   },
   "table": {
     "headerNombre": "Nome",

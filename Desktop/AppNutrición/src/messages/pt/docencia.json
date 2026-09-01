@@ -11,11 +11,14 @@
     "hasta": "Até {fecha}",
     "sinFechaFin": "Sem data de fim",
     "enPreparacionTitulo": "Em preparação",
-    "enPreparacionClases": "Turmas e registo de alunos",
     "enPreparacionCasos": "Casos clínicos e a sua atribuição",
     "enPreparacionCorreccion": "Correção do trabalho dos alunos",
-    "irACuentaProfesional": "Aceder à minha conta profissional",
-    "irACuentaProfesionalAyuda": "Os seus próprios pacientes estão onde sempre: entre em «A minha conta profissional», no menu. Ao voltar a entrar chegará novamente aqui."
+    "irACuentaProfesionalAyuda": "Os seus próprios pacientes estão onde sempre: entre em «A minha conta profissional», no menu. Ao voltar a entrar chegará novamente aqui.",
+    "porDondeEmpezar": "Por onde começar",
+    "sinClasesTexto": "Crie a sua primeira turma e registe os seus alunos: por correio, um por linha, ou com um link que pode colar na sua sala virtual.",
+    "conClasesTexto": "{n, plural, one {Tem # turma a decorrer} other {Tem # turmas a decorrer}}. É a partir daí que regista os alunos e lhes retira o acesso no fim do ano.",
+    "crearPrimeraClase": "Criar a minha primeira turma",
+    "verMisClases": "Ver as minhas turmas"
   },
   "invitacion": {
     "titulo": "Crie a sua conta de professor",
@@ -35,7 +38,8 @@
     "irALogin": "Ir para iniciar sessão",
     "tituloAlumno": "Crie a sua conta de aluno",
     "explicacionAlumno": "Escolha a sua palavra-passe e pronto. É a conta das suas práticas: não tem de pagar nada.",
-    "claseEtiqueta": "Turma: {clase}"
+    "claseEtiqueta": "Turma: {clase}",
+    "tituloNoValida": "Convite para a Annonia"
   },
   "clases": {
     "titulo": "Turmas",
@@ -73,7 +77,7 @@
     "finCursoAyuda": "Passada esta data, os seus alunos perdem o acesso. Você não.",
     "alumnosTitulo": "{n, plural, =0 {Alunos} one {Alunos (# com acesso)} other {Alunos (# com acesso)}}",
     "sinAlumnosTitulo": "Ainda não há alunos nesta turma",
-    "sinAlumnosTexto": "O registo de alunos chega no passo seguinte.",
+    "sinAlumnosTexto": "Registe-os aqui em cima: cole os correios, um por linha, ou abra o link da turma e cole-o na sua sala virtual.",
     "ultimoAcceso": "última entrada {fecha}",
     "nuncaHaEntrado": "nunca entrou",
     "accesoRetirado": "Acesso retirado",
@@ -81,12 +85,16 @@
     "cerrarCursoTexto": "{n, plural, one {# aluno deixará de entrar} other {Os # alunos deixarão de entrar}}, mas NÃO se apaga nada: o trabalho continua guardado e os lugares voltam à bolsa para o próximo ano. Pode devolver-lhes o acesso um a um.",
     "cursoCerradoHecho": "{n, plural, =0 {Não havia nenhum aluno ativo} one {# aluno saiu do ano letivo} other {# alunos saíram do ano letivo}}",
     "cursoTerminadoTitulo": "Este ano letivo já terminou",
-    "cursoTerminadoTexto": "Os seus alunos já não podem entrar. Se começar um ano novo com esta turma, edite-a e coloque uma nova data de fim."
+    "cursoTerminadoTexto": "Os seus alunos já não podem entrar. Se começar um ano novo com esta turma, edite-a e coloque uma nova data de fim.",
+    "acabaProntoTitulo": "{dias, plural, =0 {O ano letivo termina hoje} one {O ano letivo termina amanhã} other {Faltam # dias para o fim do ano letivo}}",
+    "acabaProntoTexto": "{n, plural, one {Quando chegar essa data, o seu aluno deixará de entrar} other {Quando chegar essa data, os seus # alunos deixarão de entrar}} e o trabalho fica guardado. Se o ano continua, edite a turma e mude a data de fim.",
+    "soloArchivadasTitulo": "Não tem nenhuma turma a decorrer",
+    "soloArchivadasTexto": "As que arquivou continuam lá, com todo o conteúdo: entre em «Ver as arquivadas» para as recuperar."
   },
   "clasePublica": {
     "titulo": "Junte-se à turma",
     "explicacion": "Crie a sua conta para fazer as práticas. A palavra-passe escolhe-a você.",
-    "contrasenaAyuda": "Pelo menos 6 caracteres. Se já tem conta na Annonia, entre com ela e adicionamo-lo à turma sem mexer em nada do que é seu.",
+    "contrasenaAyuda": "Pelo menos 6 caracteres, a que quiser. Se já tiver conta na Annonia com esse correio, escreva a palavra-passe da sua conta: é o que nos diz que é você.",
     "apuntarme": "Juntar-me à turma",
     "dominioSugerido": "Use o correio da universidade ({dominios}) se o tiver.",
     "avisoDominio": "Esse correio não é da universidade. Pode juntar-se na mesma.",
@@ -117,7 +125,7 @@
     "cerrarEnlace": "Fechar o link",
     "enlaceAbierto": "Link aberto",
     "enlaceCerrado": "Link fechado",
-    "enlaceAbiertoAyuda": "Qualquer pessoa com o link pode juntar-se, até esgotar os lugares da licença.",
+    "enlaceAbiertoAyuda": "Qualquer pessoa com o link pode juntar-se, até esgotar os lugares da licença. Cada vez que o abre é gerado um novo: o anterior deixa de funcionar.",
     "enlaceCerradoAyuda": "Neste momento ninguém pode juntar-se com o link.",
     "copiar": "Copiar",
     "copiado": "Copiado",

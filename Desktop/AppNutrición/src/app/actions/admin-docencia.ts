@@ -16,7 +16,7 @@ import { getTranslations } from "next-intl/server";
 import { isNextNavigation } from "@/lib/utils";
 import { sanitizeString, sanitizeStringOptional } from "@/lib/validation";
 import { crearCuentaNutricionista } from "./admin";
-import { contarAlumnosDeLicencia, plazasLibresDeLicencia } from "@/lib/docencia-bolsa";
+import { contarAlumnosDeLicencia, plazasLibresDeLicencia, contarInvitacionesVivas } from "@/lib/docencia-bolsa";
 
 export interface LicenciaDocenteItem {
   id: string;
@@ -256,8 +256,12 @@ export async function editarLicenciaDocente(
   if (maxProfesores < profesores) {
     return { ok: false, error: t("docencia.cupoProfesoresMenorQueAlta", { alta: profesores }) };
   }
-  if (maxAlumnos < alumnos) {
-    return { ok: false, error: t("docencia.cupoAlumnosMenorQueAlta", { alta: alumnos }) };
+  // Las invitaciones enviadas y sin usar también están vendidas: bajar el cupo por debajo de
+  // (alumnos + invitaciones) dejaba entrar a los invitados por encima del cupo nuevo, porque cada
+  // invitación sigue siendo válida 30 días (auditoría 1 sep 2026).
+  const reservadas = alumnos + (await contarInvitacionesVivas(licenciaId));
+  if (maxAlumnos < reservadas) {
+    return { ok: false, error: t("docencia.cupoAlumnosMenorQueAlta", { alta: reservadas }) };
   }
 
   try {

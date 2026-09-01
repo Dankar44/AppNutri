@@ -33,7 +33,8 @@
     "dietista": "Nutricionista",
     "cerrarSesion": "Sair",
     "cerrarSesionTitle": "Sair",
-    "abrirMenu": "Abrir menu"
+    "abrirMenu": "Abrir menu",
+    "profesor": "Professor"
   },
   "patientNav": {
     "miPlan": "Meu plano",

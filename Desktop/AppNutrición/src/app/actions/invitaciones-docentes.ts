@@ -18,6 +18,9 @@ import { isNextNavigation, urlPublica } from "@/lib/utils";
 import { sanitizeString, sanitizeStringOptional } from "@/lib/validation";
 import { sendEmail } from "@/lib/mailer";
 import { crearPacienteDemoSiNoExiste } from "@/lib/paciente-demo";
+import { getLocale } from "@/i18n/locale";
+import { cursoTerminado, licenciaVigente } from "@/lib/docencia";
+import { plazasLibresDeLicencia } from "@/lib/docencia-bolsa";
 
 /** Un mes: tiempo de sobra para que un profesor abra un correo, y no eterno. */
 const DIAS_DE_VALIDEZ = 30;
@@ -305,10 +308,21 @@ export async function aceptarInvitacionDocente(data: {
     select: {
       id: true, email: true, rol: true, licenciaDocenteId: true, invitadoPor: true,
       claseId: true, aceptadaAt: true, expiraAt: true,
-      licenciaDocente: { select: { institucion: true } },
+      licenciaDocente: { select: { institucion: true, activa: true, fechaFin: true } },
+      clase: { select: { archivada: true, fechaFinCurso: true } },
     },
   });
   if (!inv || inv.aceptadaAt || inv.expiraAt.getTime() < Date.now()) {
+    return { ok: false, error: t("docencia.invitacionNoValida") };
+  }
+  // Una invitación vive 30 días, y en ese tiempo la clase se archiva, el curso se acaba o la
+  // licencia caduca. La página ya lo comprobaba; la acción no, y una acción se puede llamar
+  // directamente (auditoría 1 sep 2026). Sin esto se colaban alumnos por encima del cupo, porque
+  // las clases archivadas no cuentan en la bolsa.
+  if (inv.clase?.archivada || cursoTerminado(inv.clase?.fechaFinCurso)) {
+    return { ok: false, error: t("docencia.invitacionNoValida") };
+  }
+  if (inv.licenciaDocente && !licenciaVigente(inv.licenciaDocente)) {
     return { ok: false, error: t("docencia.invitacionNoValida") };
   }
 
@@ -351,93 +365,120 @@ export async function aceptarInvitacionDocente(data: {
   );
   if (existingAuth.length > 0) return { ok: false, error: t("admin.yaExisteUsuarioEmail") };
 
-  const authRows = await prisma.$queryRawUnsafe<{ id: string }[]>(
-    `INSERT INTO auth.users (
-       instance_id, id, aud, role, email, encrypted_password,
-       email_confirmed_at, created_at, updated_at,
-       raw_app_meta_data, raw_user_meta_data,
-       is_sso_user, is_anonymous,
-       confirmation_token, recovery_token,
-       email_change_token_new, email_change, email_change_token_current,
-       reauthentication_token, phone_change, phone_change_token
-     ) VALUES (
-       '00000000-0000-0000-0000-000000000000',
-       gen_random_uuid(),
-       'authenticated', 'authenticated',
-       $1, crypt($2, gen_salt('bf')),
-       NOW(), NOW(), NOW(),
-       '{"provider":"email","providers":["email"]}',
-       jsonb_build_object('nombre', $3::text, 'apellidos', $4::text, 'email_verified', true, 'phone_verified', false),
-       false, false,
-       '', '', '', '', '', '', '', ''
-     ) RETURNING id`,
-    email, data.password, nombre, apellidos,
-  );
-  const authId = authRows[0].id;
+  const esAlumno = inv.rol === "ALUMNO";
+  const locale = await getLocale();
 
   try {
-    await prisma.$queryRawUnsafe(
-      `INSERT INTO auth.identities (
-         id, user_id, provider_id, provider, identity_data,
-         last_sign_in_at, created_at, updated_at
-       ) VALUES (
-         gen_random_uuid(), $1::uuid, $1::text, 'email',
-         jsonb_build_object('sub', $1::text, 'email', $2::text, 'email_verified', true, 'provider', 'email'),
-         NOW(), NOW(), NOW()
-       )`,
-      authId, email,
-    );
+    // TODO el alta va en una sola transacción, incluida la creación del usuario de autenticación.
+    // Antes se hacía por pasos y se deshacía a mano en el catch: si el rollback fallaba —o si el
+    // fallo llegaba después de crear la ficha, que no se deshacía— ese correo quedaba inservible
+    // para siempre, ni podía entrar ni podía registrarse (auditoría 1 sep 2026).
+    const resultado = await prisma.$transaction(async (tx) => {
+      if (inv.licenciaDocenteId) {
+        // Con la fila de la licencia bloqueada, dos alumnos aceptando a la vez hacen cola aquí.
+        await tx.$queryRawUnsafe(`SELECT id FROM licencias_docentes WHERE id = $1 FOR UPDATE`, inv.licenciaDocenteId);
+      }
 
-    const esAlumno = inv.rol === "ALUMNO";
-    const dietista = await prisma.dietista.create({
-      data: {
-        authId,
-        email,
-        nombre,
-        apellidos,
-        verificado: true,
-        fuenteContacto: "universidad",
-        creadoPor: inv.invitadoPor ?? undefined,
-        rolDocente: inv.rol,
-        licenciaDocenteId: inv.licenciaDocenteId,
-        // La cuenta de un alumno nace marcada: al retirarle el acceso no se convierte en una
-        // cuenta normal registrándose otra vez con ese correo.
-        cuentaDeClase: esAlumno,
-      },
-    });
+      // Marcarla usada lo primero: libera la plaza que su propia invitación tenía reservada, y
+      // corta en seco que el mismo enlace se acepte dos veces a la vez.
+      const marcada = await tx.invitacionDocente.updateMany({
+        where: { id: inv.id, aceptadaAt: null },
+        data: { aceptadaAt: new Date() },
+      });
+      if (marcada.count === 0) return { error: "docencia.invitacionNoValida" as const, dietistaId: null };
 
-    // Un alumno NO lleva suscripción: su acceso viene de la matrícula, y una suscripción suya
-    // aparecería en el panel de administración como si fuese una venta.
-    if (!esAlumno) {
-      await prisma.$queryRawUnsafe(
-        `INSERT INTO suscripciones (id, "dietistaId", plan, estado, "fechaInicio", "createdAt", "updatedAt")
-         VALUES (gen_random_uuid()::text, $1, 'PROFESIONAL', 'ACTIVA', NOW(), NOW(), NOW())`,
-        dietista.id,
+      if (esAlumno && inv.licenciaDocenteId) {
+        if ((await plazasLibresDeLicencia(inv.licenciaDocenteId, tx)) <= 0) {
+          return { error: "docencia.sinPlazas" as const, dietistaId: null };
+        }
+      }
+
+      const authRows = await tx.$queryRawUnsafe<{ id: string }[]>(
+        `INSERT INTO auth.users (
+           instance_id, id, aud, role, email, encrypted_password,
+           email_confirmed_at, created_at, updated_at,
+           raw_app_meta_data, raw_user_meta_data,
+           is_sso_user, is_anonymous,
+           confirmation_token, recovery_token,
+           email_change_token_new, email_change, email_change_token_current,
+           reauthentication_token, phone_change, phone_change_token
+         ) VALUES (
+           '00000000-0000-0000-0000-000000000000',
+           gen_random_uuid(),
+           'authenticated', 'authenticated',
+           $1, crypt($2, gen_salt('bf')),
+           NOW(), NOW(), NOW(),
+           '{"provider":"email","providers":["email"]}',
+           jsonb_build_object('nombre', $3::text, 'apellidos', $4::text, 'email_verified', true, 'phone_verified', false),
+           false, false,
+           '', '', '', '', '', '', '', ''
+         ) RETURNING id`,
+        email, data.password, nombre, apellidos,
       );
+      const authId = authRows[0].id;
+
+      await tx.$queryRawUnsafe(
+        `INSERT INTO auth.identities (
+           id, user_id, provider_id, provider, identity_data,
+           last_sign_in_at, created_at, updated_at
+         ) VALUES (
+           gen_random_uuid(), $1::uuid, $1::text, 'email',
+           jsonb_build_object('sub', $1::text, 'email', $2::text, 'email_verified', true, 'provider', 'email'),
+           NOW(), NOW(), NOW()
+         )`,
+        authId, email,
+      );
+
+      const dietista = await tx.dietista.create({
+        data: {
+          authId,
+          email,
+          nombre,
+          apellidos,
+          verificado: true,
+          fuenteContacto: "universidad",
+          creadoPor: inv.invitadoPor ?? undefined,
+          rolDocente: inv.rol,
+          licenciaDocenteId: inv.licenciaDocenteId,
+          // La cuenta de un alumno nace marcada: al retirarle el acceso no se convierte en una
+          // cuenta normal registrándose otra vez con ese correo.
+          cuentaDeClase: esAlumno,
+        },
+      });
+
+      // Un alumno NO lleva suscripción: su acceso viene de la matrícula, y una suscripción suya
+      // aparecería en el panel de administración como si fuese una venta.
+      if (!esAlumno) {
+        await tx.$queryRawUnsafe(
+          `INSERT INTO suscripciones (id, "dietistaId", plan, estado, "fechaInicio", "createdAt", "updatedAt")
+           VALUES (gen_random_uuid()::text, $1, 'PROFESIONAL', 'ACTIVA', NOW(), NOW(), NOW())`,
+          dietista.id,
+        );
+      }
+
+      if (inv.claseId) {
+        await tx.alumnoClase.create({ data: { claseId: inv.claseId, alumnoId: dietista.id } });
+      }
+
+      await tx.invitacionDocente.update({
+        where: { id: inv.id },
+        data: { aceptadaPorId: dietista.id },
+      });
+
+      return { error: null, dietistaId: dietista.id };
+    }, { timeout: 20_000, maxWait: 15_000 });
+
+    if (resultado.error || !resultado.dietistaId) {
+      return { ok: false, error: t(resultado.error ?? "general.errorDesconocido") };
     }
 
-    if (inv.claseId) {
-      await prisma.alumnoClase.create({ data: { claseId: inv.claseId, alumnoId: dietista.id } });
-    }
-
-    crearPacienteDemoSiNoExiste(prisma, dietista.id, "es").catch(() => {});
-
-    await prisma.invitacionDocente.update({
-      where: { id: inv.id },
-      data: { aceptadaAt: new Date(), aceptadaPorId: dietista.id },
-    });
+    crearPacienteDemoSiNoExiste(prisma, resultado.dietistaId, locale).catch(() => {});
 
     revalidatePath("/admin/universidades");
     if (inv.licenciaDocenteId) revalidatePath(`/admin/universidades/${inv.licenciaDocenteId}`);
     revalidatePath("/admin/dietistas");
     return { ok: true };
   } catch (err) {
-    // Si algo falla después de crear el usuario de autenticación, se deshace: si no, ese correo
-    // quedaría bloqueado para siempre sin ficha (los "zombis" de auth.users).
-    await prisma.$queryRawUnsafe(`DELETE FROM auth.identities WHERE user_id = $1::uuid`, authId)
-      .catch((e) => console.warn("[docencia] Rollback identities falló:", e));
-    await prisma.$queryRawUnsafe(`DELETE FROM auth.users WHERE id = $1::uuid`, authId)
-      .catch((e) => console.warn("[docencia] Rollback users falló:", e));
     if (isNextNavigation(err)) throw err;
     console.error("[docencia] Error aceptando invitación:", err);
     return { ok: false, error: t("general.errorDesconocido") };

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard,
@@ -73,9 +73,10 @@ function seccionesDocentes(t: (key: string) => string, opts?: { isAdmin?: boolea
     {
       title: t("nav.material"),
       items: [
-        { href: "/dietas", label: t("navItems.dietas"), icon: UtensilsCrossed },
-        { href: "/alimentos", label: t("navItems.alimentos"), icon: Apple },
-        { href: "/recetas", label: t("navItems.recetas"), icon: CookingPot },
+        // Con la marca del espacio para no perder el menú docente al entrar (ver esRutaDocente).
+        { href: "/dietas?espacio=docente", label: t("navItems.dietas"), icon: UtensilsCrossed },
+        { href: "/alimentos?espacio=docente", label: t("navItems.alimentos"), icon: Apple },
+        { href: "/recetas?espacio=docente", label: t("navItems.recetas"), icon: CookingPot },
       ],
     },
     {
@@ -112,9 +113,10 @@ function getNavSections(
     {
       title: t("nav.dietas"),
       items: [
-        { href: "/dietas", label: t("navItems.dietas"), icon: UtensilsCrossed },
-        { href: "/alimentos", label: t("navItems.alimentos"), icon: Apple },
-        { href: "/recetas", label: t("navItems.recetas"), icon: CookingPot },
+        // Con la marca del espacio para no perder el menú docente al entrar (ver esRutaDocente).
+        { href: "/dietas?espacio=docente", label: t("navItems.dietas"), icon: UtensilsCrossed },
+        { href: "/alimentos?espacio=docente", label: t("navItems.alimentos"), icon: Apple },
+        { href: "/recetas?espacio=docente", label: t("navItems.recetas"), icon: CookingPot },
       ],
     },
     {
@@ -168,6 +170,8 @@ interface SidebarProps {
 export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCount: mensajesCountInit = 0, badges: badgesInit = {}, isAdmin, hasEmpresa, esProfesor }: SidebarProps) {
   const t = useTranslations("common");
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const enEspacioDocente = esRutaDocente(pathname, searchParams.get("espacio"));
   const isDemo = useIsDemo();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -312,7 +316,7 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
 
       {/* Nav */}
       <nav className="flex-1 py-4 px-3 overflow-y-auto overscroll-contain">
-        {getNavSections(t, { isAdmin, hasEmpresa, esProfesor, enEspacioDocente: esRutaDocente(pathname) }).map((section, sectionIndex) => (
+        {getNavSections(t, { isAdmin, hasEmpresa, esProfesor, enEspacioDocente }).map((section, sectionIndex) => (
           <div
             key={section.title}
             className={cn(sectionIndex > 0 && "mt-6")}
@@ -325,18 +329,20 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
             <div className="space-y-1">
               {section.items.map((item) => {
                 const admin = item.admin === true;
+                // Algunos enlaces llevan `?espacio=docente`; para marcar el activo y buscar su
+                // aviso solo cuenta la ruta.
+                const ruta = item.href.split("?")[0];
                 const isActive = admin
                   ? pathname.startsWith("/admin-login") ||
                     pathname === "/admin" ||
                     pathname.startsWith("/admin/")
-                  : pathname === item.href ||
-                    pathname.startsWith(item.href + "/");
+                  : pathname === ruta || pathname.startsWith(ruta + "/");
                 const badgeCount =
-                  item.href === "/mensajes"
+                  ruta === "/mensajes"
                     ? mensajesCount
-                    : (badges[item.href] ?? 0);
+                    : (badges[ruta] ?? 0);
                 const puntoNovedades =
-                  item.href === "/novedades" && novedadesSinLeer;
+                  ruta === "/novedades" && novedadesSinLeer;
                 return (
                   <Link
                     key={item.href + (admin ? "-admin" : "")}
@@ -386,7 +392,7 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
                       <span
                         className={cn(
                           "inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold shrink-0",
-                          item.href === "/mensajes"
+                          ruta === "/mensajes"
                             ? "bg-primary text-primary-foreground"
                             : "bg-red-500 text-white",
                         )}
@@ -408,7 +414,10 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
           {(!collapsed || mobileOpen) && (
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium truncate">{dietistaNombre}</p>
-              <p className="text-xs text-muted-foreground">{t("sidebar.dietista")}</p>
+              {/* En el espacio docente pone "Profesor": es donde está y es lo que es allí. */}
+              <p className="text-xs text-muted-foreground">
+                {esProfesor && enEspacioDocente ? t("sidebar.profesor") : t("sidebar.dietista")}
+              </p>
             </div>
           )}
           <div className="flex items-center gap-1 shrink-0">

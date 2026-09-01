@@ -11,11 +11,14 @@
     "hasta": "Hasta el {fecha}",
     "sinFechaFin": "Sin fecha de fin",
     "enPreparacionTitulo": "En preparación",
-    "enPreparacionClases": "Clases y alta de alumnos",
     "enPreparacionCasos": "Casos clínicos y su asignación",
     "enPreparacionCorreccion": "Corrección del trabajo de los alumnos",
-    "irACuentaProfesional": "Acceder a mi cuenta profesional",
-    "irACuentaProfesionalAyuda": "Tus propios pacientes están donde siempre: entra en «Mi cuenta profesional», en el menú. Al volver a entrar aterrizarás otra vez aquí."
+    "irACuentaProfesionalAyuda": "Tus propios pacientes están donde siempre: entra en «Mi cuenta profesional», en el menú. Al volver a entrar aterrizarás otra vez aquí.",
+    "porDondeEmpezar": "Por dónde empezar",
+    "sinClasesTexto": "Crea tu primera clase y dale de alta a tus alumnos: por correo, uno por línea, o con un enlace que puedes pegar en tu aula virtual.",
+    "conClasesTexto": "{n, plural, one {Tienes # clase en marcha} other {Tienes # clases en marcha}}. Desde ahí das de alta a tus alumnos y les retiras el acceso al acabar el curso.",
+    "crearPrimeraClase": "Crear mi primera clase",
+    "verMisClases": "Ver mis clases"
   },
   "invitacion": {
     "titulo": "Crea tu cuenta de profesor",
@@ -35,7 +38,8 @@
     "irALogin": "Ir a iniciar sesión",
     "tituloAlumno": "Crea tu cuenta de alumno",
     "explicacionAlumno": "Elige tu contraseña y ya está. Es la cuenta de tus prácticas: no tienes que pagar nada.",
-    "claseEtiqueta": "Clase: {clase}"
+    "claseEtiqueta": "Clase: {clase}",
+    "tituloNoValida": "Invitación a Annonia"
   },
   "clases": {
     "titulo": "Clases",
@@ -73,7 +77,7 @@
     "finCursoAyuda": "Pasada esta fecha, tus alumnos pierden el acceso. Tú no.",
     "alumnosTitulo": "{n, plural, =0 {Alumnos} one {Alumnos (# con acceso)} other {Alumnos (# con acceso)}}",
     "sinAlumnosTitulo": "Todavía no hay alumnos en esta clase",
-    "sinAlumnosTexto": "El alta de alumnos llega en el siguiente paso.",
+    "sinAlumnosTexto": "Dales de alta ahí arriba: pega sus correos, uno por línea, o abre el enlace de la clase y pégalo en tu aula virtual.",
     "ultimoAcceso": "última entrada {fecha}",
     "nuncaHaEntrado": "no ha entrado nunca",
     "accesoRetirado": "Acceso retirado",
@@ -81,12 +85,16 @@
     "cerrarCursoTexto": "{n, plural, one {# alumno dejará de entrar} other {Los # alumnos dejarán de entrar}}, pero NO se borra nada: su trabajo sigue guardado y sus plazas vuelven a la bolsa para el curso que viene. Puedes devolverles el acceso uno a uno.",
     "cursoCerradoHecho": "{n, plural, =0 {No había ningún alumno activo} one {# alumno ha salido del curso} other {# alumnos han salido del curso}}",
     "cursoTerminadoTitulo": "Este curso ya ha terminado",
-    "cursoTerminadoTexto": "Tus alumnos ya no pueden entrar. Si empiezas un curso nuevo con esta clase, edítala y pon una fecha de fin nueva."
+    "cursoTerminadoTexto": "Tus alumnos ya no pueden entrar. Si empiezas un curso nuevo con esta clase, edítala y pon una fecha de fin nueva.",
+    "acabaProntoTitulo": "{dias, plural, =0 {El curso termina hoy} one {El curso termina mañana} other {Al curso le queda # días}}",
+    "acabaProntoTexto": "{n, plural, one {Cuando llegue esa fecha, tu alumno dejará de entrar} other {Cuando llegue esa fecha, tus # alumnos dejarán de entrar}} y su trabajo quedará guardado. Si el curso sigue, edita la clase y cambia la fecha de fin.",
+    "soloArchivadasTitulo": "No tienes ninguna clase en marcha",
+    "soloArchivadasTexto": "Las que has archivado siguen ahí, con todo su contenido: entra en «Ver las archivadas» para recuperarlas."
   },
   "clasePublica": {
     "titulo": "Únete a la clase",
     "explicacion": "Crea tu cuenta para hacer las prácticas. Eliges tú la contraseña.",
-    "contrasenaAyuda": "Al menos 6 caracteres. Si ya tienes cuenta en Annonia, entra con ella y te añadimos a la clase sin tocar nada de lo tuyo.",
+    "contrasenaAyuda": "Al menos 6 caracteres, la que tú quieras. Si ya tienes cuenta en Annonia con ese correo, escribe la contraseña de tu cuenta: es lo que nos dice que eres tú.",
     "apuntarme": "Apuntarme a la clase",
     "dominioSugerido": "Usa tu correo de la universidad ({dominios}) si lo tienes.",
     "avisoDominio": "Ese correo no es de la universidad. Puedes apuntarte igual.",
@@ -117,7 +125,7 @@
     "cerrarEnlace": "Cerrar el enlace",
     "enlaceAbierto": "Enlace abierto",
     "enlaceCerrado": "Enlace cerrado",
-    "enlaceAbiertoAyuda": "Cualquiera con el enlace puede apuntarse, hasta agotar las plazas de la licencia.",
+    "enlaceAbiertoAyuda": "Cualquiera con el enlace puede apuntarse, hasta agotar las plazas de la licencia. Cada vez que lo abres se genera uno nuevo: el anterior deja de valer.",
     "enlaceCerradoAyuda": "Ahora mismo nadie puede apuntarse con el enlace.",
     "copiar": "Copiar",
     "copiado": "Copiado",

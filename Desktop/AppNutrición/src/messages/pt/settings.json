@@ -17,7 +17,8 @@
     "guias": "Guias",
     "zonaPeligrosa": "Zona perigosa",
     "idioma": "Idioma",
-    "empresa": "Centro"
+    "empresa": "Centro",
+    "clase": "A sua turma"
   },
   "sections": {
     "perfil": {
@@ -536,127 +537,292 @@
         "name": "Boas-vindas ao Dashboard",
         "description": "Conheça seu painel principal e as métricas do seu consultório",
         "steps": {
-          "d1-1": { "title": "Seu menu de navegação", "description": "Pelo sidebar você acessa todas as seções do Annonia: pacientes, dietas, alimentos, agenda e mais." },
-          "d1-2": { "title": "Próxima consulta", "description": "Sua próxima consulta aparece aqui com o nome do paciente, data, hora e motivo. Clique para ir à ficha." },
-          "d1-3": { "title": "Notificações", "description": "Sua última notificação aparece aqui. As notificações avisam sobre pacientes sem consulta recente, planos expirados e mais." },
-          "d1-4": { "title": "Gráfico de atividade", "description": "Visualize sua atividade dos últimos 6 meses: consultas realizadas e pacientes novos." },
-          "d1-5": { "title": "Acessos rápidos", "description": "Crie um novo paciente, plano dietético, consulta ou receita com um só clique nestas cards." }
+          "d1-1": {
+            "title": "Seu menu de navegação",
+            "description": "Pelo sidebar você acessa todas as seções do Annonia: pacientes, dietas, alimentos, agenda e mais."
+          },
+          "d1-2": {
+            "title": "Próxima consulta",
+            "description": "Sua próxima consulta aparece aqui com o nome do paciente, data, hora e motivo. Clique para ir à ficha."
+          },
+          "d1-3": {
+            "title": "Notificações",
+            "description": "Sua última notificação aparece aqui. As notificações avisam sobre pacientes sem consulta recente, planos expirados e mais."
+          },
+          "d1-4": {
+            "title": "Gráfico de atividade",
+            "description": "Visualize sua atividade dos últimos 6 meses: consultas realizadas e pacientes novos."
+          },
+          "d1-5": {
+            "title": "Acessos rápidos",
+            "description": "Crie um novo paciente, plano dietético, consulta ou receita com um só clique nestas cards."
+          }
         }
       },
       "dietistaPacientes": {
         "name": "Gerenciar Pacientes",
         "description": "Aprenda a criar e gerenciar a ficha dos seus pacientes",
         "steps": {
-          "d2-1": { "title": "Lista de pacientes", "description": "Aqui estão todos os seus pacientes. Você pode ver seus dados, status e objetivo nutricional." },
-          "d2-2": { "title": "Criar novo paciente", "description": "Clique neste botão para registrar um novo paciente com todos os dados: pessoais, médicos, alergias, suplementos, atividade física e mais." },
-          "d2-3": { "title": "Buscar e filtrar", "description": "Use o buscador para encontrar pacientes por nome. Filtre entre ativos e inativos." }
+          "d2-1": {
+            "title": "Lista de pacientes",
+            "description": "Aqui estão todos os seus pacientes. Você pode ver seus dados, status e objetivo nutricional."
+          },
+          "d2-2": {
+            "title": "Criar novo paciente",
+            "description": "Clique neste botão para registrar um novo paciente com todos os dados: pessoais, médicos, alergias, suplementos, atividade física e mais."
+          },
+          "d2-3": {
+            "title": "Buscar e filtrar",
+            "description": "Use o buscador para encontrar pacientes por nome. Filtre entre ativos e inativos."
+          }
         }
       },
       "dietistaFichaPaciente": {
         "name": "Ficha do Paciente",
         "description": "Descubra tudo o que pode ver e fazer na ficha de um paciente",
         "steps": {
-          "d2b-1": { "title": "Paciente de demonstração", "description": "Mostramos uma ficha de exemplo com dados fictícios para que veja todas as seções disponíveis." },
-          "d2b-2": { "title": "Dados pessoais", "description": "Aqui você verá email, telefone, data de nascimento e sexo do paciente. É preenchido ao criar o paciente." },
-          "d2b-3": { "title": "Histórico médico", "description": "Alergias, intolerâncias, patologias, medicamentos e suplementos. Tudo com etiquetas coloridas para ver de relance." },
-          "d2b-4": { "title": "Atividade e estilo de vida", "description": "Ocupação, nível de atividade, tipo de exercício, horários de trabalho, exercício e descanso. Informação chave para personalizar a dieta." },
-          "d2b-5": { "title": "Horário semanal", "description": "Calendário compartilhado entre nutricionista e paciente. Ambos podem adicionar atividades (trabalho, exercício, refeições, descanso) e sincroniza automaticamente." },
-          "d2b-6": { "title": "Medidas e registro rápido", "description": "Peso, altura e IMC atuais. O botão 'Registro rápido' permite anotar novas medidas diretamente durante a consulta." },
-          "d2b-7": { "title": "Recomendações", "description": "Escreva recomendações personalizadas. O paciente as verá pelo portal. São salvas automaticamente a cada 5 segundos." },
-          "d2b-8": { "title": "Planos alimentares", "description": "Os planos dietéticos do paciente. Máximo 3 visíveis, com link para 'Ver todos'. Daqui você cria novos planos ou acessa os existentes." }
+          "d2b-1": {
+            "title": "Paciente de demonstração",
+            "description": "Mostramos uma ficha de exemplo com dados fictícios para que veja todas as seções disponíveis."
+          },
+          "d2b-2": {
+            "title": "Dados pessoais",
+            "description": "Aqui você verá email, telefone, data de nascimento e sexo do paciente. É preenchido ao criar o paciente."
+          },
+          "d2b-3": {
+            "title": "Histórico médico",
+            "description": "Alergias, intolerâncias, patologias, medicamentos e suplementos. Tudo com etiquetas coloridas para ver de relance."
+          },
+          "d2b-4": {
+            "title": "Atividade e estilo de vida",
+            "description": "Ocupação, nível de atividade, tipo de exercício, horários de trabalho, exercício e descanso. Informação chave para personalizar a dieta."
+          },
+          "d2b-5": {
+            "title": "Horário semanal",
+            "description": "Calendário compartilhado entre nutricionista e paciente. Ambos podem adicionar atividades (trabalho, exercício, refeições, descanso) e sincroniza automaticamente."
+          },
+          "d2b-6": {
+            "title": "Medidas e registro rápido",
+            "description": "Peso, altura e IMC atuais. O botão 'Registro rápido' permite anotar novas medidas diretamente durante a consulta."
+          },
+          "d2b-7": {
+            "title": "Recomendações",
+            "description": "Escreva recomendações personalizadas. O paciente as verá pelo portal. São salvas automaticamente a cada 5 segundos."
+          },
+          "d2b-8": {
+            "title": "Planos alimentares",
+            "description": "Os planos dietéticos do paciente. Máximo 3 visíveis, com link para 'Ver todos'. Daqui você cria novos planos ou acessa os existentes."
+          }
         }
       },
       "dietistaPlanes": {
         "name": "Planos Alimentares",
         "description": "Aprenda a navegar e gerenciar seus planos dietéticos",
         "steps": {
-          "dpl-1": { "title": "Sua lista de planos", "description": "Aqui você vê todos os seus planos organizados por paciente. Cada card mostra o avatar, nome do paciente e quantos planos tem." },
-          "dpl-2": { "title": "Buscar planos", "description": "Use o buscador para encontrar planos por nome de dieta ou nome de paciente." },
-          "dpl-3": { "title": "Cada plano", "description": "Cada plano mostra seu nome, data de criação e calorias objetivo. Clique para abrir o editor completo." },
-          "dpl-4": { "title": "Modelos", "description": "Os modelos são planos salvos como base. Você pode criar um plano novo a partir de um modelo para economizar tempo." },
-          "dpl-5": { "title": "Novo plano", "description": "Clique aqui para criar um plano novo: selecione paciente, dê um nome e opcionalmente configure macros objetivo." }
+          "dpl-1": {
+            "title": "Sua lista de planos",
+            "description": "Aqui você vê todos os seus planos organizados por paciente. Cada card mostra o avatar, nome do paciente e quantos planos tem."
+          },
+          "dpl-2": {
+            "title": "Buscar planos",
+            "description": "Use o buscador para encontrar planos por nome de dieta ou nome de paciente."
+          },
+          "dpl-3": {
+            "title": "Cada plano",
+            "description": "Cada plano mostra seu nome, data de criação e calorias objetivo. Clique para abrir o editor completo."
+          },
+          "dpl-4": {
+            "title": "Modelos",
+            "description": "Os modelos são planos salvos como base. Você pode criar um plano novo a partir de um modelo para economizar tempo."
+          },
+          "dpl-5": {
+            "title": "Novo plano",
+            "description": "Clique aqui para criar um plano novo: selecione paciente, dê um nome e opcionalmente configure macros objetivo."
+          }
         }
       },
       "dietistaDietas": {
         "name": "Editor de Plano Dietético",
         "description": "Crie planos alimentares semanais com IA ou manualmente",
         "steps": {
-          "d3-1": { "title": "Plano de demonstração", "description": "Mostramos um plano de exemplo com dados fictícios para que veja como funciona o editor de dietas." },
-          "d3-2": { "title": "Barra de ações", "description": "Daqui você pode gerar com IA, salvar como modelo, compartilhar, editar, exportar PDF ou excluir o plano." },
-          "d3-3": { "title": "Macros objetivo", "description": "Os objetivos diários do plano: calorias, proteínas, carboidratos e gorduras. São configurados ao criar ou editar o plano." },
-          "d3-4": { "title": "Editor semanal", "description": "Cada dia tem 6 refeições com hora, descrição do prato e alimentos com quantidades. São exibidos 3 dias por vez e você pode deslizar horizontalmente." },
-          "d3-5": { "title": "Geração com IA", "description": "O botão 'IA' gera um menu semanal completo. Configure fase nutricional (déficit, volume, definição...), tipo de dieta e preferências." },
-          "d3-6": { "title": "Exportar PDF", "description": "Gere um PDF profissional com capa, resumo semanal, detalhamento por dia com ingredientes, recomendações e lista de compras." },
-          "d3-7": { "title": "Compartilhar", "description": "Gere um link único para que seu paciente veja o plano sem precisar de conta. Perfeito para enviar por WhatsApp ou email." }
+          "d3-1": {
+            "title": "Plano de demonstração",
+            "description": "Mostramos um plano de exemplo com dados fictícios para que veja como funciona o editor de dietas."
+          },
+          "d3-2": {
+            "title": "Barra de ações",
+            "description": "Daqui você pode gerar com IA, salvar como modelo, compartilhar, editar, exportar PDF ou excluir o plano."
+          },
+          "d3-3": {
+            "title": "Macros objetivo",
+            "description": "Os objetivos diários do plano: calorias, proteínas, carboidratos e gorduras. São configurados ao criar ou editar o plano."
+          },
+          "d3-4": {
+            "title": "Editor semanal",
+            "description": "Cada dia tem 6 refeições com hora, descrição do prato e alimentos com quantidades. São exibidos 3 dias por vez e você pode deslizar horizontalmente."
+          },
+          "d3-5": {
+            "title": "Geração com IA",
+            "description": "O botão 'IA' gera um menu semanal completo. Configure fase nutricional (déficit, volume, definição...), tipo de dieta e preferências."
+          },
+          "d3-6": {
+            "title": "Exportar PDF",
+            "description": "Gere um PDF profissional com capa, resumo semanal, detalhamento por dia com ingredientes, recomendações e lista de compras."
+          },
+          "d3-7": {
+            "title": "Compartilhar",
+            "description": "Gere um link único para que seu paciente veja o plano sem precisar de conta. Perfeito para enviar por WhatsApp ou email."
+          }
         }
       },
       "dietistaIA": {
         "name": "Gerar Dieta com IA",
         "description": "Aprenda a usar a inteligência artificial para criar planos automáticos",
         "steps": {
-          "dia-1": { "title": "Painel de geração IA", "description": "Aqui você configura todos os parâmetros antes que a IA gere um plano semanal completo. Vamos ver cada seção." },
-          "dia-2": { "title": "Fase nutricional", "description": "Selecione a fase do paciente: déficit (perder gordura), manutenção, volume (ganhar massa), definição ou reverse diet. Os macros se ajustam automaticamente." },
-          "dia-3": { "title": "Tipo de dieta", "description": "Escolha o estilo: mediterrânea, baixa em carboidratos, alta em proteínas, vegetariana, vegana, cetogênica, sem glúten ou anti-inflamatória." },
-          "dia-4": { "title": "Macros diários", "description": "Os objetivos de calorias, proteínas, carboidratos e gorduras. Se ajustam automaticamente ao selecionar uma fase, mas você pode modificá-los manualmente." },
-          "dia-5": { "title": "Preferências rápidas", "description": "Marque checkboxes para indicar se quer receitas fáceis, aptas para batch cooking, econômicas ou muito variadas." },
-          "dia-6": { "title": "Dados do paciente", "description": "A IA usa os dados do paciente automaticamente: alergias, intolerâncias, preferências e objetivo. Por isso é importante ter a ficha completa." },
-          "dia-7": { "title": "Instruções adicionais", "description": "Escreva instruções livres: 'rico em peixe', 'evitar laticínios no jantar', 'café da manhã sempre com aveia'... A IA as seguirá com prioridade máxima." },
-          "dia-8": { "title": "Gerar", "description": "Clique neste botão e a IA gerará um plano semanal completo em 1-2 minutos. Você poderá revisar o resultado e aceitá-lo ou descartá-lo." }
+          "dia-1": {
+            "title": "Painel de geração IA",
+            "description": "Aqui você configura todos os parâmetros antes que a IA gere um plano semanal completo. Vamos ver cada seção."
+          },
+          "dia-2": {
+            "title": "Fase nutricional",
+            "description": "Selecione a fase do paciente: déficit (perder gordura), manutenção, volume (ganhar massa), definição ou reverse diet. Os macros se ajustam automaticamente."
+          },
+          "dia-3": {
+            "title": "Tipo de dieta",
+            "description": "Escolha o estilo: mediterrânea, baixa em carboidratos, alta em proteínas, vegetariana, vegana, cetogênica, sem glúten ou anti-inflamatória."
+          },
+          "dia-4": {
+            "title": "Macros diários",
+            "description": "Os objetivos de calorias, proteínas, carboidratos e gorduras. Se ajustam automaticamente ao selecionar uma fase, mas você pode modificá-los manualmente."
+          },
+          "dia-5": {
+            "title": "Preferências rápidas",
+            "description": "Marque checkboxes para indicar se quer receitas fáceis, aptas para batch cooking, econômicas ou muito variadas."
+          },
+          "dia-6": {
+            "title": "Dados do paciente",
+            "description": "A IA usa os dados do paciente automaticamente: alergias, intolerâncias, preferências e objetivo. Por isso é importante ter a ficha completa."
+          },
+          "dia-7": {
+            "title": "Instruções adicionais",
+            "description": "Escreva instruções livres: 'rico em peixe', 'evitar laticínios no jantar', 'café da manhã sempre com aveia'... A IA as seguirá com prioridade máxima."
+          },
+          "dia-8": {
+            "title": "Gerar",
+            "description": "Clique neste botão e a IA gerará um plano semanal completo em 1-2 minutos. Você poderá revisar o resultado e aceitá-lo ou descartá-lo."
+          }
         }
       },
       "dietistaAlimentos": {
         "name": "Base de Alimentos",
         "description": "Gerencie seu banco de dados nutricional com filtros avançados",
         "steps": {
-          "d4-1": { "title": "Seu banco de dados", "description": "Mais de 2600 alimentos com informação nutricional detalhada. Filtre por categoria, macros e origem." },
-          "d4-2": { "title": "Filtros avançados", "description": "Busque alimentos por faixa de calorias, proteínas, carboidratos e gorduras. Ideal para encontrar o ingrediente perfeito." },
-          "d4-3": { "title": "Importar alimentos", "description": "Importe do Open Food Facts: busque qualquer produto e adicione-o ao seu banco de dados com um clique." }
+          "d4-1": {
+            "title": "Seu banco de dados",
+            "description": "Mais de 2600 alimentos com informação nutricional detalhada. Filtre por categoria, macros e origem."
+          },
+          "d4-2": {
+            "title": "Filtros avançados",
+            "description": "Busque alimentos por faixa de calorias, proteínas, carboidratos e gorduras. Ideal para encontrar o ingrediente perfeito."
+          },
+          "d4-3": {
+            "title": "Importar alimentos",
+            "description": "Importe do Open Food Facts: busque qualquer produto e adicione-o ao seu banco de dados com um clique."
+          }
         }
       },
       "dietistaAgenda": {
         "name": "Agenda e Consultas",
         "description": "Gerencie seu calendário de consultas com todas as funcionalidades",
         "steps": {
-          "d5-1": { "title": "Sua agenda", "description": "Aqui você gerencia todas as suas consultas. Vamos ver cada parte do calendário." },
-          "d5-2": { "title": "Nova consulta", "description": "Clique aqui para agendar uma nova consulta: selecione paciente, data, hora, duração (15-90 min) e motivo." },
-          "d5-3": { "title": "Controles de navegação", "description": "Navegue entre semanas ou meses com as setas. O botão 'Hoje' leva ao dia atual. Também vê o intervalo de datas." },
-          "d5-4": { "title": "Vista Semana / Mês", "description": "Alterne entre vista semanal (detalhada, vê cada consulta) e mensal (calendário com pontos). A vista semanal é a mais usada." },
-          "d5-5": { "title": "Vista semanal", "description": "Cada coluna é um dia. O dia atual é destacado em verde. As consultas mostram hora, paciente, duração e motivo com cores conforme o status." },
-          "d5-6": { "title": "Detalhe do dia", "description": "Ao clicar em um dia, abre-se o detalhe com todas as consultas expandidas. O dia atual abre automaticamente ao entrar na agenda." },
-          "d5-7": { "title": "Status da consulta", "description": "Cada consulta tem um status com cor: Azul = Confirmada, Âmbar = Pendente, Verde = Concluída, Cinza = Cancelada." },
-          "d5-8": { "title": "Ações da consulta", "description": "Daqui você pode: marcar como concluída, exportar para Google Calendar para sincronizá-la, ou excluir a consulta." }
+          "d5-1": {
+            "title": "Sua agenda",
+            "description": "Aqui você gerencia todas as suas consultas. Vamos ver cada parte do calendário."
+          },
+          "d5-2": {
+            "title": "Nova consulta",
+            "description": "Clique aqui para agendar uma nova consulta: selecione paciente, data, hora, duração (15-90 min) e motivo."
+          },
+          "d5-3": {
+            "title": "Controles de navegação",
+            "description": "Navegue entre semanas ou meses com as setas. O botão 'Hoje' leva ao dia atual. Também vê o intervalo de datas."
+          },
+          "d5-4": {
+            "title": "Vista Semana / Mês",
+            "description": "Alterne entre vista semanal (detalhada, vê cada consulta) e mensal (calendário com pontos). A vista semanal é a mais usada."
+          },
+          "d5-5": {
+            "title": "Vista semanal",
+            "description": "Cada coluna é um dia. O dia atual é destacado em verde. As consultas mostram hora, paciente, duração e motivo com cores conforme o status."
+          },
+          "d5-6": {
+            "title": "Detalhe do dia",
+            "description": "Ao clicar em um dia, abre-se o detalhe com todas as consultas expandidas. O dia atual abre automaticamente ao entrar na agenda."
+          },
+          "d5-7": {
+            "title": "Status da consulta",
+            "description": "Cada consulta tem um status com cor: Azul = Confirmada, Âmbar = Pendente, Verde = Concluída, Cinza = Cancelada."
+          },
+          "d5-8": {
+            "title": "Ações da consulta",
+            "description": "Daqui você pode: marcar como concluída, exportar para Google Calendar para sincronizá-la, ou excluir a consulta."
+          }
         }
       },
       "dietistaReportes": {
         "name": "Relatórios e PDF",
         "description": "Estatísticas do seu consultório e exportação de relatórios",
         "steps": {
-          "d6-1": { "title": "Estatísticas", "description": "Métricas do seu consultório: taxa de retenção, média de consultas por paciente, planos criados e pacientes com portal." },
-          "d6-2": { "title": "Relatórios por paciente", "description": "Selecione um paciente para gerar relatórios PDF com sua ficha, evolução, consultas e plano dietético." }
+          "d6-1": {
+            "title": "Estatísticas",
+            "description": "Métricas do seu consultório: taxa de retenção, média de consultas por paciente, planos criados e pacientes com portal."
+          },
+          "d6-2": {
+            "title": "Relatórios por paciente",
+            "description": "Selecione um paciente para gerar relatórios PDF com sua ficha, evolução, consultas e plano dietético."
+          }
         }
       },
       "pacienteDashboard": {
         "name": "Boas-vindas ao Portal",
         "description": "Conheça seu portal de nutrição personalizado",
         "steps": {
-          "p1-1": { "title": "Seu menu", "description": "Pelo sidebar você acessa todas as seções: dieta, diário, evolução, recomendações e mais." },
-          "p1-2": { "title": "Seu dia de hoje", "description": "Aqui você vê seu progresso do dia: refeições registradas, água e exercício. Clique para registrar seu acompanhamento diário." },
-          "p1-3": { "title": "Seu progresso", "description": "Peso, IMC e porcentagem de gordura com a variação em relação à semana anterior." }
+          "p1-1": {
+            "title": "Seu menu",
+            "description": "Pelo sidebar você acessa todas as seções: dieta, diário, evolução, recomendações e mais."
+          },
+          "p1-2": {
+            "title": "Seu dia de hoje",
+            "description": "Aqui você vê seu progresso do dia: refeições registradas, água e exercício. Clique para registrar seu acompanhamento diário."
+          },
+          "p1-3": {
+            "title": "Seu progresso",
+            "description": "Peso, IMC e porcentagem de gordura com a variação em relação à semana anterior."
+          }
         }
       },
       "pacienteDieta": {
         "name": "Sua Dieta",
         "description": "Aprenda a consultar seu plano alimentar semanal",
         "steps": {
-          "p2-1": { "title": "Seu plano semanal", "description": "Aqui você vê sua dieta completa: 7 dias com todas as refeições, ingredientes e quantidades." },
-          "p2-2": { "title": "Lista de compras", "description": "Gere automaticamente sua lista de compras a partir dos ingredientes do seu plano semanal." }
+          "p2-1": {
+            "title": "Seu plano semanal",
+            "description": "Aqui você vê sua dieta completa: 7 dias com todas as refeições, ingredientes e quantidades."
+          },
+          "p2-2": {
+            "title": "Lista de compras",
+            "description": "Gere automaticamente sua lista de compras a partir dos ingredientes do seu plano semanal."
+          }
         }
       },
       "pacienteEvolucion": {
         "name": "Sua Evolução",
         "description": "Visualize seu progresso com gráficos",
         "steps": {
-          "p4-1": { "title": "Gráficos de progresso", "description": "Aqui você vê sua evolução: peso, IMC, porcentagem de gordura e perímetros ao longo do tempo." }
+          "p4-1": {
+            "title": "Gráficos de progresso",
+            "description": "Aqui você vê sua evolução: peso, IMC, porcentagem de gordura e perímetros ao longo do tempo."
+          }
         }
       }
     },
@@ -665,18 +831,38 @@
         "sexo": "Masculino",
         "objetivo": "Perder peso",
         "objetivoDetalle": "Perder 5 kg de forma saudável em 3 meses",
-        "alergias": ["Frutos secos (amêndoas)", "Pólen estacional"],
-        "intolerancias": ["Lactose (parcial)"],
-        "patologias": ["Hipertensão controlada", "Hipotireoidismo subclínico leve"],
-        "medicamentos": ["Enalapril 10 mg a cada 24 h", "Levotiroxina 50 mcg em jejum"],
-        "suplementos": ["Vitamina D3 1000 UI", "Omega-3 EPA/DHA", "Magnésio bisglicinato"],
+        "alergias": [
+          "Frutos secos (amêndoas)",
+          "Pólen estacional"
+        ],
+        "intolerancias": [
+          "Lactose (parcial)"
+        ],
+        "patologias": [
+          "Hipertensão controlada",
+          "Hipotireoidismo subclínico leve"
+        ],
+        "medicamentos": [
+          "Enalapril 10 mg a cada 24 h",
+          "Levotiroxina 50 mcg em jejum"
+        ],
+        "suplementos": [
+          "Vitamina D3 1000 UI",
+          "Omega-3 EPA/DHA",
+          "Magnésio bisglicinato"
+        ],
         "ocupacion": "Escritório",
         "nivelActividad": "Moderado (3 vezes/sem)",
         "tipoEjercicio": "Treino de força e cardio",
         "horarioTrabajo": "09:00 – 18:00",
         "horarioEjercicio": "S/Q/S 19:00",
         "horasDescanso": "7-8 horas",
-        "preferencias": ["Mediterrânea", "Peixe gordo", "Legumes da época", "Sem ultraprocessados"],
+        "preferencias": [
+          "Mediterrânea",
+          "Peixe gordo",
+          "Legumes da época",
+          "Sem ultraprocessados"
+        ],
         "recomendaciones": "Beber pelo menos 2L de água por dia. Jantar leve 2h antes de dormir. Incluir mais vegetais de folha verde.",
         "notas": "Paciente de teste pré-configurado para que você explore as funções do app. Pode editá-lo ou excluí-lo quando quiser."
       },

@@ -16,9 +16,9 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { isNextNavigation, urlPublica } from "@/lib/utils";
-import { sanitizeString } from "@/lib/validation";
+import { sanitizeString, validateEmail } from "@/lib/validation";
 import { sendEmail } from "@/lib/mailer";
-import { plazasLibresDeLicencia, alumnoYaOcupaPlaza } from "@/lib/docencia-bolsa";
+import { plazasLibresDeLicencia, conPlazaDeLaBolsa } from "@/lib/docencia-bolsa";
 import { emailDelDominio, cursoTerminado } from "@/lib/docencia";
 import { requireProfesor } from "./docencia";
 
@@ -83,87 +83,95 @@ export async function invitarAlumnos(data: {
   // Con el curso pasado, dar de alta no serviría de nada: el alumno no podría ni entrar.
   if (cursoTerminado(clase.fechaFinCurso)) return { ok: false, error: t("docencia.cursoTerminado") };
 
+  // NFC para que "josé@" escrito de dos formas distintas no acabe siendo dos alumnos.
   const correos = [...new Set(
-    data.correos.split(/[\n,;]+/).map((c) => sanitizeString(c, 200).toLowerCase().trim()).filter(Boolean),
+    data.correos.split(/[\n,;]+/)
+      .map((c) => sanitizeString(c, 200).normalize("NFC").toLowerCase().trim())
+      .filter(Boolean),
   )];
   if (correos.length === 0) return { ok: false, error: t("docencia.sinCorreos") };
 
   const detalle: NonNullable<ResultadoAltaAlumnos["detalle"]> = [];
+  const tokensParaEnviar: { email: string; token: string }[] = [];
   const nombreProfesor = `${profesor.nombre} ${profesor.apellidos}`.trim();
 
   try {
     for (const email of correos) {
-      if (!email.includes("@")) {
+      // `includes("@")` dejaba pasar cosas como «Nombre <x@y>»: se valida de verdad.
+      if (!validateEmail(email)) {
         detalle.push({ email, resultado: "invalido" });
         continue;
       }
 
       const existente = await prisma.dietista.findUnique({ where: { email }, select: { id: true } });
 
-      // Las plazas se miran DENTRO del bucle: si quedan tres y se pegan diez correos, entran tres
-      // y los demás se avisan, en vez de pasarse de la bolsa vendida. Quien ya ocupa plaza en la
-      // institución no vuelve a consumir, así que a ese no se le puede rechazar por bolsa llena.
-      const yaOcupa = existente
-        ? await alumnoYaOcupaPlaza(clase.licenciaDocenteId, existente.id)
-        : false;
-      if (!yaOcupa && (await plazasLibresDeLicencia(clase.licenciaDocenteId)) <= 0) {
-        detalle.push({ email, resultado: "sinPlazas" });
-        continue;
-      }
-
-      if (existente) {
-        const yaMatriculado = await prisma.alumnoClase.findUnique({
-          where: { claseId_alumnoId: { claseId: clase.id, alumnoId: existente.id } },
-        });
-        if (yaMatriculado) {
-          // Si estaba con el acceso retirado, esto se lo devuelve: es la vía de "meter el correo
-          // otra vez" que se acordó para el curso siguiente.
-          if (!yaMatriculado.activa) {
-            await prisma.alumnoClase.update({
-              where: { id: yaMatriculado.id },
-              data: { activa: true, bajaAt: null },
+      // Contar la bolsa y dar el alta van DENTRO de la misma transacción, con la fila de la
+      // licencia bloqueada: si se cuenta fuera, dos profesores pegando sus listas a la vez se
+      // quedan los dos con la última plaza. Y se mira alumno a alumno, no una vez al principio:
+      // si quedan tres y se pegan diez correos, entran tres y de los otros siete se avisa.
+      const resultado = await conPlazaDeLaBolsa(
+        clase.licenciaDocenteId,
+        { alumnoId: existente?.id ?? null, email },
+        async (tx): Promise<"invitado" | "matriculado" | "yaEstaba"> => {
+          if (existente) {
+            const yaMatriculado = await tx.alumnoClase.findUnique({
+              where: { claseId_alumnoId: { claseId: clase.id, alumnoId: existente.id } },
             });
-            detalle.push({ email, resultado: "matriculado" });
-          } else {
-            detalle.push({ email, resultado: "yaEstaba" });
+            if (yaMatriculado) {
+              // Si estaba con el acceso retirado, esto se lo devuelve: es la vía de "meter el
+              // correo otra vez" que se acordó para el curso siguiente.
+              if (!yaMatriculado.activa) {
+                await tx.alumnoClase.update({
+                  where: { id: yaMatriculado.id },
+                  data: { activa: true, bajaAt: null },
+                });
+                return "matriculado";
+              }
+              return "yaEstaba";
+            }
+
+            // Cuenta que ya existe: se le matricula sin tocar nada de lo suyo. Si es un
+            // nutricionista con su propia suscripción, la conserva; solo se le marca el rol si no
+            // tenía ninguno, y `cuentaDeClase` se queda en false para que siga contando como
+            // cliente en administración y no se le eche al acabar el curso.
+            await tx.alumnoClase.create({ data: { claseId: clase.id, alumnoId: existente.id } });
+            await tx.dietista.updateMany({
+              where: { id: existente.id, rolDocente: null },
+              data: { rolDocente: "ALUMNO", licenciaDocenteId: clase.licenciaDocenteId },
+            });
+            return "matriculado";
           }
-          continue;
-        }
 
-        // Cuenta que ya existe: se le matricula sin tocar nada de lo suyo. Si es un nutricionista
-        // con su propia suscripción, la conserva; solo se le marca el rol si no tenía ninguno.
-        await prisma.$transaction([
-          prisma.alumnoClase.create({ data: { claseId: clase.id, alumnoId: existente.id } }),
-          prisma.dietista.updateMany({
-            where: { id: existente.id, rolDocente: null },
-            data: { rolDocente: "ALUMNO", licenciaDocenteId: clase.licenciaDocenteId },
-          }),
-        ]);
-        detalle.push({ email, resultado: "matriculado" });
-        continue;
-      }
-
-      // Sin cuenta: invitación con su enlace. Se anula la anterior para que solo haya uno vivo.
-      await prisma.invitacionDocente.deleteMany({ where: { email, claseId: clase.id, aceptadaAt: null } });
-      const token = randomBytes(24).toString("base64url");
-      await prisma.invitacionDocente.create({
-        data: {
-          token,
-          email,
-          rol: "ALUMNO",
-          claseId: clase.id,
-          licenciaDocenteId: clase.licenciaDocenteId,
-          invitadoPor: profesor.dietistaId,
-          expiraAt: new Date(Date.now() + DIAS_DE_VALIDEZ * 24 * 60 * 60 * 1000),
-          ultimoEnvioAt: new Date(),
+          // Sin cuenta: invitación con su enlace.
+          const token = randomBytes(24).toString("base64url");
+          await tx.invitacionDocente.create({
+            data: {
+              token,
+              email,
+              rol: "ALUMNO",
+              claseId: clase.id,
+              licenciaDocenteId: clase.licenciaDocenteId,
+              invitadoPor: profesor.dietistaId,
+              expiraAt: new Date(Date.now() + DIAS_DE_VALIDEZ * 24 * 60 * 60 * 1000),
+              ultimoEnvioAt: new Date(),
+            },
+          });
+          // El correo se manda DESPUÉS, ya fuera de la transacción: no se puede dejar una
+          // transacción abierta esperando a que conteste el servidor de correo.
+          tokensParaEnviar.push({ email, token });
+          return "invitado";
         },
-      });
+      );
+
+      detalle.push({ email, resultado: resultado.ok ? resultado.valor : "sinPlazas" });
+    }
+
+    for (const { email, token } of tokensParaEnviar) {
       sendEmail({
         to: email,
         subject: `${nombreProfesor} te ha dado acceso a Annonia — ${clase.nombre}`,
         html: correoAlumno(clase.nombre, nombreProfesor, `${urlPublica()}/invitacion/${token}`),
       }).catch((err) => console.error("[docencia] Error enviando invitación de alumno:", err));
-      detalle.push({ email, resultado: "invitado" });
     }
 
     revalidatePath(`/profesor/clases/${clase.id}`);
@@ -196,17 +204,22 @@ export async function cambiarAccesoAlumno(
   }
 
   try {
-    // Devolver el acceso consume plaza otra vez, salvo que ya la ocupe por la clase de otro profesor.
+    // Devolver el acceso consume plaza otra vez, salvo que ya la ocupe por la clase de otro
+    // profesor. Se comprueba y se escribe dentro de la misma transacción, como en el alta.
     if (activa && clase.licenciaDocenteId) {
-      const yaOcupa = await alumnoYaOcupaPlaza(clase.licenciaDocenteId, alumnoId);
-      if (!yaOcupa && (await plazasLibresDeLicencia(clase.licenciaDocenteId)) <= 0) {
-        return { ok: false, error: t("docencia.sinPlazas") };
-      }
+      const hecho = await conPlazaDeLaBolsa(clase.licenciaDocenteId, { alumnoId }, (tx) =>
+        tx.alumnoClase.update({
+          where: { claseId_alumnoId: { claseId, alumnoId } },
+          data: { activa: true, bajaAt: null },
+        }),
+      );
+      if (!hecho.ok) return { ok: false, error: t("docencia.sinPlazas") };
+    } else {
+      await prisma.alumnoClase.update({
+        where: { claseId_alumnoId: { claseId, alumnoId } },
+        data: { activa, bajaAt: activa ? null : new Date() },
+      });
     }
-    await prisma.alumnoClase.update({
-      where: { claseId_alumnoId: { claseId, alumnoId } },
-      data: { activa, bajaAt: activa ? null : new Date() },
-    });
     revalidatePath(`/profesor/clases/${claseId}`);
     revalidatePath("/profesor");
     return { ok: true };
@@ -232,7 +245,12 @@ export async function cambiarEnlaceClase(
   if (!clase) return { ok: false, error: t("docencia.claseNoEncontrada") };
 
   try {
-    const token = clase.tokenInvitacion ?? randomBytes(18).toString("base64url");
+    // Al ABRIRLO se genera uno nuevo siempre. Cerrar el enlace es lo que hace el profesor cuando
+    // se le ha ido de las manos (se ha filtrado, lo ha reenviado un alumno...), así que reabrirlo
+    // con el mismo token no serviría de nada: el viejo volvería a funcionar.
+    const token = abierto
+      ? randomBytes(18).toString("base64url")
+      : (clase.tokenInvitacion ?? randomBytes(18).toString("base64url"));
     await prisma.clase.update({
       where: { id: claseId },
       data: { invitacionAbierta: abierto, tokenInvitacion: token },

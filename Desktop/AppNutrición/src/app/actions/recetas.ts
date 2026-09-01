@@ -256,6 +256,12 @@ export async function actualizarReceta(
     unidad: ing.unidad,
   }));
 
+  // La propiedad se comprueba ANTES de borrar: hasta el 1 sep 2026 el deleteMany iba primero y el
+  // update fallaba después, así que cualquiera con una sesión podía dejar sin ingredientes la
+  // receta de otro pasando su id. El borrado ya estaba confirmado cuando saltaba el error.
+  const suya = await prisma.receta.findFirst({ where: { id, dietistaId: dietista.id }, select: { id: true } });
+  if (!suya) throw new Error(t("receta.recetaNoEncontrada"));
+
   await prisma.recetaIngrediente.deleteMany({ where: { recetaId: id } });
 
   await prisma.receta.update({
@@ -287,6 +293,10 @@ export async function eliminarReceta(id: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
+
+  // Igual que en actualizarReceta: primero se comprueba de quién es.
+  const suya = await prisma.receta.findFirst({ where: { id, dietistaId: dietista.id }, select: { id: true } });
+  if (!suya) throw new Error(t("receta.recetaNoEncontrada"));
 
   await prisma.recetaIngrediente.deleteMany({ where: { recetaId: id } });
   await prisma.receta.delete({ where: { id, dietistaId: dietista.id } });
@@ -326,6 +336,10 @@ export interface RecetaListItem {
   createdAt: Date;
   esGlobal: boolean;
   favorito: boolean;
+  /** La está compartiendo con su centro o con su clase. */
+  compartida: boolean;
+  /** No es suya: se la comparten. Se ve y se copia, no se edita. */
+  ajena: boolean;
 }
 
 type Scope = "mias" | "app" | "clase";
@@ -407,7 +421,7 @@ export async function getRecetas(
     SELECT r.id, r.nombre, r.descripcion, r.porciones,
            r.calorias, r.proteinas, r.carbohidratos, r.grasas, r.fibra,
            r."tiempoPreparacion" AS "tiempoPreparacion",
-           r."dietistaId" AS "dietistaId",
+           r."dietistaId" AS "dietistaId", r.compartido AS "compartido",
            r."createdAt" AS "createdAt",
            COUNT(ri.id)::int AS "numIngredientes",
            (fav.id IS NOT NULL) AS "favorito"
@@ -437,6 +451,8 @@ export async function getRecetas(
     createdAt: r.createdAt as Date,
     esGlobal: r.dietistaId === null || r.dietistaId === undefined,
     favorito: Boolean(r.favorito),
+    compartida: Boolean(r.compartido),
+    ajena: r.dietistaId !== null && r.dietistaId !== undefined && r.dietistaId !== dietista.id,
   }));
 }
 

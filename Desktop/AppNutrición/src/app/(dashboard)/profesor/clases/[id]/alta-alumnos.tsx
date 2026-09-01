@@ -80,7 +80,7 @@ export function AltaAlumnos({
 
   if (cursoTerminado || !puedeDarAltas) {
     return (
-      <p className="text-sm text-muted-foreground border border-dashed border-border rounded-xl p-4">
+      <p className="text-sm text-muted-foreground py-4 lg:p-4 lg:border lg:border-dashed lg:border-border lg:rounded-xl">
         {cursoTerminado ? t("alumnos.cursoTerminadoAviso") : t("alumnos.cursoCerrado")}
       </p>
     );

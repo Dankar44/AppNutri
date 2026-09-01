@@ -95,9 +95,18 @@ export function emailDelDominio(email: string, dominioEmail: string | null | und
  * por un estado guardado: así no hay nada que recordar ni que se pueda desincronizar, y el enlace
  * del menú sigue siendo un enlace normal (un GET con efectos ya nos costó un fallo, 27 ago 2026).
  */
-export function esRutaDocente(pathname: string): boolean {
-  return pathname === "/profesor" || pathname.startsWith("/profesor/");
+export function esRutaDocente(pathname: string, espacio?: string | null): boolean {
+  if (pathname === "/profesor" || pathname.startsWith("/profesor/")) return true;
+  // Dietas, alimentos y recetas son de los dos espacios: las usa el profesor con su clase y el
+  // nutricionista con sus pacientes. Como la dirección es la misma, el enlace del menú docente
+  // lleva `?espacio=docente` y así al entrar ahí no se le cambia el menú por el de nutricionista,
+  // que era lo que hacía desaparecer "Clases" al primer clic. Sigue siendo un enlace normal, sin
+  // efectos: el prefetch puede dispararlo tantas veces como quiera.
+  return espacio === "docente" && RUTAS_DE_MATERIAL.some((r) => pathname === r || pathname.startsWith(`${r}/`));
 }
+
+/** Lo que el profesor comparte con su clase, y que también usa en su consulta. */
+export const RUTAS_DE_MATERIAL = ["/dietas", "/alimentos", "/recetas"] as const;
 
 /**
  * ¿Se ha acabado ya el curso de una clase?
@@ -117,4 +126,12 @@ export function inicioDeHoy(hoy: Date = new Date()): Date {
   const d = new Date(hoy);
   d.setHours(0, 0, 0, 0);
   return d;
+}
+
+/** Días que quedan de curso, o null si no tiene fecha de fin. Negativo si ya pasó. */
+export function diasDeCursoQueQuedan(fechaFinCurso: Date | null | undefined, hoy: Date = new Date()): number | null {
+  if (!fechaFinCurso) return null;
+  const fin = new Date(fechaFinCurso);
+  fin.setHours(23, 59, 59, 999);
+  return Math.ceil((fin.getTime() - hoy.getTime()) / (24 * 60 * 60 * 1000));
 }

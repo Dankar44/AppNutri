@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getCurrentDietista, signOut } from "@/app/actions/auth";
+import { getCurrentDietista, getDietistaAunqueNoPuedaEntrar, signOut } from "@/app/actions/auth";
 import {
   getNotificacionesCount,
   getBadgesNavegacion,
@@ -21,7 +21,9 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const dietista = await getCurrentDietista();
+  // `getCurrentDietista` ya devuelve null al alumno con el curso terminado, y aquí hay que
+  // distinguir "no hay sesión" (→ login) de "sesión válida pero el curso acabó" (→ explicárselo).
+  const dietista = (await getCurrentDietista()) ?? (await getDietistaAunqueNoPuedaEntrar());
   const locale = await getLocale();
 
   if (!dietista) {

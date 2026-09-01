@@ -12,6 +12,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
 import { licenciaVigente } from "@/lib/docencia";
+import { contarAlumnosDeLicencia } from "@/lib/docencia-bolsa";
 
 export interface DatosProfesor {
   dietistaId: string;
@@ -69,9 +70,13 @@ async function getDatosProfesor(): Promise<DatosProfesor | null> {
   if (!ficha || ficha.rolDocente !== "PROFESOR") return null;
 
   const licencia = ficha.licenciaDocente;
+  // La misma regla que la bolsa y que administración: alumnos DISTINTOS con el acceso puesto en
+  // clases vivas. Contar la columna del alumno metía a los retirados y a los de clases archivadas,
+  // así que tras cerrar un curso el panel seguía diciendo "300/300" mientras la clase decía que
+  // había 300 plazas libres. Dos números distintos para lo mismo (auditoría 1 sep 2026).
   const [alumnosDados, profesoresDados] = licencia
     ? await Promise.all([
-        prisma.dietista.count({ where: { licenciaDocenteId: licencia.id, rolDocente: "ALUMNO" } }),
+        contarAlumnosDeLicencia(licencia.id),
         prisma.dietista.count({ where: { licenciaDocenteId: licencia.id, rolDocente: "PROFESOR" } }),
       ])
     : [0, 0];

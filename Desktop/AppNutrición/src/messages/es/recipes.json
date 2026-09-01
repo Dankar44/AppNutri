@@ -22,7 +22,9 @@
     "mostrandoTodas": "Mostrando las {total} recetas",
     "compartidasConmigo": "Compartidas conmigo",
     "subtitleCompartidas": "{count, plural, =0 {Nadie ha compartido recetas contigo todavía} one {# receta que te han compartido} other {# recetas que te han compartido}}",
-    "sinCompartidas": "Todavía no te han compartido ninguna receta"
+    "sinCompartidas": "Todavía no te han compartido ninguna receta",
+    "compartida": "Compartida",
+    "meLaComparten": "De mi clase"
   },
   "filter": {
     "buscarPlaceholder": "Buscar receta...",

@@ -93,7 +93,11 @@ export default async function AlimentosPage({ searchParams }: Props) {
       />
 
       <div className="mb-6">
-        <AlimentosFilter misAlimentosCount={misAlimentosCount} tieneEmpresa={tieneEmpresa} />
+        <AlimentosFilter
+          misAlimentosCount={misAlimentosCount}
+          tieneEmpresa={tieneEmpresa}
+          fuenteCompartida={tieneEmpresa ? "centro" : dietista?.rolDocente === "ALUMNO" ? "clase" : null}
+        />
       </div>
 
       {alimentos.length === 0 ? (

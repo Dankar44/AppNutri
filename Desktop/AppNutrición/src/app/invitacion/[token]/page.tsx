@@ -27,7 +27,9 @@ export default async function InvitacionPage({
             <GraduationCap strokeWidth={1.75} className="w-8 h-8 text-primary" />
           </div>
           <h1 className="text-2xl font-bold">
-            {t(invitacion?.rol === "ALUMNO" ? "invitacion.tituloAlumno" : "invitacion.titulo")}
+            {!invitacion
+              ? t("invitacion.tituloNoValida")
+              : t(invitacion.rol === "ALUMNO" ? "invitacion.tituloAlumno" : "invitacion.titulo")}
           </h1>
           {invitacion?.institucion && (
             <p className="text-muted-foreground mt-1">{invitacion.institucion}</p>

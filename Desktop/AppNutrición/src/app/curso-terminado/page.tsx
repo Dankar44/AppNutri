@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { GraduationCap, Archive } from "lucide-react";
 import { getTranslations } from "next-intl/server";
-import { getCurrentDietista, signOut } from "@/app/actions/auth";
+import { getDietistaAunqueNoPuedaEntrar, signOut } from "@/app/actions/auth";
 import { prisma } from "@/lib/prisma";
 import { alumnoPuedeEntrar } from "@/lib/docencia-acceso";
 import { formatDate } from "@/lib/utils";
@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
  * comprueba igual que en el panel y se le devuelve a su sitio.
  */
 export default async function CursoTerminadoPage() {
-  const dietista = await getCurrentDietista();
+  const dietista = await getDietistaAunqueNoPuedaEntrar();
   if (!dietista) redirect("/login");
 
   const { puede } = await alumnoPuedeEntrar(dietista);

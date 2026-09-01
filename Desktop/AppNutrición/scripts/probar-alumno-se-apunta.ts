@@ -32,6 +32,21 @@ const comprobar = (t: string, c: boolean, d = "") => { console.log(`  ${c ? "✓
 const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const texto = (page: Page) => page.evaluate(() => document.body.innerText);
 
+/**
+ * Los avisos se van solos a los pocos segundos, así que no vale mirar cuando ya ha terminado la
+ * espera: hay que estar pendiente mientras salen.
+ */
+async function esperarToast(page: Page, maxMs = 8000): Promise<string> {
+  const hasta = Date.now() + maxMs;
+  while (Date.now() < hasta) {
+    const t = await page.evaluate(() =>
+      Array.from(document.querySelectorAll("[data-sonner-toast]")).map((x) => x.textContent ?? "").join(" | "));
+    if (t.trim()) return t;
+    await esperar(200);
+  }
+  return "";
+}
+
 async function rellenar(page: Page, etiqueta: string, valor: string) {
   const hecho = await page.evaluate((tx, v) => {
     const l = Array.from(document.querySelectorAll("label")).find((x) => x.textContent?.trim().startsWith(tx));
@@ -196,7 +211,15 @@ async function main() {
     await rellenar(page, "Nombre", "Luis");
     await rellenar(page, "Apellidos", "Otro");
     await rellenar(page, "Correo", luis.email);
-    await rellenar(page, "Contraseña", "LoQueSeaDaIgual_9");
+    await rellenar(page, "Contraseña", "LaQueMeInventoAhora_9");
+    await pulsar(page, "Apuntarme");
+    const avisoContrasena = await esperarToast(page);
+    comprobar("con una contraseña inventada no se le matricula",
+      (await client.query(`SELECT COUNT(*)::int n FROM alumnos_clase a JOIN dietistas d ON d.id = a."alumnoId" WHERE d.email = $1`, [luis.email])).rows[0].n === 0);
+    comprobar("y se le dice que use la suya", /contraseña de tu cuenta/i.test(avisoContrasena), avisoContrasena);
+
+    // Con SU contraseña de siempre sí: es lo que demuestra que la cuenta es suya.
+    await rellenar(page, "Contraseña", luis.pass);
     await pulsar(page, "Apuntarme");
     await esperar(5000);
     const { rows: luisAhora } = await client.query(
@@ -243,13 +266,13 @@ async function main() {
       `INSERT INTO alumnos_clase (id, "claseId", "alumnoId", "altaAt") VALUES (gen_random_uuid()::text, $1, $2, NOW())`,
       [claseId, otro]);
     await pulsar(page, "Apuntarme");
-    await esperar(4000);
+    const avisoPlaza = await esperarToast(page);
+    await esperar(2000);
     comprobar("no se le crea cuenta al que llega tarde",
       (await client.query(`SELECT COUNT(*)::int n FROM dietistas WHERE email = $1`, [`tarde@${DOMINIO}`])).rows[0].n === 0);
     comprobar("tampoco se queda un usuario suelto en auth",
       (await client.query(`SELECT COUNT(*)::int n FROM auth.users WHERE email = $1`, [`tarde@${DOMINIO}`])).rows[0].n === 0);
-    comprobar("y se le dice por qué", /plaza/i.test(await page.evaluate(() =>
-      Array.from(document.querySelectorAll("[data-sonner-toast]")).map((t) => t.textContent ?? "").join(" "))));
+    comprobar("y se le dice por qué", /plaza/i.test(avisoPlaza), avisoPlaza);
 
     console.log("\n── El correo de invitación del profesor ──");
     const tokenInv = randomBytes(24).toString("base64url");

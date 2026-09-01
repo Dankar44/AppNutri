@@ -1,6 +1,8 @@
-import { GraduationCap, Users, UserCog, CalendarRange, AlertTriangle } from "lucide-react";
+import Link from "next/link";
+import { GraduationCap, Users, UserCog, CalendarRange, AlertTriangle, Plus } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireProfesor } from "@/app/actions/docencia";
+import { getMisClases } from "@/app/actions/clases";
 import type { Metadata } from "next";
 import { cursoActual } from "@/lib/docencia";
 import { formatDate } from "@/lib/utils";
@@ -17,15 +19,19 @@ function Contador({
   etiqueta,
   usadas,
   total,
+  href,
 }: {
   icono: typeof Users;
   etiqueta: string;
   usadas: number;
   total: number;
+  href?: string;
 }) {
   const pct = total > 0 ? Math.min(100, Math.round((usadas / total) * 100)) : 0;
-  return (
-    <div className="py-4 lg:p-5 border-b border-border last:border-b-0 lg:border lg:rounded-2xl lg:bg-card">
+  const clases =
+    "block py-4 lg:p-5 border-b border-border last:border-b-0 lg:border lg:rounded-2xl lg:bg-card transition-colors";
+  const cuerpo = (
+    <>
       <div className="flex items-center gap-2.5 mb-3">
         <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
           <Icono strokeWidth={1.75} className="w-5 h-5 text-primary" />
@@ -39,7 +45,14 @@ function Contador({
       <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden">
         <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
       </div>
-    </div>
+    </>
+  );
+
+  // El contador de alumnos lleva a sus clases; los otros dos no llevan a ningún sitio todavía.
+  return href ? (
+    <Link href={href} className={`${clases} lg:hover:border-primary/40`}>{cuerpo}</Link>
+  ) : (
+    <div className={clases}>{cuerpo}</div>
   );
 }
 
@@ -47,6 +60,7 @@ export default async function ProfesorPage() {
   const datos = await requireProfesor();
   const t = await getTranslations("docencia");
   const locale = await getLocale();
+  const clases = (await getMisClases()).length;
 
   const { licencia } = datos;
   const curso = licencia?.curso || cursoActual();
@@ -72,7 +86,7 @@ export default async function ProfesorPage() {
       )}
 
       {licencia && !datos.puedeDarAltas && (
-        <div className="flex gap-3 rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-4">
+        <div className="flex gap-3 py-4 lg:p-4 lg:rounded-xl lg:border lg:border-amber-200 dark:lg:border-amber-500/30 lg:bg-amber-50 dark:lg:bg-amber-500/10 border-b border-border lg:border-b-0">
           <AlertTriangle strokeWidth={1.75} className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
           <div className="text-sm">
             <p className="font-medium text-amber-900 dark:text-amber-200">{t("panel.licenciaCerradaTitulo")}</p>
@@ -88,6 +102,7 @@ export default async function ProfesorPage() {
             etiqueta={t("panel.alumnos")}
             usadas={datos.alumnosDados}
             total={licencia.maxAlumnos}
+            href="/profesor/clases"
           />
           <Contador
             icono={UserCog}
@@ -112,12 +127,26 @@ export default async function ProfesorPage() {
         </section>
       )}
 
-      {/* Lo que queda por construir, dicho a las claras para que nadie busque un botón que aún
-          no existe. Se irá sustituyendo por las secciones reales en las siguientes fases. */}
-      <section className="rounded-xl border border-dashed border-border p-4 lg:p-5">
+      {/* Por dónde se empieza. En móvil el menú está detrás de la hamburguesa, así que sin esto
+          el profesor entra, ve unos contadores y no tiene ni un sitio al que ir. */}
+      <section className="py-4 lg:p-5 lg:border lg:border-border lg:rounded-2xl lg:bg-card">
+        <h2 className="font-semibold">{t("panel.porDondeEmpezar")}</h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          {clases === 0 ? t("panel.sinClasesTexto") : t("panel.conClasesTexto", { n: clases })}
+        </p>
+        <Link
+          href="/profesor/clases"
+          className="mt-3 inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+        >
+          {clases === 0 ? <Plus className="w-4 h-4" /> : <Users className="w-4 h-4" />}
+          {clases === 0 ? t("panel.crearPrimeraClase") : t("panel.verMisClases")}
+        </Link>
+      </section>
+
+      {/* Lo que todavía no existe, dicho a las claras para que nadie busque un botón que no está. */}
+      <section className="py-4 lg:p-5 lg:rounded-xl lg:border lg:border-dashed lg:border-border">
         <p className="text-sm font-medium mb-2">{t("panel.enPreparacionTitulo")}</p>
         <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-          <li>{t("panel.enPreparacionClases")}</li>
           <li>{t("panel.enPreparacionCasos")}</li>
           <li>{t("panel.enPreparacionCorreccion")}</li>
         </ul>

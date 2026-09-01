@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Carrot, Clock, Sparkles } from "lucide-react";
+import { Carrot, Clock, Sparkles, Share2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { MacroBadges } from "@/components/macro-badge";
 import { FavoritoButton } from "./favorito-button";
@@ -22,6 +22,8 @@ type Receta = {
   tiempoPreparacion: number | null;
   esGlobal: boolean;
   favorito: boolean;
+  compartida?: boolean;
+  ajena?: boolean;
 };
 
 export function RecetasGrid({ recetas }: { recetas: Receta[] }) {
@@ -57,6 +59,20 @@ export function RecetasGrid({ recetas }: { recetas: Receta[] }) {
                   <span className="inline-flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded bg-primary/10 text-primary shrink-0">
                     <Sparkles className="w-2.5 h-2.5" />
                     App
+                  </span>
+                )}
+                {/* Lo mismo que ya hacía la lista de alimentos: se ve de un vistazo qué está
+                    compartido y qué es de otro, sin tener que abrirlo. */}
+                {receta.ajena && (
+                  <span className="inline-flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 shrink-0">
+                    <Share2 className="w-2.5 h-2.5" />
+                    {t("list.meLaComparten")}
+                  </span>
+                )}
+                {receta.compartida && !receta.ajena && (
+                  <span className="inline-flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 shrink-0">
+                    <Share2 className="w-2.5 h-2.5" />
+                    {t("list.compartida")}
                   </span>
                 )}
               </div>

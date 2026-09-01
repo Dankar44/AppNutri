@@ -164,7 +164,7 @@ export default async function AjustesPage({
 
       {/* Layout con nav lateral + contenido */}
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-10 items-start">
-        <AjustesNav />
+        <AjustesNav hideClase={!claseDelAlumno} />
 
         <main className="flex-1 min-w-0 space-y-10">
           {/* PERFIL */}
