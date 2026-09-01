@@ -411,6 +411,15 @@ export async function aceptarPlanIA(
     data: { estado: "APLICADO" },
   });
 
+  // El plan de IA rellena un plan que ya existe, y ese plan cuelga de un paciente: hay que
+  // refrescar también su ficha. Sin esto, la nutricionista acepta el plan, se va a la pestaña
+  // "Plan de alimentación" del paciente y sigue viendo la versión en caché SIN el plan, así que
+  // parece que no se ha guardado. Reportado el 31 ago 2026: "he dado a guardar plan, estoy
+  // mirando en dietas del paciente y no me aparece".
+  // planes.ts revalida la ficha del paciente en 8 sitios; aquí no se hacía en ninguno.
+  if (planExistente?.pacienteId) {
+    revalidatePath(`/pacientes/${planExistente.pacienteId}`);
+  }
   revalidatePath(`/dietas/${planId}`);
   revalidatePath("/dietas");
 }
