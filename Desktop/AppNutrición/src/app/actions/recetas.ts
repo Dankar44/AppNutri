@@ -15,7 +15,8 @@ import {
   sanitizeSearch,
   LIMITS,
 } from "@/lib/validation";
-import { getCompanyMemberIds } from "@/lib/empresa-utils";
+import { getMaterialMemberIds, puedeCompartirMaterial } from "@/lib/empresa-utils";
+import { isNextNavigation } from "@/lib/utils";
 import { normalizarParaBusqueda } from "@/lib/alimento-utils";
 
 export interface RecetaFormData {
@@ -24,6 +25,8 @@ export interface RecetaFormData {
   instrucciones?: string;
   porciones: number;
   tiempoPreparacion?: number | null;
+  /** Que la vean su centro o, si es profesor, sus alumnos. Por defecto, no. */
+  compartido?: boolean;
 }
 
 export interface IngredienteData {
@@ -216,6 +219,8 @@ export async function crearReceta(
       descripcion: descripcionSanitizada,
       instrucciones: instruccionesSanitizadas,
       porciones: porcionesValidadas,
+      // Compartir es una decisión explícita: por defecto una receta es solo suya.
+      compartido: (await puedeCompartirMaterial(dietista)) ? (data.compartido ?? false) : false,
       ingredientes: {
         create: ingredientesValidados,
       },
@@ -261,6 +266,9 @@ export async function actualizarReceta(
       descripcion: descripcionSanitizada,
       instrucciones: instruccionesSanitizadas,
       porciones: porcionesValidadas,
+      ...((await puedeCompartirMaterial(dietista)) && data.compartido !== undefined
+        ? { compartido: data.compartido }
+        : {}),
       ingredientes: {
         create: ingredientesValidados,
       },
@@ -320,7 +328,7 @@ export interface RecetaListItem {
   favorito: boolean;
 }
 
-type Scope = "mias" | "app";
+type Scope = "mias" | "app" | "clase";
 
 function buildFiltersSql(
   filters: RecetaFilters,
@@ -372,17 +380,27 @@ export async function getRecetas(
     typeof busquedaOrFilters === "string"
       ? { busqueda: busquedaOrFilters }
       : busquedaOrFilters ?? {};
-  const scope: Scope = args.scope === "app" ? "app" : "mias";
+  const scope: Scope = args.scope === "app" ? "app" : args.scope === "clase" ? "clase" : "mias";
+
+  // Lo que le comparten (su centro o su profesor) va en su propia pestaña: mezclarlo con "mis
+  // recetas" haría que pareciese suyo y que pudiese editarlo, y no es así — se copia y ya.
+  const compartidasPor =
+    scope === "clase" ? (await getMaterialMemberIds(dietista)).filter((v) => v !== dietista.id) : [];
+  if (scope === "clase" && compartidasPor.length === 0) return [];
 
   const baseWhere =
     scope === "app"
       ? `r."dietistaId" IS NULL`
-      : `(r."dietistaId" = $1 OR (r."dietistaId" IS NULL AND fav.id IS NOT NULL))`;
+      : scope === "clase"
+        ? `(r.compartido = true AND r."dietistaId" = ANY($2::text[]))`
+        : `(r."dietistaId" = $1 OR (r."dietistaId" IS NULL AND fav.id IS NOT NULL))`;
 
-  const { whereExtra, havingExtra, values, nextIndex } = buildFiltersSql(args, 2);
+  const { whereExtra, havingExtra, values, nextIndex } = buildFiltersSql(args, scope === "clase" ? 3 : 2);
   void nextIndex;
 
-  const allValues: unknown[] = [dietista.id, ...values];
+  const allValues: unknown[] = scope === "clase"
+    ? [dietista.id, compartidasPor, ...values]
+    : [dietista.id, ...values];
   const whereSql = [baseWhere, ...whereExtra].join(" AND ");
 
   const sql = `
@@ -433,7 +451,16 @@ export async function getReceta(id: string) {
   );
   if (ownerRows.length === 0) return null;
   const owner = ownerRows[0].dietistaId;
-  if (owner !== null && owner !== dietista.id) return null;
+  if (owner !== null && owner !== dietista.id) {
+    // Puede ser material que le comparten (su centro o su profesor): se puede mirar y copiar,
+    // pero no editar — de eso se encarga `actualizarReceta`, que sigue exigiendo ser el dueño.
+    const visibles = await getMaterialMemberIds(dietista);
+    const compartida = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+      `SELECT id FROM recetas WHERE id = $1 AND compartido = true AND "dietistaId" = ANY($2::text[]) LIMIT 1`,
+      id, visibles.filter((v) => v !== dietista.id),
+    );
+    if (compartida.length === 0) return null;
+  }
 
   const receta = await prisma.receta.findUnique({
     where: { id },
@@ -544,8 +571,7 @@ export async function buscarAlimentosYRecetas(
   }> = [];
 
   if (incluirAlimentos) {
-    const empresaRow = await prisma.dietista.findUnique({ where: { id: dietista.id }, select: { empresaId: true } });
-    const memberIds = await getCompanyMemberIds(dietista.id, empresaRow?.empresaId ?? null);
+    const memberIds = await getMaterialMemberIds(dietista);
 
     const nombreFilter = querySanitizada
       ? { nombreNormalizado: { contains: normalizarParaBusqueda(querySanitizada) } }
@@ -764,4 +790,66 @@ export async function buscarEquivalentesReceta(
   }
 
   return recetas.map(({ dietistaId, ...rest }) => ({ ...rest, esPropio: dietistaId === dietista.id }));
+}
+
+/**
+ * #39 — Copiar a mis recetas lo que me comparten.
+ *
+ * Igual que con los alimentos: el alumno se lleva su copia con los ingredientes y las
+ * cantidades, y a partir de ahí es suya. La del profesor no se toca.
+ */
+export async function copiarReceta(id: string): Promise<{ ok: boolean; error?: string; id?: string }> {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
+  if (dietista.isDemo) return { ok: false, error: t("auth.noAutorizado") };
+
+  const memberIds = await getMaterialMemberIds(dietista);
+  const otros = memberIds.filter((m) => m !== dietista.id);
+
+  const original = await prisma.receta.findFirst({
+    where: {
+      id,
+      OR: [
+        { dietistaId: null },
+        ...(otros.length > 0 ? [{ dietistaId: { in: otros }, compartido: true }] : []),
+      ],
+    },
+    include: { ingredientes: true },
+  });
+  if (!original) return { ok: false, error: t("receta.recetaNoEncontrada") };
+
+  try {
+    const nombre = sanitizeString(`${original.nombre} (copia)`, LIMITS.NOMBRE);
+    const copia = await prisma.receta.create({
+      data: {
+        dietista: { connect: { id: dietista.id } },
+        nombre,
+        nombreNormalizado: normalizarParaBusqueda(nombre),
+        descripcion: original.descripcion,
+        instrucciones: original.instrucciones,
+        porciones: original.porciones,
+        compartido: false,
+        ingredientes: {
+          create: original.ingredientes.map((i) => ({
+            alimentoId: i.alimentoId,
+            cantidad: i.cantidad,
+            unidad: i.unidad,
+          })),
+        },
+      },
+    });
+    // El tiempo de preparación vive fuera del modelo generado; se copia aparte, como en el editor.
+    await prisma.$queryRawUnsafe(
+      `UPDATE recetas SET "tiempoPreparacion" = (SELECT "tiempoPreparacion" FROM recetas WHERE id = $2) WHERE id = $1`,
+      copia.id, id,
+    ).catch(() => {});
+    await recalcularMacrosReceta(copia.id);
+    revalidatePath("/recetas");
+    return { ok: true, id: copia.id };
+  } catch (e) {
+    if (isNextNavigation(e)) throw e;
+    console.error("[recetas] Error copiando receta:", e);
+    return { ok: false, error: t("general.errorDesconocido") };
+  }
 }

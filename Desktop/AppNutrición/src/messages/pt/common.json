@@ -254,5 +254,10 @@
   },
   "soporte": {
     "problemas": "Ainda tem problemas com o acesso ou a criação da sua conta? Escreva para nós em"
+  },
+  "copiarMaterial": {
+    "boton": "Copiar para o meu",
+    "hecha": "Copiado. Já é seu: altere-o como quiser.",
+    "error": "Não foi possível copiar"
   }
 }

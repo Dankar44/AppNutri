@@ -25,12 +25,15 @@ interface RecetaFormProps {
   recetaId?: string;
   defaultValues?: RecetaFormData;
   defaultIngredientes?: IngredienteItem[];
+  /** Con quién se comparte, o null si no tiene con quién. Texto, que cruza a cliente. */
+  compartirCon?: "centro" | "clase" | null;
 }
 
 export function RecetaForm({
   recetaId,
   defaultValues,
   defaultIngredientes = [],
+  compartirCon = null,
 }: RecetaFormProps) {
   const router = useRouter();
   const t = useTranslations("recipes");
@@ -38,6 +41,7 @@ export function RecetaForm({
   const blockIfDemo = useDemoGuard();
   const [loading, setLoading] = useState(false);
   const [ingredientes, setIngredientes] = useState<IngredienteItem[]>(defaultIngredientes);
+  const [compartido, setCompartido] = useState(defaultValues?.compartido ?? false);
   // Micros por 100 g de cada alimento usado (cargados bajo demanda) para sumarlos en vivo.
   const [microsCache, setMicrosCache] = useState<Record<string, Partial<Record<string, number | null>>>>({});
   const formRef = useRef<HTMLFormElement>(null);
@@ -111,6 +115,7 @@ export function RecetaForm({
       porciones,
       tiempoPreparacion:
         tiempoParsed === null || Number.isNaN(tiempoParsed) ? null : tiempoParsed,
+      ...(compartirCon ? { compartido } : {}),
     };
 
     const ingredientesData: IngredienteData[] = ingredientes.map((ing) => ({
@@ -271,6 +276,27 @@ export function RecetaForm({
           porciones={porciones}
         />
       </section>
+
+      {compartirCon && (
+        <section className="bg-card rounded-xl border border-border p-6">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={compartido}
+              onChange={(e) => setCompartido(e.target.checked)}
+              className="w-4 h-4 rounded border-border text-primary focus:ring-primary/30"
+            />
+            <div>
+              <span className="text-sm font-medium">
+                {compartirCon === "clase" ? t("form.compartirConClase") : t("form.compartirConCentro")}
+              </span>
+              <p className="text-xs text-muted-foreground">
+                {compartirCon === "clase" ? t("form.compartirConClaseDesc") : t("form.compartirConCentroDesc")}
+              </p>
+            </div>
+          </label>
+        </section>
+      )}
 
       <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3">
         <button

@@ -1,10 +1,12 @@
 import Link from "next/link";
-import { Plus, CookingPot, Sparkles } from "lucide-react";
+import { Plus, CookingPot, Sparkles, Share2 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { getRecetas, type RecetaFilters } from "@/app/actions/recetas";
 import { RecetasFilter } from "./recetas-filter";
 import { RecetasGrid } from "./recetas-grid";
 import { PageHeader } from "@/components/page-header";
+import { getCurrentDietista } from "@/app/actions/auth";
+import { getMaterialMemberIds } from "@/lib/empresa-utils";
 
 interface Props {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -26,7 +28,15 @@ function toNumber(v: string | string[] | undefined): number | undefined {
 
 export default async function RecetasPage({ searchParams }: Props) {
   const sp = await searchParams;
-  const tab = sp.tab === "app" ? "app" : "mias";
+  const tab = sp.tab === "app" ? "app" : sp.tab === "clase" ? "clase" : "mias";
+
+  // La pestaña de material compartido solo aparece si hay alguien que comparta con esta persona:
+  // a un nutricionista suelto no le dice nada.
+  const dietista = await getCurrentDietista();
+  const compartidoPorOtros = dietista
+    ? (await getMaterialMemberIds(dietista)).filter((v) => v !== dietista.id)
+    : [];
+  const hayMaterialCompartido = compartidoPorOtros.length > 0;
   const busqueda = typeof sp.busqueda === "string" ? sp.busqueda : undefined;
 
   const microMin: Record<string, number> = {};
@@ -74,11 +84,18 @@ export default async function RecetasPage({ searchParams }: Props) {
     p.set("tab", "app");
     return `/recetas?${p.toString()}`;
   })();
+  const claseHref = (() => {
+    const p = new URLSearchParams(currentParams);
+    p.set("tab", "clase");
+    return `/recetas?${p.toString()}`;
+  })();
 
   const t = await getTranslations("recipes");
-  const subtitle = tab === "mias"
-    ? (recetas.length === 1 ? t("list.subtitleCount", { count: recetas.length }) : t("list.subtitleCountPlural", { count: recetas.length }))
-    : (recetas.length === 1 ? t("list.subtitleAppCount", { count: recetas.length }) : t("list.subtitleAppCountPlural", { count: recetas.length }));
+  const subtitle = tab === "clase"
+    ? t("list.subtitleCompartidas", { count: recetas.length })
+    : tab === "mias"
+      ? (recetas.length === 1 ? t("list.subtitleCount", { count: recetas.length }) : t("list.subtitleCountPlural", { count: recetas.length }))
+      : (recetas.length === 1 ? t("list.subtitleAppCount", { count: recetas.length }) : t("list.subtitleAppCountPlural", { count: recetas.length }));
 
   return (
     <div>
@@ -120,6 +137,19 @@ export default async function RecetasPage({ searchParams }: Props) {
           <span className="hidden sm:inline">{t("list.recetasApp")}</span>
           <span className="sm:hidden">{t("list.recetasAppCorto")}</span>
         </Link>
+        {hayMaterialCompartido && (
+          <Link
+            href={claseHref}
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors inline-flex items-center gap-1.5 ${
+              tab === "clase"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Share2 className="w-3.5 h-3.5" />
+            {t("list.compartidasConmigo")}
+          </Link>
+        )}
       </div>
 
       <div className="mb-6">
@@ -130,7 +160,7 @@ export default async function RecetasPage({ searchParams }: Props) {
         <div className="bg-card rounded-xl border border-border p-12 text-center">
           <CookingPot className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="font-medium text-lg mb-1">
-            {tab === "app" ? t("list.sinRecetas") : t("list.sinRecetasPropias")}
+            {tab === "app" ? t("list.sinRecetas") : tab === "clase" ? t("list.sinCompartidas") : t("list.sinRecetasPropias")}
           </h3>
           <p className="text-muted-foreground mb-4">
             {hayFiltros

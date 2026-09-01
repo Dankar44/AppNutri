@@ -381,6 +381,7 @@ model Alimento {
   entradasDiario      EntradaDiario[]
   movimientosStock    MovimientoStock[]
 
+  @@index([dietistaId, compartido])
   @@map("alimentos")
 }
 
@@ -426,12 +427,17 @@ model Receta {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
+  /// Igual que en Alimento: quien la tiene decide si la ven los demás (su centro y, si es
+  /// profesor, sus alumnos). Por defecto no se comparte nada.
+  compartido      Boolean   @default(false)
+
   ingredientes    RecetaIngrediente[]
   alimentosEnComida AlimentoEnComida[]
   alternativas      AlternativaAlimento[]
   entradasDiario    EntradaDiario[]
   favoritos         RecetaFavorito[]
 
+  @@index([dietistaId, compartido])
   @@map("recetas")
 }
 

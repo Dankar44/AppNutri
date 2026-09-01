@@ -8,11 +8,9 @@ import { prisma } from "@/lib/prisma";
 export default async function NuevoAlimentoPage() {
   const t = await getTranslations("foods");
   const dietista = await getCurrentDietista();
-  let tieneEmpresa = false;
-  if (dietista) {
-    const d = await prisma.dietista.findUnique({ where: { id: dietista.id }, select: { empresaId: true } });
-    tieneEmpresa = !!d?.empresaId;
-  }
+  // El interruptor de compartir solo se enseña a quien tiene con quién: su centro o su clase.
+  const tieneEmpresa = !!dietista?.empresaId;
+  const compartirCon = tieneEmpresa ? "centro" : dietista?.rolDocente === "PROFESOR" ? "clase" : null;
 
   return (
     <div>
@@ -29,7 +27,7 @@ export default async function NuevoAlimentoPage() {
           {t("nuevo.descripcion")}
         </p>
       </div>
-      <AlimentoForm tieneEmpresa={tieneEmpresa} />
+      <AlimentoForm tieneEmpresa={tieneEmpresa} compartirCon={compartirCon} />
     </div>
   );
 }

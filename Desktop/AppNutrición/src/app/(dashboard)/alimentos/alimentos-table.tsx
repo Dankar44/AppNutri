@@ -53,9 +53,11 @@ interface Props {
   propios?: boolean;
   fuenteCentro?: boolean;
   currentDietistaId?: string;
+  /** Un alumno no tiene "centro": lo que le comparten viene de su clase, y hay que decirlo así. */
+  esAlumno?: boolean;
 }
 
-export function AlimentosTable({ initial, initialCursor, busqueda, categoria, propios, fuenteCentro, currentDietistaId }: Props) {
+export function AlimentosTable({ initial, initialCursor, busqueda, categoria, propios, fuenteCentro, currentDietistaId, esAlumno = false }: Props) {
   const t = useTranslations("foods");
   const router = useRouter();
   const [alimentos, setAlimentos] = useState(initial);
@@ -112,7 +114,7 @@ export function AlimentosTable({ initial, initialCursor, busqueda, categoria, pr
                   </span>
                   {isFromOther && (
                     <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 shrink-0">
-                      {t("table.deCentro")}
+                      {esAlumno ? t("table.deClase") : t("table.deCentro")}
                     </span>
                   )}
                   {alimento.compartido && !isFromOther && (
@@ -205,7 +207,7 @@ export function AlimentosTable({ initial, initialCursor, busqueda, categoria, pr
                   </span>
                   {isFromOther && (
                     <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400">
-                      {t("table.deCentro")}
+                      {esAlumno ? t("table.deClase") : t("table.deCentro")}
                     </span>
                   )}
                   {alimento.compartido && !isFromOther && (

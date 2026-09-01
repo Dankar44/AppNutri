@@ -19,7 +19,10 @@
     "mostrandoDe": "Mostrando {visibles} de {total}",
     "verMas": "Ver {count} más",
     "verTodas": "Ver todas ({count})",
-    "mostrandoTodas": "Mostrando las {total} recetas"
+    "mostrandoTodas": "Mostrando las {total} recetas",
+    "compartidasConmigo": "Compartidas conmigo",
+    "subtitleCompartidas": "{count, plural, =0 {Nadie ha compartido recetas contigo todavía} one {# receta que te han compartido} other {# recetas que te han compartido}}",
+    "sinCompartidas": "Todavía no te han compartido ninguna receta"
   },
   "filter": {
     "buscarPlaceholder": "Buscar receta...",
@@ -88,7 +91,11 @@
     "microsReceta": "Micros por porción",
     "energiaLabel": "Energía",
     "peso1Porcion": "Peso 1 porción",
-    "anadirIngredientes": "Añade ingredientes para ver los macros calculados"
+    "anadirIngredientes": "Añade ingredientes para ver los macros calculados",
+    "compartirConCentro": "Compartir con mi centro",
+    "compartirConCentroDesc": "Tus compañeros la verán en su lista y podrán copiarla.",
+    "compartirConClase": "Compartir con mis clases",
+    "compartirConClaseDesc": "Tus alumnos la verán en su lista y podrán copiarla para modificarla. La tuya no se toca."
   },
   "ingredientes": {
     "titulo": "Ingredientes",

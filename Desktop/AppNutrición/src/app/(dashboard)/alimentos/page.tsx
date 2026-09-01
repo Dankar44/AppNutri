@@ -140,6 +140,7 @@ export default async function AlimentosPage({ searchParams }: Props) {
             propios={propios}
             fuenteCentro={!!fuenteAlimento}
             currentDietistaId={dietista?.id}
+            esAlumno={dietista?.rolDocente === "ALUMNO"}
           />
         </div>
       )}

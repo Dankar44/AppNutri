@@ -20,11 +20,12 @@ export default async function EditarAlimentoPage({ params }: Props) {
 
   const t = await getTranslations("foods");
   const dietista = await getCurrentDietista();
-  let tieneEmpresa = false;
-  if (dietista) {
-    const d = await prisma.dietista.findUnique({ where: { id: dietista.id }, select: { empresaId: true } });
-    tieneEmpresa = !!d?.empresaId;
-  }
+  // Desde que existe el material compartido, `getAlimento` también devuelve lo que le prestan a
+  // uno: eso se mira y se copia, pero editarlo no tiene sentido (el servidor tampoco lo dejaría).
+  if (alimento.dietistaId !== dietista?.id) notFound();
+  // El interruptor de compartir solo se enseña a quien tiene con quién: su centro o su clase.
+  const tieneEmpresa = !!dietista?.empresaId;
+  const compartirCon = tieneEmpresa ? "centro" : dietista?.rolDocente === "PROFESOR" ? "clase" : null;
 
   return (
     <div>
@@ -41,6 +42,7 @@ export default async function EditarAlimentoPage({ params }: Props) {
       <AlimentoForm
         alimentoId={alimento.id}
         tieneEmpresa={tieneEmpresa}
+        compartirCon={compartirCon}
         defaultValues={{
           nombre: alimento.nombre,
           categoria: alimento.categoria,

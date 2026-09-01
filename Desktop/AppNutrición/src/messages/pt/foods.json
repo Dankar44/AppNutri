@@ -55,7 +55,8 @@
     "importado": "Importado",
     "personalizado": "Personalizado",
     "compartido": "Partilhado",
-    "deCentro": "Do centro"
+    "deCentro": "Do centro",
+    "deClase": "Da minha turma"
   },
   "detail": {
     "volverAAlimentos": "Voltar para alimentos",
@@ -113,7 +114,9 @@
     "alimentoCreado": "Alimento criado",
     "errorGuardar": "Erro ao salvar o alimento",
     "compartirConCentro": "Partilhar com o centro",
-    "compartirConCentroDesc": "Os membros do seu centro poderão ver e usar este alimento."
+    "compartirConCentroDesc": "Os membros do seu centro poderão ver e usar este alimento.",
+    "compartirConClase": "Partilhar com as minhas turmas",
+    "compartirConClaseDesc": "Os seus alunos vão vê-lo na lista e podem copiá-lo para o modificar. O seu não é alterado."
   },
   "importar": {
     "volverAAlimentos": "Voltar para alimentos",

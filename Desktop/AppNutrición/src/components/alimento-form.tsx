@@ -58,9 +58,14 @@ interface AlimentoFormProps {
   alimentoId?: string;
   defaultValues?: AlimentoFormData;
   tieneEmpresa?: boolean;
+  /**
+   * Con quién se comparte, o null si esta persona no tiene con quién. Va como texto y no como
+   * componente porque cruza el límite servidor→cliente.
+   */
+  compartirCon?: "centro" | "clase" | null;
 }
 
-export function AlimentoForm({ alimentoId, defaultValues, tieneEmpresa = false }: AlimentoFormProps) {
+export function AlimentoForm({ alimentoId, defaultValues, tieneEmpresa = false, compartirCon = null }: AlimentoFormProps) {
   const router = useRouter();
   const t = useTranslations("foods");
   const tc = useTranslations("common.deploy");
@@ -131,7 +136,8 @@ export function AlimentoForm({ alimentoId, defaultValues, tieneEmpresa = false }
       enlaceProducto: (form.get("enlaceProducto") as string)?.trim() || null,
       imagenUrl: (form.get("imagenUrl") as string)?.trim() || null,
       micronutrientes: parseMicros(form),
-      ...(tieneEmpresa ? { stock: stockVal, precioUnitario: precioVal, stockMinimo: stockMinimoVal, compartido } : {}),
+      ...(tieneEmpresa ? { stock: stockVal, precioUnitario: precioVal, stockMinimo: stockMinimoVal } : {}),
+      ...(compartirCon ? { compartido } : {}),
     };
 
     try {
@@ -406,7 +412,7 @@ export function AlimentoForm({ alimentoId, defaultValues, tieneEmpresa = false }
         )}
       </section>
 
-      {tieneEmpresa && (
+      {compartirCon && (
         <section className="bg-card rounded-xl border border-border p-4 sm:p-6">
           <label className="flex items-center gap-3 cursor-pointer">
             <input
@@ -416,8 +422,12 @@ export function AlimentoForm({ alimentoId, defaultValues, tieneEmpresa = false }
               className="w-4 h-4 rounded border-border text-primary focus:ring-primary/30"
             />
             <div>
-              <span className="text-sm font-medium">{t("form.compartirConCentro")}</span>
-              <p className="text-xs text-muted-foreground">{t("form.compartirConCentroDesc")}</p>
+              <span className="text-sm font-medium">
+                {compartirCon === "clase" ? t("form.compartirConClase") : t("form.compartirConCentro")}
+              </span>
+              <p className="text-xs text-muted-foreground">
+                {compartirCon === "clase" ? t("form.compartirConClaseDesc") : t("form.compartirConCentroDesc")}
+              </p>
             </div>
           </label>
         </section>

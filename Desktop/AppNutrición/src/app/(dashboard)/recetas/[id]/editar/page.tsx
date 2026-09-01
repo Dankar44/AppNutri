@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { getReceta } from "@/app/actions/recetas";
 import { RecetaForm } from "@/components/receta-form";
+import { getCurrentDietista } from "@/app/actions/auth";
 import type { IngredienteItem } from "@/components/ingrediente-list";
 
 interface Props {
@@ -12,8 +13,18 @@ interface Props {
 
 export default async function EditarRecetaPage({ params }: Props) {
   const { id } = await params;
-  const [receta, t] = await Promise.all([getReceta(id), getTranslations("recipes")]);
+  const [receta, t, dietista] = await Promise.all([
+    getReceta(id), getTranslations("recipes"), getCurrentDietista(),
+  ]);
   if (!receta) notFound();
+  // Solo se edita lo propio: lo que le comparten se ve y se copia, pero no se toca.
+  if (receta.dietistaId !== dietista?.id) notFound();
+
+  const compartirCon = dietista?.empresaId
+    ? ("centro" as const)
+    : dietista?.rolDocente === "PROFESOR"
+      ? ("clase" as const)
+      : null;
 
   const ingredientes: IngredienteItem[] = receta.ingredientes.map((ing) => ({
     alimentoId: ing.alimentoId,
@@ -49,8 +60,10 @@ export default async function EditarRecetaPage({ params }: Props) {
           instrucciones: receta.instrucciones || undefined,
           porciones: receta.porciones,
           tiempoPreparacion: receta.tiempoPreparacion,
+          compartido: receta.compartido,
         }}
         defaultIngredientes={ingredientes}
+        compartirCon={compartirCon}
       />
     </div>
   );

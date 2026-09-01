@@ -2,9 +2,19 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { RecetaForm } from "@/components/receta-form";
+import { getCurrentDietista } from "@/app/actions/auth";
+
+/** Con quién puede compartir: su centro, su clase (si es profesor) o nadie. */
+async function conQuienComparte() {
+  const dietista = await getCurrentDietista();
+  if (dietista?.empresaId) return "centro" as const;
+  if (dietista?.rolDocente === "PROFESOR") return "clase" as const;
+  return null;
+}
 
 export default async function NuevaRecetaPage() {
   const t = await getTranslations("recipes");
+  const compartirCon = await conQuienComparte();
 
   return (
     <div>
@@ -21,7 +31,7 @@ export default async function NuevaRecetaPage() {
           {t("nueva.descripcion")}
         </p>
       </div>
-      <RecetaForm />
+      <RecetaForm compartirCon={compartirCon} />
     </div>
   );
 }

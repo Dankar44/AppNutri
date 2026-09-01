@@ -11,6 +11,7 @@ import { PorcionCalculator } from "@/components/alimento/porcion-calculator";
 import { MicronutrientesCard } from "@/components/alimento/micronutrientes-card";
 import { StockInfoCard } from "@/components/alimento/stock-info-card";
 import { getCurrentDietista } from "@/app/actions/auth";
+import { CopiarMaterialButton } from "@/components/copiar-material-button";
 
 const CATEGORIA_KEY_MAP: Record<string, string> = {
   FRUTAS: "frutas", VERDURAS: "verduras", CEREALES: "cereales",
@@ -50,11 +51,10 @@ export default async function AlimentoDetailPage({ params }: Props) {
 
   const t = await getTranslations("foods");
   const dietista = await getCurrentDietista();
-  let tieneEmpresa = false;
-  if (dietista) {
-    const d = await prisma.dietista.findUnique({ where: { id: dietista.id }, select: { empresaId: true } });
-    tieneEmpresa = !!d?.empresaId;
-  }
+  const tieneEmpresa = !!dietista?.empresaId;
+  // Puede estar viendo un alimento que le comparten (su centro o su profesor): entonces ni se
+  // edita ni se borra, se copia.
+  const esMio = !!alimento.dietistaId && alimento.dietistaId === dietista?.id;
 
   return (
     <div>
@@ -108,7 +108,7 @@ export default async function AlimentoDetailPage({ params }: Props) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {alimento.dietistaId && (
+            {esMio && (
               <>
                 <Link
                   href={`/alimentos/${alimento.id}/editar`}
@@ -120,6 +120,8 @@ export default async function AlimentoDetailPage({ params }: Props) {
                 <AlimentoActions alimentoId={alimento.id} />
               </>
             )}
+            {/* Lo que le comparten no se edita: se copia y la copia ya es suya. */}
+            {!esMio && <CopiarMaterialButton id={alimento.id} tipo="alimento" />}
           </div>
         </div>
       </div>

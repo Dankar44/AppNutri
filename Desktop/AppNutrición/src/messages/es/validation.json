@@ -83,7 +83,8 @@
     "unidadNoValida": "Unidad no válida",
     "urlImagenNoValida": "La URL de imagen no es válida",
     "yaExisteNombre": "Ya existe un alimento con ese nombre",
-    "enlaceNoValido": "El enlace no es una URL válida"
+    "enlaceNoValido": "El enlace no es una URL válida",
+    "alimentoNoEncontrado": "No se ha encontrado el alimento"
   },
   "generacionIA": {
     "generacionNoEncontrada": "Generación no encontrada",

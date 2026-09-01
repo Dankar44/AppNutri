@@ -14,7 +14,8 @@ import { buscarAlimentosOFF, type AlimentoAPIResult } from "@/lib/openfoodfacts"
 import { normalizarNombreAlimento, redondearMacros, normalizarParaBusqueda } from "@/lib/alimento-utils";
 import { sanitizeString, validateNumber, validateEnum, validateUrl, validateImageUrl, sanitizeSearch, LIMITS } from "@/lib/validation";
 import { type MicroKey, MICRO_KEYS } from "@/lib/micronutrientes";
-import { getCompanyMemberIds } from "@/lib/empresa-utils";
+import { getCompanyMemberIds, getMaterialMemberIds, puedeCompartirMaterial } from "@/lib/empresa-utils";
+import { isNextNavigation } from "@/lib/utils";
 
 export interface AlimentoFormData {
   nombre: string;
@@ -118,7 +119,7 @@ export async function crearAlimento(data: AlimentoFormData) {
       enlaceProducto: enlaceValidado,
       imagenUrl: imagenUrlValidada,
       origen: "PERSONALIZADO",
-      compartido: empresaId ? (data.compartido ?? false) : false,
+      compartido: (await puedeCompartirMaterial(dietista)) ? (data.compartido ?? false) : false,
       ...micros,
       ...stockData,
     },
@@ -176,7 +177,7 @@ export async function actualizarAlimento(id: string, data: AlimentoFormData) {
       unidad: data.unidad,
       enlaceProducto: enlaceValidado,
       imagenUrl: imagenUrlValidada,
-      ...(empresaId && data.compartido !== undefined ? { compartido: data.compartido } : {}),
+      ...((await puedeCompartirMaterial(dietista)) && data.compartido !== undefined ? { compartido: data.compartido } : {}),
       ...micros,
     },
   });
@@ -265,8 +266,7 @@ export async function getAlimentosPaginados(
   const dietista = await getCurrentDietista();
   if (!dietista) return { alimentos: [], total: 0, nextCursor: null as string | null };
 
-  const empresaId = await getEmpresaId(dietista.id);
-  const memberIds = await getCompanyMemberIds(dietista.id, empresaId);
+  const memberIds = await getMaterialMemberIds(dietista);
 
   const busquedaSanitizada = busqueda ? sanitizeSearch(busqueda) : undefined;
   const f = macroFilters || {};
@@ -403,8 +403,7 @@ export async function getAlimento(id: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) return null;
 
-  const empresaId = await getEmpresaId(dietista.id);
-  const memberIds = await getCompanyMemberIds(dietista.id, empresaId);
+  const memberIds = await getMaterialMemberIds(dietista);
 
   const otherMemberIds = memberIds.filter((mid) => mid !== dietista.id);
   return prisma.alimento.findFirst({
@@ -488,8 +487,7 @@ export async function buscarEquivalentes(
   const dietista = await getCurrentDietista();
   if (!dietista) return [];
 
-  const empresaId = await getEmpresaId(dietista.id);
-  const memberIds = await getCompanyMemberIds(dietista.id, empresaId);
+  const memberIds = await getMaterialMemberIds(dietista);
 
   const search = busqueda ? sanitizeSearch(busqueda) : undefined;
 
@@ -554,4 +552,56 @@ export async function buscarEquivalentes(
   }
 
   return todos;
+}
+
+/**
+ * #39 — Copiar a mis alimentos lo que me comparten.
+ *
+ * El alumno puede coger el alimento del profesor y tocarlo sin miedo: se lleva una copia suya y
+ * el original no se entera. Vale igual para el material del centro. Lo que no se copia es lo que
+ * no se ve: si no lo tenía compartido, aquí no llega.
+ */
+export async function copiarAlimento(id: string): Promise<{ ok: boolean; error?: string; id?: string }> {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
+  if (dietista.isDemo) return { ok: false, error: t("auth.noAutorizado") };
+
+  const memberIds = await getMaterialMemberIds(dietista);
+  const otros = memberIds.filter((m) => m !== dietista.id);
+
+  const original = await prisma.alimento.findFirst({
+    where: {
+      id,
+      OR: [
+        { dietistaId: null },
+        ...(otros.length > 0 ? [{ dietistaId: { in: otros }, compartido: true }] : []),
+      ],
+    },
+  });
+  if (!original) return { ok: false, error: t("alimento.alimentoNoEncontrado") };
+
+  try {
+    const { id: _id, dietistaId: _d, createdAt: _c, updatedAt: _u, compartido: _comp,
+            stock: _s, precioUnitario: _p, stockMinimo: _sm, ...campos } = original;
+    void _id; void _d; void _c; void _u; void _comp; void _s; void _p; void _sm;
+
+    const nombre = sanitizeString(`${original.nombre} (copia)`, LIMITS.NOMBRE);
+    const copia = await prisma.alimento.create({
+      data: {
+        ...campos,
+        nombre,
+        nombreNormalizado: normalizarParaBusqueda(nombre),
+        dietistaId: dietista.id,
+        // La copia es suya y empieza sin compartir: ya decidirá él.
+        compartido: false,
+      },
+    });
+    revalidatePath("/alimentos");
+    return { ok: true, id: copia.id };
+  } catch (e) {
+    if (isNextNavigation(e)) throw e;
+    console.error("[alimentos] Error copiando alimento:", e);
+    return { ok: false, error: t("general.errorDesconocido") };
+  }
 }

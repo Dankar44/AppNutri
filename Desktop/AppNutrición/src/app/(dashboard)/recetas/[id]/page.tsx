@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import { getCurrentDietista } from "@/app/actions/auth";
+import { CopiarMaterialButton } from "@/components/copiar-material-button";
 import Link from "next/link";
 import { ArrowLeft, Pencil, Clock, Sparkles } from "lucide-react";
 import { getTranslations } from "next-intl/server";
@@ -18,8 +20,11 @@ interface Props {
 
 export default async function RecetaDetailPage({ params }: Props) {
   const { id } = await params;
-  const [receta, t] = await Promise.all([getReceta(id), getTranslations("recipes")]);
+  const [receta, t, dietista] = await Promise.all([
+    getReceta(id), getTranslations("recipes"), getCurrentDietista(),
+  ]);
   if (!receta) notFound();
+  const esMia = !receta.esGlobal && receta.dietistaId === dietista?.id;
 
   // Peso real en gramos: convertir cada ingrediente según su unidad (ud, ml…) y la porción
   // del alimento — sumar la cantidad cruda daba "100 g" para "100 ud" (bug).
@@ -71,7 +76,7 @@ export default async function RecetaDetailPage({ params }: Props) {
             {receta.esGlobal && (
               <FavoritoButton recetaId={receta.id} inicial={receta.favorito} />
             )}
-            {!receta.esGlobal && (
+            {esMia && (
               <>
                 <Link
                   href={`/recetas/${receta.id}/editar`}
@@ -83,6 +88,8 @@ export default async function RecetaDetailPage({ params }: Props) {
                 <RecetaActions recetaId={receta.id} />
               </>
             )}
+            {/* Ni la global ni la que le comparten se editan: se copian. */}
+            {!esMia && !receta.esGlobal && <CopiarMaterialButton id={receta.id} tipo="receta" />}
           </div>
         </div>
       </div>
