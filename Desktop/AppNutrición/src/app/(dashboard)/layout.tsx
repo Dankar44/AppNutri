@@ -80,6 +80,7 @@ export default async function DashboardLayout({
             isAdmin={isAdminEmail(dietista.email)}
             hasEmpresa={!!dietista.empresaId}
             esProfesor={profesor}
+            esAlumno={dietista.rolDocente === "ALUMNO"}
           />
           <main className="flex-1 overflow-y-auto min-w-0 bg-background">
             <div className="w-full max-w-none pt-14 lg:pt-6 lg:px-5 pb-safe lg:pb-6">

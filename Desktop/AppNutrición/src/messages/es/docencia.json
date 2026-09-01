@@ -39,7 +39,8 @@
     "tituloAlumno": "Crea tu cuenta de alumno",
     "explicacionAlumno": "Elige tu contraseña y ya está. Es la cuenta de tus prácticas: no tienes que pagar nada.",
     "claseEtiqueta": "Clase: {clase}",
-    "tituloNoValida": "Invitación a Annonia"
+    "tituloNoValida": "Invitación a Annonia",
+    "otraSesion": "Ahora mismo estás dentro con la cuenta {correo}. Al crear esta cuenta se cerrará esa sesión para que puedas entrar con la nueva."
   },
   "clases": {
     "titulo": "Clases",
@@ -89,7 +90,14 @@
     "acabaProntoTitulo": "{dias, plural, =0 {El curso termina hoy} one {El curso termina mañana} other {Al curso le queda # días}}",
     "acabaProntoTexto": "{n, plural, one {Cuando llegue esa fecha, tu alumno dejará de entrar} other {Cuando llegue esa fecha, tus # alumnos dejarán de entrar}} y su trabajo quedará guardado. Si el curso sigue, edita la clase y cambia la fecha de fin.",
     "soloArchivadasTitulo": "No tienes ninguna clase en marcha",
-    "soloArchivadasTexto": "Las que has archivado siguen ahí, con todo su contenido: entra en «Ver las archivadas» para recuperarlas."
+    "soloArchivadasTexto": "Las que has archivado siguen ahí, con todo su contenido: entra en «Ver las archivadas» para recuperarlas.",
+    "conAcceso": "{n, plural, =0 {Nadie con acceso todavía} one {# alumno con acceso} other {# alumnos con acceso}}",
+    "retiradosTitulo": "{n, plural, one {# alumno retirado} other {# alumnos retirados}}",
+    "verRetirados": "Ver los retirados",
+    "ocultarRetirados": "Ocultar los retirados",
+    "quitarDeLaLista": "Quitar de la lista",
+    "quitarTexto": "{nombre} desaparece de esta clase, pero su cuenta y todo su trabajo siguen intactos. Si vuelve el curso que viene, basta con meter su correo otra vez.",
+    "quitado": "Quitado de la lista"
   },
   "clasePublica": {
     "titulo": "Únete a la clase",

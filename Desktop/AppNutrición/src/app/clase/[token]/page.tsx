@@ -2,6 +2,7 @@ import { GraduationCap, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { getClasePorToken } from "@/app/actions/clase-publica";
+import { getCurrentDietista } from "@/app/actions/auth";
 import { ApuntarseForm } from "./apuntarse-form";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +19,7 @@ export default async function ClasePublicaPage({
 }) {
   const { token } = await params;
   const clase = await getClasePorToken(token);
+  const sesionAbierta = (await getCurrentDietista())?.email ?? null;
   const t = await getTranslations("docencia");
 
   return (
@@ -55,7 +57,7 @@ export default async function ClasePublicaPage({
             <p className="text-amber-800/80 dark:text-amber-200/70 mt-1">{t("clasePublica.sinPlazasTexto")}</p>
           </div>
         ) : (
-          <ApuntarseForm token={token} dominios={clase.dominios} />
+          <ApuntarseForm token={token} dominios={clase.dominios} sesionAbierta={sesionAbierta} />
         )}
       </div>
     </div>

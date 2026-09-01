@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Users, Archive, AlertTriangle, CalendarOff, CalendarClock } from "lucide-react";
+import { ArrowLeft, AlertTriangle, CalendarOff, CalendarClock } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireProfesor } from "@/app/actions/docencia";
 import { getClase } from "@/app/actions/clases";
@@ -9,7 +9,7 @@ import { cursoTerminado, diasDeCursoQueQuedan } from "@/lib/docencia";
 import { getLocale } from "@/i18n/locale";
 import { AccionesClase } from "./acciones-clase";
 import { AltaAlumnos } from "./alta-alumnos";
-import { AccesoAlumno } from "./acceso-alumno";
+import { ListaAlumnos } from "./lista-alumnos";
 import { getPlazasLibres } from "@/app/actions/alumnos";
 
 export default async function ClaseDetallePage({
@@ -105,47 +105,21 @@ export default async function ClaseDetallePage({
         />
       )}
 
-      <section>
-        <h2 className="text-lg font-semibold mb-3">
-          {t("clases.alumnosTitulo", { n: clase.alumnosActivos })}
-        </h2>
-
-        {clase.alumnos.length === 0 ? (
-          <div className="text-center py-10 lg:border lg:border-dashed lg:border-border lg:rounded-xl">
-            <Users strokeWidth={1.5} className="w-10 h-10 text-muted-foreground/40 mx-auto mb-2" />
-            <p className="text-sm font-medium">{t("clases.sinAlumnosTitulo")}</p>
-            <p className="text-xs text-muted-foreground mt-1">{t("clases.sinAlumnosTexto")}</p>
-          </div>
-        ) : (
-          <div className="divide-y divide-border lg:border lg:border-border lg:rounded-xl lg:overflow-hidden">
-            {clase.alumnos.map((a) => (
-              <div key={a.id} className="flex items-center gap-3 py-3 lg:px-4">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate">
-                    {a.nombre} {a.apellidos}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {a.email}
-                    {" · "}
-                    {a.ultimoAcceso
-                      ? t("clases.ultimoAcceso", { fecha: formatDate(a.ultimoAcceso, locale) })
-                      : t("clases.nuncaHaEntrado")}
-                  </p>
-                </div>
-                {!a.activa && (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground shrink-0">
-                    <Archive className="w-3 h-3" />
-                    {t("clases.accesoRetirado")}
-                  </span>
-                )}
-                {!clase.archivada && (
-                  <AccesoAlumno claseId={clase.id} alumnoId={a.id} nombre={`${a.nombre} ${a.apellidos}`} activa={a.activa} />
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+      <ListaAlumnos
+        claseId={clase.id}
+        claseArchivada={clase.archivada}
+        alumnos={clase.alumnos.map((a) => ({
+          id: a.id,
+          nombre: a.nombre,
+          apellidos: a.apellidos,
+          email: a.email,
+          activa: a.activa,
+          // La fecha se formatea aquí: el componente de cliente no sabe de idiomas.
+          ultimoAcceso: a.ultimoAcceso
+            ? t("clases.ultimoAcceso", { fecha: formatDate(a.ultimoAcceso, locale) })
+            : t("clases.nuncaHaEntrado"),
+        }))}
+      />
     </div>
   );
 }

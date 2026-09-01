@@ -217,11 +217,12 @@ async function main() {
     }
     // El material lleva la marca del espacio para que al entrar no se le cambie el menú por el de
     // nutricionista y desaparezca "Clases" (auditoría 1 sep 2026).
-    for (const dentro of ["/dietas", "/alimentos", "/recetas"]) {
+    // Ajustes y Novedades también van marcados: son de la cuenta entera, y sin la marca el menú
+    // se cambiaba por el de nutricionista al entrar (Guillermo, 1 sep 2026).
+    for (const dentro of ["/dietas", "/alimentos", "/recetas", "/ajustes", "/novedades"]) {
       comprobar(`pero sí ${dentro}, con la marca del espacio`,
         espacio.cuerpo.includes(`href="${dentro}?espacio=docente"`));
     }
-    comprobar("y ajustes", espacio.cuerpo.includes('href="/ajustes"'));
 
     const panelProfesor = await pedir("/dashboard", sesion);
     comprobar("el panel NO expulsa al profesor", panelProfesor.estado === 200 && !/http-equiv="refresh"/.test(panelProfesor.cuerpo), `estado ${panelProfesor.estado}`);

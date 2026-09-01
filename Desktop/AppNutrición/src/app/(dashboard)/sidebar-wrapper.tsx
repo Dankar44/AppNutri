@@ -11,6 +11,7 @@ interface SidebarWrapperProps {
   isAdmin?: boolean;
   hasEmpresa?: boolean;
   esProfesor?: boolean;
+  esAlumno?: boolean;
 }
 
 export function SidebarWrapper({
@@ -22,6 +23,7 @@ export function SidebarWrapper({
   isAdmin,
   hasEmpresa,
   esProfesor,
+  esAlumno,
 }: SidebarWrapperProps) {
   return (
     <Sidebar
@@ -35,6 +37,7 @@ export function SidebarWrapper({
       isAdmin={isAdmin}
       hasEmpresa={hasEmpresa}
       esProfesor={esProfesor}
+      esAlumno={esAlumno}
     />
   );
 }

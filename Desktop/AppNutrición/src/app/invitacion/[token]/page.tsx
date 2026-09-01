@@ -2,6 +2,7 @@ import { GraduationCap, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { getInvitacionPorToken } from "@/app/actions/invitaciones-docentes";
+import { getCurrentDietista } from "@/app/actions/auth";
 import { AceptarInvitacionForm } from "./aceptar-form";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +19,10 @@ export default async function InvitacionPage({
   const { token } = await params;
   const invitacion = await getInvitacionPorToken(token);
   const t = await getTranslations("docencia");
+  // Es normalísimo que el profesor abra el enlace en su propio navegador para probarlo: si no se
+  // le dice nada, crea la cuenta del alumno y acaba aterrizando en SU espacio docente sin
+  // entender por qué (Guillermo, 1 sep 2026).
+  const sesionAbierta = (await getCurrentDietista())?.email ?? null;
 
   return (
     <div className="min-h-dvh flex items-center justify-center bg-background p-4">
@@ -62,7 +67,12 @@ export default async function InvitacionPage({
             </Link>
           </div>
         ) : (
-          <AceptarInvitacionForm token={token} email={invitacion.email} rol={invitacion.rol} />
+          <AceptarInvitacionForm
+            token={token}
+            email={invitacion.email}
+            rol={invitacion.rol}
+            sesionAbierta={sesionAbierta}
+          />
         )}
       </div>
     </div>

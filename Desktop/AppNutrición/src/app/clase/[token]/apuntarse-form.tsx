@@ -5,9 +5,19 @@ import { Eye, EyeOff, Loader2, UserPlus, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { apuntarseAClase } from "@/app/actions/clase-publica";
+import { signOut } from "@/app/actions/auth";
 import { emailDelDominio } from "@/lib/docencia";
 
-export function ApuntarseForm({ token, dominios }: { token: string; dominios: string[] }) {
+export function ApuntarseForm({
+  token,
+  dominios,
+  sesionAbierta,
+}: {
+  token: string;
+  dominios: string[];
+  /** Correo de quien ya está dentro en este navegador, si hay alguien. */
+  sesionAbierta: string | null;
+}) {
   const t = useTranslations("docencia");
   const [isPending, startTransition] = useTransition();
   const [nombre, setNombre] = useState("");
@@ -27,6 +37,12 @@ export function ApuntarseForm({ token, dominios }: { token: string; dominios: st
       const result = await apuntarseAClase({ token, nombre, apellidos, email, password });
       if (result.ok) {
         toast.success(result.yaTeniaCuenta ? t("clasePublica.yaTeniaCuenta") : t("invitacion.cuentaCreada"));
+        // Si había otra sesión abierta (el profesor probando el enlace), se cierra: si no, al ir
+        // a /login entraría con SU cuenta y parecería que la del alumno no se ha creado.
+        if (sesionAbierta) {
+          await signOut();
+          return;
+        }
         window.location.href = "/login";
       } else {
         toast.error(result.error || t("invitacion.errorGenerico"));
@@ -40,6 +56,13 @@ export function ApuntarseForm({ token, dominios }: { token: string; dominios: st
   return (
     <form onSubmit={handleSubmit} className="bg-card border border-border rounded-xl p-5 space-y-4">
       <p className="text-sm text-muted-foreground">{t("clasePublica.explicacion")}</p>
+
+      {sesionAbierta && (
+        <div className="flex gap-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 rounded-lg p-3">
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-px" />
+          <span>{t("invitacion.otraSesion", { correo: sesionAbierta })}</span>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <div>

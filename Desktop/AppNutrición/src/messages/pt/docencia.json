@@ -39,7 +39,8 @@
     "tituloAlumno": "Crie a sua conta de aluno",
     "explicacionAlumno": "Escolha a sua palavra-passe e pronto. É a conta das suas práticas: não tem de pagar nada.",
     "claseEtiqueta": "Turma: {clase}",
-    "tituloNoValida": "Convite para a Annonia"
+    "tituloNoValida": "Convite para a Annonia",
+    "otraSesion": "Neste momento está dentro com a conta {correo}. Ao criar esta conta, essa sessão será fechada para que possa entrar com a nova."
   },
   "clases": {
     "titulo": "Turmas",
@@ -89,7 +90,14 @@
     "acabaProntoTitulo": "{dias, plural, =0 {O ano letivo termina hoje} one {O ano letivo termina amanhã} other {Faltam # dias para o fim do ano letivo}}",
     "acabaProntoTexto": "{n, plural, one {Quando chegar essa data, o seu aluno deixará de entrar} other {Quando chegar essa data, os seus # alunos deixarão de entrar}} e o trabalho fica guardado. Se o ano continua, edite a turma e mude a data de fim.",
     "soloArchivadasTitulo": "Não tem nenhuma turma a decorrer",
-    "soloArchivadasTexto": "As que arquivou continuam lá, com todo o conteúdo: entre em «Ver as arquivadas» para as recuperar."
+    "soloArchivadasTexto": "As que arquivou continuam lá, com todo o conteúdo: entre em «Ver as arquivadas» para as recuperar.",
+    "conAcceso": "{n, plural, =0 {Ainda ninguém com acesso} one {# aluno com acesso} other {# alunos com acesso}}",
+    "retiradosTitulo": "{n, plural, one {# aluno retirado} other {# alunos retirados}}",
+    "verRetirados": "Ver os retirados",
+    "ocultarRetirados": "Ocultar os retirados",
+    "quitarDeLaLista": "Retirar da lista",
+    "quitarTexto": "{nombre} desaparece desta turma, mas a conta e todo o trabalho ficam intactos. Se voltar no próximo ano, basta pôr o correio outra vez.",
+    "quitado": "Retirado da lista"
   },
   "clasePublica": {
     "titulo": "Junte-se à turma",

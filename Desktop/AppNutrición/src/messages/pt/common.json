@@ -34,7 +34,8 @@
     "cerrarSesion": "Sair",
     "cerrarSesionTitle": "Sair",
     "abrirMenu": "Abrir menu",
-    "profesor": "Professor"
+    "profesor": "Professor",
+    "alumno": "Aluno"
   },
   "patientNav": {
     "miPlan": "Meu plano",

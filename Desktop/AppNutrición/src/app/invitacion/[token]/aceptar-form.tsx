@@ -5,16 +5,21 @@ import { Eye, EyeOff, Loader2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { aceptarInvitacionDocente } from "@/app/actions/invitaciones-docentes";
+import { signOut } from "@/app/actions/auth";
+import { AlertTriangle } from "lucide-react";
 
 export function AceptarInvitacionForm({
   token,
   email,
   rol,
+  sesionAbierta,
 }: {
   token: string;
   email: string;
   // Como string y no como componente: por el límite servidor→cliente no se pasan funciones.
   rol: "PROFESOR" | "ALUMNO";
+  /** Correo de quien ya está dentro en este navegador, si hay alguien. */
+  sesionAbierta: string | null;
 }) {
   const t = useTranslations("docencia");
   const [isPending, startTransition] = useTransition();
@@ -29,6 +34,12 @@ export function AceptarInvitacionForm({
       const result = await aceptarInvitacionDocente({ token, nombre, apellidos, password });
       if (result.ok) {
         toast.success(t("invitacion.cuentaCreada"));
+        // Si había otra sesión abierta (el profesor probando), se cierra: si no, al ir a /login
+        // se le colaría dentro con SU cuenta y parecería que la del alumno no se ha creado.
+        if (sesionAbierta) {
+          await signOut();
+          return;
+        }
         // Recarga completa para que el servidor vea la sesión nueva al identificarse.
         window.location.href = "/login";
       } else {
@@ -45,6 +56,13 @@ export function AceptarInvitacionForm({
       <p className="text-sm text-muted-foreground">
         {t(rol === "ALUMNO" ? "invitacion.explicacionAlumno" : "invitacion.explicacion")}
       </p>
+
+      {sesionAbierta && (
+        <div className="flex gap-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 rounded-lg p-3">
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-px" />
+          <span>{t("invitacion.otraSesion", { correo: sesionAbierta })}</span>
+        </div>
+      )}
 
       <div>
         <label className="text-xs font-medium text-muted-foreground">{t("invitacion.correo")}</label>

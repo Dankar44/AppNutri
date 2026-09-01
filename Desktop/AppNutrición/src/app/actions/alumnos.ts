@@ -276,3 +276,41 @@ export async function correoEsDelDominio(email: string): Promise<boolean> {
   const profesor = await requireProfesor();
   return emailDelDominio(email, profesor.licencia?.dominioEmail ?? null);
 }
+
+/**
+ * Quitar a un alumno de la lista de la clase.
+ *
+ * Solo se puede con el acceso ya retirado, y es lo que pidió Guillermo (1 sep 2026): un profesor
+ * que da la misma asignatura cinco años tendría la ficha llena de gente de cursos pasados. Borra
+ * la MATRÍCULA, no la cuenta: el alumno conserva todo su trabajo y, si vuelve, basta con volver a
+ * meter su correo.
+ */
+export async function quitarDeLaClase(
+  claseId: string,
+  alumnoId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const profesor = await requireProfesor();
+  const t = await getTranslations("validation");
+
+  const clase = await prisma.clase.findFirst({
+    where: { id: claseId, profesorId: profesor.dietistaId },
+    select: { id: true },
+  });
+  if (!clase) return { ok: false, error: t("docencia.claseNoEncontrada") };
+
+  try {
+    // Con el acceso puesto no se borra: primero se le retira, y así nadie desaparece de un clic.
+    const { count } = await prisma.alumnoClase.deleteMany({
+      where: { claseId, alumnoId, activa: false },
+    });
+    if (count === 0) return { ok: false, error: t("docencia.retiraAntesElAcceso") };
+
+    revalidatePath(`/profesor/clases/${claseId}`);
+    revalidatePath("/profesor/clases");
+    return { ok: true };
+  } catch (e) {
+    if (isNextNavigation(e)) throw e;
+    console.error("[docencia] Error quitando al alumno de la clase:", e);
+    return { ok: false, error: t("general.errorDesconocido") };
+  }
+}

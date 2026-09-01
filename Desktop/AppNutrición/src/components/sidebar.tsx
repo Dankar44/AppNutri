@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { esRutaDocente } from "@/lib/docencia";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { NotificationBell } from "@/components/notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -84,8 +84,8 @@ function seccionesDocentes(t: (key: string) => string, opts?: { isAdmin?: boolea
       items: [
         // El paso a su consulta, en el menú y no solo dentro de la página: es donde se busca.
         { href: "/dashboard", label: t("navItems.miCuentaProfesional"), icon: Briefcase },
-        { href: "/ajustes", label: t("navItems.ajustes"), icon: Settings },
-        { href: "/novedades", label: t("navItems.novedades"), icon: Sparkles, externo: true },
+        { href: "/ajustes?espacio=docente", label: t("navItems.ajustes"), icon: Settings },
+        { href: "/novedades?espacio=docente", label: t("navItems.novedades"), icon: Sparkles, externo: true },
         ...(opts?.isAdmin
           ? [{ href: "/admin-login", label: t("navItems.admin"), icon: ShieldCheck, admin: true as const }]
           : []),
@@ -145,8 +145,8 @@ function getNavSections(
       title: t("nav.centroDeControl"),
       items: [
         { href: "/reportes", label: t("navItems.reportes"), icon: FileBarChart },
-        { href: "/ajustes", label: t("navItems.ajustes"), icon: Settings },
-        { href: "/novedades", label: t("navItems.novedades"), icon: Sparkles, externo: true },
+        { href: "/ajustes?espacio=docente", label: t("navItems.ajustes"), icon: Settings },
+        { href: "/novedades?espacio=docente", label: t("navItems.novedades"), icon: Sparkles, externo: true },
         ...(opts?.isAdmin
           ? [{ href: "/admin-login", label: t("navItems.admin"), icon: ShieldCheck, admin: true as const }]
           : []),
@@ -165,13 +165,25 @@ interface SidebarProps {
   isAdmin?: boolean;
   hasEmpresa?: boolean;
   esProfesor?: boolean;
+  /** Su cuenta viene de una clase: no es "nutricionista", es alumno, y hay que llamarle así. */
+  esAlumno?: boolean;
 }
 
-export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCount: mensajesCountInit = 0, badges: badgesInit = {}, isAdmin, hasEmpresa, esProfesor }: SidebarProps) {
+export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCount: mensajesCountInit = 0, badges: badgesInit = {}, isAdmin, hasEmpresa, esProfesor, esAlumno }: SidebarProps) {
   const t = useTranslations("common");
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const enEspacioDocente = esRutaDocente(pathname, searchParams.get("espacio"));
+
+  // De todas las direcciones del menú, la que más encaja con donde estamos. Se calcula una vez
+  // para que dos enlaces encadenados (/profesor y /profesor/clases) no se enciendan los dos.
+  const rutaActiva = useMemo(() => {
+    const todas = getNavSections(() => "", { isAdmin, hasEmpresa, esProfesor, enEspacioDocente })
+      .flatMap((s) => s.items.map((i) => i.href.split("?")[0]));
+    return todas
+      .filter((r) => pathname === r || pathname.startsWith(r + "/"))
+      .sort((a, b) => b.length - a.length)[0];
+  }, [pathname, isAdmin, hasEmpresa, esProfesor, enEspacioDocente]);
   const isDemo = useIsDemo();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -336,7 +348,10 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
                   ? pathname.startsWith("/admin-login") ||
                     pathname === "/admin" ||
                     pathname.startsWith("/admin/")
-                  : pathname === ruta || pathname.startsWith(ruta + "/");
+                  // Solo se enciende el enlace MÁS concreto: estando en /profesor/clases se
+                  // encendían a la vez "Inicio" (/profesor) y "Clases", porque una es prefijo
+                  // de la otra.
+                  : ruta === rutaActiva;
                 const badgeCount =
                   ruta === "/mensajes"
                     ? mensajesCount
@@ -416,7 +431,11 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
               <p className="text-sm font-medium truncate">{dietistaNombre}</p>
               {/* En el espacio docente pone "Profesor": es donde está y es lo que es allí. */}
               <p className="text-xs text-muted-foreground">
-                {esProfesor && enEspacioDocente ? t("sidebar.profesor") : t("sidebar.dietista")}
+                {esAlumno
+                  ? t("sidebar.alumno")
+                  : esProfesor && enEspacioDocente
+                    ? t("sidebar.profesor")
+                    : t("sidebar.dietista")}
               </p>
             </div>
           )}

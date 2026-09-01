@@ -102,11 +102,14 @@ export function esRutaDocente(pathname: string, espacio?: string | null): boolea
   // lleva `?espacio=docente` y así al entrar ahí no se le cambia el menú por el de nutricionista,
   // que era lo que hacía desaparecer "Clases" al primer clic. Sigue siendo un enlace normal, sin
   // efectos: el prefetch puede dispararlo tantas veces como quiera.
-  return espacio === "docente" && RUTAS_DE_MATERIAL.some((r) => pathname === r || pathname.startsWith(`${r}/`));
+  return espacio === "docente" && RUTAS_COMPARTIDAS.some((r) => pathname === r || pathname.startsWith(`${r}/`));
 }
 
-/** Lo que el profesor comparte con su clase, y que también usa en su consulta. */
-export const RUTAS_DE_MATERIAL = ["/dietas", "/alimentos", "/recetas"] as const;
+/**
+ * Rutas que son de los DOS espacios: el material que el profesor comparte con su clase y que
+ * también usa en su consulta, más los ajustes y las novedades, que son de la cuenta entera.
+ */
+export const RUTAS_COMPARTIDAS = ["/dietas", "/alimentos", "/recetas", "/ajustes", "/novedades"] as const;
 
 /**
  * ¿Se ha acabado ya el curso de una clase?
