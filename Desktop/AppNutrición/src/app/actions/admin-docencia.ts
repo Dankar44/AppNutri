@@ -16,6 +16,7 @@ import { getTranslations } from "next-intl/server";
 import { isNextNavigation } from "@/lib/utils";
 import { sanitizeString, sanitizeStringOptional } from "@/lib/validation";
 import { crearCuentaNutricionista } from "./admin";
+import { contarAlumnosDeLicencia } from "@/lib/docencia-bolsa";
 
 export interface LicenciaDocenteItem {
   id: string;
@@ -83,7 +84,10 @@ function revalidarDocencia() {
 async function contarMiembros(licenciaId: string) {
   const [profesores, alumnos] = await Promise.all([
     prisma.dietista.count({ where: { licenciaDocenteId: licenciaId, rolDocente: "PROFESOR" } }),
-    prisma.dietista.count({ where: { licenciaDocenteId: licenciaId, rolDocente: "ALUMNO" } }),
+    // Los alumnos se cuentan por la regla de la bolsa (alumnos distintos con acceso activo), no
+    // por la columna de la licencia: quien está en dos clases ocupa una plaza, y a quien se le
+    // retiró el acceso no ocupa ninguna.
+    contarAlumnosDeLicencia(licenciaId),
   ]);
   return { profesores, alumnos };
 }
@@ -390,10 +394,18 @@ export async function quitarRolDocente(dietistaId: string): Promise<{ ok: boolea
   const t = await getTranslations("validation");
 
   try {
-    await prisma.dietista.update({
-      where: { id: dietistaId },
-      data: { rolDocente: null, licenciaDocenteId: null },
-    });
+    // Sus clases se archivan, no se borran: los alumnos conservan su trabajo y todo vuelve si el
+    // rol se le devuelve o si la clase pasa a otro profesor. Decidido con Guillermo el 30 ago 2026.
+    await prisma.$transaction([
+      prisma.clase.updateMany({
+        where: { profesorId: dietistaId, archivada: false },
+        data: { archivada: true, archivadaAt: new Date() },
+      }),
+      prisma.dietista.update({
+        where: { id: dietistaId },
+        data: { rolDocente: null, licenciaDocenteId: null },
+      }),
+    ]);
     revalidarDocencia();
     return { ok: true };
   } catch (e) {

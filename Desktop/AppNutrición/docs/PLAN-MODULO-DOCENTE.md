@@ -200,22 +200,22 @@ Arrancado el 30 ago 2026. Verificación cada bloque y auditoría al final, como 
 
 ### Bloque C · Modelo de clases y matrículas (35-50)
 
-35. [ ] Migración: tabla `clases` (profesor, licencia, nombre, curso, token, estado, archivada).
-36. [ ] `ALTER TABLE public.clases ENABLE ROW LEVEL SECURITY` en la misma migración.
-37. [ ] Migración: tabla `alumnos_clase` (matrícula) con estado, alta y baja.
-38. [ ] RLS también en ella.
-39. [ ] Índices por profesor, por licencia y por alumno.
-40. [ ] Clave ajena de la clase a la licencia, con su comportamiento al borrar.
-41. [ ] `Dietista.origenCuenta` para distinguir la cuenta que nació de una clase.
-42. [ ] Idempotencia: ejecutar la migración dos veces.
-43. [ ] Comprobar RLS con `scripts/comprobar-rls.ts`.
-44. [ ] Modelos en `schema.prisma` con sus comentarios.
-45. [ ] `prisma generate` con Node 22 y reiniciar el servidor (el cliente viejo se queda en memoria).
-46. [ ] `npm run db:comparar`: el desajuste esperado y nada más.
-47. [ ] Un alumno = una licencia aunque esté en dos clases: escribir la consulta que lo cuenta.
-48. [ ] Decidir qué pasa con las clases cuando se archiva un profesor.
-49. [ ] Documentar el modelo en el plan.
-50. [ ] ✅ `tsc` y comparación de esquemas.
+35. [x] Migración: tabla `clases` (profesor, licencia, nombre, curso, token, estado, archivada).
+36. [x] `ALTER TABLE public.clases ENABLE ROW LEVEL SECURITY` en la misma migración.
+37. [x] Migración: tabla `alumnos_clase` (matrícula) con estado, alta y baja.
+38. [x] RLS también en ella.
+39. [x] Índices por profesor, por licencia y por alumno.
+40. [x] Clave ajena de la clase a la licencia, con su comportamiento al borrar.
+41. [x] `Dietista.origenCuenta` para distinguir la cuenta que nació de una clase.
+42. [x] Idempotencia: ejecutar la migración dos veces.
+43. [x] Comprobar RLS con `scripts/comprobar-rls.ts`.
+44. [x] Modelos en `schema.prisma` con sus comentarios.
+45. [x] `prisma generate` con Node 22 y reiniciar el servidor (el cliente viejo se queda en memoria).
+46. [x] `npm run db:comparar`: el desajuste esperado y nada más.
+47. [x] Un alumno = una licencia aunque esté en dos clases: escribir la consulta que lo cuenta.
+48. [x] Decidir qué pasa con las clases cuando se archiva un profesor.
+49. [x] Documentar el modelo en el plan.
+50. [x] ✅ `tsc` y comparación de esquemas.
 
 ### Bloque D · Clases (51-68)
 

@@ -68,6 +68,11 @@ model Dietista {
   rolDocente         RolDocente?
   licenciaDocenteId  String?
   licenciaDocente    LicenciaDocente? @relation(fields: [licenciaDocenteId], references: [id], onDelete: SetNull)
+  /// La cuenta nació de una clase. No se convierte en cuenta normal: al quitarle el acceso al
+  /// acabar el curso, registrarse otra vez con ese correo no le devolvería el uso gratis.
+  cuentaDeClase      Boolean   @default(false)
+  clasesImpartidas   Clase[]
+  matriculas         AlumnoClase[]
 
   @@index([licenciaDocenteId])
   @@map("dietistas")
@@ -1039,6 +1044,7 @@ model LicenciaDocente {
 
   miembros      Dietista[]
   invitaciones  InvitacionDocente[]
+  clases        Clase[]
 
   @@map("licencias_docentes")
 }
@@ -1053,6 +1059,9 @@ model InvitacionDocente {
   rol               RolDocente @default(PROFESOR)
   licenciaDocenteId String?
   licenciaDocente   LicenciaDocente? @relation(fields: [licenciaDocenteId], references: [id], onDelete: Cascade)
+  /// A qué clase entra el alumno invitado (los profesores no llevan clase).
+  claseId           String?
+  clase             Clase?    @relation(fields: [claseId], references: [id], onDelete: Cascade)
   /// Quién invitó: el correo del administrador, o el id del profesor cuando invite a sus alumnos.
   invitadoPor       String?
   expiraAt          DateTime
@@ -1068,4 +1077,54 @@ model InvitacionDocente {
   @@index([email])
   @@index([licenciaDocenteId])
   @@map("invitaciones_docentes")
+}
+
+/// El grupo de un profesor: "Dietoterapia 3º A", curso 2026/27. Los alumnos entran por invitación
+/// o por el enlace de la clase, que se puede cerrar cuando ya se han apuntado todos.
+model Clase {
+  id                String    @id @default(dbgenerated("gen_random_uuid()::text"))
+  profesorId        String
+  profesor          Dietista  @relation(fields: [profesorId], references: [id], onDelete: Cascade)
+  licenciaDocenteId String?
+  licenciaDocente   LicenciaDocente? @relation(fields: [licenciaDocenteId], references: [id], onDelete: SetNull)
+  nombre            String
+  curso             String?
+  tokenInvitacion   String?   @unique
+  invitacionAbierta Boolean   @default(true)
+  /// Fin del curso de esta clase: pasada la fecha, sus alumnos pierden el acceso. El profesor no.
+  fechaFinCurso     DateTime?
+  /// Archivar no borra nada: es lo que pasa cuando a un profesor se le retira el rol.
+  archivada         Boolean   @default(false)
+  archivadaAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @default(now()) @updatedAt
+
+  alumnos           AlumnoClase[]
+  invitaciones      InvitacionDocente[]
+
+  @@index([profesorId])
+  @@index([licenciaDocenteId])
+  @@map("clases")
+}
+
+/// Matrícula: un alumno dentro de una clase. Es lo que se activa y se retira cada curso — el
+/// trabajo del alumno (sus dietas, sus pacientes de prácticas) no se toca nunca.
+///
+/// Un alumno en las clases de dos profesores tiene DOS matrículas pero consume UNA licencia: la
+/// bolsa se cuenta por alumnos distintos de la licencia, no por matrículas.
+model AlumnoClase {
+  id        String    @id @default(dbgenerated("gen_random_uuid()::text"))
+  claseId   String
+  clase     Clase     @relation(fields: [claseId], references: [id], onDelete: Cascade)
+  alumnoId  String
+  alumno    Dietista  @relation(fields: [alumnoId], references: [id], onDelete: Cascade)
+  activa    Boolean   @default(true)
+  altaAt    DateTime  @default(now())
+  bajaAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now()) @updatedAt
+
+  @@unique([claseId, alumnoId])
+  @@index([alumnoId])
+  @@map("alumnos_clase")
 }
