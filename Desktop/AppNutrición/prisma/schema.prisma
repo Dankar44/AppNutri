@@ -76,6 +76,7 @@ model Dietista {
   /// Si ya se le enseñó el aviso de que su año escolar terminó y la cuenta se le queda.
   avisoFinCursoVisto  Boolean   @default(false)
   clasesImpartidas   Clase[]
+  clasesQueLleva     ProfesorClase[]
   matriculas         AlumnoClase[]
 
   @@index([licenciaDocenteId])
@@ -1093,6 +1094,8 @@ model InvitacionDocente {
 /// o por el enlace de la clase, que se puede cerrar cuando ya se han apuntado todos.
 model Clase {
   id                String    @id @default(dbgenerated("gen_random_uuid()::text"))
+  /// Quien la creó. Es a quien el alumno ve como "su profesor"; los demás que la llevan están en
+  /// `profesores`, donde el creador también aparece para que el permiso se compruebe en un sitio.
   profesorId        String
   profesor          Dietista  @relation(fields: [profesorId], references: [id], onDelete: Cascade)
   licenciaDocenteId String?
@@ -1111,6 +1114,7 @@ model Clase {
 
   alumnos           AlumnoClase[]
   invitaciones      InvitacionDocente[]
+  profesores        ProfesorClase[]
 
   @@index([profesorId])
   @@index([licenciaDocenteId])
@@ -1122,6 +1126,22 @@ model Clase {
 ///
 /// Un alumno en las clases de dos profesores tiene DOS matrículas pero consume UNA licencia: la
 /// bolsa se cuenta por alumnos distintos de la licencia, no por matrículas.
+/// #39 — Quién lleva una clase. En una facultad la misma asignatura la dan varios profesores, y
+/// todos tienen que ver los mismos alumnos y el mismo trabajo. El creador también está aquí.
+model ProfesorClase {
+  id         String   @id @default(dbgenerated("gen_random_uuid()::text"))
+  claseId    String
+  clase      Clase    @relation(fields: [claseId], references: [id], onDelete: Cascade)
+  profesorId String
+  profesor   Dietista @relation(fields: [profesorId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  @@unique([claseId, profesorId])
+  @@index([profesorId])
+  @@map("profesores_clase")
+}
+
 model AlumnoClase {
   id        String    @id @default(dbgenerated("gen_random_uuid()::text"))
   claseId   String

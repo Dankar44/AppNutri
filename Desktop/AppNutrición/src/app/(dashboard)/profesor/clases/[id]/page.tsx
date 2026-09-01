@@ -3,13 +3,14 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, AlertTriangle, CalendarOff, CalendarClock } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireProfesor } from "@/app/actions/docencia";
-import { getClase } from "@/app/actions/clases";
+import { getClase, getProfesoresDeClase, getProfesoresQuePuedeAnadir } from "@/app/actions/clases";
 import { formatDate } from "@/lib/utils";
 import { cursoTerminado, diasDeCursoQueQuedan } from "@/lib/docencia";
 import { getLocale } from "@/i18n/locale";
 import { AccionesClase } from "./acciones-clase";
 import { AltaAlumnos } from "./alta-alumnos";
 import { ListaAlumnos } from "./lista-alumnos";
+import { ProfesoresClase } from "./profesores-clase";
 import { getPlazasLibres } from "@/app/actions/alumnos";
 
 export default async function ClaseDetallePage({
@@ -25,6 +26,10 @@ export default async function ClaseDetallePage({
   const t = await getTranslations("docencia");
   const locale = await getLocale();
   const plazasLibres = await getPlazasLibres();
+  const [profesores, candidatos] = await Promise.all([
+    getProfesoresDeClase(clase.id),
+    getProfesoresQuePuedeAnadir(clase.id),
+  ]);
   const terminado = cursoTerminado(clase.fechaFinCurso);
   // Avisar ANTES, no el día que sus alumnos se quedan fuera y le llaman por teléfono.
   const diasQueQuedan = diasDeCursoQueQuedan(clase.fechaFinCurso);
@@ -103,6 +108,10 @@ export default async function ClaseDetallePage({
           puedeDarAltas={profesor.puedeDarAltas}
           cursoTerminado={terminado}
         />
+      )}
+
+      {!clase.archivada && (
+        <ProfesoresClase claseId={clase.id} profesores={profesores} candidatos={candidatos} />
       )}
 
       <ListaAlumnos

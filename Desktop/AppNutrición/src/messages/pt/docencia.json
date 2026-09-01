@@ -161,5 +161,17 @@
     "descripcion": "O seu acesso à Annonia vem daqui: paga-o a sua faculdade, não tem de contratar nada.",
     "hasta": "O ano letivo termina a {fecha}",
     "noSePuedeBorrar": "A sua conta foi criada pela sua faculdade para as suas práticas, por isso não a pode apagar: o seu professor tem de poder corrigir o que entregar. Se quiser sair, diga-lho."
+  },
+  "profesores": {
+    "titulo": "{n, plural, one {Professor da turma} other {Professores da turma (#)}}",
+    "explicacion": "Todos os que estiverem aqui veem os mesmos alunos e o mesmo trabalho. Só pode adicionar professores da sua faculdade.",
+    "anadir": "Adicionar professor",
+    "elige": "Quem quer adicionar?",
+    "cancelar": "Cancelar",
+    "creador": "Criou a turma",
+    "quitar": "Retirar da turma",
+    "quitarTexto": "{nombre} deixa de ver esta turma e os seus alunos. Não se apaga nada, e pode voltar a adicioná-lo quando quiser.",
+    "anadido": "Professor adicionado à turma",
+    "quitado": "Professor retirado da turma"
   }
 }

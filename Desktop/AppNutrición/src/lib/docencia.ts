@@ -146,3 +146,19 @@ export function diasDeCursoQueQuedan(fechaFinCurso: Date | null | undefined, hoy
   fin.setHours(23, 59, 59, 999);
   return Math.ceil((fin.getTime() - hoy.getTime()) / (24 * 60 * 60 * 1000));
 }
+
+/**
+ * #39 — Condición de "esta clase la llevo yo".
+ *
+ * Una clase puede tener varios profesores (Guillermo, 1 sep 2026): el que la creó y los que se
+ * añaden después. Está aquí, en un solo sitio, porque se usa en todas las acciones de la clase y
+ * cualquier despiste dejaría a un profesor tocando la clase de otra facultad.
+ */
+export function claseQueLleva(profesorId: string) {
+  return {
+    OR: [
+      { profesorId },
+      { profesores: { some: { profesorId } } },
+    ],
+  };
+}

@@ -14,7 +14,7 @@ import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { isNextNavigation, urlPublica } from "@/lib/utils";
 import { sanitizeString, sanitizeStringOptional } from "@/lib/validation";
-import { cursoQueSeContrata, finDeCursoPorDefecto } from "@/lib/docencia";
+import { cursoQueSeContrata, finDeCursoPorDefecto, claseQueLleva } from "@/lib/docencia";
 import { plazasLibresDeLicencia } from "@/lib/docencia-bolsa";
 import { requireProfesor } from "./docencia";
 
@@ -42,7 +42,7 @@ export interface ClaseResumen {
  * aunque sean de la misma universidad**: cada uno responde de sus alumnos.
  */
 async function claseDelProfesor(claseId: string, profesorId: string) {
-  return prisma.clase.findFirst({ where: { id: claseId, profesorId } });
+  return prisma.clase.findFirst({ where: { id: claseId, ...claseQueLleva(profesorId) } });
 }
 
 export async function getMisClases(incluirArchivadas = false): Promise<ClaseResumen[]> {
@@ -50,7 +50,7 @@ export async function getMisClases(incluirArchivadas = false): Promise<ClaseResu
 
   const clases = await prisma.clase.findMany({
     where: {
-      profesorId: profesor.dietistaId,
+      ...claseQueLleva(profesor.dietistaId),
       ...(incluirArchivadas ? {} : { archivada: false }),
     },
     orderBy: [{ archivada: "asc" }, { createdAt: "desc" }],
@@ -92,8 +92,11 @@ export async function crearClase(data: {
         licenciaDocenteId: profesor.licencia?.id ?? null,
         nombre,
         curso: sanitizeStringOptional(data.curso, 20) || cursoQueSeContrata(),
-        // El curso acaba en agosto; a partir de ahí sus alumnos pierden el acceso.
+        // El curso acaba en agosto; a partir de ahí sus alumnos pierden la clase.
         fechaFinCurso: new Date(finDeCursoPorDefecto()),
+        // El que la crea es el primero de la lista de quienes la llevan: así el permiso se
+        // comprueba en un solo sitio, mire quien mire.
+        profesores: { create: { profesorId: profesor.dietistaId } },
       },
     });
     revalidarClases();
@@ -210,7 +213,7 @@ export async function getClase(claseId: string): Promise<ClaseDetalle | null> {
   const profesor = await requireProfesor();
 
   const clase = await prisma.clase.findFirst({
-    where: { id: claseId, profesorId: profesor.dietistaId },
+    where: { id: claseId, ...claseQueLleva(profesor.dietistaId) },
     include: {
       alumnos: {
         orderBy: [{ activa: "desc" }, { altaAt: "asc" }],
@@ -272,6 +275,118 @@ export async function cerrarCursoDeClase(
   } catch (e) {
     if (isNextNavigation(e)) throw e;
     console.error("[docencia] Error cerrando el curso:", e);
+    return { ok: false, error: t("general.errorDesconocido") };
+  }
+}
+
+export interface ProfesorDeClase {
+  id: string;
+  nombre: string;
+  apellidos: string;
+  email: string;
+  /** La creó él. No se le puede quitar: es a quien el alumno ve como su profesor. */
+  esElCreador: boolean;
+}
+
+/** Quiénes llevan esta clase. */
+export async function getProfesoresDeClase(claseId: string): Promise<ProfesorDeClase[]> {
+  const profesor = await requireProfesor();
+  const clase = await claseDelProfesor(claseId, profesor.dietistaId);
+  if (!clase) return [];
+
+  const filas = await prisma.profesorClase.findMany({
+    where: { claseId },
+    orderBy: { createdAt: "asc" },
+    select: { profesor: { select: { id: true, nombre: true, apellidos: true, email: true } } },
+  });
+  return filas.map((f) => ({
+    id: f.profesor.id,
+    nombre: f.profesor.nombre,
+    apellidos: f.profesor.apellidos,
+    email: f.profesor.email,
+    esElCreador: f.profesor.id === clase.profesorId,
+  }));
+}
+
+/** Los compañeros de su facultad a los que puede meter en la clase (los que aún no están). */
+export async function getProfesoresQuePuedeAnadir(claseId: string): Promise<ProfesorDeClase[]> {
+  const profesor = await requireProfesor();
+  if (!profesor.licencia) return [];
+  if (!(await claseDelProfesor(claseId, profesor.dietistaId))) return [];
+
+  const candidatos = await prisma.dietista.findMany({
+    where: {
+      rolDocente: "PROFESOR",
+      licenciaDocenteId: profesor.licencia.id,
+      clasesQueLleva: { none: { claseId } },
+    },
+    orderBy: [{ apellidos: "asc" }, { nombre: "asc" }],
+    select: { id: true, nombre: true, apellidos: true, email: true },
+  });
+  return candidatos.map((c) => ({ ...c, esElCreador: false }));
+}
+
+/**
+ * Añade a otro profesor de la misma facultad a la clase. Pasa a verlo todo: los alumnos, el
+ * material y, más adelante, los casos y las entregas.
+ */
+export async function anadirProfesorAClase(
+  claseId: string,
+  profesorId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const profesor = await requireProfesor();
+  const t = await getTranslations("validation");
+
+  const clase = await claseDelProfesor(claseId, profesor.dietistaId);
+  if (!clase) return { ok: false, error: t("docencia.claseNoEncontrada") };
+
+  // Solo profesores de SU misma licencia: si no, se podría meter a cualquiera con su id.
+  const candidato = await prisma.dietista.findFirst({
+    where: {
+      id: profesorId,
+      rolDocente: "PROFESOR",
+      licenciaDocenteId: profesor.licencia?.id ?? "sin-licencia",
+    },
+    select: { id: true },
+  });
+  if (!candidato) return { ok: false, error: t("docencia.profesorNoEsDeTuFacultad") };
+
+  try {
+    await prisma.profesorClase.upsert({
+      where: { claseId_profesorId: { claseId, profesorId } },
+      create: { claseId, profesorId },
+      update: {},
+    });
+    revalidarClases(claseId);
+    return { ok: true };
+  } catch (e) {
+    if (isNextNavigation(e)) throw e;
+    console.error("[docencia] Error añadiendo profesor a la clase:", e);
+    return { ok: false, error: t("general.errorDesconocido") };
+  }
+}
+
+/** Saca a un profesor de la clase. Al creador no se le puede sacar: la clase se quedaría sin dueño. */
+export async function quitarProfesorDeClase(
+  claseId: string,
+  profesorId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const profesor = await requireProfesor();
+  const t = await getTranslations("validation");
+
+  const clase = await claseDelProfesor(claseId, profesor.dietistaId);
+  if (!clase) return { ok: false, error: t("docencia.claseNoEncontrada") };
+  if (clase.profesorId === profesorId) {
+    return { ok: false, error: t("docencia.alCreadorNoSeLeQuita") };
+  }
+
+  try {
+    await prisma.profesorClase.deleteMany({ where: { claseId, profesorId } });
+    revalidarClases(claseId);
+    return { ok: true };
+  } catch (e) {
+    if (isNextNavigation(e)) throw e;
+    console.error("[docencia] Error quitando profesor de la clase:", e);
     return { ok: false, error: t("general.errorDesconocido") };
   }
 }

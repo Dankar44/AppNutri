@@ -293,6 +293,8 @@
     "cuentaDeClaseNoSeBorra": "Esta cuenta la gestiona tu facultad: no se puede borrar desde aquí.",
     "contrasenaDeSuCuenta": "Ese correo ya tiene cuenta en Annonia: escribe la contraseña de tu cuenta para entrar en la clase.",
     "noCabenAlDesarchivar": "No caben: al desarchivarla vuelven {vuelven} alumnos y solo quedan {libres} plazas libres. Amplía la licencia o retira antes a algunos alumnos.",
-    "retiraAntesElAcceso": "Retírale antes el acceso: así no desaparece nadie de un clic."
+    "retiraAntesElAcceso": "Retírale antes el acceso: así no desaparece nadie de un clic.",
+    "profesorNoEsDeTuFacultad": "Ese profesor no es de tu facultad.",
+    "alCreadorNoSeLeQuita": "No puedes quitar a quien creó la clase."
   }
 }

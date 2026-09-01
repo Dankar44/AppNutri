@@ -199,6 +199,63 @@ async function main() {
     await esperar(800);
     comprobar("y su listado está vacío", (await p2.content()).includes("Todavía no tienes ninguna clase"));
 
+    console.log("\n── Varios profesores en la misma clase ──");
+    const { rows: miClase } = await client.query(
+      `SELECT id FROM clases WHERE nombre LIKE 'PRUEBA clase%' AND "profesorId" = (
+         SELECT id FROM dietistas WHERE email = $1) LIMIT 1`, [PROFES[0].email]);
+    const claseCompartida = miClase[0]?.id as string | undefined;
+    if (!claseCompartida) throw new Error("no hay clase del profesor 1 para la prueba");
+
+    const otroProfe = await sesionDe(navegador, PROFES[1].email, PROFES[1].pass);
+    await otroProfe.goto(`${BASE}/profesor/clases/${claseCompartida}`, { waitUntil: "domcontentloaded" });
+    await esperar(1200);
+    comprobar("antes de añadirle, el otro profesor no la ve",
+      !(await otroProfe.evaluate(() => document.body.innerText)).includes("PRUEBA clase"), otroProfe.url());
+
+    await p1.goto(`${BASE}/profesor/clases/${claseCompartida}`, { waitUntil: "networkidle0" });
+    await esperar(1200);
+    comprobar("el creador sale como tal en la lista de profesores",
+      (await p1.evaluate(() => document.body.innerText)).includes("Creó la clase"));
+    await pulsar(p1, "Añadir profesor");
+    await esperar(500);
+    await pulsar(p1, "Profesor Dos");
+    await esperar(3500);
+    const { rows: llevan } = await client.query(
+      `SELECT COUNT(*)::int n FROM profesores_clase WHERE "claseId" = $1`, [claseCompartida]);
+    comprobar("la clase pasa a tener dos profesores", llevan[0].n === 2, `${llevan[0].n}`);
+
+    await otroProfe.goto(`${BASE}/profesor/clases/${claseCompartida}`, { waitUntil: "networkidle0" });
+    await esperar(1500);
+    const vistaDelSegundo = await otroProfe.evaluate(() => document.body.innerText);
+    comprobar("y ahora el segundo profesor la ve entera", vistaDelSegundo.includes("Dar de alta alumnos"),
+      vistaDelSegundo.split("\n").slice(0, 3).join(" / "));
+    await otroProfe.goto(`${BASE}/profesor/clases`, { waitUntil: "networkidle0" });
+    await esperar(1200);
+    comprobar("y le sale en su lista de clases",
+      (await otroProfe.evaluate(() => document.body.innerText)).includes("PRUEBA clase"));
+
+    console.log("\n── Y se le puede quitar (menos al creador) ──");
+    await p1.goto(`${BASE}/profesor/clases/${claseCompartida}`, { waitUntil: "networkidle0" });
+    await esperar(1200);
+    const equis = await p1.evaluate(() => {
+      const b = Array.from(document.querySelectorAll("button")).find(
+        (x) => x.getAttribute("aria-label") === "Quitar de la clase");
+      if (!b) return false;
+      (b as HTMLElement).click();
+      return true;
+    });
+    comprobar("hay una equis para quitarle, y no para el creador", equis);
+    await esperar(600);
+    await pulsar(p1, "Quitar de la clase", "[role='dialog']");
+    await esperar(3500);
+    const { rows: trasQuitar } = await client.query(
+      `SELECT COUNT(*)::int n FROM profesores_clase WHERE "claseId" = $1`, [claseCompartida]);
+    comprobar("la clase vuelve a tener un solo profesor", trasQuitar[0].n === 1, `${trasQuitar[0].n}`);
+    await otroProfe.goto(`${BASE}/profesor/clases/${claseCompartida}`, { waitUntil: "domcontentloaded" });
+    await esperar(1200);
+    comprobar("y el otro deja de verla",
+      !(await otroProfe.evaluate(() => document.body.innerText)).includes("Dar de alta alumnos"), otroProfe.url());
+
     console.log("\n── Limpieza ──");
     await limpiar(client);
     const { rows: quedan } = await client.query(`SELECT count(*)::int AS n FROM clases WHERE nombre LIKE 'PRUEBA clase%'`);

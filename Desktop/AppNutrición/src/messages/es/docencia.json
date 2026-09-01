@@ -161,5 +161,17 @@
     "descripcion": "Tu acceso a Annonia viene de aquí: lo paga tu facultad, tú no tienes que contratar nada.",
     "hasta": "El curso termina el {fecha}",
     "noSePuedeBorrar": "Tu cuenta la ha creado tu facultad para tus prácticas, así que no puedes borrarla tú: tu profesor tiene que poder corregir lo que entregues. Si quieres darte de baja, díselo a él."
+  },
+  "profesores": {
+    "titulo": "{n, plural, one {Profesor de la clase} other {Profesores de la clase (#)}}",
+    "explicacion": "Todos los que estén aquí ven los mismos alumnos y el mismo trabajo. Solo puedes añadir profesores de tu facultad.",
+    "anadir": "Añadir profesor",
+    "elige": "¿A quién añades?",
+    "cancelar": "Cancelar",
+    "creador": "Creó la clase",
+    "quitar": "Quitar de la clase",
+    "quitarTexto": "{nombre} deja de ver esta clase y sus alumnos. No se borra nada, y puedes volver a añadirle cuando quieras.",
+    "anadido": "Profesor añadido a la clase",
+    "quitado": "Profesor quitado de la clase"
   }
 }
