@@ -83,6 +83,13 @@ export default async function UniversidadDetallePage({
             {licencia.alumnos}
             <span className="text-base font-normal text-muted-foreground"> / {licencia.maxAlumnos}</span>
           </p>
+          {/* La ficha solo lista quién es; el detalle (clase, profesor, último acceso) está allí. */}
+          <Link
+            href={`/admin/alumnos?licencia=${licencia.id}`}
+            className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline mt-1 inline-block"
+          >
+            {t("verAlumnos")}
+          </Link>
         </div>
       </div>
 

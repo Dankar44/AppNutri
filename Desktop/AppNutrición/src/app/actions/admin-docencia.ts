@@ -16,7 +16,7 @@ import { getTranslations } from "next-intl/server";
 import { isNextNavigation } from "@/lib/utils";
 import { sanitizeString, sanitizeStringOptional } from "@/lib/validation";
 import { crearCuentaNutricionista } from "./admin";
-import { contarAlumnosDeLicencia } from "@/lib/docencia-bolsa";
+import { contarAlumnosDeLicencia, plazasLibresDeLicencia } from "@/lib/docencia-bolsa";
 
 export interface LicenciaDocenteItem {
   id: string;
@@ -413,4 +413,119 @@ export async function quitarRolDocente(dietistaId: string): Promise<{ ok: boolea
     console.error("[docencia] Error quitando rol docente:", e);
     return { ok: false, error: t("general.errorDesconocido") };
   }
+}
+
+export interface AlumnoAdmin {
+  id: string;
+  nombre: string;
+  apellidos: string;
+  email: string;
+  /** Nació en una clase (la creó su profesor) o ya era nutricionista antes. */
+  cuentaDeClase: boolean;
+  institucion: string | null;
+  licenciaId: string | null;
+  clase: string | null;
+  claseId: string | null;
+  profesor: string | null;
+  /** Con el acceso puesto ahora mismo: es lo que de verdad consume plaza. */
+  activo: boolean;
+  altaAt: Date | null;
+  bajaAt: Date | null;
+  ultimoAcceso: Date | null;
+  /** Nunca ha llegado a entrar: la facultad está pagando una plaza que no se usa. */
+  nuncaEntro: boolean;
+}
+
+/**
+ * Todos los alumnos, para poder responder al teléfono cuando llame una facultad.
+ *
+ * Se listan las MATRÍCULAS y no los alumnos: uno que esté en las clases de dos profesores sale
+ * dos veces, que es justo lo que hay que ver para entender por qué la bolsa cuadra o no. La
+ * cuenta de plazas ocupadas sí es de alumnos distintos, como se factura.
+ */
+export async function getAlumnosAdmin(filtros?: {
+  licenciaId?: string;
+  /** "activos" | "retirados" | undefined (todos) */
+  estado?: string;
+  buscar?: string;
+}): Promise<AlumnoAdmin[]> {
+  const admin = await requireAdmin();
+  if (!admin || admin.role !== "admin") return [];
+
+  const buscar = filtros?.buscar?.trim();
+  const matriculas = await prisma.alumnoClase.findMany({
+    where: {
+      ...(filtros?.estado === "activos" ? { activa: true } : {}),
+      ...(filtros?.estado === "retirados" ? { activa: false } : {}),
+      ...(filtros?.licenciaId ? { clase: { licenciaDocenteId: filtros.licenciaId } } : {}),
+      ...(buscar
+        ? {
+            alumno: {
+              OR: [
+                { nombre: { contains: buscar, mode: "insensitive" } },
+                { apellidos: { contains: buscar, mode: "insensitive" } },
+                { email: { contains: buscar, mode: "insensitive" } },
+              ],
+            },
+          }
+        : {}),
+    },
+    orderBy: [{ activa: "desc" }, { altaAt: "desc" }],
+    take: 500,
+    include: {
+      alumno: { select: { id: true, nombre: true, apellidos: true, email: true, cuentaDeClase: true, lastAccessAt: true } },
+      clase: {
+        select: {
+          id: true, nombre: true,
+          profesor: { select: { nombre: true, apellidos: true } },
+          licenciaDocente: { select: { id: true, institucion: true } },
+        },
+      },
+    },
+  });
+
+  return matriculas.map((m) => ({
+    id: m.alumno.id,
+    nombre: m.alumno.nombre,
+    apellidos: m.alumno.apellidos,
+    email: m.alumno.email,
+    cuentaDeClase: m.alumno.cuentaDeClase,
+    institucion: m.clase.licenciaDocente?.institucion ?? null,
+    licenciaId: m.clase.licenciaDocente?.id ?? null,
+    clase: m.clase.nombre,
+    claseId: m.clase.id,
+    profesor: `${m.clase.profesor.nombre} ${m.clase.profesor.apellidos}`.trim(),
+    activo: m.activa,
+    altaAt: m.altaAt,
+    bajaAt: m.bajaAt,
+    ultimoAcceso: m.alumno.lastAccessAt,
+    nuncaEntro: m.alumno.lastAccessAt === null,
+  }));
+}
+
+/** Lo que consume cada institución de verdad, para cobrar y para renovar. */
+export async function getConsumoDeLicencias(): Promise<
+  { id: string; institucion: string; maxAlumnos: number; ocupadas: number; libres: number; activa: boolean }[]
+> {
+  const admin = await requireAdmin();
+  if (!admin || admin.role !== "admin") return [];
+
+  const licencias = await prisma.licenciaDocente.findMany({
+    orderBy: { institucion: "asc" },
+    select: { id: true, institucion: true, maxAlumnos: true, activa: true },
+  });
+
+  return Promise.all(
+    licencias.map(async (l) => {
+      const ocupadas = await contarAlumnosDeLicencia(l.id);
+      return {
+        id: l.id,
+        institucion: l.institucion,
+        maxAlumnos: l.maxAlumnos,
+        ocupadas,
+        libres: await plazasLibresDeLicencia(l.id),
+        activa: l.activa,
+      };
+    }),
+  );
 }

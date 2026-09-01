@@ -26,7 +26,8 @@
       "crearCuenta": "Criar conta",
       "centros": "Centros",
       "ofertas": "Ofertas",
-      "universidades": "Universidades"
+      "universidades": "Universidades",
+      "alumnos": "Alunos"
     },
     "roles": {
       "creator": "Criador de contas",
@@ -522,6 +523,33 @@
     "reenviarInvitacion": "Reenviar",
     "toastInvitacionReenviada": "Convite reenviado (envio n.º {envios})",
     "invitacionEnviosVeces": "enviado {veces} vezes",
-    "invitacionUltimoEnvio": "último envio {fecha}"
+    "invitacionUltimoEnvio": "último envio {fecha}",
+    "verAlumnos": "Ver o detalhe dos seus alunos"
+  },
+  "alumnos": {
+    "title": "Alunos",
+    "subtitle": "{matriculas, plural, one {# inscrição} other {# inscrições}} · {alumnos, plural, one {# aluno a ocupar lugar} other {# alunos a ocupar lugar}}",
+    "plazasUsadas": "{libres, plural, =0 {sem lugares livres} one {# lugar livre} other {# lugares livres}}",
+    "inactiva": "Inativa",
+    "nuncaEntraron": "{n, plural, one {# aluno com lugar nunca entrou} other {# alunos com lugar nunca entraram}}. Vale a pena avisar o professor.",
+    "vacio": "Não há nenhum aluno com estes filtros.",
+    "buscarPlaceholder": "Procurar por nome ou correio",
+    "todasInstituciones": "Todas as instituições",
+    "todosEstados": "Todos",
+    "nunca": "Nunca",
+    "yaTeniaCuenta": "Já tinha conta",
+    "col": {
+      "alumno": "Aluno",
+      "institucion": "Instituição",
+      "clase": "Turma e professor",
+      "alta": "Registo",
+      "ultimoAcceso": "Último acesso",
+      "estado": "Estado"
+    },
+    "estado": {
+      "activo": "Com acesso",
+      "retirado": "Retirado",
+      "retiradoEl": "Retirado a {fecha}"
+    }
   }
 }

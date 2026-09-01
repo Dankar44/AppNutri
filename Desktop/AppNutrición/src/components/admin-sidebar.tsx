@@ -20,6 +20,7 @@ import {
   Building2,
   Briefcase,
   GraduationCap,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -37,6 +38,7 @@ const navItems = [
   { href: "/admin/crear-cuenta", labelKey: "nav.crearCuenta" as const, icon: UserPlus },
   { href: "/admin/centros", labelKey: "nav.centros" as const, icon: Building2 },
   { href: "/admin/universidades", labelKey: "nav.universidades" as const, icon: GraduationCap },
+  { href: "/admin/alumnos", labelKey: "nav.alumnos" as const, icon: BookOpen },
   { href: "/admin/ofertas", labelKey: "nav.ofertas" as const, icon: Briefcase },
 ];
 
