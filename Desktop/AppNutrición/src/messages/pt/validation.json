@@ -281,6 +281,9 @@
     "dietistaObligatorio": "Escolha a que nutricionista atribui a função",
     "yaTieneRolDocente": "Esta conta já tem uma função docente atribuída",
     "invitacionNoValida": "Este link já não é válido: pode ter expirado ou já ter sido usado",
-    "invitacionYaUsada": "Esse convite já foi usado"
+    "invitacionYaUsada": "Esse convite já foi usado",
+    "licenciaCerrada": "O ano letivo está fechado: não se podem criar turmas novas até que a licença seja renovada",
+    "nombreClaseObligatorio": "A turma precisa de um nome",
+    "claseNoEncontrada": "Não foi encontrada essa turma"
   }
 }

@@ -281,6 +281,9 @@
     "dietistaObligatorio": "Elige a qué nutricionista le das el rol",
     "yaTieneRolDocente": "Esta cuenta ya tiene un rol docente asignado",
     "invitacionNoValida": "Este enlace ya no es válido: puede haber caducado o haberse usado",
-    "invitacionYaUsada": "Esa invitación ya se ha usado"
+    "invitacionYaUsada": "Esa invitación ya se ha usado",
+    "licenciaCerrada": "El curso está cerrado: no se pueden crear clases nuevas hasta que se renueve la licencia",
+    "nombreClaseObligatorio": "La clase necesita un nombre",
+    "claseNoEncontrada": "No se ha encontrado esa clase"
   }
 }

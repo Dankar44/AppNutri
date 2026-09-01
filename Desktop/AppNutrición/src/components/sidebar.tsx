@@ -65,8 +65,9 @@ function seccionesDocentes(t: (key: string) => string, opts?: { isAdmin?: boolea
       title: t("nav.docencia"),
       items: [
         { href: "/profesor", label: t("navItems.inicioDocente"), icon: GraduationCap },
-        // Clases, Alumnos, Casos y Entregas se añaden cuando existan: un menú lleno de sitios
-        // vacíos es peor que uno corto.
+        { href: "/profesor/clases", label: t("navItems.clases"), icon: Users },
+        // Alumnos, Casos y Entregas se añaden cuando existan: un menú lleno de sitios vacíos es
+        // peor que uno corto.
       ],
     },
     {

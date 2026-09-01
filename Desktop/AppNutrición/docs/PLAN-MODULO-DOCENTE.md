@@ -153,6 +153,20 @@ menú lleno de sitios vacíos es peor que un menú corto.
 - Pantalla de «no tienes acceso» para el alumno, respetando su suscripción propia si la tiene.
 - Cerrar y renovar curso conservando todos sus datos.
 
+## Al integrar la rama, tener esto en cuenta (1 sep 2026)
+
+`main` local iba **4 commits por detrás de `origin/main`** cuando se creó esta rama, y dos arreglos
+de IA (`78470ab` reintentar con JSON inválido, `27d39ec` refrescar la ficha al aceptar el plan)
+están **aplicados dos veces**: en `origin/main` con esos hashes y en esta rama con otros
+(`25ff0d0`, `09f9531`). El contenido es idéntico, comprobado con `diff`, así que al mezclar deberían
+resolverse solos; se dejan como están a propósito para no reescribir historial (Guillermo, 1 sep).
+
+Los dos están **desplegados en producción** (el servidor tiene `78470ab`), así que no hay nada
+pendiente de subir por ese lado.
+
+Antes de integrar: actualizar `main` desde `origin`, mezclar sobre él y comprobar que esos dos
+cambios no aparecen duplicados en el resultado.
+
 ## Plan de la Fase 2 — 152 pasos
 
 Arrancado el 30 ago 2026. Verificación cada bloque y auditoría al final, como en la Fase 1.
@@ -219,24 +233,24 @@ Arrancado el 30 ago 2026. Verificación cada bloque y auditoría al final, como 
 
 ### Bloque D · Clases (51-68)
 
-51. [ ] `crearClase`, `editarClase`, `archivarClase` en una acción nueva.
-52. [ ] Cada una con `requireProfesor` y comprobando que la clase es suya.
-53. [ ] Que un profesor no pueda tocar la clase de otro (aunque sea de la misma licencia).
-54. [ ] Listado de clases en el espacio docente.
-55. [ ] Ficha de una clase: alumnos, casos y su estado.
-56. [ ] Crear clase: nombre y curso, con el curso por defecto.
-57. [ ] Editar y archivar, con confirmación.
-58. [ ] Estado vacío: sin clases.
-59. [ ] Contador de alumnos por clase.
-60. [ ] `revalidatePath` en todas las mutaciones.
-61. [ ] Traducciones es y pt.
-62. [ ] Comprobar en el navegador: crear, editar y archivar de verdad.
-63. [ ] Comprobar que archivar no borra nada.
-64. [ ] Comprobar los límites de longitud de los campos.
-65. [ ] Comprobar el móvil.
+51. [x] `crearClase`, `editarClase`, `archivarClase` en una acción nueva.
+52. [x] Cada una con `requireProfesor` y comprobando que la clase es suya.
+53. [x] Que un profesor no pueda tocar la clase de otro (aunque sea de la misma licencia).
+54. [x] Listado de clases en el espacio docente.
+55. [x] Ficha de una clase: alumnos, casos y su estado.
+56. [x] Crear clase: nombre y curso, con el curso por defecto.
+57. [x] Editar y archivar, con confirmación.
+58. [x] Estado vacío: sin clases.
+59. [x] Contador de alumnos por clase.
+60. [x] `revalidatePath` en todas las mutaciones.
+61. [x] Traducciones es y pt.
+62. [x] Comprobar en el navegador: crear, editar y archivar de verdad.
+63. [x] Comprobar que archivar no borra nada.
+64. [x] Comprobar los límites de longitud de los campos.
+65. [x] Comprobar el móvil.
 66. [ ] Comprobar el modo oscuro.
 67. [ ] Capturas y mirarlas.
-68. [ ] ✅ `tsc` + baterías.
+68. [x] ✅ `tsc` + baterías.
 
 ### Bloque E · Alta de alumnos (69-92)
 
