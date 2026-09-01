@@ -255,6 +255,7 @@ export async function cancelarInvitacionDocente(id: string): Promise<{ ok: boole
 export interface InvitacionPublica {
   email: string;
   institucion: string | null;
+  clase: string | null;
   rol: "PROFESOR" | "ALUMNO";
 }
 
@@ -272,12 +273,16 @@ export async function getInvitacionPorToken(token: string): Promise<InvitacionPu
       aceptadaAt: true,
       expiraAt: true,
       licenciaDocente: { select: { institucion: true } },
+      clase: { select: { nombre: true, archivada: true } },
     },
   });
   if (!inv || inv.aceptadaAt || inv.expiraAt.getTime() < Date.now()) return null;
+  // Una invitación a una clase archivada no vale: el curso ya no está en marcha.
+  if (inv.clase?.archivada) return null;
   return {
     email: inv.email,
     institucion: inv.licenciaDocente?.institucion ?? null,
+    clase: inv.clase?.nombre ?? null,
     rol: inv.rol,
   };
 }
@@ -299,7 +304,7 @@ export async function aceptarInvitacionDocente(data: {
     where: { token: data.token },
     select: {
       id: true, email: true, rol: true, licenciaDocenteId: true, invitadoPor: true,
-      aceptadaAt: true, expiraAt: true,
+      claseId: true, aceptadaAt: true, expiraAt: true,
       licenciaDocente: { select: { institucion: true } },
     },
   });
@@ -323,6 +328,14 @@ export async function aceptarInvitacionDocente(data: {
       await prisma.dietista.update({
         where: { id: yaExiste.id },
         data: { rolDocente: inv.rol, licenciaDocenteId: inv.licenciaDocenteId },
+      });
+    }
+    // Si la invitación era para una clase, la matrícula es lo que le da el acceso.
+    if (inv.claseId) {
+      await prisma.alumnoClase.upsert({
+        where: { claseId_alumnoId: { claseId: inv.claseId, alumnoId: yaExiste.id } },
+        create: { claseId: inv.claseId, alumnoId: yaExiste.id },
+        update: { activa: true, bajaAt: null },
       });
     }
     await prisma.invitacionDocente.update({
@@ -375,6 +388,7 @@ export async function aceptarInvitacionDocente(data: {
       authId, email,
     );
 
+    const esAlumno = inv.rol === "ALUMNO";
     const dietista = await prisma.dietista.create({
       data: {
         authId,
@@ -386,14 +400,25 @@ export async function aceptarInvitacionDocente(data: {
         creadoPor: inv.invitadoPor ?? undefined,
         rolDocente: inv.rol,
         licenciaDocenteId: inv.licenciaDocenteId,
+        // La cuenta de un alumno nace marcada: al retirarle el acceso no se convierte en una
+        // cuenta normal registrándose otra vez con ese correo.
+        cuentaDeClase: esAlumno,
       },
     });
 
-    await prisma.$queryRawUnsafe(
-      `INSERT INTO suscripciones (id, "dietistaId", plan, estado, "fechaInicio", "createdAt", "updatedAt")
-       VALUES (gen_random_uuid()::text, $1, 'PROFESIONAL', 'ACTIVA', NOW(), NOW(), NOW())`,
-      dietista.id,
-    );
+    // Un alumno NO lleva suscripción: su acceso viene de la matrícula, y una suscripción suya
+    // aparecería en el panel de administración como si fuese una venta.
+    if (!esAlumno) {
+      await prisma.$queryRawUnsafe(
+        `INSERT INTO suscripciones (id, "dietistaId", plan, estado, "fechaInicio", "createdAt", "updatedAt")
+         VALUES (gen_random_uuid()::text, $1, 'PROFESIONAL', 'ACTIVA', NOW(), NOW(), NOW())`,
+        dietista.id,
+      );
+    }
+
+    if (inv.claseId) {
+      await prisma.alumnoClase.create({ data: { claseId: inv.claseId, alumnoId: dietista.id } });
+    }
 
     crearPacienteDemoSiNoExiste(prisma, dietista.id, "es").catch(() => {});
 

@@ -284,6 +284,9 @@
     "invitacionYaUsada": "Esa invitación ya se ha usado",
     "licenciaCerrada": "El curso está cerrado: no se pueden crear clases nuevas hasta que se renueve la licencia",
     "nombreClaseObligatorio": "La clase necesita un nombre",
-    "claseNoEncontrada": "No se ha encontrado esa clase"
+    "claseNoEncontrada": "No se ha encontrado esa clase",
+    "sinCorreos": "Escribe al menos un correo",
+    "sinPlazas": "No quedan plazas libres en la licencia",
+    "enlaceClaseNoValido": "Este enlace ya no está disponible"
   }
 }

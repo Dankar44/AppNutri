@@ -32,7 +32,10 @@
     "errorGenerico": "No se ha podido crear la cuenta",
     "noValidaTitulo": "Este enlace ya no vale",
     "noValidaTexto": "Puede que haya caducado o que ya lo hayas usado. Pide que te lo vuelvan a enviar.",
-    "irALogin": "Ir a iniciar sesión"
+    "irALogin": "Ir a iniciar sesión",
+    "tituloAlumno": "Crea tu cuenta de alumno",
+    "explicacionAlumno": "Elige tu contraseña y ya está. Es la cuenta de tus prácticas: no tienes que pagar nada.",
+    "claseEtiqueta": "Clase: {clase}"
   },
   "clases": {
     "titulo": "Clases",
@@ -74,5 +77,51 @@
     "ultimoAcceso": "última entrada {fecha}",
     "nuncaHaEntrado": "no ha entrado nunca",
     "accesoRetirado": "Acceso retirado"
+  },
+  "clasePublica": {
+    "titulo": "Únete a la clase",
+    "explicacion": "Crea tu cuenta para hacer las prácticas. Eliges tú la contraseña.",
+    "contrasenaAyuda": "Al menos 6 caracteres. Si ya tienes cuenta en Annonia, entra con ella y te añadimos a la clase sin tocar nada de lo tuyo.",
+    "apuntarme": "Apuntarme a la clase",
+    "dominioSugerido": "Usa tu correo de la universidad ({dominios}) si lo tienes.",
+    "avisoDominio": "Ese correo no es de la universidad. Puedes apuntarte igual.",
+    "yaTeniaCuenta": "Ya tenías cuenta: te hemos añadido a la clase y conservas todo lo tuyo.",
+    "noValidaTitulo": "Este enlace no está disponible",
+    "noValidaTexto": "Puede que el profesor lo haya cerrado, que el curso haya terminado o que la dirección no sea correcta. Pídeselo de nuevo.",
+    "sinPlazasTitulo": "No quedan plazas libres",
+    "sinPlazasTexto": "Esta universidad ha ocupado todas sus licencias. Avisa a tu profesor."
+  },
+  "alumnos": {
+    "titulo": "Dar de alta alumnos",
+    "plazasLibres": "{n, plural, =0 {sin plazas libres} one {# plaza libre} other {# plazas libres}}",
+    "porCorreo": "Por correo",
+    "porEnlace": "Con un enlace",
+    "correos": "Correos de los alumnos",
+    "correosAyuda": "Uno por línea. A cada uno le llega un correo para que cree su cuenta con la contraseña que elija. Si ya tiene cuenta en Annonia, se le añade a la clase sin tocar nada de lo suyo.",
+    "enviarInvitaciones": "Enviar invitaciones",
+    "altaHecha": "Alta hecha",
+    "errorAlta": "No se ha podido completar el alta",
+    "errorCopiar": "No se ha podido copiar",
+    "resInvitados": "{n, plural, one {# invitado} other {# invitados}}",
+    "resMatriculados": "{n, plural, one {# añadido} other {# añadidos}}",
+    "resYaEstaban": "{n, plural, one {# ya estaba} other {# ya estaban}}",
+    "resSinPlazas": "{n, plural, one {# sin plaza} other {# sin plaza}}",
+    "resInvalidos": "{n, plural, one {# correo mal escrito} other {# correos mal escritos}}",
+    "enlaceExplicacion": "Pega este enlace en tu aula virtual y tus alumnos se apuntan solos. Ciérralo cuando ya estén todos.",
+    "abrirEnlace": "Abrir el enlace",
+    "cerrarEnlace": "Cerrar el enlace",
+    "enlaceAbierto": "Enlace abierto",
+    "enlaceCerrado": "Enlace cerrado",
+    "enlaceAbiertoAyuda": "Cualquiera con el enlace puede apuntarse, hasta agotar las plazas de la licencia.",
+    "enlaceCerradoAyuda": "Ahora mismo nadie puede apuntarse con el enlace.",
+    "copiar": "Copiar",
+    "copiado": "Copiado",
+    "cursoCerrado": "El curso está cerrado: no puedes dar de alta más alumnos hasta que se renueve la licencia.",
+    "retirar": "Retirar acceso",
+    "devolver": "Devolver acceso",
+    "retirarTexto": "{nombre} dejará de entrar, pero NO se borra nada: sus dietas y sus pacientes de prácticas siguen ahí, y su plaza queda libre. Puedes devolvérselo cuando quieras.",
+    "devolverTexto": "{nombre} vuelve a entrar con todo su trabajo tal y como lo dejó. Ocupará una plaza de la licencia.",
+    "accesoRetirado": "Acceso retirado",
+    "accesoDevuelto": "Acceso devuelto"
   }
 }

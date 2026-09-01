@@ -52,3 +52,23 @@ export async function plazasLibresDeLicencia(licenciaId: string): Promise<number
   ]);
   return Math.max(0, licencia.maxAlumnos - ocupadas - invitadas);
 }
+
+/**
+ * ¿Este alumno ya está ocupando una plaza de esta institución?
+ *
+ * Hace falta antes de dar de alta: si ya está en la clase de otro profesor de la misma facultad,
+ * meterlo en una segunda clase no consume otra plaza (regla 1), así que no se le puede rechazar
+ * por bolsa llena. Sin esto, en una facultad con la bolsa justa el segundo profesor no podría
+ * añadir a sus propios alumnos.
+ */
+export async function alumnoYaOcupaPlaza(licenciaId: string, alumnoId: string): Promise<boolean> {
+  const matricula = await prisma.alumnoClase.findFirst({
+    where: {
+      alumnoId,
+      activa: true,
+      clase: { licenciaDocenteId: licenciaId, archivada: false },
+    },
+    select: { id: true },
+  });
+  return matricula !== null;
+}

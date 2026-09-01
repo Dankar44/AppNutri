@@ -284,6 +284,9 @@
     "invitacionYaUsada": "Esse convite já foi usado",
     "licenciaCerrada": "O ano letivo está fechado: não se podem criar turmas novas até que a licença seja renovada",
     "nombreClaseObligatorio": "A turma precisa de um nome",
-    "claseNoEncontrada": "Não foi encontrada essa turma"
+    "claseNoEncontrada": "Não foi encontrada essa turma",
+    "sinCorreos": "Escreva pelo menos um correio",
+    "sinPlazas": "Não restam lugares livres na licença",
+    "enlaceClaseNoValido": "Este link já não está disponível"
   }
 }

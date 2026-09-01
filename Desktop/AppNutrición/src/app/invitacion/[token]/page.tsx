@@ -26,9 +26,16 @@ export default async function InvitacionPage({
           <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
             <GraduationCap strokeWidth={1.75} className="w-8 h-8 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold">{t("invitacion.titulo")}</h1>
+          <h1 className="text-2xl font-bold">
+            {t(invitacion?.rol === "ALUMNO" ? "invitacion.tituloAlumno" : "invitacion.titulo")}
+          </h1>
           {invitacion?.institucion && (
             <p className="text-muted-foreground mt-1">{invitacion.institucion}</p>
+          )}
+          {invitacion?.clase && (
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {t("invitacion.claseEtiqueta", { clase: invitacion.clase })}
+            </p>
           )}
         </div>
 
@@ -53,7 +60,7 @@ export default async function InvitacionPage({
             </Link>
           </div>
         ) : (
-          <AceptarInvitacionForm token={token} email={invitacion.email} />
+          <AceptarInvitacionForm token={token} email={invitacion.email} rol={invitacion.rol} />
         )}
       </div>
     </div>

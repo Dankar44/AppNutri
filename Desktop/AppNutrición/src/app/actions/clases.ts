@@ -12,7 +12,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
-import { isNextNavigation } from "@/lib/utils";
+import { isNextNavigation, urlPublica } from "@/lib/utils";
 import { sanitizeString, sanitizeStringOptional } from "@/lib/validation";
 import { cursoQueSeContrata, finDeCursoPorDefecto } from "@/lib/docencia";
 import { requireProfesor } from "./docencia";
@@ -166,6 +166,8 @@ export async function archivarClase(
 }
 
 export interface ClaseDetalle extends ClaseResumen {
+  /** El enlace completo, ya montado con el dominio que toca en cada entorno. */
+  enlaceInvitacion: string | null;
   alumnos: {
     id: string;
     nombre: string;
@@ -201,6 +203,7 @@ export async function getClase(claseId: string): Promise<ClaseDetalle | null> {
     archivada: clase.archivada,
     fechaFinCurso: clase.fechaFinCurso,
     invitacionAbierta: clase.invitacionAbierta,
+    enlaceInvitacion: clase.tokenInvitacion ? `${urlPublica()}/clase/${clase.tokenInvitacion}` : null,
     alumnosActivos: clase.alumnos.filter((a) => a.activa).length,
     alumnosRetirados: clase.alumnos.filter((a) => !a.activa).length,
     alumnos: clase.alumnos.map((m) => ({

@@ -32,7 +32,10 @@
     "errorGenerico": "Não foi possível criar a conta",
     "noValidaTitulo": "Este link já não é válido",
     "noValidaTexto": "Pode ter expirado ou já ter sido usado. Peça que lho enviem novamente.",
-    "irALogin": "Ir para iniciar sessão"
+    "irALogin": "Ir para iniciar sessão",
+    "tituloAlumno": "Crie a sua conta de aluno",
+    "explicacionAlumno": "Escolha a sua palavra-passe e pronto. É a conta das suas práticas: não tem de pagar nada.",
+    "claseEtiqueta": "Turma: {clase}"
   },
   "clases": {
     "titulo": "Turmas",
@@ -74,5 +77,51 @@
     "ultimoAcceso": "última entrada {fecha}",
     "nuncaHaEntrado": "nunca entrou",
     "accesoRetirado": "Acesso retirado"
+  },
+  "clasePublica": {
+    "titulo": "Junte-se à turma",
+    "explicacion": "Crie a sua conta para fazer as práticas. A palavra-passe escolhe-a você.",
+    "contrasenaAyuda": "Pelo menos 6 caracteres. Se já tem conta na Annonia, entre com ela e adicionamo-lo à turma sem mexer em nada do que é seu.",
+    "apuntarme": "Juntar-me à turma",
+    "dominioSugerido": "Use o correio da universidade ({dominios}) se o tiver.",
+    "avisoDominio": "Esse correio não é da universidade. Pode juntar-se na mesma.",
+    "yaTeniaCuenta": "Já tinha conta: adicionámo-lo à turma e mantém tudo o que é seu.",
+    "noValidaTitulo": "Este link não está disponível",
+    "noValidaTexto": "Pode ter sido fechado pelo professor, o ano letivo pode ter terminado ou o endereço não estar correto. Peça-lho de novo.",
+    "sinPlazasTitulo": "Não restam lugares livres",
+    "sinPlazasTexto": "Esta universidade ocupou todas as suas licenças. Avise o seu professor."
+  },
+  "alumnos": {
+    "titulo": "Registar alunos",
+    "plazasLibres": "{n, plural, =0 {sem lugares livres} one {# lugar livre} other {# lugares livres}}",
+    "porCorreo": "Por correio",
+    "porEnlace": "Com um link",
+    "correos": "Correios dos alunos",
+    "correosAyuda": "Um por linha. A cada um chega um correio para criar a conta com a palavra-passe que escolher. Se já tiver conta na Annonia, é adicionado à turma sem mexer em nada do que é seu.",
+    "enviarInvitaciones": "Enviar convites",
+    "altaHecha": "Registo feito",
+    "errorAlta": "Não foi possível completar o registo",
+    "errorCopiar": "Não foi possível copiar",
+    "resInvitados": "{n, plural, one {# convidado} other {# convidados}}",
+    "resMatriculados": "{n, plural, one {# adicionado} other {# adicionados}}",
+    "resYaEstaban": "{n, plural, one {# já estava} other {# já estavam}}",
+    "resSinPlazas": "{n, plural, one {# sem lugar} other {# sem lugar}}",
+    "resInvalidos": "{n, plural, one {# correio mal escrito} other {# correios mal escritos}}",
+    "enlaceExplicacion": "Cole este link na sua sala virtual e os alunos juntam-se sozinhos. Feche-o quando já estiverem todos.",
+    "abrirEnlace": "Abrir o link",
+    "cerrarEnlace": "Fechar o link",
+    "enlaceAbierto": "Link aberto",
+    "enlaceCerrado": "Link fechado",
+    "enlaceAbiertoAyuda": "Qualquer pessoa com o link pode juntar-se, até esgotar os lugares da licença.",
+    "enlaceCerradoAyuda": "Neste momento ninguém pode juntar-se com o link.",
+    "copiar": "Copiar",
+    "copiado": "Copiado",
+    "cursoCerrado": "O ano letivo está fechado: não pode registar mais alunos até que a licença seja renovada.",
+    "retirar": "Retirar acesso",
+    "devolver": "Devolver acesso",
+    "retirarTexto": "{nombre} deixará de entrar, mas NÃO se apaga nada: as suas dietas e os seus pacientes de práticas continuam lá, e o lugar fica livre. Pode devolvê-lo quando quiser.",
+    "devolverTexto": "{nombre} volta a entrar com todo o seu trabalho tal como o deixou. Ocupará um lugar da licença.",
+    "accesoRetirado": "Acesso retirado",
+    "accesoDevuelto": "Acesso devolvido"
   }
 }

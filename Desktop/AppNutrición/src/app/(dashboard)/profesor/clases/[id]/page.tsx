@@ -7,19 +7,23 @@ import { getClase } from "@/app/actions/clases";
 import { formatDate } from "@/lib/utils";
 import { getLocale } from "@/i18n/locale";
 import { AccionesClase } from "./acciones-clase";
+import { AltaAlumnos } from "./alta-alumnos";
+import { AccesoAlumno } from "./acceso-alumno";
+import { getPlazasLibres } from "@/app/actions/alumnos";
 
 export default async function ClaseDetallePage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireProfesor();
+  const profesor = await requireProfesor();
   const { id } = await params;
   const clase = await getClase(id);
   if (!clase) notFound();
 
   const t = await getTranslations("docencia");
   const locale = await getLocale();
+  const plazasLibres = await getPlazasLibres();
 
   return (
     <div className="space-y-6">
@@ -60,6 +64,16 @@ export default async function ClaseDetallePage({
         </div>
       )}
 
+      {!clase.archivada && (
+        <AltaAlumnos
+          claseId={clase.id}
+          plazasLibres={plazasLibres}
+          enlace={clase.enlaceInvitacion}
+          enlaceAbierto={clase.invitacionAbierta && clase.enlaceInvitacion !== null}
+          puedeDarAltas={profesor.puedeDarAltas}
+        />
+      )}
+
       <section>
         <h2 className="text-lg font-semibold mb-3">
           {t("clases.alumnosTitulo", { n: clase.alumnosActivos })}
@@ -92,6 +106,9 @@ export default async function ClaseDetallePage({
                     <Archive className="w-3 h-3" />
                     {t("clases.accesoRetirado")}
                   </span>
+                )}
+                {!clase.archivada && (
+                  <AccesoAlumno claseId={clase.id} alumnoId={a.id} nombre={`${a.nombre} ${a.apellidos}`} activa={a.activa} />
                 )}
               </div>
             ))}
