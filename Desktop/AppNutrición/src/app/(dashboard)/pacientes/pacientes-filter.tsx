@@ -10,23 +10,29 @@ interface Props {
   busquedaInicial: string;
   activosInicial: boolean;
   vista: string;
+  /** #40 — "" (todos), "propios" o "clase". */
+  fuente?: string;
+  /** Solo se enseña el selector a quien tiene casos de clase: al resto no le dice nada. */
+  hayDeClase?: boolean;
 }
 
-export function PacientesFilter({ busquedaInicial, activosInicial, vista }: Props) {
+export function PacientesFilter({ busquedaInicial, activosInicial, vista, fuente = "", hayDeClase = false }: Props) {
   const t = useTranslations("patients");
   const router = useRouter();
   const [busqueda, setBusqueda] = useState(busquedaInicial);
   const [soloActivos, setSoloActivos] = useState(activosInicial);
 
   const buildUrl = useCallback(
-    (newBusqueda: string, newActivos: boolean, newVista?: string) => {
+    (newBusqueda: string, newActivos: boolean, newVista?: string, newFuente?: string) => {
       const params = new URLSearchParams();
       if (newBusqueda) params.set("busqueda", newBusqueda);
       if (newActivos) params.set("activos", "true");
+      const f = newFuente === undefined ? fuente : newFuente;
+      if (f) params.set("fuente", f);
       params.set("vista", newVista || vista);
       return `/pacientes?${params.toString()}`;
     },
-    [vista]
+    [vista, fuente]
   );
 
   function applyFilters(newBusqueda: string, newActivos: boolean) {
@@ -35,6 +41,17 @@ export function PacientesFilter({ busquedaInicial, activosInicial, vista }: Prop
 
   return (
     <div className="space-y-3 sm:space-y-0 sm:flex sm:items-center sm:gap-3">
+      {hayDeClase && (
+        <select
+          value={fuente}
+          onChange={(e) => router.push(buildUrl(busqueda, soloActivos, undefined, e.target.value))}
+          className="rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 shrink-0"
+        >
+          <option value="">{t("list.todos")}</option>
+          <option value="propios">{t("list.soloMios")}</option>
+          <option value="clase">{t("list.soloDeClase")}</option>
+        </select>
+      )}
       <div className="relative flex-1">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <input

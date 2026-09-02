@@ -18,7 +18,11 @@
     "headerObjetivo": "Objetivo",
     "headerImc": "IMC",
     "headerEstado": "Status",
-    "headerFechaAlta": "Data de cadastro"
+    "headerFechaAlta": "Data de cadastro",
+    "deClase": "De turma",
+    "todos": "Todos",
+    "soloMios": "Só os meus",
+    "soloDeClase": "Só os da turma"
   },
   "objetivoLabels": {
     "PERDER_PESO": "Perder peso",

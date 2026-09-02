@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Plus, Users } from "lucide-react";
 import { getTranslations } from "next-intl/server";
-import { getPacientes } from "@/app/actions/pacientes";
+import { getPacientes, tienePacientesDeClase } from "@/app/actions/pacientes";
 import { getMapaNotificacionesPacientes } from "@/app/actions/notificaciones";
 import { formatDate, OBJETIVO_KEYS, calcularIMC, capitalizarNombre } from "@/lib/utils";
 import { AvatarPaciente } from "@/components/avatar-paciente";
@@ -10,7 +10,7 @@ import { PacientesFilter } from "./pacientes-filter";
 import { PageHeader } from "@/components/page-header";
 
 interface Props {
-  searchParams: Promise<{ busqueda?: string; activos?: string; vista?: string }>;
+  searchParams: Promise<{ busqueda?: string; activos?: string; vista?: string; fuente?: string }>;
 }
 
 export default async function PacientesPage({ searchParams }: Props) {
@@ -18,10 +18,12 @@ export default async function PacientesPage({ searchParams }: Props) {
   const busqueda = params.busqueda || "";
   const soloActivos = params.activos === "true";
   const vista = params.vista || "tabla";
-  const [pacientes, notifsPorPaciente, t] = await Promise.all([
-    getPacientes(busqueda, soloActivos),
+  const fuente = params.fuente || "";
+  const [pacientes, notifsPorPaciente, t, hayDeClase] = await Promise.all([
+    getPacientes(busqueda, soloActivos, fuente),
     getMapaNotificacionesPacientes(),
     getTranslations("patients"),
+    tienePacientesDeClase(),
   ]);
 
   return (
@@ -43,7 +45,7 @@ export default async function PacientesPage({ searchParams }: Props) {
       />
 
       <div className="mb-6" data-tour="patient-search">
-        <PacientesFilter busquedaInicial={busqueda} activosInicial={soloActivos} vista={vista} />
+        <PacientesFilter busquedaInicial={busqueda} activosInicial={soloActivos} vista={vista} fuente={fuente} hayDeClase={hayDeClase} />
       </div>
 
       <div data-tour="patient-list">
@@ -86,6 +88,11 @@ export default async function PacientesPage({ searchParams }: Props) {
               {p.esDemo && (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 text-[10px] font-medium border border-amber-200 dark:border-amber-500/30 mt-1">
                   {t("list.pacienteEjemplo")}
+                </span>
+              )}
+              {p.esDeClase && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 text-[10px] font-medium border border-purple-200 dark:border-purple-500/30 mt-1">
+                  {p.claseDelCaso ?? t("list.deClase")}
                 </span>
               )}
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -142,6 +149,11 @@ export default async function PacientesPage({ searchParams }: Props) {
                           {p.esDemo && (
                             <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 text-[10px] font-medium border border-amber-200 dark:border-amber-500/30 shrink-0">
                               {t("list.ejemplo")}
+                            </span>
+                          )}
+                          {p.esDeClase && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 text-[10px] font-medium border border-purple-200 dark:border-purple-500/30 shrink-0">
+                              {p.claseDelCaso ?? t("list.deClase")}
                             </span>
                           )}
                         </div>

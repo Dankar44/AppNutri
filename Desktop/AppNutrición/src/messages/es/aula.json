@@ -7,5 +7,25 @@
   "hasta": "Hasta el {fecha}",
   "queHayAqui": "Aquí verán los casos que te asigne tu profesor y lo que le entregues. Sus alimentos y recetas los tienes en Material.",
   "pasadasTitulo": "{n, plural, one {# clase anterior} other {# clases anteriores}}",
-  "pasadasTexto": "Tu trabajo de esos cursos sigue guardado: solo has dejado de ver el material de la clase."
+  "pasadasTexto": "Tu trabajo de esos cursos sigue guardado: solo has dejado de ver el material de la clase.",
+  "casos": {
+    "titulo": "{n, plural, one {Tu caso} other {Tus casos}}",
+    "empezar": "Empezar el caso",
+    "abrir": "Abrir el paciente",
+    "entregar": "Entregar",
+    "entregado": "Caso entregado",
+    "deshacerEntrega": "Deshacer la entrega",
+    "entregaDeshecha": "Entrega deshecha: puedes seguir tocándolo",
+    "errorAbrir": "No se ha podido abrir el caso",
+    "entregaAntes": "Entrega antes del {fecha}",
+    "sePasoLaFecha": "Se pasó la fecha ({fecha})",
+    "comentarioDelProfesor": "Tu profesor te dice",
+    "estado": {
+      "SIN_EMPEZAR": "Sin empezar",
+      "EN_MARCHA": "En marcha",
+      "ENTREGADA": "Entregada",
+      "CORREGIDA": "Corregida"
+    },
+    "explicacionPrimeraVez": "Al empezar un caso se te crea su paciente en tu cuenta. Trabájalo como si fuese real: su ficha, su plan, su PDF."
+  }
 }

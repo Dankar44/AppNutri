@@ -7,5 +7,25 @@
   "hasta": "Até {fecha}",
   "queHayAqui": "Aqui verá os casos que o professor lhe atribua e o que lhe entregar. Os alimentos e receitas dele estão em Material.",
   "pasadasTitulo": "{n, plural, one {# turma anterior} other {# turmas anteriores}}",
-  "pasadasTexto": "O seu trabalho desses anos continua guardado: só deixou de ver o material da turma."
+  "pasadasTexto": "O seu trabalho desses anos continua guardado: só deixou de ver o material da turma.",
+  "casos": {
+    "titulo": "{n, plural, one {O seu caso} other {Os seus casos}}",
+    "empezar": "Começar o caso",
+    "abrir": "Abrir o paciente",
+    "entregar": "Entregar",
+    "entregado": "Caso entregue",
+    "deshacerEntrega": "Desfazer a entrega",
+    "entregaDeshecha": "Entrega desfeita: pode continuar a trabalhar nela",
+    "errorAbrir": "Não foi possível abrir o caso",
+    "entregaAntes": "Entregue até {fecha}",
+    "sePasoLaFecha": "Passou a data ({fecha})",
+    "comentarioDelProfesor": "O seu professor diz-lhe",
+    "estado": {
+      "SIN_EMPEZAR": "Sem começar",
+      "EN_MARCHA": "Em curso",
+      "ENTREGADA": "Entregue",
+      "CORREGIDA": "Corrigida"
+    },
+    "explicacionPrimeraVez": "Ao começar um caso é criado o seu paciente na sua conta. Trabalhe-o como se fosse real: a ficha, o plano, o PDF."
+  }
 }

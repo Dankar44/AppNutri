@@ -405,17 +405,21 @@ export async function setAvisarPorWhatsapp(id: string, valor: boolean) {
 
 export async function getPacientes(
   busqueda?: string,
-  soloActivos?: boolean
+  soloActivos?: boolean,
+  /** #40 — "clase" deja solo los casos de clase; "propios", solo los suyos. */
+  fuente?: string,
 ) {
   const dietista = await getCurrentDietista();
   if (!dietista) return [];
 
   const query = busqueda ? sanitizeString(busqueda, 100) : undefined;
 
-  return prisma.paciente.findMany({
+  const pacientes = await prisma.paciente.findMany({
     where: {
       dietistaId: dietista.id,
       ...(soloActivos ? { activo: true } : {}),
+      ...(fuente === "clase" ? { esDeClase: true } : {}),
+      ...(fuente === "propios" ? { esDeClase: false } : {}),
       ...(query
         ? {
             OR: [
@@ -429,10 +433,32 @@ export async function getPacientes(
     select: {
       id: true, nombre: true, apellidos: true, email: true, telefono: true,
       fotoUrl: true, objetivo: true, activo: true, createdAt: true,
-      peso: true, altura: true, esDemo: true,
+      peso: true, altura: true, esDemo: true, esDeClase: true,
+      // De qué clase viene, para poder decirlo en la lista del alumno.
+      entregaCaso: {
+        select: {
+          asignacion: { select: { clase: { select: { nombre: true } } } },
+        },
+      },
     },
     orderBy: { createdAt: "desc" },
   });
+
+  return pacientes.map((p) => ({
+    ...p,
+    claseDelCaso: p.entregaCaso?.asignacion.clase.nombre ?? null,
+  }));
+}
+
+/** ¿Tiene algún paciente que venga de un caso de clase? Para enseñar el filtro solo a quien le sirve. */
+export async function tienePacientesDeClase(): Promise<boolean> {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return false;
+  const uno = await prisma.paciente.findFirst({
+    where: { dietistaId: dietista.id, esDeClase: true },
+    select: { id: true },
+  });
+  return uno !== null;
 }
 
 export async function getPaciente(id: string) {

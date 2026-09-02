@@ -3,7 +3,9 @@ import { GraduationCap, CalendarRange, Users, Archive } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { getCurrentDietista } from "@/app/actions/auth";
-import { getMisClasesComoAlumno } from "@/app/actions/aula";
+import { getMisClasesComoAlumno, getMisCasosDelAula } from "@/app/actions/aula";
+import { CasosDelAlumno, type CasoParaAlumno } from "./casos-del-alumno";
+import { diasDeCursoQueQuedan } from "@/lib/docencia";
 import { formatDate } from "@/lib/utils";
 import { getLocale } from "@/i18n/locale";
 
@@ -24,9 +26,29 @@ export default async function AulaPage() {
 
   const t = await getTranslations("aula");
   const locale = await getLocale();
-  const clases = await getMisClasesComoAlumno();
+  const [clases, casosCrudos] = await Promise.all([getMisClasesComoAlumno(), getMisCasosDelAula()]);
   const enMarcha = clases.filter((c) => c.activa);
   const pasadas = clases.filter((c) => !c.activa);
+
+  // Las fechas se formatean aquí: el componente de cliente no sabe de idiomas.
+  const casos: CasoParaAlumno[] = casosCrudos.map((c) => {
+    const dias = diasDeCursoQueQuedan(c.fechaLimite);
+    const sinEntregar = c.estado === "SIN_EMPEZAR" || c.estado === "EN_MARCHA";
+    return {
+      asignacionId: c.asignacionId,
+      casoNombre: c.casoNombre,
+      consigna: c.consigna,
+      pacienteDelCaso: c.pacienteDelCaso,
+      claseNombre: c.claseNombre,
+      estado: c.estado,
+      pacienteId: c.pacienteId,
+      nota: c.nota,
+      comentario: c.comentario,
+      fechaLimite: c.fechaLimite ? formatDate(c.fechaLimite, locale) : null,
+      fueraDePlazo: sinEntregar && dias !== null && dias < 0,
+      diasQueQuedan: dias,
+    };
+  });
 
   return (
     <div className="space-y-6">
@@ -43,6 +65,8 @@ export default async function AulaPage() {
           </div>
         </div>
       </section>
+
+      <CasosDelAlumno casos={casos} />
 
       {clases.length === 0 ? (
         <div className="text-center py-14">
@@ -73,7 +97,9 @@ export default async function AulaPage() {
                   </p>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground mt-3">{t("queHayAqui")}</p>
+              {casos.length === 0 && (
+                <p className="text-xs text-muted-foreground mt-3">{t("queHayAqui")}</p>
+              )}
             </div>
           ))}
         </div>

@@ -18,7 +18,11 @@
     "headerObjetivo": "Objetivo",
     "headerImc": "IMC",
     "headerEstado": "Estado",
-    "headerFechaAlta": "Fecha alta"
+    "headerFechaAlta": "Fecha alta",
+    "deClase": "De clase",
+    "todos": "Todos",
+    "soloMios": "Solo los míos",
+    "soloDeClase": "Solo los de clase"
   },
   "objetivoLabels": {
     "PERDER_PESO": "Perder peso",
