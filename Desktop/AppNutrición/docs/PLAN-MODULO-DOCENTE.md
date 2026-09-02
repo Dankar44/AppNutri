@@ -355,26 +355,39 @@ quedaban mezclados sin forma de sacarlos de la lista.
 
 Estado: **EN MARCHA** (2 sep 2026).
 
-## La decisión que lo ordena todo: un caso ES un paciente
+## La decisión que lo ordena todo: el caso ES un paciente del profesor, rellenado con la ficha de siempre
 
-Guillermo, 2 sep 2026, viendo el aula vacía:
+Guillermo, 2 sep 2026, tumbando la primera versión (que creaba el caso con un formulario aparte,
+recortado):
 
-> "también como una [pantalla] de pacientes, y está un poco más realista para que pueda crearse,
-> que tenga el paciente de prueba, vea cómo está. La parte de pacientes como tal no la quitaría.
-> (…) pero también los de la clase: aparte de aparecerle las clases, le aparece ahí, rollo,
-> paciente no sé qué, clase no sé cuánto, fecha límite de entrega este tiempo".
+> "la gracia es que el profesor cree un caso EXACTAMENTE igual que cuando un nutricionista se lo da
+> a un paciente que rellena todos sus datos exactamente igual, la anamnesis, mediciones, altura,
+> peso, alergias… tiene que aparecer exactamente igual que un paciente normal, solo que lo único
+> que no aparece es la planificación y el plan de alimentación (…) El profesor rellena sus datos,
+> las alergias, el horario, lo que sea, y luego tiene que funcionar. Y luego esto se le comparte a
+> los alumnos, pero esto se ve como un paciente normal."
 
-De ahí sale el modelo:
+De ahí sale el modelo definitivo (el que está en código):
 
-- El profesor crea un **caso**: un paciente ficticio con su historia y lo que se le pide al alumno.
-- Al asignarlo a una clase, **cada alumno recibe su propia copia** como paciente de verdad de su
-  cuenta, marcado como "de clase" y con la fecha límite. Trabaja con las pantallas de siempre
-  (ficha, anamnesis, plan alimenticio, PDF), que es justo lo que tiene que aprender a usar.
-- Ese paciente le sale **en su aula** (con la clase y la fecha) y **en su lista de pacientes**
-  (etiquetado, para no confundirlo con la gente real que ya empiece a ver).
-- Al profesor los casos le viven en su espacio docente y **no se mezclan nunca** con sus pacientes
-  reales, que era la condición de partida.
-- Al alumno **no se le quita Pacientes**: es donde practica, y donde está su paciente de ejemplo.
+- Crear un **caso** pide solo tres cosas: el nombre del caso, la consigna (qué les pides) y el
+  nombre del paciente. Y lleva **directo a la ficha de siempre de ese paciente**, con un aviso
+  encima. Todo lo demás —anamnesis, mediciones, alergias, horario, recomendaciones— se rellena ahí,
+  igual que con un paciente de verdad. **La ficha del paciente ES el formulario del caso.**
+- El paciente del caso es un `Paciente` de verdad del profesor, marcado `esCasoDocente`. **No se
+  mezcla nunca** con los suyos: fuera de la lista, de la agenda y de todas las cifras
+  (`PACIENTES_REALES`).
+- En la ficha de la plantilla se quita **solo el portal del paciente** (es para una persona real
+  que entra con su PIN). Planificación y plan de alimentación **se quedan**: el profesor decide qué
+  les da hecho y qué les pide (puede darles la planificación y pedir el plan, o al revés). No se le
+  impone una forma de trabajar. Tampoco se le ofrece citar ni borrar ese paciente.
+- Al asignarlo a una clase (con fecha límite) y **empezarlo el alumno**, se le copia el paciente
+  **entero** a su cuenta: datos, anamnesis resuelta, mediciones, consultas, horario,
+  recomendaciones, **planificaciones y planes** (con los ids reescritos). Lo ve "exactamente igual
+  que un paciente normal", marcado `esDeClase`.
+- Los casos del alumno viven **dentro de la clase**, no sueltos en el aula: el aula lista las clases
+  con "N casos · M por entregar" y, dentro, están los casos. También le salen en **Pacientes**,
+  etiquetados con su clase.
+- Al entregar puede dejar una **nota** para el profesor, que la ve al corregir.
 
 ## Estado: bloques A a E hechos, auditoría incluida (2 sep 2026)
 
@@ -384,18 +397,22 @@ nota). El paciente se crea la primera vez que el alumno abre el caso, no al asig
 de 300 generaría 300 pacientes que quizá nadie llegue a abrir. Y `PACIENTES_REALES`, un solo
 filtro donde antes había 53 `esDemo: false` repetidos a mano en ocho ficheros.
 
-**B · El profesor crea y asigna.** Casos con los mismos campos que una ficha de paciente, se
-duplican y se archivan. Asignación a una o varias clases con fecha límite, que se puede cambiar
-después. Retirar no borra nada.
+**B · El profesor crea y asigna.** Crear un caso pide nombre, consigna y nombre del paciente, y
+lleva a la ficha de siempre a rellenarlo (`copiarPaciente` es lo que luego lo clona). Se duplican y
+se archivan. Asignación a una o varias clases con fecha límite, que se puede cambiar después.
+**Se asigna desde dos sitios**: la ficha del caso y el aviso de encima de la ficha del paciente
+(que es donde el profesor pasa el rato). Retirar no borra nada.
 
-**C · El alumno trabaja.** El caso le sale en el aula con el paciente, la clase y la fecha; al
-empezarlo se le crea su paciente y aterriza en su ficha, que lleva arriba la consigna, el plazo y
-el botón de entregar. En su lista de pacientes sale etiquetado con su clase, con un selector para
-separarlos de los suyos.
+**C · El alumno trabaja.** El caso le sale **dentro de su clase** (el aula lista las clases con su
+recuento); al empezarlo se le copia el paciente entero y aterriza en su ficha, que lleva arriba la
+consigna, el plazo y el botón de entregar (con una nota opcional para el profesor). En su lista de
+pacientes sale etiquetado con su clase, con un selector para separarlos de los suyos.
 
-**D · El profesor corrige.** Ve quién ha entregado y quién no, abre el trabajo en solo lectura
-(paciente + planes) y pone nota de 0 a 10 con comentario, con un interruptor para publicarla
-cuando termine con toda la clase.
+**D · El profesor corrige.** En la ficha del caso, cada clase se despliega con sus alumnos y su
+progreso (el plazo se cambia ahí mismo, junto a la clase). Abre el trabajo en solo lectura
+(la nota del alumno + el paciente + los planes) y pone nota de 0 a 10 con comentario, con un
+interruptor para publicarla cuando termine con toda la clase. Los casos también se ven desde la
+ficha de la clase, y desde ahí el nombre abre el paciente (volviendo luego a la clase).
 
 **E · Menú del alumno.** Pacientes se queda: es donde practica. Fuera del aula, la gestión de una
 consulta (Agenda, Pagos) sigue en su cuenta profesional, a un clic.
@@ -417,13 +434,35 @@ retirar a un alumno escondía su trabajo de los dos lados; se podía corregir a 
 entregado; el paciente inventado salía en el selector de citas; y el día de la fecha límite
 contaba distinto para el profesor que para el alumno.
 
-**Estado: 16 baterías, 465 comprobaciones.** `tsc` y `next build` limpios, RLS en las 42 tablas.
+**Estado: 16 baterías, ~480 comprobaciones.** `tsc` y `next build` limpios, RLS en las 42 tablas.
 Con 200 alumnos, 20 casos y ~2.500 entregas, la pantalla más lenta son 2,1 s.
+
+### El rediseño del 2 sep (lo que salió al probarlo Guillermo)
+
+La primera versión creaba el caso con un formulario propio recortado y los casos salían sueltos en
+el aula. Al probarlo, Guillermo pidió el modelo de arriba. Cambios hechos:
+
+- **El caso se rellena con la ficha de siempre.** Se tiró el formulario largo; `crearCaso` crea el
+  paciente `esCasoDocente` y redirige a `/pacientes/[id]`. `copiarPaciente` ahora copia también
+  **planificaciones y planes** (con `planificacionIds`, `objetivosPorPlani`, `repartoPorComida` y
+  los `grupoId` de "comen igual" reescritos a los ids nuevos).
+- **Los casos, dentro de la clase.** Nueva ruta `/aula/[claseId]`; el aula solo lista clases.
+- **Nota del alumno al entregar** (`entregas_caso.notaAlumno`); el profesor la ve al corregir.
+- **Migración `add-casos-como-pacientes`**: `pacientes.esCasoDocente`, `casos_clinicos.pacienteId`
+  (FK única, SetNull) y `entregas_caso.notaAlumno`; se caen las 17 columnas de la copia recortada
+  del paciente que tenía `casos_clinicos` (producción nunca las tuvo).
+- **La ficha del caso** reúne consigna + clases + entregas en una pantalla (se fue la página de
+  entregas aparte, que confundía; su dirección antigua redirige). El plazo se edita junto a la
+  clase, no en un "cambiar la fecha límite" suelto que no se sabía a quién afectaba.
+- **El relleno de las tarjetas**: `lg:py-0 lg:p-5` dejaba el padding vertical a cero en escritorio
+  (la propiedad concreta gana al atajo) → todo pegado. Corregido en todas las tarjetas nuevas.
 
 ### Lo que queda de la fase 3
 
-- Que el alumno pueda escribir su razonamiento en la entrega (hoy el profesor lee lo que haya
-  puesto en la ficha del paciente y en el plan).
+- Decidir si avisar de que la copia del alumno NO se actualiza si el profesor cambia la plantilla
+  después (hoy es una foto del momento de empezar).
+- Decidir si "entregar" congela el plan (hoy el alumno puede seguir tocándolo y el profesor ve lo
+  último).
 - Repasar el menú del alumno cuando se vea el flujo con gente de verdad (Mensajes, Pagos).
 
 ---

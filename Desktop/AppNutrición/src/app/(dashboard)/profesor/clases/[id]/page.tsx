@@ -112,7 +112,8 @@ export default async function ClaseDetallePage({
         />
       )}
 
-      {/* Los casos de esta clase: la misma información que en Casos, vista desde la clase. */}
+      {/* Los casos de esta clase. El nombre abre el paciente del caso, como uno más de la consulta;
+          «Ver entregas» lleva a cómo va esta clase con él. */}
       <section className="py-4 lg:px-6 lg:py-6 lg:border lg:border-border lg:rounded-xl lg:bg-card">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <h2 className="font-semibold inline-flex items-center gap-2">
@@ -128,20 +129,30 @@ export default async function ClaseDetallePage({
         ) : (
           <div className="mt-3 divide-y divide-border">
             {casos.map((c) => (
-              <Link
-                key={c.asignacionId}
-                href={`/profesor/casos/${c.casoId}/entregas/${c.asignacionId}`}
-                className="flex items-center gap-3 py-2.5 group"
-              >
-                <div className="min-w-0 flex-1">
+              <div key={c.asignacionId} className="flex items-center gap-3 py-3">
+                <Link
+                  href={
+                    c.pacienteId
+                      ? `/pacientes/${c.pacienteId}?espacio=docente&desde=clase:${clase.id}`
+                      : `/profesor/casos/${c.casoId}`
+                  }
+                  className="min-w-0 flex-1 group"
+                >
                   <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">{c.nombre}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground truncate">
+                    {c.pacienteNombre && <>{c.pacienteNombre} · </>}
                     {t("clases.casoProgreso", { entregadas: c.entregadas, alumnos: c.alumnos })}
                     {c.fechaLimite && <> · {t("clases.hasta", { fecha: formatDate(c.fechaLimite, locale) })}</>}
                   </p>
-                </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
-              </Link>
+                </Link>
+                <Link
+                  href={`/profesor/casos/${c.casoId}?clase=${c.asignacionId}#clase-${c.asignacionId}`}
+                  className="text-xs font-medium text-muted-foreground hover:text-foreground inline-flex items-center gap-0.5 shrink-0"
+                >
+                  {t("clases.verEntregas")}
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
             ))}
           </div>
         )}

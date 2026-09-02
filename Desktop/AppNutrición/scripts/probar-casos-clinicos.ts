@@ -165,9 +165,12 @@ async function main() {
     comprobar("aterriza en la ficha del paciente", profe.url().includes(`/pacientes/${plantillaId}`), profe.url());
     let visible = await texto(profe);
     comprobar("con el aviso de que es un caso", visible.includes("Este paciente es el caso"));
-    comprobar("y sin la pestaña del plan de alimentación", !visible.includes("Plan de alimentación"));
-    comprobar("ni la de planificación", !visible.includes("Planificación"));
-    comprobar("pero con la anamnesis y las mediciones", visible.includes("Anamnesis") && visible.includes("Mediciones"));
+    comprobar("que no le dice cómo tienen que trabajar sus alumnos", !/lo hacen ellos/.test(visible));
+    comprobar("con la pestaña de planificación, por si quiere dársela hecha", visible.includes("Planificación"));
+    comprobar("y la del plan de alimentación", visible.includes("Plan de alimentación"));
+    comprobar("pero sin el portal del paciente, que es para gente real", !visible.includes("Portal del paciente"));
+    comprobar("con la anamnesis y las mediciones", visible.includes("Anamnesis") && visible.includes("Mediciones"));
+    comprobar("y con el botón de asignarlo a una clase aquí mismo", visible.includes("Asignar a una clase"));
     comprobar("y con el menú docente, no el de nutricionista",
       (await profe.evaluate(() => (document.querySelector("aside, nav") as HTMLElement | null)?.innerText ?? "")).includes("Casos"));
     // Lo que rellenaría en la ficha: aquí se mete por debajo, que lo que se prueba es que viaja.
@@ -180,6 +183,33 @@ async function main() {
     await client.query(
       `INSERT INTO medidas_antropometricas (id, "pacienteId", fecha, peso, altura, "createdAt")
        VALUES (gen_random_uuid()::text, $1, NOW(), 58, 165, NOW())`, [plantillaId]);
+    // Y una planificación con un plan a medias: el profesor puede dárselo hecho y pedir otra cosa.
+    const { rows: plani } = await client.query(
+      `INSERT INTO planificaciones (id, "pacienteId", "dietistaId", nombre, datos, "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, $2, '${MARCA} Plani', '{"kcalObjetivo":1800}', NOW(), NOW()) RETURNING id`,
+      [plantillaId, profesorId]);
+    const planiId = plani[0].id as string;
+    const { rows: alis } = await client.query(`SELECT id FROM alimentos WHERE "dietistaId" IS NULL LIMIT 2`);
+    await client.query(
+      `INSERT INTO planes_alimenticios (id, "pacienteId", "dietistaId", nombre, "planificacionIds", "objetivosPorPlani",
+              "repartoPorComida", activo, "createdAt", "updatedAt")
+       VALUES ('${MARCA}-plan', $1, $2, '${MARCA} Plan base', ARRAY[$3]::text[],
+               jsonb_build_object($3::text, '{"kcal":1800}'::jsonb),
+               jsonb_build_object('v', 2, 'porPlani', jsonb_build_object($3::text, '{"activo":true,"comidas":[]}'::jsonb)),
+               true, NOW(), NOW())`, [plantillaId, profesorId, planiId]);
+    await client.query(
+      `INSERT INTO dias_del_plan (id, "planId", dia, "planificacionId", "grupoId") VALUES
+         ('${MARCA}-lunes', '${MARCA}-plan', 'LUNES', $1, '${MARCA}-grupo'),
+         ('${MARCA}-martes', '${MARCA}-plan', 'MARTES', $1, '${MARCA}-grupo')`, [planiId]);
+    await client.query(
+      `INSERT INTO comidas_del_dia (id, "diaId", tipo, orden, nombre, hora)
+       VALUES ('${MARCA}-desayuno', '${MARCA}-lunes', 'DESAYUNO', 0, 'Desayuno de hierro', '08:30')`);
+    await client.query(
+      `INSERT INTO alimentos_en_comida (id, "comidaId", "alimentoId", cantidad, unidad, orden)
+       VALUES ('${MARCA}-ali', '${MARCA}-desayuno', $1, 100, 'GRAMOS', 0)`, [alis[0].id]);
+    await client.query(
+      `INSERT INTO alternativas_alimento (id, "alimentoEnComidaId", "alimentoId", cantidad, unidad, orden)
+       VALUES ('${MARCA}-alt', '${MARCA}-ali', $1, 50, 'GRAMOS', 0)`, [alis[1].id]);
 
     console.log("\n── Y NO aparece entre sus pacientes ──");
     await profe.goto(`${BASE}/pacientes`, { waitUntil: "networkidle0" });
@@ -187,9 +217,10 @@ async function main() {
     comprobar("el paciente del caso no está en la lista de pacientes del profesor",
       !(await texto(profe)).includes("Marta Vegana"));
 
-    console.log("\n── Lo asigna a su clase ──");
-    await profe.goto(`${BASE}/profesor/casos/${casoId}`, { waitUntil: "networkidle0" });
+    console.log("\n── Lo asigna a su clase desde la propia ficha ──");
+    await profe.goto(`${BASE}/pacientes/${plantillaId}?espacio=docente`, { waitUntil: "networkidle0" });
     await esperar(1500);
+    comprobar("la ficha dice que aún no está en ninguna clase", (await texto(profe)).includes("Sin asignar todavía"));
     await pulsar(profe, "Asignar a una clase");
     await esperar(600);
     await profe.evaluate(() => {
@@ -207,6 +238,23 @@ async function main() {
     comprobar("queda asignado a la clase", asig.length === 1);
     comprobar("con su fecha límite", asig[0]?.fechaLimite !== null,
       String(asig[0]?.fechaLimite)?.slice(0, 10));
+    visible = await texto(profe);
+    comprobar("y la ficha lo dice, con la clase y el plazo",
+      visible.includes("Asignado a 1 clase") && visible.includes(`${MARCA} Dietoterapia`) && /Hasta el 30\/06\/2027/.test(visible),
+      visible.split("\n").find((l) => l.includes("Asignado a")) ?? "no lo dice");
+
+    console.log("\n── Desde la clase, el caso abre su paciente, y se vuelve a la clase ──");
+    await profe.goto(`${BASE}/profesor/clases/${claseId}`, { waitUntil: "networkidle0" });
+    await esperar(1500);
+    visible = await texto(profe);
+    comprobar("la clase lista el caso con su paciente", visible.includes("Mujer vegana con anemia") && visible.includes("Marta Vegana"));
+    await pulsar(profe, `${MARCA} Mujer vegana`);
+    await esperar(3000);
+    comprobar("el caso abre la ficha del paciente, como uno más", profe.url().includes(`/pacientes/${plantillaId}`), profe.url());
+    comprobar("y «volver» lleva a la clase, que es de donde se venía", (await texto(profe)).includes("Volver a la clase"));
+    await pulsar(profe, "Volver a la clase");
+    await esperar(2500);
+    comprobar("de verdad", profe.url().includes(`/profesor/clases/${claseId}`), profe.url());
 
     console.log("\n── La alumna lo ve dentro de su clase ──");
     const alumna = await sesionDe(navegador, `alumna@${DOMINIO}`);
@@ -242,6 +290,36 @@ async function main() {
     comprobar("con su horario", Array.isArray(pac[0]?.horario) && pac[0].horario.length === 1);
     comprobar("con sus recomendaciones", (pac[0]?.recomendaciones ?? "").includes("agua"));
     comprobar("y con sus mediciones", pac[0]?.medidas === 1, `${pac[0]?.medidas} mediciones`);
+    const { rows: planisCopia } = await client.query(
+      `SELECT id, nombre, datos FROM planificaciones WHERE "pacienteId" = $1`, [pac[0]?.id]);
+    comprobar("con la planificación del profesor", planisCopia.length === 1 && planisCopia[0].datos?.kcalObjetivo === 1800,
+      `${planisCopia.length} planificaciones`);
+    const { rows: planCopia } = await client.query(
+      `SELECT p.id, p.nombre, p."dietistaId", p."planificacionIds", p."objetivosPorPlani", p."repartoPorComida",
+              (SELECT COUNT(*)::int FROM dias_del_plan d WHERE d."planId" = p.id) AS dias,
+              (SELECT COUNT(DISTINCT d."grupoId")::int FROM dias_del_plan d WHERE d."planId" = p.id) AS grupos,
+              (SELECT COUNT(*)::int FROM dias_del_plan d WHERE d."planId" = p.id AND d."planificacionId" = $2) AS dias_con_plani,
+              (SELECT COUNT(*)::int FROM comidas_del_dia c JOIN dias_del_plan d ON d.id = c."diaId" WHERE d."planId" = p.id) AS comidas,
+              (SELECT COUNT(*)::int FROM alimentos_en_comida a JOIN comidas_del_dia c ON c.id = a."comidaId"
+                 JOIN dias_del_plan d ON d.id = c."diaId" WHERE d."planId" = p.id) AS alimentos,
+              (SELECT COUNT(*)::int FROM alternativas_alimento al JOIN alimentos_en_comida a ON a.id = al."alimentoEnComidaId"
+                 JOIN comidas_del_dia c ON c.id = a."comidaId" JOIN dias_del_plan d ON d.id = c."diaId" WHERE d."planId" = p.id) AS alternativas
+         FROM planes_alimenticios p WHERE p."pacienteId" = $1`, [pac[0]?.id, planisCopia[0]?.id]);
+    comprobar("y con su plan a medias, que ahora es de la alumna", planCopia.length === 1 && planCopia[0].dietistaId === alumnaId);
+    comprobar("con sus días, comidas, alimentos y alternativas",
+      planCopia[0]?.dias === 2 && planCopia[0]?.comidas === 1 && planCopia[0]?.alimentos === 1 && planCopia[0]?.alternativas === 1,
+      `${planCopia[0]?.dias} días, ${planCopia[0]?.comidas} comidas, ${planCopia[0]?.alimentos} alimentos, ${planCopia[0]?.alternativas} alternativas`);
+    comprobar("los días que comían igual siguen juntos, con un grupo nuevo",
+      planCopia[0]?.grupos === 1 && (await client.query(`SELECT COUNT(*)::int n FROM dias_del_plan WHERE "grupoId" = '${MARCA}-grupo'`)).rows[0].n === 2);
+    comprobar("y todo apunta a la planificación NUEVA, no a la del profesor",
+      planCopia[0]?.dias_con_plani === 2
+        && planCopia[0]?.planificacionIds?.[0] === planisCopia[0]?.id
+        && Object.keys(planCopia[0]?.objetivosPorPlani ?? {})[0] === planisCopia[0]?.id
+        && Object.keys(planCopia[0]?.repartoPorComida?.porPlani ?? {})[0] === planisCopia[0]?.id,
+      JSON.stringify({ ids: planCopia[0]?.planificacionIds, nueva: planisCopia[0]?.id }));
+    const { rows: planOriginal } = await client.query(
+      `SELECT COUNT(*)::int n FROM planes_alimenticios WHERE "pacienteId" = $1`, [plantillaId]);
+    comprobar("y el plan del profesor sigue en su plantilla", planOriginal[0].n === 1);
     const { rows: plantillaIntacta } = await client.query(
       `SELECT "dietistaId", "esCasoDocente" FROM pacientes WHERE id = $1`, [plantillaId]);
     comprobar("la plantilla del profesor sigue siendo suya", plantillaIntacta[0].esCasoDocente === true);
@@ -277,11 +355,16 @@ async function main() {
     comprobar("y apuntando a su paciente", entrega[0]?.pacienteId === pac[0]?.id);
 
     console.log("\n── El profesor ve su trabajo y le pone nota ──");
-    await profe.goto(`${BASE}/profesor/casos/${casoId}/entregas/${asig[0].id}`, { waitUntil: "networkidle0" });
+    await profe.goto(`${BASE}/profesor/casos/${casoId}`, { waitUntil: "networkidle0" });
     await esperar(1800);
     visible = await texto(profe);
-    comprobar("ve a la alumna en la lista", visible.includes(`${MARCA} Alonso`));
+    comprobar("en la ficha del caso, dentro de la clase, ve a la alumna", visible.includes(`${MARCA} Alonso`));
     comprobar("con su estado", visible.includes("Entregada"));
+    comprobar("y el plazo junto a la clase, no en una pantalla aparte", /Hasta el 30\/06\/2027/.test(visible));
+    await profe.goto(`${BASE}/profesor/casos/${casoId}/entregas/${asig[0].id}`, { waitUntil: "networkidle0" });
+    await esperar(1500);
+    comprobar("la dirección antigua de las entregas lleva a la ficha del caso",
+      profe.url().includes(`/profesor/casos/${casoId}?clase=`), profe.url());
     await pulsar(profe, `${MARCA} Alonso`);
     await esperar(2500);
     visible = await texto(profe);
@@ -345,7 +428,7 @@ async function main() {
 
     // 4. Al retirarle el acceso, su entrega sigue viéndose desde el lado del profesor.
     await client.query(`UPDATE alumnos_clase SET activa = false WHERE "alumnoId" = $1`, [alumnaId]);
-    await profe.goto(`${BASE}/profesor/casos/${casoId}/entregas/${asig[0].id}`, { waitUntil: "networkidle0" });
+    await profe.goto(`${BASE}/profesor/casos/${casoId}?clase=${asig[0].id}`, { waitUntil: "networkidle0" });
     await esperar(1800);
     visible = await texto(profe);
     comprobar("el trabajo de un alumno retirado no se esconde", visible.includes(`${MARCA} Alonso`));

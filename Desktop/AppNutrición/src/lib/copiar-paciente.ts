@@ -1,4 +1,5 @@
 import "server-only";
+import { randomUUID } from "crypto";
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { estructuraEfectiva } from "@/lib/anamnesis-plantillas";
@@ -9,10 +10,11 @@ import { sanitizeCamposAnamnesis } from "@/lib/ficha-informacion-types";
  *
  * Es lo que pasa cuando un alumno abre un caso: el paciente plantilla que rellenó el profesor con
  * la ficha de siempre se copia a la cuenta del alumno, tal cual — datos, anamnesis, mediciones,
- * consultas, horario, recomendaciones — para que se lo encuentre "exactamente igual que un
- * paciente normal" (Guillermo, 2 sep 2026). Lo único que no viaja es lo que tiene que hacer él:
- * los planes y la planificación. Tampoco viajan las cosas de una consulta real (citas, pagos,
- * mensajes, acceso al portal, tokens de preconsulta).
+ * consultas, horario, recomendaciones, planificaciones y planes — para que se lo encuentre
+ * "exactamente igual que un paciente normal" (Guillermo, 2 sep 2026). El profesor decide qué les
+ * da hecho y qué les pide: puede darles la planificación y pedirles el plan, o al revés, así que
+ * aquí no se decide nada por él. Lo único que no viaja son las cosas de una consulta real (citas,
+ * pagos, mensajes, acceso al portal, tokens de preconsulta, enlaces compartidos).
  *
  * La anamnesis va **resuelta**: si el profesor usaba una plantilla suya, el alumno no puede verla,
  * así que se copia la estructura efectiva dentro del paciente.
@@ -92,5 +94,116 @@ export async function copiarPaciente(
     });
   }
 
+  // Las planificaciones cambian de id al copiarse, y los planes las referencian por id en tres
+  // sitios (planificacionIds, objetivosPorPlani y repartoPorComida.porPlani) más cada día del plan:
+  // todo eso se reescribe con los ids nuevos.
+  const planificaciones = await tx.planificacion.findMany({
+    where: { pacienteId: origenId },
+    orderBy: { createdAt: "asc" },
+  });
+  const idsPlani = new Map<string, string>();
+  for (const p of planificaciones) {
+    const { id: pid, pacienteId: _pp, dietistaId: _pd, createdAt: _pc2, updatedAt: _pu2, datos, ...datosPlani } = p;
+    void _pp; void _pd; void _pc2; void _pu2;
+    const creada = await tx.planificacion.create({
+      data: {
+        ...datosPlani,
+        datos: datos as Prisma.InputJsonValue,
+        pacienteId: nuevo.id,
+        dietistaId: destino.dietistaId,
+      },
+    });
+    idsPlani.set(pid, creada.id);
+  }
+  const nuevaPlani = (id: string | null) => (id ? idsPlani.get(id) ?? null : null);
+
+  const planes = await tx.planAlimenticio.findMany({
+    where: { pacienteId: origenId },
+    orderBy: { createdAt: "asc" },
+    include: {
+      dias: {
+        include: {
+          comidas: {
+            orderBy: { orden: "asc" },
+            include: {
+              alimentos: { orderBy: { orden: "asc" }, include: { alternativas: { orderBy: { orden: "asc" } } } },
+            },
+          },
+        },
+      },
+    },
+  });
+  for (const plan of planes) {
+    const {
+      id: _plid, pacienteId: _plp, dietistaId: _pld, createdAt: _plc, updatedAt: _plu,
+      dias, planificacionIds, objetivosPorPlani, repartoPorComida,
+      ...datosPlan
+    } = plan;
+    void _plid; void _plp; void _pld; void _plc; void _plu;
+    const nuevoPlan = await tx.planAlimenticio.create({
+      data: {
+        ...datosPlan,
+        pacienteId: nuevo.id,
+        dietistaId: destino.dietistaId,
+        planificacionIds: planificacionIds.map((pid) => idsPlani.get(pid)).filter((x): x is string => !!x),
+        ...(objetivosPorPlani === null ? {} : { objetivosPorPlani: reclavar(objetivosPorPlani, idsPlani) }),
+        ...(repartoPorComida === null ? {} : { repartoPorComida: reclavarReparto(repartoPorComida, idsPlani) }),
+      },
+    });
+    // Los días que "comen igual" comparten un grupoId: se conserva la agrupación con ids nuevos.
+    const grupos = new Map<string, string>();
+    for (const dia of dias) {
+      let grupoId: string | null = null;
+      if (dia.grupoId) {
+        grupoId = grupos.get(dia.grupoId) ?? randomUUID();
+        grupos.set(dia.grupoId, grupoId);
+      }
+      await tx.diaDelPlan.create({
+        data: {
+          planId: nuevoPlan.id,
+          dia: dia.dia,
+          grupoId,
+          planificacionId: nuevaPlani(dia.planificacionId),
+          comidas: {
+            create: dia.comidas.map((c) => ({
+              tipo: c.tipo, orden: c.orden, descripcion: c.descripcion, nombre: c.nombre, hora: c.hora,
+              alimentos: {
+                create: c.alimentos.map((a) => ({
+                  alimentoId: a.alimentoId, recetaId: a.recetaId, cantidad: a.cantidad, unidad: a.unidad,
+                  orden: a.orden, nombrePersonalizado: a.nombrePersonalizado,
+                  alternativas: {
+                    create: a.alternativas.map((alt) => ({
+                      alimentoId: alt.alimentoId, recetaId: alt.recetaId, cantidad: alt.cantidad,
+                      unidad: alt.unidad, orden: alt.orden, nombrePersonalizado: alt.nombrePersonalizado,
+                    })),
+                  },
+                })),
+              },
+            })),
+          },
+        },
+      });
+    }
+  }
+
   return nuevo.id;
+}
+
+/** Un objeto indexado por id de planificación, con las claves cambiadas a los ids nuevos. */
+function reclavar(valor: Prisma.JsonValue, ids: Map<string, string>): Prisma.InputJsonValue {
+  if (typeof valor !== "object" || valor === null || Array.isArray(valor)) return valor as Prisma.InputJsonValue;
+  const salida: Record<string, Prisma.JsonValue> = {};
+  for (const [clave, v] of Object.entries(valor)) {
+    const nueva = ids.get(clave);
+    if (nueva && v !== undefined) salida[nueva] = v;
+  }
+  return salida as Prisma.InputJsonValue;
+}
+
+/** El reparto por comida: si lleva `porPlani`, se le cambian las claves; lo demás va tal cual. */
+function reclavarReparto(valor: Prisma.JsonValue, ids: Map<string, string>): Prisma.InputJsonValue {
+  if (typeof valor !== "object" || valor === null || Array.isArray(valor)) return valor as Prisma.InputJsonValue;
+  const porPlani = valor.porPlani;
+  if (porPlani === undefined || porPlani === null) return valor as Prisma.InputJsonValue;
+  return { ...valor, porPlani: reclavar(porPlani, ids) } as Prisma.InputJsonValue;
 }

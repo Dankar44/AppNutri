@@ -175,15 +175,19 @@ export function PacienteFichaClient({
 }) {
   const t = useTranslations("patients.ficha");
   const tTabs = useTranslations("patients.fichaTabs");
-  // #40 — En la plantilla de un caso no hay Planificación ni Plan de alimentación: eso es justo lo
-  // que tienen que hacer los alumnos. Tampoco el portal del paciente, que es para gente real.
-  // El espacio (aula del alumno o docente del profesor) viaja en la dirección; si se perdiera al
-  // cambiar de pestaña, el menú lateral se les cambiaría al de nutricionista al primer clic.
-  const espacio = useSearchParams().get("espacio");
-  const sufijoEspacio = espacio ? `&espacio=${espacio}` : "";
+  // #40 — La plantilla de un caso tiene TODAS las pestañas de un paciente normal, planificación y
+  // plan incluidos: el profesor decide qué les da hecho a sus alumnos y qué les pide. Lo único que
+  // no tiene es el portal del paciente, que es para una persona real que entra con su PIN.
+  // El espacio (aula del alumno o docente del profesor) y el sitio del que se viene viajan en la
+  // dirección; si se perdieran al cambiar de pestaña, el menú lateral se les cambiaría al de
+  // nutricionista al primer clic y el enlace de volver dejaría de llevar a la clase.
+  const parametros = useSearchParams();
+  const espacio = parametros.get("espacio");
+  const desde = parametros.get("desde");
+  const sufijoEspacio = (espacio ? `&espacio=${espacio}` : "") + (desde ? `&desde=${encodeURIComponent(desde)}` : "");
 
   const fichaTabs = getFichaTabs(tTabs).filter(
-    (tab) => !paciente.esCasoDocente || !["planificacion", "plan-alimentacion", "portal-paciente"].includes(tab.id),
+    (tab) => !paciente.esCasoDocente || tab.id !== "portal-paciente",
   );
   const router = useRouter();
   const nombre = capitalizarNombre(paciente.nombre);
@@ -318,6 +322,8 @@ export function PacienteFichaClient({
             patologias: paciente.patologias,
             medicamentos: paciente.medicamentos,
             suplementos: paciente.suplementos,
+            // La plantilla de un caso no tiene portal: no hay persona real que entre con un PIN.
+            esCasoDocente: paciente.esCasoDocente,
           }}
           horario={horario}
           recomendaciones={recomendaciones}

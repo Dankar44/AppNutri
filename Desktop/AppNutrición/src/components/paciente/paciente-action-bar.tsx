@@ -99,17 +99,18 @@ export function PacienteActionBar({ pacienteId, activo, email, esDemo, esDeClase
     variante: "default",
     run: () => router.push(`/pacientes/${pacienteId}/editar`),
   });
-  acciones.push({
-    id: "estado",
-    icon: Power,
-    label: activo ? t("actions.desactivar") : t("actions.activar"),
-    title: activo ? t("actions.desactivarPaciente") : t("actions.activarPaciente"),
-    variante: "default",
-    run: handleToggleActivo,
-  });
-  // El paciente de un caso no se borra: es el trabajo que su profesor tiene que corregir. El
-  // servidor también lo impide; aquí se quita el botón para no ofrecer algo que va a fallar.
+  // El paciente de un caso ni se desactiva ni se borra: es el trabajo que su profesor tiene que
+  // corregir (o la plantilla de la que salen las copias). El servidor también impide borrarlo;
+  // aquí se quitan los botones para no ofrecer algo que va a fallar o a dejar el caso cojo.
   if (!esDeClase) {
+    acciones.push({
+      id: "estado",
+      icon: Power,
+      label: activo ? t("actions.desactivar") : t("actions.activar"),
+      title: activo ? t("actions.desactivarPaciente") : t("actions.activarPaciente"),
+      variante: "default",
+      run: handleToggleActivo,
+    });
     acciones.push({
       id: "eliminar",
       icon: Trash2,
@@ -176,22 +177,26 @@ export function PacienteActionBar({ pacienteId, activo, email, esDemo, esDeClase
         >
           <Pencil className="w-4 h-4" />
         </Link>
-        <button
-          onClick={handleToggleActivo}
-          disabled={loading}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
-          title={activo ? t("actions.desactivarPaciente") : t("actions.activarPaciente")}
-        >
-          <Power className="w-4 h-4" />
-          {activo ? t("actions.desactivar") : t("actions.activar")}
-        </button>
-        <button
-          onClick={() => setShowConfirm(true)}
-          disabled={loading}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/15 transition-colors text-sm font-medium"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+        {!esDeClase && (
+          <>
+            <button
+              onClick={handleToggleActivo}
+              disabled={loading}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
+              title={activo ? t("actions.desactivarPaciente") : t("actions.activarPaciente")}
+            >
+              <Power className="w-4 h-4" />
+              {activo ? t("actions.desactivar") : t("actions.activar")}
+            </button>
+            <button
+              onClick={() => setShowConfirm(true)}
+              disabled={loading}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/15 transition-colors text-sm font-medium"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </>
+        )}
       </div>
 
       {/* Móvil: acordeón horizontal (un botón abierto a la vez; 1er toque abre, 2º ejecuta) */}

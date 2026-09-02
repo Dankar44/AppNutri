@@ -50,7 +50,7 @@
   },
   "asignar": {
     "titulo": "{n, plural, =0 {Sin asignar todavía} one {Asignado a # clase} other {Asignado a # clases}}",
-    "explicacion": "Al asignarlo, tus alumnos lo ven en su aula. Su paciente se les crea la primera vez que lo abren.",
+    "explicacion": "Al asignarlo, tus alumnos lo ven en su aula. Su paciente se les crea la primera vez que lo abren, con lo que tenga la ficha en ese momento.",
     "anadir": "Asignar a una clase",
     "elige": "¿A qué clase?",
     "fechaLimite": "Fecha límite",
@@ -68,7 +68,8 @@
     "cambiarFecha": "Cambiar la fecha límite",
     "ponerFecha": "Poner una fecha límite",
     "fechaCambiada": "Fecha límite cambiada",
-    "irAClases": "Ir a mis clases"
+    "irAClases": "Ir a mis clases",
+    "hasta": "Hasta el {fecha}"
   },
   "entregas": {
     "titulo": "Entregas",
@@ -101,11 +102,12 @@
   "crearYRellenar": "Crear y rellenar el paciente",
   "paciente": {
     "abrirFicha": "Abrir la ficha de {nombre}",
-    "abrirFichaAyuda": "Rellénala como la de un paciente de verdad: anamnesis, mediciones, alergias, horario… Lo que pongas ahí es lo que se encontrarán tus alumnos.",
+    "abrirFichaAyuda": "Rellénala como la de un paciente de verdad: anamnesis, mediciones, alergias, horario… y, si quieres, su planificación o un plan ya hecho. Tú decides qué les das y qué les pides.",
     "sinConsigna": "Todavía no has escrito qué les pides.",
     "avisoTitulo": "Este paciente es el caso «{caso}»",
-    "avisoTexto": "Rellénalo como a un paciente de verdad. Lo que pongas aquí es lo que se encontrarán tus alumnos al empezar el caso; el plan de alimentación lo hacen ellos.",
-    "verCaso": "Ver el caso"
+    "avisoTexto": "Todo lo que rellenes aquí lo verán tus alumnos tal cual al empezar el caso. Lo que quieras que hagan ellos, díselo en «Qué les pides».",
+    "verCaso": "Ver el caso",
+    "volverAClase": "Volver a la clase"
   },
   "objetivo": {
     "MANTENIMIENTO": "Mantenimiento",

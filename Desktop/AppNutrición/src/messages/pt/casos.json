@@ -50,7 +50,7 @@
   },
   "asignar": {
     "titulo": "{n, plural, =0 {Ainda sem atribuir} one {Atribuído a # turma} other {Atribuído a # turmas}}",
-    "explicacion": "Ao atribuí-lo, os seus alunos veem-no na sala. O paciente é criado na primeira vez que o abrem.",
+    "explicacion": "Ao atribuí-lo, os teus alunos veem-no na sua sala. O paciente deles é criado na primeira vez que o abrem, com o que a ficha tiver nesse momento.",
     "anadir": "Atribuir a uma turma",
     "elige": "A que turma?",
     "fechaLimite": "Data limite",
@@ -68,7 +68,8 @@
     "cambiarFecha": "Mudar a data limite",
     "ponerFecha": "Definir uma data limite",
     "fechaCambiada": "Data limite alterada",
-    "irAClases": "Ir às minhas turmas"
+    "irAClases": "Ir às minhas turmas",
+    "hasta": "Até {fecha}"
   },
   "entregas": {
     "titulo": "Entregas",
@@ -101,11 +102,12 @@
   "crearYRellenar": "Criar e preencher o paciente",
   "paciente": {
     "abrirFicha": "Abrir a ficha de {nombre}",
-    "abrirFichaAyuda": "Preencha-a como a de um paciente real: anamnese, medições, alergias, horário… O que puser aí é o que os seus alunos vão encontrar.",
+    "abrirFichaAyuda": "Preenche-a como a de um paciente real: anamnese, medições, alergias, horário… e, se quiseres, o planeamento ou um plano já feito. Tu decides o que lhes dás e o que lhes pedes.",
     "sinConsigna": "Ainda não escreveu o que lhes pede.",
     "avisoTitulo": "Este paciente é o caso «{caso}»",
-    "avisoTexto": "Preencha-o como a um paciente real. O que puser aqui é o que os seus alunos vão encontrar ao começar o caso; o plano alimentar fazem-no eles.",
-    "verCaso": "Ver o caso"
+    "avisoTexto": "Tudo o que preencheres aqui, os teus alunos vão vê-lo tal e qual ao começar o caso. O que quiseres que eles façam, diz-lho em «O que lhes pedes».",
+    "verCaso": "Ver o caso",
+    "volverAClase": "Voltar à turma"
   },
   "objetivo": {
     "MANTENIMIENTO": "Manutenção",

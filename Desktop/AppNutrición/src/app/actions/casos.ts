@@ -758,7 +758,17 @@ export async function getTrabajoDeEntrega(
 
 /** Los casos puestos a una clase, para verlos desde la ficha de la clase (la otra puerta). */
 export async function getCasosDeClase(claseId: string): Promise<
-  { asignacionId: string; casoId: string; nombre: string; fechaLimite: Date | null; entregadas: number; alumnos: number }[]
+  {
+    asignacionId: string;
+    casoId: string;
+    nombre: string;
+    /** El paciente plantilla: desde la clase se abre directamente su ficha. */
+    pacienteId: string | null;
+    pacienteNombre: string | null;
+    fechaLimite: Date | null;
+    entregadas: number;
+    alumnos: number;
+  }[]
 > {
   const profesor = await requireProfesor();
   const clase = await prisma.clase.findFirst({
@@ -772,7 +782,7 @@ export async function getCasosDeClase(claseId: string): Promise<
     orderBy: [{ fechaLimite: "asc" }, { createdAt: "desc" }],
     select: {
       id: true, fechaLimite: true,
-      caso: { select: { id: true, nombre: true } },
+      caso: { select: { id: true, nombre: true, paciente: { select: { id: true, nombre: true, apellidos: true } } } },
       _count: { select: { entregas: { where: { estado: { in: ["ENTREGADA", "CORREGIDA"] } } } } },
     },
   });
@@ -780,6 +790,8 @@ export async function getCasosDeClase(claseId: string): Promise<
     asignacionId: a.id,
     casoId: a.caso.id,
     nombre: a.caso.nombre,
+    pacienteId: a.caso.paciente?.id ?? null,
+    pacienteNombre: a.caso.paciente ? `${a.caso.paciente.nombre} ${a.caso.paciente.apellidos}`.trim() : null,
     fechaLimite: a.fechaLimite,
     entregadas: a._count.entregas,
     alumnos: clase._count.alumnos,

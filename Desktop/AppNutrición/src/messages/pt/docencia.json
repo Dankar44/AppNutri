@@ -100,8 +100,9 @@
     "quitado": "Retirado da lista",
     "casosTitulo": "{n, plural, =0 {Casos da turma} one {# caso na turma} other {# casos na turma}}",
     "irACasos": "Ir aos meus casos",
-    "sinCasos": "Ainda não propôs nenhum caso a esta turma. Os casos criam-se em «Casos» e atribuem-se à turma a partir daí.",
-    "casoProgreso": "{entregadas} de {alumnos} entregaram"
+    "sinCasos": "Ainda não atribuíste nenhum caso a esta turma. Os casos criam-se em «Casos» e atribuem-se à turma a partir do caso ou da ficha do seu paciente.",
+    "casoProgreso": "{entregadas} de {alumnos} entregaram",
+    "verEntregas": "Ver entregas"
   },
   "clasePublica": {
     "titulo": "Junte-se à turma",

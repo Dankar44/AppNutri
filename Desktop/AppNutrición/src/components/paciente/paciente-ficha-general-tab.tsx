@@ -234,7 +234,6 @@ export function PacienteFichaGeneralTab({
         </p>
         <HorarioDietistaWrapper pacienteId={paciente.id} initialEntries={horario} />
       </section>
-      {!paciente.esCasoDocente && (
       <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h3 className="text-base sm:text-2xl font-semibold inline-flex items-center gap-2">
@@ -278,7 +277,6 @@ export function PacienteFichaGeneralTab({
           </Link>
         )}
       </section>
-      )}
       </div>
 
       <div className="space-y-5">

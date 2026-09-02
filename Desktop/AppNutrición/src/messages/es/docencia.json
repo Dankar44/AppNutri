@@ -100,8 +100,9 @@
     "quitado": "Quitado de la lista",
     "casosTitulo": "{n, plural, =0 {Casos de la clase} one {# caso en la clase} other {# casos en la clase}}",
     "irACasos": "Ir a mis casos",
-    "sinCasos": "Todavía no le has puesto ningún caso a esta clase. Los casos se crean en «Casos» y se asignan a la clase desde ahí.",
-    "casoProgreso": "{entregadas} de {alumnos} han entregado"
+    "sinCasos": "Todavía no le has puesto ningún caso a esta clase. Los casos se crean en «Casos» y se asignan a la clase desde el caso o desde la ficha de su paciente.",
+    "casoProgreso": "{entregadas} de {alumnos} han entregado",
+    "verEntregas": "Ver entregas"
   },
   "clasePublica": {
     "titulo": "Únete a la clase",

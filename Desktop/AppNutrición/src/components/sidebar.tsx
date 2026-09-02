@@ -225,9 +225,13 @@ export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCou
   const rutaActiva = useMemo(() => {
     const todas = getNavSections(() => "", { isAdmin, hasEmpresa, esProfesor, esAlumno, enEspacioDocente })
       .flatMap((s) => s.items.map((i) => i.href.split("?")[0]));
-    return todas
+    const mejor = todas
       .filter((r) => pathname === r || pathname.startsWith(r + "/"))
       .sort((a, b) => b.length - a.length)[0];
+    // El profesor rellena el paciente de un caso en /pacientes/…, que no está en su menú: que se
+    // encienda «Casos», que es de donde viene, y no se quede el menú sin nada marcado.
+    if (!mejor && esProfesor && enEspacioDocente && pathname.startsWith("/pacientes")) return "/profesor/casos";
+    return mejor;
   }, [pathname, isAdmin, hasEmpresa, esProfesor, esAlumno, enEspacioDocente]);
   const isDemo = useIsDemo();
   const [collapsed, setCollapsed] = useState(false);

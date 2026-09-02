@@ -203,8 +203,8 @@ async function main() {
         WHERE c.nombre LIKE '${MARCA}%' LIMIT 1`);
     const { rows: suCaso } = await client.query(
       `SELECT "casoId" FROM asignaciones_caso WHERE id = $1`, [unaAsignacion[0].id]);
-    await medirPagina("profesor: las entregas de una clase entera",
-      `${BASE}/profesor/casos/${suCaso[0].casoId}/entregas/${unaAsignacion[0].id}`, profe);
+    await medirPagina("profesor: el caso con las entregas de una clase entera",
+      `${BASE}/profesor/casos/${suCaso[0].casoId}?clase=${unaAsignacion[0].id}`, profe);
 
     const { data: da } = await sb.auth.signInWithPassword({ email: `a50@${DOMINIO}`, password: PASS });
     const alumno = await (await navegador.createBrowserContext()).newPage();

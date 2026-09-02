@@ -35,11 +35,11 @@ export default async function EntregaPage({
   return (
     <div className="space-y-6">
       <Link
-        href={`/profesor/casos/${id}/entregas/${asignacionId}`}
+        href={`/profesor/casos/${id}?clase=${asignacionId}#clase-${asignacionId}`}
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="w-4 h-4" />
-        {t("entregas.titulo")}
+        {trabajo.casoNombre}
       </Link>
 
       <div>

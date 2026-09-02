@@ -16,7 +16,7 @@ import { getEstructuraEfectivaPaciente, getPlantillasAnamnesis } from "@/app/act
 import { AutoMarkLeidas } from "./auto-mark-leidas";
 import { AvisoCaso } from "./aviso-caso";
 import { AvisoPlantilla } from "./aviso-plantilla";
-import { getCasoDePacientePlantilla } from "@/app/actions/casos";
+import { getCasoDePacientePlantilla, getAsignacionesDeCaso, getClasesParaAsignar } from "@/app/actions/casos";
 import { getCasoDelPaciente } from "@/app/actions/aula";
 import { cursoTerminado } from "@/lib/docencia";
 import { formatDate } from "@/lib/utils";
@@ -24,12 +24,16 @@ import { getLocale } from "@/i18n/locale";
 
 interface Props {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ pestana?: string }>;
+  searchParams: Promise<{ pestana?: string; desde?: string }>;
 }
+
+// De dónde se viene a la ficha de la plantilla de un caso: "clase:<id>" cuando se abre desde la
+// página de la clase, para que «volver» lleve allí y no al caso. Solo se acepta esa forma exacta.
+const DESDE_CLASE = /^clase:([0-9a-f-]{36})$/;
 
 export default async function PacienteDetailPage({ params, searchParams }: Props) {
   const { id } = await params;
-  const { pestana: rawPestana } = await searchParams;
+  const { pestana: rawPestana, desde } = await searchParams;
 
   const paciente = await getPaciente(id);
   if (!paciente) notFound();
@@ -65,6 +69,7 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
   ]);
   const notifsPaciente = mapaNotifs[id] || [];
   const t = await getTranslations("patients");
+  const tCasos = await getTranslations("casos");
 
   // #40 — Si el paciente viene de un caso de clase, el alumno tiene delante lo que le han pedido,
   // hasta cuándo y el botón de entregar. Solo se pregunta si está marcado como de clase.
@@ -72,20 +77,32 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
   // Y si es la PLANTILLA de un caso del profesor, se le recuerda que lo que rellena aquí es lo que
   // se van a encontrar sus alumnos.
   const plantillaDe = paciente.esCasoDocente ? await getCasoDePacientePlantilla(id) : null;
+  const [asignacionesDelCaso, clasesParaAsignar] = plantillaDe
+    ? await Promise.all([getAsignacionesDeCaso(plantillaDe.id), getClasesParaAsignar(plantillaDe.id)])
+    : [[], []];
   const locale = await getLocale();
+
+  const claseDeOrigen = plantillaDe ? desde?.match(DESDE_CLASE)?.[1] ?? null : null;
+  const volver = claseDeOrigen
+    ? { href: `/profesor/clases/${claseDeOrigen}`, texto: tCasos("paciente.volverAClase") }
+    : plantillaDe
+      ? { href: `/profesor/casos/${plantillaDe.id}`, texto: plantillaDe.nombre }
+      : { href: "/pacientes", texto: t("nuevo.volverAPacientes") };
 
   return (
     <div>
       <AutoMarkLeidas pacienteId={id} pestana={pestana} />
       <Link
-        href={plantillaDe ? `/profesor/casos/${plantillaDe.id}` : "/pacientes"}
+        href={volver.href}
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 py-2 sm:py-0 -my-2 sm:my-0"
       >
         <ArrowLeft className="w-4 h-4" />
-        {plantillaDe ? plantillaDe.nombre : t("nuevo.volverAPacientes")}
+        {volver.texto}
       </Link>
 
-      {plantillaDe && <AvisoPlantilla caso={plantillaDe} />}
+      {plantillaDe && (
+        <AvisoPlantilla caso={plantillaDe} asignaciones={asignacionesDelCaso} clases={clasesParaAsignar} />
+      )}
 
       {caso && (
         <AvisoCaso

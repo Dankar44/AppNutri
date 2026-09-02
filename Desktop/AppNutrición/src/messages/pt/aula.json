@@ -25,7 +25,7 @@
       "ENTREGADA": "Entregue",
       "CORREGIDA": "Corrigida"
     },
-    "explicacionPrimeraVez": "Cada caso é um paciente inventado que lhe é criado na conta ao começá-lo. Trabalhe-o como se fosse real: a ficha, o plano, o PDF.",
+    "explicacionPrimeraVez": "Cada caso é um paciente inventado que é criado na tua conta quando o começas. Trabalha-o como se fosse real e faz o que o teu professor te pedir.",
     "esUnCaso": "Caso de {clase}",
     "volverAlAula": "Voltar à minha sala",
     "enLaClase": "{n, plural, =0 {Ainda sem casos} one {# caso} other {# casos}}{pendientes, plural, =0 {} one { · # por entregar} other { · # por entregar}}",
