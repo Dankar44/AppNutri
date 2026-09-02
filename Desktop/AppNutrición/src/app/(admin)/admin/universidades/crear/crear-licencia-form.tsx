@@ -6,6 +6,7 @@ import { GraduationCap, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { crearLicenciaDocente } from "@/app/actions/admin-docencia";
+import { DatePicker } from "@/components/date-picker";
 import { cursoQueSeContrata, finDeCursoPorDefecto } from "@/lib/docencia";
 
 export function CrearLicenciaForm() {
@@ -137,12 +138,9 @@ export function CrearLicenciaForm() {
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground">{t("form.fechaFin")}</label>
-            <input
-              type="date"
-              value={fechaFin}
-              onChange={(e) => setFechaFin(e.target.value)}
-              className={input}
-            />
+            <div className="mt-1">
+              <DatePicker value={fechaFin} onChange={setFechaFin} />
+            </div>
             <p className="text-xs text-muted-foreground mt-1">{t("form.fechaFinAyuda")}</p>
           </div>
         </div>

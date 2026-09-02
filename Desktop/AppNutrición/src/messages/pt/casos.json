@@ -102,10 +102,10 @@
   "crearYRellenar": "Criar e preencher o paciente",
   "paciente": {
     "abrirFicha": "Abrir a ficha de {nombre}",
-    "abrirFichaAyuda": "Preenche-a como a de um paciente real: anamnese, medições, alergias, horário… e, se quiseres, o planeamento ou um plano já feito. Tu decides o que lhes dás e o que lhes pedes.",
+    "abrirFichaAyuda": "Preenche-a como a de um paciente real: anamnese, medições, alergias, horário… O que puseres aí é o que os teus alunos vão encontrar. O planeamento e o plano que fizeres são a tua solução, salvo se decidires dar-lhos feitos.",
     "sinConsigna": "Ainda não escreveu o que lhes pede.",
     "avisoTitulo": "Este paciente é o caso «{caso}»",
-    "avisoTexto": "Tudo o que preencheres aqui, os teus alunos vão vê-lo tal e qual ao começar o caso. O que quiseres que eles façam, diz-lho em «O que lhes pedes».",
+    "avisoTexto": "O que preencheres aqui —dados, anamnese, medições, horário, recomendações— os teus alunos vão vê-lo tal e qual ao começar o caso. O que quiseres que eles façam, diz-lho em «O que lhes pedes».",
     "verCaso": "Ver o caso",
     "volverAClase": "Voltar à turma"
   },
@@ -116,5 +116,13 @@
     "PATOLOGIA": "Patologia",
     "DEPORTIVO": "Desportivo",
     "OTRO": "Outro"
+  },
+  "compartir": {
+    "titulo": "Dar-lhes feito o planeamento e o plano alimentar",
+    "apagado": "Desligado: o que fizeres em Planeamento e Plano alimentar é a tua solução. Só tu a vês, e serve-te para comparar com o que entregarem.",
+    "encendido": "Ligado: o planeamento e os planos que a ficha tiver são copiados quando começam o caso, com tudo o resto. Quem já o tenha começado não o recebe.",
+    "activado": "Vão recebê-lo feito: o planeamento e o plano viajam com o caso",
+    "desactivado": "Fica contigo: o planeamento e o plano não se partilham",
+    "compararConTuPlan": "Comparar com o teu plano do caso"
   }
 }

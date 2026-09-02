@@ -1170,9 +1170,13 @@ model CasoClinico {
   consigna          String?
 
   /// El paciente plantilla, del profesor y marcado con `esCasoDocente` para que no se mezcle con
-  /// sus pacientes reales. Se rellena con la ficha normal, menos Planificación y Plan.
+  /// sus pacientes reales. Se rellena con la ficha normal, entera.
   pacienteId        String?  @unique
   paciente          Paciente? @relation("PacienteDelCaso", fields: [pacienteId], references: [id], onDelete: SetNull)
+  /// Si la planificación y los planes del paciente plantilla se les copian a los alumnos al empezar
+  /// el caso. Apagado (lo normal): lo que el profesor haga ahí es SU solución, para comparar con lo
+  /// que entreguen. El resto de la ficha viaja siempre.
+  compartirPlanes   Boolean  @default(false)
 
   /// Archivar no borra: las entregas de cursos pasados siguen ahí.
   archivado         Boolean  @default(false)

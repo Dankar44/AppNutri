@@ -10,11 +10,15 @@ import { sanitizeCamposAnamnesis } from "@/lib/ficha-informacion-types";
  *
  * Es lo que pasa cuando un alumno abre un caso: el paciente plantilla que rellenó el profesor con
  * la ficha de siempre se copia a la cuenta del alumno, tal cual — datos, anamnesis, mediciones,
- * consultas, horario, recomendaciones, planificaciones y planes — para que se lo encuentre
- * "exactamente igual que un paciente normal" (Guillermo, 2 sep 2026). El profesor decide qué les
- * da hecho y qué les pide: puede darles la planificación y pedirles el plan, o al revés, así que
- * aquí no se decide nada por él. Lo único que no viaja son las cosas de una consulta real (citas,
- * pagos, mensajes, acceso al portal, tokens de preconsulta, enlaces compartidos).
+ * consultas, horario, recomendaciones — para que se lo encuentre "exactamente igual que un
+ * paciente normal" (Guillermo, 2 sep 2026).
+ *
+ * La planificación y los planes viajan solo si se pide (`conPlanes`): por defecto lo que el
+ * profesor hace en Planificación y Plan de alimentación es SU solución, para comparar con lo que
+ * entreguen, y no se les manda (Guillermo, 2 sep 2026: "que se pueda hacer el plan y no
+ * compartirlo"). Si enciende «compartir» en el caso, se les copian con el resto de la ficha.
+ * Lo que no viaja nunca son las cosas de una consulta real (citas, pagos, mensajes, acceso al
+ * portal, tokens de preconsulta, enlaces compartidos).
  *
  * La anamnesis va **resuelta**: si el profesor usaba una plantilla suya, el alumno no puede verla,
  * así que se copia la estructura efectiva dentro del paciente.
@@ -24,7 +28,7 @@ type Tx = Prisma.TransactionClient | typeof prisma;
 export async function copiarPaciente(
   tx: Tx,
   origenId: string,
-  destino: { dietistaId: string; esDeClase: boolean },
+  destino: { dietistaId: string; esDeClase: boolean; conPlanes: boolean },
 ): Promise<string> {
   const origen = await tx.paciente.findUnique({
     where: { id: origenId },
@@ -93,6 +97,8 @@ export async function copiarPaciente(
       },
     });
   }
+
+  if (!destino.conPlanes) return nuevo.id;
 
   // Las planificaciones cambian de id al copiarse, y los planes las referencian por id en tres
   // sitios (planificacionIds, objetivosPorPlani y repartoPorComida.porPlani) más cada día del plan:

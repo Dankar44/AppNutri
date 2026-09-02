@@ -7,6 +7,7 @@ import { RecetasGrid } from "./recetas-grid";
 import { PageHeader } from "@/components/page-header";
 import { getCurrentDietista } from "@/app/actions/auth";
 import { getMaterialMemberIds } from "@/lib/empresa-utils";
+import { prisma } from "@/lib/prisma";
 
 interface Props {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -28,11 +29,15 @@ function toNumber(v: string | string[] | undefined): number | undefined {
 
 export default async function RecetasPage({ searchParams }: Props) {
   const sp = await searchParams;
-  const tab = sp.tab === "app" ? "app" : sp.tab === "clase" ? "clase" : "mias";
+  const dietista = await getCurrentDietista();
+  // Sin pestaña elegida, quien aún no tiene recetas propias aterriza en las de la app: si no, lo
+  // primero que ve es «Sin recetas propias» y parece que el catálogo no existe (2 sep 2026).
+  const tabPedida = sp.tab === "app" ? "app" : sp.tab === "clase" ? "clase" : sp.tab === "mias" ? "mias" : null;
+  const tab = tabPedida
+    ?? ((dietista && (await prisma.receta.count({ where: { dietistaId: dietista.id } })) === 0) ? "app" : "mias");
 
   // La pestaña de material compartido solo aparece si hay alguien que comparta con esta persona:
   // a un nutricionista suelto no le dice nada.
-  const dietista = await getCurrentDietista();
   const compartidoPorOtros = dietista
     ? (await getMaterialMemberIds(dietista)).filter((v) => v !== dietista.id)
     : [];
@@ -75,9 +80,8 @@ export default async function RecetasPage({ searchParams }: Props) {
   }
   const miasHref = (() => {
     const p = new URLSearchParams(currentParams);
-    p.delete("tab");
-    const q = p.toString();
-    return q ? `/recetas?${q}` : "/recetas";
+    p.set("tab", "mias");
+    return `/recetas?${p.toString()}`;
   })();
   const appHref = (() => {
     const p = new URLSearchParams(currentParams);

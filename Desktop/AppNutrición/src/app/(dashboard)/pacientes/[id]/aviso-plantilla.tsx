@@ -3,6 +3,7 @@ import { ClipboardList, ArrowRight, Users } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import type { AsignacionResumen } from "@/app/actions/casos";
 import { AsignarAClase } from "@/app/(dashboard)/profesor/casos/[id]/asignar-a-clase";
+import { CompartirPlanes } from "@/app/(dashboard)/profesor/casos/[id]/compartir-planes";
 import { formatDate } from "@/lib/utils";
 import { getLocale } from "@/i18n/locale";
 
@@ -16,7 +17,7 @@ export async function AvisoPlantilla({
   asignaciones,
   clases,
 }: {
-  caso: { id: string; nombre: string; consigna: string | null };
+  caso: { id: string; nombre: string; consigna: string | null; compartirPlanes: boolean };
   asignaciones: AsignacionResumen[];
   clases: { id: string; nombre: string; curso: string | null }[];
 }) {
@@ -54,8 +55,13 @@ export async function AvisoPlantilla({
         </Link>
       </div>
 
+      {/* Si la planificación y el plan que haga aquí son su solución o se los da hechos. */}
+      <div className="mt-4 pt-3 border-t border-primary/20">
+        <CompartirPlanes casoId={caso.id} valor={caso.compartirPlanes} compacto />
+      </div>
+
       {/* A qué clases está puesto, y el botón para ponerlo a otra, aquí mismo. */}
-      <div className="mt-4 pt-3 border-t border-primary/20 flex items-center justify-between gap-3 flex-wrap">
+      <div className="mt-3 pt-3 border-t border-primary/20 flex items-center justify-between gap-3 flex-wrap">
         <p className="text-sm text-muted-foreground inline-flex items-start gap-1.5 min-w-0">
           <Users className="w-4 h-4 shrink-0 mt-0.5" />
           <span>

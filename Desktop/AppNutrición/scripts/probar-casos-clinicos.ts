@@ -217,9 +217,20 @@ async function main() {
     comprobar("el paciente del caso no está en la lista de pacientes del profesor",
       !(await texto(profe)).includes("Marta Vegana"));
 
-    console.log("\n── Lo asigna a su clase desde la propia ficha ──");
+    console.log("\n── Decide darles hecho el plan (por defecto no se comparte) ──");
     await profe.goto(`${BASE}/pacientes/${plantillaId}?espacio=docente`, { waitUntil: "networkidle0" });
     await esperar(1500);
+    visible = await texto(profe);
+    comprobar("el interruptor está en la ficha, apagado", visible.includes("Darles hecha la planificación") && visible.includes("Apagado:"));
+    const { rows: porDefecto } = await client.query(`SELECT "compartirPlanes" FROM casos_clinicos WHERE id = $1`, [casoId]);
+    comprobar("y en la base de datos el caso nace sin compartir", porDefecto[0]?.compartirPlanes === false);
+    await pulsar(profe, "Darles hecha la planificación");
+    await esperar(3500);
+    const { rows: compartido } = await client.query(`SELECT "compartirPlanes" FROM casos_clinicos WHERE id = $1`, [casoId]);
+    comprobar("al encenderlo se guarda", compartido[0]?.compartirPlanes === true);
+    comprobar("y la ficha lo dice", (await texto(profe)).includes("Encendido:"));
+
+    console.log("\n── Lo asigna a su clase desde la propia ficha ──");
     comprobar("la ficha dice que aún no está en ninguna clase", (await texto(profe)).includes("Sin asignar todavía"));
     await pulsar(profe, "Asignar a una clase");
     await esperar(600);
@@ -230,7 +241,7 @@ async function main() {
         s.dispatchEvent(new Event("change", { bubbles: true }));
       }
     });
-    await rellenar(profe, "Fecha límite", "2027-06-30");
+    await rellenar(profe, "Fecha límite", "30/06/2027");
     await pulsar(profe, "Asignar", "form");
     await esperar(4000);
     const { rows: asig } = await client.query(
@@ -370,6 +381,7 @@ async function main() {
     visible = await texto(profe);
     comprobar("puede abrir su trabajo", visible.includes("Marta Vegana"), profe.url());
     comprobar("y se le avisa de que es solo lectura", /No puedes tocarlo/i.test(visible));
+    comprobar("con un enlace para comparar con su propio plan", visible.includes("Comparar con tu plan del caso"));
     comprobar("ve la nota que le dejó la alumna", visible.includes("legumbres"));
     await rellenar(profe, "Nota", "8,5");
     await rellenar(profe, "Comentario", "Bien planteado, revisa la vitamina B12.");

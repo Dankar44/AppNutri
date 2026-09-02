@@ -102,7 +102,7 @@ async function main() {
     console.log("\n── Cambia el plazo ahí mismo ──");
     await pulsar(profe, "Fecha límite:");
     await esperar(600);
-    await escribir(profe, "input[type=date]", "2026-09-20");
+    await escribir(profe, "input[placeholder='dd/mm/aaaa']", "20/09/2026");
     await pulsar(profe, "Guardar", "form");
     await esperar(3500);
     v = await texto(profe);
@@ -115,7 +115,8 @@ async function main() {
     await esperar(3500);
     comprobar("aterriza en la ficha del paciente", profe.url().includes(`/pacientes/${plantillaId}`), profe.url());
     v = await texto(profe);
-    comprobar("con el aviso nuevo", v.includes("Todo lo que rellenes aquí lo verán tus alumnos tal cual"));
+    comprobar("con el aviso nuevo", v.includes("lo verán tus alumnos tal cual al empezar el caso"));
+    comprobar("y el interruptor del plan, apagado", v.includes("Darles hecha la planificación") && v.includes("Apagado:"));
     comprobar("sin la frase de «el plan lo hacen ellos»", !v.includes("lo hacen ellos"));
     comprobar("dice a qué clase está asignado y hasta cuándo", v.includes("Asignado a 1 clase") && v.includes("Hasta el 20/09/2026"));
     comprobar("con Planificación y Plan de alimentación", v.includes("Planificación") && v.includes("Plan de alimentación"));
@@ -182,7 +183,7 @@ async function main() {
         s.dispatchEvent(new Event("change", { bubbles: true }));
       }
     });
-    await escribir(profe, "input[type=date]", "2026-10-15");
+    await escribir(profe, "input[placeholder='dd/mm/aaaa']", "15/10/2026");
     await pulsar(profe, "Asignar", "form");
     await esperar(4000);
     v = await texto(profe);
@@ -223,18 +224,19 @@ async function main() {
     comprobar("se le crea su paciente y aterriza en él", suPac.length === 1 && alumna.url().includes(`/pacientes/${suPac[0]?.id}`), alumna.url());
     v = await texto(alumna);
     comprobar("con la consigna y el botón de entregar arriba", v.includes("hierro") && v.includes("Entregar"));
-    comprobar("ve el plan que le dejó el profesor en la ficha", v.includes("Plan base del caso"));
+    comprobar("NO ve el plan del profesor: es su solución y no se comparte por defecto", !v.includes("Plan base del caso"));
     comprobar("y tiene todo lo demás (anamnesis, mediciones, portal…)", v.includes("Anamnesis") && v.includes("Mediciones") && v.includes("Portal del paciente"));
     await foto(alumna, "alumna-ficha");
     await alumna.goto(`${BASE}/pacientes/${suPac[0].id}?pestana=plan-alimentacion&espacio=aula`, { waitUntil: "networkidle0" });
     await esperar(2500);
     v = await texto(alumna);
-    comprobar("en Plan de alimentación está el plan del profesor", v.includes("Plan base del caso"));
+    comprobar("su Plan de alimentación está vacío, para que lo haga ella", !v.includes("Plan base del caso"));
     const { rows: copia } = await client.query(
-      `SELECT (SELECT COUNT(*)::int FROM alimentos_en_comida a JOIN comidas_del_dia c ON c.id = a."comidaId" JOIN dias_del_plan d ON d.id = c."diaId" WHERE d."planId" = p.id) AS alimentos,
-              (SELECT COUNT(*)::int FROM planificaciones WHERE "pacienteId" = p."pacienteId") AS planis
-         FROM planes_alimenticios p WHERE p."pacienteId" = $1`, [suPac[0].id]);
-    comprobar("con su comida dentro y la planificación copiada", copia[0]?.alimentos === 1 && copia[0]?.planis >= 1, JSON.stringify(copia[0]));
+      `SELECT (SELECT COUNT(*)::int FROM planes_alimenticios WHERE "pacienteId" = $1) AS planes,
+              (SELECT COUNT(*)::int FROM planificaciones WHERE "pacienteId" = $1) AS planis`, [suPac[0].id]);
+    comprobar("ni planes ni planificación copiados", copia[0]?.planes === 0 && copia[0]?.planis === 0, JSON.stringify(copia[0]));
+    const { rows: delProfe } = await client.query(`SELECT COUNT(*)::int n FROM planes_alimenticios WHERE "pacienteId" = $1`, [plantillaId]);
+    comprobar("y el plan del profesor sigue siendo suyo", delProfe[0].n === 1);
     comprobar("y el menú sigue siendo el del aula", (await menu(alumna)).includes("Mis clases"));
     await foto(alumna, "alumna-plan-copiado");
 
@@ -254,12 +256,12 @@ async function main() {
     await profe.goto(`${BASE}/profesor/casos/${casoId}?clase=${(await client.query(`SELECT id FROM asignaciones_caso WHERE "casoId"=$1 AND "claseId"=$2`, [casoId, claseId])).rows[0].id}`, { waitUntil: "networkidle0" });
     await esperar(1500);
     v = await texto(profe);
-    comprobar("ve a la alumna como entregada, con 1 plan", v.includes("Entregada") && v.includes("1 plan"), v.split("\n").filter((l) => l.includes("Entregada")).join(" | "));
+    comprobar("ve a la alumna como entregada, sin plan todavía", v.includes("Entregada") && v.includes("sin plan todavía"), v.split("\n").filter((l) => l.includes("Entregada")).join(" | "));
     await foto(profe, "profesor-entregada");
     await pulsar(profe, "Alumna de prueba");
     await esperar(3500);
     v = await texto(profe);
-    comprobar("abre su trabajo: nota, paciente y plan", v.includes("lentejas") && v.includes("Marta Vegana") && v.includes("Plan base del caso"));
+    comprobar("abre su trabajo: nota y paciente (sin plan, que no hizo ninguno)", v.includes("lentejas") && v.includes("Marta Vegana") && v.includes("Todavía no ha hecho ningún plan"));
     await foto(profe, "profesor-trabajo-alumna");
     await escribir(profe, "input[type=number], input[inputmode=decimal]", "9");
     await escribir(profe, "textarea", "Muy bien el hierro; revisa la B12.");

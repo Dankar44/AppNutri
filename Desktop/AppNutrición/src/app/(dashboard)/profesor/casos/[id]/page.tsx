@@ -16,6 +16,7 @@ import { AsignarAClase } from "./asignar-a-clase";
 import { FechaLimite } from "./fecha-limite";
 import { RetirarAsignacion } from "./retirar-asignacion";
 import { ListaEntregas } from "./lista-entregas";
+import { CompartirPlanes } from "./compartir-planes";
 
 /**
  * #40 — La ficha del caso: qué se les pide, a qué clases está puesto y cómo va cada una, con sus
@@ -95,6 +96,12 @@ export default async function CasoPage({
             <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary shrink-0" />
           </div>
         </Link>
+      )}
+
+      {caso.pacienteId && (
+        <section className="py-4 lg:px-6 lg:py-5 lg:border lg:border-border lg:rounded-xl lg:bg-card">
+          <CompartirPlanes casoId={caso.id} valor={caso.compartirPlanes} />
+        </section>
       )}
 
       <section className="py-4 lg:px-6 lg:py-6 lg:border lg:border-border lg:rounded-xl lg:bg-card">

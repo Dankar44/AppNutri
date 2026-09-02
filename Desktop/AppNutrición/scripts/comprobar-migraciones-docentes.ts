@@ -30,6 +30,7 @@ const MIGRACIONES: { script: string; comprueba: [string, string][] }[] = [
   { script: "add-casos-clinicos", comprueba: [["casos_clinicos", "consigna"], ["asignaciones_caso", "fechaLimite"], ["entregas_caso", "nota"], ["pacientes", "esDeClase"]] },
   { script: "add-notificaciones-docentes", comprueba: [] },
   { script: "add-casos-como-pacientes", comprueba: [["casos_clinicos", "pacienteId"], ["pacientes", "esCasoDocente"], ["entregas_caso", "notaAlumno"]] },
+  { script: "add-caso-compartir-planes", comprueba: [["casos_clinicos", "compartirPlanes"]] },
 ];
 
 const TABLAS_CON_RLS = ["licencias_docentes", "invitaciones_docentes", "clases", "alumnos_clase", "profesores_clase", "casos_clinicos", "asignaciones_caso", "entregas_caso"];

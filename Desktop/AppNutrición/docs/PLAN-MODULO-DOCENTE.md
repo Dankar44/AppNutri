@@ -377,13 +377,16 @@ De ahí sale el modelo definitivo (el que está en código):
   mezcla nunca** con los suyos: fuera de la lista, de la agenda y de todas las cifras
   (`PACIENTES_REALES`).
 - En la ficha de la plantilla se quita **solo el portal del paciente** (es para una persona real
-  que entra con su PIN). Planificación y plan de alimentación **se quedan**: el profesor decide qué
-  les da hecho y qué les pide (puede darles la planificación y pedir el plan, o al revés). No se le
-  impone una forma de trabajar. Tampoco se le ofrece citar ni borrar ese paciente.
+  que entra con su PIN). Planificación y plan de alimentación **se quedan**, pero lo que el profesor
+  haga ahí es **su solución** y NO se comparte por defecto (Guillermo, 2 sep 2026: "que se pueda
+  hacer el plan y no compartirlo, para tener el suyo y compararlo con lo que le entregan"). Un
+  interruptor por caso, `compartirPlanes` («Darles hecha la planificación y el plan»), hace que se
+  les copie al empezar el caso, si quiere dárselo hecho. Tampoco se le ofrece citar ni borrar.
 - Al asignarlo a una clase (con fecha límite) y **empezarlo el alumno**, se le copia el paciente
   **entero** a su cuenta: datos, anamnesis resuelta, mediciones, consultas, horario,
-  recomendaciones, **planificaciones y planes** (con los ids reescritos). Lo ve "exactamente igual
-  que un paciente normal", marcado `esDeClase`.
+  recomendaciones — y **planificaciones y planes solo si `compartirPlanes`** (con los ids
+  reescritos). Lo ve "exactamente igual que un paciente normal", marcado `esDeClase`. Al corregir,
+  el profesor tiene un enlace «Comparar con tu plan del caso» que abre su solución en otra pestaña.
 - Los casos del alumno viven **dentro de la clase**, no sueltos en el aula: el aula lista las clases
   con "N casos · M por entregar" y, dentro, están los casos. También le salen en **Pacientes**,
   etiquetados con su clase.
@@ -465,8 +468,15 @@ el aula. Al probarlo, Guillermo pidió el modelo de arriba. Cambios hechos:
   también arregla Material → Dietas → una dieta, que perdía el menú desde la fase 2.
 - **El selector de paciente de «Nueva dieta»** no lista la plantilla de un caso salvo que se venga
   de su ficha con su id: no se mezcla con los pacientes de verdad del profesor.
-- **Prueba de recorrido** `probar-recorrido-casos.ts`: el flujo entero con clics (41 comprobaciones
+- **Prueba de recorrido** `probar-recorrido-casos.ts`: el flujo entero con clics (43 comprobaciones
   y una captura por pantalla en /tmp/annonia-recorrido).
+- **`compartirPlanes`** (migración `add-caso-compartir-planes`, la 12ª): la planificación y el plan
+  del profesor no viajan salvo que lo encienda. Interruptor en la ficha del caso y en el aviso de
+  la ficha del paciente; enlace «Comparar con tu plan del caso» al corregir.
+- **Calendario de la app** (`DatePicker`) en vez del del navegador para el plazo, la asignación, el
+  fin de curso y la fecha de la licencia.
+- **Recetas** abre en «Recetas de la app» cuando la cuenta aún no tiene propias: un profesor/alumno
+  nuevo aterrizaba en «Mis recetas» vacío y parecía que el catálogo (315) no existía.
 
 ### Lo que queda de la fase 3
 

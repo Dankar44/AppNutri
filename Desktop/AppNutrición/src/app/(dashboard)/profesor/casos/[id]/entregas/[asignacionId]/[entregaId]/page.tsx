@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, User, FileText, Eye, AlertTriangle, MessageSquareText } from "lucide-react";
+import { ArrowLeft, User, FileText, Eye, AlertTriangle, MessageSquareText, GitCompareArrows } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireProfesor } from "@/app/actions/docencia";
 import { getTrabajoDeEntrega } from "@/app/actions/casos";
@@ -98,6 +98,18 @@ export default async function EntregaPage({
         <section className="space-y-3">
           <div className="flex items-center gap-2 flex-wrap">
             <FileText className="w-4 h-4 text-muted-foreground" />
+            {/* Su solución, en otra pestaña, para tenerla al lado mientras corrige. */}
+            {trabajo.casoPacienteId && (
+              <a
+                href={`/pacientes/${trabajo.casoPacienteId}?pestana=plan-alimentacion&espacio=docente`}
+                target="_blank"
+                rel="noopener"
+                className="ml-auto inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline order-last"
+              >
+                <GitCompareArrows className="w-4 h-4" />
+                {t("compartir.compararConTuPlan")}
+              </a>
+            )}
             {trabajo.planes.map((p) => {
               const activo = trabajo.planVisto?.id === p.id;
               return (

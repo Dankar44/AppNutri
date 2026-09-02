@@ -6,6 +6,7 @@ import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { editarLicenciaDocente } from "@/app/actions/admin-docencia";
+import { DatePicker } from "@/components/date-picker";
 
 interface LicenciaEditable {
   id: string;
@@ -144,7 +145,9 @@ export function EditarLicenciaForm({ licencia }: { licencia: LicenciaEditable })
         </div>
         <div>
           <label className="text-xs font-medium text-muted-foreground">{t("form.fechaFin")}</label>
-          <input type="date" value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} className={input} />
+          <div className="mt-1">
+            <DatePicker value={fechaFin} onChange={setFechaFin} />
+          </div>
         </div>
       </div>
 

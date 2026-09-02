@@ -102,10 +102,10 @@
   "crearYRellenar": "Crear y rellenar el paciente",
   "paciente": {
     "abrirFicha": "Abrir la ficha de {nombre}",
-    "abrirFichaAyuda": "Rellénala como la de un paciente de verdad: anamnesis, mediciones, alergias, horario… y, si quieres, su planificación o un plan ya hecho. Tú decides qué les das y qué les pides.",
+    "abrirFichaAyuda": "Rellénala como la de un paciente de verdad: anamnesis, mediciones, alergias, horario… Lo que pongas ahí es lo que se encontrarán tus alumnos. La planificación y el plan que hagas son tu solución, salvo que decidas dárselos hechos.",
     "sinConsigna": "Todavía no has escrito qué les pides.",
     "avisoTitulo": "Este paciente es el caso «{caso}»",
-    "avisoTexto": "Todo lo que rellenes aquí lo verán tus alumnos tal cual al empezar el caso. Lo que quieras que hagan ellos, díselo en «Qué les pides».",
+    "avisoTexto": "Lo que rellenes aquí —datos, anamnesis, mediciones, horario, recomendaciones— lo verán tus alumnos tal cual al empezar el caso. Lo que quieras que hagan ellos, díselo en «Qué les pides».",
     "verCaso": "Ver el caso",
     "volverAClase": "Volver a la clase"
   },
@@ -116,5 +116,13 @@
     "PATOLOGIA": "Patología",
     "DEPORTIVO": "Deportivo",
     "OTRO": "Otro"
+  },
+  "compartir": {
+    "titulo": "Darles hecha la planificación y el plan de alimentación",
+    "apagado": "Apagado: lo que hagas en Planificación y Plan de alimentación es tu solución. Solo la ves tú, y te sirve para comparar con lo que entreguen.",
+    "encendido": "Encendido: la planificación y los planes que tenga la ficha se les copian al empezar el caso, con todo lo demás. Quien ya lo haya empezado no lo recibe.",
+    "activado": "Se les dará hecho: la planificación y el plan viajan con el caso",
+    "desactivado": "Se queda contigo: la planificación y el plan no se comparten",
+    "compararConTuPlan": "Comparar con tu plan del caso"
   }
 }

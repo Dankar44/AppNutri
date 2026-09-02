@@ -6,6 +6,7 @@ import { CalendarClock, Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { asignarCasoAClase } from "@/app/actions/casos";
+import { DatePicker } from "@/components/date-picker";
 import { cn } from "@/lib/utils";
 
 /**
@@ -87,7 +88,9 @@ export function AsignarAClase({
         </div>
         <div>
           <label className="text-xs font-medium text-muted-foreground">{t("asignar.fechaLimite")}</label>
-          <input type="date" value={fechaLimite} onChange={(e) => setFechaLimite(e.target.value)} className={input} />
+          <div className="mt-1">
+            <DatePicker value={fechaLimite} onChange={setFechaLimite} futureOnly />
+          </div>
         </div>
       </div>
       <div className="flex items-center gap-3">

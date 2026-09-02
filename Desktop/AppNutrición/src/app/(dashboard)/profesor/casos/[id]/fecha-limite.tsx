@@ -6,6 +6,7 @@ import { Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { cambiarFechaLimite } from "@/app/actions/casos";
+import { DatePicker } from "@/components/date-picker";
 
 /**
  * La fecha límite de un caso en UNA clase, con su lápiz al lado. Va junto al nombre de la clase
@@ -57,14 +58,10 @@ export function FechaLimite({
 
   return (
     <form onSubmit={guardar} className="inline-flex flex-wrap items-center gap-2">
-      <input
-        type="date"
-        value={fecha}
-        autoFocus
-        onChange={(e) => setFecha(e.target.value)}
-        aria-label={t("asignar.fechaLimite")}
-        className="rounded-lg border border-border bg-background px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30"
-      />
+      {/* El calendario de la app, no el del navegador (Guillermo, 2 sep 2026). */}
+      <div className="w-44">
+        <DatePicker value={fecha} onChange={setFecha} futureOnly />
+      </div>
       <button
         type="submit"
         disabled={isPending}

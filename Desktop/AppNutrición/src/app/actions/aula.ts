@@ -202,7 +202,7 @@ export async function abrirCaso(
         alumnos: { some: { alumnoId: dietista.id, activa: true } },
       },
     },
-    include: { caso: { select: { pacienteId: true } } },
+    include: { caso: { select: { pacienteId: true, compartirPlanes: true } } },
   });
   if (!asignacion) return { ok: false, error: t("docencia.casoNoEncontrado") };
   if (!asignacion.caso.pacienteId) return { ok: false, error: t("docencia.casoSinPaciente") };
@@ -236,8 +236,11 @@ export async function abrirCaso(
       if (entrega.pacienteId) return entrega.pacienteId;
 
       // La copia entera del paciente que rellenó el profesor: datos, anamnesis, mediciones,
-      // consultas, horario y recomendaciones. Lo único que no viaja es lo que tiene que hacer él.
-      const nuevoId = await copiarPaciente(tx, plantillaId, { dietistaId: dietista.id, esDeClase: true });
+      // consultas, horario y recomendaciones. La planificación y el plan, solo si el profesor ha
+      // decidido dárselos hechos; si no, son su solución y se quedan con él.
+      const nuevoId = await copiarPaciente(tx, plantillaId, {
+        dietistaId: dietista.id, esDeClase: true, conPlanes: asignacion.caso.compartirPlanes,
+      });
 
       await tx.entregaCaso.update({
         where: { id: entrega.id },

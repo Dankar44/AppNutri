@@ -72,6 +72,8 @@ export interface CasoResumen {
   pacienteNombre: string;
   consigna: string | null;
   archivado: boolean;
+  /** Si la planificación y los planes de la plantilla se les copian a los alumnos (ver schema). */
+  compartirPlanes: boolean;
   /** A cuántas clases está puesto ahora mismo. */
   clases: number;
   /** Cuántos alumnos lo han entregado ya. */
@@ -94,6 +96,7 @@ const RESUMEN_ASIGNACIONES = {
 
 function resumir(c: {
   id: string; nombre: string; consigna: string | null; archivado: boolean; pacienteId: string | null;
+  compartirPlanes: boolean;
   paciente: { nombre: string; apellidos: string } | null;
   asignaciones: { clase: { _count: { alumnos: number } }; _count: { entregas: number } }[];
 }): CasoResumen {
@@ -106,6 +109,7 @@ function resumir(c: {
     pacienteNombre: c.paciente ? `${c.paciente.nombre} ${c.paciente.apellidos}`.trim() : "",
     consigna: c.consigna,
     archivado: c.archivado,
+    compartirPlanes: c.compartirPlanes,
     clases: c.asignaciones.length,
     entregadas,
     // Pendiente es todo el que no ha entregado, haya abierto el caso o no.
@@ -122,7 +126,7 @@ export async function getMisCasos(incluirArchivados = false): Promise<CasoResume
     },
     orderBy: [{ archivado: "asc" }, { createdAt: "desc" }],
     select: {
-      id: true, nombre: true, consigna: true, archivado: true, pacienteId: true,
+      id: true, nombre: true, consigna: true, archivado: true, pacienteId: true, compartirPlanes: true,
       paciente: { select: { nombre: true, apellidos: true } },
       asignaciones: RESUMEN_ASIGNACIONES,
     },
@@ -135,7 +139,7 @@ export async function getCaso(casoId: string): Promise<CasoResumen | null> {
   const c = await prisma.casoClinico.findFirst({
     where: { id: casoId, profesorId: profesor.dietistaId },
     select: {
-      id: true, nombre: true, consigna: true, archivado: true, pacienteId: true,
+      id: true, nombre: true, consigna: true, archivado: true, pacienteId: true, compartirPlanes: true,
       paciente: { select: { nombre: true, apellidos: true } },
       asignaciones: RESUMEN_ASIGNACIONES,
     },
@@ -146,12 +150,32 @@ export async function getCaso(casoId: string): Promise<CasoResumen | null> {
 /** El caso al que pertenece un paciente plantilla, para pintar el aviso encima de su ficha. */
 export async function getCasoDePacientePlantilla(
   pacienteId: string,
-): Promise<{ id: string; nombre: string; consigna: string | null } | null> {
+): Promise<{ id: string; nombre: string; consigna: string | null; compartirPlanes: boolean } | null> {
   const profesor = await requireProfesor();
   return prisma.casoClinico.findFirst({
     where: { pacienteId, profesorId: profesor.dietistaId },
-    select: { id: true, nombre: true, consigna: true },
+    select: { id: true, nombre: true, consigna: true, compartirPlanes: true },
   });
+}
+
+/**
+ * Si la planificación y los planes del paciente plantilla se les dan hechos a los alumnos.
+ * Solo afecta a quien empiece el caso a partir de ahora: la copia se hace al abrirlo.
+ */
+export async function cambiarCompartirPlanes(
+  casoId: string,
+  compartir: boolean,
+): Promise<{ ok: boolean; error?: string }> {
+  const profesor = await requireProfesor();
+  const t = await getTranslations("validation");
+  const { count } = await prisma.casoClinico.updateMany({
+    where: { id: casoId, profesorId: profesor.dietistaId },
+    data: { compartirPlanes: compartir },
+  });
+  if (count === 0) return { ok: false, error: t("docencia.casoNoEncontrado") };
+  revalidarCasos();
+  revalidatePath(`/profesor/casos/${casoId}`);
+  return { ok: true };
 }
 
 /**
@@ -247,14 +271,15 @@ export async function duplicarCaso(
 
   const original = await prisma.casoClinico.findFirst({
     where: { id: casoId, profesorId: profesor.dietistaId },
-    select: { nombre: true, consigna: true, pacienteId: true, licenciaDocenteId: true },
+    select: { nombre: true, consigna: true, pacienteId: true, licenciaDocenteId: true, compartirPlanes: true },
   });
   if (!original) return { ok: false, error: t("docencia.casoNoEncontrado") };
 
   try {
     const copia = await prisma.$transaction(async (tx) => {
       const pacienteId = original.pacienteId
-        ? await copiarPaciente(tx, original.pacienteId, { dietistaId: profesor.dietistaId, esDeClase: false })
+        // Es una copia para él mismo: viaja todo, su solución incluida.
+        ? await copiarPaciente(tx, original.pacienteId, { dietistaId: profesor.dietistaId, esDeClase: false, conPlanes: true })
         : null;
       if (pacienteId) {
         await tx.paciente.update({ where: { id: pacienteId }, data: { esCasoDocente: true } });
@@ -266,6 +291,7 @@ export async function duplicarCaso(
           nombre: sanitizeString(`${original.nombre} (copia)`, 150),
           consigna: original.consigna,
           pacienteId,
+          compartirPlanes: original.compartirPlanes,
           archivado: false,
         },
       });
@@ -654,6 +680,8 @@ export interface TrabajoDeEntrega {
   alumnoNombre: string;
   casoNombre: string;
   claseNombre: string;
+  /** El paciente plantilla del profesor, para comparar su plan con el del alumno. */
+  casoPacienteId: string | null;
   estado: string;
   entregadaAt: Date | null;
   /** Lo que el alumno escribió al entregar. */
@@ -695,7 +723,7 @@ export async function getTrabajoDeEntrega(
     include: {
       alumno: { select: { nombre: true, apellidos: true } },
       asignacion: {
-        select: { caso: { select: { nombre: true } }, clase: { select: { nombre: true } } },
+        select: { caso: { select: { nombre: true, pacienteId: true } }, clase: { select: { nombre: true } } },
       },
       paciente: {
         select: {
@@ -732,6 +760,7 @@ export async function getTrabajoDeEntrega(
     alumnoNombre: `${entrega.alumno.nombre} ${entrega.alumno.apellidos}`.trim(),
     casoNombre: entrega.asignacion.caso.nombre,
     claseNombre: entrega.asignacion.clase.nombre,
+    casoPacienteId: entrega.asignacion.caso.pacienteId,
     estado: entrega.estado,
     entregadaAt: entrega.entregadaAt,
     notaAlumno: entrega.notaAlumno,
