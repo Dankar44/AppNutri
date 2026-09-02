@@ -9,6 +9,7 @@ import { StatsCard } from "@/components/stats-card";
 import { DistribucionChart, ActividadAnualChart } from "./reportes-charts";
 import { PageHeader } from "@/components/page-header";
 import { getTranslations } from "next-intl/server";
+import { PACIENTES_REALES } from "@/lib/filtros-pacientes";
 
 export default async function ReportesPage() {
   const t = await getTranslations("reports");
@@ -21,7 +22,7 @@ export default async function ReportesPage() {
     getDistribucionObjetivos(),
     getConsultasPorMes(),
     prisma.paciente.findMany({
-      where: { dietistaId: dietista.id, activo: true, esDemo: false },
+      where: { dietistaId: dietista.id, activo: true, ...PACIENTES_REALES },
       select: {
         id: true,
         nombre: true,

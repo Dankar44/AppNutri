@@ -6,6 +6,7 @@ import { TipoNotificacion } from "@/generated/prisma/client";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { getLocale } from "@/i18n/locale";
+import { PACIENTES_REALES } from "@/lib/filtros-pacientes";
 
 const generacionEnCurso = new Map<string, number>();
 
@@ -56,11 +57,11 @@ export async function generarNotificaciones() {
   // Datos necesarios en paralelo (3 queries en vez de separadas)
   const [citasHoy, pacientes, entradasHoy] = await Promise.all([
     prisma.cita.findMany({
-      where: { dietistaId: dietista.id, fechaHora: { gte: hoy, lt: manana }, paciente: { esDemo: false } },
+      where: { dietistaId: dietista.id, fechaHora: { gte: hoy, lt: manana }, paciente: { ...PACIENTES_REALES } },
       include: { paciente: { select: { nombre: true, apellidos: true } } },
     }),
     prisma.paciente.findMany({
-      where: { dietistaId: dietista.id, activo: true, esDemo: false },
+      where: { dietistaId: dietista.id, activo: true, ...PACIENTES_REALES },
       select: {
         id: true, nombre: true, apellidos: true,
         consultas: { orderBy: { fecha: "desc" }, take: 1, select: { fecha: true } },
@@ -68,7 +69,7 @@ export async function generarNotificaciones() {
       },
     }),
     prisma.seguimientoDiario.findMany({
-      where: { createdAt: { gte: hoy }, paciente: { dietistaId: dietista.id, esDemo: false } },
+      where: { createdAt: { gte: hoy }, paciente: { dietistaId: dietista.id, ...PACIENTES_REALES } },
       select: { paciente: { select: { id: true, nombre: true, apellidos: true } } },
       distinct: ["pacienteId"],
     }),
@@ -383,7 +384,7 @@ export async function getMapaNotificacionesPacientes(): Promise<
   if (!dietista) return {};
 
   const notifs = await prisma.notificacion.findMany({
-    where: { dietistaId: dietista.id, leida: false, pacienteId: { not: null }, paciente: { esDemo: false } },
+    where: { dietistaId: dietista.id, leida: false, pacienteId: { not: null }, paciente: { ...PACIENTES_REALES } },
     select: { id: true, pacienteId: true, tipo: true, titulo: true, mensaje: true, tituloKey: true, mensajeKey: true, params: true, createdAt: true },
     orderBy: { createdAt: "desc" },
   });
@@ -421,7 +422,7 @@ export async function getMapaNotificacionesCitas(
       dietistaId: dietista.id,
       leida: false,
       citaId: { in: citaIds },
-      OR: [{ paciente: { esDemo: false } }, { pacienteId: null }],
+      OR: [{ paciente: { ...PACIENTES_REALES } }, { pacienteId: null }],
     },
     select: { id: true, citaId: true, tipo: true, titulo: true, mensaje: true, tituloKey: true, mensajeKey: true, params: true, createdAt: true },
     orderBy: { createdAt: "desc" },

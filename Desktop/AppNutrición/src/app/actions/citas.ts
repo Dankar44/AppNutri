@@ -14,6 +14,7 @@ import { fromMadrid, fromMadridLocalString, toMadridDateStr } from "@/lib/tz";
 import { syncCitaAmbos, unsyncCitaAntesDeBorrar } from "@/lib/google-sync";
 import { enviarEmailCita, construirMensajeWhatsAppCita } from "@/lib/email-citas";
 import { getTranslations, getLocale } from "next-intl/server";
+import { PACIENTES_REALES } from "@/lib/filtros-pacientes";
 
 export interface CitaFormData {
   pacienteId: string;
@@ -150,7 +151,7 @@ export async function getCitasSemana(fechaInicio: string) {
     where: {
       dietistaId: dietista.id,
       fechaHora: { gte: inicio, lt: fin },
-      paciente: { esDemo: false },
+      paciente: { ...PACIENTES_REALES },
     },
     include: { paciente: { select: { id: true, nombre: true, apellidos: true } } },
     orderBy: { fechaHora: "asc" },
@@ -168,7 +169,7 @@ export async function getCitasMes(anio: number, mes: number) {
     where: {
       dietistaId: dietista.id,
       fechaHora: { gte: inicio, lt: fin },
-      paciente: { esDemo: false },
+      paciente: { ...PACIENTES_REALES },
     },
     include: { paciente: { select: { id: true, nombre: true, apellidos: true } } },
     orderBy: { fechaHora: "asc" },
@@ -188,7 +189,7 @@ export async function getCitasHoy() {
     where: {
       dietistaId: dietista.id,
       fechaHora: { gte: hoy, lt: manana },
-      paciente: { esDemo: false },
+      paciente: { ...PACIENTES_REALES },
     },
     include: { paciente: { select: { nombre: true, apellidos: true } } },
     orderBy: { fechaHora: "asc" },
@@ -210,7 +211,7 @@ export async function getCitasDia(fechaYYYYMMDD: string) {
     where: {
       dietistaId: dietista.id,
       fechaHora: { gte: inicio, lt: fin },
-      paciente: { esDemo: false },
+      paciente: { ...PACIENTES_REALES },
     },
     include: {
       paciente: {
@@ -233,7 +234,7 @@ export async function getProximasCitas(take = 8) {
       dietistaId: dietista.id,
       fechaHora: { gte: ahora },
       estado: { in: [EstadoCita.PENDIENTE, EstadoCita.CONFIRMADA] },
-      paciente: { esDemo: false },
+      paciente: { ...PACIENTES_REALES },
     },
     include: {
       paciente: {

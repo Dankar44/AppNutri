@@ -5,6 +5,7 @@ import { getCurrentDietista } from "./auth";
 import { getTranslations } from "next-intl/server";
 import { getLocale } from "@/i18n/locale";
 import { intlTag } from "@/i18n/config";
+import { PACIENTES_REALES } from "@/lib/filtros-pacientes";
 
 export async function getEstadisticasDietista() {
   const dietista = await getCurrentDietista();
@@ -18,13 +19,13 @@ export async function getEstadisticasDietista() {
     planesIA,
     pacientesConPortal,
   ] = await Promise.all([
-    prisma.paciente.count({ where: { dietistaId: dietista.id, esDemo: false } }),
-    prisma.paciente.count({ where: { dietistaId: dietista.id, activo: true, esDemo: false } }),
-    prisma.consulta.count({ where: { dietistaId: dietista.id, paciente: { esDemo: false } } }),
-    prisma.planAlimenticio.count({ where: { dietistaId: dietista.id, paciente: { esDemo: false } } }),
+    prisma.paciente.count({ where: { dietistaId: dietista.id, ...PACIENTES_REALES } }),
+    prisma.paciente.count({ where: { dietistaId: dietista.id, activo: true, ...PACIENTES_REALES } }),
+    prisma.consulta.count({ where: { dietistaId: dietista.id, paciente: { ...PACIENTES_REALES } } }),
+    prisma.planAlimenticio.count({ where: { dietistaId: dietista.id, paciente: { ...PACIENTES_REALES } } }),
     prisma.generacionIA.count({ where: { dietistaId: dietista.id, estado: "APLICADO" } }),
     prisma.accesoPaciente.count({
-      where: { activo: true, paciente: { dietistaId: dietista.id, esDemo: false } },
+      where: { activo: true, paciente: { dietistaId: dietista.id, ...PACIENTES_REALES } },
     }),
   ]);
 
@@ -55,7 +56,7 @@ export async function getDistribucionObjetivos() {
 
   const pacientes = await prisma.paciente.groupBy({
     by: ["objetivo"],
-    where: { dietistaId: dietista.id, esDemo: false },
+    where: { dietistaId: dietista.id, ...PACIENTES_REALES },
     _count: true,
   });
 
@@ -91,8 +92,8 @@ export async function getConsultasPorMes() {
     const label = inicio.toLocaleDateString(tag, { month: "short", year: "2-digit" });
 
     const [consultas, pacientes] = await Promise.all([
-      prisma.consulta.count({ where: { dietistaId: dietista.id, fecha: { gte: inicio, lt: fin }, paciente: { esDemo: false } } }),
-      prisma.paciente.count({ where: { dietistaId: dietista.id, createdAt: { gte: inicio, lt: fin }, esDemo: false } }),
+      prisma.consulta.count({ where: { dietistaId: dietista.id, fecha: { gte: inicio, lt: fin }, paciente: { ...PACIENTES_REALES } } }),
+      prisma.paciente.count({ where: { dietistaId: dietista.id, createdAt: { gte: inicio, lt: fin }, ...PACIENTES_REALES } }),
     ]);
 
     meses.push({ mes: label, consultas, pacientes });

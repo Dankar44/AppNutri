@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { PACIENTES_REALES } from "@/lib/filtros-pacientes";
 import {
   createGoogleEvent,
   updateGoogleEvent,
@@ -220,7 +221,7 @@ export async function backfillCitasNutri(dietistaId: string): Promise<{ creadas:
       dietistaId,
       googleEventId: null,
       estado: { in: ["PENDIENTE", "CONFIRMADA", "COMPLETADA"] },
-      paciente: { esDemo: false },
+      paciente: { ...PACIENTES_REALES },
     },
     include: {
       paciente: { select: { nombre: true, apellidos: true, email: true, esDemo: true } },
@@ -267,7 +268,7 @@ export async function backfillCitasPaciente(pacienteId: string): Promise<{ cread
       pacienteId,
       googleEventIdPaciente: null,
       estado: { in: ["PENDIENTE", "CONFIRMADA", "COMPLETADA"] },
-      paciente: { esDemo: false },
+      paciente: { ...PACIENTES_REALES },
     },
     include: {
       paciente: { select: { nombre: true, apellidos: true, email: true, esDemo: true } },

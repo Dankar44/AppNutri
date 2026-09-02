@@ -78,6 +78,8 @@ model Dietista {
   clasesImpartidas   Clase[]
   clasesQueLleva     ProfesorClase[]
   matriculas         AlumnoClase[]
+  casosClinicos      CasoClinico[]   @relation("CasosDelProfesor")
+  entregasDeCasos    EntregaCaso[]   @relation("EntregasDelAlumno")
 
   @@index([licenciaDocenteId])
   @@map("dietistas")
@@ -266,6 +268,8 @@ model Paciente {
 
   fichaSidebar        Json?
   esDemo              Boolean           @default(false)
+  /// #40 — Nació de un caso de clase: se etiqueta en su lista y no cuenta como paciente real.
+  esDeClase           Boolean           @default(false)
   activo              Boolean           @default(true)
   /// Si true, el paciente no ve calorías ni macros (portal, PDF, seguimiento). El dietista siempre los ve.
   ocultarCalorias     Boolean           @default(false)
@@ -287,6 +291,7 @@ model Paciente {
   pagos               Pago[]
   planificaciones     Planificacion[]
   googleIntegracion   GoogleIntegracionPaciente?
+  entregaCaso         EntregaCaso?
 
   @@map("pacientes")
 }
@@ -1055,6 +1060,7 @@ model LicenciaDocente {
 
   miembros      Dietista[]
   invitaciones  InvitacionDocente[]
+  casos         CasoClinico[]
   clases        Clase[]
 
   @@map("licencias_docentes")
@@ -1115,6 +1121,7 @@ model Clase {
   alumnos           AlumnoClase[]
   invitaciones      InvitacionDocente[]
   profesores        ProfesorClase[]
+  casosAsignados    AsignacionCaso[]
 
   @@index([profesorId])
   @@index([licenciaDocenteId])
@@ -1140,6 +1147,108 @@ model ProfesorClase {
   @@unique([claseId, profesorId])
   @@index([profesorId])
   @@map("profesores_clase")
+}
+
+/// #40 (issue #32) — El caso que escribe el profesor: un paciente ficticio con su historia y lo
+/// que se le pide al alumno. Es una plantilla: se asigna a varias clases sin tocarse.
+model CasoClinico {
+  id                String   @id @default(dbgenerated("gen_random_uuid()::text"))
+  profesorId        String
+  profesor          Dietista @relation("CasosDelProfesor", fields: [profesorId], references: [id], onDelete: Cascade)
+  licenciaDocenteId String?
+  licenciaDocente   LicenciaDocente? @relation(fields: [licenciaDocenteId], references: [id], onDelete: SetNull)
+
+  nombre            String
+  /// Lo que tiene que entregar el alumno, con sus palabras.
+  consigna          String?
+
+  // El paciente ficticio. Mismos campos que un paciente de verdad, porque de aquí sale uno.
+  pacienteNombre    String
+  pacienteApellidos String   @default("")
+  sexo              Sexo?
+  fechaNacimiento   DateTime?
+  peso              Float?
+  altura            Float?
+  objetivo          ObjetivoPaciente @default(MANTENIMIENTO)
+  objetivoDetalle   String?
+  nivelActividad    String?
+  patologias        String[]
+  alergias          String[]
+  intolerancias     String[]
+  medicamentos      String[]
+  suplementos       String[]
+  preferencias      String[]
+  notas             String?
+  fichaInformacion  Json?
+
+  /// Archivar no borra: las entregas de cursos pasados siguen ahí.
+  archivado         Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now()) @updatedAt
+
+  asignaciones      AsignacionCaso[]
+
+  @@index([profesorId, archivado])
+  @@map("casos_clinicos")
+}
+
+/// #40 — Un caso puesto a una clase, con su fecha límite.
+model AsignacionCaso {
+  id          String    @id @default(dbgenerated("gen_random_uuid()::text"))
+  casoId      String
+  caso        CasoClinico @relation(fields: [casoId], references: [id], onDelete: Cascade)
+  claseId     String
+  clase       Clase     @relation(fields: [claseId], references: [id], onDelete: Cascade)
+  fechaLimite DateTime?
+  asignadoPor String?
+  /// Retirar la asignación no borra lo entregado: deja de verse como pendiente y ya.
+  retiradaAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+
+  entregas    EntregaCaso[]
+
+  @@unique([casoId, claseId])
+  @@index([claseId])
+  @@map("asignaciones_caso")
+}
+
+enum EstadoEntrega {
+  SIN_EMPEZAR
+  EN_MARCHA
+  ENTREGADA
+  CORREGIDA
+}
+
+/// #40 — Lo de cada alumno con un caso: su paciente, su estado y su nota.
+model EntregaCaso {
+  id                String   @id @default(dbgenerated("gen_random_uuid()::text"))
+  asignacionId      String
+  asignacion        AsignacionCaso @relation(fields: [asignacionId], references: [id], onDelete: Cascade)
+  alumnoId          String
+  alumno            Dietista @relation("EntregasDelAlumno", fields: [alumnoId], references: [id], onDelete: Cascade)
+  /// El paciente se crea la primera vez que lo abre, no al asignarlo: una clase de 300 alumnos
+  /// generaría 300 pacientes que quizá nadie llegue a abrir.
+  pacienteId        String?  @unique
+  paciente          Paciente? @relation(fields: [pacienteId], references: [id], onDelete: SetNull)
+
+  estado            EstadoEntrega @default(SIN_EMPEZAR)
+  abiertaAt         DateTime?
+  entregadaAt       DateTime?
+
+  nota              Float?
+  comentario        String?
+  /// La nota no se le enseña hasta que el profesor quiere (acordado el 27 ago 2026).
+  visibleParaAlumno Boolean  @default(false)
+  corregidaAt       DateTime?
+  corregidaPor      String?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now()) @updatedAt
+
+  @@unique([asignacionId, alumnoId])
+  @@index([alumnoId, estado])
+  @@map("entregas_caso")
 }
 
 model AlumnoClase {

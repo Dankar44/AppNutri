@@ -6,6 +6,7 @@ import { getLocale } from "@/i18n/locale";
 import { intlTag } from "@/i18n/config";
 import { capitalizarNombre } from "@/lib/utils";
 import { SeguimientoDietistas } from "./seguimiento-dietistas";
+import { PACIENTES_REALES } from "@/lib/filtros-pacientes";
 
 export default async function SeguimientoPage() {
   const t = await getTranslations("admin");
@@ -66,12 +67,12 @@ export default async function SeguimientoPage() {
         verificado: true,
         creadoPor: true,
         fuenteContacto: true,
-        _count: { select: { pacientes: { where: { esDemo: false } } } },
+        _count: { select: { pacientes: { where: { ...PACIENTES_REALES } } } },
       },
       orderBy: { lastAccessAt: "desc" },
     }),
     prisma.paciente.findMany({
-      where: { activo: true, esDemo: false },
+      where: { activo: true, ...PACIENTES_REALES },
       select: {
         id: true,
         nombre: true,
