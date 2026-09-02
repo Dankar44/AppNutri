@@ -22,6 +22,7 @@ import {
   Building2,
   Sparkles,
   GraduationCap,
+  ClipboardList,
   Briefcase,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -66,8 +67,7 @@ function seccionesDocentes(t: (key: string) => string, opts?: { isAdmin?: boolea
       items: [
         { href: "/profesor", label: t("navItems.inicioDocente"), icon: GraduationCap },
         { href: "/profesor/clases", label: t("navItems.clases"), icon: Users },
-        // Alumnos, Casos y Entregas se añaden cuando existan: un menú lleno de sitios vacíos es
-        // peor que uno corto.
+        { href: "/profesor/casos", label: t("navItems.casos"), icon: ClipboardList },
       ],
     },
     {

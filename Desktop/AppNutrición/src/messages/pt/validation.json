@@ -295,6 +295,14 @@
     "noCabenAlDesarchivar": "Não cabem: ao desarquivá-la voltam {vuelven} alunos e só restam {libres} lugares livres. Amplie a licença ou retire antes alguns alunos.",
     "retiraAntesElAcceso": "Retire-lhe primeiro o acesso: assim ninguém desaparece com um clique.",
     "profesorNoEsDeTuFacultad": "Esse professor não é da sua faculdade.",
-    "alCreadorNoSeLeQuita": "Não pode retirar quem criou a turma."
+    "alCreadorNoSeLeQuita": "Não pode retirar quem criou a turma.",
+    "nombreCasoObligatorio": "Dê um nome ao caso.",
+    "nombrePacienteObligatorio": "O paciente do caso precisa de um nome.",
+    "casoNoEncontrado": "Não se encontrou o caso.",
+    "fechaLimiteNoValida": "Essa data limite não é válida.",
+    "abreloAntes": "Abra-o antes de o entregar: é assim que se cria o seu paciente.",
+    "yaCorregida": "O seu professor já a corrigiu, por isso não se pode alterar.",
+    "entregaNoEncontrada": "Não se encontrou essa entrega.",
+    "notaFueraDeRango": "A nota vai de 0 a 10."
   }
 }
