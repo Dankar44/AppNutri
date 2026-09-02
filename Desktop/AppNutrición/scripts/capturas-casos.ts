@@ -71,9 +71,17 @@ async function main() {
     const alumna = await abrir("alumna.prueba@annonia.dev", "AlumnaPrueba2026");
     await alumna.goto(`${BASE}/aula`, { waitUntil: "networkidle0" });
     await foto(alumna, "03-el-caso-en-su-aula");
+    // Empezar el caso para ver la ficha del paciente con el aviso arriba
+    await alumna.evaluate(() => {
+      const b = Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.includes("Empezar el caso"));
+      (b as HTMLElement | undefined)?.click();
+    });
+    await esperar(6000);
+    await foto(alumna, "04-trabajando-el-caso");
+
     const movil = await abrir("alumna.prueba@annonia.dev", "AlumnaPrueba2026", 390);
     await movil.goto(`${BASE}/aula`, { waitUntil: "networkidle0" });
-    await foto(movil, "04-su-aula-en-movil");
+    await foto(movil, "05-su-aula-en-movil");
   } finally {
     client.release();
     await navegador.close();

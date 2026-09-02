@@ -78,6 +78,7 @@ type PacienteSerializado = {
   preconsultaCompletadaAt?: string | null;
   plantillaAnamnesisId?: string | null;
   esDemo?: boolean;
+  esDeClase?: boolean;
   ocultarCalorias?: boolean;
   avisarPorEmail?: boolean;
 };
@@ -232,6 +233,7 @@ export function PacienteFichaClient({
             activo={paciente.activo}
             email={paciente.email}
             esDemo={paciente.esDemo === true}
+            esDeClase={paciente.esDeClase === true}
           />
         </div>
       </div>

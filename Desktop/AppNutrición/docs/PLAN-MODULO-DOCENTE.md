@@ -376,68 +376,55 @@ De ahí sale el modelo:
   reales, que era la condición de partida.
 - Al alumno **no se le quita Pacientes**: es donde practica, y donde está su paciente de ejemplo.
 
-## Plan de la Fase 3 — 128 pasos
+## Estado: bloques A a E hechos, auditoría incluida (2 sep 2026)
 
-### Bloque A · Modelo de casos (1-18)
-1. [ ] Tabla `casos_clinicos`: del profesor, con nombre, descripción y consigna.
-2. [ ] Datos del paciente ficticio dentro del caso (edad, sexo, peso, talla, actividad, patologías).
-3. [ ] Anamnesis del caso: lo que el alumno tiene que leer antes de empezar.
-4. [ ] Un caso es una plantilla: se asigna N veces sin tocarse.
-5. [ ] Tabla `asignaciones_caso`: caso + clase + fecha límite.
-6. [ ] Tabla `entregas`: alumno + asignación + el paciente que se le creó + estado.
-7. [ ] Estados de la entrega: sin empezar, en marcha, entregada, corregida.
-8. [ ] `pacientes.origenCasoId`: marca el paciente que nació de un caso.
-9. [ ] RLS en las tres tablas nuevas.
-10. [ ] Migración aditiva y repetible, con su comprobación.
-11. [ ] Modelos en Prisma y cliente regenerado (y servidor reiniciado).
-12. [ ] Un caso borrado no se lleva por delante el trabajo del alumno.
-13. [ ] Copiar el caso a paciente: qué se copia y qué no.
-14. [ ] Que el paciente del caso no cuente en las cifras de pacientes reales de administración.
-15. [ ] Que no cuente para los límites del plan del alumno.
-16. [ ] Comprobar que no se puede asignar un caso a una clase que no llevas.
-17. [ ] Comprobar que no se puede asignar a una clase con el curso cerrado.
-18. [ ] ✅ `tsc` + baterías.
+**A · Modelo.** `casos_clinicos` (la plantilla del profesor), `asignaciones_caso` (ese caso puesto
+a una clase, con fecha límite) y `entregas_caso` (lo de cada alumno: su paciente, su estado y su
+nota). El paciente se crea la primera vez que el alumno abre el caso, no al asignarlo: una clase
+de 300 generaría 300 pacientes que quizá nadie llegue a abrir. Y `PACIENTES_REALES`, un solo
+filtro donde antes había 53 `esDemo: false` repetidos a mano en ocho ficheros.
 
-### Bloque B · El profesor crea y asigna (19-42)
-19. [ ] Sección "Casos" en el espacio docente.
-20. [ ] Crear un caso: nombre, consigna y datos del paciente ficticio.
-21. [ ] Editar y duplicar un caso (el mismo caso vale para varios cursos).
-22. [ ] Archivar un caso sin romper las entregas hechas.
-23. [ ] Asignar a una clase, con fecha límite.
-24. [ ] Asignar a varias clases a la vez.
-25. [ ] Ver a quién se le ha asignado y quién lo tiene entregado.
-26. [ ] Retirar una asignación: qué pasa con lo ya entregado.
-27. [ ] Avisar al alumno de que tiene un caso nuevo (notificación en la app).
-28. [ ] Que el caso NO aparezca entre sus pacientes reales.
-29. [ ] Traducciones es y pt.
-30-42. [ ] Interfaz, estados vacíos, móvil sin cajas y pruebas de cada camino.
+**B · El profesor crea y asigna.** Casos con los mismos campos que una ficha de paciente, se
+duplican y se archivan. Asignación a una o varias clases con fecha límite, que se puede cambiar
+después. Retirar no borra nada.
 
-### Bloque C · El alumno trabaja el caso (43-70)
-43. [ ] En el aula: "Paciente X · Clase Y · entrega antes del Z".
-44. [ ] Abrir el caso crea (o abre) su paciente, con la anamnesis puesta.
-45. [ ] Trabaja con las pantallas de siempre: ficha, plan, PDF.
-46. [ ] En su lista de pacientes sale etiquetado como de clase.
-47. [ ] Filtro para separar sus pacientes de los de clase.
-48. [ ] Aviso cuando queda poco para la fecha límite.
-49. [ ] Qué pasa si entrega tarde (se puede, y se ve que fue tarde).
-50-70. [ ] Entregar, deshacer la entrega, volver a entregar, y sus pruebas.
+**C · El alumno trabaja.** El caso le sale en el aula con el paciente, la clase y la fecha; al
+empezarlo se le crea su paciente y aterriza en su ficha, que lleva arriba la consigna, el plazo y
+el botón de entregar. En su lista de pacientes sale etiquetado con su clase, con un selector para
+separarlos de los suyos.
 
-### Bloque D · El profesor corrige (71-96)
-71. [ ] Lista de entregas de una asignación, con su estado.
-72. [ ] Abrir la entrega del alumno en solo lectura.
-73. [ ] Nota de 0 a 10 con decimales y comentario.
-74. [ ] Decidir si el alumno la ve o no (el interruptor que se acordó).
-75. [ ] Avisar al alumno de que está corregida.
-76-96. [ ] Interfaz, traducciones y pruebas.
+**D · El profesor corrige.** Ve quién ha entregado y quién no, abre el trabajo en solo lectura
+(paciente + planes) y pone nota de 0 a 10 con comentario, con un interruptor para publicarla
+cuando termine con toda la clase.
 
-### Bloque E · Menú del alumno (97-106)
-97. [ ] Pacientes se queda: es donde practica.
-98. [ ] Qué le sobra de verdad (Pagos, Mensajes) una vez visto el flujo entero.
-99-106. [ ] Ajustes, traducciones y pruebas.
+**E · Menú del alumno.** Pacientes se queda: es donde practica. Fuera del aula, la gestión de una
+consulta (Agenda, Pagos) sigue en su cuenta profesional, a un clic.
 
-### Bloque F · Auditoría de la Fase 3 (107-128)
-107-128. [ ] Releer cada fichero, seguridad, aislamiento entre alumnos, casos límite del
-calendario, rendimiento con 200 entregas, guía de bugs, auditoría multiagente y arreglos.
+### La auditoría (bloque F)
+
+Tres revisiones adversarias. **Cuatro de los hallazgos no eran del módulo docente sino de la
+aplicación entera**, y los cuatro estaban desde antes:
+
+| Qué | Quién podía |
+|---|---|
+| `crearEnlace(planId)` sin comprobar el dueño | Cualquiera con cuenta: publicar en internet la dieta de un paciente ajeno |
+| `crearPlan`, `crearConsulta`, `crearPlanDesdePlantilla` con `pacienteId` ajeno | Colgar planes y consultas de la ficha de otro |
+
+Del módulo, catorce: borrar la cuenta del profesor arrasaba con las entregas de sus alumnos; el
+alumno podía borrar el paciente del caso y reabrir una entrega corregida; dos pestañas creaban dos
+pacientes; entregar no repetía las comprobaciones de abrir; un caso archivado se seguía viendo;
+retirar a un alumno escondía su trabajo de los dos lados; se podía corregir a quien no había
+entregado; el paciente inventado salía en el selector de citas; y el día de la fecha límite
+contaba distinto para el profesor que para el alumno.
+
+**Estado: 16 baterías, 465 comprobaciones.** `tsc` y `next build` limpios, RLS en las 42 tablas.
+Con 200 alumnos, 20 casos y ~2.500 entregas, la pantalla más lenta son 2,1 s.
+
+### Lo que queda de la fase 3
+
+- Que el alumno pueda escribir su razonamiento en la entrega (hoy el profesor lee lo que haya
+  puesto en la ficha del paciente y en el plan).
+- Repasar el menú del alumno cuando se vea el flujo con gente de verdad (Mensajes, Pagos).
 
 ---
 

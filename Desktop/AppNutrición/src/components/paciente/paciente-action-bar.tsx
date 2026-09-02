@@ -15,6 +15,8 @@ interface Props {
   activo: boolean;
   email: string | null;
   esDemo: boolean;
+  /** #40 — Paciente de un caso de clase: ni se borra ni se le pone cita. */
+  esDeClase?: boolean;
 }
 
 type Variante = "primary" | "default" | "danger";
@@ -29,7 +31,7 @@ type AccionMovil = {
   run: () => void;
 };
 
-export function PacienteActionBar({ pacienteId, activo, email, esDemo }: Props) {
+export function PacienteActionBar({ pacienteId, activo, email, esDemo, esDeClase = false }: Props) {
   const t = useTranslations("patients");
   const router = useRouter();
   const [showConfirm, setShowConfirm] = useState(false);
@@ -65,7 +67,9 @@ export function PacienteActionBar({ pacienteId, activo, email, esDemo }: Props) 
 
   // Acciones de la barra móvil, en el mismo orden que en escritorio.
   const acciones: AccionMovil[] = [];
-  if (!esDemo) {
+  // Al paciente de un caso no se le cita: es una persona inventada, y la cita acabaría mandando
+  // correos de verdad.
+  if (!esDemo && !esDeClase) {
     acciones.push({
       id: "cita",
       icon: CalendarPlus,
@@ -103,14 +107,18 @@ export function PacienteActionBar({ pacienteId, activo, email, esDemo }: Props) 
     variante: "default",
     run: handleToggleActivo,
   });
-  acciones.push({
-    id: "eliminar",
-    icon: Trash2,
-    label: t("actions.eliminar"),
-    title: t("actions.eliminarPaciente"),
-    variante: "danger",
-    run: () => setShowConfirm(true),
-  });
+  // El paciente de un caso no se borra: es el trabajo que su profesor tiene que corregir. El
+  // servidor también lo impide; aquí se quita el botón para no ofrecer algo que va a fallar.
+  if (!esDeClase) {
+    acciones.push({
+      id: "eliminar",
+      icon: Trash2,
+      label: t("actions.eliminar"),
+      title: t("actions.eliminarPaciente"),
+      variante: "danger",
+      run: () => setShowConfirm(true),
+    });
+  }
 
   // Botón abierto en móvil (el primero arranca desplegado: "Nueva cita").
   const [abierto, setAbierto] = useState<string | null>(acciones[0]?.id ?? null);
@@ -140,7 +148,7 @@ export function PacienteActionBar({ pacienteId, activo, email, esDemo }: Props) 
     <>
       {/* Escritorio: barra completa, un solo clic (comportamiento de siempre) */}
       <div className="hidden lg:flex items-center gap-3 flex-wrap">
-        {!esDemo && (
+        {!esDemo && !esDeClase && (
           <Link
             href={`/agenda/nueva?paciente=${pacienteId}`}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-primary/40 text-primary hover:bg-primary/10 transition-colors text-sm font-medium"
