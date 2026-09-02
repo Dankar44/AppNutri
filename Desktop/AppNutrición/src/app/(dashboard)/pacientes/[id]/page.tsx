@@ -19,7 +19,7 @@ import { AvisoPlantilla } from "./aviso-plantilla";
 import { getCasoDePacientePlantilla, getAsignacionesDeCaso, getClasesParaAsignar } from "@/app/actions/casos";
 import { getCasoDelPaciente } from "@/app/actions/aula";
 import { cursoTerminado } from "@/lib/docencia";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatDateTime } from "@/lib/utils";
 import { getLocale } from "@/i18n/locale";
 
 interface Props {
@@ -107,6 +107,7 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
       {caso && (
         <AvisoCaso
           asignacionId={caso.asignacionId}
+          entregaId={caso.entregaId}
           casoNombre={caso.casoNombre}
           consigna={caso.consigna}
           claseNombre={caso.claseNombre}
@@ -118,12 +119,17 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
             (caso.estado === "SIN_EMPEZAR" || caso.estado === "EN_MARCHA") &&
             cursoTerminado(caso.fechaLimite)
           }
+          entregadaEl={caso.entregadaAt ? formatDateTime(caso.entregadaAt, locale) : null}
+          entregableNombre={caso.entregableNombre}
+          entregablePlanNombre={caso.entregablePlanNombre}
+          planes={caso.planes}
         />
       )}
 
       <PacienteFichaClient
         paciente={serializado}
         pestana={pestana}
+        casoEntrega={caso ? { asignacionId: caso.asignacionId, estado: caso.estado, planes: caso.planes } : null}
         medidas={medidas}
         planes={planes}
         planificaciones={planificaciones}

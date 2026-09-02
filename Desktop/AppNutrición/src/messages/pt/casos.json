@@ -97,7 +97,12 @@
     "notaFuera": "A nota vai de 0 a 10.",
     "yaNoEstaEnLaClase": "Já não está na turma",
     "todaviaNoEntregada": "Este aluno ainda não entregou. Espere que o faça: se lhe puser nota agora, não poderá entregar.",
-    "notaDelAlumno": "O que o aluno lhe conta"
+    "notaDelAlumno": "O que o aluno lhe conta",
+    "fotoFija": "Estás a ver a entrega tal e qual a fez em {fecha}. O que o aluno tenha alterado depois não está aqui, salvo se entregar de novo.",
+    "entregable": "Entregável",
+    "entregableDe": "O PDF de «{plan}», tal e qual o entregou ({tamano}).",
+    "sinEntregable": "Entregou sem PDF: não anexou nenhum entregável.",
+    "abrirPdf": "Abrir o PDF"
   },
   "crearYRellenar": "Criar e preencher o paciente",
   "paciente": {
@@ -124,5 +129,23 @@
     "activado": "Vão recebê-lo feito: o planeamento e o plano viajam com o caso",
     "desactivado": "Fica contigo: o planeamento e o plano não se partilham",
     "compararConTuPlan": "Comparar com o teu plano do caso"
+  },
+  "planificacion": {
+    "titulo": "Planeamento",
+    "ninguna": "Não fez nenhum planeamento para este paciente.",
+    "kcal": "Objetivo",
+    "proteinas": "Proteínas",
+    "carbohidratos": "Hidratos",
+    "grasas": "Gorduras",
+    "pesoActual": "Peso atual",
+    "pesoObjetivo": "Peso objetivo",
+    "grasaActual": "Gordura atual",
+    "grasaObjetivo": "Gordura objetivo",
+    "ajuste": "Ajuste sobre o gasto",
+    "actividad": "Atividade",
+    "formula": "Fórmulas",
+    "porDefecto": "por defeito",
+    "vacia": "Ainda sem dados.",
+    "reparto": "Distribuição por refeições (% das kcal do dia)"
   }
 }

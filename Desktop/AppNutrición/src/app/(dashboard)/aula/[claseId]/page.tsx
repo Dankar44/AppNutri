@@ -4,7 +4,7 @@ import { ArrowLeft, Users, CalendarRange, ClipboardList } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { getCurrentDietista } from "@/app/actions/auth";
 import { getMisClasesComoAlumno, getMisCasosDelAula } from "@/app/actions/aula";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatDateTime } from "@/lib/utils";
 import { getLocale } from "@/i18n/locale";
 import { diasDeCursoQueQuedan } from "@/lib/docencia";
 import { CasosDelAlumno, type CasoParaAlumno } from "../casos-del-alumno";
@@ -48,6 +48,11 @@ export default async function ClaseDelAlumnoPage({ params }: { params: Promise<{
         fechaLimite: c.fechaLimite ? formatDate(c.fechaLimite, locale) : null,
         fueraDePlazo: sinEntregar && dias !== null && dias < 0,
         diasQueQuedan: dias,
+        entregaId: c.entregaId,
+        entregadaEl: c.entregadaAt ? formatDateTime(c.entregadaAt, locale) : null,
+        entregableNombre: c.entregableNombre,
+        entregablePlanNombre: c.entregablePlanNombre,
+        planes: c.planes,
       };
     });
 

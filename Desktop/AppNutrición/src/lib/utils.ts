@@ -48,6 +48,21 @@ export function formatDate(date: Date | string, locale?: Locale): string {
   });
 }
 
+/**
+ * Fecha y hora ("02/09/2026, 13:45"), para cosas que pasan en un momento concreto: una entrega.
+ * En hora de España, como toda la app (ver tz.ts): el servidor de producción va en UTC.
+ */
+export function formatDateTime(date: Date | string, locale?: Locale): string {
+  return new Date(date).toLocaleString(locale ? intlTag(locale) : "es-ES", {
+    timeZone: "Europe/Madrid",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export function capitalizarNombre(texto: string): string {
   return texto
     .toLowerCase()

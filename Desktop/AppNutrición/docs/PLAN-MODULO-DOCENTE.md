@@ -391,6 +391,15 @@ De ahí sale el modelo definitivo (el que está en código):
   con "N casos · M por entregar" y, dentro, están los casos. También le salen en **Pacientes**,
   etiquetados con su clase.
 - Al entregar puede dejar una **nota** para el profesor, que la ve al corregir.
+- **La entrega es una FOTO FIJA con su PDF** (Guillermo, 2 sep 2026: "lo que se envíe se envíe;
+  por mucho que modifique el alumno después, si no le da a enviar otra vez no se refleja", y "lo
+  importante es el entregable final"). Al entregar se congela el trabajo (`entregaSnapshot`:
+  paciente, planificaciones y planes tal y como se pintan) y se genera y guarda el **PDF del
+  entregable** (`entregablePdf`, el mismo que le daría al paciente, con las secciones que el alumno
+  tenga en Entregables si entrega desde ahí). El profesor ve la foto con fecha y hora, abre el PDF
+  y ve **también la planificación** del alumno (resumen en solo lectura). El alumno puede seguir
+  tocando su paciente; «Volver a entregar» sustituye la foto. Esto cierra la duda "¿entregar
+  congela?": sí, congela la entrega, no el paciente.
 
 ## Estado: bloques A a E hechos, auditoría incluida (2 sep 2026)
 
@@ -477,13 +486,20 @@ el aula. Al probarlo, Guillermo pidió el modelo de arriba. Cambios hechos:
   fin de curso y la fecha de la licencia.
 - **Recetas** abre en «Recetas de la app» cuando la cuenta aún no tiene propias: un profesor/alumno
   nuevo aterrizaba en «Mis recetas» vacío y parecía que el catálogo (315) no existía.
+- **Entrega congelada con PDF** (migración `add-entrega-congelada`, la 13ª): `entregaSnapshot`
+  (JSONB), `entregablePdf` (bytea, ~230 KB por entrega; si pesa, a Storage), `entregablePlanId`,
+  `entregableNombre`, `entregableBytes`. Cuadro de entrega compartido (`components/docencia/
+  entregar-caso.tsx`) en el aula, el aviso de la ficha y la pestaña Entregables («Entregar al
+  profesor», con las secciones puestas ahí). Ruta `GET /api/entregas/[id]/pdf` (alumno o profesor
+  del caso / de la clase). El profesor ve fecha y hora de la entrega, el PDF, el paciente, la
+  **planificación** (`planificacion-resumen.tsx`) y los planes de la foto; en vivo solo si aún no
+  ha entregado. `deshacerEntrega` borra la foto y el PDF. Todas las consultas a `entregas_caso`
+  llevan `select` para no arrastrar el bytea.
 
 ### Lo que queda de la fase 3
 
 - Decidir si avisar de que la copia del alumno NO se actualiza si el profesor cambia la plantilla
   después (hoy es una foto del momento de empezar).
-- Decidir si "entregar" congela el plan (hoy el alumno puede seguir tocándolo y el profesor ve lo
-  último).
 - Repasar el menú del alumno cuando se vea el flujo con gente de verdad (Mensajes, Pagos).
 
 ---

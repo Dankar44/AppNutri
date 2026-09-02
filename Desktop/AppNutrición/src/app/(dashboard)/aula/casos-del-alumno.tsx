@@ -3,14 +3,16 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ClipboardList, Loader2, CalendarClock, CheckCircle2, Send, Undo2, User, AlertTriangle, Star,
+  ClipboardList, Loader2, CalendarClock, CheckCircle2, Undo2, User, AlertTriangle, Star, FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
-import { abrirCaso, entregarCaso, deshacerEntrega } from "@/app/actions/aula";
+import { abrirCaso, deshacerEntrega } from "@/app/actions/aula";
+import { EntregarCaso } from "@/components/docencia/entregar-caso";
 
 export interface CasoParaAlumno {
   asignacionId: string;
+  entregaId: string | null;
   casoNombre: string;
   consigna: string | null;
   pacienteDelCaso: string;
@@ -24,6 +26,11 @@ export interface CasoParaAlumno {
   /** Se pasó la fecha y no lo ha entregado. */
   fueraDePlazo: boolean;
   diasQueQuedan: number | null;
+  /** Ya formateada en el servidor. */
+  entregadaEl: string | null;
+  entregableNombre: string | null;
+  entregablePlanNombre: string | null;
+  planes: { id: string; nombre: string; activo: boolean }[];
 }
 
 /**
@@ -37,9 +44,6 @@ export function CasosDelAlumno({ casos }: { casos: CasoParaAlumno[] }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [trabajando, setTrabajando] = useState<string | null>(null);
-  // El cuadro de la nota al entregar, abierto para un caso a la vez.
-  const [entregando, setEntregando] = useState<string | null>(null);
-  const [notaAlumno, setNotaAlumno] = useState("");
 
   function abrir(asignacionId: string, pacienteId: string | null) {
     if (pacienteId) {
@@ -54,22 +58,6 @@ export function CasosDelAlumno({ casos }: { casos: CasoParaAlumno[] }) {
       setTrabajando(null);
       if (result.ok && result.pacienteId) {
         router.push(`/pacientes/${result.pacienteId}?espacio=aula`);
-      } else {
-        toast.error(result.error || t("casos.errorAbrir"));
-      }
-    });
-  }
-
-  function entregar(asignacionId: string) {
-    setTrabajando(asignacionId);
-    startTransition(async () => {
-      const result = await entregarCaso(asignacionId, notaAlumno);
-      setTrabajando(null);
-      if (result.ok) {
-        toast.success(t("casos.entregado"));
-        setEntregando(null);
-        setNotaAlumno("");
-        router.refresh();
       } else {
         toast.error(result.error || t("casos.errorAbrir"));
       }
@@ -155,7 +143,19 @@ export function CasosDelAlumno({ casos }: { casos: CasoParaAlumno[] }) {
                   <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-medium">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     {t(`casos.estado.${estadoQueVe(c)}`)}
+                    {c.entregadaEl && <span className="text-muted-foreground font-normal">· {c.entregadaEl}</span>}
                   </span>
+                )}
+                {(c.estado === "ENTREGADA" || c.estado === "CORREGIDA") && c.entregableNombre && c.entregaId && (
+                  <a
+                    href={`/api/entregas/${c.entregaId}/pdf`}
+                    target="_blank"
+                    rel="noopener"
+                    className="inline-flex items-center gap-1 text-primary font-medium hover:underline"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    {t("casos.verPdf")}
+                  </a>
                 )}
               </div>
 
@@ -177,17 +177,8 @@ export function CasosDelAlumno({ casos }: { casos: CasoParaAlumno[] }) {
                   {c.estado === "SIN_EMPEZAR" ? t("casos.empezar") : t("casos.abrir")}
                 </button>
 
-                {c.estado === "EN_MARCHA" && entregando !== c.asignacionId && (
-                  <button
-                    type="button"
-                    onClick={() => setEntregando(c.asignacionId)}
-                    disabled={ocupado}
-                    className={`${boton} border border-border hover:bg-muted`}
-                  >
-                    <Send className="w-4 h-4" />
-                    {t("casos.entregar")}
-                  </button>
-                )}
+                {c.estado === "EN_MARCHA" && <EntregarCaso asignacionId={c.asignacionId} planes={c.planes} />}
+                {c.estado === "ENTREGADA" && <EntregarCaso asignacionId={c.asignacionId} planes={c.planes} reentrega />}
 
                 {c.estado === "ENTREGADA" && (
                   <button
@@ -202,40 +193,6 @@ export function CasosDelAlumno({ casos }: { casos: CasoParaAlumno[] }) {
                 )}
               </div>
 
-              {entregando === c.asignacionId && (
-                <form
-                  onSubmit={(e) => { e.preventDefault(); entregar(c.asignacionId); }}
-                  className="mt-3 space-y-2 border-t border-border pt-3"
-                >
-                  <label className="text-xs font-medium text-muted-foreground">{t("casos.notaAlumno")}</label>
-                  <textarea
-                    value={notaAlumno}
-                    onChange={(e) => setNotaAlumno(e.target.value)}
-                    rows={3}
-                    maxLength={4000}
-                    autoFocus
-                    placeholder={t("casos.notaAlumnoPlaceholder")}
-                    className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y"
-                  />
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="submit"
-                      disabled={ocupado}
-                      className={`${boton} bg-primary text-primary-foreground hover:opacity-90`}
-                    >
-                      {ocupado ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                      {t("casos.confirmarEntrega")}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setEntregando(null); setNotaAlumno(""); }}
-                      className="text-xs text-muted-foreground hover:text-foreground"
-                    >
-                      {t("casos.cancelar")}
-                    </button>
-                  </div>
-                </form>
-              )}
             </div>
           );
         })}

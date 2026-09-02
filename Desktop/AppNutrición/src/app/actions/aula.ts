@@ -12,6 +12,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/generated/prisma/client";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { isNextNavigation } from "@/lib/utils";
@@ -19,6 +20,9 @@ import { sanitizeStringOptional } from "@/lib/validation";
 import { getCurrentDietista } from "./auth";
 import { inicioDeHoy } from "@/lib/docencia";
 import { copiarPaciente } from "@/lib/copiar-paciente";
+import { congelarTrabajo } from "@/lib/entrega-congelada";
+import { generarPdfDelPlan } from "@/lib/pdf-del-plan";
+import type { PDFSectionOptions, DisplayOverrides } from "@/lib/pdf/generate-plan-pdf";
 
 export interface ClaseDelAlumno {
   id: string;
@@ -100,6 +104,11 @@ export interface CasoDelAlumno {
   /** Nota y comentario, solo si el profesor los ha hecho visibles. */
   nota: number | null;
   comentario: string | null;
+  /** Los planes de su paciente, para elegir cuál va como entregable en PDF. */
+  planes: { id: string; nombre: string; activo: boolean }[];
+  /** El PDF que entregó, si lo hizo. */
+  entregableNombre: string | null;
+  entregablePlanNombre: string | null;
 }
 
 /**
@@ -128,7 +137,15 @@ export async function getMisCasosDelAula(): Promise<CasoDelAlumno[]> {
     include: {
       caso: { select: { nombre: true, consigna: true, paciente: { select: { nombre: true, apellidos: true } } } },
       clase: { select: { id: true, nombre: true } },
-      entregas: { where: { alumnoId: dietista.id } },
+      // Con `select`: la fila lleva el PDF entregado (bytea) y no hay que traérselo para listar.
+      entregas: {
+        where: { alumnoId: dietista.id },
+        select: {
+          id: true, estado: true, pacienteId: true, entregadaAt: true, nota: true, comentario: true,
+          visibleParaAlumno: true, entregableNombre: true, entregablePlanId: true,
+          paciente: { select: { planes: { orderBy: [{ activo: "desc" }, { createdAt: "desc" }], select: { id: true, nombre: true, activo: true } } } },
+        },
+      },
     },
   });
 
@@ -150,6 +167,9 @@ export async function getMisCasosDelAula(): Promise<CasoDelAlumno[]> {
       // La nota no se enseña hasta que el profesor lo decide.
       nota: visible ? entrega?.nota ?? null : null,
       comentario: visible ? entrega?.comentario ?? null : null,
+      planes: entrega?.paciente?.planes ?? [],
+      entregableNombre: entrega?.entregableNombre ?? null,
+      entregablePlanNombre: entrega?.paciente?.planes.find((p) => p.id === entrega.entregablePlanId)?.nombre ?? null,
     };
   });
 }
@@ -265,10 +285,23 @@ export async function abrirCaso(
 }
 
 /** Entregar el caso. Se puede entregar tarde: se guarda cuándo y el profesor lo ve. */
+export interface OpcionesEntrega {
+  /** Lo que le quiere contar al profesor: su razonamiento, en corto. Opcional. */
+  notaAlumno?: string;
+  /**
+   * El entregable en PDF: qué plan y con qué secciones (las de la pestaña Entregables, o las de
+   * siempre). Sin esto, la entrega va sin PDF — para casos que no piden dieta.
+   */
+  entregable?: { planId: string; sections?: PDFSectionOptions; displayOverrides?: DisplayOverrides } | null;
+}
+
+/**
+ * Entregar el caso: una FOTO FIJA del trabajo más el PDF del entregable (Guillermo, 2 sep 2026).
+ * Se puede volver a entregar mientras el profesor no lo haya corregido: sustituye la foto.
+ */
 export async function entregarCaso(
   asignacionId: string,
-  /** Lo que le quiere contar al profesor: su razonamiento, en corto. Opcional. */
-  notaAlumno?: string,
+  opciones: OpcionesEntrega = {},
 ): Promise<{ ok: boolean; error?: string }> {
   const dietista = await getCurrentDietista();
   const t = await getTranslations("validation");
@@ -287,13 +320,41 @@ export async function entregarCaso(
   if (!entrega || !entrega.pacienteId) return { ok: false, error: t("docencia.abreloAntes") };
   if (entrega.estado === "CORREGIDA") return { ok: false, error: t("docencia.yaCorregida") };
 
+  // El PDF, del plan de ESTE paciente y de este alumno. Si falla el navegador, no se entrega a
+  // medias: se le dice y puede volver a intentarlo o entregar sin PDF.
+  let entregable: { planId: string; nombre: string; pdf: Buffer } | null = null;
+  if (opciones.entregable) {
+    const plan = await prisma.planAlimenticio.findFirst({
+      where: { id: opciones.entregable.planId, pacienteId: entrega.pacienteId, dietistaId: dietista.id },
+      select: { id: true },
+    });
+    if (!plan) return { ok: false, error: t("docencia.planNoDelCaso") };
+    try {
+      const generado = await generarPdfDelPlan(plan.id, opciones.entregable.sections, opciones.entregable.displayOverrides);
+      if (!generado) return { ok: false, error: t("docencia.planNoDelCaso") };
+      entregable = { planId: plan.id, nombre: generado.nombre, pdf: generado.pdf };
+    } catch (e) {
+      console.error("[entregarCaso] PDF del entregable:", e);
+      return { ok: false, error: t("docencia.errorEntregable") };
+    }
+  }
+
+  const congelado = await congelarTrabajo(entrega.pacienteId);
+  if (!congelado) return { ok: false, error: t("docencia.abreloAntes") };
+
   await prisma.entregaCaso.update({
     where: { id: entrega.id },
     data: {
       estado: "ENTREGADA",
       entregadaAt: new Date(),
-      notaAlumno: sanitizeStringOptional(notaAlumno, 4000) || null,
+      notaAlumno: sanitizeStringOptional(opciones.notaAlumno, 4000) || null,
+      entregaSnapshot: congelado as unknown as Prisma.InputJsonValue,
+      entregablePlanId: entregable?.planId ?? null,
+      entregableNombre: entregable?.nombre ?? null,
+      entregableBytes: entregable?.pdf.byteLength ?? null,
+      entregablePdf: entregable ? new Uint8Array(entregable.pdf) : null,
     },
+    select: { id: true },
   });
   revalidatePath("/aula");
   return { ok: true };
@@ -320,7 +381,12 @@ export async function deshacerEntrega(
 
   await prisma.entregaCaso.update({
     where: { id: entrega.id },
-    data: { estado: "EN_MARCHA", entregadaAt: null },
+    data: {
+      estado: "EN_MARCHA", entregadaAt: null,
+      // La foto y el PDF eran de esa entrega: se van con ella.
+      entregaSnapshot: Prisma.DbNull, entregablePlanId: null, entregableNombre: null, entregableBytes: null, entregablePdf: null,
+    },
+    select: { id: true },
   });
   revalidatePath("/aula");
   return { ok: true };
@@ -328,6 +394,7 @@ export async function deshacerEntrega(
 
 export interface CasoDeEstePaciente {
   asignacionId: string;
+  entregaId: string;
   casoNombre: string;
   consigna: string | null;
   claseNombre: string;
@@ -335,6 +402,12 @@ export interface CasoDeEstePaciente {
   estado: "SIN_EMPEZAR" | "EN_MARCHA" | "ENTREGADA" | "CORREGIDA";
   nota: number | null;
   comentario: string | null;
+  entregadaAt: Date | null;
+  /** El PDF que entregó, si lo hizo, y de qué plan. */
+  entregableNombre: string | null;
+  entregablePlanNombre: string | null;
+  /** Sus planes, para elegir cuál va de entregable. */
+  planes: { id: string; nombre: string; activo: boolean }[];
 }
 
 /**
@@ -349,7 +422,8 @@ export async function getCasoDelPaciente(pacienteId: string): Promise<CasoDeEste
   const entrega = await prisma.entregaCaso.findFirst({
     where: { pacienteId, alumnoId: dietista.id },
     select: {
-      estado: true, nota: true, comentario: true, visibleParaAlumno: true,
+      id: true, estado: true, nota: true, comentario: true, visibleParaAlumno: true, entregadaAt: true,
+      entregableNombre: true, entregablePlanId: true,
       asignacion: {
         select: {
           id: true, fechaLimite: true,
@@ -357,13 +431,16 @@ export async function getCasoDelPaciente(pacienteId: string): Promise<CasoDeEste
           clase: { select: { nombre: true } },
         },
       },
+      paciente: { select: { planes: { orderBy: [{ activo: "desc" }, { createdAt: "desc" }], select: { id: true, nombre: true, activo: true } } } },
     },
   });
   if (!entrega) return null;
 
   const visible = entrega.visibleParaAlumno;
+  const planes = entrega.paciente?.planes ?? [];
   return {
     asignacionId: entrega.asignacion.id,
+    entregaId: entrega.id,
     casoNombre: entrega.asignacion.caso.nombre,
     consigna: entrega.asignacion.caso.consigna,
     claseNombre: entrega.asignacion.clase.nombre,
@@ -371,5 +448,9 @@ export async function getCasoDelPaciente(pacienteId: string): Promise<CasoDeEste
     estado: entrega.estado as CasoDeEstePaciente["estado"],
     nota: visible ? entrega.nota : null,
     comentario: visible ? entrega.comentario : null,
+    entregadaAt: entrega.entregadaAt,
+    entregableNombre: entrega.entregableNombre,
+    entregablePlanNombre: planes.find((p) => p.id === entrega.entregablePlanId)?.nombre ?? null,
+    planes,
   };
 }

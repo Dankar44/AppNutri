@@ -356,14 +356,36 @@ async function main() {
       Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(c, "He priorizado las legumbres.");
       c.dispatchEvent(new Event("input", { bubbles: true }));
     });
+    visible = await texto(alumna);
+    comprobar("el cuadro ofrece adjuntar el PDF del entregable", visible.includes("Adjuntar el entregable en PDF"));
     await pulsar(alumna, "Entregar", "form");
-    await esperar(4000);
+    // Generar el PDF con el navegador tarda unos segundos.
+    await esperar(15000);
     const { rows: entrega } = await client.query(
-      `SELECT id, estado, "entregadaAt", "pacienteId", "notaAlumno" FROM entregas_caso WHERE "alumnoId" = $1`, [alumnaId]);
+      `SELECT id, estado, "entregadaAt", "pacienteId", "notaAlumno", "entregablePlanId", "entregableNombre", "entregableBytes",
+              octet_length("entregablePdf") AS pdf_bytes, "entregaSnapshot"
+         FROM entregas_caso WHERE "alumnoId" = $1`, [alumnaId]);
     comprobar("queda entregada", entrega[0]?.estado === "ENTREGADA");
     comprobar("con su nota", (entrega[0]?.notaAlumno ?? "").includes("legumbres"), entrega[0]?.notaAlumno ?? "sin nota");
     comprobar("con la fecha", entrega[0]?.entregadaAt !== null);
     comprobar("y apuntando a su paciente", entrega[0]?.pacienteId === pac[0]?.id);
+    comprobar("con el PDF del entregable guardado", (entrega[0]?.pdf_bytes ?? 0) > 10000 && entrega[0]?.entregableBytes === entrega[0]?.pdf_bytes,
+      `${entrega[0]?.pdf_bytes} bytes · ${entrega[0]?.entregableNombre}`);
+    comprobar("del plan que tenía", entrega[0]?.entregablePlanId === planCopia[0]?.id);
+    const foto = entrega[0]?.entregaSnapshot;
+    comprobar("y la foto fija del trabajo: paciente, planificación y plan",
+      foto?.v === 1 && foto?.paciente?.nombre === "Marta" && Array.isArray(foto?.planificaciones) && foto?.planes?.length === 1,
+      JSON.stringify({ v: foto?.v, planis: foto?.planificaciones?.length, planes: foto?.planes?.length }));
+    visible = await texto(alumna);
+    comprobar("la alumna ve cuándo entregó y el PDF", visible.includes("Entregada") && /\d\d\/\d\d\/\d{4}, \d\d:\d\d/.test(visible) && visible.includes("Ver el PDF"),
+      visible.split("\n").filter((l) => /Entregad|PDF|\d\d:\d\d/.test(l)).join(" | "));
+    const pdfAlumna = await alumna.evaluate(async (id) => {
+      const r = await fetch(`/api/entregas/${id}/pdf`);
+      return { status: r.status, tipo: r.headers.get("content-type") ?? "" };
+    }, entrega[0].id);
+    comprobar("y puede abrir su PDF", pdfAlumna.status === 200 && pdfAlumna.tipo.includes("pdf"), JSON.stringify(pdfAlumna));
+    // La entrega es una foto: lo que toque después no se refleja hasta que vuelva a entregar.
+    await client.query(`UPDATE planes_alimenticios SET nombre = 'CAMBIADO DESPUÉS' WHERE id = $1`, [planCopia[0].id]);
 
     console.log("\n── El profesor ve su trabajo y le pone nota ──");
     await profe.goto(`${BASE}/profesor/casos/${casoId}`, { waitUntil: "networkidle0" });
@@ -380,7 +402,19 @@ async function main() {
     await esperar(2500);
     visible = await texto(profe);
     comprobar("puede abrir su trabajo", visible.includes("Marta Vegana"), profe.url());
-    comprobar("y se le avisa de que es solo lectura", /No puedes tocarlo/i.test(visible));
+    comprobar("y se le dice que es la foto de la entrega, con fecha y hora", /tal y como la hizo el \d\d\/\d\d\/\d{4}, \d\d:\d\d/.test(visible),
+      visible.split("\n").find((l) => l.includes("tal y como")) ?? "");
+    comprobar("ve el PDF del entregable para abrirlo", visible.includes("Abrir el PDF") && /tal y como lo entregó \(\d+ KB\)/.test(visible));
+    comprobar("ve la planificación de la alumna", visible.includes("Planificación") && (visible.includes("kcal") || visible.includes("Sin datos") || visible.includes("No ha hecho ninguna planificación")));
+    comprobar("y el plan tal y como estaba al entregar, no el cambiado después",
+      visible.includes("Plan base") && !visible.includes("CAMBIADO DESPUÉS"));
+    const pdfProfe = await profe.evaluate(async (id) => {
+      const r = await fetch(`/api/entregas/${id}/pdf`);
+      return { status: r.status, tipo: r.headers.get("content-type") ?? "" };
+    }, entrega[0].id);
+    comprobar("el profesor puede abrir el PDF", pdfProfe.status === 200 && pdfProfe.tipo.includes("pdf"), JSON.stringify(pdfProfe));
+    const pdfAjeno = await profe.evaluate(async () => (await fetch(`/api/entregas/00000000-0000-0000-0000-000000000000/pdf`)).status);
+    comprobar("y una entrega que no existe da 404", pdfAjeno === 404, String(pdfAjeno));
     comprobar("con un enlace para comparar con su propio plan", visible.includes("Comparar con tu plan del caso"));
     comprobar("ve la nota que le dejó la alumna", visible.includes("legumbres"));
     await rellenar(profe, "Nota", "8,5");

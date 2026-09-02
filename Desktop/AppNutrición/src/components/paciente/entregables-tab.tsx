@@ -32,6 +32,7 @@ import {
   UNIDAD_LABELS_FULL,
 } from "@/lib/pdf/generate-plan-pdf";
 import { downloadPDF } from "@/lib/pdf/pdf-download";
+import { EntregarCaso } from "@/components/docencia/entregar-caso";
 
 // ─── Types ───
 
@@ -42,6 +43,11 @@ interface EntregablesTabProps {
   planActivo?: { id: string; nombre: string } | null;
   /** Si el paciente tiene activado "ocultar calorías": el PDF arranca sin valores nutricionales + aviso. */
   ocultarCalorias?: boolean;
+  /**
+   * #40 — Si este paciente es un caso de clase: el alumno puede entregar desde aquí el PDF con las
+   * secciones que tiene puestas, que es el sitio natural para hacerlo.
+   */
+  casoEntrega?: { asignacionId: string; estado: string; planes: { id: string; nombre: string; activo: boolean }[] } | null;
 }
 
 // ─── PDF Options ───
@@ -318,8 +324,10 @@ export function EntregablesTab({
   pacienteNombre,
   planActivo,
   ocultarCalorias = false,
+  casoEntrega = null,
 }: EntregablesTabProps) {
   const t = useTranslations("patients.entregables");
+  const tAula = useTranslations("aula");
   const tPdf = useTranslations("pdf");
   const [sendingPlan, startSendingPlan] = useTransition();
 
@@ -600,6 +608,19 @@ export function EntregablesTab({
                   {t("descargarPdf")}
                 </button>
                 </div>
+
+                {/* #40 — Entregar el caso con ESTE PDF, con las secciones que tiene puestas aquí. */}
+                {casoEntrega && (casoEntrega.estado === "EN_MARCHA" || casoEntrega.estado === "ENTREGADA") && (
+                  <div className="pt-3 border-t border-border">
+                    <EntregarCaso
+                      asignacionId={casoEntrega.asignacionId}
+                      planes={casoEntrega.planes}
+                      reentrega={casoEntrega.estado === "ENTREGADA"}
+                      etiqueta={casoEntrega.estado === "ENTREGADA" ? tAula("casos.volverAEntregar") : tAula("casos.entregarAlProfesor")}
+                      opcionesPdf={{ planId: selectedPlanId, sections: toSections(pdfOptions), displayOverrides }}
+                    />
+                  </div>
+                )}
 
                 <Link
                   href="/ajustes#documentos"

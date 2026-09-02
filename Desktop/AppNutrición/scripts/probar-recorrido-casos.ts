@@ -246,10 +246,13 @@ async function main() {
     await pulsar(alumna, "Entregar");
     await esperar(700);
     await escribir(alumna, "textarea", "He cubierto el hierro con lentejas y he añadido vitamina C.");
+    comprobar("sin plan, el cuadro avisa de que irá sin PDF", (await texto(alumna)).includes("la entrega irá sin PDF"));
     await pulsar(alumna, "Entregar", "form");
-    await esperar(4000);
+    await esperar(6000);
     v = await texto(alumna);
-    comprobar("queda entregada, con opción de deshacer", v.includes("Entregada") && v.includes("Deshacer la entrega"));
+    comprobar("queda entregada, con la hora, y puede deshacer o volver a entregar",
+      v.includes("Entregada") && /\d\d\/\d\d\/\d{4}, \d\d:\d\d/.test(v) && v.includes("Deshacer la entrega") && v.includes("Volver a entregar"),
+      v.split("\n").filter((l) => /Entregada|\d\d:\d\d|entregar/.test(l)).join(" | "));
     await foto(alumna, "alumna-entregado");
 
     console.log("\n── PROFESOR: corrige ──");
@@ -262,6 +265,8 @@ async function main() {
     await esperar(3500);
     v = await texto(profe);
     comprobar("abre su trabajo: nota y paciente (sin plan, que no hizo ninguno)", v.includes("lentejas") && v.includes("Marta Vegana") && v.includes("Todavía no ha hecho ningún plan"));
+    comprobar("se le dice que entregó sin PDF", v.includes("Entregó sin PDF"));
+    comprobar("y ve la sección de planificación", v.includes("Planificación"));
     await foto(profe, "profesor-trabajo-alumna");
     await escribir(profe, "input[type=number], input[inputmode=decimal]", "9");
     await escribir(profe, "textarea", "Muy bien el hierro; revisa la B12.");

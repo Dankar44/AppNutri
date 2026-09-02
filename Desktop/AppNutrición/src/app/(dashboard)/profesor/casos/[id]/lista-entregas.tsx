@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { CheckCircle2, Clock, Circle, Star, AlertTriangle, ChevronRight } from "lucide-react";
+import { CheckCircle2, Clock, Circle, Star, AlertTriangle, ChevronRight, FileText } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import type { EntregaResumen } from "@/app/actions/casos";
-import { formatDate } from "@/lib/utils";
+import { formatDateTime } from "@/lib/utils";
 import { getLocale } from "@/i18n/locale";
 
 const ICONOS = {
@@ -43,11 +43,16 @@ export async function ListaEntregas({
               <p className="text-sm font-medium truncate">{e.alumnoNombre}</p>
               <p className="text-xs text-muted-foreground truncate">
                 {t(`entregas.estado.${e.estado}`)}
-                {e.entregadaAt && <> · {formatDate(e.entregadaAt, locale)}</>}
+                {e.entregadaAt && <> · {formatDateTime(e.entregadaAt, locale)}</>}
                 {" · "}
                 {t("entregas.planes", { n: e.planes })}
               </p>
             </div>
+            {e.conPdf && (
+              <span title={t("entregas.entregable")} className="text-primary shrink-0">
+                <FileText className="w-4 h-4" />
+              </span>
+            )}
             {e.fuera && (
               <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground shrink-0">
                 {t("entregas.yaNoEstaEnLaClase")}

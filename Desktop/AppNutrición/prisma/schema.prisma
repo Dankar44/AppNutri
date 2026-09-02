@@ -1234,6 +1234,15 @@ model EntregaCaso {
   entregadaAt       DateTime?
   /// Lo que el alumno le cuenta al profesor al entregar: su razonamiento, en corto.
   notaAlumno        String?
+  /// La entrega es una foto fija: el trabajo (paciente, planificaciones y planes, ya en la forma
+  /// en que se pintan) tal y como estaba al entregar. Lo que el alumno toque después no cambia
+  /// esto salvo que vuelva a entregar. Es lo que ve el profesor al corregir.
+  entregaSnapshot   Json?
+  /// El PDF del entregable, el mismo que le daría al paciente, tal y como lo entregó.
+  entregablePlanId  String?
+  entregableNombre  String?
+  entregableBytes   Int?
+  entregablePdf     Bytes?
 
   nota              Float?
   comentario        String?

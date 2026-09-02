@@ -1,19 +1,21 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, User, FileText, Eye, AlertTriangle, MessageSquareText, GitCompareArrows } from "lucide-react";
+import { ArrowLeft, User, FileText, Eye, AlertTriangle, MessageSquareText, GitCompareArrows, Download, Camera } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireProfesor } from "@/app/actions/docencia";
 import { getTrabajoDeEntrega } from "@/app/actions/casos";
 import { PlanVisual } from "@/components/paciente/plan-visual";
-import { formatDate } from "@/lib/utils";
+import { formatDateTime } from "@/lib/utils";
 import { getLocale } from "@/i18n/locale";
 import { Corregir } from "./corregir";
+import { PlanificacionResumen } from "./planificacion-resumen";
 
 /**
  * #40 — El trabajo del alumno, para corregirlo.
  *
- * Solo lectura: el profesor ve el paciente y el plan tal y como los ha dejado, pero no puede
- * tocarlos — son de la cuenta del alumno.
+ * Solo lectura, y una vez entregado es la FOTO de la entrega: el paciente, su planificación, sus
+ * planes y el PDF del entregable tal y como los mandó. Lo que toque después no cambia esto salvo
+ * que vuelva a entregar (Guillermo, 2 sep 2026). Mientras no ha entregado se ve en vivo, avisando.
  */
 export default async function EntregaPage({
   params,
@@ -46,14 +48,48 @@ export default async function EntregaPage({
         <h1 className="text-xl sm:text-2xl font-bold">{trabajo.alumnoNombre}</h1>
         <p className="text-sm text-muted-foreground">
           {trabajo.casoNombre} · {trabajo.claseNombre} · {t(`entregas.estado.${trabajo.estado}`)}
-          {trabajo.entregadaAt && <> · {formatDate(trabajo.entregadaAt, locale)}</>}
         </p>
       </div>
 
       <div className="flex gap-3 py-3 lg:p-3 lg:rounded-lg lg:bg-muted/50 border-b border-border lg:border-b-0">
-        <Eye className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
-        <p className="text-xs text-muted-foreground">{t("entregas.soloLectura")}</p>
+        {trabajo.congelado ? <Camera className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" /> : <Eye className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />}
+        <p className="text-xs text-muted-foreground">
+          {trabajo.congelado && trabajo.entregadaAt
+            ? t("entregas.fotoFija", { fecha: formatDateTime(trabajo.entregadaAt, locale) })
+            : t("entregas.soloLectura")}
+        </p>
       </div>
+
+      {/* El entregable: el PDF tal y como lo mandó. Es lo que más le interesa al profesor. */}
+      {(trabajo.estado === "ENTREGADA" || trabajo.estado === "CORREGIDA") && (
+        <section className="py-4 lg:px-6 lg:py-5 lg:border lg:border-border lg:rounded-xl lg:bg-card flex items-center justify-between gap-3 flex-wrap">
+          <div className="min-w-0">
+            <h2 className="font-semibold inline-flex items-center gap-2">
+              <FileText className="w-4 h-4 text-primary" />
+              {t("entregas.entregable")}
+            </h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {trabajo.entregable
+                ? t("entregas.entregableDe", {
+                    plan: trabajo.entregable.planNombre ?? trabajo.entregable.nombre,
+                    tamano: trabajo.entregable.bytes ? `${Math.max(1, Math.round(trabajo.entregable.bytes / 1024))} KB` : "",
+                  })
+                : t("entregas.sinEntregable")}
+            </p>
+          </div>
+          {trabajo.entregable && (
+            <a
+              href={`/api/entregas/${trabajo.entregaId}/pdf`}
+              target="_blank"
+              rel="noopener"
+              className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 shrink-0"
+            >
+              <Download className="w-4 h-4" />
+              {t("entregas.abrirPdf")}
+            </a>
+          )}
+        </section>
+      )}
 
       {trabajo.notaAlumno && (
         <section className="py-4 lg:px-6 lg:py-6 lg:border lg:border-primary/30 lg:rounded-xl lg:bg-primary/5 border-b border-border lg:border-b">
@@ -91,6 +127,8 @@ export default async function EntregaPage({
           )}
         </section>
       )}
+
+      <PlanificacionResumen planificaciones={trabajo.planificaciones} />
 
       {trabajo.planes.length === 0 ? (
         <p className="text-sm text-muted-foreground py-6 text-center">{t("entregas.sinPlanes")}</p>

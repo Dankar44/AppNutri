@@ -34,7 +34,23 @@
     "notaAlumno": "Quer contar algo ao seu professor? (opcional)",
     "notaAlumnoPlaceholder": "Dei prioridade às leguminosas e à vitamina C em cada refeição porque…",
     "confirmarEntrega": "Entregar",
-    "cancelar": "Cancelar"
+    "cancelar": "Cancelar",
+    "volverAEntregar": "Entregar de novo",
+    "adjuntarPdf": "Anexar o entregável em PDF",
+    "sinPlanParaPdf": "Ainda não fizeste nenhum plano para este paciente: a entrega irá sem PDF. Se o caso te pede uma dieta, faz-a antes de entregar.",
+    "pdfConOpcionesDeAqui": "Anexa-se o PDF de «{plan}» com as opções que tens aqui.",
+    "quePlan": "Qual plano?",
+    "planActual": "atual",
+    "pdfDe": "Anexa-se o PDF de «{plan}».",
+    "pdfSeccionesDeSiempre": "Com as secções habituais. Se quiseres escolher o que leva, entrega-o a partir do separador Entregáveis do paciente.",
+    "reentregaSustituye": "Substitui o que entregaste: o professor verá esta versão.",
+    "generandoPdf": "A gerar o entregável…",
+    "entregadoEl": "Entregue em {fecha}",
+    "entregablePdf": "Entregável: PDF de «{plan}»",
+    "verPdf": "Ver o PDF",
+    "sinEntregablePdf": "Sem PDF de entregável",
+    "fotoFija": "O que alterares agora não se reflete na entrega, salvo se entregares de novo.",
+    "entregarAlProfesor": "Entregar ao professor"
   },
   "volverAlAula": "Voltar à minha sala"
 }

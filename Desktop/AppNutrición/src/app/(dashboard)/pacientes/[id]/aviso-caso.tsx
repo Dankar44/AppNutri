@@ -1,21 +1,24 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ClipboardList, CalendarClock, Send, Undo2, Loader2, Star, AlertTriangle } from "lucide-react";
+import { ClipboardList, CalendarClock, Undo2, Loader2, Star, AlertTriangle, FileText, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
-import { entregarCaso, deshacerEntrega } from "@/app/actions/aula";
+import { deshacerEntrega } from "@/app/actions/aula";
+import { EntregarCaso } from "@/components/docencia/entregar-caso";
 
 /**
  * #40 — Lo que el alumno necesita tener delante mientras trabaja el caso.
  *
  * Sin esto, la consigna y la fecha solo estaban en el aula: se ponía a hacer el plan sin recordar
  * qué le habían pedido, y para entregar tenía que volver a buscar (auditoría 2 sep 2026).
+ * La entrega es una foto fija con su PDF: aquí se ve cuándo la hizo y qué PDF mandó.
  */
 export function AvisoCaso({
   asignacionId,
+  entregaId,
   casoNombre,
   consigna,
   claseNombre,
@@ -24,32 +27,37 @@ export function AvisoCaso({
   comentario,
   fechaLimite,
   fueraDePlazo,
+  entregadaEl,
+  entregableNombre,
+  entregablePlanNombre,
+  planes,
 }: {
   asignacionId: string;
+  entregaId: string;
   casoNombre: string;
   consigna: string | null;
   claseNombre: string;
   estado: "SIN_EMPEZAR" | "EN_MARCHA" | "ENTREGADA" | "CORREGIDA";
   nota: number | null;
   comentario: string | null;
-  /** Ya formateada en el servidor. */
+  /** Ya formateadas en el servidor. */
   fechaLimite: string | null;
   fueraDePlazo: boolean;
+  entregadaEl: string | null;
+  entregableNombre: string | null;
+  entregablePlanNombre: string | null;
+  planes: { id: string; nombre: string; activo: boolean }[];
 }) {
   const t = useTranslations("aula");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [entregando, setEntregando] = useState(false);
-  const [notaAlumno, setNotaAlumno] = useState("");
   const entregada = estado === "ENTREGADA" || estado === "CORREGIDA";
 
-  function accion(entregar: boolean) {
+  function deshacer() {
     startTransition(async () => {
-      const result = entregar ? await entregarCaso(asignacionId, notaAlumno) : await deshacerEntrega(asignacionId);
+      const result = await deshacerEntrega(asignacionId);
       if (result.ok) {
-        toast.success(entregar ? t("casos.entregado") : t("casos.entregaDeshecha"));
-        setEntregando(false);
-        setNotaAlumno("");
+        toast.success(t("casos.entregaDeshecha"));
         router.refresh();
       } else {
         toast.error(result.error || t("casos.errorAbrir"));
@@ -88,6 +96,37 @@ export function AvisoCaso({
         </p>
       )}
 
+      {/* Lo entregado: cuándo, y el PDF que mandó. Lo que toque después no cambia esto. */}
+      {entregada && entregadaEl && (
+        <div className="mt-3 py-3 lg:p-3 lg:rounded-lg lg:bg-card border-t border-border lg:border-t-0 text-sm">
+          <p className="inline-flex items-center gap-1.5 font-medium">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            {t("casos.entregadoEl", { fecha: entregadaEl })}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
+            {entregableNombre ? (
+              <>
+                <span className="inline-flex items-center gap-1">
+                  <FileText className="w-3.5 h-3.5" />
+                  {t("casos.entregablePdf", { plan: entregablePlanNombre ?? "" })}
+                </span>
+                <a
+                  href={`/api/entregas/${entregaId}/pdf`}
+                  target="_blank"
+                  rel="noopener"
+                  className="text-primary font-medium hover:underline"
+                >
+                  {t("casos.verPdf")}
+                </a>
+              </>
+            ) : (
+              <span>{t("casos.sinEntregablePdf")}</span>
+            )}
+            {estado !== "CORREGIDA" && <span>· {t("casos.fotoFija")}</span>}
+          </p>
+        </div>
+      )}
+
       {comentario && (
         <div className="mt-3 py-3 lg:p-3 lg:rounded-lg lg:bg-card border-t border-border lg:border-t-0">
           <p className="text-xs font-medium text-muted-foreground">{t("casos.comentarioDelProfesor")}</p>
@@ -95,67 +134,23 @@ export function AvisoCaso({
         </div>
       )}
 
-      {entregando && !entregada && (
-        <form onSubmit={(e) => { e.preventDefault(); accion(true); }} className="mt-3 space-y-2">
-          <label className="text-xs font-medium text-muted-foreground">{t("casos.notaAlumno")}</label>
-          <textarea
-            value={notaAlumno}
-            onChange={(e) => setNotaAlumno(e.target.value)}
-            rows={3}
-            maxLength={4000}
-            autoFocus
-            placeholder={t("casos.notaAlumnoPlaceholder")}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y"
-          />
-        </form>
-      )}
-
       <div className="flex flex-wrap items-center gap-2 mt-3">
-        {estado !== "CORREGIDA" && !entregada && !entregando && (
-          <button
-            type="button"
-            onClick={() => setEntregando(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors bg-primary text-primary-foreground hover:opacity-90"
-          >
-            <Send className="w-4 h-4" />
-            {t("casos.entregar")}
-          </button>
-        )}
-        {entregando && !entregada && (
+        {!entregada && <EntregarCaso asignacionId={asignacionId} planes={planes} />}
+        {estado === "ENTREGADA" && (
           <>
+            <EntregarCaso asignacionId={asignacionId} planes={planes} reentrega />
             <button
               type="button"
-              onClick={() => accion(true)}
+              onClick={deshacer}
               disabled={isPending}
-              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50 bg-primary text-primary-foreground hover:opacity-90"
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50 border border-border hover:bg-muted"
             >
-              {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              {t("casos.confirmarEntrega")}
-            </button>
-            <button
-              type="button"
-              onClick={() => { setEntregando(false); setNotaAlumno(""); }}
-              className="text-xs text-muted-foreground hover:text-foreground"
-            >
-              {t("casos.cancelar")}
+              {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Undo2 className="w-4 h-4" />}
+              {t("casos.deshacerEntrega")}
             </button>
           </>
         )}
-        {estado === "ENTREGADA" && (
-          <button
-            type="button"
-            onClick={() => accion(false)}
-            disabled={isPending}
-            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50 border border-border hover:bg-muted"
-          >
-            {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Undo2 className="w-4 h-4" />}
-            {t("casos.deshacerEntrega")}
-          </button>
-        )}
-        <Link
-          href="/aula"
-          className="text-sm text-muted-foreground hover:text-foreground"
-        >
+        <Link href="/aula" className="text-sm text-muted-foreground hover:text-foreground">
           {t("casos.volverAlAula")}
         </Link>
       </div>

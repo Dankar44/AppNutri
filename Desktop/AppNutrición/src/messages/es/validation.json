@@ -315,6 +315,8 @@
     "pacienteDeClaseNoSeBorra": "Este paciente es de un caso de tu clase: no puedes borrarlo, porque es el trabajo que tu profesor tiene que corregir.",
     "profesorConEntregasNoSeBorra": "Tus alumnos tienen casos entregados, y borrar tu cuenta se llevaría su trabajo y sus notas. Escríbenos y lo resolvemos contigo.",
     "casoSinPaciente": "Este caso todavía no tiene paciente: díselo a tu profesor.",
-    "plantillaDeCasoNoSeBorra": "Este paciente es la plantilla de un caso: si ya no lo quieres, archiva el caso."
+    "plantillaDeCasoNoSeBorra": "Este paciente es la plantilla de un caso: si ya no lo quieres, archiva el caso.",
+    "planNoDelCaso": "Ese plan no es de este paciente",
+    "errorEntregable": "No se ha podido generar el PDF del entregable. Vuelve a intentarlo o entrega sin el PDF."
   }
 }

@@ -19,10 +19,12 @@ import { isNextNavigation } from "@/lib/utils";
 import { sanitizeString, sanitizeStringOptional } from "@/lib/validation";
 import { claseQueLleva, cursoTerminado } from "@/lib/docencia";
 import { requireProfesor } from "./docencia";
-import { PLAN_COMPLETO, aDetalleVisual } from "@/lib/plan-para-ver";
+import {
+  leerCongelado, leerPacienteCongelable, leerPlanificaciones, leerPlanParaVer,
+  type PacienteCongelado, type PlanificacionCongelada,
+} from "@/lib/entrega-congelada";
 import { copiarPaciente } from "@/lib/copiar-paciente";
 import type { Prisma } from "@/generated/prisma/client";
-import { expandirGruposDeDias } from "@/lib/grupos-dias";
 import type { PlanVisualDetalle } from "@/components/paciente/plan-visual";
 
 /**
@@ -508,6 +510,8 @@ export interface EntregaResumen {
   visibleParaAlumno: boolean;
   /** Cuántos planes le ha hecho al paciente del caso: es lo que se corrige. */
   planes: number;
+  /** Entregó con el PDF del entregable. */
+  conPdf: boolean;
   /** Ya no está en la clase, pero entregó: su trabajo se sigue viendo y corrigiendo. */
   fuera: boolean;
 }
@@ -532,7 +536,7 @@ export async function getEntregasDeAsignacion(asignacionId: string): Promise<Ent
       entregas: {
         select: {
           id: true, alumnoId: true, estado: true, entregadaAt: true, nota: true,
-          comentario: true, visibleParaAlumno: true,
+          comentario: true, visibleParaAlumno: true, entregableNombre: true,
           alumno: { select: { id: true, nombre: true, apellidos: true, email: true } },
           paciente: { select: { _count: { select: { planes: true } } } },
         },
@@ -573,6 +577,7 @@ export async function getEntregasDeAsignacion(asignacionId: string): Promise<Ent
       comentario: e?.comentario ?? null,
       visibleParaAlumno: e?.visibleParaAlumno ?? false,
       planes: e?.paciente?._count.planes ?? 0,
+      conPdf: !!e?.entregableNombre,
     };
   });
 }
@@ -621,6 +626,7 @@ export async function corregirEntrega(
         corregidaAt: new Date(),
         corregidaPor: profesor.dietistaId,
       },
+    select: { id: true },
     });
     // Solo se le avisa si va a poder verla: si el profesor corrige sin publicar, el aviso le
     // mandaría a mirar algo que todavía no está.
@@ -669,6 +675,7 @@ export async function deshacerCorreccion(
       nota: null, comentario: null, visibleParaAlumno: false,
       corregidaAt: null, corregidaPor: null,
     },
+    select: { id: true },
   });
   revalidarCasos(entrega.asignacion.casoId);
   revalidatePath("/aula");
@@ -684,33 +691,34 @@ export interface TrabajoDeEntrega {
   casoPacienteId: string | null;
   estado: string;
   entregadaAt: Date | null;
+  /**
+   * Si lo que se ve es la FOTO de la entrega (lo normal) o el trabajo en vivo (todavía no ha
+   * entregado). La foto no cambia por mucho que el alumno siga tocando su paciente.
+   */
+  congelado: boolean;
   /** Lo que el alumno escribió al entregar. */
   notaAlumno: string | null;
   nota: number | null;
   comentario: string | null;
   visibleParaAlumno: boolean;
-  /** El paciente que se creó del caso, tal y como lo ha dejado el alumno. */
-  paciente: {
-    id: string;
-    nombre: string;
-    apellidos: string;
-    peso: number | null;
-    altura: number | null;
-    objetivo: string;
-    notas: string | null;
-    patologias: string[];
-    alergias: string[];
-  } | null;
+  /** El PDF que entregó, si lo hizo: nombre del archivo, plan del que salió y tamaño. */
+  entregable: { nombre: string; planNombre: string | null; bytes: number | null } | null;
+  /** El paciente del caso, tal y como lo dejó el alumno (en la foto, o en vivo). */
+  paciente: PacienteCongelado | null;
+  /** Sus planificaciones: objetivos, peso, fórmulas, reparto. */
+  planificaciones: PlanificacionCongelada[];
   planes: { id: string; nombre: string; activo: boolean; dias: number }[];
   /** El plan que se está mirando, listo para pintar. */
   planVisto: PlanVisualDetalle | null;
 }
 
 /**
- * Lo que ha hecho el alumno con el caso, para que el profesor lo mire.
+ * Lo que ha entregado el alumno, para que el profesor lo corrija.
  *
- * Es de SOLO LECTURA: el profesor ve el paciente y los planes del alumno, pero no puede tocarlos.
- * Ni siquiera puede llegar a ellos por las pantallas normales, porque son de la cuenta del alumno.
+ * Es de SOLO LECTURA y, una vez entregado, es la FOTO del momento de la entrega (Guillermo,
+ * 2 sep 2026: "lo que se envíe se envíe"): el alumno puede seguir tocando su paciente, que es
+ * suyo, y aquí no cambia nada salvo que vuelva a entregar. Mientras no ha entregado se ve el
+ * trabajo en vivo, avisando de ello.
  */
 export async function getTrabajoDeEntrega(
   entregaId: string,
@@ -720,40 +728,49 @@ export async function getTrabajoDeEntrega(
 
   const entrega = await prisma.entregaCaso.findFirst({
     where: { id: entregaId, asignacion: { caso: { profesorId: profesor.dietistaId } } },
-    include: {
+    select: {
+      id: true, estado: true, entregadaAt: true, notaAlumno: true, nota: true, comentario: true,
+      visibleParaAlumno: true, pacienteId: true, entregaSnapshot: true, entregablePlanId: true,
+      entregableNombre: true, entregableBytes: true,
       alumno: { select: { nombre: true, apellidos: true } },
       asignacion: {
         select: { caso: { select: { nombre: true, pacienteId: true } }, clase: { select: { nombre: true } } },
-      },
-      paciente: {
-        select: {
-          id: true, nombre: true, apellidos: true, peso: true, altura: true,
-          objetivo: true, notas: true, patologias: true, alergias: true,
-          planes: {
-            orderBy: { createdAt: "desc" },
-            select: { id: true, nombre: true, activo: true, _count: { select: { dias: true } } },
-          },
-        },
       },
     },
   });
   if (!entrega) return null;
 
-  const planes = entrega.paciente?.planes ?? [];
-  const elegido = planId ? planes.find((p) => p.id === planId) : planes[0];
+  const foto = leerCongelado(entrega.entregaSnapshot);
+  const congelado = foto !== null && (entrega.estado === "ENTREGADA" || entrega.estado === "CORREGIDA");
 
-  let planVisto: PlanVisualDetalle | null = null;
-  if (elegido) {
-    const plan = await prisma.planAlimenticio.findUnique({
-      where: { id: elegido.id },
-      include: PLAN_COMPLETO,
+  let paciente: PacienteCongelado | null;
+  let planificaciones: PlanificacionCongelada[];
+  let planes: PlanVisualDetalle[];
+  if (congelado && foto) {
+    paciente = foto.paciente;
+    planificaciones = foto.planificaciones;
+    planes = foto.planes;
+  } else if (entrega.pacienteId) {
+    // En vivo: todavía no ha entregado. Se lee igual que se congelará, para que no haya dos vistas.
+    paciente = await leerPacienteCongelable(entrega.pacienteId);
+    planificaciones = await leerPlanificaciones(entrega.pacienteId);
+    const ids = await prisma.planAlimenticio.findMany({
+      where: { pacienteId: entrega.pacienteId },
+      orderBy: [{ activo: "desc" }, { createdAt: "desc" }],
+      select: { id: true },
     });
-    if (plan) {
-      // #75 — los días agrupados enseñan el menú de su día representante, como en el enlace público.
-      const dias = await expandirGruposDeDias(plan.id, plan.dias);
-      planVisto = aDetalleVisual(plan, dias);
+    planes = [];
+    for (const { id } of ids) {
+      const plan = await leerPlanParaVer(id);
+      if (plan) planes.push(plan);
     }
+  } else {
+    paciente = null;
+    planificaciones = [];
+    planes = [];
   }
+
+  const planVisto = (planId ? planes.find((p) => p.id === planId) : planes[0]) ?? null;
 
   return {
     entregaId: entrega.id,
@@ -763,24 +780,21 @@ export async function getTrabajoDeEntrega(
     casoPacienteId: entrega.asignacion.caso.pacienteId,
     estado: entrega.estado,
     entregadaAt: entrega.entregadaAt,
+    congelado,
     notaAlumno: entrega.notaAlumno,
     nota: entrega.nota,
     comentario: entrega.comentario,
     visibleParaAlumno: entrega.visibleParaAlumno,
-    paciente: entrega.paciente
+    entregable: entrega.entregableNombre
       ? {
-          id: entrega.paciente.id,
-          nombre: entrega.paciente.nombre,
-          apellidos: entrega.paciente.apellidos,
-          peso: entrega.paciente.peso,
-          altura: entrega.paciente.altura,
-          objetivo: entrega.paciente.objetivo,
-          notas: entrega.paciente.notas,
-          patologias: entrega.paciente.patologias,
-          alergias: entrega.paciente.alergias,
+          nombre: entrega.entregableNombre,
+          planNombre: planes.find((p) => p.id === entrega.entregablePlanId)?.nombre ?? null,
+          bytes: entrega.entregableBytes,
         }
       : null,
-    planes: planes.map((p) => ({ id: p.id, nombre: p.nombre, activo: p.activo, dias: p._count.dias })),
+    paciente,
+    planificaciones,
+    planes: planes.map((p) => ({ id: p.id, nombre: p.nombre, activo: p.activo, dias: p.dias.length })),
     planVisto,
   };
 }

@@ -157,6 +157,7 @@ export function PacienteFichaClient({
   plantillasAnamnesis = [],
   notifsPorTipo = {},
   notifsDetalle = [],
+  casoEntrega = null,
 }: {
   paciente: PacienteSerializado;
   pestana: PestanaFicha;
@@ -172,6 +173,8 @@ export function PacienteFichaClient({
   plantillasAnamnesis?: PlantillaResumen[];
   notifsPorTipo?: Record<string, number>;
   notifsDetalle?: NotifDetalle[];
+  /** #40 — Si el paciente es un caso de clase del alumno: para entregar desde Entregables. */
+  casoEntrega?: { asignacionId: string; estado: string; planes: { id: string; nombre: string; activo: boolean }[] } | null;
 }) {
   const t = useTranslations("patients.ficha");
   const tTabs = useTranslations("patients.fichaTabs");
@@ -415,6 +418,7 @@ export function PacienteFichaClient({
           pacienteEmail={paciente.email}
           pacienteNombre={`${paciente.nombre} ${paciente.apellidos}`}
           ocultarCalorias={paciente.ocultarCalorias === true}
+          casoEntrega={casoEntrega}
           planActivo={
             planesResumen.find((p) => p.activo)
               ? { id: planesResumen.find((p) => p.activo)!.id, nombre: planesResumen.find((p) => p.activo)!.nombre }
