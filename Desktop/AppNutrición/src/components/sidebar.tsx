@@ -108,7 +108,9 @@ function seccionesAlumno(t: (key: string) => string): NavSection[] {
       title: t("nav.aula"),
       items: [
         { href: "/aula", label: t("navItems.misClases"), icon: GraduationCap },
-        // Los casos y las entregas se añaden cuando existan.
+        // Los casos SON pacientes suyos: es donde los trabaja, y donde tiene el de ejemplo para
+        // trastear. No se le quita (Guillermo, 2 sep 2026).
+        { href: "/pacientes?espacio=aula", label: t("navItems.pacientes"), icon: Users },
       ],
     },
     {

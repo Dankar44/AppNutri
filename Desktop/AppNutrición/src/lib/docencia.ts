@@ -113,9 +113,10 @@ export function esRutaDocente(pathname: string, espacio?: string | null): boolea
 
 /**
  * Rutas que son de los DOS espacios: el material que el profesor comparte con su clase y que
- * también usa en su consulta, más los ajustes y las novedades, que son de la cuenta entera.
+ * también usa en su consulta, los ajustes y las novedades, que son de la cuenta entera, y los
+ * pacientes — porque los casos de clase del alumno SON pacientes suyos y los trabaja ahí.
  */
-export const RUTAS_COMPARTIDAS = ["/dietas", "/alimentos", "/recetas", "/ajustes", "/novedades"] as const;
+export const RUTAS_COMPARTIDAS = ["/dietas", "/alimentos", "/recetas", "/ajustes", "/novedades", "/pacientes"] as const;
 
 /**
  * ¿Se ha acabado ya el curso de una clase?

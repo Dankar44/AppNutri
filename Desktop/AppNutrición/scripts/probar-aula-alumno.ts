@@ -123,7 +123,11 @@ async function main() {
     const menu = await menuDe(alumno);
     comprobar("tiene su aula", menu.includes("Mis clases"), menu.split("\n").slice(0, 12).join(" / "));
     comprobar("y el material", menu.includes("Alimentos") && menu.includes("Recetas"));
-    comprobar("no ve Pacientes ni Agenda desde el aula", !menu.includes("Pacientes"));
+    // Pacientes SÍ, porque sus casos son pacientes suyos y es donde los trabaja. Lo que no tiene
+    // que ver desde el aula es la parte de gestión de una consulta.
+    comprobar("tiene sus pacientes a mano", menu.includes("Pacientes"));
+    comprobar("pero no la gestión de una consulta", !menu.includes("Agenda") && !menu.includes("Pagos"),
+      menu.split("\n").slice(0, 12).join(" / "));
     comprobar("pero tiene la puerta a su cuenta profesional", menu.includes("Mi cuenta profesional"));
     comprobar("y en el pie pone que es alumno", menu.includes("Alumno"));
 
