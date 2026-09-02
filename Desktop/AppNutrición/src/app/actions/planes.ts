@@ -104,6 +104,14 @@ export async function crearPlan(data: PlanFormData) {
 
   const nombre = sanitizeString(data.nombre, LIMITS.NOMBRE);
   if (!nombre) throw new Error(t("plan.nombreObligatorio"));
+
+  // El paciente tiene que ser SUYO: `connect` por id no comprueba de quién es, así que sin esto
+  // se podían colgar planes de la ficha de un paciente de otra cuenta (auditoría 2 sep 2026).
+  const suyo = await prisma.paciente.findFirst({
+    where: { id: data.pacienteId, dietistaId: dietista.id },
+    select: { id: true },
+  });
+  if (!suyo) throw new Error(t("paciente.pacienteNoEncontrado"));
   const caloriasObjetivo = data.caloriasObjetivo != null
     ? validateNumber(data.caloriasObjetivo, 0, LIMITS.CALORIAS_MAX)
     : null;

@@ -40,7 +40,9 @@ export function CasosDelAlumno({ casos }: { casos: CasoParaAlumno[] }) {
 
   function abrir(asignacionId: string, pacienteId: string | null) {
     if (pacienteId) {
-      router.push(`/pacientes/${pacienteId}`);
+      // Con la marca del espacio: sin ella el menú cambia al de nutricionista y desaparece el
+      // aula, que es el único sitio desde donde se entrega (auditoría 2 sep 2026).
+      router.push(`/pacientes/${pacienteId}?espacio=aula`);
       return;
     }
     setTrabajando(asignacionId);
@@ -48,7 +50,7 @@ export function CasosDelAlumno({ casos }: { casos: CasoParaAlumno[] }) {
       const result = await abrirCaso(asignacionId);
       setTrabajando(null);
       if (result.ok && result.pacienteId) {
-        router.push(`/pacientes/${result.pacienteId}`);
+        router.push(`/pacientes/${result.pacienteId}?espacio=aula`);
       } else {
         toast.error(result.error || t("casos.errorAbrir"));
       }
@@ -90,7 +92,11 @@ export function CasosDelAlumno({ casos }: { casos: CasoParaAlumno[] }) {
 
   return (
     <section className="space-y-3">
-      <h2 className="text-lg font-semibold">{t("casos.titulo", { n: casos.length })}</h2>
+      <div>
+        <h2 className="text-lg font-semibold">{t("casos.titulo", { n: casos.length })}</h2>
+        {/* Que sepa desde el principio que su paciente es inventado y que se trabaja igual. */}
+        <p className="text-sm text-muted-foreground mt-0.5">{t("casos.explicacionPrimeraVez")}</p>
+      </div>
 
       <div className="divide-y divide-border lg:divide-y-0 lg:grid lg:grid-cols-2 lg:gap-4">
         {casos.map((c) => {
@@ -138,13 +144,17 @@ export function CasosDelAlumno({ casos }: { casos: CasoParaAlumno[] }) {
                 {(c.estado === "ENTREGADA" || c.estado === "CORREGIDA") && (
                   <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-medium">
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    {t(`casos.estado.${c.estado}`)}
+                    {/* Mientras el profesor no publique la nota, para el alumno sigue "entregada":
+                        decirle "corregida" y no enseñarle nada es peor que no decir nada. */}
+                    {t(c.estado === "CORREGIDA" && c.nota === null && !c.comentario
+                      ? "casos.estado.ENTREGADA"
+                      : `casos.estado.${c.estado}`)}
                   </span>
                 )}
               </div>
 
               {c.comentario && (
-                <div className="mt-3 rounded-lg bg-muted/60 p-3">
+                <div className="mt-3 py-3 lg:p-3 lg:rounded-lg lg:bg-muted/60 border-t border-border lg:border-t-0">
                   <p className="text-xs font-medium text-muted-foreground">{t("casos.comentarioDelProfesor")}</p>
                   <p className="text-sm mt-0.5 whitespace-pre-wrap">{c.comentario}</p>
                 </div>

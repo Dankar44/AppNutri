@@ -19,6 +19,9 @@ interface Props {
 export function PacientesFilter({ busquedaInicial, activosInicial, vista, fuente = "", hayDeClase = false }: Props) {
   const t = useTranslations("patients");
   const router = useRouter();
+  // El espacio (aula o docente) viaja en la dirección: si se pierde al buscar, al alumno se le
+  // cambia el menú y deja de ver su aula (auditoría 2 sep 2026).
+  const espacio = useSearchParams().get("espacio");
   const [busqueda, setBusqueda] = useState(busquedaInicial);
   const [soloActivos, setSoloActivos] = useState(activosInicial);
 
@@ -29,10 +32,11 @@ export function PacientesFilter({ busquedaInicial, activosInicial, vista, fuente
       if (newActivos) params.set("activos", "true");
       const f = newFuente === undefined ? fuente : newFuente;
       if (f) params.set("fuente", f);
+      if (espacio) params.set("espacio", espacio);
       params.set("vista", newVista || vista);
       return `/pacientes?${params.toString()}`;
     },
-    [vista, fuente]
+    [vista, fuente, espacio]
   );
 
   function applyFilters(newBusqueda: string, newActivos: boolean) {

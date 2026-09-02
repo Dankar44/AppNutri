@@ -21,6 +21,13 @@ export async function crearConsulta(data: ConsultaFormData) {
   if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
+  // El paciente tiene que ser SUYO: `connect` por id no comprueba de quién es.
+  const suyo = await prisma.paciente.findFirst({
+    where: { id: data.pacienteId, dietistaId: dietista.id },
+    select: { id: true },
+  });
+  if (!suyo) throw new Error(t("paciente.pacienteNoEncontrado"));
+
   const consulta = await prisma.consulta.create({
     data: {
       paciente: { connect: { id: data.pacienteId } },

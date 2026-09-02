@@ -26,6 +26,8 @@
       "ENTREGADA": "Entregue",
       "CORREGIDA": "Corrigida"
     },
-    "explicacionPrimeraVez": "Ao começar um caso é criado o seu paciente na sua conta. Trabalhe-o como se fosse real: a ficha, o plano, o PDF."
+    "explicacionPrimeraVez": "Cada caso é um paciente inventado que lhe é criado na conta ao começá-lo. Trabalhe-o como se fosse real: a ficha, o plano, o PDF.",
+    "esUnCaso": "Caso de {clase}",
+    "volverAlAula": "Voltar à minha sala"
   }
 }

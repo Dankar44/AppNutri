@@ -161,7 +161,12 @@ export function Asignaciones({
       )}
 
       {clases.length === 0 && asignaciones.length === 0 && (
-        <p className="text-sm text-muted-foreground mt-3">{t("asignar.sinClases")}</p>
+        <p className="text-sm text-muted-foreground mt-3">
+          {t("asignar.sinClases")}{" "}
+          <Link href="/profesor/clases" className="text-primary hover:underline">
+            {t("asignar.irAClases")}
+          </Link>
+        </p>
       )}
       {clases.length === 0 && asignaciones.length > 0 && (
         <p className="text-xs text-muted-foreground mt-3">{t("asignar.todasAsignadas")}</p>

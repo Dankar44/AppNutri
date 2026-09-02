@@ -39,7 +39,7 @@
     "fechaNacimientoObligatoria": "La fecha de nacimiento es obligatoria",
     "fechaNacimientoInvalida": "Fecha de nacimiento no válida",
     "fechaNacimientoFutura": "La fecha de nacimiento no puede ser futura",
-    "pacienteNoEncontrado": "Paciente no encontrado",
+    "pacienteNoEncontrado": "No se ha encontrado el paciente",
     "sinEmailRegistrado": "El paciente no tiene email registrado",
     "emailPerteneceADietista": "Este email pertenece a una cuenta de nutricionista. Una persona no puede ser nutricionista y paciente a la vez."
   },
@@ -174,7 +174,9 @@
       "preconsultaCompletada": "Anamnesis completada por el paciente",
       "horarioCompletado": "Horario completado por el paciente",
       "consulta": "Consulta",
-      "ejercicio": "Ejercicio"
+      "ejercicio": "Ejercicio",
+      "casoAsignado": "Tienes un caso nuevo",
+      "casoCorregido": "Te han corregido un caso"
     },
     "mensajes": {
       "proponeCita": "{nombreDietista} propone una cita para el {fecha}",
@@ -303,6 +305,10 @@
     "abreloAntes": "Ábrelo antes de entregarlo: así se crea tu paciente.",
     "yaCorregida": "Tu profesor ya la ha corregido, así que no se puede tocar.",
     "entregaNoEncontrada": "No se ha encontrado esa entrega.",
-    "notaFueraDeRango": "La nota va de 0 a 10."
+    "notaFueraDeRango": "La nota va de 0 a 10.",
+    "todaviaNoHaEntregado": "Todavía no lo ha entregado: espera a que lo entregue para corregirlo.",
+    "notaOComentario": "Ponle al menos una nota o un comentario.",
+    "pacienteDeClaseNoSeBorra": "Este paciente es de un caso de tu clase: no puedes borrarlo, porque es el trabajo que tu profesor tiene que corregir.",
+    "profesorConEntregasNoSeBorra": "Tus alumnos tienen casos entregados, y borrar tu cuenta se llevaría su trabajo y sus notas. Escríbenos y lo resolvemos contigo."
   }
 }

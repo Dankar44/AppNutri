@@ -12,6 +12,15 @@ export async function crearEnlace(planId: string) {
   if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
+  // El plan tiene que ser SUYO. Sin esto, cualquiera con una sesión podía crear un enlace público
+  // sobre el plan de otro y publicar en internet la dieta de un paciente ajeno, con su nombre y
+  // apellidos, sin que su nutricionista lo viera ni pudiera revocarlo (auditoría 2 sep 2026).
+  const suyo = await prisma.planAlimenticio.findFirst({
+    where: { id: planId, dietistaId: dietista.id },
+    select: { id: true },
+  });
+  if (!suyo) throw new Error(t("plan.planNoEncontrado"));
+
   const enlace = await prisma.enlaceCompartido.create({
     data: { plan: { connect: { id: planId } }, dietista: { connect: { id: dietista.id } } },
   });

@@ -69,6 +69,16 @@ export async function eliminarCuenta() {
     throw new Error(t("docencia.cuentaDeClaseNoSeBorra"));
   }
 
+  // Un profesor con casos entregados tampoco: borrar su cuenta se llevaría por delante, en
+  // cascada, las entregas y las notas de TODOS sus alumnos (auditoría 2 sep 2026).
+  if (dietista.rolDocente === "PROFESOR") {
+    const conEntregas = await prisma.entregaCaso.findFirst({
+      where: { asignacion: { caso: { profesorId: dietista.id } } },
+      select: { id: true },
+    });
+    if (conEntregas) throw new Error(t("docencia.profesorConEntregasNoSeBorra"));
+  }
+
   const authId = dietista.authId;
 
   // Eliminar auth ANTES del dietista para evitar zombis si falla a medias

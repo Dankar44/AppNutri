@@ -109,6 +109,10 @@ async function main() {
       )
     `);
     await client.query(`CREATE INDEX IF NOT EXISTS entregas_caso_alumno_idx ON entregas_caso ("alumnoId", estado)`);
+    // Un paciente pertenece a UNA entrega. Sin esta restricción, dos pestañas del alumno abriendo
+    // el caso a la vez le dejaban dos pacientes y solo uno enganchado (auditoría 2 sep 2026).
+    await client.query(
+      `CREATE UNIQUE INDEX IF NOT EXISTS entregas_caso_paciente_key ON entregas_caso ("pacienteId") WHERE "pacienteId" IS NOT NULL`);
     await client.query(`ALTER TABLE public.entregas_caso ENABLE ROW LEVEL SECURITY`);
     await client.query(`REVOKE ALL ON public.entregas_caso FROM anon, authenticated`);
     console.log("✓ entregas_caso");

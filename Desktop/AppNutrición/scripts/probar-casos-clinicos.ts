@@ -268,6 +268,51 @@ async function main() {
     comprobar("y cuando la publica, sí", /8[.,]5/.test(visible), visible.split("\n").filter((l) => /8/.test(l)).slice(0, 2).join(" / "));
     comprobar("con el comentario", visible.includes("B12"));
 
+    console.log("\n── Lo que la auditoría encontró, que no vuelva ──");
+    // 1. El paciente de un caso no se borra: es el trabajo que hay que corregir.
+    const { rows: sigue } = await client.query(
+      `SELECT COUNT(*)::int n FROM pacientes WHERE id = $1`, [pac[0].id]);
+    comprobar("el paciente del caso sigue existiendo", sigue[0].n === 1);
+    await alumna.goto(`${BASE}/pacientes/${pac[0].id}?espacio=aula`, { waitUntil: "networkidle0" });
+    await esperar(1800);
+    visible = await texto(alumna);
+    comprobar("trabajando el caso ve lo que le han pedido", visible.includes("Cubre el hierro"));
+    comprobar("y hasta cuándo", /Entrega antes del|Se pasó la fecha/.test(visible));
+    comprobar("sin perder su aula en el menú",
+      (await alumna.evaluate(() => (document.querySelector("aside, nav") as HTMLElement | null)?.innerText ?? "")).includes("Mis clases"));
+
+    // 2. Abrir otra vez un caso ya corregido no lo devuelve a "en marcha".
+    await client.query(`UPDATE entregas_caso SET estado = 'CORREGIDA' WHERE "alumnoId" = $1`, [alumnaId]);
+    await alumna.goto(`${BASE}/aula`, { waitUntil: "networkidle0" });
+    await esperar(1500);
+    await pulsar(alumna, "Abrir el paciente");
+    await esperar(3000);
+    const { rows: trasAbrir } = await client.query(
+      `SELECT estado FROM entregas_caso WHERE "alumnoId" = $1`, [alumnaId]);
+    comprobar("abrir un caso corregido no lo devuelve a en marcha", trasAbrir[0].estado === "CORREGIDA");
+
+    // 3. Un caso archivado desaparece del aula.
+    await client.query(`UPDATE casos_clinicos SET archivado = true WHERE id = $1`, [casoId]);
+    await alumna.goto(`${BASE}/aula`, { waitUntil: "networkidle0" });
+    await esperar(1800);
+    comprobar("el caso archivado desaparece del aula", !(await texto(alumna)).includes("Mujer vegana con anemia"));
+    await client.query(`UPDATE casos_clinicos SET archivado = false WHERE id = $1`, [casoId]);
+
+    // 4. Al retirarle el acceso, su entrega sigue viéndose desde el lado del profesor.
+    await client.query(`UPDATE alumnos_clase SET activa = false WHERE "alumnoId" = $1`, [alumnaId]);
+    await profe.goto(`${BASE}/profesor/casos/${casoId}/entregas/${asig[0].id}`, { waitUntil: "networkidle0" });
+    await esperar(1800);
+    visible = await texto(profe);
+    comprobar("el trabajo de un alumno retirado no se esconde", visible.includes(`${MARCA} Alonso`));
+    comprobar("y se dice que ya no está en la clase", visible.includes("Ya no está en la clase"));
+    await client.query(`UPDATE alumnos_clase SET activa = true WHERE "alumnoId" = $1`, [alumnaId]);
+
+    // 5. El paciente de un caso no sale en el selector de citas.
+    await alumna.goto(`${BASE}/agenda`, { waitUntil: "networkidle0" });
+    await esperar(2000);
+    comprobar("el paciente del caso no está en la agenda para citarle",
+      !(await texto(alumna)).includes("Marta Vegana"));
+
     console.log("\n── El caso no cuenta como paciente real ──");
     const { rows: reales } = await client.query(
       `SELECT COUNT(*)::int n FROM pacientes WHERE "esDemo" = false AND "esDeClase" = false AND "dietistaId" = $1`,

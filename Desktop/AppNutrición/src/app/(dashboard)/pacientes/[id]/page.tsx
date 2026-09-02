@@ -14,6 +14,11 @@ import { getMapaNotificacionesPacientes } from "@/app/actions/notificaciones";
 import { getCamposAnamnesis } from "@/app/actions/perfil";
 import { getEstructuraEfectivaPaciente, getPlantillasAnamnesis } from "@/app/actions/plantillas-anamnesis";
 import { AutoMarkLeidas } from "./auto-mark-leidas";
+import { AvisoCaso } from "./aviso-caso";
+import { getCasoDelPaciente } from "@/app/actions/aula";
+import { cursoTerminado } from "@/lib/docencia";
+import { formatDate } from "@/lib/utils";
+import { getLocale } from "@/i18n/locale";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -59,6 +64,11 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
   const notifsPaciente = mapaNotifs[id] || [];
   const t = await getTranslations("patients");
 
+  // #40 — Si el paciente viene de un caso de clase, el alumno tiene delante lo que le han pedido,
+  // hasta cuándo y el botón de entregar. Solo se pregunta si está marcado como de clase.
+  const caso = paciente.esDeClase ? await getCasoDelPaciente(id) : null;
+  const locale = await getLocale();
+
   return (
     <div>
       <AutoMarkLeidas pacienteId={id} pestana={pestana} />
@@ -69,6 +79,23 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
         <ArrowLeft className="w-4 h-4" />
         {t("nuevo.volverAPacientes")}
       </Link>
+
+      {caso && (
+        <AvisoCaso
+          asignacionId={caso.asignacionId}
+          casoNombre={caso.casoNombre}
+          consigna={caso.consigna}
+          claseNombre={caso.claseNombre}
+          estado={caso.estado}
+          nota={caso.nota}
+          comentario={caso.comentario}
+          fechaLimite={caso.fechaLimite ? formatDate(caso.fechaLimite, locale) : null}
+          fueraDePlazo={
+            (caso.estado === "SIN_EMPEZAR" || caso.estado === "EN_MARCHA") &&
+            cursoTerminado(caso.fechaLimite)
+          }
+        />
+      )}
 
       <PacienteFichaClient
         paciente={serializado}

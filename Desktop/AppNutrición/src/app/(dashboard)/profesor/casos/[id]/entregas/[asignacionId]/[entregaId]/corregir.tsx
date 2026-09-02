@@ -19,12 +19,15 @@ export function Corregir({
   comentario,
   visibleParaAlumno,
   yaCorregida,
+  puedeCorregirse,
 }: {
   entregaId: string;
   nota: number | null;
   comentario: string | null;
   visibleParaAlumno: boolean;
   yaCorregida: boolean;
+  /** Solo se corrige lo entregado: si no, el alumno se queda encerrado sin poder entregar. */
+  puedeCorregirse: boolean;
 }) {
   const t = useTranslations("casos");
   const router = useRouter();
@@ -117,7 +120,7 @@ export function Corregir({
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="submit"
-          disabled={isPending}
+          disabled={isPending || !puedeCorregirse}
           className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
         >
           {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Star className="w-4 h-4" />}

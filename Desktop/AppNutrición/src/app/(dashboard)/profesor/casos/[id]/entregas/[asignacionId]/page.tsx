@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, CheckCircle2, Clock, Circle, Star, AlertTriangle, ChevronRight } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireProfesor } from "@/app/actions/docencia";
-import { getCaso, getEntregasDeAsignacion } from "@/app/actions/casos";
+import { getCaso, getEntregasDeAsignacion, getAsignacionesDeCaso } from "@/app/actions/casos";
+import { FechaLimite } from "./fecha-limite";
 import { formatDate } from "@/lib/utils";
 import { getLocale } from "@/i18n/locale";
 
@@ -15,13 +16,16 @@ export default async function EntregasPage({
 }) {
   await requireProfesor();
   const { id, asignacionId } = await params;
-  const [caso, entregas, t, locale] = await Promise.all([
+  const [caso, entregas, asignaciones, t, locale] = await Promise.all([
     getCaso(id),
     getEntregasDeAsignacion(asignacionId),
+    getAsignacionesDeCaso(id),
     getTranslations("casos"),
     getLocale(),
   ]);
   if (!caso) notFound();
+  // De qué clase es esta pantalla: con el mismo caso puesto a tres clases, sin esto no se sabe.
+  const asignacion = asignaciones.find((a) => a.id === asignacionId) ?? null;
 
   const iconos = {
     SIN_EMPEZAR: <Circle className="w-4 h-4 text-muted-foreground/50" />,
@@ -41,9 +45,23 @@ export default async function EntregasPage({
       </Link>
 
       <div>
-        <h1 className="text-xl sm:text-2xl font-bold">{t("entregas.titulo")}</h1>
-        <p className="text-sm text-muted-foreground">{caso.nombre}</p>
+        <h1 className="text-xl sm:text-2xl font-bold">
+          {asignacion ? asignacion.claseNombre : t("entregas.titulo")}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          {caso.nombre}
+          {asignacion?.fechaLimite && (
+            <> · {t("asignar.fechaLimite")}: {formatDate(asignacion.fechaLimite, locale)}</>
+          )}
+        </p>
       </div>
+
+      {asignacion && (
+        <FechaLimite
+          asignacionId={asignacion.id}
+          valor={asignacion.fechaLimite ? asignacion.fechaLimite.toISOString().slice(0, 10) : ""}
+        />
+      )}
 
       {entregas.length === 0 ? (
         <p className="text-sm text-muted-foreground py-10 text-center">{t("entregas.sinAlumnos")}</p>
@@ -63,6 +81,11 @@ export default async function EntregasPage({
                     {t("entregas.planes", { n: e.planes })}
                   </p>
                 </div>
+                {e.fuera && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground shrink-0">
+                    {t("entregas.yaNoEstaEnLaClase")}
+                  </span>
+                )}
                 {e.tarde && (
                   <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 shrink-0">
                     <AlertTriangle className="w-3 h-3" />

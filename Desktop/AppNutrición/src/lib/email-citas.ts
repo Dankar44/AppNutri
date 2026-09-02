@@ -51,12 +51,14 @@ export async function enviarEmailCita(
       googleMeetLink: true,
       enlaceVideollamada: true,
       propuestoPor: true,
-      paciente: { select: { nombre: true, apellidos: true, email: true, esDemo: true, avisarPorEmail: true } },
+      paciente: { select: { nombre: true, apellidos: true, email: true, esDemo: true, esDeClase: true, avisarPorEmail: true } },
       dietista: { select: { nombre: true, apellidos: true, email: true } },
     },
   });
   if (!cita) return { ok: false, motivo: "no-cita" };
   if (cita.paciente.esDemo) return { ok: false, motivo: "demo" };
+  // Un paciente de caso de clase es una persona inventada: no se le manda nada.
+  if (cita.paciente.esDeClase) return { ok: false, motivo: "de-clase" };
   if (!cita.paciente.email) return { ok: false, motivo: "sin-email" };
   // El interruptor por paciente solo corta el envío AUTOMÁTICO; el botón manual
   // de la agenda (force: true) envía igual aunque esté desactivado.

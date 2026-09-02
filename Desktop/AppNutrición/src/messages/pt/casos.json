@@ -91,8 +91,12 @@
     "retirarTexto": "Deixa de lhes aparecer como pendente, mas NÃO se apaga nada: o que já fizeram continua na conta deles e você continua a vê-lo aqui.",
     "sinClases": "Crie primeiro uma turma: é a quem se atribuem os casos.",
     "todasAsignadas": "Já está atribuído a todas as suas turmas.",
-    "progreso": "{entregadas} de {alumnos} entregue",
-    "corregidas": "{n} corrigidas"
+    "progreso": "{entregadas} de {alumnos} entregaram",
+    "corregidas": "{n} corrigidas",
+    "cambiarFecha": "Mudar a data limite",
+    "ponerFecha": "Definir uma data limite",
+    "fechaCambiada": "Data limite alterada",
+    "irAClases": "Ir às minhas turmas"
   },
   "entregas": {
     "titulo": "Entregas",
@@ -105,7 +109,6 @@
     },
     "tarde": "Fora do prazo",
     "planes": "{n, plural, =0 {ainda sem plano} one {# plano} other {# planos}}",
-    "verTrabajo": "Ver o trabalho",
     "corregir": "Corrigir",
     "nota": "Nota (0-10)",
     "comentario": "Comentário para o aluno",
@@ -118,6 +121,8 @@
     "sinAlumnos": "Esta turma ainda não tem alunos.",
     "soloLectura": "Está a ver o trabalho do seu aluno tal como o deixou. Não o pode alterar: é da conta dele.",
     "sinPlanes": "Ainda não fez nenhum plano para este paciente.",
-    "notaFuera": "A nota vai de 0 a 10."
+    "notaFuera": "A nota vai de 0 a 10.",
+    "yaNoEstaEnLaClase": "Já não está na turma",
+    "todaviaNoEntregada": "Este aluno ainda não entregou. Espere que o faça: se lhe puser nota agora, não poderá entregar."
   }
 }

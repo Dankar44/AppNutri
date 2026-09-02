@@ -91,8 +91,12 @@
     "retirarTexto": "Deja de salirles como pendiente, pero NO se borra nada: lo que ya han hecho sigue en su cuenta y tú lo sigues viendo aquí.",
     "sinClases": "Primero crea una clase: es a quien se le asignan los casos.",
     "todasAsignadas": "Ya está asignado a todas tus clases.",
-    "progreso": "{entregadas} de {alumnos} entregado",
-    "corregidas": "{n} corregidas"
+    "progreso": "{entregadas} de {alumnos} han entregado",
+    "corregidas": "{n} corregidas",
+    "cambiarFecha": "Cambiar la fecha límite",
+    "ponerFecha": "Poner una fecha límite",
+    "fechaCambiada": "Fecha límite cambiada",
+    "irAClases": "Ir a mis clases"
   },
   "entregas": {
     "titulo": "Entregas",
@@ -105,7 +109,6 @@
     },
     "tarde": "Fuera de plazo",
     "planes": "{n, plural, =0 {sin plan todavía} one {# plan} other {# planes}}",
-    "verTrabajo": "Ver su trabajo",
     "corregir": "Corregir",
     "nota": "Nota (0-10)",
     "comentario": "Comentario para el alumno",
@@ -118,6 +121,8 @@
     "sinAlumnos": "Esta clase todavía no tiene alumnos.",
     "soloLectura": "Estás viendo el trabajo de tu alumno tal y como lo ha dejado. No puedes tocarlo: es de su cuenta.",
     "sinPlanes": "Todavía no ha hecho ningún plan para este paciente.",
-    "notaFuera": "La nota va de 0 a 10."
+    "notaFuera": "La nota va de 0 a 10.",
+    "yaNoEstaEnLaClase": "Ya no está en la clase",
+    "todaviaNoEntregada": "Este alumno todavía no ha entregado. Espera a que lo haga: si le pones nota ahora, no podrá entregarlo."
   }
 }

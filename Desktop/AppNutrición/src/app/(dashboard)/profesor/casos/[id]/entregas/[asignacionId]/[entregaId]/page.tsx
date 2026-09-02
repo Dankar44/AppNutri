@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, User, FileText, Eye } from "lucide-react";
+import { ArrowLeft, User, FileText, Eye, AlertTriangle } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireProfesor } from "@/app/actions/docencia";
 import { getTrabajoDeEntrega } from "@/app/actions/casos";
@@ -66,6 +66,19 @@ export default async function EntregaPage({
             {trabajo.paciente.altura != null && <span>{t("campos.altura")}: {trabajo.paciente.altura}</span>}
             <span>{t("campos.objetivo")}: {t(`objetivo.${trabajo.paciente.objetivo}`)}</span>
           </div>
+          {/* Lo que el alumno ha escrito en la ficha: si la consigna pedía razonar algo, está aquí. */}
+          {trabajo.paciente.patologias.length > 0 && (
+            <p className="text-sm mt-2">
+              <span className="text-muted-foreground">{t("campos.patologias")}: </span>
+              {trabajo.paciente.patologias.join(", ")}
+            </p>
+          )}
+          {trabajo.paciente.notas && (
+            <div className="mt-3">
+              <p className="text-xs font-medium text-muted-foreground">{t("campos.notas")}</p>
+              <p className="text-sm whitespace-pre-wrap mt-0.5">{trabajo.paciente.notas}</p>
+            </div>
+          )}
         </section>
       )}
 
@@ -112,8 +125,16 @@ export default async function EntregaPage({
         </section>
       )}
 
+      {trabajo.estado !== "ENTREGADA" && trabajo.estado !== "CORREGIDA" && (
+        <div className="flex gap-3 py-3 lg:p-4 lg:rounded-xl lg:border lg:border-amber-200 dark:lg:border-amber-500/30 lg:bg-amber-50 dark:lg:bg-amber-500/10 border-b border-border lg:border-b">
+          <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <p className="text-sm text-amber-900 dark:text-amber-200">{t("entregas.todaviaNoEntregada")}</p>
+        </div>
+      )}
+
       <Corregir
         entregaId={trabajo.entregaId}
+        puedeCorregirse={trabajo.estado === "ENTREGADA" || trabajo.estado === "CORREGIDA"}
         nota={trabajo.nota}
         comentario={trabajo.comentario}
         visibleParaAlumno={trabajo.visibleParaAlumno}

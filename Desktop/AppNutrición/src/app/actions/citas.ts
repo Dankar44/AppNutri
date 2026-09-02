@@ -251,7 +251,9 @@ export async function getPacientesParaCita() {
   if (!dietista) return [];
 
   return prisma.paciente.findMany({
-    where: { dietistaId: dietista.id, activo: true },
+    // El paciente de un caso de clase no va al selector de citas: es una persona inventada, y
+    // ponerle una cita acabaría mandando correos de verdad (auditoría 2 sep 2026).
+    where: { dietistaId: dietista.id, activo: true, esDeClase: false },
     select: {
       id: true,
       nombre: true,

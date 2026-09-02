@@ -145,8 +145,9 @@ export function inicioDeHoy(hoy: Date = new Date()): Date {
 /** Días que quedan de curso, o null si no tiene fecha de fin. Negativo si ya pasó. */
 export function diasDeCursoQueQuedan(fechaFinCurso: Date | null | undefined, hoy: Date = new Date()): number | null {
   if (!fechaFinCurso) return null;
+  // En UTC, como `cursoTerminado`: las dos formas de mirar la misma fecha tienen que coincidir.
   const fin = new Date(fechaFinCurso);
-  fin.setHours(23, 59, 59, 999);
+  fin.setUTCHours(23, 59, 59, 999);
   return Math.ceil((fin.getTime() - hoy.getTime()) / (24 * 60 * 60 * 1000));
 }
 

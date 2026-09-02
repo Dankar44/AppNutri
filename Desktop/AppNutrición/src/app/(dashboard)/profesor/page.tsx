@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { GraduationCap, Users, UserCog, CalendarRange, AlertTriangle, Plus } from "lucide-react";
+import { GraduationCap, Users, UserCog, CalendarRange, AlertTriangle, Plus, ClipboardList } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireProfesor } from "@/app/actions/docencia";
 import { getMisClases } from "@/app/actions/clases";
+import { getMisCasos } from "@/app/actions/casos";
 import type { Metadata } from "next";
 import { cursoActual } from "@/lib/docencia";
 import { formatDate } from "@/lib/utils";
@@ -60,7 +61,10 @@ export default async function ProfesorPage() {
   const datos = await requireProfesor();
   const t = await getTranslations("docencia");
   const locale = await getLocale();
-  const clases = (await getMisClases()).length;
+  const [clases, casos] = await Promise.all([
+    getMisClases().then((c) => c.length),
+    getMisCasos().then((c) => c.length),
+  ]);
 
   const { licencia } = datos;
   const curso = licencia?.curso || cursoActual();
@@ -134,22 +138,24 @@ export default async function ProfesorPage() {
         <p className="text-sm text-muted-foreground mt-1">
           {clases === 0 ? t("panel.sinClasesTexto") : t("panel.conClasesTexto", { n: clases })}
         </p>
-        <Link
-          href="/profesor/clases"
-          className="mt-3 inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
-        >
-          {clases === 0 ? <Plus className="w-4 h-4" /> : <Users className="w-4 h-4" />}
-          {clases === 0 ? t("panel.crearPrimeraClase") : t("panel.verMisClases")}
-        </Link>
-      </section>
-
-      {/* Lo que todavía no existe, dicho a las claras para que nadie busque un botón que no está. */}
-      <section className="py-4 lg:p-5 lg:rounded-xl lg:border lg:border-dashed lg:border-border">
-        <p className="text-sm font-medium mb-2">{t("panel.enPreparacionTitulo")}</p>
-        <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-          <li>{t("panel.enPreparacionCasos")}</li>
-          <li>{t("panel.enPreparacionCorreccion")}</li>
-        </ul>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Link
+            href="/profesor/clases"
+            className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+          >
+            {clases === 0 ? <Plus className="w-4 h-4" /> : <Users className="w-4 h-4" />}
+            {clases === 0 ? t("panel.crearPrimeraClase") : t("panel.verMisClases")}
+          </Link>
+          {/* El segundo paso, en la misma pantalla: sin esto el profesor no encuentra los casos. */}
+          <Link
+            href="/profesor/casos"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium hover:bg-muted transition-colors"
+          >
+            <ClipboardList className="w-4 h-4" />
+            {casos === 0 ? t("panel.crearPrimerCaso") : t("panel.verMisCasos")}
+          </Link>
+        </div>
+        <p className="text-xs text-muted-foreground mt-2">{t("panel.dosPasos")}</p>
       </section>
 
       {/* El paso a su consulta vive en el menú («Mi cuenta profesional»), que es donde se busca;

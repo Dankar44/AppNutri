@@ -180,6 +180,14 @@ export async function crearPlanDesdePlantilla(
   });
   if (!plantilla) throw new Error(t("plantilla.plantillaNoEncontrada"));
 
+  // El paciente también tiene que ser suyo: se comprobaba la plantilla y no el destino, así que
+  // se podía crear un plan sobre el paciente de otra cuenta (auditoría 2 sep 2026).
+  const suyo = await prisma.paciente.findFirst({
+    where: { id: pacienteId, dietistaId: dietista.id },
+    select: { id: true },
+  });
+  if (!suyo) throw new Error(t("paciente.pacienteNoEncontrado"));
+
   const datos = (plantilla.datos as unknown as PlantillaDia[]) || [];
 
   // Recoger todos los IDs referenciados (incl. alternativas) y verificar cuáles existen

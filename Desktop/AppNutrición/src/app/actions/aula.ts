@@ -114,6 +114,8 @@ export async function getMisCasosDelAula(): Promise<CasoDelAlumno[]> {
   const asignaciones = await prisma.asignacionCaso.findMany({
     where: {
       retiradaAt: null,
+      // Un caso archivado deja de estar en circulación: ni se ve ni se abre.
+      caso: { archivado: false },
       clase: {
         archivada: false,
         OR: [{ fechaFinCurso: null }, { fechaFinCurso: { gte: hoy } }],
@@ -151,6 +153,28 @@ export async function getMisCasosDelAula(): Promise<CasoDelAlumno[]> {
 }
 
 /**
+ * ¿Ese caso sigue siendo suyo? Clase viva, matrícula activa, asignación puesta y caso sin
+ * archivar. Lo comparten abrir, entregar y deshacer: las tres tienen que exigir lo mismo.
+ */
+async function asignacionVigenteDelAlumno(asignacionId: string, alumnoId: string): Promise<boolean> {
+  const hoy = inicioDeHoy();
+  const asignacion = await prisma.asignacionCaso.findFirst({
+    where: {
+      id: asignacionId,
+      retiradaAt: null,
+      caso: { archivado: false },
+      clase: {
+        archivada: false,
+        OR: [{ fechaFinCurso: null }, { fechaFinCurso: { gte: hoy } }],
+        alumnos: { some: { alumnoId, activa: true } },
+      },
+    },
+    select: { id: true },
+  });
+  return asignacion !== null;
+}
+
+/**
  * Abre el caso: la primera vez le crea SU paciente a partir de los datos que escribió el profesor.
  *
  * A partir de ahí es un paciente de su cuenta como cualquier otro — su ficha, su anamnesis, su
@@ -169,6 +193,7 @@ export async function abrirCaso(
     where: {
       id: asignacionId,
       retiradaAt: null,
+      caso: { archivado: false },
       clase: {
         archivada: false,
         OR: [{ fechaFinCurso: null }, { fechaFinCurso: { gte: hoy } }],
@@ -187,9 +212,26 @@ export async function abrirCaso(
     if (existente?.pacienteId) return { ok: true, pacienteId: existente.pacienteId };
 
     const c = asignacion.caso;
-    // Todo en una transacción: un paciente creado sin su entrega sería un paciente huérfano en la
-    // lista del alumno, y una entrega sin paciente le dejaría el caso sin poder abrirse.
+    // Todo en una transacción, y **la entrega primero**: es la que tiene la clave única
+    // (asignación + alumno), así que si el alumno pulsa dos veces o abre dos pestañas, la segunda
+    // choca ahí y no llega a crear un segundo paciente. Al revés — paciente primero — se creaban
+    // dos y solo uno quedaba enganchado al caso (auditoría 2 sep 2026).
     const pacienteId = await prisma.$transaction(async (tx) => {
+      const entrega = await tx.entregaCaso.upsert({
+        where: { asignacionId_alumnoId: { asignacionId, alumnoId: dietista.id } },
+        create: {
+          asignacionId,
+          alumnoId: dietista.id,
+          estado: "EN_MARCHA",
+          abiertaAt: new Date(),
+        },
+        // NO se toca el estado: una entrega ya corregida no puede volver a "en marcha" por
+        // abrirla, que era la forma de deshacer una corrección por la puerta de atrás.
+        update: {},
+        select: { id: true, pacienteId: true },
+      });
+      if (entrega.pacienteId) return entrega.pacienteId;
+
       const paciente = await tx.paciente.create({
         data: {
           dietistaId: dietista.id,
@@ -213,16 +255,14 @@ export async function abrirCaso(
           esDeClase: true,
         },
       });
-      await tx.entregaCaso.upsert({
-        where: { asignacionId_alumnoId: { asignacionId, alumnoId: dietista.id } },
-        create: {
-          asignacionId,
-          alumnoId: dietista.id,
+      await tx.entregaCaso.update({
+        where: { id: entrega.id },
+        data: {
           pacienteId: paciente.id,
-          estado: "EN_MARCHA",
+          // Solo se pone "en marcha" a quien todavía no había entregado.
+          ...(existente && existente.estado !== "SIN_EMPEZAR" ? {} : { estado: "EN_MARCHA" }),
           abiertaAt: new Date(),
         },
-        update: { pacienteId: paciente.id, estado: "EN_MARCHA", abiertaAt: new Date() },
       });
       return paciente.id;
     });
@@ -245,11 +285,17 @@ export async function entregarCaso(
   const t = await getTranslations("validation");
   if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
 
+  // Las mismas comprobaciones que al abrirlo: sin esto, un alumno al que le retiraron el acceso
+  // o cuyo curso cerró seguía pudiendo entregar con el id que tenía guardado.
+  if (!(await asignacionVigenteDelAlumno(asignacionId, dietista.id))) {
+    return { ok: false, error: t("docencia.casoNoEncontrado") };
+  }
+
   const entrega = await prisma.entregaCaso.findUnique({
     where: { asignacionId_alumnoId: { asignacionId, alumnoId: dietista.id } },
     select: { id: true, estado: true, pacienteId: true },
   });
-  if (!entrega) return { ok: false, error: t("docencia.abreloAntes") };
+  if (!entrega || !entrega.pacienteId) return { ok: false, error: t("docencia.abreloAntes") };
   if (entrega.estado === "CORREGIDA") return { ok: false, error: t("docencia.yaCorregida") };
 
   await prisma.entregaCaso.update({
@@ -268,6 +314,10 @@ export async function deshacerEntrega(
   const t = await getTranslations("validation");
   if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
 
+  if (!(await asignacionVigenteDelAlumno(asignacionId, dietista.id))) {
+    return { ok: false, error: t("docencia.casoNoEncontrado") };
+  }
+
   const entrega = await prisma.entregaCaso.findUnique({
     where: { asignacionId_alumnoId: { asignacionId, alumnoId: dietista.id } },
     select: { id: true, estado: true },
@@ -281,4 +331,52 @@ export async function deshacerEntrega(
   });
   revalidatePath("/aula");
   return { ok: true };
+}
+
+export interface CasoDeEstePaciente {
+  asignacionId: string;
+  casoNombre: string;
+  consigna: string | null;
+  claseNombre: string;
+  fechaLimite: Date | null;
+  estado: "SIN_EMPEZAR" | "EN_MARCHA" | "ENTREGADA" | "CORREGIDA";
+  nota: number | null;
+  comentario: string | null;
+}
+
+/**
+ * ¿Este paciente viene de un caso de clase? Sirve para que, mientras el alumno trabaja en la
+ * ficha, tenga delante lo que le han pedido, hasta cuándo, y el botón de entregar — que si no
+ * están solo en el aula y hay que ir a buscarlos.
+ */
+export async function getCasoDelPaciente(pacienteId: string): Promise<CasoDeEstePaciente | null> {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return null;
+
+  const entrega = await prisma.entregaCaso.findFirst({
+    where: { pacienteId, alumnoId: dietista.id },
+    select: {
+      estado: true, nota: true, comentario: true, visibleParaAlumno: true,
+      asignacion: {
+        select: {
+          id: true, fechaLimite: true,
+          caso: { select: { nombre: true, consigna: true } },
+          clase: { select: { nombre: true } },
+        },
+      },
+    },
+  });
+  if (!entrega) return null;
+
+  const visible = entrega.visibleParaAlumno;
+  return {
+    asignacionId: entrega.asignacion.id,
+    casoNombre: entrega.asignacion.caso.nombre,
+    consigna: entrega.asignacion.caso.consigna,
+    claseNombre: entrega.asignacion.clase.nombre,
+    fechaLimite: entrega.asignacion.fechaLimite,
+    estado: entrega.estado as CasoDeEstePaciente["estado"],
+    nota: visible ? entrega.nota : null,
+    comentario: visible ? entrega.comentario : null,
+  };
 }

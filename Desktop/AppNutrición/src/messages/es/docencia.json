@@ -10,15 +10,15 @@
     "curso": "Curso",
     "hasta": "Hasta el {fecha}",
     "sinFechaFin": "Sin fecha de fin",
-    "enPreparacionTitulo": "En preparación",
-    "enPreparacionCasos": "Casos clínicos y su asignación",
-    "enPreparacionCorreccion": "Corrección del trabajo de los alumnos",
     "irACuentaProfesionalAyuda": "Tus propios pacientes están donde siempre: entra en «Mi cuenta profesional», en el menú. Al volver a entrar aterrizarás otra vez aquí.",
     "porDondeEmpezar": "Por dónde empezar",
     "sinClasesTexto": "Crea tu primera clase y dale de alta a tus alumnos: por correo, uno por línea, o con un enlace que puedes pegar en tu aula virtual.",
     "conClasesTexto": "{n, plural, one {Tienes # clase en marcha} other {Tienes # clases en marcha}}. Desde ahí das de alta a tus alumnos y les retiras el acceso al acabar el curso.",
     "crearPrimeraClase": "Crear mi primera clase",
-    "verMisClases": "Ver mis clases"
+    "verMisClases": "Ver mis clases",
+    "crearPrimerCaso": "Crear mi primer caso",
+    "verMisCasos": "Ver mis casos",
+    "dosPasos": "Son dos pasos: una clase con tus alumnos dentro, y los casos que les vas poniendo."
   },
   "invitacion": {
     "titulo": "Crea tu cuenta de profesor",

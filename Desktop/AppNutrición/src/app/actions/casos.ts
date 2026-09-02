@@ -24,6 +24,31 @@ import { PLAN_COMPLETO, aDetalleVisual } from "@/lib/plan-para-ver";
 import { expandirGruposDeDias } from "@/lib/grupos-dias";
 import type { PlanVisualDetalle } from "@/components/paciente/plan-visual";
 
+/**
+ * Avisa a los alumnos de una clase. Se hace de golpe con `createMany`: en una clase de 300, uno
+ * a uno serían 300 idas y venidas a la base de datos.
+ */
+async function avisarDelCaso(claseId: string, casoId: string, tipo: "CASO_ASIGNADO") {
+  const [caso, matriculas, t] = await Promise.all([
+    prisma.casoClinico.findUnique({ where: { id: casoId }, select: { nombre: true } }),
+    prisma.alumnoClase.findMany({ where: { claseId, activa: true }, select: { alumnoId: true } }),
+    getTranslations("validation"),
+  ]);
+  if (!caso || matriculas.length === 0) return;
+
+  await prisma.notificacion.createMany({
+    data: matriculas.map((m) => ({
+      dietistaId: m.alumnoId,
+      tipo,
+      titulo: t("notificaciones.titulos.casoAsignado"),
+      mensaje: caso.nombre,
+      tituloKey: "notificaciones.titulos.casoAsignado",
+      params: { caso: caso.nombre },
+      enlace: "/aula",
+    })),
+  }).catch((e) => console.error("[docencia] No se pudo avisar del caso:", e));
+}
+
 function revalidarCasos(casoId?: string) {
   revalidatePath("/profesor");
   revalidatePath("/profesor/casos");
@@ -111,16 +136,25 @@ export async function getMisCasos(incluirArchivados = false): Promise<CasoResume
       ...(incluirArchivados ? {} : { archivado: false }),
     },
     orderBy: [{ archivado: "asc" }, { createdAt: "desc" }],
-    include: {
+    select: {
+      id: true, nombre: true, pacienteNombre: true, consigna: true, archivado: true,
       asignaciones: {
         where: { retiradaAt: null },
-        select: { id: true, entregas: { select: { estado: true } } },
+        select: {
+          id: true,
+          // Los alumnos de la clase se cuentan aquí: son el total contra el que se mide lo
+          // entregado. Traerse las entregas una a una para contarlas en JavaScript eran 30.000
+          // filas con veinte casos y clases de 300 (auditoría 2 sep 2026).
+          clase: { select: { _count: { select: { alumnos: { where: { activa: true } } } } } },
+          _count: { select: { entregas: { where: { estado: { in: ["ENTREGADA", "CORREGIDA"] } } } } },
+        },
       },
     },
   });
 
   return casos.map((c) => {
-    const entregas = c.asignaciones.flatMap((a) => a.entregas);
+    const alumnos = c.asignaciones.reduce((n, a) => n + a.clase._count.alumnos, 0);
+    const entregadas = c.asignaciones.reduce((n, a) => n + a._count.entregas, 0);
     return {
       id: c.id,
       nombre: c.nombre,
@@ -128,8 +162,10 @@ export async function getMisCasos(incluirArchivados = false): Promise<CasoResume
       consigna: c.consigna,
       archivado: c.archivado,
       clases: c.asignaciones.length,
-      entregadas: entregas.filter((e) => e.estado === "ENTREGADA" || e.estado === "CORREGIDA").length,
-      pendientes: entregas.filter((e) => e.estado === "SIN_EMPEZAR" || e.estado === "EN_MARCHA").length,
+      entregadas,
+      // Pendiente es todo el que no ha entregado, haya abierto el caso o no. Contar solo a los
+      // que lo habían abierto decía "0 pendientes" con la clase entera sin empezar.
+      pendientes: Math.max(0, alumnos - entregadas),
     };
   });
 }
@@ -266,13 +302,18 @@ export async function getCaso(casoId: string): Promise<CasoDetalle | null> {
     include: {
       asignaciones: {
         where: { retiradaAt: null },
-        select: { id: true, entregas: { select: { estado: true } } },
+        select: {
+          id: true,
+          clase: { select: { _count: { select: { alumnos: { where: { activa: true } } } } } },
+          _count: { select: { entregas: { where: { estado: { in: ["ENTREGADA", "CORREGIDA"] } } } } },
+        },
       },
     },
   });
   if (!c) return null;
 
-  const entregas = c.asignaciones.flatMap((a) => a.entregas);
+  const alumnosTotales = c.asignaciones.reduce((n, a) => n + a.clase._count.alumnos, 0);
+  const yaEntregadas = c.asignaciones.reduce((n, a) => n + a._count.entregas, 0);
   return {
     id: c.id,
     nombre: c.nombre,
@@ -295,8 +336,8 @@ export async function getCaso(casoId: string): Promise<CasoDetalle | null> {
     preferencias: c.preferencias,
     notas: c.notas,
     clases: c.asignaciones.length,
-    entregadas: entregas.filter((e) => e.estado === "ENTREGADA" || e.estado === "CORREGIDA").length,
-    pendientes: entregas.filter((e) => e.estado === "SIN_EMPEZAR" || e.estado === "EN_MARCHA").length,
+    entregadas: yaEntregadas,
+    pendientes: Math.max(0, alumnosTotales - yaEntregadas),
   };
 }
 
@@ -331,19 +372,30 @@ export async function getAsignacionesDeCaso(casoId: string): Promise<AsignacionR
           _count: { select: { alumnos: { where: { activa: true } } } },
         },
       },
-      entregas: { select: { estado: true } },
     },
   });
 
-  return asignaciones.map((a) => ({
-    id: a.id,
-    claseId: a.clase.id,
-    claseNombre: a.clase.nombre,
-    fechaLimite: a.fechaLimite,
-    alumnos: a.clase._count.alumnos,
-    entregadas: a.entregas.filter((e) => e.estado === "ENTREGADA").length,
-    corregidas: a.entregas.filter((e) => e.estado === "CORREGIDA").length,
-  }));
+  // Los estados se cuentan en una sola consulta agrupada, no trayéndose las entregas.
+  const conteos = await prisma.entregaCaso.groupBy({
+    by: ["asignacionId", "estado"],
+    where: { asignacionId: { in: asignaciones.map((a) => a.id) } },
+    _count: { _all: true },
+  });
+
+  return asignaciones.map((a) => {
+    const suyos = conteos.filter((c) => c.asignacionId === a.id);
+    const cuantos = (estado: string) =>
+      suyos.find((c) => c.estado === estado)?._count._all ?? 0;
+    return {
+      id: a.id,
+      claseId: a.clase.id,
+      claseNombre: a.clase.nombre,
+      fechaLimite: a.fechaLimite,
+      alumnos: a.clase._count.alumnos,
+      entregadas: cuantos("ENTREGADA"),
+      corregidas: cuantos("CORREGIDA"),
+    };
+  });
 }
 
 /** Las clases del profesor a las que todavía no está puesto este caso. */
@@ -374,8 +426,14 @@ export async function asignarCasoAClase(
   const profesor = await requireProfesor();
   const t = await getTranslations("validation");
 
+  // Si la asignación ya existía (retirada), se puede revivir aunque el caso esté archivado: si no,
+  // archivar + retirar dejaba las entregas invisibles para siempre (auditoría 2 sep 2026).
+  const yaExistia = await prisma.asignacionCaso.findUnique({
+    where: { casoId_claseId: { casoId, claseId } },
+    select: { id: true, fechaLimite: true },
+  });
   const caso = await prisma.casoClinico.findFirst({
-    where: { id: casoId, profesorId: profesor.dietistaId, archivado: false },
+    where: { id: casoId, profesorId: profesor.dietistaId, ...(yaExistia ? {} : { archivado: false }) },
     select: { id: true },
   });
   if (!caso) return { ok: false, error: t("docencia.casoNoEncontrado") };
@@ -397,9 +455,19 @@ export async function asignarCasoAClase(
     await prisma.asignacionCaso.upsert({
       where: { casoId_claseId: { casoId, claseId } },
       create: { casoId, claseId, fechaLimite: limite, asignadoPor: profesor.dietistaId },
-      // Si estaba retirada, volver a asignarla la revive con la fecha nueva y sus entregas.
-      update: { fechaLimite: limite, retiradaAt: null, asignadoPor: profesor.dietistaId },
+      // Si estaba retirada, volver a asignarla la revive con sus entregas. Sin fecha nueva se
+      // conserva la que tenía: pisarla con null borraba el plazo sin querer.
+      update: {
+        ...(fechaLimite === undefined ? {} : { fechaLimite: limite }),
+        retiradaAt: null,
+        asignadoPor: profesor.dietistaId,
+      },
     });
+
+    // Aviso a los alumnos: sin esto, un caso puesto a mitad de semana no se entera nadie hasta
+    // que entra al aula por su cuenta.
+    await avisarDelCaso(claseId, casoId, "CASO_ASIGNADO");
+
     revalidarCasos(casoId);
     revalidatePath("/aula");
     return { ok: true };
@@ -476,6 +544,8 @@ export interface EntregaResumen {
   visibleParaAlumno: boolean;
   /** Cuántos planes le ha hecho al paciente del caso: es lo que se corrige. */
   planes: number;
+  /** Ya no está en la clase, pero entregó: su trabajo se sigue viendo y corrigiendo. */
+  fuera: boolean;
 }
 
 /** Cómo va una asignación: todos los alumnos de la clase, hayan empezado o no. */
@@ -499,6 +569,7 @@ export async function getEntregasDeAsignacion(asignacionId: string): Promise<Ent
         select: {
           id: true, alumnoId: true, estado: true, entregadaAt: true, nota: true,
           comentario: true, visibleParaAlumno: true,
+          alumno: { select: { id: true, nombre: true, apellidos: true, email: true } },
           paciente: { select: { _count: { select: { planes: true } } } },
         },
       },
@@ -507,21 +578,33 @@ export async function getEntregasDeAsignacion(asignacionId: string): Promise<Ent
   if (!asignacion) return [];
 
   const porAlumno = new Map(asignacion.entregas.map((e) => [e.alumnoId, e]));
+
   // Se listan TODOS los alumnos de la clase, no solo los que han empezado: al profesor lo que le
-  // interesa ver de un vistazo es quién no ha tocado el caso todavía.
-  return asignacion.clase.alumnos.map(({ alumno }) => {
+  // interesa ver de un vistazo es quién no ha tocado el caso todavía. Y también los que YA NO
+  // están en la clase pero tienen algo entregado: si no, retirarle el acceso a un alumno escondía
+  // su trabajo —y su nota— de los dos lados (auditoría 2 sep 2026).
+  const enLaClase = new Set(asignacion.clase.alumnos.map((a) => a.alumno.id));
+  const exalumnos = asignacion.entregas
+    .filter((e) => !enLaClase.has(e.alumnoId))
+    .map((e) => ({ alumno: e.alumno, fuera: true }));
+  const todos = [
+    ...asignacion.clase.alumnos.map((a) => ({ alumno: a.alumno, fuera: false })),
+    ...exalumnos,
+  ];
+
+  return todos.map(({ alumno, fuera }) => {
     const e = porAlumno.get(alumno.id);
     return {
+      fuera,
       id: e?.id ?? "",
       alumnoId: alumno.id,
       alumnoNombre: `${alumno.nombre} ${alumno.apellidos}`.trim(),
       alumnoEmail: alumno.email,
       estado: (e?.estado ?? "SIN_EMPEZAR") as EntregaResumen["estado"],
       entregadaAt: e?.entregadaAt ?? null,
-      tarde:
-        e?.entregadaAt != null &&
-        asignacion.fechaLimite != null &&
-        e.entregadaAt.getTime() > asignacion.fechaLimite.getTime(),
+      // "Tarde" es DESPUÉS del último día, no durante. La fecha se elige en un selector de día y
+      // se guarda a medianoche UTC: quien entrega el mismo día del límite ha llegado a tiempo.
+      tarde: e?.entregadaAt != null && cursoTerminado(asignacion.fechaLimite, e.entregadaAt),
       nota: e?.nota ?? null,
       comentario: e?.comentario ?? null,
       visibleParaAlumno: e?.visibleParaAlumno ?? false,
@@ -543,27 +626,55 @@ export async function corregirEntrega(
 
   const entrega = await prisma.entregaCaso.findFirst({
     where: { id: entregaId, asignacion: { caso: { profesorId: profesor.dietistaId } } },
-    select: { id: true, asignacion: { select: { casoId: true } } },
+    select: {
+      id: true, alumnoId: true, estado: true,
+      asignacion: { select: { casoId: true, caso: { select: { nombre: true } } } },
+    },
   });
   if (!entrega) return { ok: false, error: t("docencia.entregaNoEncontrada") };
+  // No se corrige lo que todavía no han entregado: dejaría al alumno encerrado (no puede entregar
+  // ni deshacer nada una vez corregido) y con una nota sobre un trabajo a medias.
+  if (entrega.estado !== "ENTREGADA" && entrega.estado !== "CORREGIDA") {
+    return { ok: false, error: t("docencia.todaviaNoHaEntregado") };
+  }
 
   const nota = data.nota === null || data.nota === undefined ? null : Number(data.nota);
   if (nota !== null && (!Number.isFinite(nota) || nota < 0 || nota > 10)) {
     return { ok: false, error: t("docencia.notaFueraDeRango") };
   }
+  const comentario = sanitizeStringOptional(data.comentario, 4000) || null;
+  // Corregir sin poner ni nota ni comentario no es corregir: dejaría "Corregida" y nada más.
+  if (nota === null && !comentario) return { ok: false, error: t("docencia.notaOComentario") };
 
   try {
     await prisma.entregaCaso.update({
       where: { id: entregaId },
       data: {
         nota,
-        comentario: sanitizeStringOptional(data.comentario, 4000) || null,
+        comentario,
         visibleParaAlumno: data.visibleParaAlumno,
         estado: "CORREGIDA",
         corregidaAt: new Date(),
         corregidaPor: profesor.dietistaId,
       },
     });
+    // Solo se le avisa si va a poder verla: si el profesor corrige sin publicar, el aviso le
+    // mandaría a mirar algo que todavía no está.
+    if (data.visibleParaAlumno) {
+      const t = await getTranslations("validation");
+      await prisma.notificacion.create({
+        data: {
+          dietistaId: entrega.alumnoId,
+          tipo: "CASO_CORREGIDO",
+          titulo: t("notificaciones.titulos.casoCorregido"),
+          mensaje: entrega.asignacion.caso.nombre,
+          tituloKey: "notificaciones.titulos.casoCorregido",
+          params: { caso: entrega.asignacion.caso.nombre },
+          enlace: "/aula",
+        },
+      }).catch((e) => console.error("[docencia] No se pudo avisar de la corrección:", e));
+    }
+
     revalidarCasos(entrega.asignacion.casoId);
     revalidatePath("/aula");
     return { ok: true };
