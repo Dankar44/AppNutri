@@ -1,6 +1,7 @@
 "use client";
 
 import { Sidebar } from "@/components/sidebar";
+import type { Espacio } from "@/lib/docencia";
 
 interface SidebarWrapperProps {
   dietistaNombre: string;
@@ -12,6 +13,7 @@ interface SidebarWrapperProps {
   hasEmpresa?: boolean;
   esProfesor?: boolean;
   esAlumno?: boolean;
+  espacioInicial?: Espacio | null;
 }
 
 export function SidebarWrapper({
@@ -24,6 +26,7 @@ export function SidebarWrapper({
   hasEmpresa,
   esProfesor,
   esAlumno,
+  espacioInicial,
 }: SidebarWrapperProps) {
   return (
     <Sidebar
@@ -38,6 +41,7 @@ export function SidebarWrapper({
       hasEmpresa={hasEmpresa}
       esProfesor={esProfesor}
       esAlumno={esAlumno}
+      espacioInicial={espacioInicial}
     />
   );
 }

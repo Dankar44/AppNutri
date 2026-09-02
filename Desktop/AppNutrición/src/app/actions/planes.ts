@@ -1659,12 +1659,21 @@ export async function getPlanParaImportar(planId: string) {
   };
 }
 
-export async function getPacientesParaPlan() {
+/**
+ * Los pacientes a los que se les puede hacer una dieta. El paciente plantilla de un caso docente
+ * (#40) no sale en el selector de la consulta —no se mezcla con los de verdad—, salvo que se venga
+ * de su propia ficha con su id, que es como el profesor le prepara un plan.
+ */
+export async function getPacientesParaPlan(incluirId?: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) return [];
 
   return prisma.paciente.findMany({
-    where: { dietistaId: dietista.id, activo: true },
+    where: {
+      dietistaId: dietista.id,
+      activo: true,
+      OR: [{ esCasoDocente: false }, ...(incluirId ? [{ id: incluirId }] : [])],
+    },
     select: {
       id: true,
       nombre: true,

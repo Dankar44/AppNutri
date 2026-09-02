@@ -111,6 +111,39 @@ export function esRutaDocente(pathname: string, espacio?: string | null): boolea
     && RUTAS_COMPARTIDAS.some((r) => pathname === r || pathname.startsWith(`${r}/`));
 }
 
+export type Espacio = "docente" | "aula";
+
+/** La cookie donde el navegador recuerda en qué espacio estaba (ver espacioQueDicta). */
+export const COOKIE_ESPACIO = "annonia-espacio";
+
+/**
+ * Qué espacio dicta una dirección por sí sola:
+ *
+ * - "docente" / "aula": las rutas propias de cada espacio, o una compartida con la marca `?espacio=`.
+ * - "profesional": todo lo que es solo de la consulta (/dashboard, /agenda, /pagos, /mensajes…).
+ * - null: una ruta compartida SIN marca (la ficha de un paciente, el editor de una dieta): no
+ *   cambia nada y se sigue en el espacio en el que se estaba.
+ *
+ * Ese "se sigue donde se estaba" es lo que hace que el espacio sea un MODO y no una marca que se
+ * pierde al primer salto: el profesor que abre la ficha del paciente de su caso y de ahí crea una
+ * dieta pasa por /dietas/nuevo y el editor, que no llevan marca, y antes al llegar ahí el menú se
+ * le cambiaba por el de nutricionista. El menú recuerda el último espacio dictado (en una cookie
+ * que escribe el propio menú al pintarse, nunca un enlace con efectos) y solo cambia cuando una
+ * dirección dicta otra cosa: «Mi cuenta profesional» lleva a /dashboard, que dicta "profesional".
+ */
+export function espacioQueDicta(pathname: string, espacio?: string | null): Espacio | "profesional" | null {
+  if (pathname === "/profesor" || pathname.startsWith("/profesor/")) return "docente";
+  if (pathname === "/aula" || pathname.startsWith("/aula/")) return "aula";
+  if (espacio === "docente" || espacio === "aula") return espacio;
+  if (RUTAS_COMPARTIDAS.some((r) => pathname === r || pathname.startsWith(`${r}/`))) return null;
+  return "profesional";
+}
+
+/** El valor de la cookie, solo si es uno de los dos espacios. */
+export function espacioGuardado(valor: string | undefined | null): Espacio | null {
+  return valor === "docente" || valor === "aula" ? valor : null;
+}
+
 /**
  * Rutas que son de los DOS espacios: el material que el profesor comparte con su clase y que
  * también usa en su consulta, los ajustes y las novedades, que son de la cuenta entera, y los

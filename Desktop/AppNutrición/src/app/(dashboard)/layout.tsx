@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { getCurrentDietista, signOut } from "@/app/actions/auth";
 import {
   getNotificacionesCount,
@@ -15,6 +16,7 @@ import { DemoProvider } from "@/contexts/demo-context";
 import { prisma } from "@/lib/prisma";
 import { getLocale } from "@/i18n/locale";
 import { revisarCursoDelAlumno } from "@/lib/docencia-acceso";
+import { COOKIE_ESPACIO, espacioGuardado } from "@/lib/docencia";
 
 export default async function DashboardLayout({
   children,
@@ -65,6 +67,9 @@ export default async function DashboardLayout({
     }).catch(() => {});
   }
 
+  // El espacio (docente / aula / consulta) en el que estaba: el menú arranca ahí y no parpadea.
+  const espacioInicial = espacioGuardado((await cookies()).get(COOKIE_ESPACIO)?.value);
+
   return (
     <DemoProvider isDemo={dietista.isDemo}>
       <TourWrapper audience="dietista">
@@ -81,6 +86,7 @@ export default async function DashboardLayout({
             hasEmpresa={!!dietista.empresaId}
             esProfesor={profesor}
             esAlumno={dietista.rolDocente === "ALUMNO"}
+            espacioInicial={espacioInicial}
           />
           <main className="flex-1 overflow-y-auto min-w-0 bg-background">
             <div className="w-full max-w-none pt-14 lg:pt-6 lg:px-5 pb-safe lg:pb-6">

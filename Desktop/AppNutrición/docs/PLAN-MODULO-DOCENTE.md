@@ -456,6 +456,17 @@ el aula. Al probarlo, Guillermo pidió el modelo de arriba. Cambios hechos:
   clase, no en un "cambiar la fecha límite" suelto que no se sabía a quién afectaba.
 - **El relleno de las tarjetas**: `lg:py-0 lg:p-5` dejaba el padding vertical a cero en escritorio
   (la propiedad concreta gana al atajo) → todo pegado. Corregido en todas las tarjetas nuevas.
+- **El espacio es un modo, no una marca** (`espacioQueDicta`, cookie `annonia-espacio`). Al crear
+  una dieta desde la ficha del paciente del caso se pasa por `/dietas/nuevo` y el editor, que no
+  llevan `?espacio=docente`, y el menú se cambiaba al de nutricionista a mitad de faena. Ahora el
+  menú recuerda el último espacio que dictó una dirección (lo escribe él mismo en la cookie al
+  pintarse, nunca un enlace con efectos) y solo cambia cuando otra dirección dicta otra cosa
+  («Mi cuenta profesional» → /dashboard). Las rutas compartidas sin marca no cambian nada. Esto
+  también arregla Material → Dietas → una dieta, que perdía el menú desde la fase 2.
+- **El selector de paciente de «Nueva dieta»** no lista la plantilla de un caso salvo que se venga
+  de su ficha con su id: no se mezcla con los pacientes de verdad del profesor.
+- **Prueba de recorrido** `probar-recorrido-casos.ts`: el flujo entero con clics (41 comprobaciones
+  y una captura por pantalla en /tmp/annonia-recorrido).
 
 ### Lo que queda de la fase 3
 

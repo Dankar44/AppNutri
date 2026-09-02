@@ -26,7 +26,7 @@ import {
   Briefcase,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { esRutaDocente } from "@/lib/docencia";
+import { COOKIE_ESPACIO, espacioQueDicta, type Espacio } from "@/lib/docencia";
 import { useState, useEffect, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { NotificationBell } from "@/components/notification-bell";
@@ -212,13 +212,31 @@ interface SidebarProps {
   esProfesor?: boolean;
   /** Su cuenta viene de una clase: no es "nutricionista", es alumno, y hay que llamarle así. */
   esAlumno?: boolean;
+  /** El espacio que recordaba la cookie al pedir la página (ver espacioQueDicta). */
+  espacioInicial?: Espacio | null;
 }
 
-export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCount: mensajesCountInit = 0, badges: badgesInit = {}, isAdmin, hasEmpresa, esProfesor, esAlumno }: SidebarProps) {
+export function Sidebar({ dietistaNombre, onSignOut, notifCount = 0, mensajesCount: mensajesCountInit = 0, badges: badgesInit = {}, isAdmin, hasEmpresa, esProfesor, esAlumno, espacioInicial }: SidebarProps) {
   const t = useTranslations("common");
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const enEspacioDocente = esRutaDocente(pathname, searchParams.get("espacio"));
+  // El espacio es un modo: lo dicta la dirección cuando dice algo, y si no, se sigue en el último
+  // (ver espacioQueDicta). El valor inicial viene de la cookie leída en el servidor, para que el
+  // menú del HTML y el del cliente sean el mismo y no parpadee al recargar.
+  const dicta = espacioQueDicta(pathname, searchParams.get("espacio"));
+  const [recordado, setRecordado] = useState<Espacio | null>(espacioInicial ?? null);
+  useEffect(() => {
+    if (dicta === null) return;
+    const nuevo: Espacio | null = dicta === "profesional" ? null : dicta;
+    if (nuevo === recordado) return;
+    setRecordado(nuevo);
+    try {
+      document.cookie = nuevo
+        ? `${COOKIE_ESPACIO}=${nuevo}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`
+        : `${COOKIE_ESPACIO}=; path=/; max-age=0; samesite=lax`;
+    } catch { /* sin cookies, el modo dura lo que dure la pestaña */ }
+  }, [dicta, recordado]);
+  const enEspacioDocente = dicta === "profesional" ? false : dicta !== null || recordado !== null;
 
   // De todas las direcciones del menú, la que más encaja con donde estamos. Se calcula una vez
   // para que dos enlaces encadenados (/profesor y /profesor/clases) no se enciendan los dos.

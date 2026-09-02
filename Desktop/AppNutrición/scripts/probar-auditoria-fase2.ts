@@ -327,9 +327,17 @@ async function main() {
     comprobar("y al entrar en Alimentos sigue viendo Clases", menuMaterial.includes("Clases"),
       menuMaterial.split("\n").slice(0, 10).join(" / "));
     comprobar("sin que aparezcan Pacientes ni Agenda", !menuMaterial.includes("Pacientes"));
+    // El espacio es un modo (2 sep 2026): una ruta compartida SIN marca no le cambia el menú, que
+    // es lo que pasaba al crear una dieta desde la ficha del paciente de un caso (/dietas/nuevo).
     await profe.goto(`${BASE}/alimentos`, { waitUntil: "networkidle0" });
     await esperar(1500);
-    comprobar("y en su consulta el menú es el de siempre", (await menuDe(profe)).includes("Pacientes"));
+    comprobar("y si sigue por el material sin la marca, el menú docente se queda", (await menuDe(profe)).includes("Clases"));
+    await profe.goto(`${BASE}/dashboard`, { waitUntil: "networkidle0" });
+    await esperar(1500);
+    comprobar("al ir a su cuenta profesional, el menú es el de siempre", (await menuDe(profe)).includes("Pacientes"));
+    await profe.goto(`${BASE}/alimentos`, { waitUntil: "networkidle0" });
+    await esperar(1500);
+    comprobar("y desde ahí el material ya es el de su consulta", (await menuDe(profe)).includes("Pacientes"));
 
     console.log("\n── Desde su inicio se llega a las clases ──");
     await profe.goto(`${BASE}/profesor`, { waitUntil: "networkidle0" });

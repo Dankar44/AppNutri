@@ -105,7 +105,8 @@ export default function NuevoPlanPage() {
   const avisoDesvioVisto = useRef(false); // ya avisado en esta sesión de edición
 
   useEffect(() => {
-    getPacientesParaPlan().then((p) => setPacientes(p as unknown as Paciente[]));
+    // Con el id del paciente del que se viene: si es la plantilla de un caso docente, solo así sale.
+    getPacientesParaPlan(searchParams.get("pacienteId") || undefined).then((p) => setPacientes(p as unknown as Paciente[]));
     getPlantillas().then(setPlantillas);
   }, []);
 
