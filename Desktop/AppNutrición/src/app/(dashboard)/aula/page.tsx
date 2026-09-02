@@ -62,12 +62,12 @@ export default async function AulaPage() {
                 {[c.institucion, c.curso].filter(Boolean).join(" · ")}
               </p>
               <div className="mt-3 space-y-1.5 text-sm text-muted-foreground">
-                <p className="inline-flex items-center gap-1.5">
+                <p className="flex items-center gap-1.5">
                   <Users className="w-4 h-4 shrink-0" />
                   {c.profesores.map((p) => p.nombre).join(", ")}
                 </p>
                 {c.fechaFinCurso && (
-                  <p className="inline-flex items-center gap-1.5">
+                  <p className="flex items-center gap-1.5">
                     <CalendarRange className="w-4 h-4 shrink-0" />
                     {t("hasta", { fecha: formatDate(c.fechaFinCurso, locale) })}
                   </p>
