@@ -20,6 +20,9 @@ import { sanitizeString, sanitizeStringOptional, validateNumberOptional, LIMITS 
 import { claseQueLleva, cursoTerminado } from "@/lib/docencia";
 import { requireProfesor } from "./docencia";
 import type { Sexo, ObjetivoPaciente } from "@/generated/prisma/client";
+import { PLAN_COMPLETO, aDetalleVisual } from "@/lib/plan-para-ver";
+import { expandirGruposDeDias } from "@/lib/grupos-dias";
+import type { PlanVisualDetalle } from "@/components/paciente/plan-visual";
 
 function revalidarCasos(casoId?: string) {
   revalidatePath("/profesor");
@@ -595,4 +598,108 @@ export async function deshacerCorreccion(
   revalidarCasos(entrega.asignacion.casoId);
   revalidatePath("/aula");
   return { ok: true };
+}
+
+export interface TrabajoDeEntrega {
+  entregaId: string;
+  alumnoNombre: string;
+  casoNombre: string;
+  claseNombre: string;
+  estado: string;
+  entregadaAt: Date | null;
+  nota: number | null;
+  comentario: string | null;
+  visibleParaAlumno: boolean;
+  /** El paciente que se creó del caso, tal y como lo ha dejado el alumno. */
+  paciente: {
+    id: string;
+    nombre: string;
+    apellidos: string;
+    peso: number | null;
+    altura: number | null;
+    objetivo: string;
+    notas: string | null;
+    patologias: string[];
+    alergias: string[];
+  } | null;
+  planes: { id: string; nombre: string; activo: boolean; dias: number }[];
+  /** El plan que se está mirando, listo para pintar. */
+  planVisto: PlanVisualDetalle | null;
+}
+
+/**
+ * Lo que ha hecho el alumno con el caso, para que el profesor lo mire.
+ *
+ * Es de SOLO LECTURA: el profesor ve el paciente y los planes del alumno, pero no puede tocarlos.
+ * Ni siquiera puede llegar a ellos por las pantallas normales, porque son de la cuenta del alumno.
+ */
+export async function getTrabajoDeEntrega(
+  entregaId: string,
+  planId?: string,
+): Promise<TrabajoDeEntrega | null> {
+  const profesor = await requireProfesor();
+
+  const entrega = await prisma.entregaCaso.findFirst({
+    where: { id: entregaId, asignacion: { caso: { profesorId: profesor.dietistaId } } },
+    include: {
+      alumno: { select: { nombre: true, apellidos: true } },
+      asignacion: {
+        select: { caso: { select: { nombre: true } }, clase: { select: { nombre: true } } },
+      },
+      paciente: {
+        select: {
+          id: true, nombre: true, apellidos: true, peso: true, altura: true,
+          objetivo: true, notas: true, patologias: true, alergias: true,
+          planes: {
+            orderBy: { createdAt: "desc" },
+            select: { id: true, nombre: true, activo: true, _count: { select: { dias: true } } },
+          },
+        },
+      },
+    },
+  });
+  if (!entrega) return null;
+
+  const planes = entrega.paciente?.planes ?? [];
+  const elegido = planId ? planes.find((p) => p.id === planId) : planes[0];
+
+  let planVisto: PlanVisualDetalle | null = null;
+  if (elegido) {
+    const plan = await prisma.planAlimenticio.findUnique({
+      where: { id: elegido.id },
+      include: PLAN_COMPLETO,
+    });
+    if (plan) {
+      // #75 — los días agrupados enseñan el menú de su día representante, como en el enlace público.
+      const dias = await expandirGruposDeDias(plan.id, plan.dias);
+      planVisto = aDetalleVisual(plan, dias);
+    }
+  }
+
+  return {
+    entregaId: entrega.id,
+    alumnoNombre: `${entrega.alumno.nombre} ${entrega.alumno.apellidos}`.trim(),
+    casoNombre: entrega.asignacion.caso.nombre,
+    claseNombre: entrega.asignacion.clase.nombre,
+    estado: entrega.estado,
+    entregadaAt: entrega.entregadaAt,
+    nota: entrega.nota,
+    comentario: entrega.comentario,
+    visibleParaAlumno: entrega.visibleParaAlumno,
+    paciente: entrega.paciente
+      ? {
+          id: entrega.paciente.id,
+          nombre: entrega.paciente.nombre,
+          apellidos: entrega.paciente.apellidos,
+          peso: entrega.paciente.peso,
+          altura: entrega.paciente.altura,
+          objetivo: entrega.paciente.objetivo,
+          notas: entrega.paciente.notas,
+          patologias: entrega.paciente.patologias,
+          alergias: entrega.paciente.alergias,
+        }
+      : null,
+    planes: planes.map((p) => ({ id: p.id, nombre: p.nombre, activo: p.activo, dias: p._count.dias })),
+    planVisto,
+  };
 }

@@ -115,6 +115,9 @@
     "corregida": "Corrección guardada",
     "deshacer": "Deshacer la corrección",
     "deshecha": "Corrección deshecha",
-    "sinAlumnos": "Esta clase todavía no tiene alumnos."
+    "sinAlumnos": "Esta clase todavía no tiene alumnos.",
+    "soloLectura": "Estás viendo el trabajo de tu alumno tal y como lo ha dejado. No puedes tocarlo: es de su cuenta.",
+    "sinPlanes": "Todavía no ha hecho ningún plan para este paciente.",
+    "notaFuera": "La nota va de 0 a 10."
   }
 }
