@@ -40,6 +40,7 @@ async function cookieAdmin() {
 
 async function limpiar(client: pg.PoolClient) {
   await client.query(`DELETE FROM alimentos WHERE nombre LIKE '${MARCA}%'`);
+  await client.query(`DELETE FROM casos_clinicos WHERE nombre LIKE '${MARCA}%'`);
   await client.query(`DELETE FROM clases WHERE nombre LIKE '${MARCA}%'`);
   const { rows } = await client.query(`SELECT id FROM auth.users WHERE email LIKE '%@${DOMINIO}'`);
   for (const r of rows) {
@@ -123,6 +124,30 @@ async function main() {
          100, 10, 10, 5, 2, 100, 'GRAMOS', 'PERSONALIZADO', $1, true, NOW(), NOW()
        FROM generate_series(1, 120) AS i`, [profes[0].id]);
 
+    // #40 — Casos y entregas: 20 casos, uno asignado a cada clase, con la mitad de los alumnos
+    // habiendo abierto el suyo. Es lo que tendrá una asignatura al final de un cuatrimestre.
+    await client.query(
+      `INSERT INTO casos_clinicos (id, "profesorId", "licenciaDocenteId", nombre, consigna,
+         "pacienteNombre", "pacienteApellidos", peso, altura, objetivo, "createdAt", "updatedAt")
+       SELECT gen_random_uuid()::text, $1, $2, '${MARCA} caso ' || i, 'Haz el plan.',
+         'Paciente', 'Numero ' || i, 70, 170, 'MANTENIMIENTO', NOW(), NOW()
+       FROM generate_series(1, 20) AS i`, [profes[0].id, licenciaId]);
+    await client.query(
+      `INSERT INTO asignaciones_caso (id, "casoId", "claseId", "fechaLimite", "asignadoPor", "createdAt", "updatedAt")
+       SELECT gen_random_uuid()::text, c.id, cl.id, CURRENT_DATE + 30, $1, NOW(), NOW()
+         FROM (SELECT id, row_number() OVER (ORDER BY nombre) rn FROM casos_clinicos WHERE nombre LIKE '${MARCA}%') c
+         JOIN (SELECT id, row_number() OVER (ORDER BY nombre) rn FROM clases WHERE nombre LIKE '${MARCA}%') cl
+           ON cl.rn = ((c.rn - 1) % $2) + 1
+       ON CONFLICT DO NOTHING`, [profes[0].id, CLASES]);
+    await client.query(
+      `INSERT INTO entregas_caso (id, "asignacionId", "alumnoId", estado, "abiertaAt", "createdAt", "updatedAt")
+       SELECT gen_random_uuid()::text, a.id, ac."alumnoId", 'EN_MARCHA', NOW(), NOW(), NOW()
+         FROM asignaciones_caso a
+         JOIN alumnos_clase ac ON ac."claseId" = a."claseId" AND ac.activa
+         JOIN clases c ON c.id = a."claseId"
+        WHERE c.nombre LIKE '${MARCA}%' AND random() < 0.5
+       ON CONFLICT DO NOTHING`);
+
     const { rows: cuenta } = await client.query(
       `SELECT (SELECT COUNT(*)::int FROM dietistas WHERE email LIKE '%@${DOMINIO}') d,
               (SELECT COUNT(*)::int FROM alumnos_clase ac JOIN clases c ON c.id = ac."claseId"
@@ -166,6 +191,14 @@ async function main() {
     });
     await medirPagina("profesor: sus clases", `${BASE}/profesor/clases`, profe);
     await medirPagina("profesor: una clase con sus alumnos", `${BASE}/profesor/clases/${clases[0].id}`, profe);
+    await medirPagina("profesor: sus 20 casos", `${BASE}/profesor/casos`, profe);
+    const { rows: unaAsignacion } = await client.query(
+      `SELECT a.id FROM asignaciones_caso a JOIN clases c ON c.id = a."claseId"
+        WHERE c.nombre LIKE '${MARCA}%' LIMIT 1`);
+    const { rows: suCaso } = await client.query(
+      `SELECT "casoId" FROM asignaciones_caso WHERE id = $1`, [unaAsignacion[0].id]);
+    await medirPagina("profesor: las entregas de una clase entera",
+      `${BASE}/profesor/casos/${suCaso[0].casoId}/entregas/${unaAsignacion[0].id}`, profe);
 
     const { data: da } = await sb.auth.signInWithPassword({ email: `a50@${DOMINIO}`, password: PASS });
     const alumno = await (await navegador.createBrowserContext()).newPage();
@@ -178,6 +211,7 @@ async function main() {
     });
     await medirPagina("alumno: su panel", `${BASE}/dashboard`, alumno);
     await medirPagina("alumno: sus alimentos (con 120 del profesor)", `${BASE}/alimentos`, alumno);
+    await medirPagina("alumno: su aula con sus casos", `${BASE}/aula`, alumno);
     await esperar(300);
   } finally {
     await limpiar(client);

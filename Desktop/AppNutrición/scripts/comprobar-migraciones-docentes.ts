@@ -27,9 +27,10 @@ const MIGRACIONES: { script: string; comprueba: [string, string][] }[] = [
   { script: "add-recetas-compartido", comprueba: [["recetas", "compartido"]] },
   { script: "add-exalumno", comprueba: [["dietistas", "exAlumnoDesde"], ["dietistas", "avisoFinCursoVisto"]] },
   { script: "add-profesores-clase", comprueba: [["profesores_clase", "profesorId"]] },
+  { script: "add-casos-clinicos", comprueba: [["casos_clinicos", "consigna"], ["asignaciones_caso", "fechaLimite"], ["entregas_caso", "nota"], ["pacientes", "esDeClase"]] },
 ];
 
-const TABLAS_CON_RLS = ["licencias_docentes", "invitaciones_docentes", "clases", "alumnos_clase", "profesores_clase"];
+const TABLAS_CON_RLS = ["licencias_docentes", "invitaciones_docentes", "clases", "alumnos_clase", "profesores_clase", "casos_clinicos", "asignaciones_caso", "entregas_caso"];
 
 async function main() {
   const client = await pool.connect();
