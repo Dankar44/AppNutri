@@ -15,7 +15,7 @@ interface Props {
   activo: boolean;
   email: string | null;
   esDemo: boolean;
-  /** #40 — Paciente de un caso de clase: ni se borra ni se le pone cita. */
+  /** #40 — Paciente de un caso de clase, o su plantilla: ni se borra ni se le pone cita. */
   esDeClase?: boolean;
 }
 

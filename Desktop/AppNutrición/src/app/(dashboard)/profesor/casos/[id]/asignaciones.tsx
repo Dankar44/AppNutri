@@ -68,7 +68,7 @@ export function Asignaciones({
     "mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30";
 
   return (
-    <section className="py-4 lg:p-5 lg:border lg:border-border lg:rounded-xl lg:bg-card">
+    <section className="py-4 lg:px-6 lg:py-6 lg:border lg:border-border lg:rounded-xl lg:bg-card">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h2 className="font-semibold">{t("asignar.titulo", { n: asignaciones.length })}</h2>
         {clases.length > 0 && !asignando && (

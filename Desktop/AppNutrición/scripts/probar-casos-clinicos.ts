@@ -99,6 +99,7 @@ async function sesionDe(navegador: Browser, email: string): Promise<Page> {
 
 async function limpiar(client: pg.PoolClient) {
   await client.query(`DELETE FROM casos_clinicos WHERE nombre LIKE '${MARCA}%'`);
+  await client.query(`DELETE FROM pacientes WHERE "dietistaId" IN (SELECT id FROM dietistas WHERE email LIKE '%@${DOMINIO}')`);
   await client.query(`DELETE FROM clases WHERE nombre LIKE '${MARCA}%'`);
   const { rows } = await client.query(`SELECT id FROM auth.users WHERE email LIKE '%@${DOMINIO}'`);
   for (const r of rows) {
@@ -148,24 +149,42 @@ async function main() {
     await rellenar(profe, "Qué les pides", "Cubre el hierro con alimentos vegetales.");
     await rellenar(profe, "Nombre", "Marta");
     await rellenar(profe, "Apellidos", "Vegana");
-    await rellenar(profe, "Peso", "58");
-    await rellenar(profe, "Altura", "165");
-    await rellenar(profe, "Historia y motivo", "Mujer de 28 años, vegana desde hace tres. Ferritina baja.");
-    await rellenar(profe, "Patologías", "Anemia ferropénica");
-    await pulsar(profe, "Crear el caso");
-    await esperar(4000);
+    await pulsar(profe, "Crear y rellenar el paciente");
+    await esperar(5000);
     const { rows: creado } = await client.query(
-      `SELECT id, nombre, "pacienteNombre", peso, patologias, "profesorId" FROM casos_clinicos WHERE nombre LIKE '${MARCA}%'`);
+      `SELECT c.id, c."pacienteId", p."esCasoDocente", p.nombre
+         FROM casos_clinicos c LEFT JOIN pacientes p ON p.id = c."pacienteId"
+        WHERE c.nombre LIKE '${MARCA}%'`);
     comprobar("se crea el caso", creado.length === 1, `${creado.length}`);
-    comprobar("con su paciente inventado", creado[0]?.pacienteNombre === "Marta");
-    comprobar("con sus datos", Number(creado[0]?.peso) === 58);
-    comprobar("y sus patologías", creado[0]?.patologias?.[0] === "Anemia ferropénica");
+    comprobar("con un paciente de verdad del profesor", creado[0]?.pacienteId !== null);
+    comprobar("marcado como plantilla del caso", creado[0]?.esCasoDocente === true);
     const casoId = creado[0].id as string;
+    const plantillaId = creado[0].pacienteId as string;
+
+    console.log("\n── Y se le lleva a la ficha de siempre, a rellenarlo como uno de verdad ──");
+    comprobar("aterriza en la ficha del paciente", profe.url().includes(`/pacientes/${plantillaId}`), profe.url());
+    let visible = await texto(profe);
+    comprobar("con el aviso de que es un caso", visible.includes("Este paciente es el caso"));
+    comprobar("y sin la pestaña del plan de alimentación", !visible.includes("Plan de alimentación"));
+    comprobar("ni la de planificación", !visible.includes("Planificación"));
+    comprobar("pero con la anamnesis y las mediciones", visible.includes("Anamnesis") && visible.includes("Mediciones"));
+    comprobar("y con el menú docente, no el de nutricionista",
+      (await profe.evaluate(() => (document.querySelector("aside, nav") as HTMLElement | null)?.innerText ?? "")).includes("Casos"));
+    // Lo que rellenaría en la ficha: aquí se mete por debajo, que lo que se prueba es que viaja.
+    await client.query(
+      `UPDATE pacientes SET peso = 58, altura = 165, patologias = ARRAY['Anemia ferropénica'],
+              alergias = ARRAY['Frutos secos'], notas = 'Mujer de 28 años, vegana desde hace tres. Ferritina baja.',
+              horario = '[{"dia":"lunes","hora":"08:00","actividad":"Desayuno"}]'::jsonb,
+              recomendaciones = 'Beber 2 litros de agua'
+        WHERE id = $1`, [plantillaId]);
+    await client.query(
+      `INSERT INTO medidas_antropometricas (id, "pacienteId", fecha, peso, altura, "createdAt")
+       VALUES (gen_random_uuid()::text, $1, NOW(), 58, 165, NOW())`, [plantillaId]);
 
     console.log("\n── Y NO aparece entre sus pacientes ──");
     await profe.goto(`${BASE}/pacientes`, { waitUntil: "networkidle0" });
     await esperar(1500);
-    comprobar("el caso no está en la lista de pacientes del profesor",
+    comprobar("el paciente del caso no está en la lista de pacientes del profesor",
       !(await texto(profe)).includes("Marta Vegana"));
 
     console.log("\n── Lo asigna a su clase ──");
@@ -189,12 +208,19 @@ async function main() {
     comprobar("con su fecha límite", asig[0]?.fechaLimite !== null,
       String(asig[0]?.fechaLimite)?.slice(0, 10));
 
-    console.log("\n── La alumna lo ve en su aula ──");
+    console.log("\n── La alumna lo ve dentro de su clase ──");
     const alumna = await sesionDe(navegador, `alumna@${DOMINIO}`);
     await alumna.goto(`${BASE}/aula`, { waitUntil: "networkidle0" });
     await esperar(1800);
-    let visible = await texto(alumna);
-    comprobar("le sale el caso", visible.includes("Mujer vegana con anemia"));
+    visible = await texto(alumna);
+    comprobar("en el aula no salen los casos sueltos", !visible.includes("Cubre el hierro"));
+    comprobar("pero la clase dice cuántos tiene", /1 caso/.test(visible),
+      visible.split("\n").find((l) => /caso/.test(l)) ?? "no dice nada");
+    await pulsar(alumna, `${MARCA} Dietoterapia`);
+    await esperar(2000);
+    comprobar("entra en la clase", alumna.url().includes(`/aula/${claseId}`), alumna.url());
+    visible = await texto(alumna);
+    comprobar("y ahí le sale el caso", visible.includes("Mujer vegana con anemia"));
     comprobar("con el paciente y su clase", visible.includes("Marta Vegana") && visible.includes("Dietoterapia"));
     comprobar("y la fecha de entrega", /Entrega antes del/.test(visible));
     comprobar("todavía no tiene paciente creado",
@@ -204,12 +230,21 @@ async function main() {
     await pulsar(alumna, "Empezar el caso");
     await esperar(6000);
     const { rows: pac } = await client.query(
-      `SELECT id, nombre, apellidos, peso, "esDeClase", notas FROM pacientes WHERE "dietistaId" = $1 AND "esDeClase" = true`,
+      `SELECT id, nombre, apellidos, peso, "esDeClase", "esCasoDocente", notas, alergias, horario, recomendaciones,
+              (SELECT COUNT(*)::int FROM medidas_antropometricas m WHERE m."pacienteId" = p.id) AS medidas
+         FROM pacientes p WHERE "dietistaId" = $1 AND "esDeClase" = true`,
       [alumnaId]);
     comprobar("se le crea el paciente", pac.length === 1, `${pac.length}`);
     comprobar("con los datos del caso", pac[0]?.nombre === "Marta" && Number(pac[0]?.peso) === 58);
-    comprobar("marcado como de clase", pac[0]?.esDeClase === true);
+    comprobar("marcado como de clase, no como plantilla", pac[0]?.esDeClase === true && pac[0]?.esCasoDocente === false);
     comprobar("con la historia que escribió el profesor", (pac[0]?.notas ?? "").includes("vegana"));
+    comprobar("con sus alergias", pac[0]?.alergias?.[0] === "Frutos secos");
+    comprobar("con su horario", Array.isArray(pac[0]?.horario) && pac[0].horario.length === 1);
+    comprobar("con sus recomendaciones", (pac[0]?.recomendaciones ?? "").includes("agua"));
+    comprobar("y con sus mediciones", pac[0]?.medidas === 1, `${pac[0]?.medidas} mediciones`);
+    const { rows: plantillaIntacta } = await client.query(
+      `SELECT "dietistaId", "esCasoDocente" FROM pacientes WHERE id = $1`, [plantillaId]);
+    comprobar("la plantilla del profesor sigue siendo suya", plantillaIntacta[0].esCasoDocente === true);
     comprobar("y se le lleva a su ficha", alumna.url().includes(`/pacientes/${pac[0]?.id}`), alumna.url());
 
     console.log("\n── En su lista de pacientes sale etiquetado ──");
@@ -221,14 +256,23 @@ async function main() {
       visible.split("\n").filter((l) => l.includes("Marta")).join(" / "));
     comprobar("y hay un selector para separarlos", /Solo los de clase|Solo los míos|Todos/.test(visible));
 
-    console.log("\n── Entrega ──");
-    await alumna.goto(`${BASE}/aula`, { waitUntil: "networkidle0" });
+    console.log("\n── Entrega, con una nota para el profesor ──");
+    await alumna.goto(`${BASE}/aula/${claseId}`, { waitUntil: "networkidle0" });
     await esperar(1500);
     await pulsar(alumna, "Entregar");
+    await esperar(600);
+    await alumna.evaluate(() => {
+      const c = document.querySelector("textarea") as HTMLTextAreaElement | null;
+      if (!c) return;
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(c, "He priorizado las legumbres.");
+      c.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await pulsar(alumna, "Entregar", "form");
     await esperar(4000);
     const { rows: entrega } = await client.query(
-      `SELECT id, estado, "entregadaAt", "pacienteId" FROM entregas_caso WHERE "alumnoId" = $1`, [alumnaId]);
+      `SELECT id, estado, "entregadaAt", "pacienteId", "notaAlumno" FROM entregas_caso WHERE "alumnoId" = $1`, [alumnaId]);
     comprobar("queda entregada", entrega[0]?.estado === "ENTREGADA");
+    comprobar("con su nota", (entrega[0]?.notaAlumno ?? "").includes("legumbres"), entrega[0]?.notaAlumno ?? "sin nota");
     comprobar("con la fecha", entrega[0]?.entregadaAt !== null);
     comprobar("y apuntando a su paciente", entrega[0]?.pacienteId === pac[0]?.id);
 
@@ -243,6 +287,7 @@ async function main() {
     visible = await texto(profe);
     comprobar("puede abrir su trabajo", visible.includes("Marta Vegana"), profe.url());
     comprobar("y se le avisa de que es solo lectura", /No puedes tocarlo/i.test(visible));
+    comprobar("ve la nota que le dejó la alumna", visible.includes("legumbres"));
     await rellenar(profe, "Nota", "8,5");
     await rellenar(profe, "Comentario", "Bien planteado, revisa la vitamina B12.");
     await pulsar(profe, "Guardar la corrección");
@@ -255,14 +300,14 @@ async function main() {
     comprobar("pero SIN enseñársela al alumno todavía", corregida[0]?.visibleParaAlumno === false);
 
     console.log("\n── La alumna no ve la nota hasta que el profesor quiere ──");
-    await alumna.goto(`${BASE}/aula`, { waitUntil: "networkidle0" });
+    await alumna.goto(`${BASE}/aula/${claseId}`, { waitUntil: "networkidle0" });
     await esperar(1800);
     visible = await texto(alumna);
     comprobar("no ve la nota", !visible.includes("8,5") && !visible.includes("8.5"));
     comprobar("ni el comentario", !visible.includes("B12"));
 
     await client.query(`UPDATE entregas_caso SET "visibleParaAlumno" = true WHERE "alumnoId" = $1`, [alumnaId]);
-    await alumna.goto(`${BASE}/aula`, { waitUntil: "networkidle0" });
+    await alumna.goto(`${BASE}/aula/${claseId}`, { waitUntil: "networkidle0" });
     await esperar(1800);
     visible = await texto(alumna);
     comprobar("y cuando la publica, sí", /8[.,]5/.test(visible), visible.split("\n").filter((l) => /8/.test(l)).slice(0, 2).join(" / "));
@@ -283,7 +328,7 @@ async function main() {
 
     // 2. Abrir otra vez un caso ya corregido no lo devuelve a "en marcha".
     await client.query(`UPDATE entregas_caso SET estado = 'CORREGIDA' WHERE "alumnoId" = $1`, [alumnaId]);
-    await alumna.goto(`${BASE}/aula`, { waitUntil: "networkidle0" });
+    await alumna.goto(`${BASE}/aula/${claseId}`, { waitUntil: "networkidle0" });
     await esperar(1500);
     await pulsar(alumna, "Abrir el paciente");
     await esperar(3000);
@@ -293,9 +338,9 @@ async function main() {
 
     // 3. Un caso archivado desaparece del aula.
     await client.query(`UPDATE casos_clinicos SET archivado = true WHERE id = $1`, [casoId]);
-    await alumna.goto(`${BASE}/aula`, { waitUntil: "networkidle0" });
+    await alumna.goto(`${BASE}/aula/${claseId}`, { waitUntil: "networkidle0" });
     await esperar(1800);
-    comprobar("el caso archivado desaparece del aula", !(await texto(alumna)).includes("Mujer vegana con anemia"));
+    comprobar("el caso archivado desaparece de la clase", !(await texto(alumna)).includes("Mujer vegana con anemia"));
     await client.query(`UPDATE casos_clinicos SET archivado = false WHERE id = $1`, [casoId]);
 
     // 4. Al retirarle el acceso, su entrega sigue viéndose desde el lado del profesor.

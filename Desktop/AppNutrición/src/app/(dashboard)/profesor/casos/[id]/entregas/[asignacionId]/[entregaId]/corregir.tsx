@@ -78,7 +78,7 @@ export function Corregir({
     "mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30";
 
   return (
-    <form onSubmit={guardar} className="py-4 lg:p-5 lg:border lg:border-border lg:rounded-xl lg:bg-card space-y-4">
+    <form onSubmit={guardar} className="py-4 lg:px-6 lg:py-6 lg:border lg:border-border lg:rounded-xl lg:bg-card space-y-4">
       <h2 className="font-semibold">{t("entregas.corregir")}</h2>
 
       <div className="sm:max-w-[10rem]">

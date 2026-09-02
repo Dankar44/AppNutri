@@ -27,7 +27,7 @@ export async function registrarMovimientoStock(
   if (dietista.isDemo) return { ok: false, error: t("auth.noAutorizado") };
 
   const aId = validateId(alimentoId);
-  if (!aId) return { ok: false, error: t("alimento.noEncontrado") };
+  if (!aId) return { ok: false, error: t("alimento.alimentoNoEncontrado") };
 
   const tipo = validateEnum(data.tipo, TIPOS_MOVIMIENTO);
   if (!tipo) return { ok: false, error: t("empresa.tipoMovimientoInvalido") };
@@ -46,7 +46,7 @@ export async function registrarMovimientoStock(
     where: { id: aId, dietistaId: { in: memberIds } },
     select: { id: true, stock: true, stockMinimo: true, dietistaId: true },
   });
-  if (!alimento) return { ok: false, error: t("alimento.noEncontrado") };
+  if (!alimento) return { ok: false, error: t("alimento.alimentoNoEncontrado") };
 
   const stockAnterior = alimento.stock ?? 0;
   let stockNuevo: number;
@@ -124,7 +124,7 @@ export async function actualizarStockAlimento(
   if (dietista.isDemo) return { ok: false, error: t("auth.noAutorizado") };
 
   const aId = validateId(alimentoId);
-  if (!aId) return { ok: false, error: t("alimento.noEncontrado") };
+  if (!aId) return { ok: false, error: t("alimento.alimentoNoEncontrado") };
 
   const d = await prisma.dietista.findUnique({
     where: { id: dietista.id },
@@ -137,7 +137,7 @@ export async function actualizarStockAlimento(
     where: { id: aId, dietistaId: { in: memberIds } },
     select: { id: true, dietistaId: true },
   });
-  if (!alimento) return { ok: false, error: t("alimento.noEncontrado") };
+  if (!alimento) return { ok: false, error: t("alimento.alimentoNoEncontrado") };
 
   const updateData: Record<string, unknown> = {};
   if (data.stock !== undefined) {

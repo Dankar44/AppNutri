@@ -97,7 +97,11 @@
     "ocultarRetirados": "Ocultar os retirados",
     "quitarDeLaLista": "Retirar da lista",
     "quitarTexto": "{nombre} desaparece desta turma, mas a conta e todo o trabalho ficam intactos. Se voltar no próximo ano, basta pôr o correio outra vez.",
-    "quitado": "Retirado da lista"
+    "quitado": "Retirado da lista",
+    "casosTitulo": "{n, plural, =0 {Casos da turma} one {# caso na turma} other {# casos na turma}}",
+    "irACasos": "Ir aos meus casos",
+    "sinCasos": "Ainda não propôs nenhum caso a esta turma. Os casos criam-se em «Casos» e atribuem-se à turma a partir daí.",
+    "casoProgreso": "{entregadas} de {alumnos} entregaram"
   },
   "clasePublica": {
     "titulo": "Junte-se à turma",

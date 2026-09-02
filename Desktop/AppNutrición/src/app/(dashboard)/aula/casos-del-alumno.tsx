@@ -37,6 +37,9 @@ export function CasosDelAlumno({ casos }: { casos: CasoParaAlumno[] }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [trabajando, setTrabajando] = useState<string | null>(null);
+  // El cuadro de la nota al entregar, abierto para un caso a la vez.
+  const [entregando, setEntregando] = useState<string | null>(null);
+  const [notaAlumno, setNotaAlumno] = useState("");
 
   function abrir(asignacionId: string, pacienteId: string | null) {
     if (pacienteId) {
@@ -60,10 +63,12 @@ export function CasosDelAlumno({ casos }: { casos: CasoParaAlumno[] }) {
   function entregar(asignacionId: string) {
     setTrabajando(asignacionId);
     startTransition(async () => {
-      const result = await entregarCaso(asignacionId);
+      const result = await entregarCaso(asignacionId, notaAlumno);
       setTrabajando(null);
       if (result.ok) {
         toast.success(t("casos.entregado"));
+        setEntregando(null);
+        setNotaAlumno("");
         router.refresh();
       } else {
         toast.error(result.error || t("casos.errorAbrir"));
@@ -87,6 +92,11 @@ export function CasosDelAlumno({ casos }: { casos: CasoParaAlumno[] }) {
 
   if (casos.length === 0) return null;
 
+  // Mientras el profesor no publique la nota, para el alumno sigue "entregada": decirle "corregida"
+  // y no enseñarle nada es peor que no decir nada.
+  const estadoQueVe = (c: CasoParaAlumno) =>
+    c.estado === "CORREGIDA" && c.nota === null && !c.comentario ? "ENTREGADA" : c.estado;
+
   const boton =
     "inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50";
 
@@ -104,7 +114,7 @@ export function CasosDelAlumno({ casos }: { casos: CasoParaAlumno[] }) {
           return (
             <div
               key={c.asignacionId}
-              className="py-4 lg:py-0 lg:p-5 lg:border lg:border-border lg:rounded-2xl lg:bg-card"
+              className="py-4 lg:px-6 lg:py-6 lg:border lg:border-border lg:rounded-2xl lg:bg-card"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -144,11 +154,7 @@ export function CasosDelAlumno({ casos }: { casos: CasoParaAlumno[] }) {
                 {(c.estado === "ENTREGADA" || c.estado === "CORREGIDA") && (
                   <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-medium">
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    {/* Mientras el profesor no publique la nota, para el alumno sigue "entregada":
-                        decirle "corregida" y no enseñarle nada es peor que no decir nada. */}
-                    {t(c.estado === "CORREGIDA" && c.nota === null && !c.comentario
-                      ? "casos.estado.ENTREGADA"
-                      : `casos.estado.${c.estado}`)}
+                    {t(`casos.estado.${estadoQueVe(c)}`)}
                   </span>
                 )}
               </div>
@@ -171,10 +177,10 @@ export function CasosDelAlumno({ casos }: { casos: CasoParaAlumno[] }) {
                   {c.estado === "SIN_EMPEZAR" ? t("casos.empezar") : t("casos.abrir")}
                 </button>
 
-                {c.estado === "EN_MARCHA" && (
+                {c.estado === "EN_MARCHA" && entregando !== c.asignacionId && (
                   <button
                     type="button"
-                    onClick={() => entregar(c.asignacionId)}
+                    onClick={() => setEntregando(c.asignacionId)}
                     disabled={ocupado}
                     className={`${boton} border border-border hover:bg-muted`}
                   >
@@ -195,6 +201,41 @@ export function CasosDelAlumno({ casos }: { casos: CasoParaAlumno[] }) {
                   </button>
                 )}
               </div>
+
+              {entregando === c.asignacionId && (
+                <form
+                  onSubmit={(e) => { e.preventDefault(); entregar(c.asignacionId); }}
+                  className="mt-3 space-y-2 border-t border-border pt-3"
+                >
+                  <label className="text-xs font-medium text-muted-foreground">{t("casos.notaAlumno")}</label>
+                  <textarea
+                    value={notaAlumno}
+                    onChange={(e) => setNotaAlumno(e.target.value)}
+                    rows={3}
+                    maxLength={4000}
+                    autoFocus
+                    placeholder={t("casos.notaAlumnoPlaceholder")}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y"
+                  />
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="submit"
+                      disabled={ocupado}
+                      className={`${boton} bg-primary text-primary-foreground hover:opacity-90`}
+                    >
+                      {ocupado ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                      {t("casos.confirmarEntrega")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setEntregando(null); setNotaAlumno(""); }}
+                      className="text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      {t("casos.cancelar")}
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           );
         })}

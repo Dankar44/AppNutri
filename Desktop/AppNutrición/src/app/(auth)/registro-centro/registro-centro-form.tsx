@@ -215,7 +215,7 @@ export default function RegistroCentroForm() {
                   className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  {t("registro.form.step2.backButton")}
+                  {t("registro.form.step3.backButton")}
                 </button>
                 <h2 className="text-2xl font-bold">{t("registroCentro.step2Title")}</h2>
                 <p className="text-muted-foreground mt-1 text-sm">

@@ -97,7 +97,11 @@
     "ocultarRetirados": "Ocultar los retirados",
     "quitarDeLaLista": "Quitar de la lista",
     "quitarTexto": "{nombre} desaparece de esta clase, pero su cuenta y todo su trabajo siguen intactos. Si vuelve el curso que viene, basta con meter su correo otra vez.",
-    "quitado": "Quitado de la lista"
+    "quitado": "Quitado de la lista",
+    "casosTitulo": "{n, plural, =0 {Casos de la clase} one {# caso en la clase} other {# casos en la clase}}",
+    "irACasos": "Ir a mis casos",
+    "sinCasos": "Todavía no le has puesto ningún caso a esta clase. Los casos se crean en «Casos» y se asignan a la clase desde ahí.",
+    "casoProgreso": "{entregadas} de {alumnos} han entregado"
   },
   "clasePublica": {
     "titulo": "Únete a la clase",

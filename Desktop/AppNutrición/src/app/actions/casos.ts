@@ -3,24 +3,25 @@
 /**
  * #40 (issue #32) — Los casos clínicos del profesor.
  *
- * Un caso es un paciente ficticio con su historia y lo que se le pide al alumno. Es una plantilla:
- * se asigna a varias clases y a varios cursos sin tocarse. Al asignarlo, cada alumno acaba
- * teniendo su propia copia como paciente de verdad de su cuenta (eso lo hace `aula.ts` la primera
- * vez que lo abre).
+ * Un caso es un PACIENTE de verdad del profesor, rellenado con la ficha de siempre (anamnesis,
+ * mediciones, alergias, horario…) como si fuese suyo, más un nombre y una consigna. Es una
+ * plantilla: se asigna a varias clases y a varios cursos sin tocarse, y cada alumno recibe una
+ * copia entera del paciente la primera vez que lo abre (eso lo hace `aula.ts`).
  *
- * Los casos NO se mezclan con los pacientes reales del profesor: viven aquí, en su espacio
- * docente, que era la condición de partida.
+ * El paciente plantilla lleva `esCasoDocente` para que NO se mezcle con los pacientes reales del
+ * profesor: no sale en su lista, ni en su agenda, ni cuenta en ninguna cifra.
  */
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { isNextNavigation } from "@/lib/utils";
-import { sanitizeString, sanitizeStringOptional, validateNumberOptional, LIMITS } from "@/lib/validation";
+import { sanitizeString, sanitizeStringOptional } from "@/lib/validation";
 import { claseQueLleva, cursoTerminado } from "@/lib/docencia";
 import { requireProfesor } from "./docencia";
-import type { Sexo, ObjetivoPaciente } from "@/generated/prisma/client";
 import { PLAN_COMPLETO, aDetalleVisual } from "@/lib/plan-para-ver";
+import { copiarPaciente } from "@/lib/copiar-paciente";
+import type { Prisma } from "@/generated/prisma/client";
 import { expandirGruposDeDias } from "@/lib/grupos-dias";
 import type { PlanVisualDetalle } from "@/components/paciente/plan-visual";
 
@@ -55,67 +56,19 @@ function revalidarCasos(casoId?: string) {
   if (casoId) revalidatePath(`/profesor/casos/${casoId}`);
 }
 
-/** Trocea un textarea de "uno por línea" en lista, sin vacíos ni repetidos. */
-function porLineas(valor: string | undefined, max = 30): string[] {
-  if (!valor) return [];
-  return [...new Set(
-    valor.split(/[\n,;]+/).map((x) => sanitizeString(x, 120)).filter(Boolean),
-  )].slice(0, max);
-}
-
 export interface CasoFormData {
   nombre: string;
   consigna?: string;
-  pacienteNombre: string;
+  /** Solo al crear: el nombre con el que nace el paciente. Lo demás se rellena en su ficha. */
+  pacienteNombre?: string;
   pacienteApellidos?: string;
-  sexo?: string;
-  fechaNacimiento?: string;
-  peso?: number | null;
-  altura?: number | null;
-  objetivo?: string;
-  objetivoDetalle?: string;
-  nivelActividad?: string;
-  /** Los cinco campos de lista llegan como texto, uno por línea. */
-  patologias?: string;
-  alergias?: string;
-  intolerancias?: string;
-  medicamentos?: string;
-  suplementos?: string;
-  preferencias?: string;
-  notas?: string;
-}
-
-const SEXOS = ["MASCULINO", "FEMENINO", "OTRO"];
-const OBJETIVOS = ["PERDER_PESO", "GANAR_MASA", "MANTENIMIENTO", "PATOLOGIA", "DEPORTIVO", "OTRO"];
-
-function datosDelCaso(data: CasoFormData) {
-  return {
-    nombre: sanitizeString(data.nombre, 150),
-    consigna: sanitizeStringOptional(data.consigna, 4000) || null,
-    pacienteNombre: sanitizeString(data.pacienteNombre, 100),
-    pacienteApellidos: sanitizeStringOptional(data.pacienteApellidos, 100) ?? "",
-    sexo: (data.sexo && SEXOS.includes(data.sexo) ? data.sexo : null) as Sexo | null,
-    fechaNacimiento: data.fechaNacimiento ? new Date(data.fechaNacimiento) : null,
-    peso: validateNumberOptional(data.peso, 0, 500),
-    altura: validateNumberOptional(data.altura, 0, 300),
-    objetivo: (data.objetivo && OBJETIVOS.includes(data.objetivo)
-      ? data.objetivo
-      : "MANTENIMIENTO") as ObjetivoPaciente,
-    objetivoDetalle: sanitizeStringOptional(data.objetivoDetalle, 500) || null,
-    nivelActividad: sanitizeStringOptional(data.nivelActividad, 120) || null,
-    patologias: porLineas(data.patologias),
-    alergias: porLineas(data.alergias),
-    intolerancias: porLineas(data.intolerancias),
-    medicamentos: porLineas(data.medicamentos),
-    suplementos: porLineas(data.suplementos),
-    preferencias: porLineas(data.preferencias),
-    notas: sanitizeStringOptional(data.notas, LIMITS.NOTAS ?? 5000) || null,
-  };
 }
 
 export interface CasoResumen {
   id: string;
   nombre: string;
+  /** El paciente plantilla, para enseñar su nombre y para entrar a su ficha. */
+  pacienteId: string | null;
   pacienteNombre: string;
   consigna: string | null;
   archivado: boolean;
@@ -123,13 +76,45 @@ export interface CasoResumen {
   clases: number;
   /** Cuántos alumnos lo han entregado ya. */
   entregadas: number;
-  /** Cuántos lo tienen pendiente. */
+  /** Cuántos lo tienen pendiente (hayan abierto el caso o no). */
   pendientes: number;
+}
+
+// Los alumnos de la clase se cuentan aquí: son el total contra el que se mide lo entregado.
+// Traerse las entregas una a una para contarlas en JavaScript eran 30.000 filas con veinte casos y
+// clases de 300 (auditoría 2 sep 2026).
+const RESUMEN_ASIGNACIONES = {
+  where: { retiradaAt: null },
+  select: {
+    id: true,
+    clase: { select: { _count: { select: { alumnos: { where: { activa: true } } } } } },
+    _count: { select: { entregas: { where: { estado: { in: ["ENTREGADA", "CORREGIDA"] } } } } },
+  },
+} satisfies Prisma.CasoClinico$asignacionesArgs;
+
+function resumir(c: {
+  id: string; nombre: string; consigna: string | null; archivado: boolean; pacienteId: string | null;
+  paciente: { nombre: string; apellidos: string } | null;
+  asignaciones: { clase: { _count: { alumnos: number } }; _count: { entregas: number } }[];
+}): CasoResumen {
+  const alumnos = c.asignaciones.reduce((n, a) => n + a.clase._count.alumnos, 0);
+  const entregadas = c.asignaciones.reduce((n, a) => n + a._count.entregas, 0);
+  return {
+    id: c.id,
+    nombre: c.nombre,
+    pacienteId: c.pacienteId,
+    pacienteNombre: c.paciente ? `${c.paciente.nombre} ${c.paciente.apellidos}`.trim() : "",
+    consigna: c.consigna,
+    archivado: c.archivado,
+    clases: c.asignaciones.length,
+    entregadas,
+    // Pendiente es todo el que no ha entregado, haya abierto el caso o no.
+    pendientes: Math.max(0, alumnos - entregadas),
+  };
 }
 
 export async function getMisCasos(incluirArchivados = false): Promise<CasoResumen[]> {
   const profesor = await requireProfesor();
-
   const casos = await prisma.casoClinico.findMany({
     where: {
       profesorId: profesor.dietistaId,
@@ -137,59 +122,77 @@ export async function getMisCasos(incluirArchivados = false): Promise<CasoResume
     },
     orderBy: [{ archivado: "asc" }, { createdAt: "desc" }],
     select: {
-      id: true, nombre: true, pacienteNombre: true, consigna: true, archivado: true,
-      asignaciones: {
-        where: { retiradaAt: null },
-        select: {
-          id: true,
-          // Los alumnos de la clase se cuentan aquí: son el total contra el que se mide lo
-          // entregado. Traerse las entregas una a una para contarlas en JavaScript eran 30.000
-          // filas con veinte casos y clases de 300 (auditoría 2 sep 2026).
-          clase: { select: { _count: { select: { alumnos: { where: { activa: true } } } } } },
-          _count: { select: { entregas: { where: { estado: { in: ["ENTREGADA", "CORREGIDA"] } } } } },
-        },
-      },
+      id: true, nombre: true, consigna: true, archivado: true, pacienteId: true,
+      paciente: { select: { nombre: true, apellidos: true } },
+      asignaciones: RESUMEN_ASIGNACIONES,
     },
   });
+  return casos.map(resumir);
+}
 
-  return casos.map((c) => {
-    const alumnos = c.asignaciones.reduce((n, a) => n + a.clase._count.alumnos, 0);
-    const entregadas = c.asignaciones.reduce((n, a) => n + a._count.entregas, 0);
-    return {
-      id: c.id,
-      nombre: c.nombre,
-      pacienteNombre: c.pacienteNombre,
-      consigna: c.consigna,
-      archivado: c.archivado,
-      clases: c.asignaciones.length,
-      entregadas,
-      // Pendiente es todo el que no ha entregado, haya abierto el caso o no. Contar solo a los
-      // que lo habían abierto decía "0 pendientes" con la clase entera sin empezar.
-      pendientes: Math.max(0, alumnos - entregadas),
-    };
+export async function getCaso(casoId: string): Promise<CasoResumen | null> {
+  const profesor = await requireProfesor();
+  const c = await prisma.casoClinico.findFirst({
+    where: { id: casoId, profesorId: profesor.dietistaId },
+    select: {
+      id: true, nombre: true, consigna: true, archivado: true, pacienteId: true,
+      paciente: { select: { nombre: true, apellidos: true } },
+      asignaciones: RESUMEN_ASIGNACIONES,
+    },
+  });
+  return c ? resumir(c) : null;
+}
+
+/** El caso al que pertenece un paciente plantilla, para pintar el aviso encima de su ficha. */
+export async function getCasoDePacientePlantilla(
+  pacienteId: string,
+): Promise<{ id: string; nombre: string; consigna: string | null } | null> {
+  const profesor = await requireProfesor();
+  return prisma.casoClinico.findFirst({
+    where: { pacienteId, profesorId: profesor.dietistaId },
+    select: { id: true, nombre: true, consigna: true },
   });
 }
 
+/**
+ * Crear un caso: el nombre, la consigna y un paciente NUEVO del profesor, marcado como plantilla.
+ * Lo demás —anamnesis, mediciones, alergias, horario— se rellena en la ficha de ese paciente, que
+ * es la de siempre: eso es lo que hace realista el caso.
+ */
 export async function crearCaso(
   data: CasoFormData,
-): Promise<{ ok: boolean; error?: string; casoId?: string }> {
+): Promise<{ ok: boolean; error?: string; casoId?: string; pacienteId?: string }> {
   const profesor = await requireProfesor();
   const t = await getTranslations("validation");
 
-  const campos = datosDelCaso(data);
-  if (!campos.nombre) return { ok: false, error: t("docencia.nombreCasoObligatorio") };
-  if (!campos.pacienteNombre) return { ok: false, error: t("docencia.nombrePacienteObligatorio") };
+  const nombre = sanitizeString(data.nombre, 150);
+  if (!nombre) return { ok: false, error: t("docencia.nombreCasoObligatorio") };
+  const pacienteNombre = sanitizeString(data.pacienteNombre ?? "", 100);
+  if (!pacienteNombre) return { ok: false, error: t("docencia.nombrePacienteObligatorio") };
 
   try {
-    const caso = await prisma.casoClinico.create({
-      data: {
-        ...campos,
-        profesorId: profesor.dietistaId,
-        licenciaDocenteId: profesor.licencia?.id ?? null,
-      },
+    const { caso, paciente } = await prisma.$transaction(async (tx) => {
+      const paciente = await tx.paciente.create({
+        data: {
+          dietistaId: profesor.dietistaId,
+          nombre: pacienteNombre,
+          apellidos: sanitizeStringOptional(data.pacienteApellidos, 100) ?? "",
+          esCasoDocente: true,
+        },
+      });
+      const caso = await tx.casoClinico.create({
+        data: {
+          profesorId: profesor.dietistaId,
+          licenciaDocenteId: profesor.licencia?.id ?? null,
+          nombre,
+          consigna: sanitizeStringOptional(data.consigna, 4000) || null,
+          pacienteId: paciente.id,
+        },
+      });
+      return { caso, paciente };
     });
     revalidarCasos();
-    return { ok: true, casoId: caso.id };
+    return { ok: true, casoId: caso.id, pacienteId: paciente.id };
   } catch (e) {
     if (isNextNavigation(e)) throw e;
     console.error("[docencia] Error creando caso:", e);
@@ -197,6 +200,7 @@ export async function crearCaso(
   }
 }
 
+/** Editar el nombre del caso y la consigna. El paciente se edita en su ficha. */
 export async function editarCaso(
   casoId: string,
   data: CasoFormData,
@@ -204,27 +208,17 @@ export async function editarCaso(
   const profesor = await requireProfesor();
   const t = await getTranslations("validation");
 
-  const suyo = await prisma.casoClinico.findFirst({
+  const nombre = sanitizeString(data.nombre, 150);
+  if (!nombre) return { ok: false, error: t("docencia.nombreCasoObligatorio") };
+
+  const { count } = await prisma.casoClinico.updateMany({
     where: { id: casoId, profesorId: profesor.dietistaId },
-    select: { id: true },
+    data: { nombre, consigna: sanitizeStringOptional(data.consigna, 4000) || null },
   });
-  if (!suyo) return { ok: false, error: t("docencia.casoNoEncontrado") };
-
-  const campos = datosDelCaso(data);
-  if (!campos.nombre) return { ok: false, error: t("docencia.nombreCasoObligatorio") };
-  if (!campos.pacienteNombre) return { ok: false, error: t("docencia.nombrePacienteObligatorio") };
-
-  try {
-    // Editar el caso NO toca los pacientes que ya se crearon de él: el alumno que lo tiene a
-    // medias no puede ver cómo le cambian los datos por debajo mientras trabaja.
-    await prisma.casoClinico.update({ where: { id: casoId }, data: campos });
-    revalidarCasos(casoId);
-    return { ok: true };
-  } catch (e) {
-    if (isNextNavigation(e)) throw e;
-    console.error("[docencia] Error editando caso:", e);
-    return { ok: false, error: t("general.errorDesconocido") };
-  }
+  if (count === 0) return { ok: false, error: t("docencia.casoNoEncontrado") };
+  revalidarCasos(casoId);
+  if (data.pacienteNombre !== undefined) revalidatePath("/pacientes");
+  return { ok: true };
 }
 
 /** Archivar y desarchivar. No borra nada: las entregas de cursos pasados siguen ahí. */
@@ -244,7 +238,7 @@ export async function archivarCaso(
   return { ok: true };
 }
 
-/** Duplicar: el mismo caso para el curso siguiente, o una variante. */
+/** Duplicar: el mismo caso para el curso siguiente, con una copia entera de su paciente. */
 export async function duplicarCaso(
   casoId: string,
 ): Promise<{ ok: boolean; error?: string; casoId?: string }> {
@@ -253,20 +247,28 @@ export async function duplicarCaso(
 
   const original = await prisma.casoClinico.findFirst({
     where: { id: casoId, profesorId: profesor.dietistaId },
+    select: { nombre: true, consigna: true, pacienteId: true, licenciaDocenteId: true },
   });
   if (!original) return { ok: false, error: t("docencia.casoNoEncontrado") };
 
   try {
-    const { id: _id, createdAt: _c, updatedAt: _u, fichaInformacion, ...campos } = original;
-    void _id; void _c; void _u;
-    const copia = await prisma.casoClinico.create({
-      data: {
-        ...campos,
-        // El JSON opcional necesita `undefined` en vez de `null` para que Prisma lo deje vacío.
-        ...(fichaInformacion === null ? {} : { fichaInformacion }),
-        nombre: sanitizeString(`${original.nombre} (copia)`, 150),
-        archivado: false,
-      },
+    const copia = await prisma.$transaction(async (tx) => {
+      const pacienteId = original.pacienteId
+        ? await copiarPaciente(tx, original.pacienteId, { dietistaId: profesor.dietistaId, esDeClase: false })
+        : null;
+      if (pacienteId) {
+        await tx.paciente.update({ where: { id: pacienteId }, data: { esCasoDocente: true } });
+      }
+      return tx.casoClinico.create({
+        data: {
+          profesorId: profesor.dietistaId,
+          licenciaDocenteId: original.licenciaDocenteId,
+          nombre: sanitizeString(`${original.nombre} (copia)`, 150),
+          consigna: original.consigna,
+          pacienteId,
+          archivado: false,
+        },
+      });
     });
     revalidarCasos();
     return { ok: true, casoId: copia.id };
@@ -275,70 +277,6 @@ export async function duplicarCaso(
     console.error("[docencia] Error duplicando caso:", e);
     return { ok: false, error: t("general.errorDesconocido") };
   }
-}
-
-export interface CasoDetalle extends CasoResumen {
-  pacienteApellidos: string;
-  sexo: string | null;
-  fechaNacimiento: Date | null;
-  peso: number | null;
-  altura: number | null;
-  objetivo: string;
-  objetivoDetalle: string | null;
-  nivelActividad: string | null;
-  patologias: string[];
-  alergias: string[];
-  intolerancias: string[];
-  medicamentos: string[];
-  suplementos: string[];
-  preferencias: string[];
-  notas: string | null;
-}
-
-export async function getCaso(casoId: string): Promise<CasoDetalle | null> {
-  const profesor = await requireProfesor();
-  const c = await prisma.casoClinico.findFirst({
-    where: { id: casoId, profesorId: profesor.dietistaId },
-    include: {
-      asignaciones: {
-        where: { retiradaAt: null },
-        select: {
-          id: true,
-          clase: { select: { _count: { select: { alumnos: { where: { activa: true } } } } } },
-          _count: { select: { entregas: { where: { estado: { in: ["ENTREGADA", "CORREGIDA"] } } } } },
-        },
-      },
-    },
-  });
-  if (!c) return null;
-
-  const alumnosTotales = c.asignaciones.reduce((n, a) => n + a.clase._count.alumnos, 0);
-  const yaEntregadas = c.asignaciones.reduce((n, a) => n + a._count.entregas, 0);
-  return {
-    id: c.id,
-    nombre: c.nombre,
-    consigna: c.consigna,
-    archivado: c.archivado,
-    pacienteNombre: c.pacienteNombre,
-    pacienteApellidos: c.pacienteApellidos,
-    sexo: c.sexo,
-    fechaNacimiento: c.fechaNacimiento,
-    peso: c.peso,
-    altura: c.altura,
-    objetivo: c.objetivo,
-    objetivoDetalle: c.objetivoDetalle,
-    nivelActividad: c.nivelActividad,
-    patologias: c.patologias,
-    alergias: c.alergias,
-    intolerancias: c.intolerancias,
-    medicamentos: c.medicamentos,
-    suplementos: c.suplementos,
-    preferencias: c.preferencias,
-    notas: c.notas,
-    clases: c.asignaciones.length,
-    entregadas: yaEntregadas,
-    pendientes: Math.max(0, alumnosTotales - yaEntregadas),
-  };
 }
 
 // ─── Asignar el caso a una clase ───
@@ -718,6 +656,8 @@ export interface TrabajoDeEntrega {
   claseNombre: string;
   estado: string;
   entregadaAt: Date | null;
+  /** Lo que el alumno escribió al entregar. */
+  notaAlumno: string | null;
   nota: number | null;
   comentario: string | null;
   visibleParaAlumno: boolean;
@@ -794,6 +734,7 @@ export async function getTrabajoDeEntrega(
     claseNombre: entrega.asignacion.clase.nombre,
     estado: entrega.estado,
     entregadaAt: entrega.entregadaAt,
+    notaAlumno: entrega.notaAlumno,
     nota: entrega.nota,
     comentario: entrega.comentario,
     visibleParaAlumno: entrega.visibleParaAlumno,
@@ -813,4 +754,34 @@ export async function getTrabajoDeEntrega(
     planes: planes.map((p) => ({ id: p.id, nombre: p.nombre, activo: p.activo, dias: p._count.dias })),
     planVisto,
   };
+}
+
+/** Los casos puestos a una clase, para verlos desde la ficha de la clase (la otra puerta). */
+export async function getCasosDeClase(claseId: string): Promise<
+  { asignacionId: string; casoId: string; nombre: string; fechaLimite: Date | null; entregadas: number; alumnos: number }[]
+> {
+  const profesor = await requireProfesor();
+  const clase = await prisma.clase.findFirst({
+    where: { id: claseId, ...claseQueLleva(profesor.dietistaId) },
+    select: { _count: { select: { alumnos: { where: { activa: true } } } } },
+  });
+  if (!clase) return [];
+
+  const asignaciones = await prisma.asignacionCaso.findMany({
+    where: { claseId, retiradaAt: null, caso: { archivado: false } },
+    orderBy: [{ fechaLimite: "asc" }, { createdAt: "desc" }],
+    select: {
+      id: true, fechaLimite: true,
+      caso: { select: { id: true, nombre: true } },
+      _count: { select: { entregas: { where: { estado: { in: ["ENTREGADA", "CORREGIDA"] } } } } },
+    },
+  });
+  return asignaciones.map((a) => ({
+    asignacionId: a.id,
+    casoId: a.caso.id,
+    nombre: a.caso.nombre,
+    fechaLimite: a.fechaLimite,
+    entregadas: a._count.entregas,
+    alumnos: clase._count.alumnos,
+  }));
 }

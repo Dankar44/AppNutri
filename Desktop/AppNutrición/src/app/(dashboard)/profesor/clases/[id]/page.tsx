@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, AlertTriangle, CalendarOff, CalendarClock } from "lucide-react";
+import { ArrowLeft, AlertTriangle, CalendarOff, CalendarClock, ClipboardList, ChevronRight } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireProfesor } from "@/app/actions/docencia";
 import { getClase, getProfesoresDeClase, getProfesoresQuePuedeAnadir } from "@/app/actions/clases";
+import { getCasosDeClase } from "@/app/actions/casos";
 import { formatDate } from "@/lib/utils";
 import { cursoTerminado, diasDeCursoQueQuedan } from "@/lib/docencia";
 import { getLocale } from "@/i18n/locale";
@@ -26,9 +27,10 @@ export default async function ClaseDetallePage({
   const t = await getTranslations("docencia");
   const locale = await getLocale();
   const plazasLibres = await getPlazasLibres();
-  const [profesores, candidatos] = await Promise.all([
+  const [profesores, candidatos, casos] = await Promise.all([
     getProfesoresDeClase(clase.id),
     getProfesoresQuePuedeAnadir(clase.id),
+    getCasosDeClase(clase.id),
   ]);
   const terminado = cursoTerminado(clase.fechaFinCurso);
   // Avisar ANTES, no el día que sus alumnos se quedan fuera y le llaman por teléfono.
@@ -109,6 +111,41 @@ export default async function ClaseDetallePage({
           cursoTerminado={terminado}
         />
       )}
+
+      {/* Los casos de esta clase: la misma información que en Casos, vista desde la clase. */}
+      <section className="py-4 lg:px-6 lg:py-6 lg:border lg:border-border lg:rounded-xl lg:bg-card">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <h2 className="font-semibold inline-flex items-center gap-2">
+            <ClipboardList className="w-4 h-4 text-muted-foreground" />
+            {t("clases.casosTitulo", { n: casos.length })}
+          </h2>
+          <Link href="/profesor/casos" className="text-sm font-medium text-primary hover:underline">
+            {t("clases.irACasos")}
+          </Link>
+        </div>
+        {casos.length === 0 ? (
+          <p className="text-sm text-muted-foreground mt-2">{t("clases.sinCasos")}</p>
+        ) : (
+          <div className="mt-3 divide-y divide-border">
+            {casos.map((c) => (
+              <Link
+                key={c.asignacionId}
+                href={`/profesor/casos/${c.casoId}/entregas/${c.asignacionId}`}
+                className="flex items-center gap-3 py-2.5 group"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">{c.nombre}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("clases.casoProgreso", { entregadas: c.entregadas, alumnos: c.alumnos })}
+                    {c.fechaLimite && <> · {t("clases.hasta", { fecha: formatDate(c.fechaLimite, locale) })}</>}
+                  </p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
 
       {!clase.archivada && (
         <ProfesoresClase claseId={clase.id} profesores={profesores} candidatos={candidatos} />

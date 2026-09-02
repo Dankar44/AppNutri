@@ -45,6 +45,8 @@ import {
 
 type PacienteGeneral = {
   id: string;
+  /** #40 — Plantilla de un caso: sin planes (los hacen los alumnos) ni portal (no hay persona). */
+  esCasoDocente?: boolean;
   email: string | null;
   telefono: string | null;
   fechaNacimiento: string | null;
@@ -232,6 +234,7 @@ export function PacienteFichaGeneralTab({
         </p>
         <HorarioDietistaWrapper pacienteId={paciente.id} initialEntries={horario} />
       </section>
+      {!paciente.esCasoDocente && (
       <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h3 className="text-base sm:text-2xl font-semibold inline-flex items-center gap-2">
@@ -275,6 +278,7 @@ export function PacienteFichaGeneralTab({
           </Link>
         )}
       </section>
+      )}
       </div>
 
       <div className="space-y-5">
@@ -381,6 +385,7 @@ export function PacienteFichaGeneralTab({
         </Link>
       </section>
 
+      {!paciente.esCasoDocente && (
       <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
         <h3 className="text-base sm:text-2xl font-semibold mb-4 inline-flex items-center gap-2">
           <Shield className="w-5 h-5 text-violet-500" />
@@ -393,6 +398,7 @@ export function PacienteFichaGeneralTab({
           {t("configurarAcceso")}
         </Link>
       </section>
+      )}
 
       <div>
         <RecomendacionesCard pacienteId={paciente.id} initialText={recomendaciones} />

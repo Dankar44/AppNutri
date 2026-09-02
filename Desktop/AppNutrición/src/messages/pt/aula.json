@@ -5,7 +5,6 @@
   "vaciaTitulo": "Ainda não está em nenhuma turma",
   "vaciaTexto": "Quando o seu professor o registar, a turma aparecerá aqui com os casos e as entregas.",
   "hasta": "Até {fecha}",
-  "queHayAqui": "Aqui verá os casos que o professor lhe atribua e o que lhe entregar. Os alimentos e receitas dele estão em Material.",
   "pasadasTitulo": "{n, plural, one {# turma anterior} other {# turmas anteriores}}",
   "pasadasTexto": "O seu trabalho desses anos continua guardado: só deixou de ver o material da turma.",
   "casos": {
@@ -28,6 +27,14 @@
     },
     "explicacionPrimeraVez": "Cada caso é um paciente inventado que lhe é criado na conta ao começá-lo. Trabalhe-o como se fosse real: a ficha, o plano, o PDF.",
     "esUnCaso": "Caso de {clase}",
-    "volverAlAula": "Voltar à minha sala"
-  }
+    "volverAlAula": "Voltar à minha sala",
+    "enLaClase": "{n, plural, =0 {Ainda sem casos} one {# caso} other {# casos}}{pendientes, plural, =0 {} one { · # por entregar} other { · # por entregar}}",
+    "sinCasosTitulo": "O seu professor ainda não propôs nenhum caso",
+    "sinCasosTexto": "Quando o fizer, aparecerá aqui com o que lhe pede e a data de entrega. Entretanto, os alimentos e receitas dele estão em Material.",
+    "notaAlumno": "Quer contar algo ao seu professor? (opcional)",
+    "notaAlumnoPlaceholder": "Dei prioridade às leguminosas e à vitamina C em cada refeição porque…",
+    "confirmarEntrega": "Entregar",
+    "cancelar": "Cancelar"
+  },
+  "volverAlAula": "Voltar à minha sala"
 }

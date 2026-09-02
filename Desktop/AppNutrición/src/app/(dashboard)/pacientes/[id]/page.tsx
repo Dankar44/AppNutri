@@ -15,6 +15,8 @@ import { getCamposAnamnesis } from "@/app/actions/perfil";
 import { getEstructuraEfectivaPaciente, getPlantillasAnamnesis } from "@/app/actions/plantillas-anamnesis";
 import { AutoMarkLeidas } from "./auto-mark-leidas";
 import { AvisoCaso } from "./aviso-caso";
+import { AvisoPlantilla } from "./aviso-plantilla";
+import { getCasoDePacientePlantilla } from "@/app/actions/casos";
 import { getCasoDelPaciente } from "@/app/actions/aula";
 import { cursoTerminado } from "@/lib/docencia";
 import { formatDate } from "@/lib/utils";
@@ -67,18 +69,23 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
   // #40 — Si el paciente viene de un caso de clase, el alumno tiene delante lo que le han pedido,
   // hasta cuándo y el botón de entregar. Solo se pregunta si está marcado como de clase.
   const caso = paciente.esDeClase ? await getCasoDelPaciente(id) : null;
+  // Y si es la PLANTILLA de un caso del profesor, se le recuerda que lo que rellena aquí es lo que
+  // se van a encontrar sus alumnos.
+  const plantillaDe = paciente.esCasoDocente ? await getCasoDePacientePlantilla(id) : null;
   const locale = await getLocale();
 
   return (
     <div>
       <AutoMarkLeidas pacienteId={id} pestana={pestana} />
       <Link
-        href="/pacientes"
+        href={plantillaDe ? `/profesor/casos/${plantillaDe.id}` : "/pacientes"}
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 py-2 sm:py-0 -my-2 sm:my-0"
       >
         <ArrowLeft className="w-4 h-4" />
-        {t("nuevo.volverAPacientes")}
+        {plantillaDe ? plantillaDe.nombre : t("nuevo.volverAPacientes")}
       </Link>
+
+      {plantillaDe && <AvisoPlantilla caso={plantillaDe} />}
 
       {caso && (
         <AvisoCaso

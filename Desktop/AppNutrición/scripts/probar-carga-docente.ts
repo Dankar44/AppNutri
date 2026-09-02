@@ -41,6 +41,7 @@ async function cookieAdmin() {
 async function limpiar(client: pg.PoolClient) {
   await client.query(`DELETE FROM alimentos WHERE nombre LIKE '${MARCA}%'`);
   await client.query(`DELETE FROM casos_clinicos WHERE nombre LIKE '${MARCA}%'`);
+  await client.query(`DELETE FROM pacientes WHERE nombre = '${MARCA} Paciente'`);
   await client.query(`DELETE FROM clases WHERE nombre LIKE '${MARCA}%'`);
   const { rows } = await client.query(`SELECT id FROM auth.users WHERE email LIKE '%@${DOMINIO}'`);
   for (const r of rows) {
@@ -126,12 +127,17 @@ async function main() {
 
     // #40 — Casos y entregas: 20 casos, uno asignado a cada clase, con la mitad de los alumnos
     // habiendo abierto el suyo. Es lo que tendrá una asignatura al final de un cuatrimestre.
+    // Cada caso apunta a un paciente plantilla del profesor, como en la aplicación.
     await client.query(
-      `INSERT INTO casos_clinicos (id, "profesorId", "licenciaDocenteId", nombre, consigna,
-         "pacienteNombre", "pacienteApellidos", peso, altura, objetivo, "createdAt", "updatedAt")
-       SELECT gen_random_uuid()::text, $1, $2, '${MARCA} caso ' || i, 'Haz el plan.',
-         'Paciente', 'Numero ' || i, 70, 170, 'MANTENIMIENTO', NOW(), NOW()
-       FROM generate_series(1, 20) AS i`, [profes[0].id, licenciaId]);
+      `INSERT INTO pacientes (id, "dietistaId", nombre, apellidos, peso, altura, "esCasoDocente", "createdAt", "updatedAt")
+       SELECT gen_random_uuid()::text, $1, '${MARCA} Paciente', 'Numero ' || i, 70, 170, true, NOW(), NOW()
+       FROM generate_series(1, 20) AS i`, [profes[0].id]);
+    await client.query(
+      `INSERT INTO casos_clinicos (id, "profesorId", "licenciaDocenteId", nombre, consigna, "pacienteId", "createdAt", "updatedAt")
+       SELECT gen_random_uuid()::text, $1, $2, '${MARCA} caso ' || p.rn, 'Haz el plan.', p.id, NOW(), NOW()
+         FROM (SELECT id, row_number() OVER (ORDER BY apellidos) rn FROM pacientes
+                WHERE "dietistaId" = $1 AND "esCasoDocente" = true AND nombre = '${MARCA} Paciente') p`,
+      [profes[0].id, licenciaId]);
     await client.query(
       `INSERT INTO asignaciones_caso (id, "casoId", "claseId", "fechaLimite", "asignadoPor", "createdAt", "updatedAt")
        SELECT gen_random_uuid()::text, c.id, cl.id, CURRENT_DATE + 30, $1, NOW(), NOW()

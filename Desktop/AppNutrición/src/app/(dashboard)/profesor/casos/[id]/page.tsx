@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, User, Archive } from "lucide-react";
+import { ArrowLeft, User, Archive, ArrowRight, ClipboardList } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireProfesor } from "@/app/actions/docencia";
 import { getCaso, getAsignacionesDeCaso, getClasesParaAsignar } from "@/app/actions/casos";
@@ -9,7 +9,12 @@ import { getLocale } from "@/i18n/locale";
 import { AccionesCaso } from "./acciones-caso";
 import { Asignaciones } from "./asignaciones";
 
-/** #40 — La ficha del caso: qué pide, a quién ficticio, y a qué clases está puesto. */
+/**
+ * #40 — La ficha del caso: qué se les pide, a qué clases está puesto, y la puerta al paciente.
+ *
+ * El paciente NO se enseña aquí: se abre su ficha de siempre, que es donde el profesor lo rellena
+ * (anamnesis, mediciones, alergias, horario…) exactamente igual que con uno de verdad.
+ */
 export default async function CasoPage({ params }: { params: Promise<{ id: string }> }) {
   await requireProfesor();
   const { id } = await params;
@@ -28,15 +33,6 @@ export default async function CasoPage({ params }: { params: Promise<{ id: strin
     asignaciones.map((a) => [a.id, a.fechaLimite ? formatDate(a.fechaLimite, locale) : ""]),
   );
 
-  const listas: [string, string[]][] = [
-    [t("campos.patologias"), caso.patologias],
-    [t("campos.alergias"), caso.alergias],
-    [t("campos.intolerancias"), caso.intolerancias],
-    [t("campos.medicamentos"), caso.medicamentos],
-    [t("campos.suplementos"), caso.suplementos],
-    [t("campos.preferencias"), caso.preferencias],
-  ];
-
   return (
     <div className="space-y-6">
       <Link
@@ -50,10 +46,12 @@ export default async function CasoPage({ params }: { params: Promise<{ id: strin
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-xl sm:text-2xl font-bold">{caso.nombre}</h1>
-          <p className="text-sm text-muted-foreground mt-0.5 inline-flex items-center gap-1.5">
-            <User className="w-4 h-4" />
-            {caso.pacienteNombre} {caso.pacienteApellidos}
-          </p>
+          {caso.pacienteNombre && (
+            <p className="text-sm text-muted-foreground mt-0.5 inline-flex items-center gap-1.5">
+              <User className="w-4 h-4" />
+              {caso.pacienteNombre}
+            </p>
+          )}
         </div>
         <AccionesCaso casoId={caso.id} archivado={caso.archivado} />
       </div>
@@ -65,72 +63,45 @@ export default async function CasoPage({ params }: { params: Promise<{ id: strin
         </div>
       )}
 
-      {caso.consigna && (
-        <section className="py-4 lg:p-5 lg:border lg:border-border lg:rounded-xl lg:bg-card">
-          <h2 className="font-semibold mb-2">{t("campos.consigna")}</h2>
-          <p className="text-sm whitespace-pre-wrap">{caso.consigna}</p>
-        </section>
+      {/* La puerta al paciente, la primera: es donde está el trabajo de verdad del profesor. */}
+      {caso.pacienteId && (
+        <Link
+          href={`/pacientes/${caso.pacienteId}?espacio=docente`}
+          className="block py-4 lg:px-6 lg:py-6 lg:rounded-xl lg:border lg:border-primary/30 lg:bg-primary/5 border-b border-border lg:border-b hover:lg:border-primary/60 transition-colors group"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <User strokeWidth={1.75} className="w-6 h-6 text-primary" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold group-hover:text-primary transition-colors">
+                {t("paciente.abrirFicha", { nombre: caso.pacienteNombre })}
+              </p>
+              <p className="text-sm text-muted-foreground mt-0.5">{t("paciente.abrirFichaAyuda")}</p>
+            </div>
+            <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary shrink-0" />
+          </div>
+        </Link>
       )}
 
-      <Asignaciones casoId={caso.id} asignaciones={asignaciones} clases={clases} fechas={fechas} />
-
-      <section className="py-4 lg:p-5 lg:border lg:border-border lg:rounded-xl lg:bg-card space-y-3">
-        <h2 className="font-semibold">{t("secciones.elPaciente")}</h2>
-        <dl className="grid sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-          {caso.sexo && (
-            <div className="flex justify-between gap-3 border-b border-border pb-1.5">
-              <dt className="text-muted-foreground">{t("campos.sexo")}</dt>
-              <dd>{t(`sexo.${caso.sexo}`)}</dd>
-            </div>
-          )}
-          {caso.fechaNacimiento && (
-            <div className="flex justify-between gap-3 border-b border-border pb-1.5">
-              <dt className="text-muted-foreground">{t("campos.fechaNacimiento")}</dt>
-              <dd>{formatDate(caso.fechaNacimiento, locale)}</dd>
-            </div>
-          )}
-          {caso.peso != null && (
-            <div className="flex justify-between gap-3 border-b border-border pb-1.5">
-              <dt className="text-muted-foreground">{t("campos.peso")}</dt>
-              <dd className="tabular-nums">{caso.peso}</dd>
-            </div>
-          )}
-          {caso.altura != null && (
-            <div className="flex justify-between gap-3 border-b border-border pb-1.5">
-              <dt className="text-muted-foreground">{t("campos.altura")}</dt>
-              <dd className="tabular-nums">{caso.altura}</dd>
-            </div>
-          )}
-          <div className="flex justify-between gap-3 border-b border-border pb-1.5">
-            <dt className="text-muted-foreground">{t("campos.objetivo")}</dt>
-            <dd>{t(`objetivo.${caso.objetivo}`)}</dd>
-          </div>
-          {caso.nivelActividad && (
-            <div className="flex justify-between gap-3 border-b border-border pb-1.5">
-              <dt className="text-muted-foreground">{t("campos.nivelActividad")}</dt>
-              <dd className="text-right">{caso.nivelActividad}</dd>
-            </div>
-          )}
-        </dl>
-
-        {listas.some(([, v]) => v.length > 0) && (
-          <div className="grid sm:grid-cols-2 gap-x-6 gap-y-3 pt-1">
-            {listas.filter(([, v]) => v.length > 0).map(([label, valores]) => (
-              <div key={label}>
-                <p className="text-xs font-medium text-muted-foreground">{label}</p>
-                <p className="text-sm">{valores.join(", ")}</p>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {caso.notas && (
-          <div className="pt-1">
-            <p className="text-xs font-medium text-muted-foreground">{t("campos.notas")}</p>
-            <p className="text-sm whitespace-pre-wrap mt-0.5">{caso.notas}</p>
-          </div>
+      <section className="py-4 lg:px-6 lg:py-6 lg:border lg:border-border lg:rounded-xl lg:bg-card">
+        <h2 className="font-semibold inline-flex items-center gap-2">
+          <ClipboardList className="w-4 h-4 text-muted-foreground" />
+          {t("campos.consigna")}
+        </h2>
+        {caso.consigna ? (
+          <p className="text-sm whitespace-pre-wrap mt-2">{caso.consigna}</p>
+        ) : (
+          <p className="text-sm text-muted-foreground mt-2">
+            {t("paciente.sinConsigna")}{" "}
+            <Link href={`/profesor/casos/${caso.id}/editar`} className="text-primary hover:underline">
+              {t("acciones.editar")}
+            </Link>
+          </p>
         )}
       </section>
+
+      <Asignaciones casoId={caso.id} asignaciones={asignaciones} clases={clases} fechas={fechas} />
     </div>
   );
 }

@@ -15,8 +15,10 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { isNextNavigation } from "@/lib/utils";
+import { sanitizeStringOptional } from "@/lib/validation";
 import { getCurrentDietista } from "./auth";
 import { inicioDeHoy } from "@/lib/docencia";
+import { copiarPaciente } from "@/lib/copiar-paciente";
 
 export interface ClaseDelAlumno {
   id: string;
@@ -124,7 +126,7 @@ export async function getMisCasosDelAula(): Promise<CasoDelAlumno[]> {
     },
     orderBy: [{ fechaLimite: "asc" }, { createdAt: "desc" }],
     include: {
-      caso: { select: { nombre: true, consigna: true, pacienteNombre: true, pacienteApellidos: true } },
+      caso: { select: { nombre: true, consigna: true, paciente: { select: { nombre: true, apellidos: true } } } },
       clase: { select: { id: true, nombre: true } },
       entregas: { where: { alumnoId: dietista.id } },
     },
@@ -138,7 +140,7 @@ export async function getMisCasosDelAula(): Promise<CasoDelAlumno[]> {
       entregaId: entrega?.id ?? null,
       casoNombre: a.caso.nombre,
       consigna: a.caso.consigna,
-      pacienteDelCaso: `${a.caso.pacienteNombre} ${a.caso.pacienteApellidos}`.trim(),
+      pacienteDelCaso: a.caso.paciente ? `${a.caso.paciente.nombre} ${a.caso.paciente.apellidos}`.trim() : "",
       claseId: a.clase.id,
       claseNombre: a.clase.nombre,
       fechaLimite: a.fechaLimite,
@@ -200,9 +202,10 @@ export async function abrirCaso(
         alumnos: { some: { alumnoId: dietista.id, activa: true } },
       },
     },
-    include: { caso: true },
+    include: { caso: { select: { pacienteId: true } } },
   });
   if (!asignacion) return { ok: false, error: t("docencia.casoNoEncontrado") };
+  if (!asignacion.caso.pacienteId) return { ok: false, error: t("docencia.casoSinPaciente") };
 
   try {
     const existente = await prisma.entregaCaso.findUnique({
@@ -211,7 +214,7 @@ export async function abrirCaso(
     });
     if (existente?.pacienteId) return { ok: true, pacienteId: existente.pacienteId };
 
-    const c = asignacion.caso;
+    const plantillaId = asignacion.caso.pacienteId;
     // Todo en una transacción, y **la entrega primero**: es la que tiene la clave única
     // (asignación + alumno), así que si el alumno pulsa dos veces o abre dos pestañas, la segunda
     // choca ahí y no llega a crear un segundo paciente. Al revés — paciente primero — se creaban
@@ -232,40 +235,21 @@ export async function abrirCaso(
       });
       if (entrega.pacienteId) return entrega.pacienteId;
 
-      const paciente = await tx.paciente.create({
-        data: {
-          dietistaId: dietista.id,
-          nombre: c.pacienteNombre,
-          apellidos: c.pacienteApellidos,
-          sexo: c.sexo,
-          fechaNacimiento: c.fechaNacimiento,
-          peso: c.peso,
-          altura: c.altura,
-          objetivo: c.objetivo,
-          objetivoDetalle: c.objetivoDetalle,
-          nivelActividad: c.nivelActividad,
-          patologias: c.patologias,
-          alergias: c.alergias,
-          intolerancias: c.intolerancias,
-          medicamentos: c.medicamentos,
-          suplementos: c.suplementos,
-          preferencias: c.preferencias,
-          notas: c.notas,
-          ...(c.fichaInformacion === null ? {} : { fichaInformacion: c.fichaInformacion }),
-          esDeClase: true,
-        },
-      });
+      // La copia entera del paciente que rellenó el profesor: datos, anamnesis, mediciones,
+      // consultas, horario y recomendaciones. Lo único que no viaja es lo que tiene que hacer él.
+      const nuevoId = await copiarPaciente(tx, plantillaId, { dietistaId: dietista.id, esDeClase: true });
+
       await tx.entregaCaso.update({
         where: { id: entrega.id },
         data: {
-          pacienteId: paciente.id,
+          pacienteId: nuevoId,
           // Solo se pone "en marcha" a quien todavía no había entregado.
           ...(existente && existente.estado !== "SIN_EMPEZAR" ? {} : { estado: "EN_MARCHA" }),
           abiertaAt: new Date(),
         },
       });
-      return paciente.id;
-    });
+      return nuevoId;
+    }, { timeout: 20_000, maxWait: 10_000 });
 
     revalidatePath("/aula");
     revalidatePath("/pacientes");
@@ -280,6 +264,8 @@ export async function abrirCaso(
 /** Entregar el caso. Se puede entregar tarde: se guarda cuándo y el profesor lo ve. */
 export async function entregarCaso(
   asignacionId: string,
+  /** Lo que le quiere contar al profesor: su razonamiento, en corto. Opcional. */
+  notaAlumno?: string,
 ): Promise<{ ok: boolean; error?: string }> {
   const dietista = await getCurrentDietista();
   const t = await getTranslations("validation");
@@ -300,7 +286,11 @@ export async function entregarCaso(
 
   await prisma.entregaCaso.update({
     where: { id: entrega.id },
-    data: { estado: "ENTREGADA", entregadaAt: new Date() },
+    data: {
+      estado: "ENTREGADA",
+      entregadaAt: new Date(),
+      notaAlumno: sanitizeStringOptional(notaAlumno, 4000) || null,
+    },
   });
   revalidatePath("/aula");
   return { ok: true };

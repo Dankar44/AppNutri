@@ -271,7 +271,11 @@
     "miembroNoEncontrado": "Miembro no encontrado",
     "yaEresLider": "Ya eres el líder de esta empresa",
     "solicitanteYaEnOtraEmpresa": "El solicitante ya pertenece a otra empresa",
-    "tipoMovimientoInvalido": "Tipo de movimiento no válido"
+    "tipoMovimientoInvalido": "Tipo de movimiento no válido",
+    "emailObligatorio": "Escribe el correo de la persona a la que invitas.",
+    "emailYaInvitado": "Ese correo ya tiene una invitación pendiente.",
+    "maxMiembrosAlcanzado": "Tu centro ha llegado al máximo de miembros.",
+    "yaEsMiembro": "Esa persona ya es miembro de tu centro."
   },
   "docencia": {
     "institucionObligatoria": "El nombre de la institución es obligatorio",
@@ -309,6 +313,8 @@
     "todaviaNoHaEntregado": "Todavía no lo ha entregado: espera a que lo entregue para corregirlo.",
     "notaOComentario": "Ponle al menos una nota o un comentario.",
     "pacienteDeClaseNoSeBorra": "Este paciente es de un caso de tu clase: no puedes borrarlo, porque es el trabajo que tu profesor tiene que corregir.",
-    "profesorConEntregasNoSeBorra": "Tus alumnos tienen casos entregados, y borrar tu cuenta se llevaría su trabajo y sus notas. Escríbenos y lo resolvemos contigo."
+    "profesorConEntregasNoSeBorra": "Tus alumnos tienen casos entregados, y borrar tu cuenta se llevaría su trabajo y sus notas. Escríbenos y lo resolvemos contigo.",
+    "casoSinPaciente": "Este caso todavía no tiene paciente: díselo a tu profesor.",
+    "plantillaDeCasoNoSeBorra": "Este paciente es la plantilla de un caso: si ya no lo quieres, archiva el caso."
   }
 }

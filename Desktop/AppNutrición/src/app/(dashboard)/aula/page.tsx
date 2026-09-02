@@ -1,11 +1,10 @@
 import { redirect } from "next/navigation";
-import { GraduationCap, CalendarRange, Users, Archive } from "lucide-react";
+import Link from "next/link";
+import { GraduationCap, CalendarRange, Users, Archive, ClipboardList } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { getCurrentDietista } from "@/app/actions/auth";
 import { getMisClasesComoAlumno, getMisCasosDelAula } from "@/app/actions/aula";
-import { CasosDelAlumno, type CasoParaAlumno } from "./casos-del-alumno";
-import { diasDeCursoQueQuedan } from "@/lib/docencia";
 import { formatDate } from "@/lib/utils";
 import { getLocale } from "@/i18n/locale";
 
@@ -31,24 +30,7 @@ export default async function AulaPage() {
   const pasadas = clases.filter((c) => !c.activa);
 
   // Las fechas se formatean aquí: el componente de cliente no sabe de idiomas.
-  const casos: CasoParaAlumno[] = casosCrudos.map((c) => {
-    const dias = diasDeCursoQueQuedan(c.fechaLimite);
-    const sinEntregar = c.estado === "SIN_EMPEZAR" || c.estado === "EN_MARCHA";
-    return {
-      asignacionId: c.asignacionId,
-      casoNombre: c.casoNombre,
-      consigna: c.consigna,
-      pacienteDelCaso: c.pacienteDelCaso,
-      claseNombre: c.claseNombre,
-      estado: c.estado,
-      pacienteId: c.pacienteId,
-      nota: c.nota,
-      comentario: c.comentario,
-      fechaLimite: c.fechaLimite ? formatDate(c.fechaLimite, locale) : null,
-      fueraDePlazo: sinEntregar && dias !== null && dias < 0,
-      diasQueQuedan: dias,
-    };
-  });
+  const casos = casosCrudos;
 
   return (
     <div className="space-y-6">
@@ -66,8 +48,6 @@ export default async function AulaPage() {
         </div>
       </section>
 
-      <CasosDelAlumno casos={casos} />
-
       {clases.length === 0 ? (
         <div className="text-center py-14">
           <GraduationCap strokeWidth={1.5} className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
@@ -77,11 +57,12 @@ export default async function AulaPage() {
       ) : (
         <div className="lg:grid lg:grid-cols-2 lg:gap-4 divide-y divide-border lg:divide-y-0">
           {enMarcha.map((c) => (
-            <div
+            <Link
               key={c.id}
-              className="py-4 lg:py-0 lg:p-5 lg:border lg:border-border lg:rounded-2xl lg:bg-card"
+              href={`/aula/${c.id}`}
+              className="block py-4 lg:px-6 lg:py-6 lg:border lg:border-border lg:rounded-2xl lg:bg-card hover:border-primary/40 transition-colors group"
             >
-              <h2 className="font-semibold leading-tight">{c.nombre}</h2>
+              <h2 className="font-semibold leading-tight group-hover:text-primary transition-colors">{c.nombre}</h2>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {[c.institucion, c.curso].filter(Boolean).join(" · ")}
               </p>
@@ -97,10 +78,15 @@ export default async function AulaPage() {
                   </p>
                 )}
               </div>
-              {casos.length === 0 && (
-                <p className="text-xs text-muted-foreground mt-3">{t("queHayAqui")}</p>
-              )}
-            </div>
+              {/* Cuántos casos tiene dentro, y cuántos le quedan por entregar: es lo que se mira. */}
+              <p className="text-sm mt-3 inline-flex items-center gap-1.5 font-medium text-primary">
+                <ClipboardList className="w-4 h-4" />
+                {t("casos.enLaClase", {
+                  n: casos.filter((k) => k.claseId === c.id).length,
+                  pendientes: casos.filter((k) => k.claseId === c.id && (k.estado === "SIN_EMPEZAR" || k.estado === "EN_MARCHA")).length,
+                })}
+              </p>
+            </Link>
           ))}
         </div>
       )}

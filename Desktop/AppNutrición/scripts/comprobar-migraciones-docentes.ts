@@ -28,6 +28,8 @@ const MIGRACIONES: { script: string; comprueba: [string, string][] }[] = [
   { script: "add-exalumno", comprueba: [["dietistas", "exAlumnoDesde"], ["dietistas", "avisoFinCursoVisto"]] },
   { script: "add-profesores-clase", comprueba: [["profesores_clase", "profesorId"]] },
   { script: "add-casos-clinicos", comprueba: [["casos_clinicos", "consigna"], ["asignaciones_caso", "fechaLimite"], ["entregas_caso", "nota"], ["pacientes", "esDeClase"]] },
+  { script: "add-notificaciones-docentes", comprueba: [] },
+  { script: "add-casos-como-pacientes", comprueba: [["casos_clinicos", "pacienteId"], ["pacientes", "esCasoDocente"], ["entregas_caso", "notaAlumno"]] },
 ];
 
 const TABLAS_CON_RLS = ["licencias_docentes", "invitaciones_docentes", "clases", "alumnos_clase", "profesores_clase", "casos_clinicos", "asignaciones_caso", "entregas_caso"];
@@ -38,6 +40,13 @@ async function main() {
     let faltan = 0;
     for (const { script, comprueba } of MIGRACIONES) {
       const presentes: boolean[] = [];
+      if (comprueba.length === 0) {
+        // Migraciones que solo añaden valores a un enum: se miran en el catálogo del tipo.
+        const { rows } = await client.query(
+          `SELECT 1 FROM pg_enum e JOIN pg_type t ON t.oid = e.enumtypid
+            WHERE t.typname = 'TipoNotificacion' AND e.enumlabel = 'CASO_ASIGNADO'`);
+        presentes.push(rows.length > 0);
+      }
       for (const [tabla, columna] of comprueba) {
         const { rows } = await client.query(
           `SELECT 1 FROM information_schema.columns

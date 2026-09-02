@@ -265,7 +265,7 @@ export async function eliminarPaciente(id: string) {
   // Si borra el paciente demo, marcar la flag para que NO se re-cree al recargar
   const paciente = await prisma.paciente.findUnique({
     where: { id },
-    select: { esDemo: true, esDeClase: true, dietistaId: true },
+    select: { esDemo: true, esDeClase: true, esCasoDocente: true, dietistaId: true },
   });
   const esDemo = paciente?.esDemo === true;
 
@@ -275,6 +275,8 @@ export async function eliminarPaciente(id: string) {
   if (paciente?.esDeClase && paciente.dietistaId === dietista.id) {
     throw new Error(t("docencia.pacienteDeClaseNoSeBorra"));
   }
+  // La plantilla de un caso tampoco: es el caso entero. Se archiva el caso, no se borra el paciente.
+  if (paciente?.esCasoDocente) throw new Error(t("docencia.plantillaDeCasoNoSeBorra"));
 
   // Borrar pagos ANTES de eliminar el paciente: el modelo Pago usa onDelete: SetNull,
   // así que si borramos primero el paciente, los pagos quedan huérfanos (pacienteId = NULL).
@@ -424,6 +426,8 @@ export async function getPacientes(
   const pacientes = await prisma.paciente.findMany({
     where: {
       dietistaId: dietista.id,
+      // Las plantillas de los casos del profesor no son pacientes suyos: viven en Casos.
+      esCasoDocente: false,
       ...(soloActivos ? { activo: true } : {}),
       ...(fuente === "clase" ? { esDeClase: true } : {}),
       ...(fuente === "propios" ? { esDeClase: false } : {}),

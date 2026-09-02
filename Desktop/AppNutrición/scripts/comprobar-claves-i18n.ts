@@ -69,16 +69,30 @@ for (const fichero of ficheros(join(RAIZ, "src"), /\.tsx?$/)) {
   // Los namespaces que usa el fichero, tal cual los declara.
   const suyos = [...código.matchAll(/(?:useTranslations|getTranslations)\(\s*["'`]([\w.-]+)["'`]/g)].map((m) => m[1]);
   if (suyos.length === 0) continue;
-  // Cada literal que se le pasa a t(...), incluidos los de un ternario: t(x ? "a" : "b").
+  // Si el fichero define su propio `t` como envoltorio (`t: (key: string) => …`), lo que le pasa
+  // no son claves del namespace y no se puede comprobar desde fuera.
+  if (/\bt:\s*\(key: string\)/.test(código)) continue;
   for (const m of código.matchAll(/\bt\(\s*([^)]*?)\)/g)) {
-    for (const lit of m[1].matchAll(/["'`]([\w.-]+)["'`]/g)) {
+    // Solo el PRIMER argumento es la clave: los literales de después son valores de los parámetros
+    // (`t("clases.hasta", { fecha: "x" })`) y no hay que buscarlos. Un ternario en el primer
+    // argumento (`t(x ? "a" : "b")`) trae dos claves, y las dos se comprueban.
+    const primerArgumento = m[1].split(/,(?![^{]*})/)[0];
+    // Solo cuentan los literales que van al principio o tras `?`/`:` (las ramas de un ternario):
+    // los que siguen a un paréntesis son argumentos de otra llamada (`get("weekday")`), no claves.
+    for (const lit of primerArgumento.matchAll(/(?:^|[?:])\s*["'`]([\w.-]+)["'`]/g)) {
       const clave = lit[1];
       usos++;
       for (const idioma of IDIOMAS) {
         const existe = suyos.some((ns) => (mensajes[idioma].get(ns) ?? new Set()).has(clave));
-        const existeEnOtro = suyos.some((ns) => (mensajes[idioma === "es" ? "pt" : "es"].get(ns) ?? new Set()).has(clave));
-        // Solo se avisa de lo que es una clave de verdad: existe al menos en un idioma y falta en el otro.
-        if (!existe && existeEnOtro) {
+        // Puede ser una clave anidada bajo un prefijo del namespace (`useTranslations("a.b")`):
+        // se prueba también con el resto del namespace por delante.
+        const existeAnidada = suyos.some((ns) => {
+          const [raiz, ...resto] = ns.split(".");
+          return resto.length > 0 && (mensajes[idioma].get(raiz) ?? new Set()).has([...resto, clave].join("."));
+        });
+        if (!existe && !existeAnidada) {
+          // Antes solo se avisaba si la clave existía en el otro idioma; una que falte en los DOS
+          // también revienta la pantalla, y se colaba (2 sep 2026).
           console.log(`  ✗ ${relative(RAIZ, fichero)} pide "${clave}" y no está en ${idioma}`);
           rotas++;
         }
@@ -86,7 +100,7 @@ for (const fichero of ficheros(join(RAIZ, "src"), /\.tsx?$/)) {
     }
   }
 }
-if (rotas === 0) console.log(`  ✓ ${usos} usos revisados, ninguno se queda sin traducción`);
+if (rotas === 0) console.log(`  ✓ ${usos} claves revisadas, todas existen en es y en pt`);
 
 const total = fallos + rotas;
 console.log(`\n${total === 0 ? "✓ TODO CORRECTO" : `✗ ${total} problemas`}`);

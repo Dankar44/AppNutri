@@ -54,7 +54,7 @@ export function AceptarInvitacionForm({
   return (
     <form onSubmit={handleSubmit} className="bg-card border border-border rounded-xl p-5 space-y-4">
       <p className="text-sm text-muted-foreground">
-        {t(rol === "ALUMNO" ? "invitacion.explicacionAlumno" : "invitacion.explicacion")}
+        {rol === "ALUMNO" ? t("invitacion.explicacionAlumno") : t("invitacion.explicacion")}
       </p>
 
       {sesionAbierta && (

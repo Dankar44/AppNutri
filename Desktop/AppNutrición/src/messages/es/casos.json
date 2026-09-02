@@ -11,10 +11,8 @@
   "vaciaTitulo": "Todavía no has creado ningún caso",
   "vaciaTexto": "Un caso es un paciente inventado con su historia. Se lo asignas a una clase y cada alumno recibe su propia copia para trabajarla como si fuese real.",
   "secciones": {
-    "elCaso": "El caso",
     "elPaciente": "El paciente",
-    "elPacienteAyuda": "Estos son los datos con los que empezará cada alumno. Rellena lo que quieras que se encuentren hecho; lo demás lo tendrán que averiguar ellos.",
-    "suHistoria": "Su historia"
+    "elPacienteAyuda": "Solo su nombre: todo lo demás lo rellenas después en su ficha, igual que con un paciente de verdad."
   },
   "campos": {
     "nombre": "Nombre del caso",
@@ -24,37 +22,11 @@
     "consignaAyuda": "Es lo primero que va a leer el alumno al abrir el caso.",
     "pacienteNombre": "Nombre",
     "pacienteApellidos": "Apellidos",
-    "sexo": "Sexo",
-    "sinDato": "Sin especificar",
-    "fechaNacimiento": "Fecha de nacimiento",
     "peso": "Peso (kg)",
     "altura": "Altura (cm)",
     "objetivo": "Objetivo",
-    "nivelActividad": "Actividad física",
-    "nivelActividadPlaceholder": "Sedentaria, entrena 2 días por semana…",
-    "notas": "Historia y motivo de consulta",
-    "notasPlaceholder": "Mujer de 28 años, vegana desde hace tres. Acude por cansancio y analítica con ferritina baja…",
-    "notasAyuda": "Lo que el alumno tiene que leer antes de ponerse. Aparecerá en las notas de su paciente.",
     "patologias": "Patologías",
-    "alergias": "Alergias",
-    "intolerancias": "Intolerancias",
-    "medicamentos": "Medicación",
-    "suplementos": "Suplementos",
-    "preferencias": "Preferencias",
-    "unoPorLinea": "Uno por línea"
-  },
-  "sexo": {
-    "FEMENINO": "Mujer",
-    "MASCULINO": "Hombre",
-    "OTRO": "Otro"
-  },
-  "objetivo": {
-    "MANTENIMIENTO": "Mantenimiento",
-    "PERDER_PESO": "Perder peso",
-    "GANAR_MASA": "Ganar masa",
-    "PATOLOGIA": "Patología",
-    "DEPORTIVO": "Deportivo",
-    "OTRO": "Otro"
+    "notas": "Notas"
   },
   "tarjeta": {
     "paciente": "Paciente: {nombre}",
@@ -123,6 +95,24 @@
     "sinPlanes": "Todavía no ha hecho ningún plan para este paciente.",
     "notaFuera": "La nota va de 0 a 10.",
     "yaNoEstaEnLaClase": "Ya no está en la clase",
-    "todaviaNoEntregada": "Este alumno todavía no ha entregado. Espera a que lo haga: si le pones nota ahora, no podrá entregarlo."
+    "todaviaNoEntregada": "Este alumno todavía no ha entregado. Espera a que lo haga: si le pones nota ahora, no podrá entregarlo.",
+    "notaDelAlumno": "Lo que te cuenta el alumno"
+  },
+  "crearYRellenar": "Crear y rellenar el paciente",
+  "paciente": {
+    "abrirFicha": "Abrir la ficha de {nombre}",
+    "abrirFichaAyuda": "Rellénala como la de un paciente de verdad: anamnesis, mediciones, alergias, horario… Lo que pongas ahí es lo que se encontrarán tus alumnos.",
+    "sinConsigna": "Todavía no has escrito qué les pides.",
+    "avisoTitulo": "Este paciente es el caso «{caso}»",
+    "avisoTexto": "Rellénalo como a un paciente de verdad. Lo que pongas aquí es lo que se encontrarán tus alumnos al empezar el caso; el plan de alimentación lo hacen ellos.",
+    "verCaso": "Ver el caso"
+  },
+  "objetivo": {
+    "MANTENIMIENTO": "Mantenimiento",
+    "PERDER_PESO": "Perder peso",
+    "GANAR_MASA": "Ganar masa",
+    "PATOLOGIA": "Patología",
+    "DEPORTIVO": "Deportivo",
+    "OTRO": "Otro"
   }
 }

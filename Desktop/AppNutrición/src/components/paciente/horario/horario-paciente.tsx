@@ -335,7 +335,7 @@ export function HorarioPaciente({ initialEntries, onSave }: Props) {
             <div className="text-[10px] text-muted-foreground">
               {(bloquesPorDia.get(mobileDia) ?? []).length === 0
                 ? t("sinActividades")
-                : `${(bloquesPorDia.get(mobileDia) ?? []).length} ${(bloquesPorDia.get(mobileDia) ?? []).length > 1 ? t("actividades") : t("actividad")}`}
+                : `${(bloquesPorDia.get(mobileDia) ?? []).length} ${(bloquesPorDia.get(mobileDia) ?? []).length > 1 ? t("variasActividades") : t("actividad")}`}
             </div>
           </div>
           <button

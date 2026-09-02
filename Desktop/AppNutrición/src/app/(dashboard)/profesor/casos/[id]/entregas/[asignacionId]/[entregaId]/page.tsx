@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, User, FileText, Eye, AlertTriangle } from "lucide-react";
+import { ArrowLeft, User, FileText, Eye, AlertTriangle, MessageSquareText } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireProfesor } from "@/app/actions/docencia";
 import { getTrabajoDeEntrega } from "@/app/actions/casos";
@@ -55,8 +55,18 @@ export default async function EntregaPage({
         <p className="text-xs text-muted-foreground">{t("entregas.soloLectura")}</p>
       </div>
 
+      {trabajo.notaAlumno && (
+        <section className="py-4 lg:px-6 lg:py-6 lg:border lg:border-primary/30 lg:rounded-xl lg:bg-primary/5 border-b border-border lg:border-b">
+          <h2 className="font-semibold inline-flex items-center gap-2">
+            <MessageSquareText className="w-4 h-4 text-primary" />
+            {t("entregas.notaDelAlumno")}
+          </h2>
+          <p className="text-sm whitespace-pre-wrap mt-2">{trabajo.notaAlumno}</p>
+        </section>
+      )}
+
       {trabajo.paciente && (
-        <section className="py-4 lg:p-5 lg:border lg:border-border lg:rounded-xl lg:bg-card">
+        <section className="py-4 lg:px-6 lg:py-6 lg:border lg:border-border lg:rounded-xl lg:bg-card">
           <h2 className="font-semibold inline-flex items-center gap-2">
             <User className="w-4 h-4 text-muted-foreground" />
             {trabajo.paciente.nombre} {trabajo.paciente.apellidos}

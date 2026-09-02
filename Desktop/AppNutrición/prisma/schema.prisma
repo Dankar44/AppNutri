@@ -270,6 +270,8 @@ model Paciente {
   esDemo              Boolean           @default(false)
   /// #40 — Nació de un caso de clase: se etiqueta en su lista y no cuenta como paciente real.
   esDeClase           Boolean           @default(false)
+  /// #40 — Es la plantilla de un caso del profesor: no se mezcla con sus pacientes reales.
+  esCasoDocente       Boolean           @default(false)
   activo              Boolean           @default(true)
   /// Si true, el paciente no ve calorías ni macros (portal, PDF, seguimiento). El dietista siempre los ve.
   ocultarCalorias     Boolean           @default(false)
@@ -292,6 +294,7 @@ model Paciente {
   planificaciones     Planificacion[]
   googleIntegracion   GoogleIntegracionPaciente?
   entregaCaso         EntregaCaso?
+  casoDelQueEsPlantilla CasoClinico?    @relation("PacienteDelCaso")
 
   @@map("pacientes")
 }
@@ -819,6 +822,9 @@ enum TipoNotificacion {
   EMPRESA_LIDER_TRANSFERIDO
   STOCK_BAJO
   PRECONSULTA_COMPLETADA
+  /// #40 — Del aula: al alumno le han puesto un caso, o se lo han corregido.
+  CASO_ASIGNADO
+  CASO_CORREGIDO
 }
 
 model Notificacion {
@@ -1149,8 +1155,9 @@ model ProfesorClase {
   @@map("profesores_clase")
 }
 
-/// #40 (issue #32) — El caso que escribe el profesor: un paciente ficticio con su historia y lo
-/// que se le pide al alumno. Es una plantilla: se asigna a varias clases sin tocarse.
+/// #40 (issue #32) — El caso del profesor: un nombre, una consigna y un PACIENTE de verdad suyo,
+/// rellenado con la ficha de siempre (anamnesis, mediciones, alergias, horario…). Es una plantilla:
+/// se asigna a varias clases sin tocarse, y cada alumno recibe una copia completa del paciente.
 model CasoClinico {
   id                String   @id @default(dbgenerated("gen_random_uuid()::text"))
   profesorId        String
@@ -1159,27 +1166,13 @@ model CasoClinico {
   licenciaDocente   LicenciaDocente? @relation(fields: [licenciaDocenteId], references: [id], onDelete: SetNull)
 
   nombre            String
-  /// Lo que tiene que entregar el alumno, con sus palabras.
+  /// Lo que tiene que entregar el alumno, con sus palabras. Se le enseña encima de la ficha.
   consigna          String?
 
-  // El paciente ficticio. Mismos campos que un paciente de verdad, porque de aquí sale uno.
-  pacienteNombre    String
-  pacienteApellidos String   @default("")
-  sexo              Sexo?
-  fechaNacimiento   DateTime?
-  peso              Float?
-  altura            Float?
-  objetivo          ObjetivoPaciente @default(MANTENIMIENTO)
-  objetivoDetalle   String?
-  nivelActividad    String?
-  patologias        String[]
-  alergias          String[]
-  intolerancias     String[]
-  medicamentos      String[]
-  suplementos       String[]
-  preferencias      String[]
-  notas             String?
-  fichaInformacion  Json?
+  /// El paciente plantilla, del profesor y marcado con `esCasoDocente` para que no se mezcle con
+  /// sus pacientes reales. Se rellena con la ficha normal, menos Planificación y Plan.
+  pacienteId        String?  @unique
+  paciente          Paciente? @relation("PacienteDelCaso", fields: [pacienteId], references: [id], onDelete: SetNull)
 
   /// Archivar no borra: las entregas de cursos pasados siguen ahí.
   archivado         Boolean  @default(false)
@@ -1235,6 +1228,8 @@ model EntregaCaso {
   estado            EstadoEntrega @default(SIN_EMPEZAR)
   abiertaAt         DateTime?
   entregadaAt       DateTime?
+  /// Lo que el alumno le cuenta al profesor al entregar: su razonamiento, en corto.
+  notaAlumno        String?
 
   nota              Float?
   comentario        String?

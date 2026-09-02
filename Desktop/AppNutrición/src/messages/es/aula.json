@@ -5,7 +5,6 @@
   "vaciaTitulo": "Todavía no estás en ninguna clase",
   "vaciaTexto": "Cuando tu profesor te dé de alta, la clase aparecerá aquí con sus casos y sus entregas.",
   "hasta": "Hasta el {fecha}",
-  "queHayAqui": "Aquí verás los casos que te asigne tu profesor y lo que le entregues. Sus alimentos y recetas los tienes en Material.",
   "pasadasTitulo": "{n, plural, one {# clase anterior} other {# clases anteriores}}",
   "pasadasTexto": "Tu trabajo de esos cursos sigue guardado: solo has dejado de ver el material de la clase.",
   "casos": {
@@ -28,6 +27,14 @@
     },
     "explicacionPrimeraVez": "Cada caso es un paciente inventado que se te crea en tu cuenta al empezarlo. Trabájalo como si fuese real: su ficha, su plan, su PDF.",
     "esUnCaso": "Caso de {clase}",
-    "volverAlAula": "Volver a mi aula"
-  }
+    "volverAlAula": "Volver a mi aula",
+    "enLaClase": "{n, plural, =0 {Sin casos todavía} one {# caso} other {# casos}}{pendientes, plural, =0 {} one { · # por entregar} other { · # por entregar}}",
+    "sinCasosTitulo": "Tu profesor todavía no ha puesto ningún caso",
+    "sinCasosTexto": "Cuando lo haga, te saldrá aquí con lo que te pide y la fecha de entrega. Mientras, sus alimentos y recetas los tienes en Material.",
+    "notaAlumno": "¿Quieres contarle algo a tu profesor? (opcional)",
+    "notaAlumnoPlaceholder": "He priorizado las legumbres y la vitamina C en cada comida porque…",
+    "confirmarEntrega": "Entregar",
+    "cancelar": "Cancelar"
+  },
+  "volverAlAula": "Volver a mi aula"
 }

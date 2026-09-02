@@ -30,7 +30,7 @@ function Contador({
 }) {
   const pct = total > 0 ? Math.min(100, Math.round((usadas / total) * 100)) : 0;
   const clases =
-    "block py-4 lg:p-5 border-b border-border last:border-b-0 lg:border lg:rounded-2xl lg:bg-card transition-colors";
+    "block py-4 lg:px-6 lg:py-6 border-b border-border last:border-b-0 lg:border lg:rounded-2xl lg:bg-card transition-colors";
   const cuerpo = (
     <>
       <div className="flex items-center gap-2.5 mb-3">
@@ -114,7 +114,7 @@ export default async function ProfesorPage() {
             usadas={datos.profesoresDados}
             total={licencia.maxProfesores}
           />
-          <div className="py-4 lg:p-5 lg:border lg:rounded-2xl lg:bg-card">
+          <div className="py-4 lg:px-6 lg:py-6 lg:border lg:rounded-2xl lg:bg-card">
             <div className="flex items-center gap-2.5 mb-3">
               <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                 <CalendarRange strokeWidth={1.75} className="w-5 h-5 text-primary" />
@@ -133,7 +133,7 @@ export default async function ProfesorPage() {
 
       {/* Por dónde se empieza. En móvil el menú está detrás de la hamburguesa, así que sin esto
           el profesor entra, ve unos contadores y no tiene ni un sitio al que ir. */}
-      <section className="py-4 lg:p-5 lg:border lg:border-border lg:rounded-2xl lg:bg-card">
+      <section className="py-4 lg:px-6 lg:py-6 lg:border lg:border-border lg:rounded-2xl lg:bg-card">
         <h2 className="font-semibold">{t("panel.porDondeEmpezar")}</h2>
         <p className="text-sm text-muted-foreground mt-1">
           {clases === 0 ? t("panel.sinClasesTexto") : t("panel.conClasesTexto", { n: clases })}

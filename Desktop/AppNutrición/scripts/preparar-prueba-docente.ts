@@ -55,9 +55,11 @@ async function main() {
   try {
     // Limpieza de la vez anterior, para que la prueba empiece siempre igual.
     await client.query(`DELETE FROM clases WHERE nombre LIKE 'Dietoterapia 3º A%'`);
+    await client.query(`DELETE FROM casos_clinicos WHERE nombre LIKE 'Caso 3: mujer vegana%'`);
     for (const quien of [PROFESOR, ALUMNA]) {
       const { rows: viejos } = await client.query(`SELECT id FROM auth.users WHERE email = $1`, [quien.email]);
       for (const v of viejos) {
+        await client.query(`DELETE FROM pacientes WHERE "dietistaId" IN (SELECT id FROM dietistas WHERE "authId" = $1)`, [v.id]);
         await client.query(`DELETE FROM dietistas WHERE "authId" = $1`, [v.id]);
         await client.query(`DELETE FROM auth.identities WHERE user_id = $1::uuid`, [v.id]);
         await client.query(`DELETE FROM auth.users WHERE id = $1::uuid`, [v.id]);
@@ -97,13 +99,35 @@ async function main() {
       `INSERT INTO alumnos_clase (id, "claseId", "alumnoId", "altaAt") VALUES (gen_random_uuid()::text, $1, $2, NOW())`,
       [claseId, alumnaId]);
 
+    // Un caso ya creado, con su paciente plantilla rellenado como lo haría el profesor.
+    const { rows: pl } = await client.query(
+      `INSERT INTO pacientes (id, "dietistaId", nombre, apellidos, sexo, peso, altura, objetivo, "nivelActividad",
+         patologias, notas, "esCasoDocente", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, 'Marta', 'Vegana', 'FEMENINO', 58, 165, 'PATOLOGIA',
+         'Sedentaria, camina 30 min al día', ARRAY['Anemia ferropénica'],
+         'Mujer de 28 años, vegana desde hace tres. Acude por cansancio y analítica con ferritina baja (9 ng/ml).',
+         true, NOW(), NOW()) RETURNING id`, [profesorId]);
+    await client.query(
+      `INSERT INTO medidas_antropometricas (id, "pacienteId", fecha, peso, altura, "createdAt")
+       VALUES (gen_random_uuid()::text, $1, NOW() - INTERVAL '7 days', 58, 165, NOW())`, [pl[0].id]);
+    const { rows: caso } = await client.query(
+      `INSERT INTO casos_clinicos (id, "profesorId", "licenciaDocenteId", nombre, consigna, "pacienteId", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, $2, 'Caso 3: mujer vegana con anemia',
+         'Haz un plan semanal cubriendo el hierro con alimentos vegetales y explica la pauta de suplementación.',
+         $3, NOW(), NOW()) RETURNING id`, [profesorId, licenciaId, pl[0].id]);
+    await client.query(
+      `INSERT INTO asignaciones_caso (id, "casoId", "claseId", "fechaLimite", "asignadoPor", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, $2, CURRENT_DATE + 10, $3, NOW(), NOW())`,
+      [caso[0].id, claseId, profesorId]);
+
     console.log(`
   Listo. En http://localhost:3001/login:
 
     PROFESOR   ${PROFESOR.email}   /  ${PROFESOR.pass}
     ALUMNA     ${ALUMNA.email}     /  ${ALUMNA.pass}
 
-  La clase "Dietoterapia 3º A" tiene 30 plazas y a la alumna ya dentro.
+  La clase "Dietoterapia 3º A" tiene 30 plazas, a la alumna ya dentro, y un caso asignado
+  ("Caso 3: mujer vegana con anemia", con su paciente rellenado) con 10 días de plazo.
   Para volver a empezar de cero, vuelve a lanzar este mismo comando.
 `);
   } finally {

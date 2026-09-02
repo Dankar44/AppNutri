@@ -42,35 +42,26 @@ async function main() {
   };
 
   try {
-    // Un caso de ejemplo en la clase de prueba, asignado a la alumna.
-    const { rows: prof } = await client.query(`SELECT id, "licenciaDocenteId" FROM dietistas WHERE email = 'profesor.prueba@annonia.dev'`);
-    const { rows: cl } = await client.query(`SELECT id FROM clases WHERE "profesorId" = $1 LIMIT 1`, [prof[0].id]);
-    await client.query(`DELETE FROM casos_clinicos WHERE "profesorId" = $1 AND nombre LIKE 'Caso 3%'`, [prof[0].id]);
+    const { rows: prof } = await client.query(`SELECT id FROM dietistas WHERE email = 'profesor.prueba@annonia.dev'`);
     const { rows: caso } = await client.query(
-      `INSERT INTO casos_clinicos (id, "profesorId", "licenciaDocenteId", nombre, consigna, "pacienteNombre",
-         "pacienteApellidos", sexo, peso, altura, objetivo, "nivelActividad", patologias, notas, "createdAt", "updatedAt")
-       VALUES (gen_random_uuid()::text, $1, $2, 'Caso 3: mujer vegana con anemia',
-         'Haz un plan semanal cubriendo el hierro con alimentos vegetales y explica la pauta de suplementación.',
-         'Marta', 'Vegana', 'FEMENINO', 58, 165, 'PATOLOGIA', 'Sedentaria, camina 30 min al día',
-         ARRAY['Anemia ferropénica'],
-         'Mujer de 28 años, vegana desde hace tres. Acude por cansancio y analítica con ferritina baja (9 ng/ml).',
-         NOW(), NOW()) RETURNING id`, [prof[0].id, prof[0].licenciaDocenteId]);
-    const { rows: asig } = await client.query(
-      `INSERT INTO asignaciones_caso (id, "casoId", "claseId", "fechaLimite", "asignadoPor", "createdAt", "updatedAt")
-       VALUES (gen_random_uuid()::text, $1, $2, CURRENT_DATE + 10, $3, NOW(), NOW())
-       ON CONFLICT ("casoId", "claseId") DO UPDATE SET "fechaLimite" = EXCLUDED."fechaLimite" RETURNING id`,
-      [caso[0].id, cl[0].id, prof[0].id]);
-    void asig;
+      `SELECT id, "pacienteId" FROM casos_clinicos WHERE "profesorId" = $1 ORDER BY "createdAt" DESC LIMIT 1`, [prof[0].id]);
+    const { rows: cl } = await client.query(`SELECT id FROM clases WHERE "profesorId" = $1 LIMIT 1`, [prof[0].id]);
 
     const profe = await abrir("profesor.prueba@annonia.dev", "ProfesorPrueba2026");
     await profe.goto(`${BASE}/profesor/casos`, { waitUntil: "networkidle0" });
     await foto(profe, "01-casos-del-profesor");
     await profe.goto(`${BASE}/profesor/casos/${caso[0].id}`, { waitUntil: "networkidle0" });
     await foto(profe, "02-ficha-del-caso");
+    await profe.goto(`${BASE}/pacientes/${caso[0].pacienteId}?espacio=docente`, { waitUntil: "networkidle0" });
+    await foto(profe, "02b-el-paciente-del-caso-con-la-ficha-de-siempre");
+    await profe.goto(`${BASE}/profesor/clases/${cl[0].id}`, { waitUntil: "networkidle0" });
+    await foto(profe, "02c-la-clase-con-sus-casos");
 
     const alumna = await abrir("alumna.prueba@annonia.dev", "AlumnaPrueba2026");
     await alumna.goto(`${BASE}/aula`, { waitUntil: "networkidle0" });
-    await foto(alumna, "03-el-caso-en-su-aula");
+    await foto(alumna, "03-su-aula-con-las-clases");
+    await alumna.goto(`${BASE}/aula/${cl[0].id}`, { waitUntil: "networkidle0" });
+    await foto(alumna, "03b-dentro-de-la-clase-el-caso");
     // Empezar el caso para ver la ficha del paciente con el aviso arriba
     await alumna.evaluate(() => {
       const b = Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.includes("Empezar el caso"));
@@ -80,8 +71,8 @@ async function main() {
     await foto(alumna, "04-trabajando-el-caso");
 
     const movil = await abrir("alumna.prueba@annonia.dev", "AlumnaPrueba2026", 390);
-    await movil.goto(`${BASE}/aula`, { waitUntil: "networkidle0" });
-    await foto(movil, "05-su-aula-en-movil");
+    await movil.goto(`${BASE}/aula/${cl[0].id}`, { waitUntil: "networkidle0" });
+    await foto(movil, "05-la-clase-en-movil");
   } finally {
     client.release();
     await navegador.close();

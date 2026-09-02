@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Calendar, X } from "lucide-react";
 import type { FichaInformacionData, CampoPersonalizadoDefinicion } from "@/lib/ficha-informacion-types";
@@ -79,6 +79,7 @@ type PacienteSerializado = {
   plantillaAnamnesisId?: string | null;
   esDemo?: boolean;
   esDeClase?: boolean;
+  esCasoDocente?: boolean;
   ocultarCalorias?: boolean;
   avisarPorEmail?: boolean;
 };
@@ -174,7 +175,16 @@ export function PacienteFichaClient({
 }) {
   const t = useTranslations("patients.ficha");
   const tTabs = useTranslations("patients.fichaTabs");
-  const fichaTabs = getFichaTabs(tTabs);
+  // #40 — En la plantilla de un caso no hay Planificación ni Plan de alimentación: eso es justo lo
+  // que tienen que hacer los alumnos. Tampoco el portal del paciente, que es para gente real.
+  // El espacio (aula del alumno o docente del profesor) viaja en la dirección; si se perdiera al
+  // cambiar de pestaña, el menú lateral se les cambiaría al de nutricionista al primer clic.
+  const espacio = useSearchParams().get("espacio");
+  const sufijoEspacio = espacio ? `&espacio=${espacio}` : "";
+
+  const fichaTabs = getFichaTabs(tTabs).filter(
+    (tab) => !paciente.esCasoDocente || !["planificacion", "plan-alimentacion", "portal-paciente"].includes(tab.id),
+  );
   const router = useRouter();
   const nombre = capitalizarNombre(paciente.nombre);
   const apellidos = capitalizarNombre(paciente.apellidos);
@@ -233,7 +243,7 @@ export function PacienteFichaClient({
             activo={paciente.activo}
             email={paciente.email}
             esDemo={paciente.esDemo === true}
-            esDeClase={paciente.esDeClase === true}
+            esDeClase={paciente.esDeClase === true || paciente.esCasoDocente === true}
           />
         </div>
       </div>
@@ -242,7 +252,7 @@ export function PacienteFichaClient({
       <div className="sm:hidden mb-5 relative">
         <select
           value={pestana}
-          onChange={(e) => router.push(`/pacientes/${paciente.id}?pestana=${e.target.value}`, { scroll: false })}
+          onChange={(e) => router.push(`/pacientes/${paciente.id}?pestana=${e.target.value}${sufijoEspacio}`, { scroll: false })}
           className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-sm font-medium text-foreground appearance-none pr-8"
         >
           {fichaTabs.map((t) => {
@@ -266,7 +276,7 @@ export function PacienteFichaClient({
           return (
             <Link
               key={t.id}
-              href={`/pacientes/${paciente.id}?pestana=${t.id}`}
+              href={`/pacientes/${paciente.id}?pestana=${t.id}${sufijoEspacio}`}
               scroll={false}
               className={cn(
                 "whitespace-nowrap px-3 py-2 text-sm font-medium rounded-t-lg border-b-2 transition-colors flex items-center gap-2",

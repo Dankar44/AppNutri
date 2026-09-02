@@ -34,7 +34,9 @@ export default async function InvitacionPage({
           <h1 className="text-2xl font-bold">
             {!invitacion
               ? t("invitacion.tituloNoValida")
-              : t(invitacion.rol === "ALUMNO" ? "invitacion.tituloAlumno" : "invitacion.titulo")}
+              : invitacion.rol === "ALUMNO"
+                ? t("invitacion.tituloAlumno")
+                : t("invitacion.titulo")}
           </h1>
           {invitacion?.institucion && (
             <p className="text-muted-foreground mt-1">{invitacion.institucion}</p>

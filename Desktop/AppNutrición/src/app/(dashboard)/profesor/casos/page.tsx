@@ -58,7 +58,7 @@ export default async function CasosPage({
             <Link
               key={c.id}
               href={`/profesor/casos/${c.id}`}
-              className="block py-4 lg:py-0 lg:p-5 lg:border lg:border-border lg:rounded-2xl lg:bg-card hover:border-primary/40 transition-colors"
+              className="block py-4 lg:px-6 lg:py-6 lg:border lg:border-border lg:rounded-2xl lg:bg-card hover:border-primary/40 transition-colors"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">

@@ -6,6 +6,7 @@ import { requireProfesor } from "@/app/actions/docencia";
 import { getCaso } from "@/app/actions/casos";
 import { CasoForm } from "../../caso-form";
 
+/** Editar el nombre y la consigna. El paciente se edita en su ficha, como uno de verdad. */
 export default async function EditarCasoPage({
   params,
 }: {
@@ -27,29 +28,7 @@ export default async function EditarCasoPage({
         {caso.nombre}
       </Link>
       <h1 className="text-xl sm:text-2xl font-bold">{t("acciones.editar")}</h1>
-      <CasoForm
-        casoId={caso.id}
-        valores={{
-          nombre: caso.nombre,
-          consigna: caso.consigna ?? "",
-          pacienteNombre: caso.pacienteNombre,
-          pacienteApellidos: caso.pacienteApellidos,
-          sexo: caso.sexo ?? "",
-          fechaNacimiento: caso.fechaNacimiento ? caso.fechaNacimiento.toISOString().slice(0, 10) : "",
-          peso: caso.peso,
-          altura: caso.altura,
-          objetivo: caso.objetivo,
-          objetivoDetalle: caso.objetivoDetalle ?? "",
-          nivelActividad: caso.nivelActividad ?? "",
-          patologias: caso.patologias.join("\n"),
-          alergias: caso.alergias.join("\n"),
-          intolerancias: caso.intolerancias.join("\n"),
-          medicamentos: caso.medicamentos.join("\n"),
-          suplementos: caso.suplementos.join("\n"),
-          preferencias: caso.preferencias.join("\n"),
-          notas: caso.notas ?? "",
-        }}
-      />
+      <CasoForm casoId={caso.id} valores={{ nombre: caso.nombre, consigna: caso.consigna ?? "" }} />
     </div>
   );
 }

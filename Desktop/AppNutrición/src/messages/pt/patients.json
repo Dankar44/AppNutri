@@ -1141,7 +1141,8 @@
       "enfoqueManana": "Foco manhã",
       "enfoqueTarde": "Foco tarde",
       "descansoSiesta": "Descanso / sesta"
-    }
+    },
+    "variasActividades": "atividades"
   },
   "evolucionCharts": {
     "pesoImc": "Peso e IMC",

@@ -62,7 +62,7 @@ export function ProfesoresClase({
   }
 
   return (
-    <section className="py-4 lg:p-5 lg:border lg:border-border lg:rounded-xl lg:bg-card">
+    <section className="py-4 lg:px-6 lg:py-6 lg:border lg:border-border lg:rounded-xl lg:bg-card">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h3 className="font-semibold inline-flex items-center gap-2">
           <UserCog className="w-4 h-4 text-muted-foreground" />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ClipboardList, CalendarClock, Send, Undo2, Loader2, Star, AlertTriangle } from "lucide-react";
@@ -39,13 +39,17 @@ export function AvisoCaso({
   const t = useTranslations("aula");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [entregando, setEntregando] = useState(false);
+  const [notaAlumno, setNotaAlumno] = useState("");
   const entregada = estado === "ENTREGADA" || estado === "CORREGIDA";
 
   function accion(entregar: boolean) {
     startTransition(async () => {
-      const result = entregar ? await entregarCaso(asignacionId) : await deshacerEntrega(asignacionId);
+      const result = entregar ? await entregarCaso(asignacionId, notaAlumno) : await deshacerEntrega(asignacionId);
       if (result.ok) {
         toast.success(entregar ? t("casos.entregado") : t("casos.entregaDeshecha"));
+        setEntregando(false);
+        setNotaAlumno("");
         router.refresh();
       } else {
         toast.error(result.error || t("casos.errorAbrir"));
@@ -91,20 +95,61 @@ export function AvisoCaso({
         </div>
       )}
 
+      {entregando && !entregada && (
+        <form onSubmit={(e) => { e.preventDefault(); accion(true); }} className="mt-3 space-y-2">
+          <label className="text-xs font-medium text-muted-foreground">{t("casos.notaAlumno")}</label>
+          <textarea
+            value={notaAlumno}
+            onChange={(e) => setNotaAlumno(e.target.value)}
+            rows={3}
+            maxLength={4000}
+            autoFocus
+            placeholder={t("casos.notaAlumnoPlaceholder")}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y"
+          />
+        </form>
+      )}
+
       <div className="flex flex-wrap items-center gap-2 mt-3">
-        {estado !== "CORREGIDA" && (
+        {estado !== "CORREGIDA" && !entregada && !entregando && (
           <button
             type="button"
-            onClick={() => accion(!entregada)}
-            disabled={isPending}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
-              entregada
-                ? "border border-border hover:bg-muted"
-                : "bg-primary text-primary-foreground hover:opacity-90"
-            }`}
+            onClick={() => setEntregando(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors bg-primary text-primary-foreground hover:opacity-90"
           >
-            {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : entregada ? <Undo2 className="w-4 h-4" /> : <Send className="w-4 h-4" />}
-            {entregada ? t("casos.deshacerEntrega") : t("casos.entregar")}
+            <Send className="w-4 h-4" />
+            {t("casos.entregar")}
+          </button>
+        )}
+        {entregando && !entregada && (
+          <>
+            <button
+              type="button"
+              onClick={() => accion(true)}
+              disabled={isPending}
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50 bg-primary text-primary-foreground hover:opacity-90"
+            >
+              {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              {t("casos.confirmarEntrega")}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setEntregando(false); setNotaAlumno(""); }}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              {t("casos.cancelar")}
+            </button>
+          </>
+        )}
+        {estado === "ENTREGADA" && (
+          <button
+            type="button"
+            onClick={() => accion(false)}
+            disabled={isPending}
+            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50 border border-border hover:bg-muted"
+          >
+            {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Undo2 className="w-4 h-4" />}
+            {t("casos.deshacerEntrega")}
           </button>
         )}
         <Link

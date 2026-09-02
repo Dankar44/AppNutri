@@ -12,11 +12,12 @@ const pool = new pg.Pool({
 // #40 (issue #32) — Casos clínicos y entregas, fase 3.
 //
 // La decisión que lo ordena todo (Guillermo, 2 sep 2026): **un caso ES un paciente**. El profesor
-// escribe un paciente ficticio con su historia; al asignarlo a una clase, cada alumno recibe su
-// propia copia como paciente de verdad de su cuenta, y lo trabaja con las pantallas de siempre
-// (ficha, anamnesis, plan, PDF), que es justo lo que tiene que aprender a usar.
+// lo rellena con la ficha de siempre (anamnesis, mediciones, alergias, horario…) como si fuese un
+// paciente suyo; al asignarlo a una clase, cada alumno recibe su propia copia y lo trabaja con las
+// mismas pantallas, que es justo lo que tiene que aprender a usar.
 //
-//   casos_clinicos    → la plantilla que escribe el profesor
+//   casos_clinicos    → el nombre del caso y la consigna; el paciente va aparte (ver la migración
+//                       `add-casos-como-pacientes`, que lo engancha)
 //   asignaciones_caso → ese caso puesto a una clase, con su fecha límite
 //   entregas_caso     → lo de cada alumno: su paciente, su estado y su nota
 //
@@ -41,23 +42,6 @@ async function main() {
         "licenciaDocenteId" TEXT REFERENCES licencias_docentes(id) ON DELETE SET NULL,
         nombre              TEXT NOT NULL,
         consigna            TEXT,
-        "pacienteNombre"    TEXT NOT NULL,
-        "pacienteApellidos" TEXT NOT NULL DEFAULT '',
-        sexo                "Sexo",
-        "fechaNacimiento"   TIMESTAMP(3),
-        peso                DOUBLE PRECISION,
-        altura              DOUBLE PRECISION,
-        objetivo            "ObjetivoPaciente" NOT NULL DEFAULT 'MANTENIMIENTO',
-        "objetivoDetalle"   TEXT,
-        "nivelActividad"    TEXT,
-        patologias          TEXT[] NOT NULL DEFAULT '{}',
-        alergias            TEXT[] NOT NULL DEFAULT '{}',
-        intolerancias       TEXT[] NOT NULL DEFAULT '{}',
-        medicamentos        TEXT[] NOT NULL DEFAULT '{}',
-        suplementos         TEXT[] NOT NULL DEFAULT '{}',
-        preferencias        TEXT[] NOT NULL DEFAULT '{}',
-        notas               TEXT,
-        "fichaInformacion"  JSONB,
         archivado           BOOLEAN NOT NULL DEFAULT false,
         "createdAt"         TIMESTAMP(3) NOT NULL DEFAULT NOW(),
         "updatedAt"         TIMESTAMP(3) NOT NULL DEFAULT NOW()
