@@ -264,5 +264,13 @@
     "boton": "Copiar para o meu",
     "hecha": "Copiado. Já é seu: altere-o como quiser.",
     "error": "Não foi possível copiar"
+  },
+  "cambiosSinGuardar": {
+    "titulo": "Tens alterações por guardar",
+    "texto": "Se saíres agora perde-se o que alteraste. Queres guardar antes?",
+    "guardarYSalir": "Guardar e sair",
+    "salirSinGuardar": "Sair sem guardar",
+    "seguirEditando": "Continuar a editar",
+    "guardando": "A guardar…"
   }
 }

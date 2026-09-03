@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
+import { useCambiosSinGuardar } from "@/components/cambios-sin-guardar";
 import { X, Save, Loader2, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { HorarioEntry } from "@/app/actions/pacientes";
@@ -164,20 +165,34 @@ export function HorarioSemanal({ initialEntries, readOnly, onSave }: Props) {
     setDirty(true);
   }
 
-  async function handleSave() {
+  async function handleSave(): Promise<boolean> {
     setSaving(true);
     try {
       await onSave(entries);
+      setDirty(false);
       toast.success(t("horarioSemanal.toastSaved"));
+      return true;
     } catch {
       toast.error(t("horarioSemanal.toastSaveError"));
+      return false;
     } finally {
       setSaving(false);
     }
   }
 
+  // Si se va con el horario sin guardar (otra pestaña de la ficha, el menú, cerrar la ventana),
+  // se le pregunta. Quedarse en la pestaña General no es salir.
+  const esMismaPantalla = useCallback((href: string) => href.includes("pestana=general"), []);
+  const { modal: avisoCambios } = useCambiosSinGuardar({
+    hayCambios: dirty && !readOnly,
+    guardar: handleSave,
+    guardando: saving,
+    esMismaPantalla,
+  });
+
   return (
     <div>
+      {avisoCambios}
       {/* Leyenda + guardar */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex flex-wrap gap-1.5">
