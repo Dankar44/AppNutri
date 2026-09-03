@@ -113,7 +113,8 @@
     "avisoTexto": "Lo que rellenes aquí —datos, anamnesis, mediciones, horario, recomendaciones— lo verán tus alumnos tal cual al empezar el caso. Lo que quieras que hagan ellos, díselo en «Qué les pides».",
     "verCaso": "Ver el caso",
     "volverAClase": "Volver a la clase",
-    "yaEmpezado": "{n, plural, one {# alumno ya lo ha empezado y tiene su copia: lo que cambies ahora en la ficha no le llega.} other {# alumnos ya lo han empezado y tienen su copia: lo que cambies ahora en la ficha no les llega.}} Solo lo verá quien lo empiece a partir de ahora. El nombre del caso y «Qué les pides» sí se actualizan para todos."
+    "yaEmpezado": "{n, plural, one {# alumno ya lo ha empezado y tiene su copia: lo que cambies ahora en la ficha no le llega solo.} other {# alumnos ya lo han empezado y tienen su copia: lo que cambies ahora en la ficha no les llega solo.}} Quien lo empiece a partir de ahora lo recibe tal cual; a los demás se lo mandas con «Actualizar el caso». El nombre y «Qué les pides» sí se actualizan para todos.",
+    "quitarAviso": "Quitar este aviso (no volverá a salir para este caso)"
   },
   "objetivo": {
     "MANTENIMIENTO": "Mantenimiento",
@@ -134,19 +135,15 @@
   "planificacion": {
     "titulo": "Planificación",
     "ninguna": "No ha hecho ninguna planificación para este paciente.",
-    "kcal": "Objetivo",
-    "proteinas": "Proteínas",
-    "carbohidratos": "Hidratos",
-    "grasas": "Grasas",
-    "pesoActual": "Peso actual",
-    "pesoObjetivo": "Peso objetivo",
-    "grasaActual": "Grasa actual",
-    "grasaObjetivo": "Grasa objetivo",
-    "ajuste": "Ajuste sobre el gasto",
-    "actividad": "Actividad",
-    "formula": "Fórmulas",
-    "porDefecto": "por defecto",
-    "vacia": "Sin datos todavía.",
-    "reparto": "Reparto por comidas (% de las kcal del día)"
+    "talCual": "Tal y como la ve el alumno. No se puede tocar."
+  },
+  "actualizar": {
+    "boton": "{n, plural, one {Actualizar el caso en el alumno que ya lo tiene} other {Actualizar el caso en los # alumnos que ya lo tienen}}",
+    "ultimaVez": "Última vez: {fecha}",
+    "titulo": "Actualizar el caso en los alumnos",
+    "texto": "{n, plural, one {Se envía la ficha tal y como está ahora al alumno que ya tiene su copia.} other {Se envía la ficha tal y como está ahora a los # alumnos que ya tienen su copia.}} Datos, anamnesis, alergias, horario, recomendaciones y notas se sobrescriben, también si el alumno los había cambiado. Las mediciones y consultas del caso se actualizan y se añaden las nuevas; las que haya añadido el alumno se quedan. No se tocan sus planes, su planificación ni lo que ya haya entregado.",
+    "confirmar": "Actualizar",
+    "hecho": "{n, plural, one {Caso actualizado en # alumno} other {Caso actualizado en # alumnos}}",
+    "parcial": "Actualizado en {n}; en {fallidas} no se ha podido. Vuelve a intentarlo."
   }
 }

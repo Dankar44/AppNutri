@@ -21,9 +21,10 @@ import { claseQueLleva, cursoTerminado } from "@/lib/docencia";
 import { requireProfesor } from "./docencia";
 import {
   leerCongelado, leerPacienteCongelable, leerPlanificaciones, leerPlanParaVer,
+  leerMedidasSerializadas, leerFichaInformacion,
   type PacienteCongelado, type PlanificacionCongelada,
 } from "@/lib/entrega-congelada";
-import { copiarPaciente } from "@/lib/copiar-paciente";
+import { copiarPaciente, actualizarCopia } from "@/lib/copiar-paciente";
 import type { Prisma } from "@/generated/prisma/client";
 import type { PlanVisualDetalle } from "@/components/paciente/plan-visual";
 
@@ -76,6 +77,10 @@ export interface CasoResumen {
   archivado: boolean;
   /** Si la planificación y los planes de la plantilla se les copian a los alumnos (ver schema). */
   compartirPlanes: boolean;
+  /** El profesor quitó el aviso de "N alumnos ya tienen su copia". */
+  avisoCopiaOculto: boolean;
+  /** Última vez que volcó la ficha actual a los alumnos con copia. */
+  copiasActualizadasAt: Date | null;
   /** A cuántas clases está puesto ahora mismo. */
   clases: number;
   /** Cuántos alumnos lo han entregado ya. */
@@ -98,7 +103,7 @@ const RESUMEN_ASIGNACIONES = {
 
 function resumir(c: {
   id: string; nombre: string; consigna: string | null; archivado: boolean; pacienteId: string | null;
-  compartirPlanes: boolean;
+  compartirPlanes: boolean; avisoCopiaOculto: boolean; copiasActualizadasAt: Date | null;
   paciente: { nombre: string; apellidos: string } | null;
   asignaciones: { clase: { _count: { alumnos: number } }; _count: { entregas: number } }[];
 }): CasoResumen {
@@ -112,6 +117,8 @@ function resumir(c: {
     consigna: c.consigna,
     archivado: c.archivado,
     compartirPlanes: c.compartirPlanes,
+    avisoCopiaOculto: c.avisoCopiaOculto,
+    copiasActualizadasAt: c.copiasActualizadasAt,
     clases: c.asignaciones.length,
     entregadas,
     // Pendiente es todo el que no ha entregado, haya abierto el caso o no.
@@ -128,7 +135,7 @@ export async function getMisCasos(incluirArchivados = false): Promise<CasoResume
     },
     orderBy: [{ archivado: "asc" }, { createdAt: "desc" }],
     select: {
-      id: true, nombre: true, consigna: true, archivado: true, pacienteId: true, compartirPlanes: true,
+      id: true, nombre: true, consigna: true, archivado: true, pacienteId: true, compartirPlanes: true, avisoCopiaOculto: true, copiasActualizadasAt: true,
       paciente: { select: { nombre: true, apellidos: true } },
       asignaciones: RESUMEN_ASIGNACIONES,
     },
@@ -141,7 +148,7 @@ export async function getCaso(casoId: string): Promise<CasoResumen | null> {
   const c = await prisma.casoClinico.findFirst({
     where: { id: casoId, profesorId: profesor.dietistaId },
     select: {
-      id: true, nombre: true, consigna: true, archivado: true, pacienteId: true, compartirPlanes: true,
+      id: true, nombre: true, consigna: true, archivado: true, pacienteId: true, compartirPlanes: true, avisoCopiaOculto: true, copiasActualizadasAt: true,
       paciente: { select: { nombre: true, apellidos: true } },
       asignaciones: RESUMEN_ASIGNACIONES,
     },
@@ -152,11 +159,11 @@ export async function getCaso(casoId: string): Promise<CasoResumen | null> {
 /** El caso al que pertenece un paciente plantilla, para pintar el aviso encima de su ficha. */
 export async function getCasoDePacientePlantilla(
   pacienteId: string,
-): Promise<{ id: string; nombre: string; consigna: string | null; compartirPlanes: boolean; empezados: number } | null> {
+): Promise<{ id: string; nombre: string; consigna: string | null; compartirPlanes: boolean; empezados: number; avisoCopiaOculto: boolean; copiasActualizadasAt: Date | null } | null> {
   const profesor = await requireProfesor();
   const caso = await prisma.casoClinico.findFirst({
     where: { pacienteId, profesorId: profesor.dietistaId },
-    select: { id: true, nombre: true, consigna: true, compartirPlanes: true },
+    select: { id: true, nombre: true, consigna: true, compartirPlanes: true, avisoCopiaOculto: true, copiasActualizadasAt: true },
   });
   if (!caso) return null;
   return { ...caso, empezados: await contarAlumnosQueEmpezaron(caso.id) };
@@ -171,6 +178,58 @@ export async function contarAlumnosQueEmpezaron(casoId: string): Promise<number>
   return prisma.entregaCaso.count({
     where: { asignacion: { casoId, retiradaAt: null }, pacienteId: { not: null } },
   });
+}
+
+/**
+ * «Actualizar el caso en los alumnos»: volcar la ficha actual de la plantilla a todos los que ya
+ * tienen su copia (Guillermo, 3 sep 2026: "si se equivoca el profesor y quiere cambiar algo, que
+ * tenga esa opción, sin quitar y poner el caso"). Ver actualizarCopia para qué se toca y qué no.
+ * Una transacción por alumno: si una falla, las demás quedan hechas y se dice cuántas.
+ */
+export async function actualizarCopiasDelCaso(
+  casoId: string,
+): Promise<{ ok: boolean; error?: string; actualizadas?: number; fallidas?: number }> {
+  const profesor = await requireProfesor();
+  const t = await getTranslations("validation");
+  const caso = await prisma.casoClinico.findFirst({
+    where: { id: casoId, profesorId: profesor.dietistaId },
+    select: { pacienteId: true },
+  });
+  if (!caso?.pacienteId) return { ok: false, error: t("docencia.casoNoEncontrado") };
+  const plantillaId = caso.pacienteId;
+
+  const copias = await prisma.entregaCaso.findMany({
+    where: { asignacion: { casoId, retiradaAt: null }, pacienteId: { not: null } },
+    select: { pacienteId: true },
+  });
+  let actualizadas = 0;
+  let fallidas = 0;
+  for (const { pacienteId } of copias) {
+    try {
+      await prisma.$transaction((tx) => actualizarCopia(tx, plantillaId, pacienteId as string), { timeout: 20000 });
+      actualizadas++;
+    } catch (e) {
+      console.error("[actualizarCopiasDelCaso]", pacienteId, e);
+      fallidas++;
+    }
+  }
+  await prisma.casoClinico.update({ where: { id: casoId }, data: { copiasActualizadasAt: new Date() }, select: { id: true } });
+  revalidarCasos();
+  revalidatePath(`/profesor/casos/${casoId}`);
+  return { ok: true, actualizadas, fallidas };
+}
+
+/** Quitar con la ✕ el aviso de "N alumnos ya tienen su copia", para este caso y para siempre. */
+export async function ocultarAvisoCopia(casoId: string): Promise<{ ok: boolean; error?: string }> {
+  const profesor = await requireProfesor();
+  const t = await getTranslations("validation");
+  const { count } = await prisma.casoClinico.updateMany({
+    where: { id: casoId, profesorId: profesor.dietistaId },
+    data: { avisoCopiaOculto: true },
+  });
+  if (count === 0) return { ok: false, error: t("docencia.casoNoEncontrado") };
+  revalidatePath(`/profesor/casos/${casoId}`);
+  return { ok: true };
 }
 
 /**
@@ -718,8 +777,11 @@ export interface TrabajoDeEntrega {
   entregable: { nombre: string; planNombre: string | null; bytes: number | null } | null;
   /** El paciente del caso, tal y como lo dejó el alumno (en la foto, o en vivo). */
   paciente: PacienteCongelado | null;
-  /** Sus planificaciones: objetivos, peso, fórmulas, reparto. */
+  /** Sus planificaciones, para pintar la misma pestaña que ve él (bloqueada). */
   planificaciones: PlanificacionCongelada[];
+  /** Sus mediciones y su anamnesis, que la pestaña de planificación usa para calcular. */
+  medidas: unknown[];
+  fichaInformacion: unknown | null;
   planes: { id: string; nombre: string; activo: boolean; dias: number }[];
   /** El plan que se está mirando, listo para pintar. */
   planVisto: PlanVisualDetalle | null;
@@ -759,14 +821,20 @@ export async function getTrabajoDeEntrega(
   let paciente: PacienteCongelado | null;
   let planificaciones: PlanificacionCongelada[];
   let planes: PlanVisualDetalle[];
+  let medidas: unknown[] = [];
+  let fichaInformacion: unknown | null = null;
   if (congelado && foto) {
     paciente = foto.paciente;
     planificaciones = foto.planificaciones;
     planes = foto.planes;
+    medidas = foto.medidas;
+    fichaInformacion = foto.fichaInformacion;
   } else if (entrega.pacienteId) {
     // En vivo: todavía no ha entregado. Se lee igual que se congelará, para que no haya dos vistas.
     paciente = await leerPacienteCongelable(entrega.pacienteId);
     planificaciones = await leerPlanificaciones(entrega.pacienteId);
+    medidas = await leerMedidasSerializadas(entrega.pacienteId);
+    fichaInformacion = await leerFichaInformacion(entrega.pacienteId);
     const ids = await prisma.planAlimenticio.findMany({
       where: { pacienteId: entrega.pacienteId },
       orderBy: [{ activo: "desc" }, { createdAt: "desc" }],
@@ -807,6 +875,8 @@ export async function getTrabajoDeEntrega(
       : null,
     paciente,
     planificaciones,
+    medidas,
+    fichaInformacion,
     planes: planes.map((p) => ({ id: p.id, nombre: p.nombre, activo: p.activo, dias: p.dias.length })),
     planVisto,
   };

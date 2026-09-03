@@ -499,8 +499,22 @@ el aula. Al probarlo, Guillermo pidió el modelo de arriba. Cambios hechos:
 - **Aviso «N alumnos ya lo han empezado»** (3 sep 2026): Guillermo rellenó el horario de la
   plantilla con la alumna ya dentro y no se lo veía reflejado. Es a propósito —la copia se hace al
   empezar el caso y luego es del alumno, que la está trabajando—, pero había que decirlo: la ficha
-  de la plantilla y la del caso avisan de cuántos alumnos tienen ya su copia y de que solo lo verá
-  quien lo empiece a partir de ahora (el nombre y la consigna sí se actualizan para todos).
+  de la plantilla y la del caso avisan de cuántos alumnos tienen ya su copia (el nombre y la
+  consigna sí se actualizan para todos). El aviso se quita con una ✕ **por caso** y no vuelve
+  (`casos_clinicos.avisoCopiaOculto`, migración `add-caso-aviso-copia`, la 14ª).
+- **«Actualizar el caso en los alumnos»** (3 sep 2026, Guillermo: "si se equivoca el profesor y
+  quiere cambiar algo, que tenga esa opción sin quitar y poner el caso"): botón en la ficha de la
+  plantilla y en la del caso, con confirmación, que vuelca la ficha ACTUAL a los alumnos que ya
+  tienen su copia (`actualizarCopia`, una transacción por alumno). Sobrescribe los campos de la
+  ficha (también si el alumno los tocó); las mediciones y consultas copiadas de la plantilla
+  recuerdan de cuál vienen (`origenId`, migración `add-origen-copia`, la 15ª) y se actualizan,
+  añaden o quitan con ella, mientras que las que añadió el alumno se quedan; **no toca** planes,
+  planificación ni lo entregado. `copiasActualizadasAt` guarda la última vez.
+- **La planificación del alumno, tal cual** (3 sep 2026, Guillermo: "ningún resumen, tiene que
+  verlo tal cual"): la corrección pinta la MISMA pestaña de planificación del paciente
+  (`PlanificacionPorDefectoTab`) con los datos de la foto (paciente con sexo/fecha, medidas y
+  anamnesis van ahora en el snapshot), dentro de un `<div inert>` para que nada se pueda pulsar ni
+  guardar. La pestaña no llama al servidor sola, solo al pulsar, así que bloqueada es segura.
 
 ### Lo que queda de la fase 3
 

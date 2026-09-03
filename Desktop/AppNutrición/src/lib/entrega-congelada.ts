@@ -24,6 +24,11 @@ export interface PacienteCongelado {
   notas: string | null;
   patologias: string[];
   alergias: string[];
+  /** Lo que necesita la pestaña de planificación para sus cálculos (edad, sexo, objetivo). */
+  sexo: string | null;
+  fechaNacimiento: string | null;
+  objetivoDetalle: string | null;
+  createdAt: string | null;
 }
 
 export interface PlanificacionCongelada {
@@ -39,19 +44,41 @@ export interface EntregaCongelada {
   paciente: PacienteCongelado;
   planificaciones: PlanificacionCongelada[];
   planes: PlanVisualDetalle[];
+  /** Las mediciones y la anamnesis, tal y como las pinta la ficha: la pestaña de planificación
+   *  las usa (peso y grasa actuales, actividad). Serializadas (fechas como texto). */
+  medidas: unknown[];
+  fichaInformacion: unknown | null;
 }
 
 /** Máximo de planes que se congelan: los más recientes. Nadie corrige veinte dietas de un caso. */
 const MAX_PLANES = 6;
 
 export async function leerPacienteCongelable(pacienteId: string): Promise<PacienteCongelado | null> {
-  return prisma.paciente.findUnique({
+  const p = await prisma.paciente.findUnique({
     where: { id: pacienteId },
     select: {
       id: true, nombre: true, apellidos: true, peso: true, altura: true,
       objetivo: true, notas: true, patologias: true, alergias: true,
+      sexo: true, fechaNacimiento: true, objetivoDetalle: true, createdAt: true,
     },
   });
+  if (!p) return null;
+  return {
+    ...p,
+    fechaNacimiento: p.fechaNacimiento ? p.fechaNacimiento.toISOString() : null,
+    createdAt: p.createdAt.toISOString(),
+  };
+}
+
+/** Las mediciones como las recibe la ficha (`getMedidas` + JSON): fechas en texto. */
+export async function leerMedidasSerializadas(pacienteId: string): Promise<unknown[]> {
+  const medidas = await prisma.medidaAntropometrica.findMany({ where: { pacienteId }, orderBy: { fecha: "desc" } });
+  return JSON.parse(JSON.stringify(medidas)) as unknown[];
+}
+
+export async function leerFichaInformacion(pacienteId: string): Promise<unknown | null> {
+  const p = await prisma.paciente.findUnique({ where: { id: pacienteId }, select: { fichaInformacion: true } });
+  return p?.fichaInformacion ?? null;
 }
 
 export async function leerPlanificaciones(pacienteId: string): Promise<PlanificacionCongelada[]> {
@@ -94,7 +121,11 @@ export async function congelarTrabajo(pacienteId: string): Promise<EntregaCongel
     const p = await leerPlanParaVer(id);
     if (p) planes.push(p);
   }
-  return { v: 1, paciente, planificaciones, planes };
+  return {
+    v: 1, paciente, planificaciones, planes,
+    medidas: await leerMedidasSerializadas(pacienteId),
+    fichaInformacion: await leerFichaInformacion(pacienteId),
+  };
 }
 
 /** Lo guardado en la fila, con la forma comprobada por encima (v: 1). */
@@ -102,5 +133,18 @@ export function leerCongelado(valor: Prisma.JsonValue | null | undefined): Entre
   if (!valor || typeof valor !== "object" || Array.isArray(valor)) return null;
   const v = valor as unknown as EntregaCongelada;
   if (v.v !== 1 || !v.paciente || !Array.isArray(v.planes)) return null;
-  return { ...v, planificaciones: Array.isArray(v.planificaciones) ? v.planificaciones : [] };
+  return {
+    ...v,
+    planificaciones: Array.isArray(v.planificaciones) ? v.planificaciones : [],
+    medidas: Array.isArray(v.medidas) ? v.medidas : [],
+    fichaInformacion: v.fichaInformacion ?? null,
+    // Fotos de antes de guardar estos campos: se rellenan a null para que la pestaña no reviente.
+    paciente: {
+      ...v.paciente,
+      sexo: v.paciente.sexo ?? null,
+      fechaNacimiento: v.paciente.fechaNacimiento ?? null,
+      objetivoDetalle: v.paciente.objetivoDetalle ?? null,
+      createdAt: v.paciente.createdAt ?? null,
+    },
+  };
 }

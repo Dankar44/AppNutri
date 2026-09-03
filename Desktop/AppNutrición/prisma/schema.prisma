@@ -608,6 +608,9 @@ model MedidaAntropometrica {
   peso                Float?
   altura              Float?
   imc                 Float?
+  /// #40 — Si es copia de la medición de la plantilla de un caso: de cuál viene, para poder
+  /// actualizarla con ella sin tocar las que añadió el alumno.
+  origenId            String?
   grasaCorporal       Float?
   masaMuscular        Float?
   perimetroCintura    Float?
@@ -651,6 +654,8 @@ model Consulta {
   notas           String?
   medidaId        String?   @unique
   medida          MedidaAntropometrica? @relation(fields: [medidaId], references: [id], onDelete: SetNull)
+  /// #40 — Si es copia de la consulta de la plantilla de un caso: de cuál viene (ver medidas).
+  origenId        String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -1177,6 +1182,10 @@ model CasoClinico {
   /// el caso. Apagado (lo normal): lo que el profesor haga ahí es SU solución, para comparar con lo
   /// que entreguen. El resto de la ficha viaja siempre.
   compartirPlanes   Boolean  @default(false)
+  /// El profesor quitó con la ✕ el aviso de "N alumnos ya tienen su copia": no se le vuelve a enseñar.
+  avisoCopiaOculto  Boolean  @default(false)
+  /// Última vez que el profesor volcó la ficha actual a los alumnos que ya tenían su copia.
+  copiasActualizadasAt DateTime?
 
   /// Archivar no borra: las entregas de cursos pasados siguen ahí.
   archivado         Boolean  @default(false)

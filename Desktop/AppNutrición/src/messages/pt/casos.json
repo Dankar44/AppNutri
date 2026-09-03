@@ -113,7 +113,8 @@
     "avisoTexto": "O que preencheres aqui —dados, anamnese, medições, horário, recomendações— os teus alunos vão vê-lo tal e qual ao começar o caso. O que quiseres que eles façam, diz-lho em «O que lhes pedes».",
     "verCaso": "Ver o caso",
     "volverAClase": "Voltar à turma",
-    "yaEmpezado": "{n, plural, one {# aluno já o começou e tem a sua cópia: o que alterares agora na ficha não lhe chega.} other {# alunos já o começaram e têm a sua cópia: o que alterares agora na ficha não lhes chega.}} Só o verá quem o começar a partir de agora. O nome do caso e «O que lhes pedes» atualizam-se para todos."
+    "yaEmpezado": "{n, plural, one {# aluno já o começou e tem a sua cópia: o que alterares agora na ficha não lhe chega sozinho.} other {# alunos já o começaram e têm a sua cópia: o que alterares agora na ficha não lhes chega sozinho.}} Quem o começar a partir de agora recebe-o tal e qual; aos restantes envia-lo com «Atualizar o caso». O nome e «O que lhes pedes» atualizam-se para todos.",
+    "quitarAviso": "Remover este aviso (não voltará a aparecer para este caso)"
   },
   "objetivo": {
     "MANTENIMIENTO": "Manutenção",
@@ -134,19 +135,15 @@
   "planificacion": {
     "titulo": "Planeamento",
     "ninguna": "Não fez nenhum planeamento para este paciente.",
-    "kcal": "Objetivo",
-    "proteinas": "Proteínas",
-    "carbohidratos": "Hidratos",
-    "grasas": "Gorduras",
-    "pesoActual": "Peso atual",
-    "pesoObjetivo": "Peso objetivo",
-    "grasaActual": "Gordura atual",
-    "grasaObjetivo": "Gordura objetivo",
-    "ajuste": "Ajuste sobre o gasto",
-    "actividad": "Atividade",
-    "formula": "Fórmulas",
-    "porDefecto": "por defeito",
-    "vacia": "Ainda sem dados.",
-    "reparto": "Distribuição por refeições (% das kcal do dia)"
+    "talCual": "Tal e qual como o aluno a vê. Não se pode alterar."
+  },
+  "actualizar": {
+    "boton": "{n, plural, one {Atualizar o caso no aluno que já o tem} other {Atualizar o caso nos # alunos que já o têm}}",
+    "ultimaVez": "Última vez: {fecha}",
+    "titulo": "Atualizar o caso nos alunos",
+    "texto": "{n, plural, one {Envia-se a ficha tal como está agora ao aluno que já tem a sua cópia.} other {Envia-se a ficha tal como está agora aos # alunos que já têm a sua cópia.}} Dados, anamnese, alergias, horário, recomendações e notas são substituídos, mesmo se o aluno os tiver alterado. As medições e consultas do caso atualizam-se e acrescentam-se as novas; as que o aluno tenha acrescentado ficam. Não se tocam os seus planos, o seu planeamento nem o que já tenha entregado.",
+    "confirmar": "Atualizar",
+    "hecho": "{n, plural, one {Caso atualizado em # aluno} other {Caso atualizado em # alunos}}",
+    "parcial": "Atualizado em {n}; em {fallidas} não foi possível. Tenta de novo."
   }
 }

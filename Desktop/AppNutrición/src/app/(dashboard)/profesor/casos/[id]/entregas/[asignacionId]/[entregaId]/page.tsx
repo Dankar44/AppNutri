@@ -8,7 +8,7 @@ import { PlanVisual } from "@/components/paciente/plan-visual";
 import { formatDateTime } from "@/lib/utils";
 import { getLocale } from "@/i18n/locale";
 import { Corregir } from "./corregir";
-import { PlanificacionResumen } from "./planificacion-resumen";
+import { PlanificacionDelAlumno } from "./planificacion-del-alumno";
 
 /**
  * #40 — El trabajo del alumno, para corregirlo.
@@ -128,7 +128,14 @@ export default async function EntregaPage({
         </section>
       )}
 
-      <PlanificacionResumen planificaciones={trabajo.planificaciones} />
+      {trabajo.paciente && (
+        <PlanificacionDelAlumno
+          paciente={trabajo.paciente}
+          planificaciones={trabajo.planificaciones}
+          medidas={trabajo.medidas}
+          fichaInformacion={trabajo.fichaInformacion}
+        />
+      )}
 
       {trabajo.planes.length === 0 ? (
         <p className="text-sm text-muted-foreground py-6 text-center">{t("entregas.sinPlanes")}</p>

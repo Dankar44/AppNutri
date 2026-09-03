@@ -341,6 +341,43 @@ async function main() {
     await esperar(1500);
     comprobar("al profesor se le avisa de que 1 alumno ya lo ha empezado y tiene su copia",
       (await texto(profe)).includes("1 alumno ya lo ha empezado"));
+    // Y lo puede quitar con la ✕, para este caso y para siempre.
+    await profe.evaluate(() => (document.querySelector("button[aria-label^='Quitar este aviso']") as HTMLElement | null)?.click());
+    await esperar(2500);
+    await profe.goto(`${BASE}/pacientes/${plantillaId}?espacio=docente`, { waitUntil: "networkidle0" });
+    await esperar(1500);
+    comprobar("y al quitarlo con la ✕ no vuelve a salir", !(await texto(profe)).includes("ya lo ha empezado"));
+    comprobar("porque se guarda en el caso", (await client.query(`SELECT "avisoCopiaOculto" FROM casos_clinicos WHERE id = $1`, [casoId])).rows[0].avisoCopiaOculto === true);
+
+    console.log("\n── Se equivoca, corrige la plantilla y la actualiza en la alumna ──");
+    // La alumna añade una medición suya; el profesor corrige el peso de la suya, añade otra, y cambia notas y horario.
+    await client.query(`INSERT INTO medidas_antropometricas (id, "pacienteId", fecha, peso, "createdAt") VALUES ('${MARCA}-medida-alumna', $1, NOW(), 57, NOW())`, [pac[0].id]);
+    await client.query(`UPDATE medidas_antropometricas SET peso = 61 WHERE "pacienteId" = $1`, [plantillaId]);
+    await client.query(`INSERT INTO medidas_antropometricas (id, "pacienteId", fecha, peso, altura, "createdAt") VALUES ('${MARCA}-medida-nueva', $1, NOW() - INTERVAL '30 days', 63, 165, NOW())`, [plantillaId]);
+    await client.query(`UPDATE pacientes SET notas = 'CORREGIDO: ferritina 7 ng/ml', horario = '[{"dia":"lunes","hora":"08:00","actividad":"Desayuno"},{"dia":"martes","hora":"20:00","actividad":"Yoga"}]'::jsonb WHERE id = $1`, [plantillaId]);
+    await client.query(`UPDATE planes_alimenticios SET nombre = 'PLAN DE LA ALUMNA' WHERE "pacienteId" = $1`, [pac[0].id]);
+    await profe.goto(`${BASE}/pacientes/${plantillaId}?espacio=docente`, { waitUntil: "networkidle0" });
+    await esperar(1500);
+    comprobar("tiene el botón de actualizar el caso en los alumnos", (await texto(profe)).includes("Actualizar el caso en el alumno"));
+    await pulsar(profe, "Actualizar el caso en el alumno");
+    await esperar(800);
+    comprobar("se le explica qué se sobrescribe y qué no antes de hacerlo", (await texto(profe)).includes("No se tocan sus planes"));
+    await profe.evaluate(() => {
+      const b = Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.trim() === "Actualizar");
+      (b as HTMLElement | undefined)?.click();
+    });
+    await esperar(5000);
+    const { rows: copiaTras } = await client.query(
+      `SELECT notas, horario, (SELECT COUNT(*)::int FROM medidas_antropometricas m WHERE m."pacienteId" = p.id) AS medidas,
+              (SELECT peso FROM medidas_antropometricas m WHERE m."pacienteId" = p.id AND m."origenId" IS NOT NULL AND m.altura = 165 AND m.fecha > NOW() - INTERVAL '1 day') AS peso_corregido,
+              (SELECT COUNT(*)::int FROM medidas_antropometricas m WHERE m."pacienteId" = p.id AND m."origenId" IS NULL) AS suyas,
+              (SELECT nombre FROM planes_alimenticios WHERE "pacienteId" = p.id LIMIT 1) AS plan
+         FROM pacientes p WHERE p.id = $1`, [pac[0].id]);
+    comprobar("las notas y el horario de la alumna se actualizan", (copiaTras[0]?.notas ?? "").includes("CORREGIDO") && copiaTras[0]?.horario?.length === 2, copiaTras[0]?.notas);
+    comprobar("la medición del profesor se corrige en su copia (61 kg) sin duplicarse", Number(copiaTras[0]?.peso_corregido) === 61, String(copiaTras[0]?.peso_corregido));
+    comprobar("la medición nueva llega, y la que añadió la alumna se queda", copiaTras[0]?.medidas === 3 && copiaTras[0]?.suyas === 1, `${copiaTras[0]?.medidas} medidas, ${copiaTras[0]?.suyas} suyas`);
+    comprobar("y su plan no se toca", copiaTras[0]?.plan === "PLAN DE LA ALUMNA", copiaTras[0]?.plan);
+    comprobar("la ficha dice cuándo se actualizó", /Última vez: \d\d\/\d\d\/\d{4}, \d\d:\d\d/.test(await texto(profe)));
 
     console.log("\n── En su lista de pacientes sale etiquetado ──");
     await alumna.goto(`${BASE}/pacientes`, { waitUntil: "networkidle0" });
@@ -413,7 +450,7 @@ async function main() {
     comprobar("ve el PDF del entregable para abrirlo", visible.includes("Abrir el PDF") && /tal y como lo entregó \(\d+ KB\)/.test(visible));
     comprobar("ve la planificación de la alumna", visible.includes("Planificación") && (visible.includes("kcal") || visible.includes("Sin datos") || visible.includes("No ha hecho ninguna planificación")));
     comprobar("y el plan tal y como estaba al entregar, no el cambiado después",
-      visible.includes("Plan base") && !visible.includes("CAMBIADO DESPUÉS"));
+      visible.includes("PLAN DE LA ALUMNA") && !visible.includes("CAMBIADO DESPUÉS"));
     const pdfProfe = await profe.evaluate(async (id) => {
       const r = await fetch(`/api/entregas/${id}/pdf`);
       return { status: r.status, tipo: r.headers.get("content-type") ?? "" };

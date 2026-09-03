@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, User, Archive, ArrowRight, ClipboardList, ChevronRight, Users, AlertTriangle } from "lucide-react";
+import { ArrowLeft, User, Archive, ArrowRight, ClipboardList, ChevronRight, Users } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireProfesor } from "@/app/actions/docencia";
 import {
@@ -10,7 +10,7 @@ import {
   getEntregasDeAsignacion,
   contarAlumnosQueEmpezaron,
 } from "@/app/actions/casos";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatDateTime } from "@/lib/utils";
 import { getLocale } from "@/i18n/locale";
 import { AccionesCaso } from "./acciones-caso";
 import { AsignarAClase } from "./asignar-a-clase";
@@ -18,6 +18,8 @@ import { FechaLimite } from "./fecha-limite";
 import { RetirarAsignacion } from "./retirar-asignacion";
 import { ListaEntregas } from "./lista-entregas";
 import { CompartirPlanes } from "./compartir-planes";
+import { AvisoCopia } from "./aviso-copia";
+import { ActualizarCopias } from "./actualizar-copias";
 
 /**
  * #40 — La ficha del caso: qué se les pide, a qué clases está puesto y cómo va cada una, con sus
@@ -94,16 +96,23 @@ export default async function CasoPage({
                 {t("paciente.abrirFicha", { nombre: caso.pacienteNombre })}
               </p>
               <p className="text-sm text-muted-foreground mt-0.5">{t("paciente.abrirFichaAyuda")}</p>
-              {empezados > 0 && (
-                <p className="text-sm mt-1.5 inline-flex items-start gap-1.5 text-amber-800 dark:text-amber-300">
-                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <span>{t("paciente.yaEmpezado", { n: empezados })}</span>
-                </p>
-              )}
             </div>
             <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary shrink-0" />
           </div>
         </Link>
+      )}
+
+      {/* Quién tiene ya su copia, y el botón para volcarles la ficha actual. Fuera del enlace de
+          arriba: un botón dentro de un enlace navegaría al pulsarlo. */}
+      {caso.pacienteId && empezados > 0 && (
+        <div className="py-2 lg:px-6 space-y-2">
+          <AvisoCopia casoId={caso.id} empezados={empezados} oculto={caso.avisoCopiaOculto} />
+          <ActualizarCopias
+            casoId={caso.id}
+            empezados={empezados}
+            ultimaVez={caso.copiasActualizadasAt ? formatDateTime(caso.copiasActualizadasAt, locale) : null}
+          />
+        </div>
       )}
 
       {caso.pacienteId && (
