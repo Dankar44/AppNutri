@@ -112,7 +112,8 @@
     "avisoTitulo": "Este paciente é o caso «{caso}»",
     "avisoTexto": "O que preencheres aqui —dados, anamnese, medições, horário, recomendações— os teus alunos vão vê-lo tal e qual ao começar o caso. O que quiseres que eles façam, diz-lho em «O que lhes pedes».",
     "verCaso": "Ver o caso",
-    "volverAClase": "Voltar à turma"
+    "volverAClase": "Voltar à turma",
+    "yaEmpezado": "{n, plural, one {# aluno já o começou e tem a sua cópia: o que alterares agora na ficha não lhe chega.} other {# alunos já o começaram e têm a sua cópia: o que alterares agora na ficha não lhes chega.}} Só o verá quem o começar a partir de agora. O nome do caso e «O que lhes pedes» atualizam-se para todos."
   },
   "objetivo": {
     "MANTENIMIENTO": "Manutenção",

@@ -496,10 +496,14 @@ el aula. Al probarlo, Guillermo pidió el modelo de arriba. Cambios hechos:
   ha entregado. `deshacerEntrega` borra la foto y el PDF. Todas las consultas a `entregas_caso`
   llevan `select` para no arrastrar el bytea.
 
+- **Aviso «N alumnos ya lo han empezado»** (3 sep 2026): Guillermo rellenó el horario de la
+  plantilla con la alumna ya dentro y no se lo veía reflejado. Es a propósito —la copia se hace al
+  empezar el caso y luego es del alumno, que la está trabajando—, pero había que decirlo: la ficha
+  de la plantilla y la del caso avisan de cuántos alumnos tienen ya su copia y de que solo lo verá
+  quien lo empiece a partir de ahora (el nombre y la consigna sí se actualizan para todos).
+
 ### Lo que queda de la fase 3
 
-- Decidir si avisar de que la copia del alumno NO se actualiza si el profesor cambia la plantilla
-  después (hoy es una foto del momento de empezar).
 - Repasar el menú del alumno cuando se vea el flujo con gente de verdad (Mensajes, Pagos).
 
 ---

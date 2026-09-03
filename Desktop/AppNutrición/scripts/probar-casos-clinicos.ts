@@ -336,6 +336,12 @@ async function main() {
     comprobar("la plantilla del profesor sigue siendo suya", plantillaIntacta[0].esCasoDocente === true);
     comprobar("y se le lleva a su ficha", alumna.url().includes(`/pacientes/${pac[0]?.id}`), alumna.url());
 
+    // Y el profesor, en la plantilla, ve que ya no puede cambiarle la ficha a quien la ha empezado.
+    await profe.goto(`${BASE}/pacientes/${plantillaId}?espacio=docente`, { waitUntil: "networkidle0" });
+    await esperar(1500);
+    comprobar("al profesor se le avisa de que 1 alumno ya lo ha empezado y tiene su copia",
+      (await texto(profe)).includes("1 alumno ya lo ha empezado"));
+
     console.log("\n── En su lista de pacientes sale etiquetado ──");
     await alumna.goto(`${BASE}/pacientes`, { waitUntil: "networkidle0" });
     await esperar(1800);

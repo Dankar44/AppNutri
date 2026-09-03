@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ClipboardList, ArrowRight, Users } from "lucide-react";
+import { ClipboardList, ArrowRight, Users, AlertTriangle } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import type { AsignacionResumen } from "@/app/actions/casos";
 import { AsignarAClase } from "@/app/(dashboard)/profesor/casos/[id]/asignar-a-clase";
@@ -17,7 +17,7 @@ export async function AvisoPlantilla({
   asignaciones,
   clases,
 }: {
-  caso: { id: string; nombre: string; consigna: string | null; compartirPlanes: boolean };
+  caso: { id: string; nombre: string; consigna: string | null; compartirPlanes: boolean; empezados: number };
   asignaciones: AsignacionResumen[];
   clases: { id: string; nombre: string; curso: string | null }[];
 }) {
@@ -39,6 +39,13 @@ export async function AvisoPlantilla({
             {t("paciente.avisoTitulo", { caso: caso.nombre })}
           </p>
           <p className="text-sm mt-1">{t("paciente.avisoTexto")}</p>
+          {/* La copia se hace al empezar el caso: a quien ya lo empezó no le llegan los cambios. */}
+          {caso.empezados > 0 && (
+            <p className="text-sm mt-2 inline-flex items-start gap-1.5 text-amber-800 dark:text-amber-300">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{t("paciente.yaEmpezado", { n: caso.empezados })}</span>
+            </p>
+          )}
           {caso.consigna && (
             <p className="text-sm text-muted-foreground mt-2 whitespace-pre-wrap">
               <span className="font-medium text-foreground">{t("campos.consigna")}: </span>

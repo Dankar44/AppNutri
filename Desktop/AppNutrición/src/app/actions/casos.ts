@@ -152,11 +152,24 @@ export async function getCaso(casoId: string): Promise<CasoResumen | null> {
 /** El caso al que pertenece un paciente plantilla, para pintar el aviso encima de su ficha. */
 export async function getCasoDePacientePlantilla(
   pacienteId: string,
-): Promise<{ id: string; nombre: string; consigna: string | null; compartirPlanes: boolean } | null> {
+): Promise<{ id: string; nombre: string; consigna: string | null; compartirPlanes: boolean; empezados: number } | null> {
   const profesor = await requireProfesor();
-  return prisma.casoClinico.findFirst({
+  const caso = await prisma.casoClinico.findFirst({
     where: { pacienteId, profesorId: profesor.dietistaId },
     select: { id: true, nombre: true, consigna: true, compartirPlanes: true },
+  });
+  if (!caso) return null;
+  return { ...caso, empezados: await contarAlumnosQueEmpezaron(caso.id) };
+}
+
+/**
+ * Cuántos alumnos ya han empezado el caso y tienen SU copia del paciente. A ellos no les llega lo
+ * que el profesor cambie ahora en la plantilla: su paciente es suyo y lo están trabajando
+ * (Guillermo lo probó el 3 sep 2026 y no lo veía reflejado: hay que decírselo en la ficha).
+ */
+export async function contarAlumnosQueEmpezaron(casoId: string): Promise<number> {
+  return prisma.entregaCaso.count({
+    where: { asignacion: { casoId, retiradaAt: null }, pacienteId: { not: null } },
   });
 }
 

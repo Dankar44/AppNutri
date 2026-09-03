@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, User, Archive, ArrowRight, ClipboardList, ChevronRight, Users } from "lucide-react";
+import { ArrowLeft, User, Archive, ArrowRight, ClipboardList, ChevronRight, Users, AlertTriangle } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireProfesor } from "@/app/actions/docencia";
 import {
@@ -8,6 +8,7 @@ import {
   getAsignacionesDeCaso,
   getClasesParaAsignar,
   getEntregasDeAsignacion,
+  contarAlumnosQueEmpezaron,
 } from "@/app/actions/casos";
 import { formatDate } from "@/lib/utils";
 import { getLocale } from "@/i18n/locale";
@@ -46,6 +47,7 @@ export default async function CasoPage({
     getLocale(),
   ]);
   const entregasPorClase = await Promise.all(asignaciones.map((a) => getEntregasDeAsignacion(a.id)));
+  const empezados = await contarAlumnosQueEmpezaron(id);
 
   return (
     <div className="space-y-6">
@@ -92,6 +94,12 @@ export default async function CasoPage({
                 {t("paciente.abrirFicha", { nombre: caso.pacienteNombre })}
               </p>
               <p className="text-sm text-muted-foreground mt-0.5">{t("paciente.abrirFichaAyuda")}</p>
+              {empezados > 0 && (
+                <p className="text-sm mt-1.5 inline-flex items-start gap-1.5 text-amber-800 dark:text-amber-300">
+                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>{t("paciente.yaEmpezado", { n: empezados })}</span>
+                </p>
+              )}
             </div>
             <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary shrink-0" />
           </div>
