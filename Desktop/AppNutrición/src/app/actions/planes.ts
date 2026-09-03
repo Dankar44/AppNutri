@@ -1952,6 +1952,8 @@ export async function getPlanesDetallePaciente(pacienteId: string) {
   const result = planes.map((plan) => ({
     id: plan.id,
     nombre: plan.nombre,
+    // #40 — compartido por el profesor del caso (copia del suyo): la ficha lo etiqueta.
+    origenId: plan.origenId ?? null,
     caloriasObjetivo: plan.caloriasObjetivo,
     activo: plan.activo,
     proteinasObjetivo: plan.proteinasObjetivo,

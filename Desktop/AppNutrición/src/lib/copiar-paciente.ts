@@ -115,100 +115,206 @@ export async function copiarPaciente(
   }
 
   if (!destino.conPlanes) return nuevo.id;
+  await copiarPlanesYPlanificaciones(tx, origenId, nuevo.id, destino.dietistaId, { primeraVez: true });
+  return nuevo.id;
+}
 
-  // Las planificaciones cambian de id al copiarse, y los planes las referencian por id en tres
-  // sitios (planificacionIds, objetivosPorPlani y repartoPorComida.porPlani) más cada día del plan:
-  // todo eso se reescribe con los ids nuevos.
-  const planificaciones = await tx.planificacion.findMany({
-    where: { pacienteId: origenId },
-    orderBy: { createdAt: "asc" },
-  });
-  const idsPlani = new Map<string, string>();
-  for (const p of planificaciones) {
-    const { id: pid, pacienteId: _pp, dietistaId: _pd, createdAt: _pc2, updatedAt: _pu2, datos, ...datosPlani } = p;
-    void _pp; void _pd; void _pc2; void _pu2;
-    const creada = await tx.planificacion.create({
-      data: {
-        ...datosPlani,
-        datos: datos as Prisma.InputJsonValue,
-        pacienteId: nuevo.id,
-        dietistaId: destino.dietistaId,
-      },
-    });
-    idsPlani.set(pid, creada.id);
-  }
-  const nuevaPlani = (id: string | null) => (id ? idsPlani.get(id) ?? null : null);
+// ─── Planes y planificaciones compartidos por el profesor ───
 
-  const planes = await tx.planAlimenticio.findMany({
-    where: { pacienteId: origenId },
-    orderBy: { createdAt: "asc" },
+type PlanConArbol = Prisma.PlanAlimenticioGetPayload<{ include: typeof ARBOL_DEL_PLAN }>;
+
+const ARBOL_DEL_PLAN = {
+  dias: {
     include: {
-      dias: {
-        include: {
-          comidas: {
-            orderBy: { orden: "asc" },
-            include: {
-              alimentos: { orderBy: { orden: "asc" }, include: { alternativas: { orderBy: { orden: "asc" } } } },
-            },
-          },
-        },
+      comidas: {
+        orderBy: { orden: "asc" as const },
+        include: { alimentos: { orderBy: { orden: "asc" as const }, include: { alternativas: { orderBy: { orden: "asc" as const } } } } },
       },
     },
+  },
+};
+
+/** Cómo está un plan, para saber después si alguien lo ha tocado. Sin ids ni referencias a planificaciones. */
+export function huellaDePlan(plan: PlanConArbol): string {
+  const orden = [...plan.dias].sort((a, b) => a.dia.localeCompare(b.dia));
+  return JSON.stringify({
+    nombre: plan.nombre,
+    kcal: plan.caloriasObjetivo, prot: plan.proteinasObjetivo, carb: plan.carbohidratosObjetivo, grasa: plan.grasasObjetivo,
+    dias: orden.map((d) => ({
+      dia: d.dia,
+      comidas: d.comidas.map((c) => ({
+        tipo: c.tipo, orden: c.orden, nombre: c.nombre, hora: c.hora, descripcion: c.descripcion,
+        alimentos: c.alimentos.map((a) => ({
+          a: a.alimentoId, r: a.recetaId, q: a.cantidad, u: a.unidad, o: a.orden, n: a.nombrePersonalizado,
+          alt: a.alternativas.map((x) => ({ a: x.alimentoId, r: x.recetaId, q: x.cantidad, u: x.unidad, o: x.orden, n: x.nombrePersonalizado })),
+        })),
+      })),
+    })),
   });
+}
+
+export function huellaDePlanificacion(p: { nombre: string; datos: Prisma.JsonValue }): string {
+  return JSON.stringify({ nombre: p.nombre, datos: p.datos });
+}
+
+/** Crea los días, comidas, alimentos y alternativas de un plan a partir de los de otro. */
+async function crearArbolDelPlan(tx: Tx, planId: string, dias: PlanConArbol["dias"], idsPlani: Map<string, string>) {
+  // Los días que "comen igual" comparten un grupoId: se conserva la agrupación con ids nuevos.
+  const grupos = new Map<string, string>();
+  for (const dia of dias) {
+    let grupoId: string | null = null;
+    if (dia.grupoId) {
+      grupoId = grupos.get(dia.grupoId) ?? randomUUID();
+      grupos.set(dia.grupoId, grupoId);
+    }
+    await tx.diaDelPlan.create({
+      data: {
+        planId,
+        dia: dia.dia,
+        grupoId,
+        planificacionId: dia.planificacionId ? idsPlani.get(dia.planificacionId) ?? null : null,
+        comidas: {
+          create: dia.comidas.map((c) => ({
+            tipo: c.tipo, orden: c.orden, descripcion: c.descripcion, nombre: c.nombre, hora: c.hora,
+            alimentos: {
+              create: c.alimentos.map((a) => ({
+                alimentoId: a.alimentoId, recetaId: a.recetaId, cantidad: a.cantidad, unidad: a.unidad,
+                orden: a.orden, nombrePersonalizado: a.nombrePersonalizado,
+                alternativas: {
+                  create: a.alternativas.map((alt) => ({
+                    alimentoId: alt.alimentoId, recetaId: alt.recetaId, cantidad: alt.cantidad,
+                    unidad: alt.unidad, orden: alt.orden, nombrePersonalizado: alt.nombrePersonalizado,
+                  })),
+                },
+              })),
+            },
+          })),
+        },
+      },
+      select: { id: true },
+    });
+  }
+}
+
+/**
+ * Los planes y planificaciones de la plantilla, al paciente del alumno, marcados como
+ * «Del profesor» (origenId + huella).
+ *
+ * - `primeraVez` (al empezar el caso, con «compartir» encendido): se copian tal cual, con sus
+ *   marcas de activo / por defecto — el alumno aún no tiene nada.
+ * - Después («Actualizar el caso» con «compartir» encendido): lo que no tenga lo recibe APARTE de
+ *   lo suyo — el plan no se marca como actual ni la planificación como la de por defecto si ya
+ *   tiene las suyas—; lo que ya tenía del profesor se sustituye solo si no lo ha tocado (la huella
+ *   coincide), y si lo ha tocado se respeta. Lo del alumno no se toca nunca.
+ *
+ * Las planificaciones cambian de id al copiarse, y los planes las referencian en tres sitios
+ * (planificacionIds, objetivosPorPlani y repartoPorComida.porPlani) más cada día: se reescribe.
+ */
+export async function copiarPlanesYPlanificaciones(
+  tx: Tx,
+  origenId: string,
+  copiaId: string,
+  dietistaId: string,
+  opciones: { primeraVez: boolean },
+): Promise<{ nuevos: number; actualizados: number; respetados: number }> {
+  const cuenta = { nuevos: 0, actualizados: 0, respetados: 0 };
+
+  // ── Planificaciones ──
+  const plantilla = await tx.planificacion.findMany({ where: { pacienteId: origenId }, orderBy: { createdAt: "asc" } });
+  const existentes = await tx.planificacion.findMany({
+    where: { pacienteId: copiaId },
+    select: { id: true, nombre: true, datos: true, origenId: true, origenHuella: true, esDefecto: true },
+  });
+  const yaTienePlanificacion = existentes.length > 0;
+  const porOrigen = new Map(existentes.filter((e) => e.origenId).map((e) => [e.origenId as string, e]));
+  const idsPlani = new Map<string, string>();
+  for (const p of plantilla) {
+    const { id: pid, pacienteId: _pp, dietistaId: _pd, createdAt: _c, updatedAt: _u, origenId: _o, origenHuella: _h, esDefecto, estado, datos, ...resto } = p;
+    void _pp; void _pd; void _c; void _u; void _o; void _h;
+    const huella = huellaDePlanificacion({ nombre: p.nombre, datos });
+    const existente = porOrigen.get(pid);
+    if (existente) {
+      idsPlani.set(pid, existente.id);
+      const sinTocar = huellaDePlanificacion({ nombre: existente.nombre, datos: existente.datos }) === existente.origenHuella;
+      if (sinTocar) {
+        await tx.planificacion.update({
+          where: { id: existente.id },
+          data: { ...resto, datos: datos as Prisma.InputJsonValue, origenHuella: huella },
+          select: { id: true },
+        });
+        cuenta.actualizados++;
+      } else cuenta.respetados++;
+      continue;
+    }
+    const creada = await tx.planificacion.create({
+      data: {
+        ...resto,
+        datos: datos as Prisma.InputJsonValue,
+        pacienteId: copiaId,
+        dietistaId,
+        // Aparte de las suyas: ni por defecto ni activa si ya tiene planificación.
+        esDefecto: opciones.primeraVez || !yaTienePlanificacion ? esDefecto : false,
+        estado: opciones.primeraVez || !yaTienePlanificacion ? estado : "guardada",
+        origenId: pid,
+        origenHuella: huella,
+      },
+      select: { id: true },
+    });
+    idsPlani.set(pid, creada.id);
+    cuenta.nuevos++;
+  }
+  // Las planificaciones del alumno que ya venían de la plantilla y no se han recorrido (plantilla
+  // sin cambios en ellas) siguen valiendo para reescribir los planes.
+  for (const e of existentes) if (e.origenId && !idsPlani.has(e.origenId)) idsPlani.set(e.origenId, e.id);
+
+  // ── Planes ──
+  const planes = await tx.planAlimenticio.findMany({ where: { pacienteId: origenId }, orderBy: { createdAt: "asc" }, include: ARBOL_DEL_PLAN });
+  const copiasPlanes = await tx.planAlimenticio.findMany({
+    where: { pacienteId: copiaId },
+    include: ARBOL_DEL_PLAN,
+  });
+  const yaTieneActivo = copiasPlanes.some((p) => p.activo);
+  const planPorOrigen = new Map(copiasPlanes.filter((p) => p.origenId).map((p) => [p.origenId as string, p]));
   for (const plan of planes) {
     const {
-      id: _plid, pacienteId: _plp, dietistaId: _pld, createdAt: _plc, updatedAt: _plu,
-      dias, planificacionIds, objetivosPorPlani, repartoPorComida,
+      id: plid, pacienteId: _plp, dietistaId: _pld, createdAt: _plc, updatedAt: _plu, origenId: _po, origenHuella: _ph,
+      dias, planificacionIds, objetivosPorPlani, repartoPorComida, activo,
       ...datosPlan
     } = plan;
-    void _plid; void _plp; void _pld; void _plc; void _plu;
+    void _plp; void _pld; void _plc; void _plu; void _po; void _ph;
+    const huella = huellaDePlan(plan);
+    const datosComunes = {
+      ...datosPlan,
+      planificacionIds: planificacionIds.map((pid) => idsPlani.get(pid)).filter((x): x is string => !!x),
+      objetivosPorPlani: objetivosPorPlani === null ? Prisma.DbNull : reclavar(objetivosPorPlani, idsPlani),
+      repartoPorComida: repartoPorComida === null ? Prisma.DbNull : reclavarReparto(repartoPorComida, idsPlani),
+      origenId: plid,
+      origenHuella: huella,
+    };
+    const existente = planPorOrigen.get(plid);
+    if (existente) {
+      const sinTocar = huellaDePlan(existente) === existente.origenHuella;
+      if (!sinTocar) { cuenta.respetados++; continue; }
+      await tx.planAlimenticio.update({ where: { id: existente.id }, data: datosComunes, select: { id: true } });
+      await tx.diaDelPlan.deleteMany({ where: { planId: existente.id } });
+      await crearArbolDelPlan(tx, existente.id, dias, idsPlani);
+      cuenta.actualizados++;
+      continue;
+    }
     const nuevoPlan = await tx.planAlimenticio.create({
       data: {
-        ...datosPlan,
-        pacienteId: nuevo.id,
-        dietistaId: destino.dietistaId,
-        planificacionIds: planificacionIds.map((pid) => idsPlani.get(pid)).filter((x): x is string => !!x),
-        ...(objetivosPorPlani === null ? {} : { objetivosPorPlani: reclavar(objetivosPorPlani, idsPlani) }),
-        ...(repartoPorComida === null ? {} : { repartoPorComida: reclavarReparto(repartoPorComida, idsPlani) }),
+        ...datosComunes,
+        pacienteId: copiaId,
+        dietistaId,
+        // Aparte de los suyos: no se le cambia cuál es su plan actual.
+        activo: opciones.primeraVez || !yaTieneActivo ? activo : false,
       },
+      select: { id: true },
     });
-    // Los días que "comen igual" comparten un grupoId: se conserva la agrupación con ids nuevos.
-    const grupos = new Map<string, string>();
-    for (const dia of dias) {
-      let grupoId: string | null = null;
-      if (dia.grupoId) {
-        grupoId = grupos.get(dia.grupoId) ?? randomUUID();
-        grupos.set(dia.grupoId, grupoId);
-      }
-      await tx.diaDelPlan.create({
-        data: {
-          planId: nuevoPlan.id,
-          dia: dia.dia,
-          grupoId,
-          planificacionId: nuevaPlani(dia.planificacionId),
-          comidas: {
-            create: dia.comidas.map((c) => ({
-              tipo: c.tipo, orden: c.orden, descripcion: c.descripcion, nombre: c.nombre, hora: c.hora,
-              alimentos: {
-                create: c.alimentos.map((a) => ({
-                  alimentoId: a.alimentoId, recetaId: a.recetaId, cantidad: a.cantidad, unidad: a.unidad,
-                  orden: a.orden, nombrePersonalizado: a.nombrePersonalizado,
-                  alternativas: {
-                    create: a.alternativas.map((alt) => ({
-                      alimentoId: alt.alimentoId, recetaId: alt.recetaId, cantidad: alt.cantidad,
-                      unidad: alt.unidad, orden: alt.orden, nombrePersonalizado: alt.nombrePersonalizado,
-                    })),
-                  },
-                })),
-              },
-            })),
-          },
-        },
-      });
-    }
+    await crearArbolDelPlan(tx, nuevoPlan.id, dias, idsPlani);
+    cuenta.nuevos++;
   }
-
-  return nuevo.id;
+  return cuenta;
 }
 
 /**

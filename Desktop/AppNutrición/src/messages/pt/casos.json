@@ -102,7 +102,8 @@
     "entregable": "Entregável",
     "entregableDe": "O PDF de «{plan}», tal e qual o entregou ({tamano}).",
     "sinEntregable": "Entregou sem PDF: não anexou nenhum entregável.",
-    "abrirPdf": "Abrir o PDF"
+    "abrirPdf": "Abrir o PDF",
+    "compartidoPorTi": "partilhado por ti"
   },
   "crearYRellenar": "Criar e preencher o paciente",
   "paciente": {
@@ -127,7 +128,7 @@
   "compartir": {
     "titulo": "Dar-lhes feito o planeamento e o plano alimentar",
     "apagado": "Desligado: o que fizeres em Planeamento e Plano alimentar é a tua solução. Só tu a vês, e serve-te para comparar com o que entregarem.",
-    "encendido": "Ligado: o planeamento e os planos que a ficha tiver são copiados quando começam o caso, com tudo o resto. Quem já o tenha começado não o recebe.",
+    "encendido": "Ligado: o planeamento e os planos que a ficha tiver são copiados quando começam o caso, marcados como «Do professor». A quem já o tenha começado chegam ao carregar em «Atualizar o caso», à parte do que é deles.",
     "activado": "Vão recebê-lo feito: o planeamento e o plano viajam com o caso",
     "desactivado": "Fica contigo: o planeamento e o plano não se partilham",
     "compararConTuPlan": "Comparar com o teu plano do caso"
@@ -141,7 +142,7 @@
     "boton": "{n, plural, one {Atualizar o caso no aluno que já o tem} other {Atualizar o caso nos # alunos que já o têm}}",
     "ultimaVez": "Última vez: {fecha}",
     "titulo": "Atualizar o caso nos alunos",
-    "texto": "{n, plural, one {Envia-se a ficha tal como está agora ao aluno que já tem a sua cópia.} other {Envia-se a ficha tal como está agora aos # alunos que já têm a sua cópia.}} Dados, anamnese, alergias, horário, recomendações e notas são substituídos, mesmo se o aluno os tiver alterado. As medições e consultas do caso atualizam-se e acrescentam-se as novas; as que o aluno tenha acrescentado ficam. Não se tocam os seus planos, o seu planeamento nem o que já tenha entregado.",
+    "texto": "{n, plural, one {Envia-se a ficha tal como está agora ao aluno que já tem a sua cópia.} other {Envia-se a ficha tal como está agora aos # alunos que já têm a sua cópia.}} Dados, anamnese, alergias, horário, recomendações e notas são substituídos, mesmo se o aluno os tiver alterado. As medições e consultas do caso atualizam-se e acrescentam-se as novas; as que o aluno tenha acrescentado ficam. Se tiveres ligado «Dar-lhes feito o planeamento e o plano», chegam-lhes também o teu planeamento e os teus planos marcados como «Do professor», à parte dos deles e sem tocar no que tenham alterado do que já lhes partilhaste. O que é deles não se toca, nem o que já tenham entregado.",
     "confirmar": "Atualizar",
     "hecho": "{n, plural, one {Caso atualizado em # aluno} other {Caso atualizado em # alunos}}",
     "parcial": "Atualizado em {n}; em {fallidas} não foi possível. Tenta de novo."

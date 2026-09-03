@@ -166,6 +166,7 @@ export default async function EntregaPage({
                   }`}
                 >
                   {p.nombre}
+                  {p.delProfesor && <span className="ml-1.5 text-[10px] opacity-80">· {t("entregas.compartidoPorTi")}</span>}
                 </Link>
               );
             })}

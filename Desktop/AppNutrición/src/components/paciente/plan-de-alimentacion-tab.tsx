@@ -85,6 +85,8 @@ type PlanDetalleDia = {
 };
 
 type PlanDetalle = {
+  /** #40 — Plan compartido por el profesor del caso. */
+  origenId?: string | null;
   id: string;
   nombre: string;
   caloriasObjetivo: number | null;
@@ -124,6 +126,7 @@ export function PlanDeAlimentacionTab({
   planificaciones?: { id: string; nombre: string; esDefecto: boolean; estado: string; datos?: { kcalObjetivo?: number; protGObjetivo?: number; carbGObjetivo?: number; grasaGObjetivo?: number; repartoPorComida?: RepartoPorComida } | null }[];
 }) {
   const t = useTranslations("patients.planAlimentacion");
+  const tc = useTranslations("common");
   const router = useRouter();
   const [isPendingAssign, startAssign] = useTransition();
   const [abierto, setAbierto] = useState(false);
@@ -220,6 +223,11 @@ export function PlanDeAlimentacionTab({
           >
             <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
               <span className="text-sm sm:text-base font-semibold truncate">{selectedPlan.nombre}</span>
+              {selectedPlan.origenId && (
+                <span title={tc("compartidoPorProfesor")} className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium shrink-0">
+                  {tc("delProfesor")}
+                </span>
+              )}
               {esActivo && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-medium shrink-0">
                   <CheckCircle2 className="w-3 h-3" />
@@ -265,6 +273,11 @@ export function PlanDeAlimentacionTab({
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="truncate text-base font-medium">{p.nombre}</span>
+                      {p.origenId && (
+                        <span title={tc("compartidoPorProfesor")} className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium shrink-0">
+                          {tc("delProfesor")}
+                        </span>
+                      )}
                       {esEsteActivo && (
                         <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-medium shrink-0">
                           <CheckCircle2 className="w-3 h-3" />

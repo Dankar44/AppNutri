@@ -102,7 +102,8 @@
     "entregable": "Entregable",
     "entregableDe": "El PDF de «{plan}», tal y como lo entregó ({tamano}).",
     "sinEntregable": "Entregó sin PDF: no adjuntó ningún entregable.",
-    "abrirPdf": "Abrir el PDF"
+    "abrirPdf": "Abrir el PDF",
+    "compartidoPorTi": "compartido por ti"
   },
   "crearYRellenar": "Crear y rellenar el paciente",
   "paciente": {
@@ -127,7 +128,7 @@
   "compartir": {
     "titulo": "Darles hecha la planificación y el plan de alimentación",
     "apagado": "Apagado: lo que hagas en Planificación y Plan de alimentación es tu solución. Solo la ves tú, y te sirve para comparar con lo que entreguen.",
-    "encendido": "Encendido: la planificación y los planes que tenga la ficha se les copian al empezar el caso, con todo lo demás. Quien ya lo haya empezado no lo recibe.",
+    "encendido": "Encendido: la planificación y los planes que tenga la ficha se les copian al empezar el caso, marcados como «Del profesor». A quien ya lo haya empezado le llegan al pulsar «Actualizar el caso», aparte de lo suyo.",
     "activado": "Se les dará hecho: la planificación y el plan viajan con el caso",
     "desactivado": "Se queda contigo: la planificación y el plan no se comparten",
     "compararConTuPlan": "Comparar con tu plan del caso"
@@ -141,7 +142,7 @@
     "boton": "{n, plural, one {Actualizar el caso en el alumno que ya lo tiene} other {Actualizar el caso en los # alumnos que ya lo tienen}}",
     "ultimaVez": "Última vez: {fecha}",
     "titulo": "Actualizar el caso en los alumnos",
-    "texto": "{n, plural, one {Se envía la ficha tal y como está ahora al alumno que ya tiene su copia.} other {Se envía la ficha tal y como está ahora a los # alumnos que ya tienen su copia.}} Datos, anamnesis, alergias, horario, recomendaciones y notas se sobrescriben, también si el alumno los había cambiado. Las mediciones y consultas del caso se actualizan y se añaden las nuevas; las que haya añadido el alumno se quedan. No se tocan sus planes, su planificación ni lo que ya haya entregado.",
+    "texto": "{n, plural, one {Se envía la ficha tal y como está ahora al alumno que ya tiene su copia.} other {Se envía la ficha tal y como está ahora a los # alumnos que ya tienen su copia.}} Datos, anamnesis, alergias, horario, recomendaciones y notas se sobrescriben, también si el alumno los había cambiado. Las mediciones y consultas del caso se actualizan y se añaden las nuevas; las que haya añadido el alumno se quedan. Si tienes encendido «Darles hecha la planificación y el plan», también les llegan tu planificación y tus planes marcados como «Del profesor», aparte de los suyos y sin pisar lo que hayan tocado de lo que ya les compartiste. Lo suyo no se toca, ni lo que ya hayan entregado.",
     "confirmar": "Actualizar",
     "hecho": "{n, plural, one {Caso actualizado en # alumno} other {Caso actualizado en # alumnos}}",
     "parcial": "Actualizado en {n}; en {fallidas} no se ha podido. Vuelve a intentarlo."

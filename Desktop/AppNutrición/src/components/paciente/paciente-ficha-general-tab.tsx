@@ -63,6 +63,7 @@ type PacienteGeneral = {
 };
 
 type PlanResumen = {
+  origenId?: string | null;
   id: string;
   nombre: string;
   caloriasObjetivo: number | null;
@@ -112,6 +113,7 @@ export function PacienteFichaGeneralTab({
 }) {
   const t = useTranslations("patients.general");
   const tSidebar = useTranslations("patients.sidebar");
+  const tc = useTranslations("common");
   const renderObjetivo = useRenderObjetivo();
   const renderLista = useRenderLista();
   const [sidebar, setSidebar] = useState<FichaSidebarData>(initialSidebar);
@@ -256,7 +258,14 @@ export function PacienteFichaGeneralTab({
               className="flex items-center justify-between rounded-xl border border-border px-4 py-3 hover:bg-muted/40"
             >
               <div>
-                <p className="font-medium">{plan.nombre}</p>
+                <p className="font-medium inline-flex items-center gap-2 flex-wrap">
+                  {plan.nombre}
+                  {plan.origenId && (
+                    <span title={tc("compartidoPorProfesor")} className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                      {tc("delProfesor")}
+                    </span>
+                  )}
+                </p>
                 <p className="text-sm text-muted-foreground">{formatDate(plan.createdAt)}</p>
               </div>
               {plan.caloriasObjetivo != null && (

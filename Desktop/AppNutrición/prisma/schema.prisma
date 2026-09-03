@@ -329,6 +329,9 @@ model Planificacion {
   fechaInicio       DateTime  @default(now())
   fechaUltimoCambio DateTime  @default(now())
   fechaFinPrevista  DateTime?
+  /// #40 — Si es copia de la planificación de la plantilla de un caso (ver PlanAlimenticio).
+  origenId          String?
+  origenHuella      String?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @default(now()) @updatedAt
 
@@ -506,6 +509,10 @@ model PlanAlimenticio {
   /// llevan un Reparto suelto (sin `v`) y se siguen leyendo tal cual (ver repartoParaPlani).
   repartoPorComida Json?
   activo          Boolean   @default(true)
+  /// #40 — Si es copia del plan de la plantilla de un caso (compartido por el profesor): de cuál
+  /// viene, y cómo estaba al mandárselo (huella) para saber si el alumno lo ha tocado.
+  origenId        String?
+  origenHuella    String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 

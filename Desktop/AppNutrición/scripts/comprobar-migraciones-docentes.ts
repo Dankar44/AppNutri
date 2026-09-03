@@ -34,6 +34,7 @@ const MIGRACIONES: { script: string; comprueba: [string, string][] }[] = [
   { script: "add-entrega-congelada", comprueba: [["entregas_caso", "entregaSnapshot"], ["entregas_caso", "entregablePdf"], ["entregas_caso", "entregableBytes"]] },
   { script: "add-caso-aviso-copia", comprueba: [["casos_clinicos", "avisoCopiaOculto"]] },
   { script: "add-origen-copia", comprueba: [["medidas_antropometricas", "origenId"], ["consultas", "origenId"], ["casos_clinicos", "copiasActualizadasAt"]] },
+  { script: "add-origen-planes", comprueba: [["planes_alimenticios", "origenId"], ["planes_alimenticios", "origenHuella"], ["planificaciones", "origenId"], ["planificaciones", "origenHuella"]] },
 ];
 
 const TABLAS_CON_RLS = ["licencias_docentes", "invitaciones_docentes", "clases", "alumnos_clase", "profesores_clase", "casos_clinicos", "asignaciones_caso", "entregas_caso"];

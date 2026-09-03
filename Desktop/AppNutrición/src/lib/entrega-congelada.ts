@@ -37,13 +37,15 @@ export interface PlanificacionCongelada {
   esDefecto: boolean;
   estado: string;
   datos: PlanificacionDatos;
+  /** Compartida por el profesor (copia de la suya). */
+  origenId?: string | null;
 }
 
 export interface EntregaCongelada {
   v: 1;
   paciente: PacienteCongelado;
   planificaciones: PlanificacionCongelada[];
-  planes: PlanVisualDetalle[];
+  planes: PlanVisto[];
   /** Las mediciones y la anamnesis, tal y como las pinta la ficha: la pestaña de planificación
    *  las usa (peso y grasa actuales, actividad). Serializadas (fechas como texto). */
   medidas: unknown[];
@@ -85,19 +87,22 @@ export async function leerPlanificaciones(pacienteId: string): Promise<Planifica
   const filas = await prisma.planificacion.findMany({
     where: { pacienteId },
     orderBy: [{ esDefecto: "desc" }, { createdAt: "asc" }],
-    select: { id: true, nombre: true, esDefecto: true, estado: true, datos: true },
+    select: { id: true, nombre: true, esDefecto: true, estado: true, datos: true, origenId: true },
   });
   return filas.map((f) => ({ ...f, datos: (f.datos ?? {}) as PlanificacionDatos }));
 }
 
 /** Un plan entero, en la forma en que lo pinta `PlanVisual`, con sus objetivos. */
-export async function leerPlanParaVer(planId: string): Promise<PlanVisualDetalle | null> {
+export type PlanVisto = PlanVisualDetalle & { origenId?: string | null };
+
+export async function leerPlanParaVer(planId: string): Promise<PlanVisto | null> {
   const plan = await prisma.planAlimenticio.findUnique({ where: { id: planId }, include: PLAN_COMPLETO });
   if (!plan) return null;
   // #75 — los días agrupados enseñan el menú de su día representante, como en el enlace público.
   const dias = await expandirGruposDeDias(plan.id, plan.dias);
   return {
     ...aDetalleVisual(plan, dias),
+    origenId: plan.origenId,
     activo: plan.activo,
     caloriasObjetivo: plan.caloriasObjetivo,
     proteinasObjetivo: plan.proteinasObjetivo,
@@ -116,7 +121,7 @@ export async function congelarTrabajo(pacienteId: string): Promise<EntregaCongel
     take: MAX_PLANES,
     select: { id: true },
   });
-  const planes: PlanVisualDetalle[] = [];
+  const planes: PlanVisto[] = [];
   for (const { id } of ids) {
     const p = await leerPlanParaVer(id);
     if (p) planes.push(p);

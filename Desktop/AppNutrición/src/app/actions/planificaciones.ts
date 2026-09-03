@@ -58,6 +58,8 @@ export type Planificacion = {
   fechaUltimoCambio: string;
   fechaFinPrevista: string | null;
   datos: PlanificacionDatos;
+  /** #40 — Compartida por el profesor del caso (copia de la suya). */
+  origenId?: string | null;
 };
 
 /* ─── Queries ─── */
@@ -77,10 +79,11 @@ export async function getPlanificaciones(pacienteId: string): Promise<Planificac
       fechaUltimoCambio: Date;
       fechaFinPrevista: Date | null;
       datos: PlanificacionDatos;
+      origenId: string | null;
     }[]
   >(
     `SELECT id, "pacienteId", nombre, estado, "esDefecto",
-            "fechaInicio", "fechaUltimoCambio", "fechaFinPrevista", datos
+            "fechaInicio", "fechaUltimoCambio", "fechaFinPrevista", datos, "origenId"
      FROM planificaciones
      WHERE "pacienteId" = $1 AND "dietistaId" = $2
      ORDER BY "esDefecto" DESC, "createdAt" ASC`,
@@ -155,7 +158,7 @@ export async function ensurePlanificacionDefecto(pacienteId: string): Promise<Pl
 
   if (dietista.isDemo) {
     // Demo: do not create, return a stub
-    return { id: "", pacienteId, nombre: t("planificacion.porDefecto"), estado: "activa", esDefecto: true, fechaInicio: new Date().toISOString(), fechaUltimoCambio: new Date().toISOString(), fechaFinPrevista: null, datos: {} };
+    return { id: "", pacienteId, nombre: t("planificacion.porDefecto"), estado: "activa", esDefecto: true, fechaInicio: new Date().toISOString(), fechaUltimoCambio: new Date().toISOString(), fechaFinPrevista: null, datos: {}, origenId: null };
   }
 
   await prisma.$queryRawUnsafe(

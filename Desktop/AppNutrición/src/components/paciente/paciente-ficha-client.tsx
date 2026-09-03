@@ -85,6 +85,7 @@ type PacienteSerializado = {
 };
 
 type PlanResumen = {
+  origenId?: string | null;
   id: string;
   nombre: string;
   caloriasObjetivo: number | null;

@@ -38,6 +38,7 @@ export function PlanificacionDelAlumno({
     fechaUltimoCambio: "",
     fechaFinPrevista: null,
     datos: p.datos,
+    origenId: p.origenId ?? null,
   }));
 
   return (

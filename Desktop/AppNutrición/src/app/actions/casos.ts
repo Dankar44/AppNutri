@@ -22,9 +22,9 @@ import { requireProfesor } from "./docencia";
 import {
   leerCongelado, leerPacienteCongelable, leerPlanificaciones, leerPlanParaVer,
   leerMedidasSerializadas, leerFichaInformacion,
-  type PacienteCongelado, type PlanificacionCongelada,
+  type PacienteCongelado, type PlanificacionCongelada, type PlanVisto,
 } from "@/lib/entrega-congelada";
-import { copiarPaciente, actualizarCopia } from "@/lib/copiar-paciente";
+import { copiarPaciente, actualizarCopia, copiarPlanesYPlanificaciones } from "@/lib/copiar-paciente";
 import type { Prisma } from "@/generated/prisma/client";
 import type { PlanVisualDetalle } from "@/components/paciente/plan-visual";
 
@@ -193,20 +193,27 @@ export async function actualizarCopiasDelCaso(
   const t = await getTranslations("validation");
   const caso = await prisma.casoClinico.findFirst({
     where: { id: casoId, profesorId: profesor.dietistaId },
-    select: { pacienteId: true },
+    select: { pacienteId: true, compartirPlanes: true },
   });
   if (!caso?.pacienteId) return { ok: false, error: t("docencia.casoNoEncontrado") };
   const plantillaId = caso.pacienteId;
 
   const copias = await prisma.entregaCaso.findMany({
     where: { asignacion: { casoId, retiradaAt: null }, pacienteId: { not: null } },
-    select: { pacienteId: true },
+    select: { pacienteId: true, alumnoId: true },
   });
   let actualizadas = 0;
   let fallidas = 0;
-  for (const { pacienteId } of copias) {
+  for (const { pacienteId, alumnoId } of copias) {
     try {
-      await prisma.$transaction((tx) => actualizarCopia(tx, plantillaId, pacienteId as string), { timeout: 20000 });
+      await prisma.$transaction(async (tx) => {
+        await actualizarCopia(tx, plantillaId, pacienteId as string);
+        // Con «compartir» encendido, también su planificación y sus planes, como «Del profesor»:
+        // aparte de lo del alumno, y sin pisar lo que haya tocado de lo compartido antes.
+        if (caso.compartirPlanes) {
+          await copiarPlanesYPlanificaciones(tx, plantillaId, pacienteId as string, alumnoId, { primeraVez: false });
+        }
+      }, { timeout: 30000 });
       actualizadas++;
     } catch (e) {
       console.error("[actualizarCopiasDelCaso]", pacienteId, e);
@@ -782,7 +789,8 @@ export interface TrabajoDeEntrega {
   /** Sus mediciones y su anamnesis, que la pestaña de planificación usa para calcular. */
   medidas: unknown[];
   fichaInformacion: unknown | null;
-  planes: { id: string; nombre: string; activo: boolean; dias: number }[];
+  /** `delProfesor`: es (o fue) el plan que el profesor compartió con el caso. */
+  planes: { id: string; nombre: string; activo: boolean; dias: number; delProfesor: boolean }[];
   /** El plan que se está mirando, listo para pintar. */
   planVisto: PlanVisualDetalle | null;
 }
@@ -820,7 +828,7 @@ export async function getTrabajoDeEntrega(
 
   let paciente: PacienteCongelado | null;
   let planificaciones: PlanificacionCongelada[];
-  let planes: PlanVisualDetalle[];
+  let planes: PlanVisto[];
   let medidas: unknown[] = [];
   let fichaInformacion: unknown | null = null;
   if (congelado && foto) {
@@ -877,7 +885,7 @@ export async function getTrabajoDeEntrega(
     planificaciones,
     medidas,
     fichaInformacion,
-    planes: planes.map((p) => ({ id: p.id, nombre: p.nombre, activo: p.activo, dias: p.dias.length })),
+    planes: planes.map((p) => ({ id: p.id, nombre: p.nombre, activo: p.activo, dias: p.dias.length, delProfesor: !!p.origenId })),
     planVisto,
   };
 }

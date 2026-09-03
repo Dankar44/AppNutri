@@ -647,6 +647,7 @@ export function PlanificacionPorDefectoTab({
 }) {
   const t = useTranslations("patients.planificacion");
   const tc = useTranslations("diets.comidaSlot.tipoLabels");
+  const tc2 = useTranslations("common");
   const tDia = useTranslations("diets.editor.dayLabels");
   // Inicial de cada día: en español el miércoles es "X" para distinguirlo del martes.
   const tIni = useTranslations("patients.planificacion.diasIniciales");
@@ -1994,6 +1995,11 @@ export function PlanificacionPorDefectoTab({
                   }`}
                 >
                   {plan.nombre}
+                  {plan.origenId && (
+                    <span title={tc2("compartidoPorProfesor")} className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-normal">
+                      {tc2("delProfesor")}
+                    </span>
+                  )}
                   {isInactive && (
                     <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-normal">
                       {plan.estado}

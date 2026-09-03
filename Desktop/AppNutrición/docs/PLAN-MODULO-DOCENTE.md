@@ -516,6 +516,20 @@ el aula. Al probarlo, Guillermo pidió el modelo de arriba. Cambios hechos:
   anamnesis van ahora en el snapshot), dentro de un `<div inert>` para que nada se pueda pulsar ni
   guardar. La pestaña no llama al servidor sola, solo al pulsar, así que bloqueada es segura.
 
+- **Planes y planificación compartidos, «Del profesor»** (3 sep 2026, Guillermo: "sale como
+  compartido por profesor, como si fuera una parte, y no como la planificación por defecto o ya
+  activada"). `planes_alimenticios` y `planificaciones` llevan `origenId` + `origenHuella`
+  (migración `add-origen-planes`, la 16ª). Al copiarlos se marcan; la ficha del alumno los etiqueta
+  «Del profesor» (cabecera y lista del plan, tarjeta de planes, pestañas de planificación) y el
+  profesor ve «compartido por ti» al corregir. «Actualizar el caso» con «compartir» encendido los
+  manda también a quien ya tiene su copia: lo nuevo llega APARTE (sin robarle el plan actual ni la
+  planificación por defecto), lo ya compartido se sustituye solo si el alumno no lo ha tocado (la
+  huella coincide) y si lo tocó se respeta. `copiarPlanesYPlanificaciones` es la única función que
+  lo hace, tanto al empezar el caso como al actualizar.
+- **Aviso de cambios sin guardar** en el horario del paciente (`useCambiosSinGuardar`, sacado de
+  la planificación), para todos los usuarios: al irse a otra pestaña o al menú pregunta guardar /
+  salir sin guardar / seguir. Y el botón Guardar del horario ya desaparece tras guardar.
+
 ### Lo que queda de la fase 3
 
 - Repasar el menú del alumno cuando se vea el flujo con gente de verdad (Mensajes, Pagos).

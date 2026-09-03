@@ -356,12 +356,18 @@ async function main() {
     await client.query(`INSERT INTO medidas_antropometricas (id, "pacienteId", fecha, peso, altura, "createdAt") VALUES ('${MARCA}-medida-nueva', $1, NOW() - INTERVAL '30 days', 63, 165, NOW())`, [plantillaId]);
     await client.query(`UPDATE pacientes SET notas = 'CORREGIDO: ferritina 7 ng/ml', horario = '[{"dia":"lunes","hora":"08:00","actividad":"Desayuno"},{"dia":"martes","hora":"20:00","actividad":"Yoga"}]'::jsonb WHERE id = $1`, [plantillaId]);
     await client.query(`UPDATE planes_alimenticios SET nombre = 'PLAN DE LA ALUMNA' WHERE "pacienteId" = $1`, [pac[0].id]);
+    // Y con «compartir» encendido: renombra su planificación (la copia de la alumna está sin tocar)
+    // y añade un plan nuevo a la plantilla (la alumna ya tiene el suyo activo).
+    await client.query(`UPDATE planificaciones SET nombre = '${MARCA} Plani v2' WHERE id = $1`, [planiId]);
+    await client.query(
+      `INSERT INTO planes_alimenticios (id, "pacienteId", "dietistaId", nombre, activo, "createdAt", "updatedAt")
+       VALUES ('${MARCA}-plan-2', $1, $2, '${MARCA} Plan extra', false, NOW(), NOW())`, [plantillaId, profesorId]);
     await profe.goto(`${BASE}/pacientes/${plantillaId}?espacio=docente`, { waitUntil: "networkidle0" });
     await esperar(1500);
     comprobar("tiene el botón de actualizar el caso en los alumnos", (await texto(profe)).includes("Actualizar el caso en el alumno"));
     await pulsar(profe, "Actualizar el caso en el alumno");
     await esperar(800);
-    comprobar("se le explica qué se sobrescribe y qué no antes de hacerlo", (await texto(profe)).includes("No se tocan sus planes"));
+    comprobar("se le explica qué se sobrescribe y qué no antes de hacerlo", (await texto(profe)).includes("Lo suyo no se toca"));
     await profe.evaluate(() => {
       const b = Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.trim() === "Actualizar");
       (b as HTMLElement | undefined)?.click();
@@ -371,12 +377,25 @@ async function main() {
       `SELECT notas, horario, (SELECT COUNT(*)::int FROM medidas_antropometricas m WHERE m."pacienteId" = p.id) AS medidas,
               (SELECT peso FROM medidas_antropometricas m WHERE m."pacienteId" = p.id AND m."origenId" IS NOT NULL AND m.altura = 165 AND m.fecha > NOW() - INTERVAL '1 day') AS peso_corregido,
               (SELECT COUNT(*)::int FROM medidas_antropometricas m WHERE m."pacienteId" = p.id AND m."origenId" IS NULL) AS suyas,
-              (SELECT nombre FROM planes_alimenticios WHERE "pacienteId" = p.id LIMIT 1) AS plan
+              (SELECT COUNT(*)::int FROM planes_alimenticios WHERE "pacienteId" = p.id AND nombre = 'PLAN DE LA ALUMNA') AS plan_suyo
          FROM pacientes p WHERE p.id = $1`, [pac[0].id]);
     comprobar("las notas y el horario de la alumna se actualizan", (copiaTras[0]?.notas ?? "").includes("CORREGIDO") && copiaTras[0]?.horario?.length === 2, copiaTras[0]?.notas);
     comprobar("la medición del profesor se corrige en su copia (61 kg) sin duplicarse", Number(copiaTras[0]?.peso_corregido) === 61, String(copiaTras[0]?.peso_corregido));
     comprobar("la medición nueva llega, y la que añadió la alumna se queda", copiaTras[0]?.medidas === 3 && copiaTras[0]?.suyas === 1, `${copiaTras[0]?.medidas} medidas, ${copiaTras[0]?.suyas} suyas`);
-    comprobar("y su plan no se toca", copiaTras[0]?.plan === "PLAN DE LA ALUMNA", copiaTras[0]?.plan);
+    comprobar("y su plan (el compartido, que ella tocó) se respeta", copiaTras[0]?.plan_suyo === 1, `${copiaTras[0]?.plan_suyo} con su nombre`);
+    const { rows: compartidos } = await client.query(
+      `SELECT nombre, activo, "origenId" FROM planes_alimenticios WHERE "pacienteId" = $1 ORDER BY "createdAt"`, [pac[0].id]);
+    comprobar("el plan nuevo del profesor le llega aparte, marcado y sin robarle el plan actual",
+      compartidos.length === 2 && compartidos[1].nombre === `${MARCA} Plan extra` && compartidos[1].activo === false && compartidos[1].origenId === `${MARCA}-plan-2`
+        && compartidos[0].activo === true,
+      compartidos.map((c) => `${c.nombre}${c.activo ? " (actual)" : ""}`).join(" | "));
+    const { rows: planiCopia } = await client.query(`SELECT nombre, "origenId" FROM planificaciones WHERE "pacienteId" = $1`, [pac[0].id]);
+    comprobar("la planificación compartida, que no había tocado, se actualiza con el nombre nuevo",
+      planiCopia.length === 1 && planiCopia[0].nombre === `${MARCA} Plani v2` && planiCopia[0].origenId === planiId, planiCopia.map((p) => p.nombre).join(" | "));
+    await alumna.goto(`${BASE}/pacientes/${pac[0].id}?pestana=plan-alimentacion&espacio=aula`, { waitUntil: "networkidle0" });
+    await esperar(2000);
+    // Su plan actual es la copia del del profesor (aunque lo haya renombrado): lleva la etiqueta.
+    comprobar("y en su ficha los planes del profesor salen etiquetados «Del profesor»", (await texto(alumna)).includes("Del profesor"));
     comprobar("la ficha dice cuándo se actualizó", /Última vez: \d\d\/\d\d\/\d{4}, \d\d:\d\d/.test(await texto(profe)));
 
     console.log("\n── En su lista de pacientes sale etiquetado ──");
@@ -416,8 +435,9 @@ async function main() {
       `${entrega[0]?.pdf_bytes} bytes · ${entrega[0]?.entregableNombre}`);
     comprobar("del plan que tenía", entrega[0]?.entregablePlanId === planCopia[0]?.id);
     const foto = entrega[0]?.entregaSnapshot;
+    // Dos planes: el suyo (la copia que renombró) y el que el profesor le compartió después.
     comprobar("y la foto fija del trabajo: paciente, planificación y plan",
-      foto?.v === 1 && foto?.paciente?.nombre === "Marta" && Array.isArray(foto?.planificaciones) && foto?.planes?.length === 1,
+      foto?.v === 1 && foto?.paciente?.nombre === "Marta" && Array.isArray(foto?.planificaciones) && foto?.planes?.length === 2,
       JSON.stringify({ v: foto?.v, planis: foto?.planificaciones?.length, planes: foto?.planes?.length }));
     visible = await texto(alumna);
     comprobar("la alumna ve cuándo entregó y el PDF", visible.includes("Entregada") && /\d\d\/\d\d\/\d{4}, \d\d:\d\d/.test(visible) && visible.includes("Ver el PDF"),
