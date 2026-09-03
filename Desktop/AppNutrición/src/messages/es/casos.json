@@ -114,8 +114,7 @@
     "avisoTexto": "Lo que rellenes aquí —datos, anamnesis, mediciones, horario, recomendaciones— lo verán tus alumnos tal cual al empezar el caso. Lo que quieras que hagan ellos, díselo en «Qué les pides».",
     "verCaso": "Ver el caso",
     "volverAClase": "Volver a la clase",
-    "yaEmpezado": "{n, plural, one {# alumno ya lo ha empezado y tiene su copia: lo que cambies ahora en la ficha no le llega solo.} other {# alumnos ya lo han empezado y tienen su copia: lo que cambies ahora en la ficha no les llega solo.}} Quien lo empiece a partir de ahora lo recibe tal cual; a los demás se lo mandas con «Actualizar el caso». El nombre y «Qué les pides» sí se actualizan para todos.",
-    "quitarAviso": "Quitar este aviso (no volverá a salir para este caso)"
+    "yaEmpezado": "{n, plural, one {# alumno ya lo ha empezado.} other {# alumnos ya lo han empezado.}} Lo que cambies aquí les llega solo la próxima vez que abran el paciente. La planificación y el plan, solo si «Darles hecha…» está encendido, y llegan aparte como «Del profesor»."
   },
   "objetivo": {
     "MANTENIMIENTO": "Mantenimiento",
@@ -128,7 +127,7 @@
   "compartir": {
     "titulo": "Darles hecha la planificación y el plan de alimentación",
     "apagado": "Apagado: lo que hagas en Planificación y Plan de alimentación es tu solución. Solo la ves tú, y te sirve para comparar con lo que entreguen.",
-    "encendido": "Encendido: la planificación y los planes que tenga la ficha se les copian al empezar el caso, marcados como «Del profesor». A quien ya lo haya empezado le llegan al pulsar «Actualizar el caso», aparte de lo suyo.",
+    "encendido": "Encendido: la planificación y los planes que tenga la ficha se les copian al empezar el caso, marcados como «Del profesor». A quien ya lo haya empezado le llegan solos la próxima vez que abra el paciente, aparte de lo suyo.",
     "activado": "Se les dará hecho: la planificación y el plan viajan con el caso",
     "desactivado": "Se queda contigo: la planificación y el plan no se comparten",
     "compararConTuPlan": "Comparar con tu plan del caso"
@@ -137,14 +136,5 @@
     "titulo": "Planificación",
     "ninguna": "No ha hecho ninguna planificación para este paciente.",
     "talCual": "Tal y como la ve el alumno. No se puede tocar."
-  },
-  "actualizar": {
-    "boton": "{n, plural, one {Actualizar el caso en el alumno que ya lo tiene} other {Actualizar el caso en los # alumnos que ya lo tienen}}",
-    "ultimaVez": "Última vez: {fecha}",
-    "titulo": "Actualizar el caso en los alumnos",
-    "texto": "{n, plural, one {Se envía la ficha tal y como está ahora al alumno que ya tiene su copia.} other {Se envía la ficha tal y como está ahora a los # alumnos que ya tienen su copia.}} Datos, anamnesis, alergias, horario, recomendaciones y notas se sobrescriben, también si el alumno los había cambiado. Las mediciones y consultas del caso se actualizan y se añaden las nuevas; las que haya añadido el alumno se quedan. Si tienes encendido «Darles hecha la planificación y el plan», también les llegan tu planificación y tus planes marcados como «Del profesor», aparte de los suyos y sin pisar lo que hayan tocado de lo que ya les compartiste. Lo suyo no se toca, ni lo que ya hayan entregado.",
-    "confirmar": "Actualizar",
-    "hecho": "{n, plural, one {Caso actualizado en # alumno} other {Caso actualizado en # alumnos}}",
-    "parcial": "Actualizado en {n}; en {fallidas} no se ha podido. Vuelve a intentarlo."
   }
 }

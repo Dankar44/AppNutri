@@ -272,6 +272,9 @@ model Paciente {
   esDeClase           Boolean           @default(false)
   /// #40 — Es la plantilla de un caso del profesor: no se mezcla con sus pacientes reales.
   esCasoDocente       Boolean           @default(false)
+  /// #40 — Si es la copia de un caso: la huella de la plantilla la última vez que se puso al día.
+  /// Al abrir la ficha se compara y, si la plantilla ha cambiado, se vuelca sola (sin botón).
+  origenHuella        String?
   activo              Boolean           @default(true)
   /// Si true, el paciente no ve calorías ni macros (portal, PDF, seguimiento). El dietista siempre los ve.
   ocultarCalorias     Boolean           @default(false)
@@ -1189,10 +1192,6 @@ model CasoClinico {
   /// el caso. Apagado (lo normal): lo que el profesor haga ahí es SU solución, para comparar con lo
   /// que entreguen. El resto de la ficha viaja siempre.
   compartirPlanes   Boolean  @default(false)
-  /// El profesor quitó con la ✕ el aviso de "N alumnos ya tienen su copia": no se le vuelve a enseñar.
-  avisoCopiaOculto  Boolean  @default(false)
-  /// Última vez que el profesor volcó la ficha actual a los alumnos que ya tenían su copia.
-  copiasActualizadasAt DateTime?
 
   /// Archivar no borra: las entregas de cursos pasados siguen ahí.
   archivado         Boolean  @default(false)

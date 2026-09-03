@@ -336,20 +336,13 @@ async function main() {
     comprobar("la plantilla del profesor sigue siendo suya", plantillaIntacta[0].esCasoDocente === true);
     comprobar("y se le lleva a su ficha", alumna.url().includes(`/pacientes/${pac[0]?.id}`), alumna.url());
 
-    // Y el profesor, en la plantilla, ve que ya no puede cambiarle la ficha a quien la ha empezado.
+    // El profesor, en la plantilla, ve cuántos la tienen ya; los cambios les llegan solos.
     await profe.goto(`${BASE}/pacientes/${plantillaId}?espacio=docente`, { waitUntil: "networkidle0" });
     await esperar(1500);
-    comprobar("al profesor se le avisa de que 1 alumno ya lo ha empezado y tiene su copia",
-      (await texto(profe)).includes("1 alumno ya lo ha empezado"));
-    // Y lo puede quitar con la ✕, para este caso y para siempre.
-    await profe.evaluate(() => (document.querySelector("button[aria-label^='Quitar este aviso']") as HTMLElement | null)?.click());
-    await esperar(2500);
-    await profe.goto(`${BASE}/pacientes/${plantillaId}?espacio=docente`, { waitUntil: "networkidle0" });
-    await esperar(1500);
-    comprobar("y al quitarlo con la ✕ no vuelve a salir", !(await texto(profe)).includes("ya lo ha empezado"));
-    comprobar("porque se guarda en el caso", (await client.query(`SELECT "avisoCopiaOculto" FROM casos_clinicos WHERE id = $1`, [casoId])).rows[0].avisoCopiaOculto === true);
+    comprobar("al profesor se le dice que 1 alumno ya lo ha empezado y que los cambios le llegan solos",
+      /1 alumno ya lo ha empezado\. Lo que cambies aquí les llega solo/.test(await texto(profe)));
 
-    console.log("\n── Se equivoca, corrige la plantilla y la actualiza en la alumna ──");
+    console.log("\n── Se equivoca, corrige la plantilla, y a la alumna le llega solo al abrir su ficha ──");
     // La alumna añade una medición suya; el profesor corrige el peso de la suya, añade otra, y cambia notas y horario.
     await client.query(`INSERT INTO medidas_antropometricas (id, "pacienteId", fecha, peso, "createdAt") VALUES ('${MARCA}-medida-alumna', $1, NOW(), 57, NOW())`, [pac[0].id]);
     await client.query(`UPDATE medidas_antropometricas SET peso = 61 WHERE "pacienteId" = $1`, [plantillaId]);
@@ -362,29 +355,23 @@ async function main() {
     await client.query(
       `INSERT INTO planes_alimenticios (id, "pacienteId", "dietistaId", nombre, activo, "createdAt", "updatedAt")
        VALUES ('${MARCA}-plan-2', $1, $2, '${MARCA} Plan extra', false, NOW(), NOW())`, [plantillaId, profesorId]);
-    await profe.goto(`${BASE}/pacientes/${plantillaId}?espacio=docente`, { waitUntil: "networkidle0" });
-    await esperar(1500);
-    comprobar("tiene el botón de actualizar el caso en los alumnos", (await texto(profe)).includes("Actualizar el caso en el alumno"));
-    await pulsar(profe, "Actualizar el caso en el alumno");
-    await esperar(800);
-    comprobar("se le explica qué se sobrescribe y qué no antes de hacerlo", (await texto(profe)).includes("Lo suyo no se toca"));
-    await profe.evaluate(() => {
-      const b = Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.trim() === "Actualizar");
-      (b as HTMLElement | undefined)?.click();
-    });
-    await esperar(5000);
+    // Nadie pulsa nada: la alumna abre su ficha.
+    await alumna.goto(`${BASE}/pacientes/${pac[0].id}?espacio=aula`, { waitUntil: "networkidle0" });
+    await esperar(2500);
     const { rows: copiaTras } = await client.query(
-      `SELECT notas, horario, (SELECT COUNT(*)::int FROM medidas_antropometricas m WHERE m."pacienteId" = p.id) AS medidas,
+      `SELECT notas, horario, "origenHuella" IS NOT NULL AS con_huella,
+              (SELECT COUNT(*)::int FROM medidas_antropometricas m WHERE m."pacienteId" = p.id) AS medidas,
               (SELECT peso FROM medidas_antropometricas m WHERE m."pacienteId" = p.id AND m."origenId" IS NOT NULL AND m.altura = 165 AND m.fecha > NOW() - INTERVAL '1 day') AS peso_corregido,
               (SELECT COUNT(*)::int FROM medidas_antropometricas m WHERE m."pacienteId" = p.id AND m."origenId" IS NULL) AS suyas,
               (SELECT COUNT(*)::int FROM planes_alimenticios WHERE "pacienteId" = p.id AND nombre = 'PLAN DE LA ALUMNA') AS plan_suyo
          FROM pacientes p WHERE p.id = $1`, [pac[0].id]);
-    comprobar("las notas y el horario de la alumna se actualizan", (copiaTras[0]?.notas ?? "").includes("CORREGIDO") && copiaTras[0]?.horario?.length === 2, copiaTras[0]?.notas);
+    comprobar("las notas y el horario de la alumna se actualizan solos", (copiaTras[0]?.notas ?? "").includes("CORREGIDO") && copiaTras[0]?.horario?.length === 2, copiaTras[0]?.notas);
     comprobar("la medición del profesor se corrige en su copia (61 kg) sin duplicarse", Number(copiaTras[0]?.peso_corregido) === 61, String(copiaTras[0]?.peso_corregido));
     comprobar("la medición nueva llega, y la que añadió la alumna se queda", copiaTras[0]?.medidas === 3 && copiaTras[0]?.suyas === 1, `${copiaTras[0]?.medidas} medidas, ${copiaTras[0]?.suyas} suyas`);
     comprobar("y su plan (el compartido, que ella tocó) se respeta", copiaTras[0]?.plan_suyo === 1, `${copiaTras[0]?.plan_suyo} con su nombre`);
+    comprobar("la copia guarda la huella de la plantilla", copiaTras[0]?.con_huella === true);
     const { rows: compartidos } = await client.query(
-      `SELECT nombre, activo, "origenId" FROM planes_alimenticios WHERE "pacienteId" = $1 ORDER BY "createdAt"`, [pac[0].id]);
+      `SELECT id, nombre, activo, "origenId" FROM planes_alimenticios WHERE "pacienteId" = $1 ORDER BY "createdAt"`, [pac[0].id]);
     comprobar("el plan nuevo del profesor le llega aparte, marcado y sin robarle el plan actual",
       compartidos.length === 2 && compartidos[1].nombre === `${MARCA} Plan extra` && compartidos[1].activo === false && compartidos[1].origenId === `${MARCA}-plan-2`
         && compartidos[0].activo === true,
@@ -392,11 +379,33 @@ async function main() {
     const { rows: planiCopia } = await client.query(`SELECT nombre, "origenId" FROM planificaciones WHERE "pacienteId" = $1`, [pac[0].id]);
     comprobar("la planificación compartida, que no había tocado, se actualiza con el nombre nuevo",
       planiCopia.length === 1 && planiCopia[0].nombre === `${MARCA} Plani v2` && planiCopia[0].origenId === planiId, planiCopia.map((p) => p.nombre).join(" | "));
+    // Sin cambios en la plantilla, abrir otra vez no vuelve a volcar (la huella coincide).
+    const { rows: antes } = await client.query(`SELECT "updatedAt" FROM pacientes WHERE id = $1`, [pac[0].id]);
     await alumna.goto(`${BASE}/pacientes/${pac[0].id}?pestana=plan-alimentacion&espacio=aula`, { waitUntil: "networkidle0" });
     await esperar(2000);
+    const { rows: despues } = await client.query(`SELECT "updatedAt" FROM pacientes WHERE id = $1`, [pac[0].id]);
+    comprobar("sin cambios en la plantilla no se vuelve a tocar la copia", String(antes[0].updatedAt) === String(despues[0].updatedAt));
     // Su plan actual es la copia del del profesor (aunque lo haya renombrado): lleva la etiqueta.
     comprobar("y en su ficha los planes del profesor salen etiquetados «Del profesor»", (await texto(alumna)).includes("Del profesor"));
-    comprobar("la ficha dice cuándo se actualizó", /Última vez: \d\d\/\d\d\/\d{4}, \d\d:\d\d/.test(await texto(profe)));
+    comprobar("y se le dice que es de solo lectura y cómo trabajar sobre él", (await texto(alumna)).includes("puedes consultarlo, pero no editarlo"));
+    // En el editor de dietas tampoco: sin Editar ni Compartir, y la ruta de editar devuelve a la vista.
+    await alumna.goto(`${BASE}/dietas/${compartidos[1].id}`, { waitUntil: "networkidle0" });
+    await esperar(2000);
+    visible = await texto(alumna);
+    comprobar("el editor de dietas del plan compartido es de solo lectura", visible.includes("puedes consultarlo, pero no editarlo") && !visible.includes("Agregar nuevo alimento"));
+    await alumna.goto(`${BASE}/dietas/${compartidos[1].id}/editar`, { waitUntil: "networkidle0" });
+    await esperar(3000);
+    comprobar("y la pantalla de editar le devuelve a la vista", !alumna.url().endsWith("/editar"), alumna.url());
+    // La planificación compartida: bloqueada y con el aviso; el servidor tampoco la deja tocar.
+    await alumna.goto(`${BASE}/pacientes/${pac[0].id}?pestana=planificacion&espacio=aula`, { waitUntil: "networkidle0" });
+    await esperar(2500);
+    // Se abre primero SU planificación por defecto (la suya, editable); la del profesor es otra pestaña.
+    comprobar("su propia planificación no lleva aviso ni bloqueo", !(await texto(alumna)).includes("Esta planificación es del profesor")
+      && (await alumna.evaluate(() => document.querySelectorAll("section[inert]").length)) === 0);
+    await pulsar(alumna, `${MARCA} Plani v2`);
+    await esperar(1200);
+    comprobar("la planificación del profesor se ve bloqueada, con el aviso", (await texto(alumna)).includes("Esta planificación es del profesor")
+      && (await alumna.evaluate(() => document.querySelectorAll("section[inert]").length)) > 0);
 
     console.log("\n── En su lista de pacientes sale etiquetado ──");
     await alumna.goto(`${BASE}/pacientes`, { waitUntil: "networkidle0" });

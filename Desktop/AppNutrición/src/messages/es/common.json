@@ -274,5 +274,7 @@
     "guardando": "Guardando…"
   },
   "delProfesor": "Del profesor",
-  "compartidoPorProfesor": "Compartido por tu profesor con el caso"
+  "compartidoPorProfesor": "Compartido por tu profesor con el caso",
+  "delProfesorSoloLecturaPlan": "Este plan es del profesor: puedes consultarlo, pero no editarlo. Para trabajar sobre él, crea tu propio plan con «Nuevo plan» y tráete lo que quieras con «Traer de otro plan».",
+  "delProfesorSoloLecturaPlanificacion": "Esta planificación es del profesor: puedes consultarla, pero no editarla. Para trabajar sobre ella, pulsa «Crear planificación»: la nueva se crea a partir de esta y ya es tuya."
 }

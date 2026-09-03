@@ -96,6 +96,37 @@ const COMIDAS: TipoComida[] = [
   "DESAYUNO", "MEDIA_MANANA", "ALMUERZO", "MERIENDA", "CENA", "RECENA",
 ];
 
+
+// #40 — Un plan compartido por el profesor con el caso (`origenId`) es de SOLO LECTURA para el
+// alumno: le sirve de base —lo consulta, se lo trae a su propio plan— pero no se toca, y así el
+// profesor puede actualizárselo siempre (Guillermo, 3 sep 2026). La interfaz no ofrece editarlo;
+// esto es la red por debajo. Cada mutación llama a la que corresponde según lo que recibe.
+async function bloqueoDelProfesor(origenId: string | null | undefined) {
+  if (!origenId) return;
+  const t = await getTranslations("validation");
+  throw new Error(t("plan.soloLecturaProfesor"));
+}
+async function asegurarPlanEditable(planId: string) {
+  const p = await prisma.planAlimenticio.findUnique({ where: { id: planId }, select: { origenId: true } });
+  await bloqueoDelProfesor(p?.origenId);
+}
+async function asegurarDiaEditable(diaId: string) {
+  const d = await prisma.diaDelPlan.findUnique({ where: { id: diaId }, select: { plan: { select: { origenId: true } } } });
+  await bloqueoDelProfesor(d?.plan.origenId);
+}
+async function asegurarComidaEditable(comidaId: string) {
+  const c = await prisma.comidaDelDia.findUnique({ where: { id: comidaId }, select: { diaDelPlan: { select: { plan: { select: { origenId: true } } } } } });
+  await bloqueoDelProfesor(c?.diaDelPlan.plan.origenId);
+}
+async function asegurarItemEditable(alimentoEnComidaId: string) {
+  const a = await prisma.alimentoEnComida.findUnique({ where: { id: alimentoEnComidaId }, select: { comida: { select: { diaDelPlan: { select: { plan: { select: { origenId: true } } } } } } } });
+  await bloqueoDelProfesor(a?.comida.diaDelPlan.plan.origenId);
+}
+async function asegurarAlternativaEditable(alternativaId: string) {
+  const alt = await prisma.alternativaAlimento.findUnique({ where: { id: alternativaId }, select: { alimentoEnComida: { select: { comida: { select: { diaDelPlan: { select: { plan: { select: { origenId: true } } } } } } } } } });
+  await bloqueoDelProfesor(alt?.alimentoEnComida.comida.diaDelPlan.plan.origenId);
+}
+
 export async function crearPlan(data: PlanFormData) {
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
@@ -291,6 +322,7 @@ export async function guardarRepartoDePlan(
   planificacionId: string | null,
   reparto: RepartoPorComida | null
 ): Promise<{ ok: boolean; error?: string }> {
+  await asegurarPlanEditable(planId);
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
@@ -329,6 +361,7 @@ export async function guardarRepartoDePlan(
 }
 
 export async function actualizarPlan(id: string, data: Partial<PlanFormData>) {
+  await asegurarPlanEditable(id);
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
@@ -371,6 +404,7 @@ export async function actualizarPlan(id: string, data: Partial<PlanFormData>) {
 }
 
 export async function eliminarPlan(id: string) {
+  await asegurarPlanEditable(id);
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
@@ -513,6 +547,7 @@ export async function addAlimentoAComida(
   cantidad: number,
   unidad: UnidadMedida = "GRAMOS"
 ) {
+  await asegurarComidaEditable(comidaId);
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
@@ -537,6 +572,7 @@ export async function addAlimentoAComida(
 }
 
 export async function removeAlimentoDeComida(alimentoEnComidaId: string) {
+  await asegurarItemEditable(alimentoEnComidaId);
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
@@ -555,6 +591,7 @@ export async function moverAlimentoEnComida(
   alimentoEnComidaId: string,
   dir: "up" | "down"
 ) {
+  await asegurarItemEditable(alimentoEnComidaId);
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
@@ -590,6 +627,7 @@ export async function moverAlimentoEnComida(
 // #27 — Reordenar una comida entera por la lista de ids en el orden deseado (para el
 // arrastre dentro de la comida): asigna orden = posición a cada id que pertenezca a la comida.
 export async function reordenarAlimentosEnComida(comidaId: string, ids: string[]) {
+  await asegurarComidaEditable(comidaId);
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
@@ -623,6 +661,7 @@ export async function actualizarCantidadAlimento(
   alimentoEnComidaId: string,
   cantidad: number
 ) {
+  await asegurarItemEditable(alimentoEnComidaId);
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
@@ -674,6 +713,7 @@ export async function guardarEquivalenciasItem(
   cantidadPrincipal: number,
   alternativas: { id: string; cantidad: number }[],
 ) {
+  await asegurarItemEditable(alimentoEnComidaId);
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
@@ -702,6 +742,7 @@ export async function guardarEquivalenciasItem(
  * Solo presentación: NO toca macros ni el Alimento/Receta. Vacío → vuelve al nombre original.
  */
 export async function renombrarItemPlan(id: string, nombre: string, esAlternativa = false) {
+  if (esAlternativa) await asegurarAlternativaEditable(id); else await asegurarItemEditable(id);
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
@@ -722,6 +763,7 @@ export async function actualizarDescripcionComida(
   comidaId: string,
   descripcion: string
 ) {
+  await asegurarComidaEditable(comidaId);
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
@@ -742,6 +784,7 @@ export async function actualizarMetaComida(
   comidaId: string,
   data: { nombre?: string | null; hora?: string | null }
 ) {
+  await asegurarComidaEditable(comidaId);
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
@@ -817,6 +860,7 @@ export async function agregarComida(
   diaId: string,
   data?: { nombre?: string; hora?: string }
 ) {
+  await asegurarDiaEditable(diaId);
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
@@ -857,6 +901,7 @@ export async function agregarComida(
 
 // #104 Fase 2 — Eliminar una comida de un día (sus alimentos y alternativas caen por cascade).
 export async function eliminarComida(comidaId: string) {
+  await asegurarComidaEditable(comidaId);
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
@@ -881,6 +926,7 @@ export async function agregarAlternativa(
   cantidad: number,
   unidad: UnidadMedida = "GRAMOS",
 ) {
+  await asegurarItemEditable(alimentoEnComidaId);
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
@@ -908,6 +954,7 @@ async function verificarPropietarioAlternativa(alternativaId: string, dietistaId
 }
 
 export async function eliminarAlternativa(alternativaId: string) {
+  await asegurarAlternativaEditable(alternativaId);
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
@@ -920,6 +967,7 @@ export async function eliminarAlternativa(alternativaId: string) {
 // #29 — Promover una alternativa a alimento principal: la alternativa elegida pasa a ser
 // el alimento de la línea y se borra de la lista; las demás alternativas se conservan.
 export async function promoverAlternativa(alternativaId: string) {
+  await asegurarAlternativaEditable(alternativaId);
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
@@ -958,6 +1006,7 @@ export async function promoverAlternativa(alternativaId: string) {
 // #29 — Intercambiar una alternativa con el alimento principal: la alternativa pasa a ser
 // principal y el principal pasa a ocupar el hueco de esa alternativa (no se pierde ninguno).
 export async function intercambiarAlternativaPrincipal(alternativaId: string) {
+  await asegurarAlternativaEditable(alternativaId);
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
@@ -1015,6 +1064,7 @@ export async function intercambiarAlternativaPrincipal(alternativaId: string) {
 }
 
 export async function actualizarCantidadAlternativa(alternativaId: string, cantidad: number) {
+  await asegurarAlternativaEditable(alternativaId);
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
@@ -1045,6 +1095,7 @@ export async function sustituirAlimentoEnComida(
   unidad: UnidadMedida = "GRAMOS",
   esReceta = false,
 ) {
+  await asegurarItemEditable(alimentoEnComidaId);
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
@@ -1066,6 +1117,7 @@ export async function moverAlimentoAComida(
   alimentoEnComidaId: string,
   nuevaComidaId: string
 ) {
+  await asegurarItemEditable(alimentoEnComidaId); await asegurarComidaEditable(nuevaComidaId);
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
@@ -1416,6 +1468,7 @@ export async function copiarComidaADias(
   modo: ModoCopia = "reemplazar",
   tipoDestino?: string,
 ) {
+  for (const destino of diaDestinoIds) await asegurarDiaEditable(destino);
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
@@ -1476,6 +1529,7 @@ export async function copiarDiaADias(
   diaDestinoIds: string[],
   modo: ModoCopia = "reemplazar",
 ) {
+  for (const destino of diaDestinoIds) await asegurarDiaEditable(destino);
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
@@ -1534,6 +1588,7 @@ export async function pegarAlimentoEnComida(
   item: { alimentoId: string | null; recetaId: string | null; cantidad: number; unidad: string },
   origenAlimentoEnComidaId?: string,
 ) {
+  await asegurarComidaEditable(destinoComidaId);
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
@@ -2096,6 +2151,7 @@ export async function asignarPlanificacionADia(
   diaId: string,
   planificacionId: string | null,
 ) {
+  await asegurarDiaEditable(diaId);
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
@@ -2178,6 +2234,7 @@ export async function asignarPlanificacionADia(
 export async function sincronizarComidasDeDia(
   diaId: string,
 ): Promise<{ ok: boolean; creadas?: string[]; error?: string }> {
+  await asegurarDiaEditable(diaId);
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
@@ -2320,6 +2377,7 @@ export async function getObjetivosPorDiaBatch(
  *  semana) conserva su menú; los demás lo PIERDEN y pasan a reflejar el del representante.
  *  El editor avisa antes de llamar (los días miembro pierden su menú actual). */
 export async function juntarDias(planId: string, diaIds: string[]) {
+  await asegurarPlanEditable(planId);
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
@@ -2384,6 +2442,7 @@ export async function juntarDias(planId: string, diaIds: string[]) {
  *  representante, el grupo restante recibe una copia del menú en su nuevo representante. Si el
  *  grupo queda con un solo día, se deshace (un día suelto no es grupo). */
 export async function separarDia(diaId: string) {
+  await asegurarDiaEditable(diaId);
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
@@ -2434,6 +2493,7 @@ export async function separarDia(diaId: string) {
 /** Deshace un grupo ENTERO: cada día miembro recibe una COPIA propia del menú (el del representante)
  *  y todos quedan sueltos. No se pierde nada (el representante ya tenía el menú; los demás lo copian). */
 export async function deshacerGrupo(diaId: string) {
+  await asegurarDiaEditable(diaId);
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));

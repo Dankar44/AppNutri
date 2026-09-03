@@ -5,28 +5,7 @@ import { createPortal } from "react-dom";
 import { useTranslations, useLocale } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  Activity,
-  Calendar,
-  Check,
-  ChevronDown,
-  Clock,
-  Dumbbell,
-  Flame,
-  MoreVertical,
-  Percent,
-  Plus,
-  Ruler,
-  Scale,
-  Search,
-  Brain,
-  Zap,
-  Wheat,
-  Droplets,
-  Beef,
-  X,
-  Pencil,
-  Trash2,
-  AlertTriangle,
+  Activity, Calendar, Check, ChevronDown, Clock, Dumbbell, Flame, MoreVertical, Percent, Plus, Ruler, Scale, Search, Brain, Zap, Wheat, Droplets, Beef, X, Pencil, Trash2, AlertTriangle, Lock,
 } from "lucide-react";
 import type { FichaInformacionData } from "@/lib/ficha-informacion-types";
 import { MonthPicker } from "@/components/month-picker";
@@ -673,6 +652,9 @@ export function PlanificacionPorDefectoTab({
     [planificaciones, selectedPlanId]
   );
   const datos = selectedPlan?.datos ?? {};
+  // #40 — La planificación compartida por el profesor con el caso se consulta, no se edita: todas
+  // las secciones van `inert` (nada se puede pulsar ni escribir) y no tiene menú de renombrar/borrar.
+  const soloLectura = !!selectedPlan?.origenId;
 
   /* ─── Tab menu state ─── */
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
@@ -1810,7 +1792,7 @@ export function PlanificacionPorDefectoTab({
   return (
     <div className="space-y-6" onKeyDown={bloquearExponencial}>
       {/* ====== Section 1: Informaciones del cliente ====== */}
-      <section className="bg-card rounded-xl border border-border overflow-hidden">
+      <section inert={soloLectura} className="bg-card rounded-xl border border-border overflow-hidden">
         <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-3">
           <SectionTitle icon={Scale}>{t("seccionCliente")}</SectionTitle>
           <p className="text-xs text-muted-foreground mt-1">
@@ -2007,7 +1989,7 @@ export function PlanificacionPorDefectoTab({
                   )}
                 </button>
               )}
-              <button
+              {!plan.origenId && <button
                 type="button"
                 data-menu-trigger
                 onClick={(e) => {
@@ -2026,7 +2008,7 @@ export function PlanificacionPorDefectoTab({
                 className="p-1 rounded hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <MoreVertical className="w-3.5 h-3.5" />
-              </button>
+              </button>}
             </div>
           );
         })}
@@ -2280,8 +2262,15 @@ export function PlanificacionPorDefectoTab({
         </div>
       )}
 
+      {soloLectura && (
+        <div className="flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2.5 text-sm">
+          <Lock className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+          <span>{tc2("delProfesorSoloLecturaPlanificacion")}</span>
+        </div>
+      )}
+
       {/* ====== Section 2: Cálculos ====== */}
-      <section className="bg-card rounded-xl border border-border overflow-hidden">
+      <section inert={soloLectura} className="bg-card rounded-xl border border-border overflow-hidden">
         <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-3">
           <SectionTitle icon={Brain}>{t("seccionCalculos")}</SectionTitle>
         </div>
@@ -2455,7 +2444,7 @@ export function PlanificacionPorDefectoTab({
       </section>
 
       {/* ====== Section 3: Distribución de macronutrientes ====== */}
-      <section className="bg-card rounded-xl border border-border overflow-hidden">
+      <section inert={soloLectura} className="bg-card rounded-xl border border-border overflow-hidden">
         <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <SectionTitle icon={Wheat}>{t("seccionMacronutrientes")}</SectionTitle>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
@@ -2743,7 +2732,7 @@ export function PlanificacionPorDefectoTab({
       {/* ====== Section 3.5: Reparto por comida (configuración avanzada · #78-C) ======
            La flecha PLIEGA el panel y el interruptor ACTIVA la función: son cosas distintas.
            Antes lo hacía todo el interruptor y para cerrar había que desactivar el reparto. */}
-      <section className="bg-card rounded-xl border border-border overflow-hidden">
+      <section inert={soloLectura} className="bg-card rounded-xl border border-border overflow-hidden">
         <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-3 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <button
             type="button"
@@ -3350,7 +3339,7 @@ export function PlanificacionPorDefectoTab({
       </section>
 
       {/* ====== Section 4: Cuantificación de nutrientes ====== */}
-      <section className="bg-card rounded-xl border border-border overflow-hidden">
+      <section inert={soloLectura} className="bg-card rounded-xl border border-border overflow-hidden">
         <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-3">
           <SectionTitle icon={Droplets}>{t("seccionNutrientes")}</SectionTitle>
         </div>
@@ -3409,7 +3398,7 @@ export function PlanificacionPorDefectoTab({
       </section>
 
       {/* ====== Section 5: Duración ====== */}
-      <section className="bg-card rounded-xl border border-border overflow-hidden">
+      <section inert={soloLectura} className="bg-card rounded-xl border border-border overflow-hidden">
         <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-3">
           <SectionTitle icon={Calendar}>{t("seccionDuracion")}</SectionTitle>
         </div>

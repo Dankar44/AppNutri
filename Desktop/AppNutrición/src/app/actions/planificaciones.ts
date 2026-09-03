@@ -204,6 +204,8 @@ export async function crearPlanificacion(
 }
 
 /* ─── Update datos + fechaUltimoCambio ─── */
+// #40 — Las planificaciones compartidas por el profesor con un caso (`origenId`) son de solo
+// lectura para el alumno: todos los UPDATE/DELETE de aquí exigen "origenId" IS NULL.
 
 export async function guardarPlanificacion(
   planId: string,
@@ -219,7 +221,7 @@ export async function guardarPlanificacion(
      SET datos = $1::jsonb,
          "fechaUltimoCambio" = CURRENT_TIMESTAMP,
          "updatedAt" = CURRENT_TIMESTAMP
-     WHERE id = $2 AND "dietistaId" = $3
+     WHERE id = $2 AND "dietistaId" = $3 AND "origenId" IS NULL
      RETURNING "pacienteId"`,
     JSON.stringify(datos),
     planId,
@@ -276,7 +278,7 @@ export async function actualizarFechasPlanificacion(
   params.push(planId, dietista.id);
 
   await prisma.$queryRawUnsafe(
-    `UPDATE planificaciones SET ${sets.join(", ")} WHERE id = $${idx} AND "dietistaId" = $${idx + 1}`,
+    `UPDATE planificaciones SET ${sets.join(", ")} WHERE id = $${idx} AND "dietistaId" = $${idx + 1} AND "origenId" IS NULL`,
     ...params
   );
 }
@@ -294,7 +296,7 @@ export async function cambiarEstadoPlanificacion(
 
   await prisma.$queryRawUnsafe(
     `UPDATE planificaciones SET estado = $1, "updatedAt" = CURRENT_TIMESTAMP
-     WHERE id = $2 AND "dietistaId" = $3`,
+     WHERE id = $2 AND "dietistaId" = $3 AND "origenId" IS NULL`,
     estado,
     planId,
     dietista.id
@@ -311,7 +313,7 @@ export async function renombrarPlanificacion(planId: string, nombre: string): Pr
 
   await prisma.$queryRawUnsafe(
     `UPDATE planificaciones SET nombre = $1, "updatedAt" = CURRENT_TIMESTAMP
-     WHERE id = $2 AND "dietistaId" = $3`,
+     WHERE id = $2 AND "dietistaId" = $3 AND "origenId" IS NULL`,
     nombre.slice(0, 100),
     planId,
     dietista.id
@@ -327,7 +329,7 @@ export async function eliminarPlanificacion(planId: string, pacienteId: string):
   if (dietista.isDemo) return;
 
   await prisma.$queryRawUnsafe(
-    `DELETE FROM planificaciones WHERE id = $1 AND "dietistaId" = $2 AND "esDefecto" = false`,
+    `DELETE FROM planificaciones WHERE id = $1 AND "dietistaId" = $2 AND "esDefecto" = false AND "origenId" IS NULL`,
     planId,
     dietista.id
   );

@@ -114,9 +114,72 @@ export async function copiarPaciente(
     });
   }
 
-  if (!destino.conPlanes) return nuevo.id;
-  await copiarPlanesYPlanificaciones(tx, origenId, nuevo.id, destino.dietistaId, { primeraVez: true });
+  if (destino.conPlanes) {
+    await copiarPlanesYPlanificaciones(tx, origenId, nuevo.id, destino.dietistaId, { primeraVez: true, marcarOrigen: destino.esDeClase });
+  }
+  // La huella de la plantilla en este momento: es con lo que se compara al abrir la ficha.
+  if (destino.esDeClase) {
+    await tx.paciente.update({
+      where: { id: nuevo.id },
+      data: { origenHuella: await huellaDePlantilla(tx, origenId, destino.conPlanes) },
+      select: { id: true },
+    });
+  }
   return nuevo.id;
+}
+
+
+/**
+ * Cómo está la plantilla ahora, en una sola cadena: lo que viaja a las copias (campos, anamnesis,
+ * mediciones, consultas) y, si «compartir» está encendido, también sus planificaciones y planes.
+ * La copia guarda la huella de la última vez que se puso al día; si no coincide, hay que volcar.
+ */
+export async function huellaDePlantilla(tx: Tx, plantillaId: string, conPlanes: boolean): Promise<string> {
+  const { campos, estructura, fichaInformacion, horario, fichaSidebar, medidas, consultas } = await leerPlantilla(tx, plantillaId);
+  const partes: unknown[] = [
+    campos, estructura, fichaInformacion, horario, fichaSidebar,
+    medidas.map(({ id: _i, pacienteId: _p, origenId: _o, createdAt: _c, ...m }) => { void _i; void _p; void _o; void _c; return m; }),
+    consultas.map(({ id: _i, pacienteId: _p, dietistaId: _d, createdAt: _c, updatedAt: _u, origenId: _o, medidaId: _m, ...c }) => { void _i; void _p; void _d; void _c; void _u; void _o; void _m; return c; }),
+    conPlanes,
+  ];
+  if (conPlanes) {
+    const planis = await tx.planificacion.findMany({ where: { pacienteId: plantillaId }, orderBy: { createdAt: "asc" } });
+    partes.push(planis.map((p) => huellaDePlanificacion({ nombre: p.nombre, datos: p.datos })));
+    const planes = await tx.planAlimenticio.findMany({ where: { pacienteId: plantillaId }, orderBy: { createdAt: "asc" }, include: ARBOL_DEL_PLAN });
+    partes.push(planes.map((p) => huellaDePlan(p)));
+  }
+  return JSON.stringify(partes);
+}
+
+/**
+ * Poner al día la copia de un alumno si la plantilla ha cambiado desde la última vez. Se llama al
+ * abrir la ficha del paciente del caso: así lo que el profesor cambie les llega solo, sin botón
+ * (Guillermo, 3 sep 2026). Solo mientras el caso siga puesto a su clase y sin archivar.
+ * Devuelve si ha hecho falta volcar.
+ */
+export async function sincronizarCopiaSiHaceFalta(copiaId: string): Promise<boolean> {
+  const entrega = await prisma.entregaCaso.findFirst({
+    where: { pacienteId: copiaId, asignacion: { retiradaAt: null, caso: { archivado: false } } },
+    select: { alumnoId: true, asignacion: { select: { caso: { select: { pacienteId: true, compartirPlanes: true } } } } },
+  });
+  const plantillaId = entrega?.asignacion.caso.pacienteId;
+  if (!entrega || !plantillaId) return false;
+  const conPlanes = entrega.asignacion.caso.compartirPlanes;
+
+  const [huella, copia] = await Promise.all([
+    huellaDePlantilla(prisma, plantillaId, conPlanes),
+    prisma.paciente.findUnique({ where: { id: copiaId }, select: { origenHuella: true } }),
+  ]);
+  if (!copia || copia.origenHuella === huella) return false;
+
+  await prisma.$transaction(async (tx) => {
+    await actualizarCopia(tx, plantillaId, copiaId);
+    // Con «compartir» encendido, también su planificación y sus planes, como «Del profesor»:
+    // aparte de lo del alumno, y sin pisar lo que haya tocado de lo compartido antes.
+    if (conPlanes) await copiarPlanesYPlanificaciones(tx, plantillaId, copiaId, entrega.alumnoId, { primeraVez: false, marcarOrigen: true });
+    await tx.paciente.update({ where: { id: copiaId }, data: { origenHuella: huella }, select: { id: true } });
+  }, { timeout: 30000 });
+  return true;
 }
 
 // ─── Planes y planificaciones compartidos por el profesor ───
@@ -215,7 +278,7 @@ export async function copiarPlanesYPlanificaciones(
   origenId: string,
   copiaId: string,
   dietistaId: string,
-  opciones: { primeraVez: boolean },
+  opciones: { primeraVez: boolean; marcarOrigen: boolean },
 ): Promise<{ nuevos: number; actualizados: number; respetados: number }> {
   const cuenta = { nuevos: 0, actualizados: 0, respetados: 0 };
 
@@ -255,8 +318,9 @@ export async function copiarPlanesYPlanificaciones(
         // Aparte de las suyas: ni por defecto ni activa si ya tiene planificación.
         esDefecto: opciones.primeraVez || !yaTienePlanificacion ? esDefecto : false,
         estado: opciones.primeraVez || !yaTienePlanificacion ? estado : "guardada",
-        origenId: pid,
-        origenHuella: huella,
+        // Solo en copias de alumno: un duplicado del propio profesor es suyo y editable.
+        origenId: opciones.marcarOrigen ? pid : null,
+        origenHuella: opciones.marcarOrigen ? huella : null,
       },
       select: { id: true },
     });
@@ -288,8 +352,8 @@ export async function copiarPlanesYPlanificaciones(
       planificacionIds: planificacionIds.map((pid) => idsPlani.get(pid)).filter((x): x is string => !!x),
       objetivosPorPlani: objetivosPorPlani === null ? Prisma.DbNull : reclavar(objetivosPorPlani, idsPlani),
       repartoPorComida: repartoPorComida === null ? Prisma.DbNull : reclavarReparto(repartoPorComida, idsPlani),
-      origenId: plid,
-      origenHuella: huella,
+      origenId: opciones.marcarOrigen ? plid : null,
+      origenHuella: opciones.marcarOrigen ? huella : null,
     };
     const existente = planPorOrigen.get(plid);
     if (existente) {

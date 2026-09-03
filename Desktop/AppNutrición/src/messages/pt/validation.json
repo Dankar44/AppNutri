@@ -47,7 +47,8 @@
     "planNoEncontrado": "Plano não encontrado",
     "planNoValido": "Plano inválido",
     "nombreObligatorio": "O nome é obrigatório",
-    "comidaNombreDuplicado": "Já existe outra refeição com esse nome neste dia. Escolha um nome diferente: a distribuição por refeição distingue as refeições próprias pelo nome."
+    "comidaNombreDuplicado": "Já existe outra refeição com esse nome neste dia. Escolha um nome diferente: a distribuição por refeição distingue as refeições próprias pelo nome.",
+    "soloLecturaProfesor": "Este plano é do professor e não se pode editar. Cria o teu e traz o que quiseres dele."
   },
   "cita": {
     "citaNoEncontrada": "Consulta não encontrada",

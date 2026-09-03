@@ -496,20 +496,18 @@ el aula. Al probarlo, Guillermo pidió el modelo de arriba. Cambios hechos:
   ha entregado. `deshacerEntrega` borra la foto y el PDF. Todas las consultas a `entregas_caso`
   llevan `select` para no arrastrar el bytea.
 
-- **Aviso «N alumnos ya lo han empezado»** (3 sep 2026): Guillermo rellenó el horario de la
-  plantilla con la alumna ya dentro y no se lo veía reflejado. Es a propósito —la copia se hace al
-  empezar el caso y luego es del alumno, que la está trabajando—, pero había que decirlo: la ficha
-  de la plantilla y la del caso avisan de cuántos alumnos tienen ya su copia (el nombre y la
-  consigna sí se actualizan para todos). El aviso se quita con una ✕ **por caso** y no vuelve
-  (`casos_clinicos.avisoCopiaOculto`, migración `add-caso-aviso-copia`, la 14ª).
-- **«Actualizar el caso en los alumnos»** (3 sep 2026, Guillermo: "si se equivoca el profesor y
-  quiere cambiar algo, que tenga esa opción sin quitar y poner el caso"): botón en la ficha de la
-  plantilla y en la del caso, con confirmación, que vuelca la ficha ACTUAL a los alumnos que ya
-  tienen su copia (`actualizarCopia`, una transacción por alumno). Sobrescribe los campos de la
-  ficha (también si el alumno los tocó); las mediciones y consultas copiadas de la plantilla
-  recuerdan de cuál vienen (`origenId`, migración `add-origen-copia`, la 15ª) y se actualizan,
-  añaden o quitan con ella, mientras que las que añadió el alumno se quedan; **no toca** planes,
-  planificación ni lo entregado. `copiasActualizadasAt` guarda la última vez.
+- **La copia del alumno se pone al día SOLA** (3 sep 2026, Guillermo: "todo se actualiza, el
+  peso, el horario… aunque lo tengan empezado; lo único que va por compartir es la planificación y
+  el plan"). Primero se hizo un aviso con ✕ y un botón «Actualizar el caso en los alumnos»; el
+  mismo día se quitaron (sus columnas se eliminan en `add-sincronizacion-copia`, la 17ª; las
+  migraciones 14 y 15 quedan sin efecto para esas columnas y producción nunca las tendrá). Lo que
+  hay: `pacientes.origenHuella` guarda la huella de la plantilla la última vez que la copia se
+  puso al día; al abrir la ficha del paciente del caso (`sincronizarCopiaSiHaceFalta`, en
+  `pacientes/[id]/page.tsx`) se compara y, si la plantilla ha cambiado, se vuelca ahí mismo con
+  `actualizarCopia` (+ planes/planificación como «Del profesor» si «compartir» está encendido). Las
+  mediciones y consultas copiadas recuerdan de cuál vienen (`origenId`) y se actualizan o quitan
+  con la plantilla; las que añadió el alumno no se tocan. Sin botón: el alumno lo ve al recargar.
+  La ficha del profesor solo dice cuántos alumnos ya lo han empezado.
 - **La planificación del alumno, tal cual** (3 sep 2026, Guillermo: "ningún resumen, tiene que
   verlo tal cual"): la corrección pinta la MISMA pestaña de planificación del paciente
   (`PlanificacionPorDefectoTab`) con los datos de la foto (paciente con sexo/fecha, medidas y
@@ -521,11 +519,20 @@ el aula. Al probarlo, Guillermo pidió el modelo de arriba. Cambios hechos:
   activada"). `planes_alimenticios` y `planificaciones` llevan `origenId` + `origenHuella`
   (migración `add-origen-planes`, la 16ª). Al copiarlos se marcan; la ficha del alumno los etiqueta
   «Del profesor» (cabecera y lista del plan, tarjeta de planes, pestañas de planificación) y el
-  profesor ve «compartido por ti» al corregir. «Actualizar el caso» con «compartir» encendido los
-  manda también a quien ya tiene su copia: lo nuevo llega APARTE (sin robarle el plan actual ni la
-  planificación por defecto), lo ya compartido se sustituye solo si el alumno no lo ha tocado (la
-  huella coincide) y si lo tocó se respeta. `copiarPlanesYPlanificaciones` es la única función que
-  lo hace, tanto al empezar el caso como al actualizar.
+  profesor ve «compartido por ti» al corregir. Con «compartir» encendido, la sincronización al abrir la
+  ficha los manda también a quien ya tiene su copia: lo nuevo llega APARTE (sin robarle el plan actual ni la
+  planificación por defecto). `copiarPlanesYPlanificaciones` es la única función que lo hace, tanto
+  al empezar el caso como al sincronizar; con `marcarOrigen: false` (duplicar un caso el propio
+  profesor) no marca nada.
+- **Lo compartido es de SOLO LECTURA para el alumno** (3 sep 2026, Guillermo: "no se puede
+  editar ni la planificación ni el plan del profesor; lo tienen como base a partir del cual se
+  crean lo suyo"). Así lo del profesor se puede actualizar siempre sin pisar nada. En la interfaz:
+  la pestaña del plan y `/dietas/[id]` pintan `PlanVisual` en `readOnly` con un aviso que dice cómo
+  trabajar sobre él («Nuevo plan» + «Traer de otro plan»); `/dietas/[id]/editar` devuelve a la
+  vista; la pestaña de planificación va `inert` por secciones, sin menú ⋮, con aviso («Crear
+  planificación» crea la suya a partir de esta). En el servidor: las 29 mutaciones de `planes.ts`
+  pasan por `asegurar*Editable` (plan / día / comida / ítem / alternativa → `plan.origenId`), y los
+  UPDATE/DELETE de `planificaciones.ts` exigen `"origenId" IS NULL`.
 - **Aviso de cambios sin guardar** en el horario del paciente (`useCambiosSinGuardar`, sacado de
   la planificación), para todos los usuarios: al irse a otra pestaña o al menú pregunta guardar /
   salir sin guardar / seguir. Y el botón Guardar del horario ya desaparece tras guardar.

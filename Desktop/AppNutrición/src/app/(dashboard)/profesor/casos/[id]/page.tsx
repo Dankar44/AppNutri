@@ -10,7 +10,7 @@ import {
   getEntregasDeAsignacion,
   contarAlumnosQueEmpezaron,
 } from "@/app/actions/casos";
-import { formatDate, formatDateTime } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import { getLocale } from "@/i18n/locale";
 import { AccionesCaso } from "./acciones-caso";
 import { AsignarAClase } from "./asignar-a-clase";
@@ -18,8 +18,6 @@ import { FechaLimite } from "./fecha-limite";
 import { RetirarAsignacion } from "./retirar-asignacion";
 import { ListaEntregas } from "./lista-entregas";
 import { CompartirPlanes } from "./compartir-planes";
-import { AvisoCopia } from "./aviso-copia";
-import { ActualizarCopias } from "./actualizar-copias";
 
 /**
  * #40 — La ficha del caso: qué se les pide, a qué clases está puesto y cómo va cada una, con sus
@@ -102,17 +100,9 @@ export default async function CasoPage({
         </Link>
       )}
 
-      {/* Quién tiene ya su copia, y el botón para volcarles la ficha actual. Fuera del enlace de
-          arriba: un botón dentro de un enlace navegaría al pulsarlo. */}
+      {/* Quién tiene ya su copia. Los cambios de la ficha les llegan solos al abrir su paciente. */}
       {caso.pacienteId && empezados > 0 && (
-        <div className="py-2 lg:px-6 space-y-2">
-          <AvisoCopia casoId={caso.id} empezados={empezados} oculto={caso.avisoCopiaOculto} />
-          <ActualizarCopias
-            casoId={caso.id}
-            empezados={empezados}
-            ultimaVez={caso.copiasActualizadasAt ? formatDateTime(caso.copiasActualizadasAt, locale) : null}
-          />
-        </div>
+        <p className="text-xs text-muted-foreground lg:px-6">{t("paciente.yaEmpezado", { n: empezados })}</p>
       )}
 
       {caso.pacienteId && (

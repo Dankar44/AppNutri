@@ -26,8 +26,8 @@ async function main() {
     await client.query(`CREATE INDEX IF NOT EXISTS medidas_antropometricas_origen_idx ON medidas_antropometricas ("origenId") WHERE "origenId" IS NOT NULL`);
     await client.query(`ALTER TABLE consultas ADD COLUMN IF NOT EXISTS "origenId" TEXT`);
     await client.query(`CREATE INDEX IF NOT EXISTS consultas_origen_idx ON consultas ("origenId") WHERE "origenId" IS NOT NULL`);
-    await client.query(`ALTER TABLE casos_clinicos ADD COLUMN IF NOT EXISTS "copiasActualizadasAt" TIMESTAMPTZ`);
-    console.log("✓ medidas_antropometricas.origenId, consultas.origenId, casos_clinicos.copiasActualizadasAt");
+    // (copiasActualizadasAt, del botón manual, se quitó el mismo día: ver add-sincronizacion-copia)
+    console.log("✓ medidas_antropometricas.origenId, consultas.origenId");
   } finally {
     client.release();
     await pool.end();

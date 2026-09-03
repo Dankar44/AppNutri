@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Pencil, Share2, Sparkles, Plus } from "lucide-react";
+import { ArrowLeft, Pencil, Share2, Sparkles, Plus, Lock } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { AvatarPaciente } from "@/components/avatar-paciente";
 import { getPlan, getPlanesPaciente } from "@/app/actions/planes";
@@ -25,6 +25,9 @@ export default async function PlanDetailPage({ params }: Props) {
 
   const planesPaciente = await getPlanesPaciente(plan.pacienteId);
   const planificaciones = await getPlanificaciones(plan.pacienteId);
+  // #40 — Compartido por el profesor con el caso: se consulta, no se edita.
+  const soloLectura = !!plan.origenId;
+  const tc = await getTranslations("common");
 
   const MICRO_COLS = [
     "vitaminaA","vitaminaB6","vitaminaB12","vitaminaC","vitaminaD",
@@ -84,12 +87,12 @@ export default async function PlanDetailPage({ params }: Props) {
           </div>
 
           {/* Mobile: tap-to-expand action bar */}
-          <div className="sm:hidden w-full">
+          {!soloLectura && (<div className="sm:hidden w-full">
             <ActionBarMobile planId={plan.id} />
-          </div>
+          </div>)}
 
           {/* Desktop: full action bar */}
-          <div className="hidden sm:inline-flex items-center gap-1 rounded-xl border border-border bg-card p-1 w-auto ml-auto">
+          {!soloLectura && (<div className="hidden sm:inline-flex items-center gap-1 rounded-xl border border-border bg-card p-1 w-auto ml-auto">
             <Link
               href={`/dietas/${plan.id}/generar-ia`}
               className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/15 transition-colors text-sm font-medium"
@@ -116,7 +119,7 @@ export default async function PlanDetailPage({ params }: Props) {
               {t("detail.edit")}
             </Link>
             <PlanActions planId={plan.id} />
-          </div>
+          </div>)}
         </div>
 
         <div className="mt-4">
@@ -134,7 +137,14 @@ export default async function PlanDetailPage({ params }: Props) {
         </div>
       </div>
 
+      {soloLectura && (
+        <div className="mb-4 flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2.5 text-sm">
+          <Lock className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+          <span>{tc("delProfesorSoloLecturaPlan")}</span>
+        </div>
+      )}
       <PlanVisual
+        readOnly={soloLectura}
         plan={{
           id: plan.id,
           nombre: plan.nombre,

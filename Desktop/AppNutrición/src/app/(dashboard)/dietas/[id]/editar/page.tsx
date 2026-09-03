@@ -37,6 +37,8 @@ export default function EditarPlanPage() {
 
   useEffect(() => {
     getPlan(id).then((p) => {
+      // #40 — El plan compartido por el profesor no se edita: a su vista.
+      if (p && p.origenId) { router.replace(`/dietas/${id}`); return; }
       if (p) {
         setPlan({
           nombre: p.nombre,

@@ -15,8 +15,10 @@ const pool = new pg.Pool({
 async function main() {
   const client = await pool.connect();
   try {
-    await client.query(`ALTER TABLE casos_clinicos ADD COLUMN IF NOT EXISTS "avisoCopiaOculto" BOOLEAN NOT NULL DEFAULT false`);
-    console.log("✓ casos_clinicos.avisoCopiaOculto");
+    // (3 sep 2026, mismo día) La copia pasó a ponerse al día sola y el aviso con ✕ se quitó: esta
+    // migración ya no crea nada. Se deja para que la lista de migraciones siga siendo la misma en
+    // los dos entornos; `add-sincronizacion-copia` quita la columna donde llegó a existir.
+    console.log("· add-caso-aviso-copia: sin efecto (el aviso se quitó el mismo día)");
   } finally {
     client.release();
     await pool.end();

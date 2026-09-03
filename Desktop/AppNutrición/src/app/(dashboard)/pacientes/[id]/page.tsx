@@ -18,6 +18,7 @@ import { AvisoCaso } from "./aviso-caso";
 import { AvisoPlantilla } from "./aviso-plantilla";
 import { getCasoDePacientePlantilla, getAsignacionesDeCaso, getClasesParaAsignar } from "@/app/actions/casos";
 import { getCasoDelPaciente } from "@/app/actions/aula";
+import { sincronizarCopiaSiHaceFalta } from "@/lib/copiar-paciente";
 import { cursoTerminado } from "@/lib/docencia";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { getLocale } from "@/i18n/locale";
@@ -34,6 +35,14 @@ const DESDE_CLASE = /^clase:([0-9a-f-]{36})$/;
 export default async function PacienteDetailPage({ params, searchParams }: Props) {
   const { id } = await params;
   const { pestana: rawPestana, desde } = await searchParams;
+
+  // #40 — Si es el paciente de un caso de clase y el profesor ha cambiado la plantilla desde la
+  // última vez, se pone al día aquí mismo, antes de leerlo. Nunca puede tumbar la ficha.
+  try {
+    await sincronizarCopiaSiHaceFalta(id);
+  } catch (e) {
+    console.error("[ficha] sincronizar copia del caso:", e);
+  }
 
   const paciente = await getPaciente(id);
   if (!paciente) notFound();

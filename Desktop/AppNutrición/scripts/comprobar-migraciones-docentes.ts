@@ -32,9 +32,10 @@ const MIGRACIONES: { script: string; comprueba: [string, string][] }[] = [
   { script: "add-casos-como-pacientes", comprueba: [["casos_clinicos", "pacienteId"], ["pacientes", "esCasoDocente"], ["entregas_caso", "notaAlumno"]] },
   { script: "add-caso-compartir-planes", comprueba: [["casos_clinicos", "compartirPlanes"]] },
   { script: "add-entrega-congelada", comprueba: [["entregas_caso", "entregaSnapshot"], ["entregas_caso", "entregablePdf"], ["entregas_caso", "entregableBytes"]] },
-  { script: "add-caso-aviso-copia", comprueba: [["casos_clinicos", "avisoCopiaOculto"]] },
-  { script: "add-origen-copia", comprueba: [["medidas_antropometricas", "origenId"], ["consultas", "origenId"], ["casos_clinicos", "copiasActualizadasAt"]] },
+  { script: "add-caso-aviso-copia", comprueba: [] },
+  { script: "add-origen-copia", comprueba: [["medidas_antropometricas", "origenId"], ["consultas", "origenId"]] },
   { script: "add-origen-planes", comprueba: [["planes_alimenticios", "origenId"], ["planes_alimenticios", "origenHuella"], ["planificaciones", "origenId"], ["planificaciones", "origenHuella"]] },
+  { script: "add-sincronizacion-copia", comprueba: [["pacientes", "origenHuella"]] },
 ];
 
 const TABLAS_CON_RLS = ["licencias_docentes", "invitaciones_docentes", "clases", "alumnos_clase", "profesores_clase", "casos_clinicos", "asignaciones_caso", "entregas_caso"];

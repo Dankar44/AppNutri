@@ -7,12 +7,7 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { asignarPlanComoActual } from "@/app/actions/planes";
 import {
-  ChevronDown,
-  Check,
-  Flame,
-  CheckCircle2,
-  Loader2,
-  Plus,
+  ChevronDown, Check, Flame, CheckCircle2, Loader2, Plus, Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PlanVisual, type PlanVisualDetalle } from "./plan-visual";
@@ -328,7 +323,15 @@ export function PlanDeAlimentacionTab({
       </div>
 
       {/* Vista completa del plan (mismo layout que /dietas/[id]) */}
+      {/* #40 — El plan del profesor se consulta, no se edita: es la base sobre la que el alumno hace el suyo. */}
+      {selectedPlan.origenId && (
+        <div className="mb-3 flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2.5 text-sm">
+          <Lock className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+          <span>{tc("delProfesorSoloLecturaPlan")}</span>
+        </div>
+      )}
       <PlanVisual
+        readOnly={!!selectedPlan.origenId}
         plan={planVisualData}
         pacienteId={pacienteId}
         pacienteNombre={pacienteNombre}
