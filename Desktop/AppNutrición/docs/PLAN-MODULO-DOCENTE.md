@@ -537,9 +537,14 @@ el aula. Al probarlo, Guillermo pidió el modelo de arriba. Cambios hechos:
   la planificación), para todos los usuarios: al irse a otra pestaña o al menú pregunta guardar /
   salir sin guardar / seguir. Y el botón Guardar del horario ya desaparece tras guardar.
 
+- **La nota es de 0 a 10** (Guillermo, 3 sep 2026, confirmado): con decimales, y se puede corregir
+  solo con comentario. No hay «apto / no apto». Cerrada la última duda de producto de la fase.
+
 ### Lo que queda de la fase 3
 
 - Repasar el menú del alumno cuando se vea el flujo con gente de verdad (Mensajes, Pagos).
+- Producción: aplicar las 17 migraciones en orden cuando Guillermo pida el deploy, y comprobar con
+  `comprobar-migraciones-docentes` (DB=prod).
 
 ---
 
