@@ -2,10 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, Archive, ArchiveRestore, Loader2, X, CalendarOff } from "lucide-react";
+import { Pencil, Archive, ArchiveRestore, Loader2, X, CalendarOff, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
-import { editarClase, archivarClase, cerrarCursoDeClase } from "@/app/actions/clases";
+import { editarClase, archivarClase, cerrarCursoDeClase, eliminarClase } from "@/app/actions/clases";
 import { ConfirmModal } from "@/components/confirm-modal";
 import { DatePicker } from "@/components/date-picker";
 
@@ -27,6 +27,7 @@ export function AccionesClase({ clase }: { clase: ClaseEditable }) {
   const [editando, setEditando] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
   const [cerrandoCurso, setCerrandoCurso] = useState(false);
+  const [eliminando, setEliminando] = useState(false);
 
   const [nombre, setNombre] = useState(clase.nombre);
   const [fechaInicio, setFechaInicio] = useState(clase.fechaInicioCurso ?? "");
@@ -72,6 +73,19 @@ export function AccionesClase({ clase }: { clase: ClaseEditable }) {
     });
   }
 
+  function eliminar() {
+    startTransition(async () => {
+      const result = await eliminarClase(clase.id);
+      if (result.ok) {
+        toast.success(t("clases.eliminada"));
+        router.push("/profesor/clases");
+      } else {
+        toast.error(result.error || t("clases.errorGuardar"));
+        setEliminando(false);
+      }
+    });
+  }
+
   const input =
     "mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30";
   const boton =
@@ -94,7 +108,25 @@ export function AccionesClase({ clase }: { clase: ClaseEditable }) {
           {clase.archivada ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
           {clase.archivada ? t("clases.desarchivar") : t("clases.archivar")}
         </button>
+        <button
+          type="button"
+          onClick={() => setEliminando(true)}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 dark:border-red-500/30 bg-card px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+        >
+          <Trash2 className="w-4 h-4" />
+          {t("clases.eliminar")}
+        </button>
       </div>
+
+      <ConfirmModal
+        open={eliminando}
+        title={t("clases.eliminar")}
+        description={t("clases.eliminarTexto", { n: clase.alumnosActivos })}
+        confirmLabel={t("clases.eliminar")}
+        loading={isPending}
+        onConfirm={eliminar}
+        onCancel={() => setEliminando(false)}
+      />
 
       {editando && (
         <div

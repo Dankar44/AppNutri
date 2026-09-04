@@ -84,9 +84,10 @@ async function sesionDe(navegador: Browser, email: string): Promise<Page> {
   return page;
 }
 
-async function matricular(client: pg.PoolClient, claseId: string, alumnoId: string) {
+// Con `altaAt` se decide hasta qué 31 de agosto es alumno: quien entró el curso pasado ya lo ha pasado.
+async function matricular(client: pg.PoolClient, claseId: string, alumnoId: string, altaAt = "NOW()") {
   await client.query(
-    `INSERT INTO alumnos_clase (id, "claseId", "alumnoId", "altaAt") VALUES (gen_random_uuid()::text, $1, $2, NOW())`,
+    `INSERT INTO alumnos_clase (id, "claseId", "alumnoId", "altaAt") VALUES (gen_random_uuid()::text, $1, $2, ${altaAt})`,
     [claseId, alumnoId]);
 }
 
@@ -133,9 +134,9 @@ async function main() {
     const alNutri = await crearCuenta(client, `nutri@${DOMINIO}`, { rolDocente: "ALUMNO", licenciaDocenteId: licenciaId, cuentaDeClase: false });
     const alPaga = await crearCuenta(client, `paga@${DOMINIO}`, { rolDocente: "ALUMNO", licenciaDocenteId: licenciaId, cuentaDeClase: true });
     await matricular(client, claseViva, alDentro);
-    await matricular(client, clasePasada, alFuera);
-    await matricular(client, clasePasada, alNutri);
-    await matricular(client, clasePasada, alPaga);
+    await matricular(client, clasePasada, alFuera, "'2025-10-01'");
+    await matricular(client, clasePasada, alNutri, "'2025-10-01'");
+    await matricular(client, clasePasada, alPaga, "'2025-10-01'");
     await client.query(
       `INSERT INTO suscripciones (id, "dietistaId", plan, estado, "fechaInicio", "createdAt", "updatedAt")
        VALUES (gen_random_uuid()::text, $1, 'PROFESIONAL', 'ACTIVA', NOW(), NOW(), NOW())`, [alPaga]);
@@ -249,27 +250,37 @@ async function main() {
     comprobar("sus cuentas siguen existiendo",
       (await client.query(`SELECT COUNT(*)::int n FROM dietistas WHERE id = $1`, [alDentro])).rows[0].n === 1);
 
-    console.log("\n── Y el que estaba dentro ya no entra ──");
+    console.log("\n── Y el que estaba dentro sigue siendo alumno hasta su 31 de agosto ──");
+    // Entró este curso: le queda año escolar. No se le echa: entra a su aula, que le dice que ahora
+    // mismo no está en ninguna clase (Guillermo, 4 sep 2026).
     page = await sesionDe(navegador, `dentro@${DOMINIO}`);
-    await page.goto(`${BASE}/dashboard`, { waitUntil: "networkidle0" });
+    await page.goto(`${BASE}/entrar`, { waitUntil: "networkidle0" });
     await esperar(1800);
-    comprobar("el alumno al que se le cerró el curso ve el aviso", page.url().includes("/curso-terminado"), page.url());
+    comprobar("al cerrarle el curso a mitad de año NO se le echa: entra a su aula", page.url().endsWith("/aula"), page.url());
+    visible = await texto(page);
+    comprobar("y el aula le dice que ahora no está en ninguna clase", visible.includes("No estás en ninguna clase ahora mismo"));
+    comprobar("con la clase entre las anteriores", visible.includes(`${MARCA} en marcha`));
+    comprobar("sigue siendo alumno en la base de datos",
+      (await client.query(`SELECT "rolDocente" FROM dietistas WHERE id = $1`, [alDentro])).rows[0].rolDocente === "ALUMNO");
 
-    console.log("\n── Una clase archivada también cierra la puerta ──");
+    console.log("\n── Archivar la clase tampoco le echa, y desarchivarla se la devuelve ──");
     await client.query(`UPDATE alumnos_clase SET activa = true, "bajaAt" = NULL WHERE "claseId" = $1`, [claseViva]);
     await client.query(`UPDATE clases SET archivada = true WHERE id = $1`, [claseViva]);
     page = await sesionDe(navegador, `dentro@${DOMINIO}`);
-    await page.goto(`${BASE}/dashboard`, { waitUntil: "networkidle0" });
+    await page.goto(`${BASE}/entrar`, { waitUntil: "networkidle0" });
     await esperar(1800);
-    comprobar("con la clase archivada también se le avisa", page.url().includes("/curso-terminado"), page.url());
-
-    console.log("\n── Y una licencia caducada, igual ──");
+    comprobar("con la clase archivada entra a su aula, sin aviso", page.url().endsWith("/aula") && (await texto(page)).includes("No estás en ninguna clase ahora mismo"), page.url());
     await client.query(`UPDATE clases SET archivada = false WHERE id = $1`, [claseViva]);
+    await page.goto(`${BASE}/aula`, { waitUntil: "networkidle0" });
+    await esperar(1500);
+    comprobar("al desarchivarla la vuelve a tener", (await texto(page)).includes("Estás en 1 clase"));
+
+    console.log("\n── Y una licencia caducada, igual: sigue en su aula ──");
     await client.query(`UPDATE licencias_docentes SET "fechaFin" = '2020-01-01' WHERE id = $1`, [licenciaId]);
     page = await sesionDe(navegador, `dentro@${DOMINIO}`);
-    await page.goto(`${BASE}/dashboard`, { waitUntil: "networkidle0" });
+    await page.goto(`${BASE}/entrar`, { waitUntil: "networkidle0" });
     await esperar(1800);
-    comprobar("si la facultad no ha renovado, al alumno se le avisa", page.url().includes("/curso-terminado"), page.url());
+    comprobar("si la facultad no ha renovado, el alumno sigue en su aula hasta su 31 de agosto", page.url().endsWith("/aula"), page.url());
     const profe2 = await sesionDe(navegador, `profe@${DOMINIO}`);
     await profe2.goto(`${BASE}/profesor`, { waitUntil: "networkidle0" });
     await esperar(1500);

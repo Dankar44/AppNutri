@@ -318,6 +318,7 @@
     "casoSinPaciente": "Este caso ainda não tem paciente: diga-o ao seu professor.",
     "plantillaDeCasoNoSeBorra": "Este paciente é o modelo de um caso: se já não o quiser, arquive o caso.",
     "planNoDelCaso": "Esse plano não é deste paciente",
-    "errorEntregable": "Não foi possível gerar o PDF do entregável. Tenta de novo ou entrega sem o PDF."
+    "errorEntregable": "Não foi possível gerar o PDF do entregável. Tenta de novo ou entrega sem o PDF.",
+    "profesorNoAlumno": "És professor: não te podes inscrever como aluno com esta conta."
   }
 }

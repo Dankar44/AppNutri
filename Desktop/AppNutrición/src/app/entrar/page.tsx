@@ -30,8 +30,8 @@ export default async function EntrarPage() {
   if (dietista?.rolDocente === "ALUMNO") {
     // Se resuelve aquí y no en el panel: si se mirase después, un alumno cuyo curso acabó
     // aterrizaría un momento en el aula antes de que le dijeran que ya no está en clase.
-    const { sigueEnClase, avisoPendiente } = await revisarCursoDelAlumno(dietista);
-    if (sigueEnClase) redirect("/aula");
+    const { sigueSiendoAlumno, avisoPendiente } = await revisarCursoDelAlumno(dietista);
+    if (sigueSiendoAlumno) redirect("/aula");
     if (avisoPendiente) redirect("/curso-terminado");
   }
 

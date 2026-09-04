@@ -16,8 +16,9 @@ import { createClient } from "@supabase/supabase-js";
 import { sanitizeString, sanitizeStringOptional, validateEmail } from "@/lib/validation";
 import { checkRateLimit, LIMITES } from "@/lib/rate-limit";
 import { getLocale } from "@/i18n/locale";
-import { dominiosDeLicencia, licenciaVigente } from "@/lib/docencia";
+import { dominiosDeLicencia, licenciaVigente, cursoTerminado } from "@/lib/docencia";
 import { plazasLibresDeLicencia, conPlazaDeLaBolsa } from "@/lib/docencia-bolsa";
+import { getCurrentDietista } from "./auth";
 import { crearPacienteDemoSiNoExiste } from "@/lib/paciente-demo";
 
 export interface ClasePublica {
@@ -55,6 +56,47 @@ export async function getClasePorToken(token: string): Promise<ClasePublica | nu
     dominios: dominiosDeLicencia(clase.licenciaDocente?.dominioEmail),
     plazasLibres: clase.licenciaDocenteId ? await plazasLibresDeLicencia(clase.licenciaDocenteId) : 0,
   };
+}
+
+/**
+ * Alta desde el enlace con la sesión que ya hay abierta en el navegador: un clic y dentro
+ * (Guillermo, 4 sep 2026: "si ya estoy logueado, la gracia es que se me agregue automáticamente").
+ * Las mismas condiciones que el alta normal: clase viva, enlace abierto, licencia vigente, plaza.
+ */
+export async function apuntarmeConMiCuenta(token: string): Promise<{ ok: boolean; error?: string }> {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
+  if (dietista.rolDocente === "PROFESOR") return { ok: false, error: t("docencia.profesorNoAlumno") };
+
+  const clase = await prisma.clase.findUnique({
+    where: { tokenInvitacion: token },
+    select: {
+      id: true, archivada: true, invitacionAbierta: true, fechaFinCurso: true, licenciaDocenteId: true,
+      licenciaDocente: { select: { activa: true, fechaFin: true } },
+    },
+  });
+  if (!clase || clase.archivada || !clase.invitacionAbierta || !clase.licenciaDocenteId) {
+    return { ok: false, error: t("docencia.enlaceClaseNoValido") };
+  }
+  if (!licenciaVigente(clase.licenciaDocente) || cursoTerminado(clase.fechaFinCurso)) {
+    return { ok: false, error: t("docencia.enlaceClaseNoValido") };
+  }
+
+  const hecho = await conPlazaDeLaBolsa(clase.licenciaDocenteId, { alumnoId: dietista.id, email: dietista.email }, async (tx) => {
+    await tx.alumnoClase.upsert({
+      where: { claseId_alumnoId: { claseId: clase.id, alumnoId: dietista.id } },
+      create: { claseId: clase.id, alumnoId: dietista.id },
+      update: { activa: true, bajaAt: null },
+    });
+    // Solo se le pone el rol si no tenía ninguno; su cuenta sigue siendo suya (cuentaDeClase false).
+    await tx.dietista.updateMany({
+      where: { id: dietista.id, rolDocente: null },
+      data: { rolDocente: "ALUMNO", licenciaDocenteId: clase.licenciaDocenteId },
+    });
+  });
+  if (!hecho.ok) return { ok: false, error: t("docencia.sinPlazas") };
+  return { ok: true };
 }
 
 /**

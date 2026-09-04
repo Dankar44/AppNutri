@@ -540,6 +540,22 @@ el aula. Al probarlo, Guillermo pidió el modelo de arriba. Cambios hechos:
 - **La nota es de 0 a 10** (Guillermo, 3 sep 2026, confirmado): con decimales, y se puede corregir
   solo con comentario. No hay «apto / no apto». Cerrada la última duda de producto de la fase.
 
+- **El alumno lo es hasta su 31 de agosto** (4 sep 2026, Guillermo): archivar o cerrar la clase a
+  mitad de curso, o que caduque la licencia, NO le echa del aula: entra normal y el aula le dice
+  que ahora mismo no está en ninguna clase (la ve entre las anteriores). Si se desarchiva, la vuelve
+  a tener y las plazas se vuelven a usar (`archivarClase(false)` además devuelve el rol a quien
+  hubiera pasado a cuenta normal). Solo pasado el 31 de agosto que le toca (`finDeAnioEscolar`
+  desde su alta más reciente, o desde que se creó la cuenta si no tiene matrículas) y sin clase
+  viva, deja de ser alumno y ve el aviso una vez (`revisarCursoDelAlumno.sigueSiendoAlumno`).
+  Cuando haya pago, ahí es donde el alumno pasaría a pagar por la parte profesional.
+- **«Eliminar» la clase** (junto a Archivar, en rojo, con confirmación): borra la clase con sus
+  matrículas, asignaciones, entregas e invitaciones (cascada); las plazas vuelven a la bolsa; los
+  alumnos conservan cuenta y pacientes. No se puede deshacer.
+- **Enlace de clase con sesión abierta**: en vez del formulario de crear cuenta, «Ya estás dentro
+  con la cuenta X» + un botón «Apuntarme a la clase con esta cuenta» (`apuntarmeConMiCuenta`:
+  mismas condiciones que el alta normal; un profesor no puede apuntarse) y «No soy yo: cerrar
+  sesión». Los dominios de la licencia siguen siendo solo un aviso, nunca bloquean (confirmado).
+
 ### Lo que queda de la fase 3
 
 - Repasar el menú del alumno cuando se vea el flujo con gente de verdad (Mensajes, Pagos).

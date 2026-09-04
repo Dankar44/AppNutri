@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { getClasePorToken } from "@/app/actions/clase-publica";
 import { getCurrentDietista } from "@/app/actions/auth";
 import { ApuntarseForm } from "./apuntarse-form";
+import { ApuntarmeConMiCuenta } from "./apuntarme-con-mi-cuenta";
 
 export const dynamic = "force-dynamic";
 
@@ -56,8 +57,11 @@ export default async function ClasePublicaPage({
             <p className="font-medium text-amber-900 dark:text-amber-200">{t("clasePublica.sinPlazasTitulo")}</p>
             <p className="text-amber-800/80 dark:text-amber-200/70 mt-1">{t("clasePublica.sinPlazasTexto")}</p>
           </div>
+        ) : sesionAbierta ? (
+          // Ya hay alguien dentro en este navegador: se le apunta con esa cuenta de un clic.
+          <ApuntarmeConMiCuenta token={token} correo={sesionAbierta} />
         ) : (
-          <ApuntarseForm token={token} dominios={clase.dominios} sesionAbierta={sesionAbierta} />
+          <ApuntarseForm token={token} dominios={clase.dominios} sesionAbierta={null} />
         )}
       </div>
     </div>

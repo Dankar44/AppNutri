@@ -353,8 +353,9 @@ async function main() {
       { rolDocente: "ALUMNO", licenciaDocenteId: licenciaId, cuentaDeClase: true });
     const claseVieja = await crearClase("clase del curso pasado");
     await client.query(`UPDATE clases SET "fechaFinCurso" = '2025-06-30' WHERE id = $1`, [claseVieja]);
+    // Entró el curso pasado: su 31 de agosto ya pasó, así que sin clase viva deja de ser alumno.
     await client.query(
-      `INSERT INTO alumnos_clase (id, "claseId", "alumnoId", "altaAt") VALUES (gen_random_uuid()::text, $1, $2, NOW())`,
+      `INSERT INTO alumnos_clase (id, "claseId", "alumnoId", "altaAt") VALUES (gen_random_uuid()::text, $1, $2, '2024-10-01')`,
       [claseVieja, expulsado]);
     const suPagina = await sesionDe(navegador, `expulsado@${DOMINIO}`);
     await suPagina.goto(`${BASE}/dashboard`, { waitUntil: "networkidle0" });

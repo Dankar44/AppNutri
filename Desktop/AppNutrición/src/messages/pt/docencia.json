@@ -71,7 +71,7 @@
     "desarchivar": "Desarquivar",
     "archivadaHecho": "Turma arquivada",
     "desarchivada": "Turma recuperada",
-    "archivarTexto": "Não se apaga nada: os alunos mantêm todo o seu trabalho e a turma deixa de ocupar lugares. Pode recuperá-la quando quiser.",
+    "archivarTexto": "Não se apaga nada: os alunos mantêm todo o seu trabalho e a turma deixa de ocupar vagas. Os alunos continuam a ser alunos até ao 31 de agosto que lhes toca, e se a desarquivares voltam a tê-la.",
     "desarchivarTexto": "A turma volta a estar ativa, com os seus alunos e o seu trabalho.",
     "archivadaTitulo": "Esta turma está arquivada",
     "archivadaTexto": "Os alunos mantêm tudo o que é seu e a turma não ocupa lugares da licença. Pode recuperá-la quando quiser.",
@@ -105,7 +105,10 @@
     "casoProgreso": "{entregadas} de {alumnos} entregaram",
     "verEntregas": "Ver entregas",
     "inicioCurso": "Início do curso",
-    "delAl": "De {inicio} a {fin}"
+    "delAl": "De {inicio} a {fin}",
+    "eliminar": "Eliminar",
+    "eliminarTexto": "{n, plural, =0 {Apaga-se a turma com os seus casos atribuídos e as suas entregas.} one {Apaga-se a turma, o seu # aluno matriculado, os casos atribuídos e as entregas.} other {Apaga-se a turma, os seus # alunos matriculados, os casos atribuídos e as entregas.}} As vagas voltam à bolsa. Os alunos mantêm a conta e os seus pacientes. Não se pode desfazer: se só queres pô-la de lado, usa «Arquivar».",
+    "eliminada": "Turma eliminada"
   },
   "clasePublica": {
     "titulo": "Junte-se à turma",
@@ -118,7 +121,11 @@
     "noValidaTitulo": "Este link não está disponível",
     "noValidaTexto": "Pode ter sido fechado pelo professor, o ano letivo pode ter terminado ou o endereço não estar correto. Peça-lho de novo.",
     "sinPlazasTitulo": "Não restam lugares livres",
-    "sinPlazasTexto": "Esta universidade ocupou todas as suas licenças. Avise o seu professor."
+    "sinPlazasTexto": "Esta universidade ocupou todas as suas licenças. Avise o seu professor.",
+    "conSesion": "Já estás dentro com a conta {correo}. Podes inscrever-te nesta turma com ela.",
+    "apuntarmeConEstaCuenta": "Inscrever-me na turma com esta conta",
+    "otraCuenta": "Não sou eu: terminar sessão e usar outra conta",
+    "apuntado": "Já estás na turma"
   },
   "alumnos": {
     "titulo": "Registar alunos",

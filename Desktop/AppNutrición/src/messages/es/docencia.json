@@ -71,7 +71,7 @@
     "desarchivar": "Desarchivar",
     "archivadaHecho": "Clase archivada",
     "desarchivada": "Clase recuperada",
-    "archivarTexto": "No se borra nada: los alumnos conservan todo su trabajo y la clase deja de ocupar plazas. Puedes recuperarla cuando quieras.",
+    "archivarTexto": "No se borra nada: los alumnos conservan todo su trabajo y la clase deja de ocupar plazas. Los alumnos siguen siendo alumnos hasta el 31 de agosto que les toque, y si la desarchivas la vuelven a tener.",
     "desarchivarTexto": "La clase vuelve a estar activa, con sus alumnos y su trabajo.",
     "archivadaTitulo": "Esta clase está archivada",
     "archivadaTexto": "Sus alumnos conservan todo lo suyo y la clase no ocupa plazas de la licencia. Puedes recuperarla cuando quieras.",
@@ -105,7 +105,10 @@
     "casoProgreso": "{entregadas} de {alumnos} han entregado",
     "verEntregas": "Ver entregas",
     "inicioCurso": "Inicio del curso",
-    "delAl": "Del {inicio} al {fin}"
+    "delAl": "Del {inicio} al {fin}",
+    "eliminar": "Eliminar",
+    "eliminarTexto": "{n, plural, =0 {Se borra la clase con sus casos asignados y sus entregas.} one {Se borra la clase, su # alumno matriculado, sus casos asignados y sus entregas.} other {Se borra la clase, sus # alumnos matriculados, sus casos asignados y sus entregas.}} Las plazas vuelven a la bolsa. Los alumnos conservan su cuenta y sus pacientes. No se puede deshacer: si solo quieres apartarla, usa «Archivar».",
+    "eliminada": "Clase eliminada"
   },
   "clasePublica": {
     "titulo": "Únete a la clase",
@@ -118,7 +121,11 @@
     "noValidaTitulo": "Este enlace no está disponible",
     "noValidaTexto": "Puede que el profesor lo haya cerrado, que el curso haya terminado o que la dirección no sea correcta. Pídeselo de nuevo.",
     "sinPlazasTitulo": "No quedan plazas libres",
-    "sinPlazasTexto": "Esta universidad ha ocupado todas sus licencias. Avisa a tu profesor."
+    "sinPlazasTexto": "Esta universidad ha ocupado todas sus licencias. Avisa a tu profesor.",
+    "conSesion": "Ya estás dentro con la cuenta {correo}. Puedes apuntarte a esta clase con ella.",
+    "apuntarmeConEstaCuenta": "Apuntarme a la clase con esta cuenta",
+    "otraCuenta": "No soy yo: cerrar sesión y usar otra cuenta",
+    "apuntado": "Ya estás en la clase"
   },
   "alumnos": {
     "titulo": "Dar de alta alumnos",

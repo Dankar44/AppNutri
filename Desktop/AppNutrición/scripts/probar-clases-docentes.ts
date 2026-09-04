@@ -255,6 +255,19 @@ async function main() {
     comprobar("y el otro deja de verla",
       !(await otroProfe.evaluate(() => document.body.innerText)).includes("Dar de alta alumnos"), otroProfe.url());
 
+    console.log("\n── Eliminar una clase del todo ──");
+    await p1.goto(`${BASE}/profesor/clases/${claseId}`, { waitUntil: "networkidle0" });
+    await esperar(1200);
+    comprobar("hay un botón de eliminar", (await p1.evaluate(() => document.body.innerText)).includes("Eliminar"));
+    await pulsar(p1, "Eliminar");
+    await esperar(600);
+    comprobar("avisa de que no se puede deshacer", /No se puede deshacer/i.test(await p1.evaluate(() => document.body.innerText)));
+    await pulsar(p1, "Eliminar", "[role='dialog']");
+    await esperar(3500);
+    comprobar("vuelve a la lista de clases", p1.url().endsWith("/profesor/clases"), p1.url());
+    const { rows: borrada } = await client.query(`SELECT COUNT(*)::int n FROM clases WHERE id = $1`, [claseId]);
+    comprobar("y la clase ya no existe", borrada[0].n === 0);
+
     console.log("\n── Limpieza ──");
     await limpiar(client);
     const { rows: quedan } = await client.query(`SELECT count(*)::int AS n FROM clases WHERE nombre LIKE 'PRUEBA clase%'`);

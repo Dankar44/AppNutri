@@ -188,6 +188,14 @@ export async function archivarClase(
       where: { id: claseId },
       data: { archivada: archivar, archivadaAt: archivar ? new Date() : null },
     });
+    // Al desarchivar, sus alumnos la vuelven a tener. Si alguno había pasado ya a cuenta normal
+    // (se le acabó el año escolar con la clase archivada), vuelve a ser alumno.
+    if (!archivar) {
+      await prisma.dietista.updateMany({
+        where: { rolDocente: null, matriculas: { some: { claseId, activa: true } } },
+        data: { rolDocente: "ALUMNO", ...(clase.licenciaDocenteId ? { licenciaDocenteId: clase.licenciaDocenteId } : {}) },
+      });
+    }
     revalidarClases(claseId);
     return { ok: true };
   } catch (e) {
@@ -249,6 +257,28 @@ export async function getClase(claseId: string): Promise<ClaseDetalle | null> {
       ultimoAcceso: m.alumno.lastAccessAt,
     })),
   };
+}
+
+/**
+ * Eliminar la clase del todo: se van sus matrículas, sus casos asignados con las entregas y sus
+ * invitaciones; las plazas vuelven a la bolsa. No se puede deshacer (Guillermo, 4 sep 2026:
+ * "eliminar elimina todo… sin poder recuperarla"). Los alumnos conservan su cuenta y sus
+ * pacientes; el paciente de cada caso es suyo y no se toca.
+ */
+export async function eliminarClase(claseId: string): Promise<{ ok: boolean; error?: string }> {
+  const profesor = await requireProfesor();
+  const t = await getTranslations("validation");
+  const clase = await claseDelProfesor(claseId, profesor.dietistaId);
+  if (!clase) return { ok: false, error: t("docencia.claseNoEncontrada") };
+  try {
+    await prisma.clase.delete({ where: { id: claseId } });
+    revalidarClases();
+    return { ok: true };
+  } catch (e) {
+    if (isNextNavigation(e)) throw e;
+    console.error("[docencia] Error eliminando clase:", e);
+    return { ok: false, error: t("general.errorDesconocido") };
+  }
 }
 
 /**

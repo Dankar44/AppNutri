@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { inicioDeHoy } from "@/lib/docencia";
+import { inicioDeHoy, finDeAnioEscolar } from "@/lib/docencia";
 
 /**
  * #39 — Qué pasa con el alumno cuando se le acaba el curso.
@@ -9,9 +9,12 @@ import { inicioDeHoy } from "@/lib/docencia";
  * el material que le comparte el profesor, sus casos y sus entregas. Su cuenta, sus dietas y sus
  * pacientes de prácticas son suyos y sigue entrando con ellos.
  *
- * Cuando se queda sin ninguna clase viva deja de ser alumno y pasa a cuenta normal de
- * nutricionista, con un aviso que se le enseña una sola vez: se ha acabado su año escolar y, por
- * ser de los primeros, la cuenta se le queda gratis.
+ * Sigue siendo alumno —con su aula, aunque esté vacía— hasta el 31 de agosto que le toca (el más
+ * próximo desde que le dieron de alta, ver finDeAnioEscolar): que el profesor archive o cierre la
+ * clase a mitad de curso no le echa del aula, y si la desarchiva la vuelve a tener (Guillermo,
+ * 4 sep 2026). Pasado ese 31 de agosto sin ninguna clase viva, deja de ser alumno y pasa a cuenta
+ * normal de nutricionista, con un aviso que se le enseña una sola vez: se ha acabado su año
+ * escolar y, por ser de los primeros, la cuenta se le queda gratis.
  *
  * OJO — lo de "gratis de por vida" es de esta época, cuando todo es gratis. **Cuando haya pasarela
  * de pago hay que volver aquí** y decidir qué pasa con el alumno que termina la carrera.
@@ -74,6 +77,8 @@ export async function claseVivaDeAlumno(alumnoId: string): Promise<ClaseViva | n
 export interface EstadoDelAlumno {
   /** Le queda alguna clase en marcha. */
   sigueEnClase: boolean;
+  /** Sigue siendo alumno (con clase viva o dentro de su año escolar): su sitio es el aula. */
+  sigueSiendoAlumno: boolean;
   clase: ClaseViva | null;
   /** Hay que enseñarle el aviso de que su año escolar terminó y la cuenta se le queda. */
   avisoPendiente: boolean;
@@ -92,10 +97,12 @@ export async function revisarCursoDelAlumno(dietista: {
   cuentaDeClase: boolean;
   exAlumnoDesde: Date | null;
   avisoFinCursoVisto: boolean;
+  createdAt: Date;
 }): Promise<EstadoDelAlumno> {
   if (dietista.rolDocente !== "ALUMNO") {
     return {
       sigueEnClase: false,
+      sigueSiendoAlumno: false,
       clase: null,
       // Un exalumno que todavía no ha visto el aviso lo ve la próxima vez que entre.
       avisoPendiente: dietista.exAlumnoDesde !== null && !dietista.avisoFinCursoVisto,
@@ -103,9 +110,18 @@ export async function revisarCursoDelAlumno(dietista: {
   }
 
   const clase = await claseVivaDeAlumno(dietista.id);
-  if (clase) return { sigueEnClase: true, clase, avisoPendiente: false };
+  if (clase) return { sigueEnClase: true, sigueSiendoAlumno: true, clase, avisoPendiente: false };
 
-  // Sin clases: deja de ser alumno. Conserva `cuentaDeClase` porque sigue siendo verdad que su
+  // Sin clase viva, pero dentro de su año escolar: sigue siendo alumno. El aula le dirá que ahora
+  // mismo no está en ninguna clase, y si el profesor desarchiva la suya la vuelve a tener.
+  const matriculas = await prisma.alumnoClase.findMany({ where: { alumnoId: dietista.id }, select: { altaAt: true } });
+  const desde = matriculas.length > 0 ? matriculas.map((m) => m.altaAt) : [dietista.createdAt];
+  const hasta = Math.max(...desde.map((d) => finDeAnioEscolar(d).getTime()));
+  if (Date.now() <= hasta) {
+    return { sigueEnClase: false, sigueSiendoAlumno: true, clase: null, avisoPendiente: false };
+  }
+
+  // Pasado su 31 de agosto y sin clases: deja de ser alumno. Conserva `cuentaDeClase` porque sigue siendo verdad que su
   // cuenta nació en un aula, y eso es lo que distingue en administración al exalumno del
   // nutricionista que se registró por su cuenta.
   //
@@ -121,5 +137,5 @@ export async function revisarCursoDelAlumno(dietista: {
     },
   }).catch((e) => console.error("[docencia] No se pudo pasar el alumno a cuenta normal:", e));
 
-  return { sigueEnClase: false, clase: null, avisoPendiente: nacioEnClase };
+  return { sigueEnClase: false, sigueSiendoAlumno: false, clase: null, avisoPendiente: nacioEnClase };
 }

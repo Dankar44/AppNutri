@@ -26,6 +26,16 @@ export function finDeCursoPorDefecto(hoy: Date = new Date()): string {
   return `${anioInicio + 1}-08-31`;
 }
 
+/**
+ * Hasta cuándo es alumno quien entró en una clase en `desde`: el 31 de agosto más próximo hacia
+ * delante. Quien entra en septiembre lo es hasta el agosto siguiente; quien entra en marzo, hasta
+ * ese mismo agosto (Guillermo, 4 sep 2026). Fin del día, en UTC, como el resto de fechas de día.
+ */
+export function finDeAnioEscolar(desde: Date): Date {
+  const anio = desde.getUTCMonth() >= 8 ? desde.getUTCFullYear() + 1 : desde.getUTCFullYear();
+  return new Date(Date.UTC(anio, 7, 31, 23, 59, 59, 999));
+}
+
 /** Inicio del curso por defecto: hoy, en formato de campo de fecha (YYYY-MM-DD). */
 export function inicioDeCursoPorDefecto(hoy: Date = new Date()): string {
   return hoy.toISOString().slice(0, 10);

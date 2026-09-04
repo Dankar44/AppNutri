@@ -151,7 +151,8 @@ async function main() {
       (await texto(profe)).split("\n").slice(0, 3).join(" / "));
 
     console.log("\n── Al salir de la clase conserva su historial ──");
-    await client.query(`UPDATE alumnos_clase SET activa = false WHERE "alumnoId" = $1`, [alumnoId]);
+    // Su alta fue el curso pasado: con el 31 de agosto ya pasado y sin clase viva, deja de ser alumno.
+    await client.query(`UPDATE alumnos_clase SET activa = false, "altaAt" = '2024-10-01' WHERE "alumnoId" = $1`, [alumnoId]);
     const exalumno = await sesionDe(navegador, `alumno@${DOMINIO}`);
     await exalumno.goto(`${BASE}/dashboard`, { waitUntil: "networkidle0" });
     await esperar(1800);
