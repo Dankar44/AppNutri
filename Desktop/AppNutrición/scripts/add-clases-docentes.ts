@@ -28,7 +28,7 @@ async function main() {
         "profesorId"        TEXT NOT NULL REFERENCES dietistas(id) ON DELETE CASCADE,
         "licenciaDocenteId" TEXT REFERENCES licencias_docentes(id) ON DELETE SET NULL,
         nombre              TEXT NOT NULL,
-        curso               TEXT,
+        "fechaInicioCurso"  TIMESTAMP(3),
         -- Enlace de invitación de la clase. Se puede cerrar cuando ya se han apuntado todos.
         "tokenInvitacion"   TEXT UNIQUE,
         "invitacionAbierta" BOOLEAN NOT NULL DEFAULT true,

@@ -3,7 +3,7 @@
 /**
  * #39 (issue #31) — Clases del profesor.
  *
- * Una clase es su grupo ("Dietoterapia 3º A", curso 2026/27). De ella cuelgan los alumnos y, más
+ * Una clase es su grupo ("Dietoterapia 3º A", del 4/9/2026 al 31/8/2027). De ella cuelgan los alumnos y, más
  * adelante, los casos que les asigna. Archivar nunca borra nada: es lo que pasa al cerrar un curso
  * o al retirarle el rol a un profesor, y todo vuelve si hace falta.
  */
@@ -13,8 +13,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { isNextNavigation, urlPublica } from "@/lib/utils";
-import { sanitizeString, sanitizeStringOptional } from "@/lib/validation";
-import { cursoQueSeContrata, finDeCursoPorDefecto, claseQueLleva } from "@/lib/docencia";
+import { sanitizeString } from "@/lib/validation";
+import { finDeCursoPorDefecto, inicioDeCursoPorDefecto, claseQueLleva } from "@/lib/docencia";
 import { plazasLibresDeLicencia } from "@/lib/docencia-bolsa";
 import { requireProfesor } from "./docencia";
 
@@ -27,7 +27,7 @@ function revalidarClases(claseId?: string) {
 export interface ClaseResumen {
   id: string;
   nombre: string;
-  curso: string | null;
+  fechaInicioCurso: Date | null;
   archivada: boolean;
   fechaFinCurso: Date | null;
   invitacionAbierta: boolean;
@@ -63,7 +63,7 @@ export async function getMisClases(incluirArchivadas = false): Promise<ClaseResu
   return clases.map((c) => ({
     id: c.id,
     nombre: c.nombre,
-    curso: c.curso,
+    fechaInicioCurso: c.fechaInicioCurso,
     archivada: c.archivada,
     fechaFinCurso: c.fechaFinCurso,
     invitacionAbierta: c.invitacionAbierta,
@@ -74,7 +74,9 @@ export async function getMisClases(incluirArchivadas = false): Promise<ClaseResu
 
 export async function crearClase(data: {
   nombre: string;
-  curso?: string;
+  /** YYYY-MM-DD. Sin ellas: empieza hoy y acaba el próximo 31 de agosto. */
+  fechaInicioCurso?: string;
+  fechaFinCurso?: string;
 }): Promise<{ ok: boolean; error?: string; claseId?: string }> {
   const profesor = await requireProfesor();
   const t = await getTranslations("validation");
@@ -91,9 +93,10 @@ export async function crearClase(data: {
         profesorId: profesor.dietistaId,
         licenciaDocenteId: profesor.licencia?.id ?? null,
         nombre,
-        curso: sanitizeStringOptional(data.curso, 20) || cursoQueSeContrata(),
-        // El curso acaba en agosto; a partir de ahí sus alumnos pierden la clase.
-        fechaFinCurso: new Date(finDeCursoPorDefecto()),
+        // El curso va de la fecha de inicio a la de fin (por defecto de hoy al próximo 31 de
+        // agosto); a partir de ahí sus alumnos pierden la clase.
+        fechaInicioCurso: new Date(data.fechaInicioCurso || inicioDeCursoPorDefecto()),
+        fechaFinCurso: new Date(data.fechaFinCurso || finDeCursoPorDefecto()),
         // El que la crea es el primero de la lista de quienes la llevan: así el permiso se
         // comprueba en un solo sitio, mire quien mire.
         profesores: { create: { profesorId: profesor.dietistaId } },
@@ -110,7 +113,7 @@ export async function crearClase(data: {
 
 export async function editarClase(
   claseId: string,
-  data: { nombre: string; curso?: string; fechaFinCurso?: string },
+  data: { nombre: string; fechaInicioCurso?: string; fechaFinCurso?: string },
 ): Promise<{ ok: boolean; error?: string }> {
   const profesor = await requireProfesor();
   const t = await getTranslations("validation");
@@ -127,7 +130,7 @@ export async function editarClase(
       where: { id: claseId },
       data: {
         nombre,
-        curso: sanitizeStringOptional(data.curso, 20) || null,
+        fechaInicioCurso: data.fechaInicioCurso ? new Date(data.fechaInicioCurso) : null,
         fechaFinCurso: data.fechaFinCurso ? new Date(data.fechaFinCurso) : null,
       },
     });
@@ -228,7 +231,7 @@ export async function getClase(claseId: string): Promise<ClaseDetalle | null> {
   return {
     id: clase.id,
     nombre: clase.nombre,
-    curso: clase.curso,
+    fechaInicioCurso: clase.fechaInicioCurso,
     archivada: clase.archivada,
     fechaFinCurso: clase.fechaFinCurso,
     invitacionAbierta: clase.invitacionAbierta,

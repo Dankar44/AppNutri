@@ -453,8 +453,8 @@
     "toastCreada": "Licencia creada",
     "toastErrorCrear": "No se ha podido crear la licencia",
     "volver": "Volver a universidades",
-    "cursoEtiqueta": "Curso {curso}",
-    "sinCurso": "Sin curso indicado",
+    "cursoEtiqueta": "Curso del {inicio} al {fin}",
+    "sinCurso": "Sin fecha de fin de curso",
     "cerradaTitulo": "Licencia cerrada",
     "cerradaTexto": "Está desactivada o ha pasado su fecha de fin. Los profesores conservan su cuenta y sus casos, pero no pueden dar de alta alumnos.",
     "profesores": "Profesores",
@@ -485,7 +485,6 @@
       "dominioAyuda": "Solo sirve para avisar cuando un correo no es de la institución; nunca impide dar de alta. Se pueden poner varios separados por comas, porque profesores y alumnos suelen tener dominios distintos.",
       "maxProfesores": "Licencias de profesor",
       "maxAlumnos": "Licencias de alumno",
-      "curso": "Curso",
       "fechaFin": "Fin del curso",
       "fechaFinAyuda": "Pasada esta fecha no se pueden dar más altas de alumno.",
       "notas": "Notas internas",
@@ -510,7 +509,8 @@
       "invitarPorCorreo": "Invitar por correo",
       "emailPlaceholder": "profesor@universidad.es",
       "enviarInvitacion": "Enviar invitación",
-      "ayudaInvitar": "Se le manda un correo para que cree su cuenta con la contraseña que él elija. Si ese correo ya tiene cuenta en Annonia no se crea otra: se le añade el rol y se le avisa."
+      "ayudaInvitar": "Se le manda un correo para que cree su cuenta con la contraseña que él elija. Si ese correo ya tiene cuenta en Annonia no se crea otra: se le añade el rol y se le avisa.",
+      "fechaInicio": "Inicio del curso"
     },
     "contactoEtiqueta": "Contacto: {persona}",
     "toastInvitacionEnviada": "Invitación enviada por correo",

@@ -65,8 +65,8 @@ async function main() {
 
     await client.query(`DELETE FROM licencias_docentes WHERE institucion = 'PRUEBA Invitaciones'`);
     const { rows: lic } = await client.query(
-      `INSERT INTO licencias_docentes (institucion, "maxProfesores", "maxAlumnos", curso, "fechaFin")
-       VALUES ('PRUEBA Invitaciones', 5, 100, '2026/27', '2027-08-31') RETURNING id`);
+      `INSERT INTO licencias_docentes (institucion, "maxProfesores", "maxAlumnos", "fechaFin")
+       VALUES ('PRUEBA Invitaciones', 5, 100, '2027-08-31') RETURNING id`);
     const licenciaId = lic[0].id as string;
 
     const adminToken = await new SignJWT({ email: (process.env.ADMIN_EMAILS ?? "").split(",")[0].trim(), role: "admin" })

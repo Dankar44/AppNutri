@@ -137,14 +137,14 @@ async function main() {
   try {
     await limpiar(client);
     const { rows: lic } = await client.query(
-      `INSERT INTO licencias_docentes (id, institucion, "maxProfesores", "maxAlumnos", curso, "fechaFin", "createdAt", "updatedAt")
-       VALUES (gen_random_uuid()::text, '${MARCA} Universidad', 3, 3, '2026/27', '2027-08-31', NOW(), NOW()) RETURNING id`);
+      `INSERT INTO licencias_docentes (id, institucion, "maxProfesores", "maxAlumnos", "fechaFin", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, '${MARCA} Universidad', 3, 3, '2027-08-31', NOW(), NOW()) RETURNING id`);
     const licenciaId = lic[0].id as string;
     const profesorId = await crearCuenta(client, `profe@${DOMINIO}`, { rolDocente: "PROFESOR", licenciaDocenteId: licenciaId });
     const crearClase = async (nombre: string) => {
       const { rows } = await client.query(
-        `INSERT INTO clases (id, "profesorId", "licenciaDocenteId", nombre, curso, "fechaFinCurso", "createdAt", "updatedAt")
-         VALUES (gen_random_uuid()::text, $1, $2, $3, '2026/27', '2027-08-31', NOW(), NOW()) RETURNING id`,
+        `INSERT INTO clases (id, "profesorId", "licenciaDocenteId", nombre, "fechaFinCurso", "createdAt", "updatedAt")
+         VALUES (gen_random_uuid()::text, $1, $2, $3, '2027-08-31', NOW(), NOW()) RETURNING id`,
         [profesorId, licenciaId, `${MARCA} ${nombre}`]);
       return rows[0].id as string;
     };

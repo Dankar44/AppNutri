@@ -52,5 +52,6 @@
     "fotoFija": "Lo que cambies ahora no se refleja en la entrega, salvo que vuelvas a entregar.",
     "entregarAlProfesor": "Entregar al profesor"
   },
-  "volverAlAula": "Volver a mi aula"
+  "volverAlAula": "Volver a mi aula",
+  "delAl": "Del {inicio} al {fin}"
 }

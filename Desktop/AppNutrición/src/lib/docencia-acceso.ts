@@ -23,7 +23,7 @@ import { inicioDeHoy } from "@/lib/docencia";
 export interface ClaseViva {
   id: string;
   nombre: string;
-  curso: string | null;
+  fechaInicioCurso: Date | null;
   fechaFinCurso: Date | null;
   institucion: string | null;
 }
@@ -55,7 +55,7 @@ export async function claseVivaDeAlumno(alumnoId: string): Promise<ClaseViva | n
     select: {
       clase: {
         select: {
-          id: true, nombre: true, curso: true, fechaFinCurso: true,
+          id: true, nombre: true, fechaInicioCurso: true, fechaFinCurso: true,
           licenciaDocente: { select: { institucion: true } },
         },
       },
@@ -65,7 +65,7 @@ export async function claseVivaDeAlumno(alumnoId: string): Promise<ClaseViva | n
   return {
     id: matricula.clase.id,
     nombre: matricula.clase.nombre,
-    curso: matricula.clase.curso,
+    fechaInicioCurso: matricula.clase.fechaInicioCurso,
     fechaFinCurso: matricula.clase.fechaFinCurso,
     institucion: matricula.clase.licenciaDocente?.institucion ?? null,
   };

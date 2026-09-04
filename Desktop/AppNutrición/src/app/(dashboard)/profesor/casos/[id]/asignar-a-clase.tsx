@@ -22,7 +22,7 @@ export function AsignarAClase({
   destacado = false,
 }: {
   casoId: string;
-  clases: { id: string; nombre: string; curso: string | null }[];
+  clases: { id: string; nombre: string }[];
   /** Como botón principal (en el aviso de la ficha) en vez de como enlace discreto. */
   destacado?: boolean;
 }) {
@@ -81,7 +81,7 @@ export function AsignarAClase({
             <option value="">—</option>
             {clases.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.nombre}{c.curso ? ` · ${c.curso}` : ""}
+                {c.nombre}
               </option>
             ))}
           </select>

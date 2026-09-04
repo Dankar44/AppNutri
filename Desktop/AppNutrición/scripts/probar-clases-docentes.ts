@@ -116,8 +116,8 @@ async function main() {
   try {
     await limpiar(client);
     const { rows: lic } = await client.query(
-      `INSERT INTO licencias_docentes (institucion, "maxProfesores", "maxAlumnos", curso, "fechaFin")
-       VALUES ('PRUEBA Clases', 3, 50, '2026/27', '2027-08-31') RETURNING id`);
+      `INSERT INTO licencias_docentes (institucion, "maxProfesores", "maxAlumnos", "fechaFin")
+       VALUES ('PRUEBA Clases', 3, 50, '2027-08-31') RETURNING id`);
     const licenciaId = lic[0].id as string;
     await crearProfesor(client, PROFES[0].email, PROFES[0].pass, PROFES[0].nombre, licenciaId);
     await crearProfesor(client, PROFES[1].email, PROFES[1].pass, PROFES[1].nombre, licenciaId);
@@ -133,16 +133,15 @@ async function main() {
     await pulsar(p1, "Nueva clase");
     await esperar(500);
     await rellenar(p1, "Nombre de la clase", "PRUEBA clase Dietoterapia");
-    await rellenar(p1, "Curso", "2026/27");
     await pulsar(p1, "Nueva clase", "form");
     await esperar(3000);
 
     const { rows: creada } = await client.query(
-      `SELECT id, nombre, curso, "fechaFinCurso", archivada, "profesorId" FROM clases WHERE nombre = 'PRUEBA clase Dietoterapia'`);
+      `SELECT id, nombre, "fechaInicioCurso", "fechaFinCurso", archivada, "profesorId" FROM clases WHERE nombre = 'PRUEBA clase Dietoterapia'`);
     comprobar("la clase se guarda", creada.length === 1);
     if (!creada.length) throw new Error("sin clase no se puede seguir");
     const claseId = creada[0].id as string;
-    comprobar("con su curso", creada[0].curso === "2026/27", String(creada[0].curso));
+    comprobar("con su fecha de inicio puesta sola (hoy)", creada[0].fechaInicioCurso !== null, String(creada[0].fechaInicioCurso)?.slice(0, 10));
     comprobar("y con fin de curso puesto solo", creada[0].fechaFinCurso !== null, String(creada[0].fechaFinCurso)?.slice(0, 10));
     comprobar("lleva al detalle de la clase", p1.url().includes(`/profesor/clases/${claseId}`), p1.url().replace(BASE, ""));
     comprobar("y dice que aún no hay alumnos", (await p1.content()).includes("Todavía no hay alumnos"));

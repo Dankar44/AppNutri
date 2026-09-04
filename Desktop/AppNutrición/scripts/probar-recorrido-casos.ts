@@ -164,8 +164,8 @@ async function main() {
 
     console.log("\n── Asigna a otra clase desde la ficha ──");
     await client.query(
-      `INSERT INTO clases (id, "profesorId", "licenciaDocenteId", nombre, curso, "fechaFinCurso", "createdAt", "updatedAt")
-       VALUES (gen_random_uuid()::text, $1, $2, 'Nutrición Clínica 2º B', '2026/27', '2027-06-30', NOW(), NOW())`,
+      `INSERT INTO clases (id, "profesorId", "licenciaDocenteId", nombre, "fechaFinCurso", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, $2, 'Nutrición Clínica 2º B', '2027-06-30', NOW(), NOW())`,
       [prof[0].id, caso[0].licenciaDocenteId]);
     await client.query(
       `INSERT INTO profesores_clase (id, "claseId", "profesorId", "createdAt", "updatedAt")

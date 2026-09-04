@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { crearLicenciaDocente } from "@/app/actions/admin-docencia";
 import { DatePicker } from "@/components/date-picker";
-import { cursoQueSeContrata, finDeCursoPorDefecto } from "@/lib/docencia";
+import { finDeCursoPorDefecto, inicioDeCursoPorDefecto } from "@/lib/docencia";
 
 export function CrearLicenciaForm() {
   const t = useTranslations("admin.universidades");
@@ -21,7 +21,7 @@ export function CrearLicenciaForm() {
   // valor que ya había salía "0200" o "13" en vez de lo que se quería (visto el 30 ago 2026).
   const [maxProfesores, setMaxProfesores] = useState("1");
   const [maxAlumnos, setMaxAlumnos] = useState("0");
-  const [curso, setCurso] = useState(cursoQueSeContrata());
+  const [fechaInicio, setFechaInicio] = useState(inicioDeCursoPorDefecto());
   const [fechaFin, setFechaFin] = useState(finDeCursoPorDefecto());
   const [notas, setNotas] = useState("");
 
@@ -38,7 +38,7 @@ export function CrearLicenciaForm() {
         dominioEmail: dominioEmail || undefined,
         maxProfesores: Number(maxProfesores || 0),
         maxAlumnos: Number(maxAlumnos || 0),
-        curso: curso || undefined,
+        fechaInicio: fechaInicio || undefined,
         fechaFin: fechaFin || undefined,
         notas: notas || undefined,
       });
@@ -127,14 +127,10 @@ export function CrearLicenciaForm() {
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs font-medium text-muted-foreground">{t("form.curso")}</label>
-            <input
-              type="text"
-              value={curso}
-              onChange={(e) => setCurso(e.target.value)}
-              maxLength={20}
-              className={input}
-            />
+            <label className="text-xs font-medium text-muted-foreground">{t("form.fechaInicio")}</label>
+            <div className="mt-1">
+              <DatePicker value={fechaInicio} onChange={setFechaInicio} />
+            </div>
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground">{t("form.fechaFin")}</label>

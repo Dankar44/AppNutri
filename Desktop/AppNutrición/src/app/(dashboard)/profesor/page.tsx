@@ -5,7 +5,6 @@ import { requireProfesor } from "@/app/actions/docencia";
 import { getMisClases } from "@/app/actions/clases";
 import { getMisCasos } from "@/app/actions/casos";
 import type { Metadata } from "next";
-import { cursoActual } from "@/lib/docencia";
 import { formatDate } from "@/lib/utils";
 import { getLocale } from "@/i18n/locale";
 
@@ -67,7 +66,6 @@ export default async function ProfesorPage() {
   ]);
 
   const { licencia } = datos;
-  const curso = licencia?.curso || cursoActual();
 
   return (
     <div className="space-y-6">
@@ -121,12 +119,12 @@ export default async function ProfesorPage() {
               </div>
               <span className="text-sm font-medium text-muted-foreground">{t("panel.curso")}</span>
             </div>
-            <p className="text-2xl font-bold tabular-nums">{curso}</p>
-            <p className="mt-2 text-xs text-muted-foreground">
+            <p className="text-lg font-bold tabular-nums">
               {licencia.fechaFin
-                ? t("panel.hasta", { fecha: formatDate(licencia.fechaFin, locale) })
-                : t("panel.sinFechaFin")}
+                ? t("panel.delAl", { inicio: formatDate(licencia.fechaInicio, locale), fin: formatDate(licencia.fechaFin, locale) })
+                : t("panel.desde", { inicio: formatDate(licencia.fechaInicio, locale) })}
             </p>
+            {!licencia.fechaFin && <p className="mt-2 text-xs text-muted-foreground">{t("panel.sinFechaFin")}</p>}
           </div>
         </section>
       )}

@@ -104,8 +104,8 @@ async function main() {
 
     await client.query(`DELETE FROM licencias_docentes WHERE institucion = $1`, [INSTITUCION]);
     const { rows: lic } = await client.query(
-      `INSERT INTO licencias_docentes (institucion, "dominioEmail", "maxProfesores", "maxAlumnos", curso, "fechaFin", notas)
-       VALUES ($1, 'upo.es,alu.upo.es', 3, 200, '2026/27', '2027-08-31', 'Licencia de ejemplo para desarrollo')
+      `INSERT INTO licencias_docentes (institucion, "dominioEmail", "maxProfesores", "maxAlumnos", "fechaFin", notas)
+       VALUES ($1, 'upo.es,alu.upo.es', 3, 200, '2027-08-31', 'Licencia de ejemplo para desarrollo')
        RETURNING id`,
       [INSTITUCION],
     );
@@ -119,7 +119,7 @@ async function main() {
     console.log(`
 ✓ Listo para probar en desarrollo
 
-  Licencia:  ${INSTITUCION} — 3 profesores y 200 alumnos, curso 2026/27
+  Licencia:  ${INSTITUCION} — 3 profesores y 200 alumnos, del curso en marcha
 
   Profesor (ya con rol):      ${EMAIL}  /  ${PASS}
   Nutricionista normal:       ${EMAIL_NUTRI}  /  ${PASS_NUTRI}

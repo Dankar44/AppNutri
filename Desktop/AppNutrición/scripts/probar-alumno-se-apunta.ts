@@ -130,15 +130,15 @@ async function main() {
   try {
     await limpiar(client);
     const { rows: lic } = await client.query(
-      `INSERT INTO licencias_docentes (id, institucion, "maxProfesores", "maxAlumnos", curso, "fechaFin", "dominioEmail", "createdAt", "updatedAt")
-       VALUES (gen_random_uuid()::text, '${MARCA} Facultad', 2, 3, '2026/27', '2027-08-31', '${DOMINIO}', NOW(), NOW()) RETURNING id`);
+      `INSERT INTO licencias_docentes (id, institucion, "maxProfesores", "maxAlumnos", "fechaFin", "dominioEmail", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, '${MARCA} Facultad', 2, 3, '2027-08-31', '${DOMINIO}', NOW(), NOW()) RETURNING id`);
     const licenciaId = lic[0].id as string;
     const profeId = await crearDietista(client, await crearAuth(client, PROFE.email, PROFE.pass), PROFE.email,
       { rolDocente: "PROFESOR", licenciaDocenteId: licenciaId });
     const token = randomBytes(18).toString("base64url");
     const { rows: cl } = await client.query(
-      `INSERT INTO clases (id, "profesorId", "licenciaDocenteId", nombre, curso, "fechaFinCurso", "tokenInvitacion", "invitacionAbierta", "createdAt", "updatedAt")
-       VALUES (gen_random_uuid()::text, $1, $2, '${MARCA} Dietoterapia', '2026/27', '2027-08-31', $3, true, NOW(), NOW()) RETURNING id`,
+      `INSERT INTO clases (id, "profesorId", "licenciaDocenteId", nombre, "fechaFinCurso", "tokenInvitacion", "invitacionAbierta", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, $2, '${MARCA} Dietoterapia', '2027-08-31', $3, true, NOW(), NOW()) RETURNING id`,
       [profeId, licenciaId, token]);
     const claseId = cl[0].id as string;
 

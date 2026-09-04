@@ -69,7 +69,7 @@ export default async function ClaseDelAlumnoPage({ params }: { params: Promise<{
       <div>
         <h1 className="text-xl sm:text-2xl font-bold">{clase.nombre}</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          {[clase.institucion, clase.curso].filter(Boolean).join(" · ")}
+          {clase.institucion}
         </p>
         <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2 text-sm text-muted-foreground">
           <span className="inline-flex items-center gap-1.5">
@@ -79,7 +79,9 @@ export default async function ClaseDelAlumnoPage({ params }: { params: Promise<{
           {clase.fechaFinCurso && (
             <span className="inline-flex items-center gap-1.5">
               <CalendarRange className="w-4 h-4 shrink-0" />
-              {t("hasta", { fecha: formatDate(clase.fechaFinCurso, locale) })}
+              {clase.fechaInicioCurso
+                ? t("delAl", { inicio: formatDate(clase.fechaInicioCurso, locale), fin: formatDate(clase.fechaFinCurso, locale) })
+                : t("hasta", { fecha: formatDate(clase.fechaFinCurso, locale) })}
             </span>
           )}
         </div>

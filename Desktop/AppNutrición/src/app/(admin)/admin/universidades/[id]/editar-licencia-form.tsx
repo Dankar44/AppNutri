@@ -15,8 +15,8 @@ interface LicenciaEditable {
   dominioEmail: string | null;
   maxProfesores: number;
   maxAlumnos: number;
-  curso: string | null;
-  /** Ya en formato YYYY-MM-DD, listo para el input date. */
+  /** Ya en formato YYYY-MM-DD, listos para el calendario. */
+  fechaInicio: string;
   fechaFin: string | null;
   activa: boolean;
   notas: string | null;
@@ -37,7 +37,7 @@ export function EditarLicenciaForm({ licencia }: { licencia: LicenciaEditable })
 
   const alEnfocarNumero = (e: React.FocusEvent<HTMLInputElement>) => e.target.select();
   const soloDigitos = (v: string) => v.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
-  const [curso, setCurso] = useState(licencia.curso ?? "");
+  const [fechaInicio, setFechaInicio] = useState(licencia.fechaInicio);
   const [fechaFin, setFechaFin] = useState(licencia.fechaFin ?? "");
   const [activa, setActiva] = useState(licencia.activa);
   const [notas, setNotas] = useState(licencia.notas ?? "");
@@ -51,7 +51,7 @@ export function EditarLicenciaForm({ licencia }: { licencia: LicenciaEditable })
         dominioEmail: dominioEmail || undefined,
         maxProfesores: Number(maxProfesores || 0),
         maxAlumnos: Number(maxAlumnos || 0),
-        curso: curso || undefined,
+        fechaInicio: fechaInicio || undefined,
         fechaFin: fechaFin || undefined,
         activa,
         notas: notas || undefined,
@@ -134,14 +134,10 @@ export function EditarLicenciaForm({ licencia }: { licencia: LicenciaEditable })
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-xs font-medium text-muted-foreground">{t("form.curso")}</label>
-          <input
-            type="text"
-            value={curso}
-            onChange={(e) => setCurso(e.target.value)}
-            maxLength={20}
-            className={input}
-          />
+          <label className="text-xs font-medium text-muted-foreground">{t("form.fechaInicio")}</label>
+          <div className="mt-1">
+            <DatePicker value={fechaInicio} onChange={setFechaInicio} />
+          </div>
         </div>
         <div>
           <label className="text-xs font-medium text-muted-foreground">{t("form.fechaFin")}</label>

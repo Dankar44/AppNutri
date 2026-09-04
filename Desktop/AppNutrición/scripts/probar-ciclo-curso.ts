@@ -92,8 +92,8 @@ async function matricular(client: pg.PoolClient, claseId: string, alumnoId: stri
 
 async function crearClase(client: pg.PoolClient, profesorId: string, licenciaId: string, nombre: string, fechaFin: string) {
   const { rows } = await client.query(
-    `INSERT INTO clases (id, "profesorId", "licenciaDocenteId", nombre, curso, "fechaFinCurso", "createdAt", "updatedAt")
-     VALUES (gen_random_uuid()::text, $1, $2, $3, '2026/27', $4, NOW(), NOW()) RETURNING id`,
+    `INSERT INTO clases (id, "profesorId", "licenciaDocenteId", nombre, "fechaFinCurso", "createdAt", "updatedAt")
+     VALUES (gen_random_uuid()::text, $1, $2, $3, $4, NOW(), NOW()) RETURNING id`,
     [profesorId, licenciaId, nombre, fechaFin]);
   return rows[0].id as string;
 }
@@ -119,8 +119,8 @@ async function main() {
   try {
     await limpiar(client);
     const { rows: lic } = await client.query(
-      `INSERT INTO licencias_docentes (id, institucion, "maxProfesores", "maxAlumnos", curso, "fechaFin", "createdAt", "updatedAt")
-       VALUES (gen_random_uuid()::text, '${MARCA} Facultad', 3, 50, '2026/27', '2027-08-31', NOW(), NOW()) RETURNING id`);
+      `INSERT INTO licencias_docentes (id, institucion, "maxProfesores", "maxAlumnos", "fechaFin", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, '${MARCA} Facultad', 3, 50, '2027-08-31', NOW(), NOW()) RETURNING id`);
     const licenciaId = lic[0].id as string;
 
     const profesorId = await crearCuenta(client, `profe@${DOMINIO}`, { rolDocente: "PROFESOR", licenciaDocenteId: licenciaId });

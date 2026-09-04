@@ -453,8 +453,8 @@
     "toastCreada": "Licença criada",
     "toastErrorCrear": "Não foi possível criar a licença",
     "volver": "Voltar a universidades",
-    "cursoEtiqueta": "Ano letivo {curso}",
-    "sinCurso": "Sem ano letivo indicado",
+    "cursoEtiqueta": "Curso de {inicio} a {fin}",
+    "sinCurso": "Sem data de fim de curso",
     "cerradaTitulo": "Licença fechada",
     "cerradaTexto": "Está desativada ou passou a data de fim. Os professores mantêm a conta e os casos, mas não podem registar alunos.",
     "profesores": "Professores",
@@ -485,7 +485,6 @@
       "dominioAyuda": "Serve apenas para avisar quando um correio não é da instituição; nunca impede o registo. Podem indicar-se vários separados por vírgulas, porque professores e alunos costumam ter domínios diferentes.",
       "maxProfesores": "Licenças de professor",
       "maxAlumnos": "Licenças de aluno",
-      "curso": "Ano letivo",
       "fechaFin": "Fim do ano letivo",
       "fechaFinAyuda": "Passada esta data não se podem registar mais alunos.",
       "notas": "Notas internas",
@@ -510,7 +509,8 @@
       "invitarPorCorreo": "Convidar por correio",
       "emailPlaceholder": "professor@universidade.pt",
       "enviarInvitacion": "Enviar convite",
-      "ayudaInvitar": "É enviado um correio para que crie a conta com a palavra-passe que escolher. Se esse correio já tiver conta na Annonia não se cria outra: é-lhe atribuída a função e é avisado."
+      "ayudaInvitar": "É enviado um correio para que crie a conta com a palavra-passe que escolher. Se esse correio já tiver conta na Annonia não se cria outra: é-lhe atribuída a função e é avisado.",
+      "fechaInicio": "Início do curso"
     },
     "contactoEtiqueta": "Contacto: {persona}",
     "toastInvitacionEnviada": "Convite enviado por correio",

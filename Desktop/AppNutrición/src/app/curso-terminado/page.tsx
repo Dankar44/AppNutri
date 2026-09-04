@@ -34,7 +34,7 @@ export default async function CursoTerminadoPage() {
     select: {
       clase: {
         select: {
-          nombre: true, curso: true, fechaFinCurso: true,
+          nombre: true, fechaInicioCurso: true, fechaFinCurso: true,
           licenciaDocente: { select: { institucion: true } },
         },
       },

@@ -209,7 +209,7 @@ async function main() {
       `profesores "${cuposEscritos.profesores}", alumnos "${cuposEscritos.alumnos}"`);
 
     const { rows: creada } = await client.query(
-      `SELECT id, institucion, "dominioEmail", "maxProfesores", "maxAlumnos", curso, notas
+      `SELECT id, institucion, "dominioEmail", "maxProfesores", "maxAlumnos", "fechaInicio", notas
        FROM licencias_docentes WHERE institucion = 'PRUEBA Universidad Pablo de Olavide'`,
     );
     comprobar("la licencia se ha guardado en la base", creada.length === 1);
@@ -217,7 +217,7 @@ async function main() {
     const licencia = creada[0];
     comprobar("con sus cupos", licencia.maxProfesores === 3 && licencia.maxAlumnos === 300, `${licencia.maxProfesores} y ${licencia.maxAlumnos}`);
     comprobar("los dominios se normalizan", licencia.dominioEmail === "upo.es,alu.upo.es", String(licencia.dominioEmail));
-    comprobar("el curso se rellena solo", !!licencia.curso, String(licencia.curso));
+    comprobar("el inicio del curso se rellena solo (hoy)", !!licencia.fechaInicio, String(licencia.fechaInicio));
     comprobar("y lleva al detalle de la licencia", page.url().includes(`/admin/universidades/${licencia.id}`), page.url().replace(BASE, ""));
 
     // ─── 2. Asignar un profesor que ya tiene cuenta ───

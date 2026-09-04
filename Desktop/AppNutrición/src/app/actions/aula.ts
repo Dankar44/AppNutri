@@ -27,7 +27,7 @@ import type { PDFSectionOptions, DisplayOverrides } from "@/lib/pdf/generate-pla
 export interface ClaseDelAlumno {
   id: string;
   nombre: string;
-  curso: string | null;
+  fechaInicioCurso: Date | null;
   fechaFinCurso: Date | null;
   institucion: string | null;
   /** Todos los que la llevan, empezando por quien la creó. */
@@ -49,7 +49,7 @@ export async function getMisClasesComoAlumno(): Promise<ClaseDelAlumno[]> {
       activa: true,
       clase: {
         select: {
-          id: true, nombre: true, curso: true, fechaFinCurso: true, archivada: true,
+          id: true, nombre: true, fechaInicioCurso: true, fechaFinCurso: true, archivada: true,
           profesor: { select: { nombre: true, apellidos: true, email: true } },
           profesores: {
             orderBy: { createdAt: "asc" },
@@ -74,7 +74,7 @@ export async function getMisClasesComoAlumno(): Promise<ClaseDelAlumno[]> {
     return {
       id: c.id,
       nombre: c.nombre,
-      curso: c.curso,
+      fechaInicioCurso: c.fechaInicioCurso,
       fechaFinCurso: c.fechaFinCurso,
       institucion: c.licenciaDocente?.institucion ?? null,
       profesores: profesores.map((p) => ({

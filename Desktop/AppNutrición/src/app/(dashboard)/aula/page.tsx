@@ -64,7 +64,7 @@ export default async function AulaPage() {
             >
               <h2 className="font-semibold leading-tight group-hover:text-primary transition-colors">{c.nombre}</h2>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {[c.institucion, c.curso].filter(Boolean).join(" · ")}
+                {c.institucion}
               </p>
               <div className="mt-3 space-y-1.5 text-sm text-muted-foreground">
                 <p className="flex items-center gap-1.5">
@@ -74,7 +74,9 @@ export default async function AulaPage() {
                 {c.fechaFinCurso && (
                   <p className="flex items-center gap-1.5">
                     <CalendarRange className="w-4 h-4 shrink-0" />
-                    {t("hasta", { fecha: formatDate(c.fechaFinCurso, locale) })}
+                    {c.fechaInicioCurso
+                      ? t("delAl", { inicio: formatDate(c.fechaInicioCurso, locale), fin: formatDate(c.fechaFinCurso, locale) })
+                      : t("hasta", { fecha: formatDate(c.fechaFinCurso, locale) })}
                   </p>
                 )}
               </div>
@@ -102,7 +104,7 @@ export default async function AulaPage() {
               <div key={c.id} className="py-2.5">
                 <p className="text-sm text-muted-foreground">
                   {c.nombre}
-                  {c.curso && <> · {c.curso}</>}
+
                 </p>
               </div>
             ))}

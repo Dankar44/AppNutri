@@ -1068,8 +1068,7 @@ model LicenciaDocente {
   dominioEmail  String?
   maxProfesores Int       @default(1)
   maxAlumnos    Int       @default(0)
-  /// Curso académico al que corresponde la bolsa, en texto libre ("2026/27").
-  curso         String?
+  /// Inicio del curso contratado (Guillermo, 4 sep 2026: fechas, no "2026/27" en texto).
   fechaInicio   DateTime  @default(now())
   /// Fin del curso contratado. Pasada esta fecha el profesor conserva su cuenta y sus casos,
   /// pero no puede dar de alta más alumnos hasta que se renueve.
@@ -1128,7 +1127,8 @@ model Clase {
   licenciaDocenteId String?
   licenciaDocente   LicenciaDocente? @relation(fields: [licenciaDocenteId], references: [id], onDelete: SetNull)
   nombre            String
-  curso             String?
+  /// Inicio del curso de esta clase. Con `fechaFinCurso` sustituyen al viejo texto "2026/27".
+  fechaInicioCurso  DateTime?
   tokenInvitacion   String?   @unique
   invitacionAbierta Boolean   @default(true)
   /// Fin del curso de esta clase: pasada la fecha, sus alumnos pierden el acceso. El profesor no.

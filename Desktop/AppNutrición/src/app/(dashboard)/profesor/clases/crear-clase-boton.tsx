@@ -6,20 +6,26 @@ import { Plus, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { crearClase } from "@/app/actions/clases";
-import { cursoQueSeContrata } from "@/lib/docencia";
+import { finDeCursoPorDefecto, inicioDeCursoPorDefecto } from "@/lib/docencia";
+import { DatePicker } from "@/components/date-picker";
 
+/**
+ * Nueva clase: el nombre y las fechas del curso. Sin texto libre de "2026/27": el curso es del día
+ * que empieza al día que acaba (Guillermo, 4 sep 2026), y por defecto va de hoy al 31 de agosto.
+ */
 export function CrearClaseBoton({ puedeCrear }: { puedeCrear: boolean }) {
   const t = useTranslations("docencia");
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [nombre, setNombre] = useState("");
-  const [curso, setCurso] = useState(cursoQueSeContrata());
+  const [fechaInicio, setFechaInicio] = useState(inicioDeCursoPorDefecto());
+  const [fechaFin, setFechaFin] = useState(finDeCursoPorDefecto());
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
-      const result = await crearClase({ nombre, curso });
+      const result = await crearClase({ nombre, fechaInicioCurso: fechaInicio || undefined, fechaFinCurso: fechaFin || undefined });
       if (result.ok && result.claseId) {
         toast.success(t("clases.creada"));
         setAbierto(false);
@@ -85,16 +91,21 @@ export function CrearClaseBoton({ puedeCrear }: { puedeCrear: boolean }) {
               />
             </div>
 
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">{t("clases.curso")}</label>
-              <input
-                type="text"
-                value={curso}
-                onChange={(e) => setCurso(e.target.value)}
-                maxLength={20}
-                className={input}
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">{t("clases.inicioCurso")}</label>
+                <div className="mt-1">
+                  <DatePicker value={fechaInicio} onChange={setFechaInicio} />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">{t("clases.finCurso")}</label>
+                <div className="mt-1">
+                  <DatePicker value={fechaFin} onChange={setFechaFin} />
+                </div>
+              </div>
             </div>
+            <p className="text-xs text-muted-foreground -mt-2">{t("clases.finCursoAyuda")}</p>
 
             <button
               type="submit"

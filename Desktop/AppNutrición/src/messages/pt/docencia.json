@@ -18,7 +18,9 @@
     "verMisClases": "Ver as minhas turmas",
     "crearPrimerCaso": "Criar o meu primeiro caso",
     "verMisCasos": "Ver os meus casos",
-    "dosPasos": "São dois passos: uma turma com os seus alunos, e os casos que lhes vai propondo."
+    "dosPasos": "São dois passos: uma turma com os seus alunos, e os casos que lhes vai propondo.",
+    "delAl": "De {inicio} a {fin}",
+    "desde": "Desde {inicio}"
   },
   "invitacion": {
     "titulo": "Crie a sua conta de professor",
@@ -48,13 +50,12 @@
     "cerrar": "Fechar",
     "nombre": "Nome da turma",
     "nombrePlaceholder": "Dietoterapia 3.º A",
-    "curso": "Ano letivo",
     "creada": "Turma criada",
     "errorCrear": "Não foi possível criar a turma",
     "noPuedeCrear": "O ano letivo está fechado: não pode criar turmas até que a licença seja renovada.",
     "vaciaTitulo": "Ainda não tem nenhuma turma",
     "vaciaTexto": "Uma turma é o seu grupo de alunos. Crie a primeira e poderá registá-los e atribuir-lhes casos.",
-    "sinCurso": "Sem ano letivo indicado",
+    "sinCurso": "Sem datas de curso",
     "hasta": "até {fecha}",
     "archivada": "Arquivada",
     "alumnos": "{n, plural, =0 {sem alunos} one {# aluno} other {# alunos}}",
@@ -102,7 +103,9 @@
     "irACasos": "Ir aos meus casos",
     "sinCasos": "Ainda não atribuíste nenhum caso a esta turma. Os casos criam-se em «Casos» e atribuem-se à turma a partir do caso ou da ficha do seu paciente.",
     "casoProgreso": "{entregadas} de {alumnos} entregaram",
-    "verEntregas": "Ver entregas"
+    "verEntregas": "Ver entregas",
+    "inicioCurso": "Início do curso",
+    "delAl": "De {inicio} a {fin}"
   },
   "clasePublica": {
     "titulo": "Junte-se à turma",
@@ -165,7 +168,8 @@
     "titulo": "A sua turma",
     "descripcion": "O seu acesso à Annonia vem daqui: paga-o a sua faculdade, não tem de contratar nada.",
     "hasta": "O ano letivo termina a {fecha}",
-    "noSePuedeBorrar": "A sua conta foi criada pela sua faculdade para as suas práticas, por isso não a pode apagar: o seu professor tem de poder corrigir o que entregar. Se quiser sair, diga-lho."
+    "noSePuedeBorrar": "A sua conta foi criada pela sua faculdade para as suas práticas, por isso não a pode apagar: o seu professor tem de poder corrigir o que entregar. Se quiser sair, diga-lho.",
+    "delAl": "Curso de {inicio} a {fin}"
   },
   "profesores": {
     "titulo": "{n, plural, one {Professor da turma} other {Professores da turma (#)}}",

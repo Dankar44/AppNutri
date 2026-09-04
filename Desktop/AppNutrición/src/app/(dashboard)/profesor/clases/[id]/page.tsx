@@ -51,15 +51,18 @@ export default async function ClaseDetallePage({
         <div className="min-w-0">
           <h1 className="text-xl sm:text-2xl font-bold">{clase.nombre}</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {clase.curso ?? t("clases.sinCurso")}
-            {clase.fechaFinCurso && <> · {t("clases.hasta", { fecha: formatDate(clase.fechaFinCurso, locale) })}</>}
+            {clase.fechaInicioCurso && clase.fechaFinCurso
+              ? t("clases.delAl", { inicio: formatDate(clase.fechaInicioCurso, locale), fin: formatDate(clase.fechaFinCurso, locale) })
+              : clase.fechaFinCurso
+                ? t("clases.hasta", { fecha: formatDate(clase.fechaFinCurso, locale) })
+                : t("clases.sinCurso")}
           </p>
         </div>
         <AccionesClase
           clase={{
             id: clase.id,
             nombre: clase.nombre,
-            curso: clase.curso,
+            fechaInicioCurso: clase.fechaInicioCurso ? clase.fechaInicioCurso.toISOString().slice(0, 10) : null,
             fechaFinCurso: clase.fechaFinCurso ? clase.fechaFinCurso.toISOString().slice(0, 10) : null,
             archivada: clase.archivada,
             alumnosActivos: clase.alumnosActivos,

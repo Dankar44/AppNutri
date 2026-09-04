@@ -135,8 +135,8 @@ async function main() {
 
     // Bolsa pequeña a propósito: cuatro plazas se agotan en una prueba y se ve el tope de verdad.
     const { rows: lic } = await client.query(
-      `INSERT INTO licencias_docentes (id, institucion, "maxProfesores", "maxAlumnos", curso, "fechaFin", "dominioEmail", "createdAt", "updatedAt")
-       VALUES (gen_random_uuid()::text, '${MARCA} Facultad', 3, 4, '2026/27', '2027-08-31', 'pruebaalta.dev', NOW(), NOW()) RETURNING id`);
+      `INSERT INTO licencias_docentes (id, institucion, "maxProfesores", "maxAlumnos", "fechaFin", "dominioEmail", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, '${MARCA} Facultad', 3, 4, '2027-08-31', 'pruebaalta.dev', NOW(), NOW()) RETURNING id`);
     const licenciaId = lic[0].id as string;
 
     const profe1 = await crearCuenta(client, PROFES[0].email, PROFES[0].pass, PROFES[0].apellidos,
@@ -145,12 +145,12 @@ async function main() {
       { rolDocente: "PROFESOR", licenciaDocenteId: licenciaId });
 
     const { rows: c1 } = await client.query(
-      `INSERT INTO clases (id, "profesorId", "licenciaDocenteId", nombre, curso, "fechaFinCurso", "createdAt", "updatedAt")
-       VALUES (gen_random_uuid()::text, $1, $2, '${MARCA} clase de uno', '2026/27', '2027-08-31', NOW(), NOW()) RETURNING id`, [profe1, licenciaId]);
+      `INSERT INTO clases (id, "profesorId", "licenciaDocenteId", nombre, "fechaFinCurso", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, $2, '${MARCA} clase de uno', '2027-08-31', NOW(), NOW()) RETURNING id`, [profe1, licenciaId]);
     const clase1 = c1[0].id as string;
     const { rows: c2 } = await client.query(
-      `INSERT INTO clases (id, "profesorId", "licenciaDocenteId", nombre, curso, "fechaFinCurso", "createdAt", "updatedAt")
-       VALUES (gen_random_uuid()::text, $1, $2, '${MARCA} clase de dos', '2026/27', '2027-08-31', NOW(), NOW()) RETURNING id`, [profe2, licenciaId]);
+      `INSERT INTO clases (id, "profesorId", "licenciaDocenteId", nombre, "fechaFinCurso", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, $2, '${MARCA} clase de dos', '2027-08-31', NOW(), NOW()) RETURNING id`, [profe2, licenciaId]);
     const clase2 = c2[0].id as string;
 
     const p1 = await sesionDe(navegador, PROFES[0].email, PROFES[0].pass);

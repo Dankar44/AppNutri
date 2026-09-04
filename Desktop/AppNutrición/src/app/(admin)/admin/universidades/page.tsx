@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatDate } from "@/lib/utils";
 import { redirect } from "next/navigation";
 import { GraduationCap, Plus, Users, UserCog } from "lucide-react";
 import { getTranslations } from "next-intl/server";
@@ -49,7 +50,11 @@ export default async function UniversidadesPage() {
                   </span>
                 )}
               </div>
-              {l.curso && <p className="text-xs text-muted-foreground mt-0.5">{l.curso}</p>}
+              {l.fechaFin && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {t("cursoEtiqueta", { inicio: formatDate(l.fechaInicio), fin: formatDate(l.fechaFin) })}
+                </p>
+              )}
               <div className="flex items-center gap-4 mt-4 text-sm">
                 <span className="inline-flex items-center gap-1.5 text-muted-foreground">
                   <UserCog className="w-4 h-4" />

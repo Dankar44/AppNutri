@@ -25,7 +25,6 @@ export interface LicenciaDocenteItem {
   dominioEmail: string | null;
   maxProfesores: number;
   maxAlumnos: number;
-  curso: string | null;
   fechaInicio: Date;
   fechaFin: Date | null;
   activa: boolean;
@@ -104,7 +103,6 @@ export async function getLicenciasDocentes(busqueda?: string): Promise<LicenciaD
           OR: [
             { institucion: { contains: search, mode: "insensitive" } },
             { dominioEmail: { contains: search, mode: "insensitive" } },
-            { curso: { contains: search, mode: "insensitive" } },
           ],
         }
       : undefined,
@@ -119,7 +117,6 @@ export async function getLicenciasDocentes(busqueda?: string): Promise<LicenciaD
       dominioEmail: l.dominioEmail,
       maxProfesores: l.maxProfesores,
       maxAlumnos: l.maxAlumnos,
-      curso: l.curso,
       fechaInicio: l.fechaInicio,
       fechaFin: l.fechaFin,
       activa: l.activa,
@@ -158,7 +155,6 @@ export async function getLicenciaDocenteDetalle(licenciaId: string): Promise<Lic
     dominioEmail: licencia.dominioEmail,
     maxProfesores: licencia.maxProfesores,
     maxAlumnos: licencia.maxAlumnos,
-    curso: licencia.curso,
     fechaInicio: licencia.fechaInicio,
     fechaFin: licencia.fechaFin,
     activa: licencia.activa,
@@ -176,7 +172,7 @@ export async function crearLicenciaDocente(data: {
   dominioEmail?: string;
   maxProfesores: number;
   maxAlumnos: number;
-  curso?: string;
+  fechaInicio?: string;
   fechaFin?: string;
   notas?: string;
 }): Promise<{ ok: boolean; error?: string; licenciaId?: string }> {
@@ -205,7 +201,7 @@ export async function crearLicenciaDocente(data: {
         dominioEmail: normalizarDominio(data.dominioEmail),
         maxProfesores,
         maxAlumnos,
-        curso: sanitizeStringOptional(data.curso, 20) || null,
+        ...(data.fechaInicio ? { fechaInicio: new Date(data.fechaInicio) } : {}),
         fechaFin: data.fechaFin ? new Date(data.fechaFin) : null,
         notas: sanitizeStringOptional(data.notas, 1000) || null,
       },
@@ -227,7 +223,7 @@ export async function editarLicenciaDocente(
     dominioEmail?: string;
     maxProfesores: number;
     maxAlumnos: number;
-    curso?: string;
+    fechaInicio?: string;
     fechaFin?: string;
     activa: boolean;
     notas?: string;
@@ -273,7 +269,7 @@ export async function editarLicenciaDocente(
         dominioEmail: normalizarDominio(data.dominioEmail),
         maxProfesores,
         maxAlumnos,
-        curso: sanitizeStringOptional(data.curso, 20) || null,
+        ...(data.fechaInicio ? { fechaInicio: new Date(data.fechaInicio) } : {}),
         fechaFin: data.fechaFin ? new Date(data.fechaFin) : null,
         activa: data.activa,
         notas: sanitizeStringOptional(data.notas, 1000) || null,

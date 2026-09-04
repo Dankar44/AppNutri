@@ -381,7 +381,7 @@ export async function getAsignacionesDeCaso(casoId: string): Promise<AsignacionR
 /** Las clases del profesor a las que todavía no está puesto este caso. */
 export async function getClasesParaAsignar(
   casoId: string,
-): Promise<{ id: string; nombre: string; curso: string | null }[]> {
+): Promise<{ id: string; nombre: string }[]> {
   const profesor = await requireProfesor();
   return prisma.clase.findMany({
     where: {
@@ -390,7 +390,7 @@ export async function getClasesParaAsignar(
       casosAsignados: { none: { casoId, retiradaAt: null } },
     },
     orderBy: { createdAt: "desc" },
-    select: { id: true, nombre: true, curso: true },
+    select: { id: true, nombre: true },
   });
 }
 

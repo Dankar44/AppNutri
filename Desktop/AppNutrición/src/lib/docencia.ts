@@ -17,31 +17,18 @@
  */
 
 /**
- * Curso académico en el formato en el que lo dicen las universidades ("2026/27").
- * El curso va de septiembre a agosto: en julio de 2027 seguimos en el curso 2026/27.
- */
-export function cursoActual(hoy: Date = new Date()): string {
-  const anioInicio = hoy.getMonth() >= 8 ? hoy.getFullYear() : hoy.getFullYear() - 1;
-  return `${anioInicio}/${String((anioInicio + 1) % 100).padStart(2, "0")}`;
-}
-
-/**
- * El curso que se está CONTRATANDO, que no siempre es el que está en marcha: a partir de junio
- * ya se vende el que empieza en septiembre. En agosto de 2026 se contrata el 2026/27, no el
- * 2025/26 que está acabando. (Guillermo, 30 ago 2026: "el curso pone 25/26, será 26/27, ¿no?")
- */
-export function cursoQueSeContrata(hoy: Date = new Date()): string {
-  const anioInicio = hoy.getMonth() >= 5 ? hoy.getFullYear() : hoy.getFullYear() - 1;
-  return `${anioInicio}/${String((anioInicio + 1) % 100).padStart(2, "0")}`;
-}
-
-/**
- * Fin del curso que se contrata, en formato de campo de fecha (YYYY-MM-DD): el 31 de agosto con
- * el que acaba ese curso. Para el 2026/27, el 31 de agosto de 2027.
+ * Fin del curso que se contrata, en formato de campo de fecha (YYYY-MM-DD): el 31 de agosto con el
+ * que acaba. A partir de junio ya se vende el curso que empieza en septiembre, así que en agosto
+ * de 2026 el fin es el 31/08/2027; en marzo de 2027, también (Guillermo, 30 ago y 4 sep 2026).
  */
 export function finDeCursoPorDefecto(hoy: Date = new Date()): string {
-  const anioFin = Number(cursoQueSeContrata(hoy).slice(0, 4)) + 1;
-  return `${anioFin}-08-31`;
+  const anioInicio = hoy.getMonth() >= 5 ? hoy.getFullYear() : hoy.getFullYear() - 1;
+  return `${anioInicio + 1}-08-31`;
+}
+
+/** Inicio del curso por defecto: hoy, en formato de campo de fecha (YYYY-MM-DD). */
+export function inicioDeCursoPorDefecto(hoy: Date = new Date()): string {
+  return hoy.toISOString().slice(0, 10);
 }
 
 /**

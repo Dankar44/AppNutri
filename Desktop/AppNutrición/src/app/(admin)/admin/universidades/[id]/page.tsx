@@ -43,7 +43,9 @@ export default async function UniversidadDetallePage({
       <div className="mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold">{licencia.institucion}</h1>
         <p className="text-muted-foreground mt-1">
-          {licencia.curso ? t("cursoEtiqueta", { curso: licencia.curso }) : t("sinCurso")}
+          {licencia.fechaFin
+            ? t("cursoEtiqueta", { inicio: formatDate(licencia.fechaInicio), fin: formatDate(licencia.fechaFin) })
+            : t("sinCurso")}
           {dominios.length > 0 && <> · {dominios.map((d) => `@${d}`).join(" · ")}</>}
         </p>
         {licencia.personaContacto && (
@@ -173,7 +175,7 @@ export default async function UniversidadDetallePage({
             dominioEmail: licencia.dominioEmail,
             maxProfesores: licencia.maxProfesores,
             maxAlumnos: licencia.maxAlumnos,
-            curso: licencia.curso,
+            fechaInicio: licencia.fechaInicio.toISOString().slice(0, 10),
             fechaFin: licencia.fechaFin ? licencia.fechaFin.toISOString().slice(0, 10) : null,
             activa: licencia.activa,
             notas: licencia.notas,

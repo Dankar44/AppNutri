@@ -24,7 +24,6 @@ export interface DatosProfesor {
     dominioEmail: string | null;
     maxProfesores: number;
     maxAlumnos: number;
-    curso: string | null;
     fechaInicio: Date;
     fechaFin: Date | null;
     activa: boolean;
@@ -62,7 +61,7 @@ async function getDatosProfesor(): Promise<DatosProfesor | null> {
       licenciaDocente: {
         select: {
           id: true, institucion: true, dominioEmail: true, maxProfesores: true,
-          maxAlumnos: true, curso: true, fechaInicio: true, fechaFin: true, activa: true,
+          maxAlumnos: true, fechaInicio: true, fechaFin: true, activa: true,
         },
       },
     },

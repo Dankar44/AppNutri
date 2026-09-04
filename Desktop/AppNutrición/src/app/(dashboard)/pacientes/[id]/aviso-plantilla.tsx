@@ -19,7 +19,7 @@ export async function AvisoPlantilla({
 }: {
   caso: { id: string; nombre: string; consigna: string | null; compartirPlanes: boolean; empezados: number };
   asignaciones: AsignacionResumen[];
-  clases: { id: string; nombre: string; curso: string | null }[];
+  clases: { id: string; nombre: string }[];
 }) {
   const [t, locale] = await Promise.all([getTranslations("casos"), getLocale()]);
   const enClases = asignaciones

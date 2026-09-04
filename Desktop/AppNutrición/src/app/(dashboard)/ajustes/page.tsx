@@ -347,14 +347,17 @@ export default async function AjustesPage({
               />
               <div className="bg-card rounded-xl border border-border p-5 sm:p-6 space-y-1">
                 <p className="font-medium">{claseDelAlumno.nombre}</p>
-                <p className="text-sm text-muted-foreground">
-                  {[claseDelAlumno.institucion, claseDelAlumno.curso].filter(Boolean).join(" · ")}
-                </p>
+                {claseDelAlumno.institucion && (
+                  <p className="text-sm text-muted-foreground">{claseDelAlumno.institucion}</p>
+                )}
                 {claseDelAlumno.fechaFinCurso && (
                   <p className="text-sm text-muted-foreground">
-                    {tDocencia("ajustesAlumno.hasta", {
-                      fecha: formatDate(claseDelAlumno.fechaFinCurso, locale),
-                    })}
+                    {claseDelAlumno.fechaInicioCurso
+                      ? tDocencia("ajustesAlumno.delAl", {
+                          inicio: formatDate(claseDelAlumno.fechaInicioCurso, locale),
+                          fin: formatDate(claseDelAlumno.fechaFinCurso, locale),
+                        })
+                      : tDocencia("ajustesAlumno.hasta", { fecha: formatDate(claseDelAlumno.fechaFinCurso, locale) })}
                   </p>
                 )}
               </div>

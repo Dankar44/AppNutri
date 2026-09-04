@@ -12,7 +12,8 @@ import { DatePicker } from "@/components/date-picker";
 interface ClaseEditable {
   id: string;
   nombre: string;
-  curso: string | null;
+  /** YYYY-MM-DD, o null. */
+  fechaInicioCurso: string | null;
   /** Ya en YYYY-MM-DD, listo para el campo de fecha. */
   fechaFinCurso: string | null;
   archivada: boolean;
@@ -28,13 +29,13 @@ export function AccionesClase({ clase }: { clase: ClaseEditable }) {
   const [cerrandoCurso, setCerrandoCurso] = useState(false);
 
   const [nombre, setNombre] = useState(clase.nombre);
-  const [curso, setCurso] = useState(clase.curso ?? "");
+  const [fechaInicio, setFechaInicio] = useState(clase.fechaInicioCurso ?? "");
   const [fechaFin, setFechaFin] = useState(clase.fechaFinCurso ?? "");
 
   function guardar(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
-      const result = await editarClase(clase.id, { nombre, curso, fechaFinCurso: fechaFin });
+      const result = await editarClase(clase.id, { nombre, fechaInicioCurso: fechaInicio, fechaFinCurso: fechaFin });
       if (result.ok) {
         toast.success(t("clases.guardada"));
         setEditando(false);
@@ -121,17 +122,21 @@ export function AccionesClase({ clase }: { clase: ClaseEditable }) {
               <label className="text-xs font-medium text-muted-foreground">{t("clases.nombre")}</label>
               <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} required maxLength={120} className={input} />
             </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">{t("clases.curso")}</label>
-              <input type="text" value={curso} onChange={(e) => setCurso(e.target.value)} maxLength={20} className={input} />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">{t("clases.finCurso")}</label>
-              <div className="mt-1">
-                <DatePicker value={fechaFin} onChange={setFechaFin} />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">{t("clases.inicioCurso")}</label>
+                <div className="mt-1">
+                  <DatePicker value={fechaInicio} onChange={setFechaInicio} />
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">{t("clases.finCursoAyuda")}</p>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">{t("clases.finCurso")}</label>
+                <div className="mt-1">
+                  <DatePicker value={fechaFin} onChange={setFechaFin} />
+                </div>
+              </div>
             </div>
+            <p className="text-xs text-muted-foreground -mt-2">{t("clases.finCursoAyuda")}</p>
 
             <button
               type="submit"

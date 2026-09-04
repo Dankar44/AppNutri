@@ -81,7 +81,7 @@ async function main() {
     await limpiar();
 
     const licencia = await prisma.licenciaDocente.create({
-      data: { institucion: "PRUEBA Bolsa", maxProfesores: 2, maxAlumnos: 10, curso: "2026/27" },
+      data: { institucion: "PRUEBA Bolsa", maxProfesores: 2, maxAlumnos: 10 },
     });
 
     const authProf = await prisma.$queryRawUnsafe<{ id: string }[]>(
@@ -101,10 +101,10 @@ async function main() {
     });
 
     const claseA = await prisma.clase.create({
-      data: { profesorId: profesor.id, licenciaDocenteId: licencia.id, nombre: "PRUEBA bolsa A", curso: "2026/27" },
+      data: { profesorId: profesor.id, licenciaDocenteId: licencia.id, nombre: "PRUEBA bolsa A" },
     });
     const claseB = await prisma.clase.create({
-      data: { profesorId: profesor.id, licenciaDocenteId: licencia.id, nombre: "PRUEBA bolsa B", curso: "2026/27" },
+      data: { profesorId: profesor.id, licenciaDocenteId: licencia.id, nombre: "PRUEBA bolsa B" },
     });
 
     console.log("\n── Un alumno en dos clases ──");

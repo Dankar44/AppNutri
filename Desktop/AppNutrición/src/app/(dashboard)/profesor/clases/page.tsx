@@ -67,8 +67,11 @@ export default async function ClasesPage({
                 <div className="min-w-0">
                   <h2 className="font-semibold leading-tight truncate">{c.nombre}</h2>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {c.curso ?? t("clases.sinCurso")}
-                    {c.fechaFinCurso && <> · {t("clases.hasta", { fecha: formatDate(c.fechaFinCurso, locale) })}</>}
+                    {c.fechaInicioCurso && c.fechaFinCurso
+                      ? t("clases.delAl", { inicio: formatDate(c.fechaInicioCurso, locale), fin: formatDate(c.fechaFinCurso, locale) })
+                      : c.fechaFinCurso
+                        ? t("clases.hasta", { fecha: formatDate(c.fechaFinCurso, locale) })
+                        : t("clases.sinCurso")}
                   </p>
                 </div>
                 {c.archivada && (

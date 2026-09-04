@@ -95,9 +95,8 @@ async function main() {
   try {
     await limpiar(client);
     const { rows: lic } = await client.query(
-      `INSERT INTO licencias_docentes (id, institucion, "personaContacto", "maxProfesores", "maxAlumnos", curso, "fechaFin", "dominioEmail", "createdAt", "updatedAt")
-       VALUES (gen_random_uuid()::text, '${MARCA} Universidad Rey Juan Carlos', 'Elena Marín', 3, 60, '2026/27',
-               '2027-08-31', 'urjc.es,alumnos.urjc.es', NOW(), NOW()) RETURNING id`);
+      `INSERT INTO licencias_docentes (id, institucion, "personaContacto", "maxProfesores", "maxAlumnos", "fechaFin", "dominioEmail", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, '${MARCA} Universidad Rey Juan Carlos', 'Elena Marín', 3, 60, '2027-08-31', 'urjc.es,alumnos.urjc.es', NOW(), NOW()) RETURNING id`);
     const licenciaId = lic[0].id as string;
     const profesorId = await crearCuenta(client, `profe@${DOMINIO}`, "Marín",
       { rolDocente: "PROFESOR", licenciaDocenteId: licenciaId });
@@ -108,9 +107,9 @@ async function main() {
     await foto(profe, "01-profesor-sin-clases");
 
     const { rows: cl } = await client.query(
-      `INSERT INTO clases (id, "profesorId", "licenciaDocenteId", nombre, curso, "fechaFinCurso", "createdAt", "updatedAt")
-       VALUES (gen_random_uuid()::text, $1, $2, '${MARCA} Dietoterapia 3º A', '2026/27', '2027-08-31', NOW(), NOW()),
-              (gen_random_uuid()::text, $1, $2, '${MARCA} Nutrición Clínica', '2026/27', '2027-06-30', NOW(), NOW())
+      `INSERT INTO clases (id, "profesorId", "licenciaDocenteId", nombre, "fechaFinCurso", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, $2, '${MARCA} Dietoterapia 3º A', '2027-08-31', NOW(), NOW()),
+              (gen_random_uuid()::text, $1, $2, '${MARCA} Nutrición Clínica', '2027-06-30', NOW(), NOW())
        RETURNING id`, [profesorId, licenciaId]);
     const claseId = cl[0].id as string;
 

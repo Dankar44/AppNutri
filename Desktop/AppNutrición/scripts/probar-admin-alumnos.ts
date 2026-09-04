@@ -78,19 +78,19 @@ async function main() {
     await limpiar(client);
 
     const { rows: lic } = await client.query(
-      `INSERT INTO licencias_docentes (id, institucion, "maxProfesores", "maxAlumnos", curso, "fechaFin", "createdAt", "updatedAt")
-       VALUES (gen_random_uuid()::text, '${MARCA} Universidad', 3, 10, '2026/27', '2027-08-31', NOW(), NOW()) RETURNING id`);
+      `INSERT INTO licencias_docentes (id, institucion, "maxProfesores", "maxAlumnos", "fechaFin", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, '${MARCA} Universidad', 3, 10, '2027-08-31', NOW(), NOW()) RETURNING id`);
     const licenciaId = lic[0].id as string;
 
     const profe1 = await crearDietista(client, `profe1@${DOMINIO}`, "Uno", { rolDocente: "PROFESOR", licenciaDocenteId: licenciaId });
     const profe2 = await crearDietista(client, `profe2@${DOMINIO}`, "Dos", { rolDocente: "PROFESOR", licenciaDocenteId: licenciaId });
     const { rows: c1 } = await client.query(
-      `INSERT INTO clases (id, "profesorId", "licenciaDocenteId", nombre, curso, "fechaFinCurso", "createdAt", "updatedAt")
-       VALUES (gen_random_uuid()::text, $1, $2, '${MARCA} clase A', '2026/27', '2027-08-31', NOW(), NOW()) RETURNING id`,
+      `INSERT INTO clases (id, "profesorId", "licenciaDocenteId", nombre, "fechaFinCurso", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, $2, '${MARCA} clase A', '2027-08-31', NOW(), NOW()) RETURNING id`,
       [profe1, licenciaId]);
     const { rows: c2 } = await client.query(
-      `INSERT INTO clases (id, "profesorId", "licenciaDocenteId", nombre, curso, "fechaFinCurso", "createdAt", "updatedAt")
-       VALUES (gen_random_uuid()::text, $1, $2, '${MARCA} clase B', '2026/27', '2027-08-31', NOW(), NOW()) RETURNING id`,
+      `INSERT INTO clases (id, "profesorId", "licenciaDocenteId", nombre, "fechaFinCurso", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, $2, '${MARCA} clase B', '2027-08-31', NOW(), NOW()) RETURNING id`,
       [profe2, licenciaId]);
 
     // Cuatro personas, tres situaciones distintas y un alumno compartido por dos profesores.

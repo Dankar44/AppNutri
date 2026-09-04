@@ -148,13 +148,13 @@ async function main() {
     // ─── 2. Licencia y rol ───
     await client.query(`DELETE FROM licencias_docentes WHERE institucion LIKE 'PRUEBA %'`);
     const { rows: lic } = await client.query(
-      `INSERT INTO licencias_docentes (institucion, "dominioEmail", "maxProfesores", "maxAlumnos", curso, "fechaFin")
-       VALUES ('PRUEBA Universidad Rey Juan Carlos', 'urjc.es,alumnos.urjc.es', 3, 300, '2026/27', '2027-08-31') RETURNING id`,
+      `INSERT INTO licencias_docentes (institucion, "dominioEmail", "maxProfesores", "maxAlumnos", "fechaFin")
+       VALUES ('PRUEBA Universidad Rey Juan Carlos', 'urjc.es,alumnos.urjc.es', 3, 300, '2027-08-31') RETURNING id`,
     );
     const licenciaId = lic[0].id as string;
     const { rows: caducada } = await client.query(
-      `INSERT INTO licencias_docentes (institucion, "maxProfesores", "maxAlumnos", curso, "fechaFin")
-       VALUES ('PRUEBA Licencia caducada', 1, 0, '2025/26', '2026-08-01') RETURNING id`,
+      `INSERT INTO licencias_docentes (institucion, "maxProfesores", "maxAlumnos", "fechaFin")
+       VALUES ('PRUEBA Licencia caducada', 1, 0, '2026-08-01') RETURNING id`,
     );
     await client.query(
       `UPDATE dietistas SET "rolDocente" = 'PROFESOR', "licenciaDocenteId" = $1 WHERE id = $2`,
@@ -197,7 +197,7 @@ async function main() {
     comprobar("el espacio docente responde 200", espacio.estado === 200, `estado ${espacio.estado}`);
     comprobar("muestra la institución", espacio.cuerpo.includes("PRUEBA Universidad Rey Juan Carlos"));
     comprobar("muestra la bolsa de alumnos", espacio.cuerpo.includes("/ 300"));
-    comprobar("muestra el curso", espacio.cuerpo.includes("2026/27"));
+    comprobar("muestra las fechas del curso", /Del \d\d\/\d\d\/\d{4} al 31\/08\/2027/.test(espacio.cuerpo));
     // Ojo: `cuerpo` es el HTML entero, y next-intl mete ahí TODOS los textos del namespace. Buscar
     // una frase suelta da falsos positivos; hay que buscar el enlace, que solo está si se pinta.
     comprobar("ofrece el paso a la cuenta profesional",

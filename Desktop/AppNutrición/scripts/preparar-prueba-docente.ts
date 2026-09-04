@@ -69,8 +69,8 @@ async function main() {
 
     const { rows: lic } = await client.query(
       `INSERT INTO licencias_docentes (id, institucion, "personaContacto", "maxProfesores", "maxAlumnos",
-         curso, "fechaFin", "dominioEmail", "createdAt", "updatedAt")
-       VALUES (gen_random_uuid()::text, $1, 'Guillermo', 3, 30, '2026/27', '2027-08-31', 'urjc.es,alumnos.urjc.es', NOW(), NOW())
+         "fechaFin", "dominioEmail", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, 'Guillermo', 3, 30, '2027-08-31', 'urjc.es,alumnos.urjc.es', NOW(), NOW())
        RETURNING id`, [INSTITUCION]);
     const licenciaId = lic[0].id as string;
 
@@ -80,8 +80,8 @@ async function main() {
     });
 
     const { rows: cl } = await client.query(
-      `INSERT INTO clases (id, "profesorId", "licenciaDocenteId", nombre, curso, "fechaFinCurso", "createdAt", "updatedAt")
-       VALUES (gen_random_uuid()::text, $1, $2, 'Dietoterapia 3º A', '2026/27', '2027-08-31', NOW(), NOW())
+      `INSERT INTO clases (id, "profesorId", "licenciaDocenteId", nombre, "fechaInicioCurso", "fechaFinCurso", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, $2, 'Dietoterapia 3º A', NOW(), '2027-08-31', NOW(), NOW())
        RETURNING id`, [profesorId, licenciaId]);
     const claseId = cl[0].id as string;
     await client.query(

@@ -18,7 +18,9 @@
     "verMisClases": "Ver mis clases",
     "crearPrimerCaso": "Crear mi primer caso",
     "verMisCasos": "Ver mis casos",
-    "dosPasos": "Son dos pasos: una clase con tus alumnos dentro, y los casos que les vas poniendo."
+    "dosPasos": "Son dos pasos: una clase con tus alumnos dentro, y los casos que les vas poniendo.",
+    "delAl": "Del {inicio} al {fin}",
+    "desde": "Desde el {inicio}"
   },
   "invitacion": {
     "titulo": "Crea tu cuenta de profesor",
@@ -48,13 +50,12 @@
     "cerrar": "Cerrar",
     "nombre": "Nombre de la clase",
     "nombrePlaceholder": "Dietoterapia 3º A",
-    "curso": "Curso",
     "creada": "Clase creada",
     "errorCrear": "No se ha podido crear la clase",
     "noPuedeCrear": "El curso está cerrado: no puedes crear clases hasta que se renueve la licencia.",
     "vaciaTitulo": "Todavía no tienes ninguna clase",
     "vaciaTexto": "Una clase es tu grupo de alumnos. Crea la primera y podrás darlos de alta y asignarles casos.",
-    "sinCurso": "Sin curso indicado",
+    "sinCurso": "Sin fechas de curso",
     "hasta": "hasta el {fecha}",
     "archivada": "Archivada",
     "alumnos": "{n, plural, =0 {sin alumnos} one {# alumno} other {# alumnos}}",
@@ -102,7 +103,9 @@
     "irACasos": "Ir a mis casos",
     "sinCasos": "Todavía no le has puesto ningún caso a esta clase. Los casos se crean en «Casos» y se asignan a la clase desde el caso o desde la ficha de su paciente.",
     "casoProgreso": "{entregadas} de {alumnos} han entregado",
-    "verEntregas": "Ver entregas"
+    "verEntregas": "Ver entregas",
+    "inicioCurso": "Inicio del curso",
+    "delAl": "Del {inicio} al {fin}"
   },
   "clasePublica": {
     "titulo": "Únete a la clase",
@@ -165,7 +168,8 @@
     "titulo": "Tu clase",
     "descripcion": "Tu acceso a Annonia viene de aquí: lo paga tu facultad, tú no tienes que contratar nada.",
     "hasta": "El curso termina el {fecha}",
-    "noSePuedeBorrar": "Tu cuenta la ha creado tu facultad para tus prácticas, así que no puedes borrarla tú: tu profesor tiene que poder corregir lo que entregues. Si quieres darte de baja, díselo a él."
+    "noSePuedeBorrar": "Tu cuenta la ha creado tu facultad para tus prácticas, así que no puedes borrarla tú: tu profesor tiene que poder corregir lo que entregues. Si quieres darte de baja, díselo a él.",
+    "delAl": "Curso del {inicio} al {fin}"
   },
   "profesores": {
     "titulo": "{n, plural, one {Profesor de la clase} other {Profesores de la clase (#)}}",

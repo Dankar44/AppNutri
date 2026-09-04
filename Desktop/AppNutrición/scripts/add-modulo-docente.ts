@@ -41,7 +41,6 @@ async function main() {
         "dominioEmail"  TEXT,
         "maxProfesores" INTEGER NOT NULL DEFAULT 1,
         "maxAlumnos"    INTEGER NOT NULL DEFAULT 0,
-        curso           TEXT,
         "fechaInicio"   TIMESTAMP(3) NOT NULL DEFAULT NOW(),
         "fechaFin"      TIMESTAMP(3),
         activa          BOOLEAN NOT NULL DEFAULT true,
