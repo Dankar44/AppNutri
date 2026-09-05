@@ -203,7 +203,6 @@
     "pacientesSection": {
       "title": "Pacientes ({count})",
       "empty": "Este nutricionista não tem pacientes",
-      "empty": "Este nutricionista não tem pacientes",
       "columns": {
         "paciente": "Paciente",
         "email": "Email",
