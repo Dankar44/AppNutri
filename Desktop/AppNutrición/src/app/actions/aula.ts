@@ -108,6 +108,8 @@ export interface CasoDelAlumno {
   planes: { id: string; nombre: string; activo: boolean }[];
   /** El PDF que entregó, si lo hizo. */
   entregableNombre: string | null;
+  /** El PDF sigue guardado. Se borra al acabar el curso (`limpiar-docencia`) y entonces no hay descarga. */
+  entregableGuardado: boolean;
   entregablePlanNombre: string | null;
 }
 
@@ -142,7 +144,7 @@ export async function getMisCasosDelAula(): Promise<CasoDelAlumno[]> {
         where: { alumnoId: dietista.id },
         select: {
           id: true, estado: true, pacienteId: true, entregadaAt: true, nota: true, comentario: true,
-          visibleParaAlumno: true, entregableNombre: true, entregablePlanId: true,
+          visibleParaAlumno: true, entregableNombre: true, entregablePlanId: true, entregableBytes: true,
           paciente: { select: { planes: { orderBy: [{ activo: "desc" }, { createdAt: "desc" }], select: { id: true, nombre: true, activo: true } } } },
         },
       },
@@ -169,6 +171,7 @@ export async function getMisCasosDelAula(): Promise<CasoDelAlumno[]> {
       comentario: visible ? entrega?.comentario ?? null : null,
       planes: entrega?.paciente?.planes ?? [],
       entregableNombre: entrega?.entregableNombre ?? null,
+      entregableGuardado: entrega?.entregableBytes != null,
       entregablePlanNombre: entrega?.paciente?.planes.find((p) => p.id === entrega.entregablePlanId)?.nombre ?? null,
     };
   });
@@ -406,6 +409,8 @@ export interface CasoDeEstePaciente {
   /** El PDF que entregó, si lo hizo, y de qué plan. */
   entregableNombre: string | null;
   entregablePlanNombre: string | null;
+  /** El PDF sigue guardado: se borra al acabar el curso y entonces no hay nada que abrir. */
+  entregableGuardado: boolean;
   /** Sus planes, para elegir cuál va de entregable. */
   planes: { id: string; nombre: string; activo: boolean }[];
 }
@@ -423,7 +428,7 @@ export async function getCasoDelPaciente(pacienteId: string): Promise<CasoDeEste
     where: { pacienteId, alumnoId: dietista.id },
     select: {
       id: true, estado: true, nota: true, comentario: true, visibleParaAlumno: true, entregadaAt: true,
-      entregableNombre: true, entregablePlanId: true,
+      entregableNombre: true, entregablePlanId: true, entregableBytes: true,
       asignacion: {
         select: {
           id: true, fechaLimite: true,
@@ -451,6 +456,7 @@ export async function getCasoDelPaciente(pacienteId: string): Promise<CasoDeEste
     entregadaAt: entrega.entregadaAt,
     entregableNombre: entrega.entregableNombre,
     entregablePlanNombre: planes.find((p) => p.id === entrega.entregablePlanId)?.nombre ?? null,
+    entregableGuardado: entrega.entregableBytes != null,
     planes,
   };
 }

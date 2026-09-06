@@ -321,8 +321,8 @@
     "errorEntregable": "No se ha podido generar el PDF del entregable. Vuelve a intentarlo o entrega sin el PDF.",
     "profesorNoAlumno": "Eres profesor: no puedes apuntarte como alumno con esta cuenta.",
     "noEstasEnUniversidad": "Ahora mismo no estás en ninguna universidad",
-    "eresElUnicoProfesor": "Eres el único profesor de esta clase: si te vas se queda sin nadie que la lleve. Añade antes a otro profesor, o archiva la clase.",
     "soloElCreadorQuita": "Solo quien creó la clase puede sacar a otro profesor. Para irte tú, usa «Salir de esta clase»",
-    "soloElCreadorElimina": "Solo quien creó la clase puede eliminarla. Tú puedes archivarla, que no borra nada"
+    "soloElCreadorElimina": "Solo quien creó la clase puede eliminarla. Tú puedes archivarla, que no borra nada",
+    "salirBorraLaClase": "Eres el único profesor: salir de esta clase la borra entera. Confírmalo si es lo que quieres"
   }
 }

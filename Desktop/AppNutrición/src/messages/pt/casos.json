@@ -103,7 +103,8 @@
     "entregableDe": "O PDF de «{plan}», tal e qual o entregou ({tamano}).",
     "sinEntregable": "Entregou sem PDF: não anexou nenhum entregável.",
     "abrirPdf": "Abrir o PDF",
-    "compartidoPorTi": "partilhado por ti"
+    "compartidoPorTi": "partilhado por ti",
+    "pdfYaNoGuardado": "Entregou «{plan}». O PDF já não está guardado: são apagados no fim do curso para não ocupar espaço. A nota e o trabalho continuam aqui."
   },
   "crearYRellenar": "Criar e preencher o paciente",
   "paciente": {
@@ -136,5 +137,7 @@
     "titulo": "Planeamento",
     "ninguna": "Não fez nenhum planeamento para este paciente.",
     "talCual": "Tal e qual como o aluno a vê. Não se pode alterar."
-  }
+  },
+  "deOtroProfesor": "Este caso foi feito por {nombre}.",
+  "deOtroProfesorAyuda": "Podes ver e corrigir as entregas das tuas turmas. O caso e o seu paciente são dele: é ele quem os altera."
 }

@@ -51,6 +51,7 @@ export default async function ClaseDelAlumnoPage({ params }: { params: Promise<{
         entregaId: c.entregaId,
         entregadaEl: c.entregadaAt ? formatDateTime(c.entregadaAt, locale) : null,
         entregableNombre: c.entregableNombre,
+        entregableGuardado: c.entregableGuardado,
         entregablePlanNombre: c.entregablePlanNombre,
         planes: c.planes,
       };

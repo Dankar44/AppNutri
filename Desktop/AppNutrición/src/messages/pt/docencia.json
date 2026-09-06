@@ -200,7 +200,11 @@
     "salirTextoCreador": "Foste tu que criaste esta turma: ao sair passa para {nombre}, que a continuará a levar com os seus alunos e o seu trabalho. Continuas a ser professor da tua faculdade.",
     "salido": "Saíste da turma",
     "soloElCreadorPuedeQuitar": "Só quem criou a turma pode retirar outro professor.",
-    "eresElUnico": "És o único professor desta turma. Para poderes sair, adiciona antes outro professor da tua faculdade; se o que queres é fechá-la, arquiva-a."
+    "eresElUnico": "És o único professor desta turma. Se saíres, a turma é apagada por completo: os seus alunos, os casos atribuídos e as entregas. Para a deixar nas mãos de outro, adiciona-o antes; para a afastar sem apagar, arquiva-a.",
+    "salirYBorrar": "Sair e apagar a turma",
+    "salirYBorrarTitulo": "Sair e apagar a turma?",
+    "salirYBorrarTexto": "{n, plural, =0 {Não fica nenhum outro professor, por isso ao saíres a turma é apagada por completo: os casos atribuídos e as entregas, com os PDF que te enviaram.} one {Não fica nenhum outro professor, por isso ao saíres a turma é apagada por completo: o seu aluno matriculado, os casos atribuídos e as entregas, com os PDF que te enviaram.} other {Não fica nenhum outro professor, por isso ao saíres a turma é apagada por completo: os seus # alunos matriculados, os casos atribuídos e as entregas, com os PDF que te enviaram.}} Os teus casos e os teus pacientes são teus e não são tocados; os alunos mantêm a sua conta. Não se pode desfazer.",
+    "salidoYBorrada": "Saíste e a turma foi apagada"
   },
   "salidas": {
     "titulo": "Deixar a docência",

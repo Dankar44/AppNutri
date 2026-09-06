@@ -29,12 +29,15 @@ export function ProfesoresClase({
   candidatos,
   yoId,
   soyElCreador,
+  alumnos,
 }: {
   claseId: string;
   profesores: ProfesorDeClase[];
   candidatos: ProfesorDeClase[];
   yoId: string;
   soyElCreador: boolean;
+  /** Cuántos alumnos hay dentro: se le dice al único profesor antes de que la borre al salir. */
+  alumnos: number;
 }) {
   const t = useTranslations("docencia");
   const router = useRouter();
@@ -75,9 +78,11 @@ export function ProfesoresClase({
 
   function salir() {
     startTransition(async () => {
-      const result = await salirDeClase(claseId);
+      // Si es el único profesor, salir borra la clase: el servidor lo pide dos veces y aquí se
+      // manda ya confirmado, porque el aviso que acaba de leer lo dice con todas las letras.
+      const result = await salirDeClase(claseId, !relevo);
       if (result.ok) {
-        toast.success(t("profesores.salido"));
+        toast.success(result.borrada ? t("profesores.salidoYBorrada") : t("profesores.salido"));
         setSaliendo(false);
         router.push("/profesor/clases");
         router.refresh();
@@ -128,18 +133,14 @@ export function ProfesoresClase({
               <p className="text-xs text-muted-foreground truncate">{p.email}</p>
             </div>
             {p.id === yoId ? (
-              // Al único profesor no se le ofrece salir: la clase se quedaría sin nadie. En su
-              // lugar, la nota de abajo le dice qué hacer antes.
-              relevo && (
-                <button
-                  type="button"
-                  onClick={() => setSaliendo(true)}
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-red-600 dark:hover:text-red-400 transition-colors shrink-0"
-                >
-                  <LogOut className="w-4 h-4" />
-                  {t("profesores.salir")}
-                </button>
-              )
+              <button
+                type="button"
+                onClick={() => setSaliendo(true)}
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-red-600 dark:hover:text-red-400 transition-colors shrink-0"
+              >
+                <LogOut className="w-4 h-4" />
+                {t("profesores.salir")}
+              </button>
             ) : (
               soyElCreador && !p.esElCreador && (
                 <button
@@ -190,13 +191,15 @@ export function ProfesoresClase({
 
       <ConfirmModal
         open={saliendo}
-        title={t("profesores.salirTitulo")}
+        title={relevo ? t("profesores.salirTitulo") : t("profesores.salirYBorrarTitulo")}
         description={
-          soyElCreador && relevo
-            ? t("profesores.salirTextoCreador", { nombre: `${relevo.nombre} ${relevo.apellidos}` })
-            : t("profesores.salirTexto")
+          !relevo
+            ? t("profesores.salirYBorrarTexto", { n: alumnos })
+            : soyElCreador
+              ? t("profesores.salirTextoCreador", { nombre: `${relevo.nombre} ${relevo.apellidos}` })
+              : t("profesores.salirTexto")
         }
-        confirmLabel={t("profesores.salir")}
+        confirmLabel={relevo ? t("profesores.salir") : t("profesores.salirYBorrar")}
         destructive
         loading={isPending}
         onConfirm={salir}

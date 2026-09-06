@@ -200,7 +200,11 @@
     "salirTextoCreador": "Tú creaste esta clase: al salir pasa a {nombre}, que la seguirá llevando con sus alumnos y su trabajo. Sigues siendo profesor de tu facultad.",
     "salido": "Has salido de la clase",
     "soloElCreadorPuedeQuitar": "Solo quien creó la clase puede sacar a otro profesor.",
-    "eresElUnico": "Eres el único profesor de esta clase. Para poder salir, añade antes a otro profesor de tu facultad; si lo que quieres es cerrarla, archívala."
+    "eresElUnico": "Eres el único profesor de esta clase. Si sales, la clase se borra entera: sus alumnos, sus casos asignados y sus entregas. Para dejarla en manos de otro, añádele antes; para apartarla sin borrar, archívala.",
+    "salirYBorrar": "Salir y borrar la clase",
+    "salirYBorrarTitulo": "¿Salir y borrar la clase?",
+    "salirYBorrarTexto": "{n, plural, =0 {No queda ningún otro profesor, así que al salir la clase se borra entera: sus casos asignados y sus entregas, con los PDF que te enviaron.} one {No queda ningún otro profesor, así que al salir la clase se borra entera: su alumno matriculado, sus casos asignados y sus entregas, con los PDF que te enviaron.} other {No queda ningún otro profesor, así que al salir la clase se borra entera: sus # alumnos matriculados, sus casos asignados y sus entregas, con los PDF que te enviaron.}} Tus casos y tus pacientes son tuyos y no se tocan; los alumnos conservan su cuenta. No se puede deshacer.",
+    "salidoYBorrada": "Has salido y la clase se ha borrado"
   },
   "salidas": {
     "titulo": "Dejar la docencia",

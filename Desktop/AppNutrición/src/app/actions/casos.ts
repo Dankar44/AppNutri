@@ -137,17 +137,37 @@ export async function getMisCasos(incluirArchivados = false): Promise<CasoResume
   return casos.map(resumir);
 }
 
-export async function getCaso(casoId: string): Promise<CasoResumen | null> {
+/**
+ * El caso, para su ficha. También se lo enseña al profesor que **lleva una clase donde está
+ * puesto**, aunque no lo haya creado: si no, no tenía por dónde llegar a las entregas de sus
+ * propios alumnos para corregirlas (revisión 7 sep 2026). Ese lo ve en solo lectura —`esMio`
+ * en falso—: el material es de quien lo hizo, la corrección se comparte.
+ */
+export async function getCaso(casoId: string): Promise<(CasoResumen & { esMio: boolean; autor: string | null }) | null> {
   const profesor = await requireProfesor();
   const c = await prisma.casoClinico.findFirst({
-    where: { id: casoId, profesorId: profesor.dietistaId },
+    where: {
+      id: casoId,
+      OR: [
+        { profesorId: profesor.dietistaId },
+        { asignaciones: { some: { retiradaAt: null, clase: claseQueLleva(profesor.dietistaId, profesor.licencia?.id ?? null) } } },
+      ],
+    },
     select: {
       id: true, nombre: true, consigna: true, archivado: true, pacienteId: true, compartirPlanes: true,
+      profesorId: true,
+      profesor: { select: { nombre: true, apellidos: true } },
       paciente: { select: { nombre: true, apellidos: true } },
       asignaciones: RESUMEN_ASIGNACIONES,
     },
   });
-  return c ? resumir(c) : null;
+  if (!c) return null;
+  const esMio = c.profesorId === profesor.dietistaId;
+  return {
+    ...resumir(c),
+    esMio,
+    autor: esMio ? null : `${c.profesor.nombre} ${c.profesor.apellidos}`.trim(),
+  };
 }
 
 /** El caso al que pertenece un paciente plantilla, para pintar el aviso encima de su ficha. */
@@ -167,10 +187,17 @@ export async function getCasoDePacientePlantilla(
  * Cuántos alumnos ya han empezado el caso y tienen SU copia del paciente. Lo que el profesor cambie
  * en la plantilla les llega solo la próxima vez que abran el paciente (ver
  * sincronizarCopiaSiHaceFalta); aquí solo se dice cuántos son.
+ *
+ * Comprueba de quién es el caso aunque la llame una página del servidor: en un fichero "use server"
+ * cada export es un endpoint que cualquiera puede llamar con un id a mano (revisión 7 sep 2026).
  */
 export async function contarAlumnosQueEmpezaron(casoId: string): Promise<number> {
+  const profesor = await requireProfesor();
   return prisma.entregaCaso.count({
-    where: { asignacion: { casoId, retiradaAt: null }, pacienteId: { not: null } },
+    where: {
+      asignacion: { casoId, retiradaAt: null, caso: { profesorId: profesor.dietistaId } },
+      pacienteId: { not: null },
+    },
   });
 }
 
@@ -333,17 +360,29 @@ export interface AsignacionResumen {
   corregidas: number;
 }
 
-/** Las clases a las que está puesto un caso, con cómo va cada una. */
+/**
+ * Las clases a las que está puesto un caso, con cómo va cada una.
+ *
+ * El autor las ve todas. Quien solo lleva una de esas clases ve **la suya y nada más**: puede
+ * corregir a sus alumnos sin enterarse de cómo le va a la clase de otro profesor (revisión
+ * 7 sep 2026).
+ */
 export async function getAsignacionesDeCaso(casoId: string): Promise<AsignacionResumen[]> {
   const profesor = await requireProfesor();
+  const licenciaId = profesor.licencia?.id ?? null;
   const caso = await prisma.casoClinico.findFirst({
-    where: { id: casoId, profesorId: profesor.dietistaId },
-    select: { id: true },
+    where: { id: casoId },
+    select: { id: true, profesorId: true },
   });
   if (!caso) return [];
+  const esMio = caso.profesorId === profesor.dietistaId;
 
   const asignaciones = await prisma.asignacionCaso.findMany({
-    where: { casoId, retiradaAt: null },
+    where: {
+      casoId,
+      retiradaAt: null,
+      ...(esMio ? {} : { clase: claseQueLleva(profesor.dietistaId, licenciaId) }),
+    },
     orderBy: { createdAt: "desc" },
     include: {
       clase: {
@@ -376,6 +415,23 @@ export async function getAsignacionesDeCaso(casoId: string): Promise<AsignacionR
       corregidas: cuantos("CORREGIDA"),
     };
   });
+}
+
+/**
+ * Una asignación con la que puedo trabajar: o el caso es mío, o llevo la clase donde está puesto.
+ *
+ * Lo segundo es lo que la pantalla promete —«todos los que estén aquí ven los mismos alumnos y el
+ * mismo trabajo»— y no se cumplía: el adjunto veía las entregas en la clase y al abrir una le
+ * decía que no existía (revisión 7 sep 2026). Editar el caso o su paciente sigue siendo solo de
+ * quien lo creó: se comparte la corrección, no el material.
+ */
+function asignacionQuePuedoCorregir(profesorId: string, licenciaId: string | null) {
+  return {
+    OR: [
+      { caso: { profesorId } },
+      { clase: claseQueLleva(profesorId, licenciaId) },
+    ],
+  };
 }
 
 /** Las clases del profesor a las que todavía no está puesto este caso. */
@@ -467,7 +523,7 @@ export async function cambiarFechaLimite(
   const t = await getTranslations("validation");
 
   const asignacion = await prisma.asignacionCaso.findFirst({
-    where: { id: asignacionId, caso: { profesorId: profesor.dietistaId } },
+    where: { id: asignacionId, ...asignacionQuePuedoCorregir(profesor.dietistaId, profesor.licencia?.id ?? null) },
     select: { id: true, casoId: true },
   });
   if (!asignacion) return { ok: false, error: t("docencia.casoNoEncontrado") };
@@ -494,7 +550,7 @@ export async function retirarAsignacion(
   const t = await getTranslations("validation");
 
   const asignacion = await prisma.asignacionCaso.findFirst({
-    where: { id: asignacionId, caso: { profesorId: profesor.dietistaId } },
+    where: { id: asignacionId, ...asignacionQuePuedoCorregir(profesor.dietistaId, profesor.licencia?.id ?? null) },
     select: { id: true, casoId: true },
   });
   if (!asignacion) return { ok: false, error: t("docencia.casoNoEncontrado") };
@@ -535,7 +591,7 @@ export async function getEntregasDeAsignacion(asignacionId: string): Promise<Ent
   const profesor = await requireProfesor();
 
   const asignacion = await prisma.asignacionCaso.findFirst({
-    where: { id: asignacionId, caso: { profesorId: profesor.dietistaId } },
+    where: { id: asignacionId, ...asignacionQuePuedoCorregir(profesor.dietistaId, profesor.licencia?.id ?? null) },
     select: {
       id: true, fechaLimite: true,
       clase: {
@@ -608,7 +664,7 @@ export async function corregirEntrega(
   const t = await getTranslations("validation");
 
   const entrega = await prisma.entregaCaso.findFirst({
-    where: { id: entregaId, asignacion: { caso: { profesorId: profesor.dietistaId } } },
+    where: { id: entregaId, asignacion: asignacionQuePuedoCorregir(profesor.dietistaId, profesor.licencia?.id ?? null) },
     select: {
       id: true, alumnoId: true, estado: true,
       asignacion: { select: { casoId: true, caso: { select: { nombre: true } } } },
@@ -677,7 +733,7 @@ export async function deshacerCorreccion(
   const t = await getTranslations("validation");
 
   const entrega = await prisma.entregaCaso.findFirst({
-    where: { id: entregaId, asignacion: { caso: { profesorId: profesor.dietistaId } } },
+    where: { id: entregaId, asignacion: asignacionQuePuedoCorregir(profesor.dietistaId, profesor.licencia?.id ?? null) },
     select: { id: true, entregadaAt: true, asignacion: { select: { casoId: true } } },
   });
   if (!entrega) return { ok: false, error: t("docencia.entregaNoEncontrada") };
@@ -715,8 +771,9 @@ export interface TrabajoDeEntrega {
   nota: number | null;
   comentario: string | null;
   visibleParaAlumno: boolean;
-  /** El PDF que entregó, si lo hizo: nombre del archivo, plan del que salió y tamaño. */
-  entregable: { nombre: string; planNombre: string | null; bytes: number | null } | null;
+  /** El PDF que entregó, si lo hizo: nombre del archivo, plan del que salió y tamaño. `guardado`
+   *  es false cuando el PDF ya se ha limpiado al acabar el curso: queda el qué, no el archivo. */
+  entregable: { nombre: string; planNombre: string | null; bytes: number | null; guardado: boolean } | null;
   /** El paciente del caso, tal y como lo dejó el alumno (en la foto, o en vivo). */
   paciente: PacienteCongelado | null;
   /** Sus planificaciones, para pintar la misma pestaña que ve él (bloqueada). */
@@ -745,7 +802,7 @@ export async function getTrabajoDeEntrega(
   const profesor = await requireProfesor();
 
   const entrega = await prisma.entregaCaso.findFirst({
-    where: { id: entregaId, asignacion: { caso: { profesorId: profesor.dietistaId } } },
+    where: { id: entregaId, asignacion: asignacionQuePuedoCorregir(profesor.dietistaId, profesor.licencia?.id ?? null) },
     select: {
       id: true, estado: true, entregadaAt: true, notaAlumno: true, nota: true, comentario: true,
       visibleParaAlumno: true, pacienteId: true, entregaSnapshot: true, entregablePlanId: true,
@@ -814,6 +871,9 @@ export async function getTrabajoDeEntrega(
           nombre: entrega.entregableNombre,
           planNombre: planes.find((p) => p.id === entrega.entregablePlanId)?.nombre ?? null,
           bytes: entrega.entregableBytes,
+          // El PDF se borra al acabar el curso para no acumular cientos de megas (`limpiar-docencia`).
+          // Cuando eso pasa, los bytes se ponen a NULL: queda el nombre de lo que entregó, sin descarga.
+          guardado: entrega.entregableBytes != null,
         }
       : null,
     paciente,

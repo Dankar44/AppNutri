@@ -412,11 +412,17 @@ export async function anadirProfesorAClase(
  * Salir de una clase por decisión propia (Guillermo, 6 sep 2026). Nadie echa a nadie: cada uno se
  * quita a sí mismo cuando deja de dar esa asignatura, y sigue siendo profesor de su facultad.
  *
- * Si el que se va es quien la creó, la clase pasa al primero de los que se quedan. Al único
- * profesor de una clase no se le deja salir a secas: la clase se quedaría sin nadie que la lleve,
- * con sus alumnos dentro, así que primero mete a otro profesor —o archívala.
+ * Si el que se va es quien la creó y quedan otros, la clase pasa al primero de ellos. Si no queda
+ * NADIE, la clase se elimina entera —con sus matrículas, casos asignados y entregas— porque una
+ * clase sin profesor no la puede recuperar ni mirar nadie, y sus PDFs seguirían ocupando sitio
+ * para siempre (Guillermo, 6 sep 2026: «se sale… y se borran todos los archivos enviados»). Como
+ * eso no tiene vuelta atrás, hace falta pedirlo dos veces: la primera devuelve `hayQueConfirmar`
+ * para que la pantalla avise, y solo con `borrarLaClase` se ejecuta.
  */
-export async function salirDeClase(claseId: string): Promise<{ ok: boolean; error?: string }> {
+export async function salirDeClase(
+  claseId: string,
+  borrarLaClase = false,
+): Promise<{ ok: boolean; error?: string; hayQueConfirmar?: boolean; borrada?: boolean }> {
   const profesor = await requireProfesor();
   const t = await getTranslations("validation");
 
@@ -428,8 +434,19 @@ export async function salirDeClase(claseId: string): Promise<{ ok: boolean; erro
     orderBy: { createdAt: "asc" },
     select: { profesorId: true },
   });
-  if (clase.profesorId === profesor.dietistaId && otros.length === 0) {
-    return { ok: false, error: t("docencia.eresElUnicoProfesor") };
+
+  // Nadie más la lleva: salir es borrarla. Se avisa antes.
+  if (otros.length === 0) {
+    if (!borrarLaClase) return { ok: false, hayQueConfirmar: true, error: t("docencia.salirBorraLaClase") };
+    try {
+      await prisma.clase.delete({ where: { id: claseId } });
+      revalidarClases();
+      return { ok: true, borrada: true };
+    } catch (e) {
+      if (isNextNavigation(e)) throw e;
+      console.error("[docencia] Error borrando la clase al salir de ella:", e);
+      return { ok: false, error: t("general.errorDesconocido") };
+    }
   }
 
   try {

@@ -69,8 +69,19 @@ export default async function CasoPage({
             </p>
           )}
         </div>
-        <AccionesCaso casoId={caso.id} archivado={caso.archivado} />
+        {caso.esMio && <AccionesCaso casoId={caso.id} archivado={caso.archivado} />}
       </div>
+
+      {/* El adjunto de la clase llega aquí para corregir a SUS alumnos: se le dice de quién es el
+          caso y que el material no lo toca él (revisión 7 sep 2026). */}
+      {!caso.esMio && (
+        <div className="py-4 lg:p-4 lg:rounded-xl lg:border lg:border-border lg:bg-muted/30 border-b border-border lg:border-b-0">
+          <p className="text-sm">
+            <span className="font-medium">{t("deOtroProfesor", { nombre: caso.autor ?? "" })}</span>{" "}
+            <span className="text-muted-foreground">{t("deOtroProfesorAyuda")}</span>
+          </p>
+        </div>
+      )}
 
       {caso.archivado && (
         <div className="flex gap-3 py-4 lg:p-4 lg:rounded-xl lg:border lg:border-border lg:bg-muted/50 border-b border-border lg:border-b-0">
@@ -80,7 +91,7 @@ export default async function CasoPage({
       )}
 
       {/* La puerta al paciente, la primera: es donde está el trabajo de verdad del profesor. */}
-      {caso.pacienteId && (
+      {caso.esMio && caso.pacienteId && (
         <Link
           href={`/pacientes/${caso.pacienteId}?espacio=docente`}
           className="block py-4 lg:px-6 lg:py-6 lg:rounded-xl lg:border lg:border-primary/30 lg:bg-primary/5 border-b border-border lg:border-b hover:lg:border-primary/60 transition-colors group"
@@ -101,11 +112,11 @@ export default async function CasoPage({
       )}
 
       {/* Quién tiene ya su copia. Los cambios de la ficha les llegan solos al abrir su paciente. */}
-      {caso.pacienteId && empezados > 0 && (
+      {caso.esMio && caso.pacienteId && empezados > 0 && (
         <p className="text-xs text-muted-foreground lg:px-6">{t("paciente.yaEmpezado", { n: empezados })}</p>
       )}
 
-      {caso.pacienteId && (
+      {caso.esMio && caso.pacienteId && (
         <section className="py-4 lg:px-6 lg:py-5 lg:border lg:border-border lg:rounded-xl lg:bg-card">
           <CompartirPlanes casoId={caso.id} valor={caso.compartirPlanes} />
         </section>
@@ -132,7 +143,7 @@ export default async function CasoPage({
       <section className="py-4 lg:px-6 lg:py-6 lg:border lg:border-border lg:rounded-xl lg:bg-card">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <h2 className="font-semibold">{t("asignar.titulo", { n: asignaciones.length })}</h2>
-          {!caso.archivado && <AsignarAClase casoId={caso.id} clases={clases} />}
+          {caso.esMio && !caso.archivado && <AsignarAClase casoId={caso.id} clases={clases} />}
         </div>
         <p className="text-xs text-muted-foreground mt-1">{t("asignar.explicacion")}</p>
 

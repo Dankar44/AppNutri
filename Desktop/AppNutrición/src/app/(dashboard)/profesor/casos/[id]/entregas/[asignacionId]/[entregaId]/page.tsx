@@ -69,15 +69,19 @@ export default async function EntregaPage({
               {t("entregas.entregable")}
             </h2>
             <p className="text-sm text-muted-foreground mt-0.5">
-              {trabajo.entregable
-                ? t("entregas.entregableDe", {
-                    plan: trabajo.entregable.planNombre ?? trabajo.entregable.nombre,
-                    tamano: trabajo.entregable.bytes ? `${Math.max(1, Math.round(trabajo.entregable.bytes / 1024))} KB` : "",
-                  })
-                : t("entregas.sinEntregable")}
+              {!trabajo.entregable
+                ? t("entregas.sinEntregable")
+                : trabajo.entregable.guardado
+                  ? t("entregas.entregableDe", {
+                      plan: trabajo.entregable.planNombre ?? trabajo.entregable.nombre,
+                      tamano: trabajo.entregable.bytes ? `${Math.max(1, Math.round(trabajo.entregable.bytes / 1024))} KB` : "",
+                    })
+                  : t("entregas.pdfYaNoGuardado", {
+                      plan: trabajo.entregable.planNombre ?? trabajo.entregable.nombre,
+                    })}
             </p>
           </div>
-          {trabajo.entregable && (
+          {trabajo.entregable?.guardado && (
             <a
               href={`/api/entregas/${trabajo.entregaId}/pdf`}
               target="_blank"

@@ -329,8 +329,15 @@ async function main() {
     comprobar("el botón de crear cuenta sigue activo", bloqueado === false);
     await foto(anonima, "06-enlace-sin-sesion");
     await escribirEnCampo(anonima, "Correo", NUEVA.email);
-    await escribirEnCampo(anonima, "Contraseña", NUEVA.pass);
-    await esperar(400);
+    // La contraseña va dentro de un envoltorio con el botón de ver/ocultar: se busca por tipo.
+    await escribir(anonima, 'input[type="password"]', NUEVA.pass);
+    await esperar(600);
+    const listoParaEnviar = await anonima.evaluate(() => {
+      const correo = document.querySelector('input[type="email"]') as HTMLInputElement | null;
+      const clave = document.querySelector('input[type="password"]') as HTMLInputElement | null;
+      return `correo="${correo?.value ?? ""}" clave=${clave?.value ? "puesta" : "VACÍA"}`;
+    });
+    comprobar("el formulario queda relleno", /clave=puesta/.test(listoParaEnviar), listoParaEnviar);
     await anonima.evaluate(() => (document.querySelector('form button[type="submit"]') as HTMLElement | null)?.click());
     await esperar(4000);
     const { rows: nueva } = await client.query(
@@ -615,6 +622,15 @@ async function main() {
     comprobar("y con el PDF del entregable", entrega[0]?.pdf === true, `${entrega[0]?.entregableBytes ?? 0} bytes`);
     await foto(alumna, "20-entregado");
 
+    // Cuánto pesa una entrega de verdad: es el número con el que se decide la política de borrado
+    // (`limpiar-docencia`). Si algún día crece mucho, aquí se ve.
+    const { rows: peso } = await client.query(
+      `SELECT "entregableBytes"::int AS pdf, pg_column_size("entregaSnapshot")::int AS foto
+         FROM entregas_caso WHERE id = $1`, [entregaId]);
+    console.log(`    · pesa: PDF ${Math.round(peso[0].pdf / 1024)} KB + foto del trabajo ${Math.round(peso[0].foto / 1024)} KB`);
+    comprobar("una entrega no se dispara de tamaño", peso[0].pdf + peso[0].foto < 1024 * 1024,
+      `${Math.round((peso[0].pdf + peso[0].foto) / 1024)} KB en total`);
+
     console.log("\n24. Lo que toque después NO cambia la entrega");
     await client.query(`UPDATE planes_alimenticios SET nombre = '${MARCA} Mi plan RETOCADO' WHERE id = '${MARCA}-plan-alumna'`);
     const { rows: sigueIgual } = await client.query(
@@ -666,6 +682,49 @@ async function main() {
     comprobar("con el candado de solo lectura", /no puedes toc|solo lectura|tal y como/i.test(visible),
       visible.split("\n").find((l) => /tal y como|no puedes/i.test(l))?.slice(0, 90) ?? "no sale");
     await foto(profe, "21-entrega-vista-por-la-profesora");
+
+    console.log("\n26b. El segundo profesor de la clase también puede corregir");
+    // Primero, que tenga por dónde llegar: la ficha del caso, en solo lectura.
+    await profe2.goto(`${BASE}/profesor/casos/${casoId}`, { waitUntil: "networkidle0" });
+    await esperar(2500);
+    const casoAdjunto = await texto(profe2);
+    comprobar("el adjunto puede abrir el caso de su clase", casoAdjunto.includes(`${MARCA} Mujer vegana`), profe2.url().replace(BASE, ""));
+    comprobar("y se le dice de quién es", /Este caso lo ha hecho/i.test(casoAdjunto));
+    comprobar("sin ofrecerle tocar el material de otro",
+      !casoAdjunto.includes("Asignar a una clase") && !casoAdjunto.includes("Darles hecha"));
+    // Las entregas de cada clase van en un desplegable: hay que abrirlo para verlas.
+    await profe2.evaluate(() => document.querySelectorAll("details").forEach((d) => { d.open = true; }));
+    await esperar(1200);
+    comprobar("pero con las entregas de sus alumnos", (await texto(profe2)).includes(ALUMNA.nombre));
+    await foto(profe2, "21a-caso-visto-por-el-adjunto");
+    // La pantalla promete que «todos los que estén aquí ven los mismos alumnos y el mismo
+    // trabajo»: hasta la revisión del 7 sep 2026 el adjunto veía las entregas en la clase y al
+    // abrir una le decía que no existía.
+    await profe2.goto(profe.url(), { waitUntil: "networkidle0" });
+    await esperar(2500);
+    const vistaAdjunto = await texto(profe2);
+    comprobar("el adjunto abre la entrega", vistaAdjunto.includes(ALUMNA.nombre), profe2.url().replace(BASE, ""));
+    comprobar("y ve el trabajo, no un error", /tal y como la hizo/i.test(vistaAdjunto));
+    comprobar("con el cuadro de corregir", /Nota \(0-10\)/.test(vistaAdjunto));
+    await foto(profe2, "21b-entrega-vista-por-el-adjunto");
+
+    console.log("\n26c. Y quien deja de llevar la clase, deja de poder");
+    // El permiso sale de llevar la clase, no de ser profesor de la facultad: si se le saca de la
+    // clase, el caso y la entrega vuelven a estar fuera de su alcance.
+    const urlEntrega = profe2.url();
+    await client.query(`DELETE FROM profesores_clase WHERE "claseId" = $1 AND "profesorId" = $2`, [claseId, profe2Id]);
+    await profe2.goto(`${BASE}/profesor/casos/${casoId}`, { waitUntil: "networkidle0" });
+    await esperar(2000);
+    comprobar("fuera de la clase, el caso ya no se le abre", !(await texto(profe2)).includes(`${MARCA} Mujer vegana`),
+      profe2.url().replace(BASE, ""));
+    await profe2.goto(urlEntrega, { waitUntil: "networkidle0" });
+    await esperar(2000);
+    comprobar("ni la entrega de una alumna que ya no es suya", !(await texto(profe2)).includes("tal y como la hizo"),
+      profe2.url().replace(BASE, ""));
+    // Se le devuelve para no dejar el escenario a medias.
+    await client.query(
+      `INSERT INTO profesores_clase (id, "claseId", "profesorId", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, $2, NOW(), NOW())`, [claseId, profe2Id]);
 
     console.log("\n27. Nota de 0 a 10 con decimales");
     await escribirEnCampo(profe, "Nota", "7,5");

@@ -169,6 +169,7 @@ export default async function ClaseDetallePage({
           candidatos={candidatos}
           yoId={profesor.dietistaId}
           soyElCreador={profesores.some((p) => p.id === profesor.dietistaId && p.esElCreador)}
+          alumnos={clase.alumnosActivos}
         />
       )}
 

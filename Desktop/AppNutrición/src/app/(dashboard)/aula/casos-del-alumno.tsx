@@ -30,6 +30,8 @@ export interface CasoParaAlumno {
   entregadaEl: string | null;
   entregableNombre: string | null;
   entregablePlanNombre: string | null;
+  /** El PDF sigue guardado: se borra al acabar el curso y entonces no hay nada que abrir. */
+  entregableGuardado: boolean;
   planes: { id: string; nombre: string; activo: boolean }[];
 }
 
@@ -146,7 +148,8 @@ export function CasosDelAlumno({ casos }: { casos: CasoParaAlumno[] }) {
                     {c.entregadaEl && <span className="text-muted-foreground font-normal">· {c.entregadaEl}</span>}
                   </span>
                 )}
-                {(c.estado === "ENTREGADA" || c.estado === "CORREGIDA") && c.entregableNombre && c.entregaId && (
+                {/* El PDF se borra al acabar el curso: si ya no está, no se enseña un enlace roto. */}
+                {(c.estado === "ENTREGADA" || c.estado === "CORREGIDA") && c.entregableNombre && c.entregableGuardado && c.entregaId && (
                   <a
                     href={`/api/entregas/${c.entregaId}/pdf`}
                     target="_blank"

@@ -649,6 +649,58 @@ Lo que salió al recorrerlo:
   clase (era el nombre editado en la prueba); y el plan del profesor parecía desaparecer al crear
   el alumno el suyo (están los dos, en el desplegable de planes).
 
+### Que la base no reviente: qué se guarda y qué se borra (6 sep 2026)
+
+Los números, medidos, no estimados: **un PDF de entregable pesa ~165 KB**. Una facultad de 300
+alumnos con 4 casos deja unas 1.200 entregas → **~240 MB solo en PDFs**. La base de **producción
+entera ocupa hoy 120 MB** (de los 500 del plan), y su tabla más gorda, `alimentos_en_comida`, son
+46 MB. O sea: **una sola universidad la duplicaría**. Guillermo, el 6 sep 2026: «no se va a poder
+mantener siempre todos los archivos ahí».
+
+`scripts/limpiar-docencia.ts` (**simula por defecto**; borra con `--ejecutar`):
+
+| Qué se borra | Cuándo |
+|---|---|
+| El **PDF** del entregable | 30 días después de corregir (`--dias=N` lo cambia) |
+| El **PDF y la foto del trabajo** | Cuando el curso de la clase ha terminado — en la práctica, cada 31 de agosto |
+| Invitaciones **sin usar** | 90 días después de caducar |
+
+No se toca nunca: **la nota, el comentario, las fechas y el nombre de lo que entregó**. El
+expediente se queda entero; lo que se va es el peso. Y para que borrar no deje botones rotos, la
+pantalla mira `entregableBytes`: si es NULL, dice «el PDF ya no se guarda» en vez de ofrecer una
+descarga que daría 404 — en la vista del profesor, en el aula del alumno y en el panel de su caso.
+
+Comprobado con `probar-limpieza-docencia.ts` (14 comprobaciones): monta cuatro entregas de 200 KB,
+las envejece y verifica una por una qué se fue y qué se quedó.
+
+**Lo que NO se limpia, y hay que tener en el radar**: los **pacientes de prácticas de los alumnos**.
+Cada alumno que empieza un caso se crea un paciente con su plan, y eso alimenta
+`alimentos_en_comida`, que ya es la tabla más grande. 300 alumnos × 4 casos = 1.200 planes por
+curso. No se tocan porque son *su* trabajo y su cuenta se queda gratis de por vida
+([[project_alumnos_gratis_de_por_vida]]), pero es lo que más va a crecer y está sin decidir.
+
+Las **notificaciones** están controladas: 986 filas y 792 KB en producción, con su propia limpieza.
+
+### La revisión del código (7 sep 2026)
+
+Repasando el módulo entero salieron tres cosas, todas del mismo sitio: **la app prometía que «todos
+los que estén aquí ven los mismos alumnos y el mismo trabajo» y no era verdad**.
+
+- El **adjunto no podía corregir**: `corregirEntrega` y `getTrabajoDeEntrega` exigían ser el autor
+  del caso, no llevar la clase. Veía las entregas listadas en su clase y, al abrir una, «no
+  encontrado».
+- **Ni siquiera tenía puerta**: `getCaso` y `getAsignacionesDeCaso` filtraban por autor, así que su
+  ficha decía «Sin asignar todavía». Los dos enlaces del caso desde la clase le llevaban a sitios
+  que no podía abrir.
+- `contarAlumnosQueEmpezaron` era un **export de un fichero `"use server"` sin comprobar sesión**:
+  cualquiera con un id podía preguntar cuántos alumnos habían empezado ese caso.
+
+Cómo queda: quien lleva la clase **ve el caso en solo lectura y corrige a sus alumnos**; el caso, su
+consigna y su paciente plantilla siguen siendo de quien los hizo, y la ficha se lo dice («Este caso
+lo ha hecho X»). Solo ve **sus** clases, no las de otros profesores del mismo caso. Y el permiso
+sale de llevar la clase: en cuanto se le saca, deja de abrirse — comprobado en los dos sentidos
+(`probar-guion-completo`, 126 comprobaciones).
+
 ### Lo que queda de la fase 3
 
 - Repasar el menú del alumno cuando se vea el flujo con gente de verdad (Mensajes, Pagos).

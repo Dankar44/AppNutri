@@ -30,6 +30,7 @@ export function AvisoCaso({
   entregadaEl,
   entregableNombre,
   entregablePlanNombre,
+  entregableGuardado,
   planes,
 }: {
   asignacionId: string;
@@ -46,6 +47,8 @@ export function AvisoCaso({
   entregadaEl: string | null;
   entregableNombre: string | null;
   entregablePlanNombre: string | null;
+  /** El PDF sigue guardado: se borra al acabar el curso y entonces no hay nada que abrir. */
+  entregableGuardado: boolean;
   planes: { id: string; nombre: string; activo: boolean }[];
 }) {
   const t = useTranslations("aula");
@@ -110,14 +113,16 @@ export function AvisoCaso({
                   <FileText className="w-3.5 h-3.5" />
                   {t("casos.entregablePdf", { plan: entregablePlanNombre ?? "" })}
                 </span>
-                <a
-                  href={`/api/entregas/${entregaId}/pdf`}
-                  target="_blank"
-                  rel="noopener"
-                  className="text-primary font-medium hover:underline"
-                >
-                  {t("casos.verPdf")}
-                </a>
+                {entregableGuardado && (
+                  <a
+                    href={`/api/entregas/${entregaId}/pdf`}
+                    target="_blank"
+                    rel="noopener"
+                    className="text-primary font-medium hover:underline"
+                  >
+                    {t("casos.verPdf")}
+                  </a>
+                )}
               </>
             ) : (
               <span>{t("casos.sinEntregablePdf")}</span>

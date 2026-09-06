@@ -183,12 +183,25 @@ async function main() {
     await bea.goto(`${BASE}/profesor/clases`, { waitUntil: "networkidle0" });
     comprobar("ya no la ve en su lista", !(await texto(bea)).includes("compartida"));
 
-    console.log("\n── 2. A la única profesora no se le deja salir a secas ──");
+    console.log("\n── 2. La única profesora sí puede salir: la clase se borra con ella ──");
     await ana.goto(`${BASE}/profesor/clases/${suya}`, { waitUntil: "networkidle0" });
     visible = await texto(ana);
-    comprobar("no se le ofrece salir", !visible.includes("Salir de esta clase"));
-    comprobar("se le explica qué hacer antes", /eres el único profesor/i.test(visible));
+    comprobar("se le ofrece salir", visible.includes("Salir de esta clase"));
+    comprobar("y se le avisa de que la clase se borra", /la clase se borra entera/i.test(visible));
     await foto(ana, "unica-profesora");
+    await pulsar(ana, "Salir de esta clase");
+    await esperar(600);
+    visible = await texto(ana);
+    comprobar("el aviso lo dice con todas las letras", /se borra entera/i.test(visible) && /No se puede deshacer/i.test(visible));
+    comprobar("y promete que sus casos y pacientes no se tocan", /son tuyos y no se tocan/i.test(visible));
+    await foto(ana, "unica-profesora-aviso");
+    await pulsar(ana, "Salir y borrar la clase");
+    await esperar(3000);
+    const { rows: borrada } = await client.query(`SELECT 1 FROM clases WHERE id = $1`, [suya]);
+    comprobar("la clase se va con ella", borrada.length === 0);
+    const { rows: sigueSiendo } = await client.query(`SELECT "rolDocente", "licenciaDocenteId" FROM dietistas WHERE id = $1`, [anaId]);
+    comprobar("pero ella sigue siendo profesora de su facultad",
+      sigueSiendo[0].rolDocente === "PROFESOR" && sigueSiendo[0].licenciaDocenteId === licenciaId);
 
     console.log("\n── 3. Salir de la universidad ──");
     await ana.goto(`${BASE}/profesor`, { waitUntil: "networkidle0" });
@@ -211,9 +224,7 @@ async function main() {
       `SELECT nombre, archivada, "profesorId" FROM clases WHERE nombre LIKE '${MARCA}%' ORDER BY nombre`);
     const laVacia = clases.find((c) => c.nombre.includes("compartida"))!;
     const conOtra = clases.find((c) => c.nombre.includes("con relevo"))!;
-    const laSuya = clases.find((c) => c.nombre.includes("solo de Ana"))!;
-    comprobar("la clase que llevaba sola se archiva, no se borra", laSuya.archivada === true);
-    comprobar("la que se quedó sin nadie más, también", laVacia.archivada === true);
+    comprobar("la que se quedó sin nadie más se archiva, no se borra", laVacia.archivada === true);
     comprobar("y la que lleva otra profesora pasa a ella, sin archivarse",
       conOtra.profesorId === beaId && conOtra.archivada === false,
       conOtra.profesorId === beaId ? "es de Bea" : "sigue siendo de Ana");

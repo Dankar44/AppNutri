@@ -131,6 +131,7 @@ export default async function PacienteDetailPage({ params, searchParams }: Props
           entregadaEl={caso.entregadaAt ? formatDateTime(caso.entregadaAt, locale) : null}
           entregableNombre={caso.entregableNombre}
           entregablePlanNombre={caso.entregablePlanNombre}
+          entregableGuardado={caso.entregableGuardado}
           planes={caso.planes}
         />
       )}
