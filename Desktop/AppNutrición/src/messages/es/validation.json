@@ -319,6 +319,10 @@
     "plantillaDeCasoNoSeBorra": "Este paciente es la plantilla de un caso: si ya no lo quieres, archiva el caso.",
     "planNoDelCaso": "Ese plan no es de este paciente",
     "errorEntregable": "No se ha podido generar el PDF del entregable. Vuelve a intentarlo o entrega sin el PDF.",
-    "profesorNoAlumno": "Eres profesor: no puedes apuntarte como alumno con esta cuenta."
+    "profesorNoAlumno": "Eres profesor: no puedes apuntarte como alumno con esta cuenta.",
+    "noEstasEnUniversidad": "Ahora mismo no estás en ninguna universidad",
+    "eresElUnicoProfesor": "Eres el único profesor de esta clase: si te vas se queda sin nadie que la lleve. Añade antes a otro profesor, o archiva la clase.",
+    "soloElCreadorQuita": "Solo quien creó la clase puede sacar a otro profesor. Para irte tú, usa «Salir de esta clase»",
+    "soloElCreadorElimina": "Solo quien creó la clase puede eliminarla. Tú puedes archivarla, que no borra nada"
   }
 }

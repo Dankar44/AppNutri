@@ -67,6 +67,7 @@ export default async function ClaseDetallePage({
             archivada: clase.archivada,
             alumnosActivos: clase.alumnosActivos,
           }}
+          soyElCreador={clase.profesorId === profesor.dietistaId}
         />
       </div>
 
@@ -162,7 +163,13 @@ export default async function ClaseDetallePage({
       </section>
 
       {!clase.archivada && (
-        <ProfesoresClase claseId={clase.id} profesores={profesores} candidatos={candidatos} />
+        <ProfesoresClase
+          claseId={clase.id}
+          profesores={profesores}
+          candidatos={candidatos}
+          yoId={profesor.dietistaId}
+          soyElCreador={profesores.some((p) => p.id === profesor.dietistaId && p.esElCreador)}
+        />
       )}
 
       <ListaAlumnos

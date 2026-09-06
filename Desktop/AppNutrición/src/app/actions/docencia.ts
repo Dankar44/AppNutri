@@ -13,6 +13,10 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
 import { licenciaVigente } from "@/lib/docencia";
 import { contarAlumnosDeLicencia } from "@/lib/docencia-bolsa";
+import { sacarDeLaUniversidad } from "@/lib/docencia-salida";
+import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
+import { isNextNavigation } from "@/lib/utils";
 
 export interface DatosProfesor {
   dietistaId: string;
@@ -104,6 +108,75 @@ export async function requireProfesor(): Promise<DatosProfesor> {
   return datos;
 }
 
+
+/**
+ * Dejar la universidad, por decisión propia (Guillermo, 6 sep 2026: «que ellos mismos se vayan de
+ * la clase para dejar libre una cuota»).
+ *
+ * Libera su plaza de profesor y le quita el acceso a las clases de esa facultad, pero **sigue
+ * siendo docente**: conserva su espacio, sus casos y sus pacientes, y puede esperar a que le
+ * metan en otra universidad. Nada se borra; si vuelve a la misma, recupera sus clases.
+ */
+export async function dejarLaUniversidad(): Promise<{ ok: boolean; error?: string }> {
+  const profesor = await requireProfesor();
+  const t = await getTranslations("validation");
+  if (!profesor.licencia) return { ok: false, error: t("docencia.noEstasEnUniversidad") };
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await sacarDeLaUniversidad(tx, profesor.dietistaId, profesor.licencia!.id);
+      await tx.dietista.update({
+        where: { id: profesor.dietistaId },
+        data: { licenciaDocenteId: null },
+      });
+    });
+    revalidarEspacioDocente();
+    return { ok: true };
+  } catch (e) {
+    if (isNextNavigation(e)) throw e;
+    console.error("[docencia] Error dejando la universidad:", e);
+    return { ok: false, error: t("general.errorDesconocido") };
+  }
+}
+
+/**
+ * Dejar de ser docente del todo: vuelve a ser un nutricionista normal, con sus pacientes y su
+ * trabajo intactos. Lo mismo que hace administración al quitarle el rol, pero decidido por él.
+ */
+export async function dejarDeSerProfesor(): Promise<{ ok: boolean; error?: string }> {
+  const profesor = await requireProfesor();
+  const t = await getTranslations("validation");
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      if (profesor.licencia) {
+        await sacarDeLaUniversidad(tx, profesor.dietistaId, profesor.licencia.id);
+      }
+      // Igual que al quitarle el rol desde administración: quien deja la docencia no puede dejarse
+      // una clase viva por ahí, aunque sea de una universidad en la que ya no estaba.
+      await tx.clase.updateMany({
+        where: { profesorId: profesor.dietistaId, archivada: false },
+        data: { archivada: true, archivadaAt: new Date() },
+      });
+      await tx.dietista.update({
+        where: { id: profesor.dietistaId },
+        data: { rolDocente: null, licenciaDocenteId: null },
+      });
+    });
+    revalidarEspacioDocente();
+    return { ok: true };
+  } catch (e) {
+    if (isNextNavigation(e)) throw e;
+    console.error("[docencia] Error dejando la docencia:", e);
+    return { ok: false, error: t("general.errorDesconocido") };
+  }
+}
+
+function revalidarEspacioDocente() {
+  revalidatePath("/profesor");
+  revalidatePath("/profesor/clases");
+  revalidatePath("/dashboard");
+}
 
 /**
  * Da por visto el aviso de fin de curso y le manda a su cuenta. Lo llama el formulario de

@@ -17,6 +17,7 @@ import { isNextNavigation } from "@/lib/utils";
 import { sanitizeString, sanitizeStringOptional } from "@/lib/validation";
 import { crearCuentaNutricionista } from "./admin";
 import { contarAlumnosDeLicencia, plazasLibresDeLicencia, contarInvitacionesVivas } from "@/lib/docencia-bolsa";
+import { sacarDeLaUniversidad } from "@/lib/docencia-salida";
 
 export interface LicenciaDocenteItem {
   id: string;
@@ -284,7 +285,14 @@ export async function editarLicenciaDocente(
   }
 }
 
-/** Nutricionistas sin rol docente, para elegir a quién se le da el de profesor. */
+/**
+ * A quién se le puede dar el rol de profesor de esta universidad: nutricionistas sin rol docente
+ * y, además, **docentes que ahora mismo no están en ninguna universidad** (Guillermo, 6 sep 2026:
+ * «así como docente, que no pertenece a alguna universidad, debería poder agregarse a otra»). Sin
+ * esto, quien sale de una facultad se quedaba en un limbo del que no había forma de sacarle.
+ *
+ * Lo que sigue sin poderse es estar en dos a la vez: eso pide un cambio de modelo y está apuntado.
+ */
 export async function buscarDietistasParaDocencia(busqueda: string) {
   const admin = await requireAdmin();
   if (!admin || admin.role !== "admin") redirect("/admin-login");
@@ -292,18 +300,22 @@ export async function buscarDietistasParaDocencia(busqueda: string) {
   const search = busqueda.trim();
   if (!search) return [];
 
-  return prisma.dietista.findMany({
+  const filas = await prisma.dietista.findMany({
     where: {
-      rolDocente: null,
-      OR: [
-        { nombre: { contains: search, mode: "insensitive" } },
-        { apellidos: { contains: search, mode: "insensitive" } },
-        { email: { contains: search, mode: "insensitive" } },
-      ],
+      OR: [{ rolDocente: null }, { rolDocente: "PROFESOR", licenciaDocenteId: null }],
+      AND: {
+        OR: [
+          { nombre: { contains: search, mode: "insensitive" } },
+          { apellidos: { contains: search, mode: "insensitive" } },
+          { email: { contains: search, mode: "insensitive" } },
+        ],
+      },
     },
-    select: { id: true, nombre: true, apellidos: true, email: true },
+    select: { id: true, nombre: true, apellidos: true, email: true, rolDocente: true },
     take: 10,
   });
+  // `yaEsDocente` deja decir en la lista que a esa persona solo le falta universidad, no el rol.
+  return filas.map(({ rolDocente, ...resto }) => ({ ...resto, yaEsDocente: rolDocente === "PROFESOR" }));
 }
 
 /**
@@ -346,10 +358,14 @@ export async function asignarProfesorLicencia(data: {
       if (!data.dietistaId) return { ok: false, error: t("docencia.dietistaObligatorio") };
       const dietista = await prisma.dietista.findUnique({
         where: { id: data.dietistaId },
-        select: { id: true, rolDocente: true },
+        select: { id: true, rolDocente: true, licenciaDocenteId: true },
       });
       if (!dietista) return { ok: false, error: t("admin.dietistaNoEncontrado") };
-      if (dietista.rolDocente) return { ok: false, error: t("docencia.yaTieneRolDocente") };
+      // Se admite al que ya es profesor pero no está en ninguna universidad: es justo el caso de
+      // quien salió de una facultad y entra en otra. Lo que no vale es sacarle de la suya sin más.
+      if (dietista.rolDocente === "ALUMNO" || (dietista.rolDocente === "PROFESOR" && dietista.licenciaDocenteId)) {
+        return { ok: false, error: t("docencia.yaTieneRolDocente") };
+      }
       dietistaId = dietista.id;
     } else {
       if (!data.email || !data.password || !data.nombre) {
@@ -387,6 +403,44 @@ export async function asignarProfesorLicencia(data: {
  * Le quita el rol docente: la cuenta sigue existiendo tal cual y pasa a ser una cuenta de
  * nutricionista normal, con sus pacientes y sus dietas intactos. Solo pierde el espacio docente.
  */
+/**
+ * Le saca de ESTA universidad, pero sigue siendo docente (Guillermo, 6 sep 2026). Libera la plaza
+ * de profesor y pierde el acceso a las clases de esa facultad; conserva su espacio, sus casos y
+ * sus pacientes, a la espera de que se le meta en otra. Sus clases se archivan, no se borran: si
+ * vuelve a esta misma universidad las recupera tal cual.
+ */
+export async function sacarProfesorDeLaUniversidad(
+  dietistaId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const admin = await requireAdmin();
+  if (!admin || admin.role !== "admin") redirect("/admin-login");
+
+  const t = await getTranslations("validation");
+
+  const profesor = await prisma.dietista.findUnique({
+    where: { id: dietistaId },
+    select: { id: true, licenciaDocenteId: true, rolDocente: true },
+  });
+  if (!profesor) return { ok: false, error: t("admin.dietistaNoEncontrado") };
+  // Cada export de un fichero "use server" es un endpoint: sin esto, pasarle el id de un ALUMNO
+  // (que también tiene licencia) le sacaría de su facultad por una puerta que no es la suya.
+  if (profesor.rolDocente !== "PROFESOR") return { ok: false, error: t("admin.dietistaNoEncontrado") };
+  if (!profesor.licenciaDocenteId) return { ok: false, error: t("docencia.noEstasEnUniversidad") };
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await sacarDeLaUniversidad(tx, dietistaId, profesor.licenciaDocenteId!);
+      await tx.dietista.update({ where: { id: dietistaId }, data: { licenciaDocenteId: null } });
+    });
+    revalidarDocencia();
+    return { ok: true };
+  } catch (e) {
+    if (isNextNavigation(e)) throw e;
+    console.error("[docencia] Error sacando al profesor de la universidad:", e);
+    return { ok: false, error: t("general.errorDesconocido") };
+  }
+}
+
 export async function quitarRolDocente(dietistaId: string): Promise<{ ok: boolean; error?: string }> {
   const admin = await requireAdmin();
   if (!admin || admin.role !== "admin") redirect("/admin-login");
@@ -396,16 +450,26 @@ export async function quitarRolDocente(dietistaId: string): Promise<{ ok: boolea
   try {
     // Sus clases se archivan, no se borran: los alumnos conservan su trabajo y todo vuelve si el
     // rol se le devuelve o si la clase pasa a otro profesor. Decidido con Guillermo el 30 ago 2026.
-    await prisma.$transaction([
-      prisma.clase.updateMany({
+    // Desde el 6 sep 2026 lo hace el mismo camino que la salida voluntaria: si la clase la llevan
+    // otros profesores, pasa a ellos en vez de archivarse y dejarles sin ella.
+    const ficha = await prisma.dietista.findUnique({
+      where: { id: dietistaId },
+      select: { licenciaDocenteId: true },
+    });
+    await prisma.$transaction(async (tx) => {
+      if (ficha?.licenciaDocenteId) {
+        await sacarDeLaUniversidad(tx, dietistaId, ficha.licenciaDocenteId);
+      }
+      // Las de fuera de su licencia (o de antes de tenerla) se archivan igual: ya no es docente.
+      await tx.clase.updateMany({
         where: { profesorId: dietistaId, archivada: false },
         data: { archivada: true, archivadaAt: new Date() },
-      }),
-      prisma.dietista.update({
+      });
+      await tx.dietista.update({
         where: { id: dietistaId },
         data: { rolDocente: null, licenciaDocenteId: null },
-      }),
-    ]);
+      });
+    });
     revalidarDocencia();
     return { ok: true };
   } catch (e) {

@@ -577,6 +577,78 @@ tirón). Adaptada: su alta pasa a ser del curso anterior para llegar al fin del 
 comprobador de migraciones no listaba la 18ª: ahora comprueba `add-fechas-curso` y además que la
 columna `curso` haya desaparecido de `clases` y `licencias_docentes`.
 
+### Las tres salidas de un profesor (Guillermo, 6 sep 2026)
+
+Al preguntar si un profesor podía estar en dos universidades salió lo de al lado: **cómo se sale**.
+Son tres cosas distintas y conviene no mezclarlas.
+
+| Qué | Quién | Qué pasa |
+|---|---|---|
+| **Salir de una clase** | él mismo | Deja esa asignatura. Sigue siendo profesor de su facultad. |
+| **Salir de la universidad** | él mismo o administración | Libera la plaza de profesor y pierde el acceso a las clases de esa facultad, pero **sigue siendo docente**: se le puede asignar a otra. |
+| **Dejar de ser docente** | él mismo o administración | Vuelve a su cuenta de nutricionista, con sus pacientes intactos. |
+
+Lo que lo sostiene:
+
+- **Una clase es de una universidad**, así que solo la lleva quien está en ELLA ahora mismo:
+  `claseQueLleva(profesorId, licenciaId)` (`src/lib/docencia.ts`) lleva el filtro dentro, y sin
+  universidad devuelve un `IN ()` vacío — ninguna clase. Los doce sitios que la usaban pasan ahora
+  la licencia, y TypeScript obliga: no se puede olvidar en uno y abrir un agujero.
+- **Nada se borra.** `sacarDeLaUniversidad` (`src/lib/docencia-salida.ts`) es el único camino, lo
+  use el profesor o administración: las clases que llevan otros **pasan a ellos**, las que se
+  quedan sin nadie se **archivan** con él todavía como creador — que es lo que permite
+  recuperarlas tal cual si vuelve a esa universidad. `quitarRolDocente` pasa por ahí también, así
+  que ya no archiva de golpe clases que otro profesor sigue dando.
+- **Entre compañeros nadie echa a nadie** («no lo veo tanto»): sacar a otro es cosa de quien creó
+  la clase; cada uno se va por su cuenta con «Salir de esta clase». Al **único** profesor de una
+  clase no se le ofrece salir —se quedaría sin nadie, con los alumnos dentro—: se le dice que meta
+  antes a otro o que la archive.
+- **Un docente sin universidad se puede meter en otra**, que es lo que hace útil todo lo anterior:
+  `buscarDietistasParaDocencia` ya no filtra solo `rolDocente: null`, también acepta
+  `PROFESOR` con `licenciaDocenteId: null`, y la lista lo dice («Ya es profesor, sin universidad»).
+  Sin esto, quien salía de una facultad se quedaba en un limbo del que no había forma de sacarle.
+
+Sin migración: todo sale de columnas que ya existían.
+
+Mirando las capturas de la prueba (`probar-salidas-profesor.ts`, 33 comprobaciones, deja las
+pantallas en `/tmp/annonia-salidas`) salieron dos cosas más:
+
+- **Cualquier profesor de la clase podía eliminarla**, aunque no la hubiese creado — y eliminar se
+  lleva matrículas, casos asignados y entregas, sin vuelta atrás. Ahora `eliminarClase` exige ser
+  el creador y el botón solo se le enseña a él; a los demás les queda archivar, que no borra nada.
+- **El panel sin universidad ofrecía «Crear mi primera clase»**, que `crearClase` rechaza por no
+  haber licencia: otro botón que fallaba al pulsarlo. Fuera, con un texto que explica que sus casos
+  sí puede seguir preparándolos.
+
+Pendiente, aparcado por Guillermo: **borrar solas las clases archivadas que nadie use** desde hace
+mucho. Hasta entonces se quedan, que es justo lo que permite recuperarlas.
+
+### El guion entero, recorrido a clics (6 sep 2026)
+
+`probar-guion-completo.ts` hace los **32 pasos** del guion que va a seguir Guillermo, en su orden y
+con su numeración, con cuentas nuevas creadas para la ocasión (una universidad, dos profesoras y
+dos alumnas: una que se apunta desde el enlace sin tener cuenta y otra que ya la tenía).
+**116 comprobaciones**, mirando en cada paso lo que se ve Y lo que queda en la base; capturas en
+`/tmp/annonia-guion`. Cubre: la licencia en administración, crear y editar la clase con sus fechas,
+el alta por correo con dominios que solo avisan, el enlace en sus tres situaciones (sin sesión, con
+la del alumno y con la del profesor), el caso con su paciente plantilla, compartir o no la
+solución, la copia del alumno y su puesta al día sola, el aviso de cambios sin guardar, la entrega
+congelada con su PDF, deshacerla y reentregar, la corrección con nota decimal, y archivar,
+desarchivar, cerrar curso y eliminar.
+
+Lo que salió al recorrerlo:
+
+- **El aula no avisaba de que ya te habían corregido**: el alumno leía «1 caso» y solo se enteraba
+  entrando en la clase. Ahora dice «1 caso · 1 corregido», igual que ya decía «1 por entregar».
+- **La nota no se le enseña al alumno hasta que el profesor enciende «Que el alumno vea la nota y
+  el comentario»** (lo decidido el 27 ago 2026). Funciona bien; lo que estaba mal era el guion, que
+  daba por hecho que la vería al momento.
+- Tres sustos que **no** eran bugs y conviene no volver a investigar: la fecha de fin de curso
+  parecía quedar en 30 de agosto (es que `pg` lee la columna `timestamp` como hora local y Prisma
+  —lo que usa la aplicación— en UTC: en la app está bien); el segundo profesor parecía no ver la
+  clase (era el nombre editado en la prueba); y el plan del profesor parecía desaparecer al crear
+  el alumno el suyo (están los dos, en el desplegable de planes).
+
 ### Lo que queda de la fase 3
 
 - Repasar el menú del alumno cuando se vea el flujo con gente de verdad (Mensajes, Pagos).

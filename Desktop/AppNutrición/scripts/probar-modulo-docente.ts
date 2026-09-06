@@ -252,7 +252,9 @@ async function main() {
     await client.query(`UPDATE dietistas SET "licenciaDocenteId" = NULL WHERE id = $1`, [dietistaId]);
     const sinLicencia = await pedir("/profesor", sesion);
     comprobar("un profesor sin licencia no revienta", sinLicencia.estado === 200, `estado ${sinLicencia.estado}`);
-    comprobar("y se le dice claramente", sinLicencia.cuerpo.includes("todavía no tiene una licencia asignada"));
+    // Desde el 6 sep 2026 un profesor puede quedarse sin universidad por haberse salido él, no
+    // solo por no habérsela asignado nunca: el panel se lo dice sin dar por hecho lo segundo.
+    comprobar("y se le dice claramente", sinLicencia.cuerpo.includes("no estás en ninguna universidad"));
     await client.query(`UPDATE dietistas SET "licenciaDocenteId" = $1 WHERE id = $2`, [licenciaId, dietistaId]);
 
     // ─── 7. Sin permisos ───

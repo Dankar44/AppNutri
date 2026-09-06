@@ -319,6 +319,10 @@
     "plantillaDeCasoNoSeBorra": "Este paciente é o modelo de um caso: se já não o quiser, arquive o caso.",
     "planNoDelCaso": "Esse plano não é deste paciente",
     "errorEntregable": "Não foi possível gerar o PDF do entregável. Tenta de novo ou entrega sem o PDF.",
-    "profesorNoAlumno": "És professor: não te podes inscrever como aluno com esta conta."
+    "profesorNoAlumno": "És professor: não te podes inscrever como aluno com esta conta.",
+    "noEstasEnUniversidad": "Neste momento não estás em nenhuma universidade",
+    "eresElUnicoProfesor": "És o único professor desta turma: se saíres, fica sem ninguém que a leve. Adiciona antes outro professor, ou arquiva a turma.",
+    "soloElCreadorQuita": "Só quem criou a turma pode retirar outro professor. Para saíres tu, usa «Sair desta turma»",
+    "soloElCreadorElimina": "Só quem criou a turma a pode eliminar. Tu podes arquivá-la, o que não apaga nada"
   }
 }

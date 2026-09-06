@@ -80,12 +80,15 @@ export default async function AulaPage() {
                   </p>
                 )}
               </div>
-              {/* Cuántos casos tiene dentro, y cuántos le quedan por entregar: es lo que se mira. */}
+              {/* Cuántos casos tiene dentro, cuántos le quedan por entregar y cuántos le han
+                  corregido ya: sin lo último, entraba, leía «1 caso» y no se enteraba de que
+                  tenía nota hasta abrir la clase (visto al recorrer el guion, 6 sep 2026). */}
               <p className="text-sm mt-3 inline-flex items-center gap-1.5 font-medium text-primary">
                 <ClipboardList className="w-4 h-4" />
                 {t("casos.enLaClase", {
                   n: casos.filter((k) => k.claseId === c.id).length,
                   pendientes: casos.filter((k) => k.claseId === c.id && (k.estado === "SIN_EMPEZAR" || k.estado === "EN_MARCHA")).length,
+                  corregidos: casos.filter((k) => k.claseId === c.id && k.estado === "CORREGIDA" && k.nota !== null).length,
                 })}
               </p>
             </Link>

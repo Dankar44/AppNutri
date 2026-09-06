@@ -2,12 +2,13 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus, X, Loader2, UserCog } from "lucide-react";
+import { UserPlus, X, Loader2, UserCog, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import {
   anadirProfesorAClase,
   quitarProfesorDeClase,
+  salirDeClase,
   type ProfesorDeClase,
 } from "@/app/actions/clases";
 import { ConfirmModal } from "@/components/confirm-modal";
@@ -18,21 +19,32 @@ import { ConfirmModal } from "@/components/confirm-modal";
  * En una facultad la misma asignatura la dan varios profesores, y todos tienen que ver los mismos
  * alumnos y el mismo trabajo (Guillermo, 1 sep 2026). Solo se puede añadir a gente de la misma
  * facultad, y al que la creó no se le puede quitar.
+ *
+ * Entre compañeros nadie echa a nadie (Guillermo, 6 sep 2026): sacar a otro es cosa de quien creó
+ * la clase, y cada uno se va por su cuenta con «Salir de esta clase».
  */
 export function ProfesoresClase({
   claseId,
   profesores,
   candidatos,
+  yoId,
+  soyElCreador,
 }: {
   claseId: string;
   profesores: ProfesorDeClase[];
   candidatos: ProfesorDeClase[];
+  yoId: string;
+  soyElCreador: boolean;
 }) {
   const t = useTranslations("docencia");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [anadiendo, setAnadiendo] = useState(false);
   const [quitando, setQuitando] = useState<ProfesorDeClase | null>(null);
+  const [saliendo, setSaliendo] = useState(false);
+  // Al salir siendo el creador, la clase pasa al siguiente de la lista: decirlo por su nombre
+  // evita la duda de "¿y quién se queda con mis alumnos?".
+  const relevo = profesores.find((p) => p.id !== yoId);
 
   function anadir(profesorId: string) {
     startTransition(async () => {
@@ -54,6 +66,20 @@ export function ProfesoresClase({
       if (result.ok) {
         toast.success(t("profesores.quitado"));
         setQuitando(null);
+        router.refresh();
+      } else {
+        toast.error(result.error || t("clases.errorGuardar"));
+      }
+    });
+  }
+
+  function salir() {
+    startTransition(async () => {
+      const result = await salirDeClase(claseId);
+      if (result.ok) {
+        toast.success(t("profesores.salido"));
+        setSaliendo(false);
+        router.push("/profesor/clases");
         router.refresh();
       } else {
         toast.error(result.error || t("clases.errorGuardar"));
@@ -88,6 +114,11 @@ export function ProfesoresClase({
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium truncate">
                 {p.nombre} {p.apellidos}
+                {p.id === yoId && (
+                  <span className="ml-2 text-[10px] font-medium px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                    {t("profesores.yo")}
+                  </span>
+                )}
                 {p.esElCreador && (
                   <span className="ml-2 text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
                     {t("profesores.creador")}
@@ -96,20 +127,39 @@ export function ProfesoresClase({
               </p>
               <p className="text-xs text-muted-foreground truncate">{p.email}</p>
             </div>
-            {!p.esElCreador && (
-              <button
-                type="button"
-                onClick={() => setQuitando(p)}
-                aria-label={t("profesores.quitar")}
-                title={t("profesores.quitar")}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors shrink-0"
-              >
-                <X className="w-4 h-4" />
-              </button>
+            {p.id === yoId ? (
+              // Al único profesor no se le ofrece salir: la clase se quedaría sin nadie. En su
+              // lugar, la nota de abajo le dice qué hacer antes.
+              relevo && (
+                <button
+                  type="button"
+                  onClick={() => setSaliendo(true)}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-red-600 dark:hover:text-red-400 transition-colors shrink-0"
+                >
+                  <LogOut className="w-4 h-4" />
+                  {t("profesores.salir")}
+                </button>
+              )
+            ) : (
+              soyElCreador && !p.esElCreador && (
+                <button
+                  type="button"
+                  onClick={() => setQuitando(p)}
+                  aria-label={t("profesores.quitar")}
+                  title={t("profesores.quitar")}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )
             )}
           </div>
         ))}
       </div>
+
+      {!relevo && (
+        <p className="text-xs text-muted-foreground mt-2">{t("profesores.eresElUnico")}</p>
+      )}
 
       {anadiendo && (
         <div className="mt-3 space-y-2">
@@ -137,6 +187,21 @@ export function ProfesoresClase({
           </button>
         </div>
       )}
+
+      <ConfirmModal
+        open={saliendo}
+        title={t("profesores.salirTitulo")}
+        description={
+          soyElCreador && relevo
+            ? t("profesores.salirTextoCreador", { nombre: `${relevo.nombre} ${relevo.apellidos}` })
+            : t("profesores.salirTexto")
+        }
+        confirmLabel={t("profesores.salir")}
+        destructive
+        loading={isPending}
+        onConfirm={salir}
+        onCancel={() => setSaliendo(false)}
+      />
 
       <ConfirmModal
         open={quitando !== null}

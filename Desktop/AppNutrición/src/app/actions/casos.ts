@@ -385,7 +385,7 @@ export async function getClasesParaAsignar(
   const profesor = await requireProfesor();
   return prisma.clase.findMany({
     where: {
-      ...claseQueLleva(profesor.dietistaId),
+      ...claseQueLleva(profesor.dietistaId, profesor.licencia?.id ?? null),
       archivada: false,
       casosAsignados: { none: { casoId, retiradaAt: null } },
     },
@@ -419,7 +419,7 @@ export async function asignarCasoAClase(
   if (!caso) return { ok: false, error: t("docencia.casoNoEncontrado") };
 
   const clase = await prisma.clase.findFirst({
-    where: { id: claseId, archivada: false, ...claseQueLleva(profesor.dietistaId) },
+    where: { id: claseId, archivada: false, ...claseQueLleva(profesor.dietistaId, profesor.licencia?.id ?? null) },
     select: { id: true, fechaFinCurso: true },
   });
   if (!clase) return { ok: false, error: t("docencia.claseNoEncontrada") };
@@ -841,7 +841,7 @@ export async function getCasosDeClase(claseId: string): Promise<
 > {
   const profesor = await requireProfesor();
   const clase = await prisma.clase.findFirst({
-    where: { id: claseId, ...claseQueLleva(profesor.dietistaId) },
+    where: { id: claseId, ...claseQueLleva(profesor.dietistaId, profesor.licencia?.id ?? null) },
     select: { _count: { select: { alumnos: { where: { activa: true } } } } },
   });
   if (!clase) return [];

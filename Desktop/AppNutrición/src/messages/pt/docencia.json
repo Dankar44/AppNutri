@@ -2,7 +2,7 @@
   "panel": {
     "titulo": "Espaço docente",
     "sinInstitucion": "Sem instituição atribuída",
-    "sinLicencia": "A sua conta é de professor, mas ainda não tem uma licença atribuída. Escreva-nos e resolvemos.",
+    "sinLicencia": "Neste momento não estás em nenhuma universidade, por isso não tens turmas. A tua conta continua a ser de professor: assim que te atribuírem uma, voltas a ter as tuas turmas e os teus alunos. Os teus casos e os teus pacientes continuam onde estavam.",
     "licenciaCerradaTitulo": "O ano letivo está fechado",
     "licenciaCerradaTexto": "Continua a ter acesso às suas turmas e aos seus casos, mas não pode registar alunos até que a licença seja renovada.",
     "alumnos": "Alunos",
@@ -20,7 +20,8 @@
     "verMisCasos": "Ver os meus casos",
     "dosPasos": "São dois passos: uma turma com os seus alunos, e os casos que lhes vai propondo.",
     "delAl": "De {inicio} a {fin}",
-    "desde": "Desde {inicio}"
+    "desde": "Desde {inicio}",
+    "sinUniversidadTexto": "Enquanto não estiveres numa universidade não podes criar turmas, mas os teus casos são teus: podes continuar a prepará-los para quando precisares."
   },
   "invitacion": {
     "titulo": "Crie a sua conta de professor",
@@ -191,6 +192,28 @@
     "quitar": "Retirar da turma",
     "quitarTexto": "{nombre} deixa de ver esta turma e os seus alunos. Não se apaga nada, e pode voltar a adicioná-lo quando quiser.",
     "anadido": "Professor adicionado à turma",
-    "quitado": "Professor retirado da turma"
+    "quitado": "Professor retirado da turma",
+    "yo": "Tu",
+    "salir": "Sair desta turma",
+    "salirTitulo": "Sair desta turma?",
+    "salirTexto": "Deixas de ver esta turma e os seus alunos. Continuas a ser professor da tua faculdade e podem voltar a incluir-te quando quiserem. Não se apaga nada.",
+    "salirTextoCreador": "Foste tu que criaste esta turma: ao sair passa para {nombre}, que a continuará a levar com os seus alunos e o seu trabalho. Continuas a ser professor da tua faculdade.",
+    "salido": "Saíste da turma",
+    "soloElCreadorPuedeQuitar": "Só quem criou a turma pode retirar outro professor.",
+    "eresElUnico": "És o único professor desta turma. Para poderes sair, adiciona antes outro professor da tua faculdade; se o que queres é fechá-la, arquiva-a."
+  },
+  "salidas": {
+    "titulo": "Deixar a docência",
+    "dejarUniversidad": "Sair de {institucion}",
+    "dejarDocencia": "Deixar de ser professor",
+    "ayuda": "Nos dois casos manténs a tua conta, os teus pacientes e os teus casos. Nada é apagado.",
+    "dejarUniversidadTitulo": "Sair desta universidade?",
+    "dejarUniversidadTexto": "Deixas {institucion} e libertas a sua vaga de professor. Perdes o acesso às suas turmas —são arquivadas, ou passam para os professores que as levem contigo—, mas continuas a ser docente: quando te colocarem noutra universidade, voltas a ter o teu espaço com turmas.",
+    "dejarUniversidadConfirmar": "Sair da universidade",
+    "dejarDocenciaTitulo": "Deixar de ser professor?",
+    "dejarDocenciaTexto": "Voltas à tua conta de nutricionista de sempre, com os teus pacientes e o teu trabalho intactos. As tuas turmas são arquivadas e os teus casos ficam guardados. Para voltares a dar aulas teria de te ser atribuída uma universidade outra vez.",
+    "dejarDocenciaConfirmar": "Deixar de ser professor",
+    "fueraUniversidad": "Saíste da universidade",
+    "fueraDocencia": "Já não és professor"
   }
 }

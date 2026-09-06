@@ -2,7 +2,7 @@
   "panel": {
     "titulo": "Espacio docente",
     "sinInstitucion": "Sin institución asignada",
-    "sinLicencia": "Tu cuenta es de profesor, pero todavía no tiene una licencia asignada. Escríbenos y lo resolvemos.",
+    "sinLicencia": "Ahora mismo no estás en ninguna universidad, así que no tienes clases. Tu cuenta sigue siendo de profesor: en cuanto te asignen una, vuelves a tener tus clases y tus alumnos. Tus casos y tus pacientes siguen donde estaban.",
     "licenciaCerradaTitulo": "El curso está cerrado",
     "licenciaCerradaTexto": "Sigues teniendo acceso a tus clases y a tus casos, pero no puedes dar de alta alumnos hasta que se renueve la licencia.",
     "alumnos": "Alumnos",
@@ -20,7 +20,8 @@
     "verMisCasos": "Ver mis casos",
     "dosPasos": "Son dos pasos: una clase con tus alumnos dentro, y los casos que les vas poniendo.",
     "delAl": "Del {inicio} al {fin}",
-    "desde": "Desde el {inicio}"
+    "desde": "Desde el {inicio}",
+    "sinUniversidadTexto": "Mientras no estés en una universidad no puedes crear clases, pero tus casos sí son tuyos: puedes seguir preparándolos para cuando los necesites."
   },
   "invitacion": {
     "titulo": "Crea tu cuenta de profesor",
@@ -191,6 +192,28 @@
     "quitar": "Quitar de la clase",
     "quitarTexto": "{nombre} deja de ver esta clase y sus alumnos. No se borra nada, y puedes volver a añadirle cuando quieras.",
     "anadido": "Profesor añadido a la clase",
-    "quitado": "Profesor quitado de la clase"
+    "quitado": "Profesor quitado de la clase",
+    "yo": "Tú",
+    "salir": "Salir de esta clase",
+    "salirTitulo": "¿Salir de esta clase?",
+    "salirTexto": "Dejas de ver esta clase y sus alumnos. Sigues siendo profesor de tu facultad, y pueden volver a meterte cuando quieran. No se borra nada.",
+    "salirTextoCreador": "Tú creaste esta clase: al salir pasa a {nombre}, que la seguirá llevando con sus alumnos y su trabajo. Sigues siendo profesor de tu facultad.",
+    "salido": "Has salido de la clase",
+    "soloElCreadorPuedeQuitar": "Solo quien creó la clase puede sacar a otro profesor.",
+    "eresElUnico": "Eres el único profesor de esta clase. Para poder salir, añade antes a otro profesor de tu facultad; si lo que quieres es cerrarla, archívala."
+  },
+  "salidas": {
+    "titulo": "Dejar la docencia",
+    "dejarUniversidad": "Salir de {institucion}",
+    "dejarDocencia": "Dejar de ser profesor",
+    "ayuda": "En los dos casos conservas tu cuenta, tus pacientes y tus casos. Nada se borra.",
+    "dejarUniversidadTitulo": "¿Salir de esta universidad?",
+    "dejarUniversidadTexto": "Dejas {institucion} y liberas su plaza de profesor. Pierdes el acceso a sus clases —se archivan, o pasan a los profesores que las lleven contigo—, pero sigues siendo docente: cuando te metan en otra universidad, vuelves a tener tu espacio con clases.",
+    "dejarUniversidadConfirmar": "Salir de la universidad",
+    "dejarDocenciaTitulo": "¿Dejar de ser profesor?",
+    "dejarDocenciaTexto": "Vuelves a tu cuenta de nutricionista de siempre, con tus pacientes y tu trabajo intactos. Tus clases se archivan y tus casos se quedan guardados. Para volver a dar clase tendría que asignarte una universidad otra vez.",
+    "dejarDocenciaConfirmar": "Dejar de ser profesor",
+    "fueraUniversidad": "Has salido de la universidad",
+    "fueraDocencia": "Ya no eres profesor"
   }
 }

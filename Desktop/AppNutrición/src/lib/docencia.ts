@@ -187,9 +187,18 @@ export function diasDeCursoQueQuedan(fechaFinCurso: Date | null | undefined, hoy
  * Una clase puede tener varios profesores (Guillermo, 1 sep 2026): el que la creó y los que se
  * añaden después. Está aquí, en un solo sitio, porque se usa en todas las acciones de la clase y
  * cualquier despiste dejaría a un profesor tocando la clase de otra facultad.
+ *
+ * La clase es además de una universidad concreta, así que solo la lleva quien está en ELLA ahora
+ * mismo (Guillermo, 6 sep 2026: quien sale de una facultad conserva su espacio docente pero deja
+ * de tener acceso a las clases en las que estaba). Quien no está en ninguna universidad no lleva
+ * ninguna clase; si vuelve a la suya, las recupera tal cual, porque nada se ha borrado.
  */
-export function claseQueLleva(profesorId: string) {
+export function claseQueLleva(profesorId: string, licenciaId: string | null) {
+  // Un `IN ()` vacío no casa con ninguna fila: es la forma honesta de decir "ninguna clase",
+  // en vez de dejar la condición suelta y que se cuelen las de la universidad que dejó.
+  if (!licenciaId) return { id: { in: [] as string[] } };
   return {
+    licenciaDocenteId: licenciaId,
     OR: [
       { profesorId },
       { profesores: { some: { profesorId } } },

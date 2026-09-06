@@ -2,6 +2,7 @@ import Link from "next/link";
 import { GraduationCap, Users, UserCog, CalendarRange, AlertTriangle, Plus, ClipboardList } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireProfesor } from "@/app/actions/docencia";
+import { SalidasDelProfesor } from "./salidas";
 import { getMisClases } from "@/app/actions/clases";
 import { getMisCasos } from "@/app/actions/casos";
 import type { Metadata } from "next";
@@ -134,16 +135,22 @@ export default async function ProfesorPage() {
       <section className="py-4 lg:px-6 lg:py-6 lg:border lg:border-border lg:rounded-2xl lg:bg-card">
         <h2 className="font-semibold">{t("panel.porDondeEmpezar")}</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          {clases === 0 ? t("panel.sinClasesTexto") : t("panel.conClasesTexto", { n: clases })}
+          {/* Sin universidad no se pueden crear clases (`crearClase` lo rechaza), así que tampoco
+              se le ofrece: sus casos sí son suyos y los puede seguir preparando. */}
+          {!licencia
+            ? t("panel.sinUniversidadTexto")
+            : clases === 0 ? t("panel.sinClasesTexto") : t("panel.conClasesTexto", { n: clases })}
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <Link
-            href="/profesor/clases"
-            className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
-          >
-            {clases === 0 ? <Plus className="w-4 h-4" /> : <Users className="w-4 h-4" />}
-            {clases === 0 ? t("panel.crearPrimeraClase") : t("panel.verMisClases")}
-          </Link>
+          {licencia && (
+            <Link
+              href="/profesor/clases"
+              className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+            >
+              {clases === 0 ? <Plus className="w-4 h-4" /> : <Users className="w-4 h-4" />}
+              {clases === 0 ? t("panel.crearPrimeraClase") : t("panel.verMisClases")}
+            </Link>
+          )}
           {/* El segundo paso, en la misma pantalla: sin esto el profesor no encuentra los casos. */}
           <Link
             href="/profesor/casos"
@@ -159,6 +166,9 @@ export default async function ProfesorPage() {
       {/* El paso a su consulta vive en el menú («Mi cuenta profesional»), que es donde se busca;
           aquí solo se recuerda que sigue ahí. */}
       <p className="text-xs text-muted-foreground pt-2">{t("panel.irACuentaProfesionalAyuda")}</p>
+
+      {/* Irse es cosa suya, no solo de administración: plegado, para que no compita con el resto. */}
+      <SalidasDelProfesor institucion={licencia?.institucion ?? null} />
     </div>
   );
 }

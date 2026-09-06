@@ -28,7 +28,7 @@
     "explicacionPrimeraVez": "Cada caso es un paciente inventado que se te crea en tu cuenta al empezarlo. Trabájalo como si fuese real y haz lo que te pida tu profesor.",
     "esUnCaso": "Caso de {clase}",
     "volverAlAula": "Volver a mi aula",
-    "enLaClase": "{n, plural, =0 {Sin casos todavía} one {# caso} other {# casos}}{pendientes, plural, =0 {} one { · # por entregar} other { · # por entregar}}",
+    "enLaClase": "{n, plural, =0 {Sin casos todavía} one {# caso} other {# casos}}{pendientes, plural, =0 {} one { · # por entregar} other { · # por entregar}}{corregidos, plural, =0 {} one { · # corregido} other { · # corregidos}}",
     "sinCasosTitulo": "Tu profesor todavía no ha puesto ningún caso",
     "sinCasosTexto": "Cuando lo haga, te saldrá aquí con lo que te pide y la fecha de entrega. Mientras, sus alimentos y recetas los tienes en Material.",
     "notaAlumno": "¿Quieres contarle algo a tu profesor? (opcional)",

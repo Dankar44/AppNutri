@@ -20,7 +20,7 @@ interface ClaseEditable {
   alumnosActivos: number;
 }
 
-export function AccionesClase({ clase }: { clase: ClaseEditable }) {
+export function AccionesClase({ clase, soyElCreador }: { clase: ClaseEditable; soyElCreador: boolean }) {
   const t = useTranslations("docencia");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -108,14 +108,16 @@ export function AccionesClase({ clase }: { clase: ClaseEditable }) {
           {clase.archivada ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
           {clase.archivada ? t("clases.desarchivar") : t("clases.archivar")}
         </button>
-        <button
-          type="button"
-          onClick={() => setEliminando(true)}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 dark:border-red-500/30 bg-card px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-        >
-          <Trash2 className="w-4 h-4" />
-          {t("clases.eliminar")}
-        </button>
+        {soyElCreador && (
+          <button
+            type="button"
+            onClick={() => setEliminando(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 dark:border-red-500/30 bg-card px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+            {t("clases.eliminar")}
+          </button>
+        )}
       </div>
 
       <ConfirmModal

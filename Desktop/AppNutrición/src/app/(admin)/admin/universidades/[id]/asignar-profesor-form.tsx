@@ -15,6 +15,8 @@ interface DietistaOption {
   nombre: string;
   apellidos: string;
   email: string;
+  /** Ya tiene el rol de profesor pero no está en ninguna universidad: solo le falta la facultad. */
+  yaEsDocente: boolean;
 }
 
 export function AsignarProfesorForm({
@@ -170,6 +172,11 @@ export function AsignarProfesorForm({
                     {d.nombre} {d.apellidos}
                   </span>
                   <span className="text-xs text-muted-foreground ml-2">{d.email}</span>
+                  {d.yaEsDocente && (
+                    <span className="ml-2 text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                      {t("yaEsDocente")}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>

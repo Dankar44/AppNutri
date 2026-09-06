@@ -7,6 +7,7 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import pg from "pg";
+import { mkdirSync } from "node:fs";
 import puppeteer, { type Page } from "puppeteer-core";
 import { createClient } from "@supabase/supabase-js";
 
@@ -77,6 +78,8 @@ async function main() {
     comprobar("no sale el formulario de crear cuenta", !v.includes("Crea tu cuenta para hacer las prácticas"));
     comprobar("sino «ya estás dentro con la cuenta…» y un botón de apuntarse", v.includes(`Ya estás dentro con la cuenta ${EMAIL}`) && v.includes("Apuntarme a la clase con esta cuenta"));
     comprobar("y la salida por si no es su cuenta", v.includes("No soy yo"));
+    // La carpeta la crea el recorrido de casos; aquí se asegura por si esta prueba va sola.
+    mkdirSync("/tmp/annonia-recorrido", { recursive: true });
     await p.screenshot({ path: "/tmp/annonia-recorrido/enlace-con-sesion.png" });
     await p.evaluate(() => { const b = Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.includes("Apuntarme a la clase con esta cuenta")); (b as HTMLElement | undefined)?.click(); });
     await esperar(4000);

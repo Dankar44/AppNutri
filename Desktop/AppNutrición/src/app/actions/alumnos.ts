@@ -75,7 +75,7 @@ export async function invitarAlumnos(data: {
   if (!profesor.puedeDarAltas) return { ok: false, error: t("docencia.licenciaCerrada") };
 
   const clase = await prisma.clase.findFirst({
-    where: { id: data.claseId, archivada: false, ...claseQueLleva(profesor.dietistaId) },
+    where: { id: data.claseId, archivada: false, ...claseQueLleva(profesor.dietistaId, profesor.licencia?.id ?? null) },
     select: { id: true, nombre: true, licenciaDocenteId: true, fechaFinCurso: true },
   });
   if (!clase) return { ok: false, error: t("docencia.claseNoEncontrada") };
@@ -195,7 +195,7 @@ export async function cambiarAccesoAlumno(
   const t = await getTranslations("validation");
 
   const clase = await prisma.clase.findFirst({
-    where: { id: claseId, ...claseQueLleva(profesor.dietistaId) },
+    where: { id: claseId, ...claseQueLleva(profesor.dietistaId, profesor.licencia?.id ?? null) },
     select: { id: true, licenciaDocenteId: true, fechaFinCurso: true },
   });
   if (!clase) return { ok: false, error: t("docencia.claseNoEncontrada") };
@@ -239,7 +239,7 @@ export async function cambiarEnlaceClase(
   const t = await getTranslations("validation");
 
   const clase = await prisma.clase.findFirst({
-    where: { id: claseId, ...claseQueLleva(profesor.dietistaId) },
+    where: { id: claseId, ...claseQueLleva(profesor.dietistaId, profesor.licencia?.id ?? null) },
     select: { id: true, tokenInvitacion: true },
   });
   if (!clase) return { ok: false, error: t("docencia.claseNoEncontrada") };
@@ -293,7 +293,7 @@ export async function quitarDeLaClase(
   const t = await getTranslations("validation");
 
   const clase = await prisma.clase.findFirst({
-    where: { id: claseId, ...claseQueLleva(profesor.dietistaId) },
+    where: { id: claseId, ...claseQueLleva(profesor.dietistaId, profesor.licencia?.id ?? null) },
     select: { id: true },
   });
   if (!clase) return { ok: false, error: t("docencia.claseNoEncontrada") };

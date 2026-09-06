@@ -524,7 +524,12 @@
     "toastInvitacionReenviada": "Convite reenviado (envio n.º {envios})",
     "invitacionEnviosVeces": "enviado {veces} vezes",
     "invitacionUltimoEnvio": "último envio {fecha}",
-    "verAlumnos": "Ver o detalhe dos seus alunos"
+    "verAlumnos": "Ver o detalhe dos seus alunos",
+    "sacarDeLaUniversidad": "Retirar da universidade",
+    "sacarDeLaUniversidadTitulo": "Retirar desta universidade?",
+    "sacarDeLaUniversidadTexto": "{nombre} deixa esta universidade e liberta a sua vaga de professor. Perde o acesso às suas turmas (são arquivadas, ou passam para quem as leve com ele), mas CONTINUA a ser docente: poderás atribuí-lo a outra universidade quando quiseres. A sua conta, os seus casos e os seus pacientes não são tocados.",
+    "toastFueraDeLaUniversidad": "Professor fora da universidade",
+    "yaEsDocente": "Já é professor, sem universidade"
   },
   "alumnos": {
     "title": "Alunos",
