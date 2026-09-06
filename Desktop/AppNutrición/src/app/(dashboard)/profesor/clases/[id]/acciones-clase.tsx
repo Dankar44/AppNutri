@@ -123,6 +123,7 @@ export function AccionesClase({ clase }: { clase: ClaseEditable }) {
         title={t("clases.eliminar")}
         description={t("clases.eliminarTexto", { n: clase.alumnosActivos })}
         confirmLabel={t("clases.eliminar")}
+        destructive
         loading={isPending}
         onConfirm={eliminar}
         onCancel={() => setEliminando(false)}

@@ -8,6 +8,23 @@ import { useTranslations } from "next-intl";
 import { apuntarmeConMiCuenta } from "@/app/actions/clase-publica";
 import { signOut } from "@/app/actions/auth";
 
+/** «No soy yo»: cierra la sesión y deja el formulario de siempre. También lo usa el profesor. */
+export function CerrarSesionParaOtraCuenta() {
+  const t = useTranslations("docencia");
+  const [saliendo, setSaliendo] = useState(false);
+  return (
+    <button
+      type="button"
+      disabled={saliendo}
+      onClick={async () => { setSaliendo(true); await signOut(); }}
+      className="w-full inline-flex items-center justify-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+    >
+      {saliendo ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
+      {t("clasePublica.otraCuenta")}
+    </button>
+  );
+}
+
 /**
  * El enlace de la clase abierto con una sesión ya dentro: un botón y listo. Si no es su cuenta,
  * cierra la sesión y aparece el formulario de siempre (Guillermo, 4 sep 2026).

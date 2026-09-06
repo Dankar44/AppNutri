@@ -244,7 +244,9 @@ async function main() {
     comprobar("sin centro ni clase, no hay interruptor", !/Compartir con/.test(await texto(ajeno)));
 
     console.log("\n── Al cerrarse el curso deja de ver el material ──");
-    await client.query(`UPDATE alumnos_clase SET activa = false WHERE "alumnoId" = $1`, [alumnoId]);
+    // Desde el 4 sep 2026 el alumno lo es hasta SU 31 de agosto: quitarle la clase a mitad de curso
+    // no le echa. Para llegar al final del ciclo, su alta pasa a ser del curso anterior.
+    await client.query(`UPDATE alumnos_clase SET activa = false, "altaAt" = '2025-10-01' WHERE "alumnoId" = $1`, [alumnoId]);
     // Sigue entrando porque le queda su copia: lo que se comprueba es lo que ve, no si entra.
     await client.query(
       `INSERT INTO suscripciones (id, "dietistaId", plan, estado, "fechaInicio", "createdAt", "updatedAt")

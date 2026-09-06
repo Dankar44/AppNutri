@@ -107,7 +107,7 @@
     "inicioCurso": "Inicio del curso",
     "delAl": "Del {inicio} al {fin}",
     "eliminar": "Eliminar",
-    "eliminarTexto": "{n, plural, =0 {Se borra la clase con sus casos asignados y sus entregas.} one {Se borra la clase, su # alumno matriculado, sus casos asignados y sus entregas.} other {Se borra la clase, sus # alumnos matriculados, sus casos asignados y sus entregas.}} Las plazas vuelven a la bolsa. Los alumnos conservan su cuenta y sus pacientes. No se puede deshacer: si solo quieres apartarla, usa «Archivar».",
+    "eliminarTexto": "{n, plural, =0 {Se borra la clase con sus casos asignados y sus entregas.} one {Se borra la clase, su alumno matriculado, sus casos asignados y sus entregas.} other {Se borra la clase, sus # alumnos matriculados, sus casos asignados y sus entregas.}} Las plazas vuelven a la bolsa. Los alumnos conservan su cuenta y sus pacientes. No se puede deshacer: si solo quieres apartarla, usa «Archivar».",
     "eliminada": "Clase eliminada"
   },
   "clasePublica": {
@@ -125,7 +125,10 @@
     "conSesion": "Ya estás dentro con la cuenta {correo}. Puedes apuntarte a esta clase con ella.",
     "apuntarmeConEstaCuenta": "Apuntarme a la clase con esta cuenta",
     "otraCuenta": "No soy yo: cerrar sesión y usar otra cuenta",
-    "apuntado": "Ya estás en la clase"
+    "apuntado": "Ya estás en la clase",
+    "eresProfesorTitulo": "Estás dentro como profesor",
+    "eresProfesorTexto": "Este enlace es para que se apunten tus alumnos: un profesor no puede ser alumno de una clase. Si querías apuntar a alguien, pásale el enlace a él.",
+    "irAMisClases": "Ir a mis clases"
   },
   "alumnos": {
     "titulo": "Dar de alta alumnos",

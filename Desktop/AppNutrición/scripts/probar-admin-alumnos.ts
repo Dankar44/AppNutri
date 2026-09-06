@@ -132,8 +132,17 @@ async function main() {
     comprobar("dice cuántas quedan libres", /7 plazas libres/.test(visible),
       visible.match(/\d+ plazas? libres?/)?.[0] ?? "no sale");
     comprobar("el retirado no ocupa plaza", !/4\/10/.test(visible));
-    comprobar("resume matrículas y alumnos aparte", /5 matrículas/.test(visible) && /3 alumnos ocupando plaza/.test(visible),
-      visible.split("\n").find((l) => l.includes("matrícula")) ?? "no sale");
+    // El resumen de arriba es de TODA la base, no solo de lo que monta esta prueba: si se compara
+    // contra números escritos a mano, cualquier clase que haya sembrada la tumba. Se contrasta
+    // contra la base de datos, que es de donde salen.
+    const { rows: totales } = await client.query(
+      `SELECT (SELECT COUNT(*) FROM alumnos_clase) AS matriculas,
+              (SELECT COUNT(DISTINCT "alumnoId") FROM alumnos_clase WHERE activa) AS alumnos`);
+    const esperadas = Number(totales[0].matriculas), ocupando = Number(totales[0].alumnos);
+    const resumen = visible.split("\n").find((l) => l.includes("matrícula")) ?? "";
+    comprobar("resume matrículas y alumnos aparte",
+      new RegExp(`${esperadas} matrículas?`).test(resumen) && new RegExp(`${ocupando} alumnos? ocupando plaza`).test(resumen),
+      `${resumen || "no sale"} (en la base: ${esperadas} y ${ocupando})`);
 
     console.log("\n── Lo que hace falta para responder al teléfono ──");
     comprobar("sale el alumno con su correo", visible.includes(`normal@${DOMINIO}`));

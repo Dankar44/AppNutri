@@ -4,7 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { getClasePorToken } from "@/app/actions/clase-publica";
 import { getCurrentDietista } from "@/app/actions/auth";
 import { ApuntarseForm } from "./apuntarse-form";
-import { ApuntarmeConMiCuenta } from "./apuntarme-con-mi-cuenta";
+import { ApuntarmeConMiCuenta, CerrarSesionParaOtraCuenta } from "./apuntarme-con-mi-cuenta";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +20,11 @@ export default async function ClasePublicaPage({
 }) {
   const { token } = await params;
   const clase = await getClasePorToken(token);
-  const sesionAbierta = (await getCurrentDietista())?.email ?? null;
+  const dentro = await getCurrentDietista();
+  const sesionAbierta = dentro?.email ?? null;
+  // Un profesor no puede ser alumno de una clase (lo rechaza `apuntarmeConMiCuenta`), así que
+  // tampoco se le enseña el botón: se le dice para qué es el enlace (Guillermo, 6 sep 2026).
+  const esProfesor = dentro?.rolDocente === "PROFESOR";
   const t = await getTranslations("docencia");
 
   return (
@@ -56,6 +60,20 @@ export default async function ClasePublicaPage({
           <div className="rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-5 text-sm">
             <p className="font-medium text-amber-900 dark:text-amber-200">{t("clasePublica.sinPlazasTitulo")}</p>
             <p className="text-amber-800/80 dark:text-amber-200/70 mt-1">{t("clasePublica.sinPlazasTexto")}</p>
+          </div>
+        ) : esProfesor ? (
+          <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+            <div>
+              <p className="font-medium text-sm">{t("clasePublica.eresProfesorTitulo")}</p>
+              <p className="text-sm text-muted-foreground mt-1">{t("clasePublica.eresProfesorTexto")}</p>
+            </div>
+            <Link
+              href="/profesor/clases"
+              className="w-full inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+            >
+              {t("clasePublica.irAMisClases")}
+            </Link>
+            <CerrarSesionParaOtraCuenta />
           </div>
         ) : sesionAbierta ? (
           // Ya hay alguien dentro en este navegador: se le apunta con esa cuenta de un clic.

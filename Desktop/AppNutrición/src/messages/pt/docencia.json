@@ -107,7 +107,7 @@
     "inicioCurso": "Início do curso",
     "delAl": "De {inicio} a {fin}",
     "eliminar": "Eliminar",
-    "eliminarTexto": "{n, plural, =0 {Apaga-se a turma com os seus casos atribuídos e as suas entregas.} one {Apaga-se a turma, o seu # aluno matriculado, os casos atribuídos e as entregas.} other {Apaga-se a turma, os seus # alunos matriculados, os casos atribuídos e as entregas.}} As vagas voltam à bolsa. Os alunos mantêm a conta e os seus pacientes. Não se pode desfazer: se só queres pô-la de lado, usa «Arquivar».",
+    "eliminarTexto": "{n, plural, =0 {Apaga-se a turma com os seus casos atribuídos e as suas entregas.} one {Apaga-se a turma, o seu aluno matriculado, os casos atribuídos e as entregas.} other {Apaga-se a turma, os seus # alunos matriculados, os casos atribuídos e as entregas.}} As vagas voltam à bolsa. Os alunos mantêm a conta e os seus pacientes. Não se pode desfazer: se só queres pô-la de lado, usa «Arquivar».",
     "eliminada": "Turma eliminada"
   },
   "clasePublica": {
@@ -125,7 +125,10 @@
     "conSesion": "Já estás dentro com a conta {correo}. Podes inscrever-te nesta turma com ela.",
     "apuntarmeConEstaCuenta": "Inscrever-me na turma com esta conta",
     "otraCuenta": "Não sou eu: terminar sessão e usar outra conta",
-    "apuntado": "Já estás na turma"
+    "apuntado": "Já estás na turma",
+    "eresProfesorTitulo": "Estás dentro como professor",
+    "eresProfesorTexto": "Esta ligação é para os teus alunos se inscreverem: um professor não pode ser aluno de uma turma. Se querias inscrever alguém, envia-lhe a ligação.",
+    "irAMisClases": "Ir para as minhas turmas"
   },
   "alumnos": {
     "titulo": "Registar alunos",

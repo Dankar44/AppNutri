@@ -18,7 +18,7 @@ const pool = new pg.Pool({
 });
 
 /** Una columna representativa por migración: si está, esa migración se ejecutó. */
-const MIGRACIONES: { script: string; comprueba: [string, string][] }[] = [
+const MIGRACIONES: { script: string; comprueba: [string, string][]; fuera?: [string, string][] }[] = [
   { script: "add-modulo-docente", comprueba: [["licencias_docentes", "institucion"], ["dietistas", "rolDocente"], ["dietistas", "licenciaDocenteId"]] },
   { script: "add-licencia-persona-contacto", comprueba: [["licencias_docentes", "personaContacto"]] },
   { script: "add-invitaciones-docentes", comprueba: [["invitaciones_docentes", "token"]] },
@@ -36,6 +36,7 @@ const MIGRACIONES: { script: string; comprueba: [string, string][] }[] = [
   { script: "add-origen-copia", comprueba: [["medidas_antropometricas", "origenId"], ["consultas", "origenId"]] },
   { script: "add-origen-planes", comprueba: [["planes_alimenticios", "origenId"], ["planes_alimenticios", "origenHuella"], ["planificaciones", "origenId"], ["planificaciones", "origenHuella"]] },
   { script: "add-sincronizacion-copia", comprueba: [["pacientes", "origenHuella"]] },
+  { script: "add-fechas-curso", comprueba: [["clases", "fechaInicioCurso"]], fuera: [["clases", "curso"], ["licencias_docentes", "curso"]] },
 ];
 
 const TABLAS_CON_RLS = ["licencias_docentes", "invitaciones_docentes", "clases", "alumnos_clase", "profesores_clase", "casos_clinicos", "asignaciones_caso", "entregas_caso"];
@@ -44,7 +45,7 @@ async function main() {
   const client = await pool.connect();
   try {
     let faltan = 0;
-    for (const { script, comprueba } of MIGRACIONES) {
+    for (const { script, comprueba, fuera } of MIGRACIONES) {
       const presentes: boolean[] = [];
       if (comprueba.length === 0) {
         // Migraciones que solo añaden valores a un enum: se miran en el catálogo del tipo.
@@ -60,6 +61,15 @@ async function main() {
           [tabla, columna],
         );
         presentes.push(rows.length > 0);
+      }
+      // Migraciones que además QUITAN una columna: si sigue ahí, no se aplicó del todo.
+      for (const [tabla, columna] of fuera ?? []) {
+        const { rows } = await client.query(
+          `SELECT 1 FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = $1 AND column_name = $2`,
+          [tabla, columna],
+        );
+        presentes.push(rows.length === 0);
       }
       const todas = presentes.every(Boolean);
       const algunas = presentes.some(Boolean);

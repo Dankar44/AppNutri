@@ -556,11 +556,33 @@ el aula. Al probarlo, Guillermo pidió el modelo de arriba. Cambios hechos:
   mismas condiciones que el alta normal; un profesor no puede apuntarse) y «No soy yo: cerrar
   sesión». Los dominios de la licencia siguen siendo solo un aviso, nunca bloquean (confirmado).
 
+### Lo que salió al repasarlo entero en el navegador (6 sep 2026)
+
+Un recorrido nuevo a clics del ciclo de vida de la clase
+(`probar-ciclo-clase-navegador.ts`, 33 comprobaciones: crearla con sus dos fechas, abrir su
+enlace, archivar, desarchivar, apuntarse con la sesión abierta y eliminarla) sacó tres cosas:
+
+- **Al profesor se le ofrecía apuntarse a su propia clase.** `apuntarmeConMiCuenta` lo rechaza en
+  el servidor, pero la página le enseñaba el botón igual: habría pulsado y le habría saltado un
+  error. Ahora `/clase/[token]` mira `rolDocente` y, si es profesor, le dice «Estás dentro como
+  profesor · este enlace es para que se apunten tus alumnos» con «Ir a mis clases» y la salida de
+  cerrar sesión (`CerrarSesionParaOtraCuenta`, sacado del componente del alumno para reutilizarlo).
+- **Confirmar el borrado iba con el botón verde de siempre**, como cualquier otra confirmación;
+  para algo irreversible invita a pulsarlo. Ahora el `ConfirmModal` de Eliminar va `destructive`.
+- **«Se borra la clase, su 1 alumno matriculado…»**: el singular del plural ICU llevaba el número.
+  Arreglado en es y pt.
+
+`probar-material-clase` daba por hecho el ciclo viejo (retirar el acceso echaba al alumno del
+tirón). Adaptada: su alta pasa a ser del curso anterior para llegar al fin del ciclo. El
+comprobador de migraciones no listaba la 18ª: ahora comprueba `add-fechas-curso` y además que la
+columna `curso` haya desaparecido de `clases` y `licencias_docentes`.
+
 ### Lo que queda de la fase 3
 
 - Repasar el menú del alumno cuando se vea el flujo con gente de verdad (Mensajes, Pagos).
-- Producción: aplicar las 17 migraciones en orden cuando Guillermo pida el deploy, y comprobar con
-  `comprobar-migraciones-docentes` (DB=prod).
+- Producción: aplicar las 18 migraciones en orden cuando Guillermo pida el deploy, y comprobar con
+  `comprobar-migraciones-docentes` (DB=prod), que ya incluye `add-fechas-curso` y verifica además
+  que la columna `curso` ha desaparecido de `clases` y `licencias_docentes`.
 
 ---
 
