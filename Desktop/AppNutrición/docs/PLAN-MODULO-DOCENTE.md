@@ -580,6 +580,14 @@ columna `curso` haya desaparecido de `clases` y `licencias_docentes`.
 ### Lo que queda de la fase 3
 
 - Repasar el menú del alumno cuando se vea el flujo con gente de verdad (Mensajes, Pagos).
+- **Un profesor en dos universidades a la vez** (Guillermo, 6 sep 2026: «apúntalo para más
+  adelante»). Hoy no se puede: `Dietista.licenciaDocenteId` es un campo, no una lista, y el
+  buscador de administración solo enseña a quien no tiene rol docente (`buscarDietistasParaDocencia`
+  filtra `rolDocente: null`, y `asignarProfesorLicencia` lo rechaza además con `yaTieneRolDocente`).
+  Moverlo de facultad sí se puede: «Quitar el rol» en la suya —sus clases se archivan, no se
+  borran— y asignarlo en la nueva. Estar en las dos pide una tabla profesor–licencia (como
+  `profesores_clase` para las clases) y repasar el conteo de plazas de cada licencia, el selector
+  de espacio y la pantalla de administración. Caso real: el asociado que da clase en dos sitios.
 - Producción: aplicar las 18 migraciones en orden cuando Guillermo pida el deploy, y comprobar con
   `comprobar-migraciones-docentes` (DB=prod), que ya incluye `add-fechas-curso` y verifica además
   que la columna `curso` ha desaparecido de `clases` y `licencias_docentes`.
