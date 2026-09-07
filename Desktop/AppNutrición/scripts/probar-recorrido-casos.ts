@@ -250,9 +250,11 @@ async function main() {
     await pulsar(alumna, "Entregar", "form");
     await esperar(6000);
     v = await texto(alumna);
-    comprobar("queda entregada, con la hora, y puede deshacer o volver a entregar",
-      v.includes("Entregada") && /\d\d\/\d\d\/\d{4}, \d\d:\d\d/.test(v) && v.includes("Deshacer la entrega") && v.includes("Volver a entregar"),
-      v.split("\n").filter((l) => /Entregada|\d\d:\d\d|entregar/.test(l)).join(" | "));
+    // Desde el 7 sep 2026 entregar cierra el caso: ni deshace ni vuelve a entregar por su cuenta.
+    comprobar("queda entregada, con la hora, y el caso se cierra",
+      v.includes("Entregada") && /\d\d\/\d\d\/\d{4}, \d\d:\d\d/.test(v)
+        && !v.includes("Deshacer la entrega") && /pídele a tu profesor que te lo reabra/i.test(v),
+      v.split("\n").filter((l) => /Entregada|\d\d:\d\d|entregar|reabra/.test(l)).join(" | "));
     await foto(alumna, "alumna-entregado");
 
     console.log("\n── PROFESOR: corrige ──");

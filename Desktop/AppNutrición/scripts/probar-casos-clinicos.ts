@@ -440,8 +440,9 @@ async function main() {
     comprobar("con su nota", (entrega[0]?.notaAlumno ?? "").includes("legumbres"), entrega[0]?.notaAlumno ?? "sin nota");
     comprobar("con la fecha", entrega[0]?.entregadaAt !== null);
     comprobar("y apuntando a su paciente", entrega[0]?.pacienteId === pac[0]?.id);
-    comprobar("con el PDF del entregable guardado", (entrega[0]?.pdf_bytes ?? 0) > 10000 && entrega[0]?.entregableBytes === entrega[0]?.pdf_bytes,
-      `${entrega[0]?.pdf_bytes} bytes · ${entrega[0]?.entregableNombre}`);
+    // Desde el 7 sep 2026 el PDF NO se guarda: se genera al pedirlo, y por eso no ocupa nada.
+    comprobar("sin guardar ni un byte de PDF", (entrega[0]?.pdf_bytes ?? 0) === 0,
+      `${entrega[0]?.pdf_bytes ?? 0} bytes · ${entrega[0]?.entregableNombre}`);
     comprobar("del plan que tenía", entrega[0]?.entregablePlanId === planCopia[0]?.id);
     const foto = entrega[0]?.entregaSnapshot;
     // Dos planes: el suyo (la copia que renombró) y el que el profesor le compartió después.
@@ -476,7 +477,8 @@ async function main() {
     comprobar("puede abrir su trabajo", visible.includes("Marta Vegana"), profe.url());
     comprobar("y se le dice que es la foto de la entrega, con fecha y hora", /tal y como la hizo el \d\d\/\d\d\/\d{4}, \d\d:\d\d/.test(visible),
       visible.split("\n").find((l) => l.includes("tal y como")) ?? "");
-    comprobar("ve el PDF del entregable para abrirlo", visible.includes("Abrir el PDF") && /tal y como lo entregó \(\d+ KB\)/.test(visible));
+    comprobar("ve el PDF del entregable para abrirlo", visible.includes("Abrir el PDF") && /tal y como lo entregó/.test(visible),
+      visible.split("\n").find((l) => /tal y como lo entregó/.test(l)) ?? "no sale");
     comprobar("ve la planificación de la alumna", visible.includes("Planificación") && (visible.includes("kcal") || visible.includes("Sin datos") || visible.includes("No ha hecho ninguna planificación")));
     comprobar("y el plan tal y como estaba al entregar, no el cambiado después",
       visible.includes("PLAN DE LA ALUMNA") && !visible.includes("CAMBIADO DESPUÉS"));
