@@ -251,21 +251,35 @@ export async function actualizarReceta(
     unidad: ing.unidad,
   }));
 
-  await prisma.recetaIngrediente.deleteMany({ where: { recetaId: id } });
-
-  await prisma.receta.update({
+  // De quién es la receta, ANTES de tocar nada. Las recetas del catálogo tienen
+  // `dietistaId` nulo, así que este findFirst no las devuelve. Es la puerta que faltaba:
+  // basta con escribir /recetas/<id>/editar a mano sobre una receta de la app para llegar
+  // hasta aquí, y con la comprobación al final (la hacía el `where` del update) el
+  // deleteMany de abajo ya había dejado esa receta sin ingredientes para los demás.
+  const propia = await prisma.receta.findFirst({
     where: { id, dietistaId: dietista.id },
-    data: {
-      nombre: nombreSanitizado,
-      nombreNormalizado: normalizarParaBusqueda(nombreSanitizado),
-      descripcion: descripcionSanitizada,
-      instrucciones: instruccionesSanitizadas,
-      porciones: porcionesValidadas,
-      ingredientes: {
-        create: ingredientesValidados,
-      },
-    },
+    select: { id: true },
   });
+  if (!propia) throw new Error(t("receta.recetaNoEncontrada"));
+
+  // Borrado y alta de ingredientes en la misma transacción: si el alta falla a medias, el
+  // borrado se deshace y la receta no se queda vacía.
+  await prisma.$transaction([
+    prisma.recetaIngrediente.deleteMany({ where: { recetaId: id } }),
+    prisma.receta.update({
+      where: { id, dietistaId: dietista.id },
+      data: {
+        nombre: nombreSanitizado,
+        nombreNormalizado: normalizarParaBusqueda(nombreSanitizado),
+        descripcion: descripcionSanitizada,
+        instrucciones: instruccionesSanitizadas,
+        porciones: porcionesValidadas,
+        ingredientes: {
+          create: ingredientesValidados,
+        },
+      },
+    }),
+  ]);
 
   await setTiempoPreparacion(id, tiempoEntero);
   await recalcularMacrosReceta(id);
@@ -280,8 +294,17 @@ export async function eliminarReceta(id: string) {
   if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
-  await prisma.recetaIngrediente.deleteMany({ where: { recetaId: id } });
-  await prisma.receta.delete({ where: { id, dietistaId: dietista.id } });
+  // Igual que al actualizar: comprobar de quién es antes de borrar nada.
+  const propia = await prisma.receta.findFirst({
+    where: { id, dietistaId: dietista.id },
+    select: { id: true },
+  });
+  if (!propia) throw new Error(t("receta.recetaNoEncontrada"));
+
+  await prisma.$transaction([
+    prisma.recetaIngrediente.deleteMany({ where: { recetaId: id } }),
+    prisma.receta.delete({ where: { id, dietistaId: dietista.id } }),
+  ]);
 
   revalidatePath("/recetas");
 }

@@ -14,6 +14,10 @@ export default async function EditarRecetaPage({ params }: Props) {
   const { id } = await params;
   const [receta, t] = await Promise.all([getReceta(id), getTranslations("recipes")]);
   if (!receta) notFound();
+  // Las recetas del catálogo no son editables: se comparten con todos los nutricionistas.
+  // `getReceta` sí las devuelve (hay que poder verlas), así que sin esto el formulario se
+  // abría con una receta de la app dentro a quien escribiese la URL a mano.
+  if (receta.esGlobal) notFound();
 
   const ingredientes: IngredienteItem[] = receta.ingredientes.map((ing) => ({
     alimentoId: ing.alimentoId,
