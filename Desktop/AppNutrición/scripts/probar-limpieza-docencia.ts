@@ -110,7 +110,10 @@ async function main() {
       return rows[0].id as string;
     };
     const enMarcha = await crearClase(`${MARCA} en marcha`, "2027-08-31");
-    const acabada = await crearClase(`${MARCA} curso acabado`, "2026-06-30");
+    // Acabada hace nada: el profesor todavía puede estar corrigiendo, así que NO se toca.
+    const recienAcabada = await crearClase(`${MARCA} recien acabada`, new Date(Date.now() - 10 * 86400000).toISOString().slice(0, 10));
+    // Acabada hace más de dos meses: ya sí.
+    const acabada = await crearClase(`${MARCA} curso acabado`, "2026-01-31");
 
     /** Una entrega con PDF de 200 KB y su foto del trabajo. Cada una lleva su propio caso: un
      *  mismo caso solo se puede poner una vez a la misma clase. */
@@ -150,7 +153,8 @@ async function main() {
     const recienCorregida = await crearEntrega(enMarcha, 3);      // se queda: solo 3 días
     const corregidaVieja = await crearEntrega(enMarcha, 40);      // se le va el PDF
     const sinCorregir = await crearEntrega(enMarcha, null);       // se queda entera
-    const deCursoAcabado = await crearEntrega(acabada, 5);        // se le va todo
+    const deCursoRecien = await crearEntrega(recienAcabada, 5);   // se conserva: margen para corregir
+    const deCursoAcabado = await crearEntrega(acabada, 5);        // se le va la foto
 
     const { rows: antes } = await client.query(
       `SELECT pg_size_pretty(pg_total_relation_size('entregas_caso')) AS t`);
@@ -195,8 +199,11 @@ async function main() {
     const c = await estado(sinCorregir);
     comprobar("lo que aún no se ha corregido no se toca", c.sinPdf === false && c.sinFoto === false);
 
+    const c2 = await estado(deCursoRecien);
+    comprobar("de un curso recién acabado NO se toca: el profesor puede estar corrigiendo", c2.sinFoto === false);
+
     const d = await estado(deCursoAcabado);
-    comprobar("del curso ya terminado se va la foto del trabajo", d.sinFoto === true);
+    comprobar("del curso terminado hace meses se va la foto del trabajo", d.sinFoto === true);
     comprobar("pero la nota se queda para siempre", Number(d.nota) === 8.5);
 
     // ── Los pacientes de prácticas: se van con el alumno, no antes ──

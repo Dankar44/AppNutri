@@ -8,8 +8,9 @@
  *
  * Lo que se lleva, todo de cursos que ya han terminado:
  *
- *   1. La **foto del trabajo** de las entregas de clases cuyo curso acabó. Es lo único que ocupa
- *      algo por entrega (~1 KB): el PDF no se guarda desde el 7 sep 2026, se genera al pedirlo.
+ *   1. La **foto del trabajo** de las entregas de clases cuyo curso acabó hace más de dos meses —
+ *      el margen para que el profesor corrija en julio lo de un curso que acabó en junio. Es lo
+ *      único que ocupa algo por entrega (~1 KB): el PDF no se guarda, se genera al pedirlo.
  *   2. Las **invitaciones sin usar** caducadas hace más de 90 días.
  *   3. Los **pacientes de prácticas** de quien ya no es alumno: al acabar su año escolar pierde
  *      los pacientes que nacieron de un caso. Nunca los suyos propios, y su cuenta no se toca.
@@ -21,6 +22,15 @@ import type { PrismaClient } from "@/generated/prisma/client";
 
 /** Días que se guarda una invitación caducada antes de tirarla. */
 const DIAS_INVITACION = 90;
+
+/**
+ * Margen desde que acaba el curso hasta que se borra la foto del trabajo.
+ *
+ * No vale borrarla el día siguiente: el profesor suele corregir DESPUÉS de que termine el curso
+ * (acaba en junio y corrige en julio), y sin la foto no vería lo que le entregaron. Dos meses dan
+ * de sobra para corregir y para una reclamación (revisión 7 sep 2026).
+ */
+const DIAS_TRAS_EL_CURSO = 60;
 
 export interface ResultadoLimpieza {
   fotosBorradas: number;
@@ -38,7 +48,9 @@ export async function limpiarDocencia(
   { simular = false }: { simular?: boolean } = {},
 ): Promise<ResultadoLimpieza> {
   const hoy = new Date();
-  const caducadasAntesDe = new Date(hoy.getTime() - DIAS_INVITACION * 24 * 60 * 60 * 1000);
+  const dia = 24 * 60 * 60 * 1000;
+  const caducadasAntesDe = new Date(hoy.getTime() - DIAS_INVITACION * dia);
+  const cursosAcabadosAntesDe = new Date(hoy.getTime() - DIAS_TRAS_EL_CURSO * dia);
 
   // 1. La foto del trabajo de los cursos terminados. El filtro de "tiene foto" se hace en SQL
   // crudo: en Prisma, comparar un Json con null pide `JsonNull` y aquí solo hace falta saber si
@@ -49,7 +61,7 @@ export async function limpiarDocencia(
       JOIN clases c ON c.id = a."claseId"
      WHERE e."entregaSnapshot" IS NOT NULL
        AND c."fechaFinCurso" IS NOT NULL
-       AND c."fechaFinCurso" < ${hoy}`;
+       AND c."fechaFinCurso" < ${cursosAcabadosAntesDe}`;
   const fotos = conFoto;
   if (!simular && fotos.length > 0) {
     // En SQL, no en Prisma: `{ set: null }` guarda el JSON `null` («null» como valor), no un NULL
