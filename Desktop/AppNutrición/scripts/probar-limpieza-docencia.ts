@@ -16,11 +16,35 @@ dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import pg from "pg";
 import { execFileSync } from "node:child_process";
+import puppeteer, { type Browser, type Page } from "puppeteer-core";
+import { createClient } from "@supabase/supabase-js";
 
+const BASE = "http://localhost:3001";
 const MARCA = "LIMPIEZA";
+const PASS = "LimpiezaPrueba_1";
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL!, ssl: { rejectUnauthorized: false } });
 
 let ok = 0, mal = 0;
+const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+async function sesionDe(navegador: Browser, email: string): Promise<Page> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const sb = createClient(url, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { auth: { persistSession: false } });
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: PASS });
+  if (error) throw new Error(`login de ${email}: ${error.message}`);
+  const ref = url.match(/https:\/\/([a-z0-9]+)\.supabase\.co/)?.[1];
+  const page = await (await navegador.createBrowserContext()).newPage();
+  await page.setViewport({ width: 1440, height: 950 });
+  await page.evaluateOnNewDocument(() => {
+    try { localStorage.setItem("annonia-welcome-dietista", "1"); localStorage.setItem("annonia-cookie-consent", "rejected"); } catch { /* da igual */ }
+  });
+  await page.setCookie({
+    name: `sb-${ref}-auth-token`,
+    value: "base64-" + Buffer.from(JSON.stringify(data.session)).toString("base64"),
+    domain: "localhost", path: "/",
+  });
+  return page;
+}
 const comprobar = (t: string, c: boolean, d = "") => { console.log(`  ${c ? "✓" : "✗"} ${t}${d ? ` — ${d}` : ""}`); c ? ok++ : mal++; };
 
 async function limpiar(client: pg.PoolClient) {
@@ -191,6 +215,36 @@ async function main() {
     comprobar("cuando deja de serlo, se va con ella", yaNo[0].n === 0, `${yaNo[0].n}`);
     const { rows: sigueCuenta } = await client.query(`SELECT 1 FROM dietistas WHERE id = $1`, [alumnaId]);
     comprobar("pero su cuenta no se toca", sigueCuenta.length === 1);
+
+    // ── Lo que de verdad hay que comprobar: que las pantallas aguanten después ──
+    // Si el paciente del alumno ya no está, el PDF no se puede rehacer. La vista del profesor
+    // tiene que decirlo, no reventar (revisión 7 sep 2026).
+    console.log("\n── Tras la limpieza, el profesor sigue pudiendo abrir la entrega ──");
+    const navegador = await puppeteer.launch({
+      executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+      headless: true, args: ["--no-sandbox"],
+    });
+    try {
+      const profe = await sesionDe(navegador, `${MARCA}.profe@annonia.dev`);
+      const { rows: donde } = await client.query(
+        `SELECT e.id AS entrega, a.id AS asignacion, a."casoId" AS caso
+           FROM entregas_caso e JOIN asignaciones_caso a ON a.id = e."asignacionId"
+          WHERE e.id = $1`, [corregidaVieja]);
+      await profe.goto(`${BASE}/profesor/casos/${donde[0].caso}/entregas/${donde[0].asignacion}/${donde[0].entrega}`,
+        { waitUntil: "networkidle0" });
+      await esperar(2500);
+      const visible = await profe.evaluate(() => document.body.innerText);
+      comprobar("la pantalla de la entrega no revienta", visible.includes("Corregir") || visible.includes("Entregable"),
+        profe.url().replace(BASE, ""));
+      // La nota se pinta en un campo, así que no está en el texto plano de la página.
+      const enPantalla = await profe.evaluate(() =>
+        Array.from(document.querySelectorAll("input, textarea")).map((c) => (c as HTMLInputElement).value).join(" | "));
+      comprobar("y la nota que le puso sigue ahí", /8[,.]5/.test(enPantalla), enPantalla.slice(0, 80) || "sin campos");
+      const pdf = await profe.evaluate(async (id) => (await fetch(`/api/entregas/${id}/pdf`)).status, donde[0].entrega as string);
+      comprobar("y el PDF, que ya no se puede rehacer, da 404 limpio en vez de romper", pdf === 404, `HTTP ${pdf}`);
+    } finally {
+      await navegador.close();
+    }
 
     const { rows: despues } = await client.query(
       `SELECT pg_size_pretty(pg_total_relation_size('entregas_caso')) AS t`);

@@ -10,15 +10,18 @@
  *
  * Lo que se borra, y solo esto:
  *
- *   1. El **PDF** del entregable, pasados N días desde que se corrigió (por defecto 30). Ya se ha
- *      corregido y visto, y el plan del que salió sigue vivo en la cuenta del alumno.
- *   2. El **PDF y la foto del trabajo** de las entregas de cursos que ya han terminado (la fecha de
- *      fin de la clase pasó) — en la práctica, el 31 de agosto de cada año.
+ *   1. Los **PDF que quedaran guardados** de antes del cambio, pasados N días desde que se
+ *      corrigieron (por defecto 30). De aquí en adelante no habrá ninguno: es para los viejos.
+ *   2. La **foto del trabajo** de las entregas de cursos que ya han terminado (la fecha de fin de
+ *      la clase pasó) — en la práctica, el 31 de agosto de cada año.
  *   3. Las **invitaciones sin usar** que caducaron hace más de 90 días.
+ *   4. Los **pacientes de prácticas** de quien ya no es alumno (Guillermo, 7 sep 2026: «si te
+ *      sales de una clase o se acaba el curso, lo pierdes; el PDF ya se lo habrá descargado»).
+ *      Solo los nacidos de un caso —`esDeClase`—, nunca los pacientes propios del alumno.
  *
- * Lo que NO se toca nunca: la nota, el comentario, las fechas, el nombre de lo que entregó, las
- * cuentas de los alumnos y sus pacientes de prácticas. El expediente se queda; el peso, no.
- * Cuando el PDF ya no está, la pantalla lo dice en vez de ofrecer una descarga rota.
+ * Lo que NO se toca nunca: **la nota, el comentario, las fechas y el nombre de lo que entregó**, y
+ * las cuentas. El expediente se queda; el peso, no. Cuando ya no queda de dónde sacar el PDF, la
+ * pantalla lo dice en vez de ofrecer una descarga rota.
  *
  * Por defecto SOLO SIMULA: dice qué borraría y cuánto liberaría, sin tocar nada.
  *
