@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Send, Loader2, FileText, RefreshCw , AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { ConfirmModal } from "@/components/confirm-modal";
 import { entregarCaso } from "@/app/actions/aula";
 import type { PDFSectionOptions, DisplayOverrides } from "@/lib/pdf/generate-plan-pdf";
 import { cn } from "@/lib/utils";
@@ -37,12 +38,14 @@ export function EntregarCaso({
   const t = useTranslations("aula");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [confirmando, setConfirmando] = useState(false);
   const [abierto, setAbierto] = useState(false);
   const [notaAlumno, setNotaAlumno] = useState("");
   const planPorDefecto = opcionesPdf?.planId ?? planes.find((p) => p.activo)?.id ?? planes[0]?.id ?? "";
   const [planId, setPlanId] = useState(planPorDefecto);
-  const [adjuntar, setAdjuntar] = useState(planes.length > 0);
-  const conPdf = adjuntar && planes.length > 0 && !!planId;
+  // El entregable va SIEMPRE: entregar un caso es entregar el plan (Guillermo, 7 sep 2026). Lo
+  // único que se elige, y solo si tiene varios, es cuál.
+  const conPdf = planes.length > 0 && !!planId;
 
   function entregar() {
     startTransition(async () => {
@@ -83,7 +86,7 @@ export function EntregarCaso({
 
   return (
     <form
-      onSubmit={(e) => { e.preventDefault(); entregar(); }}
+      onSubmit={(e) => { e.preventDefault(); setConfirmando(true); }}
       className="w-full space-y-3 border-t border-border pt-3"
     >
       <div>
@@ -108,19 +111,11 @@ export function EntregarCaso({
           </p>
         ) : (
           <>
-            <label className="flex items-start gap-2 text-sm cursor-pointer">
-              <input
-                type="checkbox"
-                checked={adjuntar}
-                onChange={(e) => setAdjuntar(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-border accent-primary"
-              />
-              <span className="font-medium inline-flex items-center gap-1.5">
-                <FileText className="w-4 h-4 text-primary" />
-                {t("casos.adjuntarPdf")}
-              </span>
-            </label>
-            {adjuntar && (
+            <p className="text-sm font-medium inline-flex items-center gap-1.5">
+              <FileText className="w-4 h-4 text-primary" />
+              {planes.length > 1 ? t("casos.queEntregas") : t("casos.loQueEntregas")}
+            </p>
+            {(
               opcionesPdf ? (
                 <p className="text-xs text-muted-foreground">
                   {t("casos.pdfConOpcionesDeAqui", { plan: planElegido?.nombre ?? "" })}
@@ -153,12 +148,6 @@ export function EntregarCaso({
         {reentrega && <p className="text-xs text-muted-foreground">{t("casos.reentregaSustituye")}</p>}
       </div>
 
-      {/* Entregar cierra el caso: es lo último que lee antes de pulsar (Guillermo, 7 sep 2026). */}
-      <p className="flex gap-2 rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200">
-        <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-        <span>{t("casos.alEntregarSeCierra")}</span>
-      </p>
-
       <div className="flex items-center gap-3">
         <button type="submit" disabled={isPending} className={cn(boton, "bg-primary text-primary-foreground hover:opacity-90")}>
           {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
@@ -173,6 +162,18 @@ export function EntregarCaso({
           {t("casos.cancelar")}
         </button>
       </div>
+
+      {/* Entregar cierra el caso: se pregunta de verdad, no basta con un aviso al lado del botón
+          (Guillermo, 7 sep 2026). */}
+      <ConfirmModal
+        open={confirmando}
+        title={t("casos.confirmarTitulo")}
+        description={t("casos.alEntregarSeCierra")}
+        confirmLabel={t("casos.confirmarEntrega")}
+        loading={isPending}
+        onConfirm={() => { setConfirmando(false); entregar(); }}
+        onCancel={() => setConfirmando(false)}
+      />
     </form>
   );
 }

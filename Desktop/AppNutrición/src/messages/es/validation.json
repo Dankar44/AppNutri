@@ -49,7 +49,7 @@
     "nombreObligatorio": "El nombre es obligatorio",
     "comidaNombreDuplicado": "Ya hay otra comida con ese nombre en este día. Ponle un nombre distinto: el reparto por comida distingue las comidas propias por su nombre.",
     "soloLecturaProfesor": "Este plan es del profesor y no se puede editar. Crea el tuyo y tráete lo que quieras de él.",
-    "bloqueadoPorEntrega": "Este caso ya lo has entregado: para volver a tocarlo, deshaz la entrega primero. Si ya está corregido, pídeselo a tu profesor."
+    "bloqueadoPorEntrega": "Ya has entregado este caso, así que está cerrado y no se puede cambiar nada. Si necesitas retocarlo, pídele a tu profesor que te lo reabra."
   },
   "cita": {
     "citaNoEncontrada": "Cita no encontrada",

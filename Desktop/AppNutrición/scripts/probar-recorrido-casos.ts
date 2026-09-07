@@ -248,6 +248,10 @@ async function main() {
     await escribir(alumna, "textarea", "He cubierto el hierro con lentejas y he añadido vitamina C.");
     comprobar("sin plan, el cuadro avisa de que irá sin PDF", (await texto(alumna)).includes("la entrega irá sin PDF"));
     await pulsar(alumna, "Entregar", "form");
+    await esperar(900);
+    // Entregar cierra el caso, así que se pregunta antes (7 sep 2026).
+    comprobar("pregunta antes de cerrar el caso", /¿Entregar el caso\?/i.test(await texto(alumna)));
+    await pulsar(alumna, "Entregar", '[role="dialog"]');
     await esperar(6000);
     v = await texto(alumna);
     // Desde el 7 sep 2026 entregar cierra el caso: ni deshace ni vuelve a entregar por su cuenta.

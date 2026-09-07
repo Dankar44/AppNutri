@@ -98,7 +98,7 @@
     "yaNoEstaEnLaClase": "Ya no está en la clase",
     "todaviaNoEntregada": "Este alumno todavía no ha entregado. Espera a que lo haga: si le pones nota ahora, no podrá entregarlo.",
     "notaDelAlumno": "Lo que te cuenta el alumno",
-    "fotoFija": "Estás viendo la entrega tal y como la hizo el {fecha}. Lo que el alumno haya tocado después no está aquí, salvo que vuelva a entregar.",
+    "fotoFija": "Estás viendo la entrega tal y como la hizo el {fecha}. El caso está cerrado para el alumno: si necesita cambiar algo, reábresela tú.",
     "entregable": "Entregable",
     "entregableDe": "El PDF de «{plan}», tal y como lo entregó.",
     "sinEntregable": "Entregó sin PDF: no adjuntó ningún entregable.",
@@ -141,7 +141,8 @@
     "encendido": "Encendido: la planificación y los planes que tenga la ficha se les copian al empezar el caso, marcados como «Del profesor». A quien ya lo haya empezado le llegan solos la próxima vez que abra el paciente, aparte de lo suyo.",
     "activado": "Se les dará hecho: la planificación y el plan viajan con el caso",
     "desactivado": "Se queda contigo: la planificación y el plan no se comparten",
-    "compararConTuPlan": "Comparar con tu plan del caso"
+    "compararConTuPlan": "Abrir mi solución del caso",
+    "compararAyuda": "Abre en otra pestaña el plan que hiciste tú en el caso, para tenerlo al lado mientras corriges."
   },
   "planificacion": {
     "titulo": "Planificación",

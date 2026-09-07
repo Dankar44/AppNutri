@@ -64,6 +64,11 @@ async function main() {
         await client.query(`DELETE FROM auth.identities WHERE user_id = $1::uuid`, [v.id]);
         await client.query(`DELETE FROM auth.users WHERE id = $1::uuid`, [v.id]);
       }
+      // Y por EMAIL, no solo por authId: otra prueba con este mismo correo pudo morir a medias y
+      // dejar la ficha sin su usuario de auth. Entonces lo de arriba no la ve, y el alta siguiente
+      // choca con el email único sin decir por qué (visto el 7 sep 2026).
+      await client.query(`DELETE FROM pacientes WHERE "dietistaId" IN (SELECT id FROM dietistas WHERE email = $1)`, [quien.email]);
+      await client.query(`DELETE FROM dietistas WHERE email = $1`, [quien.email]);
     }
     await client.query(`DELETE FROM licencias_docentes WHERE institucion = $1`, [INSTITUCION]);
 

@@ -276,5 +276,6 @@
   "delProfesor": "Do professor",
   "compartidoPorProfesor": "Partilhado pelo teu professor com o caso",
   "delProfesorSoloLecturaPlan": "Este plano é do professor: podes consultá-lo, mas não editá-lo. Para trabalhar sobre ele, cria o teu próprio plano com «Novo plano» e traz o que quiseres com «Trazer de outro plano».",
-  "delProfesorSoloLecturaPlanificacion": "Este planeamento é do professor: podes consultá-lo, mas não editá-lo. Para trabalhar sobre ele, carrega em «Criar planeamento»: o novo é criado a partir deste e já é teu."
+  "delProfesorSoloLecturaPlanificacion": "Este planeamento é do professor: podes consultá-lo, mas não editá-lo. Para trabalhar sobre ele, carrega em «Criar planeamento»: o novo é criado a partir deste e já é teu.",
+  "entregadoSoloLectura": "Já entregaste este caso, por isso está fechado: podes consultá-lo, mas não mudar nada. Se precisares de o retocar, pede ao teu professor que to reabra."
 }

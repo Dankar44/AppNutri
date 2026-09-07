@@ -51,8 +51,11 @@
     "sinEntregablePdf": "Sem PDF de entregável",
     "fotoFija": "O que alterares agora não se reflete na entrega, salvo se entregares de novo.",
     "entregarAlProfesor": "Entregar ao professor",
-    "alEntregarSeCierra": "Ao entregar, o caso fecha-se: não poderás mexer em mais nada deste paciente. Se precisares de mudar algo depois, o teu professor terá de o reabrir.",
-    "entregadoYCerrado": "Já o entregaste, por isso este caso está fechado. Se precisares de mudar algo, pede ao teu professor que to reabra."
+    "alEntregarSeCierra": "Ao entregar, o caso fecha-se: não poderás mexer em mais nada deste paciente nem voltar a entregá-lo. Se precisares de mudar algo depois, o teu professor terá de o reabrir.",
+    "entregadoYCerrado": "Já o entregaste, por isso este caso está fechado. Se precisares de mudar algo, pede ao teu professor que to reabra.",
+    "queEntregas": "Qual dos teus planos entregas?",
+    "loQueEntregas": "O que entregas",
+    "confirmarTitulo": "Entregar o caso?"
   },
   "volverAlAula": "Voltar à minha sala",
   "delAl": "De {inicio} a {fin}"

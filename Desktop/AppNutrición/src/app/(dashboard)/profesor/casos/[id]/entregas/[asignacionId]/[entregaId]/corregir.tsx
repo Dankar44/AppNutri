@@ -21,22 +21,18 @@ export function Corregir({
   visibleParaAlumno,
   yaCorregida,
   puedeCorregirse,
-  estaEntregada,
 }: {
   entregaId: string;
   nota: number | null;
   comentario: string | null;
   visibleParaAlumno: boolean;
   yaCorregida: boolean;
-  /** Está entregada: se le puede reabrir para que el alumno la retoque. */
-  estaEntregada: boolean;
   /** Solo se corrige lo entregado: si no, el alumno se queda encerrado sin poder entregar. */
   puedeCorregirse: boolean;
 }) {
   const t = useTranslations("casos");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [reabriendo, setReabriendo] = useState(false);
   // La nota va como texto: si no, borrar el campo o escribir "8," se pelea con el estado.
   const [texto, setTexto] = useState(nota !== null ? String(nota) : "");
   const [nota_, setNota] = useState(comentario ?? "");
@@ -64,18 +60,6 @@ export function Corregir({
     });
   }
 
-  function reabrir() {
-    startTransition(async () => {
-      const result = await reabrirEntrega(entregaId);
-      if (result.ok) {
-        toast.success(t("entregas.reabierta"));
-        setReabriendo(false);
-        router.refresh();
-      } else {
-        toast.error(result.error || t("errorGuardar"));
-      }
-    });
-  }
 
   function deshacer() {
     startTransition(async () => {
@@ -156,34 +140,54 @@ export function Corregir({
           </button>
         )}
       </div>
+    </form>
+  );
+}
 
-      {/* Entregar cierra el caso al alumno: reabrirlo es lo único que le deja retocarlo, y es
-          decisión del profesor (Guillermo, 7 sep 2026). */}
-      {estaEntregada && (
-        <div className="border-t border-border pt-3">
-          <button
-            type="button"
-            onClick={() => setReabriendo(true)}
-            disabled={isPending}
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground disabled:opacity-50"
-          >
-            <RotateCcw className="w-4 h-4" />
-            {t("entregas.reabrir")}
-          </button>
-          <p className="text-xs text-muted-foreground mt-1">{t("entregas.reabrirAyuda")}</p>
-        </div>
-      )}
+/**
+ * Reabrir la entrega, para poder ponerlo donde se busca: junto al aviso de «esto está cerrado»
+ * (Guillermo, 7 sep 2026, que abajo del todo no lo encontraba).
+ */
+export function ReabrirEntrega({ entregaId }: { entregaId: string }) {
+  const t = useTranslations("casos");
+  const router = useRouter();
+  const [abierto, setAbierto] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
+  function reabrir() {
+    startTransition(async () => {
+      const result = await reabrirEntrega(entregaId);
+      if (result.ok) {
+        toast.success(t("entregas.reabierta"));
+        setAbierto(false);
+        router.refresh();
+      } else {
+        toast.error(result.error || t("errorGuardar"));
+      }
+    });
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setAbierto(true)}
+        disabled={isPending}
+        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50 transition-colors shrink-0"
+      >
+        {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
+        {t("entregas.reabrir")}
+      </button>
       <ConfirmModal
-        open={reabriendo}
+        open={abierto}
         title={t("entregas.reabrirTitulo")}
         description={t("entregas.reabrirTexto")}
         confirmLabel={t("entregas.reabrir")}
         destructive
         loading={isPending}
         onConfirm={reabrir}
-        onCancel={() => setReabriendo(false)}
+        onCancel={() => setAbierto(false)}
       />
-    </form>
+    </>
   );
 }

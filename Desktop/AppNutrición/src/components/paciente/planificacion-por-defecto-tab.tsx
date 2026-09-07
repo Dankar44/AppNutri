@@ -612,12 +612,15 @@ function SectionTitle({ icon: Icon, children }: { icon: React.ComponentType<{ cl
 /* ─── Main component ─── */
 
 export function PlanificacionPorDefectoTab({
+  entregado = false,
   paciente,
   medidas,
   ficha,
   planificaciones: initialPlanificaciones = [],
   pacienteId,
 }: {
+  /** El caso ya está entregado: se consulta, no se edita. */
+  entregado?: boolean;
   paciente: PacienteForPlanificacion;
   medidas: MedidaSerializada[];
   ficha: FichaInformacionData | null | undefined;
@@ -654,7 +657,8 @@ export function PlanificacionPorDefectoTab({
   const datos = selectedPlan?.datos ?? {};
   // #40 — La planificación compartida por el profesor con el caso se consulta, no se edita: todas
   // las secciones van `inert` (nada se puede pulsar ni escribir) y no tiene menú de renombrar/borrar.
-  const soloLectura = !!selectedPlan?.origenId;
+  // #40 — De solo lectura por dos motivos: es la del profesor, o el caso ya está entregado.
+  const soloLectura = !!selectedPlan?.origenId || entregado;
 
   /* ─── Tab menu state ─── */
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
@@ -2262,7 +2266,13 @@ export function PlanificacionPorDefectoTab({
         </div>
       )}
 
-      {soloLectura && (
+      {entregado && (
+        <div className="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-3 py-2.5 text-sm text-amber-900 dark:text-amber-200">
+          <Lock className="w-4 h-4 shrink-0 mt-0.5" />
+          <span>{tc2("entregadoSoloLectura")}</span>
+        </div>
+      )}
+      {soloLectura && !entregado && (
         <div className="flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2.5 text-sm">
           <Lock className="w-4 h-4 text-primary shrink-0 mt-0.5" />
           <span>{tc2("delProfesorSoloLecturaPlanificacion")}</span>

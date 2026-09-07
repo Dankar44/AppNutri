@@ -7,7 +7,7 @@ import { getTrabajoDeEntrega } from "@/app/actions/casos";
 import { PlanVisual } from "@/components/paciente/plan-visual";
 import { formatDateTime } from "@/lib/utils";
 import { getLocale } from "@/i18n/locale";
-import { Corregir } from "./corregir";
+import { Corregir, ReabrirEntrega } from "./corregir";
 import { PlanificacionDelAlumno } from "./planificacion-del-alumno";
 
 /**
@@ -51,13 +51,18 @@ export default async function EntregaPage({
         </p>
       </div>
 
-      <div className="flex gap-3 py-3 lg:p-3 lg:rounded-lg lg:bg-muted/50 border-b border-border lg:border-b-0">
+      {/* Con el aviso, el botón de reabrir: es lo que se busca al leerlo, y abajo del todo no se
+          encontraba (Guillermo, 7 sep 2026). */}
+      <div className="flex items-start gap-3 py-3 lg:p-3 lg:rounded-lg lg:bg-muted/50 border-b border-border lg:border-b-0">
         {trabajo.congelado ? <Camera className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" /> : <Eye className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />}
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground flex-1">
           {trabajo.congelado && trabajo.entregadaAt
             ? t("entregas.fotoFija", { fecha: formatDateTime(trabajo.entregadaAt, locale) })
             : t("entregas.soloLectura")}
         </p>
+        {(trabajo.estado === "ENTREGADA" || trabajo.estado === "CORREGIDA") && (
+          <ReabrirEntrega entregaId={trabajo.entregaId} />
+        )}
       </div>
 
       {/* El entregable: el PDF tal y como lo mandó. Es lo que más le interesa al profesor. */}
@@ -147,12 +152,14 @@ export default async function EntregaPage({
         <section className="space-y-3">
           <div className="flex items-center gap-2 flex-wrap">
             <FileText className="w-4 h-4 text-muted-foreground" />
-            {/* Su solución, en otra pestaña, para tenerla al lado mientras corrige. */}
+            {/* Su solución, en otra pestaña, para tenerla al lado mientras corrige. El nombre lo
+                dice: «comparar» sonaba a una función que no existe (Guillermo, 7 sep 2026). */}
             {trabajo.casoPacienteId && (
               <a
                 href={`/pacientes/${trabajo.casoPacienteId}?pestana=plan-alimentacion&espacio=docente`}
                 target="_blank"
                 rel="noopener"
+                title={t("compartir.compararAyuda")}
                 className="ml-auto inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline order-last"
               >
                 <GitCompareArrows className="w-4 h-4" />
@@ -211,7 +218,6 @@ export default async function EntregaPage({
         comentario={trabajo.comentario}
         visibleParaAlumno={trabajo.visibleParaAlumno}
         yaCorregida={trabajo.estado === "CORREGIDA"}
-        estaEntregada={trabajo.estado === "ENTREGADA" || trabajo.estado === "CORREGIDA"}
       />
     </div>
   );

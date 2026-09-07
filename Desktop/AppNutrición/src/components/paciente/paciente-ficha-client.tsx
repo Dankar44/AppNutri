@@ -375,6 +375,7 @@ export function PacienteFichaClient({
           </div>
           <div className="hidden sm:block">
             <PlanificacionPorDefectoTab
+              entregado={casoEntrega?.estado === "ENTREGADA" || casoEntrega?.estado === "CORREGIDA"}
               paciente={paciente}
               medidas={medidas}
               ficha={ficha}
@@ -387,6 +388,8 @@ export function PacienteFichaClient({
 
       {pestana === "plan-alimentacion" && (
         <PlanDeAlimentacionTab
+          // #40 — Entregado es entregado: se ve, no se toca, hasta que el profesor lo reabra.
+          entregado={casoEntrega?.estado === "ENTREGADA" || casoEntrega?.estado === "CORREGIDA"}
           pacienteId={paciente.id}
           pacienteNombre={`${paciente.nombre} ${paciente.apellidos}`}
           planes={planes}

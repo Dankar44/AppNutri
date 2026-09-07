@@ -608,8 +608,16 @@ async function main() {
     await esperar(1200);
     visible = await texto(alumna);
     comprobar("puede contarle algo a su profesora", /contarle algo a tu profesor/i.test(visible));
-    comprobar("y elegir cuál de sus planes entrega", visible.includes("Entregable"));
+    comprobar("y elegir cuál de sus planes entrega", /Lo que entregas|Cuál de tus planes/i.test(visible));
+    comprobar("sin casilla de adjuntar: el entregable va siempre", !/Adjuntar el entregable/i.test(visible));
     await foto(alumna, "19-cuadro-de-entregar");
+    await pulsar(alumna, "Entregar");
+    await esperar(900);
+    // Ahora pregunta de verdad antes de cerrar el caso.
+    const avisoEntregar = await texto(alumna);
+    comprobar("pregunta antes de cerrar el caso", /¿Entregar el caso\?/i.test(avisoEntregar));
+    comprobar("y avisa de que no podrá tocar nada más", /no podrás tocar nada más/i.test(avisoEntregar));
+    await foto(alumna, "19a-confirmar-entrega");
     await pulsar(alumna, "Entregar");
     await esperar(7000);
     const { rows: entrega } = await client.query(
@@ -654,6 +662,18 @@ async function main() {
     visible = await texto(alumna);
     comprobar("ya no puede deshacerlo ella", !visible.includes("Deshacer la entrega"));
     comprobar("y se le explica que está cerrado", /pídele a tu profesor que te lo reabra/i.test(visible));
+    // Y los botones de tocar tienen que estar fuera, no fallar al pulsarlos (Guillermo, 7 sep 2026).
+    await alumna.goto(`${BASE}/pacientes/${copiaId}?pestana=plan-alimentacion`, { waitUntil: "networkidle0" });
+    await esperar(3000);
+    const enElPlan = await texto(alumna);
+    comprobar("en su plan se ve el candado de entregado", /Ya has entregado este caso/i.test(enElPlan));
+    const botonesQueTocan = await alumna.evaluate(() =>
+      Array.from(document.querySelectorAll("button, a"))
+        .map((b) => b.textContent?.trim() ?? "")
+        .filter((t) => /^(Nuevo plan|Añadir alimento|Añadir comida|Añadir día|Eliminar)/.test(t)));
+    comprobar("y no quedan botones de editar que fueran a fallar", botonesQueTocan.length === 0,
+      botonesQueTocan.join(", ") || "ninguno");
+    await foto(alumna, "19b-plan-bloqueado-tras-entregar");
     // Y el candado es de verdad, no solo de pantalla: se intenta tocar el plan por la puerta de atrás.
     const intento = await alumna.evaluate(async () => {
       const r = await fetch("/pacientes", { method: "HEAD" });
@@ -681,10 +701,12 @@ async function main() {
     await alumna.goto(`${BASE}/pacientes/${copiaId}`, { waitUntil: "networkidle0" });
     await esperar(2500);
     comprobar("le sale otra vez el botón de entregar", (await texto(alumna)).includes("Entregar"));
-    await pulsar(alumna, "Entregar");
+    await pulsar(alumna, "Entregar");   // abre el cuadro
     await esperar(1200);
-    await pulsar(alumna, "Entregar");
-    await esperar(5000);
+    await pulsar(alumna, "Entregar");   // envía
+    await esperar(900);
+    await pulsar(alumna, "Entregar");   // confirma el aviso
+    await esperar(6000);
     const { rows: entrega2 } = await client.query(
       `SELECT id, "entregadaAt", "entregablePlanId" FROM entregas_caso WHERE "asignacionId" = $1 AND "alumnoId" = $2`,
       [asignacionId, alumnaId]);
@@ -705,7 +727,12 @@ async function main() {
       apuntar("desde la ficha del caso no encontré el enlace a la entrega por su nombre: entré por la dirección");
     }
     visible = await texto(profe);
-    comprobar("avisa de que es una foto del día que entregó", /tal y como la hizo/i.test(visible));
+    const { rows: comoEsta } = await client.query(
+      `SELECT estado, "entregadaAt" IS NOT NULL AS entregada, "entregaSnapshot" IS NOT NULL AS foto,
+              "entregaSnapshot"->>'v' AS version
+         FROM entregas_caso WHERE id = $1`, [entregaId2]);
+    comprobar("avisa de que la entrega está cerrada", /caso está cerrado para el alumno/i.test(visible),
+      `estado=${comoEsta[0]?.estado} entregada=${comoEsta[0]?.entregada} foto=${comoEsta[0]?.foto} v=${comoEsta[0]?.version}`);
     comprobar("ve su plan", visible.includes(`${MARCA} Mi plan`));
     comprobar("ve la planificación", visible.includes("Planificación"));
     comprobar("y tiene el PDF del entregable", visible.includes("Entregable") || visible.includes("PDF"));

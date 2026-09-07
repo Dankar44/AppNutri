@@ -943,7 +943,9 @@ export async function getTrabajoDeEntrega(
     planes = [];
   }
 
-  const planVisto = (planId ? planes.find((p) => p.id === planId) : planes[0]) ?? null;
+  // Por defecto, el que entregó: es lo que hay que corregir.
+  const elEntregado = entrega.entregablePlanId ? planes.find((p) => p.id === entrega.entregablePlanId) : null;
+  const planVisto = (planId ? planes.find((p) => p.id === planId) : elEntregado ?? planes[0]) ?? null;
 
   return {
     entregaId: entrega.id,
@@ -972,7 +974,11 @@ export async function getTrabajoDeEntrega(
     planificaciones,
     medidas,
     fichaInformacion,
-    planes: planes.map((p) => ({ id: p.id, nombre: p.nombre, activo: p.activo, dias: p.dias.length, delProfesor: !!p.origenId })),
+    // Solo el plan que ENTREGÓ: si se listan todos los suyos, el profesor puede acabar corrigiendo
+    // otro por error (Guillermo, 7 sep 2026). Si no eligió entregable, se enseñan los que tenga.
+    planes: planes
+      .filter((p) => !entrega.entregablePlanId || p.id === entrega.entregablePlanId)
+      .map((p) => ({ id: p.id, nombre: p.nombre, activo: p.activo, dias: p.dias.length, delProfesor: !!p.origenId })),
     planVisto,
   };
 }

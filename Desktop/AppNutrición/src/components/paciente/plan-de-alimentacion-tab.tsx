@@ -104,6 +104,7 @@ type PlanDetalle = {
 };
 
 export function PlanDeAlimentacionTab({
+  entregado = false,
   pacienteId,
   pacienteNombre,
   planes,
@@ -111,6 +112,8 @@ export function PlanDeAlimentacionTab({
   pacienteObjetivo,
   planificaciones = [],
 }: {
+  /** El caso ya está entregado: se consulta, no se edita, hasta que el profesor lo reabra. */
+  entregado?: boolean;
   pacienteId: string;
   pacienteNombre: string;
   planes: PlanDetalle[];
@@ -294,20 +297,25 @@ export function PlanDeAlimentacionTab({
           )}
         </div>
 
+        {/* Con el caso entregado no se crea ni se cambia nada: los botones se van, no se dejan
+            puestos para que fallen al pulsarlos (Guillermo, 7 sep 2026). */}
         <div className="flex items-center gap-2 shrink-0">
-          <Link
-            href={`/dietas/nuevo?pacienteId=${pacienteId}`}
-            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors shrink-0 border border-primary/30 text-primary hover:bg-primary/5"
-            title={t("crearNuevoPlanParaPaciente")}
-          >
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">{t("nuevoPlan")}</span>
-          </Link>
+          {!entregado && (
+            <Link
+              href={`/dietas/nuevo?pacienteId=${pacienteId}`}
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors shrink-0 border border-primary/30 text-primary hover:bg-primary/5"
+              title={t("crearNuevoPlanParaPaciente")}
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">{t("nuevoPlan")}</span>
+            </Link>
+          )}
 
           <button
             type="button"
             onClick={handleAsignarActual}
             disabled={esActivo || isPendingAssign}
+            hidden={entregado}
             className={cn(
               "inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors shrink-0 border",
               esActivo
@@ -324,14 +332,21 @@ export function PlanDeAlimentacionTab({
 
       {/* Vista completa del plan (mismo layout que /dietas/[id]) */}
       {/* #40 — El plan del profesor se consulta, no se edita: es la base sobre la que el alumno hace el suyo. */}
-      {selectedPlan.origenId && (
+      {selectedPlan.origenId && !entregado && (
         <div className="mb-3 flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2.5 text-sm">
           <Lock className="w-4 h-4 text-primary shrink-0 mt-0.5" />
           <span>{tc("delProfesorSoloLecturaPlan")}</span>
         </div>
       )}
+      {/* #40 — Y una vez entregado, el caso entero se cierra: ni el suyo se toca. */}
+      {entregado && (
+        <div className="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-3 py-2.5 text-sm text-amber-900 dark:text-amber-200">
+          <Lock className="w-4 h-4 shrink-0 mt-0.5" />
+          <span>{tc("entregadoSoloLectura")}</span>
+        </div>
+      )}
       <PlanVisual
-        readOnly={!!selectedPlan.origenId}
+        readOnly={!!selectedPlan.origenId || entregado}
         plan={planVisualData}
         pacienteId={pacienteId}
         pacienteNombre={pacienteNombre}

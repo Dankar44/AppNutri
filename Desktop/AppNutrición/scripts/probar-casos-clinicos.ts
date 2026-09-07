@@ -428,10 +428,15 @@ async function main() {
       c.dispatchEvent(new Event("input", { bubbles: true }));
     });
     visible = await texto(alumna);
-    comprobar("el cuadro ofrece adjuntar el PDF del entregable", visible.includes("Adjuntar el entregable en PDF"));
+    // El entregable va SIEMPRE desde el 7 sep 2026: ya no hay casilla que marcar, solo se dice qué
+    // se entrega. Y entregar cierra el caso, así que se pregunta antes.
+    comprobar("el cuadro dice qué se entrega", /Lo que entregas|Cuál de tus planes/i.test(visible));
+    comprobar("sin casilla de adjuntar", !visible.includes("Adjuntar el entregable"));
     await pulsar(alumna, "Entregar", "form");
-    // Generar el PDF con el navegador tarda unos segundos.
-    await esperar(15000);
+    await esperar(900);
+    comprobar("y pregunta antes de cerrar el caso", /¿Entregar el caso\?/i.test(await texto(alumna)));
+    await pulsar(alumna, "Entregar", '[role="dialog"]');
+    await esperar(6000);
     const { rows: entrega } = await client.query(
       `SELECT id, estado, "entregadaAt", "pacienteId", "notaAlumno", "entregablePlanId", "entregableNombre", "entregableBytes",
               octet_length("entregablePdf") AS pdf_bytes, "entregaSnapshot"
@@ -475,8 +480,9 @@ async function main() {
     await esperar(2500);
     visible = await texto(profe);
     comprobar("puede abrir su trabajo", visible.includes("Marta Vegana"), profe.url());
-    comprobar("y se le dice que es la foto de la entrega, con fecha y hora", /tal y como la hizo el \d\d\/\d\d\/\d{4}, \d\d:\d\d/.test(visible),
-      visible.split("\n").find((l) => l.includes("tal y como")) ?? "");
+    comprobar("y se le dice que la entrega está cerrada, con fecha y hora",
+      /tal y como la hizo el \d\d\/\d\d\/\d{4}, \d\d:\d\d/.test(visible) && /caso está cerrado para el alumno/i.test(visible),
+      visible.split("\n").find((l) => l.includes("tal y como")) ?? "no sale");
     comprobar("ve el PDF del entregable para abrirlo", visible.includes("Abrir el PDF") && /tal y como lo entregó/.test(visible),
       visible.split("\n").find((l) => /tal y como lo entregó/.test(l)) ?? "no sale");
     comprobar("ve la planificación de la alumna", visible.includes("Planificación") && (visible.includes("kcal") || visible.includes("Sin datos") || visible.includes("No ha hecho ninguna planificación")));
@@ -489,8 +495,7 @@ async function main() {
     comprobar("el profesor puede abrir el PDF", pdfProfe.status === 200 && pdfProfe.tipo.includes("pdf"), JSON.stringify(pdfProfe));
     const pdfAjeno = await profe.evaluate(async () => (await fetch(`/api/entregas/00000000-0000-0000-0000-000000000000/pdf`)).status);
     comprobar("y una entrega que no existe da 404", pdfAjeno === 404, String(pdfAjeno));
-    comprobar("con un enlace para comparar con su propio plan", visible.includes("Comparar con tu plan del caso"));
-    comprobar("ve la nota que le dejó la alumna", visible.includes("legumbres"));
+    comprobar("con el enlace a su propia solución del caso", visible.includes("Abrir mi solución del caso"));
     await rellenar(profe, "Nota", "8,5");
     await rellenar(profe, "Comentario", "Bien planteado, revisa la vitamina B12.");
     await pulsar(profe, "Guardar la corrección");
