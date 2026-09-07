@@ -734,12 +734,13 @@ export async function reabrirEntrega(entregaId: string): Promise<{ ok: boolean; 
         estado: "EN_MARCHA",
         entregadaAt: null,
         // Lo entregado era de esa entrega: se va con ella, corrección incluida.
-        // El Json se vacía con el literal de la base: `Prisma` aquí solo está importado como tipo.
-        entregaSnapshot: { set: null },
         entregablePlanId: null, entregableNombre: null, entregableBytes: null, entregablePdf: null,
         nota: null, comentario: null, corregidaAt: null, corregidaPor: null, visibleParaAlumno: false,
       },
     });
+    // La foto, en SQL: por Prisma, `{ set: null }` guardaría el JSON «null» y la columna seguiría
+    // sin estar vacía de verdad.
+    await prisma.$executeRaw`UPDATE entregas_caso SET "entregaSnapshot" = NULL WHERE id = ${entrega.id}`;
     // Se le avisa: tiene que enterarse de que puede volver a tocarlo. Se reutiliza el tipo de
     // corrección para no tener que ampliar el enum —y con él, migrar los dos entornos— por un
     // aviso; el texto ya dice de qué se trata.

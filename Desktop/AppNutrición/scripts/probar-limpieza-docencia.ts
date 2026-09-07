@@ -160,8 +160,8 @@ async function main() {
     console.log("\n── Simular no borra nada ──");
     const salidaSimulada = execFileSync("npx", ["tsx", "scripts/limpiar-docencia.ts"],
       { encoding: "utf8", env: { ...process.env, DB: "dev" } });
-    comprobar("dice cuánto liberaría", /Se liberaría/.test(salidaSimulada),
-      salidaSimulada.split("\n").find((l) => l.includes("Se liberaría"))?.trim() ?? "");
+    comprobar("dice qué se llevaría", /se irían:/.test(salidaSimulada),
+      salidaSimulada.split("\n").filter((l) => l.includes("se irían")).length + " líneas");
     const { rows: intactas } = await client.query(
       `SELECT COUNT(*)::int AS n FROM entregas_caso WHERE "entregablePdf" IS NOT NULL AND id = ANY($1::text[])`,
       [[recienCorregida, corregidaVieja, sinCorregir, deCursoAcabado]]);
@@ -171,7 +171,7 @@ async function main() {
     console.log("\n── Limpiar de verdad ──");
     const salida = execFileSync("npx", ["tsx", "scripts/limpiar-docencia.ts", "--ejecutar"],
       { encoding: "utf8", env: { ...process.env, DB: "dev" } });
-    console.log(salida.split("\n").filter((l) => /^\d\.|Liberado|La base ocupa/.test(l.trim())).map((l) => `    ${l.trim()}`).join("\n"));
+    console.log(salida.split("\n").filter((l) => /fotos|invitaciones|pacientes de prácticas|La base ocupa/.test(l)).map((l) => `    ${l.trim()}`).join("\n"));
 
     const estado = async (id: string) => {
       const { rows } = await client.query(
@@ -182,12 +182,11 @@ async function main() {
     };
 
     const a = await estado(recienCorregida);
-    comprobar("lo corregido hace 3 días conserva su PDF", a.sinPdf === false);
+    comprobar("mientras el curso vive, la entrega se queda entera", a.sinFoto === false && a.sinPdf === false);
 
     const b = await estado(corregidaVieja);
-    comprobar("lo corregido hace 40 días pierde el PDF", b.sinPdf === true);
-    comprobar("y también los bytes, que es lo que mira la pantalla", b.sinBytes === true);
-    comprobar("pero conserva la nota", Number(b.nota) === 8.5, String(b.nota));
+    comprobar("y la de un curso vivo también, por vieja que sea la corrección", b.sinFoto === false);
+    comprobar("con su nota", Number(b.nota) === 8.5, String(b.nota));
     comprobar("el comentario", b.comentario === "Bien");
     comprobar("el nombre de lo que entregó", b.entregableNombre === "entregable.pdf");
     comprobar("la fecha de entrega", !!b.entregadaAt);
@@ -197,8 +196,7 @@ async function main() {
     comprobar("lo que aún no se ha corregido no se toca", c.sinPdf === false && c.sinFoto === false);
 
     const d = await estado(deCursoAcabado);
-    comprobar("del curso ya terminado se va el PDF", d.sinPdf === true);
-    comprobar("y también la foto del trabajo", d.sinFoto === true);
+    comprobar("del curso ya terminado se va la foto del trabajo", d.sinFoto === true);
     comprobar("pero la nota se queda para siempre", Number(d.nota) === 8.5);
 
     // ── Los pacientes de prácticas: se van con el alumno, no antes ──

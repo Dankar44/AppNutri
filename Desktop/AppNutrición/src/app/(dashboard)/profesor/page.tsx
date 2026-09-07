@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { GraduationCap, Users, UserCog, CalendarRange, AlertTriangle, Plus, ClipboardList } from "lucide-react";
 import { getTranslations } from "next-intl/server";
+import { prisma } from "@/lib/prisma";
+import { limpiarDocenciaSiToca } from "@/lib/limpieza-docente";
 import { requireProfesor } from "@/app/actions/docencia";
 import { SalidasDelProfesor } from "./salidas";
 import { getMisClases } from "@/app/actions/clases";
@@ -58,6 +60,8 @@ function Contador({
 }
 
 export default async function ProfesorPage() {
+  // Una vez al día, sin esperar: el módulo se limpia solo (`limpieza-docente`).
+  limpiarDocenciaSiToca(prisma);
   const datos = await requireProfesor();
   const t = await getTranslations("docencia");
   const locale = await getLocale();

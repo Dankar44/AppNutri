@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { GraduationCap, CalendarRange, Users, Archive, ClipboardList } from "lucide-react";
 import { getTranslations } from "next-intl/server";
+import { prisma } from "@/lib/prisma";
+import { limpiarDocenciaSiToca } from "@/lib/limpieza-docente";
 import type { Metadata } from "next";
 import { getCurrentDietista } from "@/app/actions/auth";
 import { getMisClasesComoAlumno, getMisCasosDelAula } from "@/app/actions/aula";
@@ -20,6 +22,8 @@ export async function generateMetadata(): Promise<Metadata> {
  * Su cuenta profesional sigue estando a un clic, en el menú.
  */
 export default async function AulaPage() {
+  // Una vez al día, sin esperar: el módulo se limpia solo (`limpieza-docente`).
+  limpiarDocenciaSiToca(prisma);
   const dietista = await getCurrentDietista();
   if (!dietista) redirect("/login");
 
