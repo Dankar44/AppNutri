@@ -232,7 +232,7 @@ guardar contra algo que no existe… y fallan en silencio (ver 3.1).
 
 ## 4. Cómo pensar cada cambio (esto es lo que más se nota)
 
-Antes de dar algo por terminado, pásale estas cuatro preguntas:
+Antes de dar algo por terminado, pásale estas preguntas:
 
 1. **¿Se ve?** Si el usuario no encuentra el botón, la funcionalidad no existe. Nos ha pasado
    seis veces: nutricionistas pidiendo cosas que ya estaban hechas. Pon el acceso donde ya está
@@ -257,6 +257,21 @@ Antes de dar algo por terminado, pásale estas cuatro preguntas:
 
 4. **¿Se rompe en una pantalla pequeña?** Varios "bugs" han sido datos escondidos por
    responsive: se veían en la pantalla del programador y no en la del cliente.
+
+5. **¿El campo acepta lo que no debe?** Un campo numérico tiene que filtrar **al teclear**, no
+   solo protestar al guardar. En «Nota (0-10)» se podía escribir `7ajhdbfsauoewfh23` y no decía
+   nada hasta pulsar Guardar (7 sep 2026). Esto ha pasado varias veces: en cada `<input>` de la
+   pantalla, pregúntate qué pasa si escriben letras, negativos, cero, o pegan un texto de 500
+   caracteres. Filtra en el `onChange` **y** valida en el servidor: lo primero es para que se
+   entienda, lo segundo porque el navegador no es de fiar. Hay ejemplos de los dos en
+   `crear-licencia-form.tsx` (`soloDigitos`) y en `corregirEntrega`.
+
+6. **¿Cuánto va a ocupar en la base?** Antes de guardar algo nuevo —una columna `Bytes`, un
+   `Json` grande, una tabla que crece por alumno o por mes— calcula `tamaño × filas esperadas` y
+   compáralo con lo que ocupa hoy la base (`pg_database_size`, `pg_column_size`). El módulo
+   docente guardaba el PDF de cada entrega: 165 KB × 1.200 entregas = 240 MB por facultad y curso,
+   con la base entera en 120 MB. Se arregló generándolo al pedirlo. Si el número sale grande,
+   dilo antes de programarlo.
 
 Y dos normas de la casa:
 - **Interfaz optimista**: al guardar, refleja el cambio al instante y revierte con aviso si

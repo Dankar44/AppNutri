@@ -90,7 +90,15 @@ export function Corregir({
           inputMode="decimal"
           value={texto}
           onFocus={(e) => e.target.select()}
-          onChange={(e) => setTexto(e.target.value)}
+          // Se filtra AL TECLEAR: dejaba escribir «7ajhdbfsauoewfh23» y no protestaba hasta
+          // guardar (Guillermo, 7 sep 2026). Se admiten los dos separadores decimales.
+          onChange={(e) => {
+            const v = e.target.value.replace(/[^\d.,]/g, "").replace(/[.,]/, "·").replace(/[.,]/g, "");
+            const limpio = v.replace("·", ",");
+            if (limpio === "" || (/^\d{0,2}(,\d{0,2})?$/.test(limpio) && Number(limpio.replace(",", ".")) <= 10)) {
+              setTexto(limpio);
+            }
+          }}
           placeholder="8,5"
           className={`${input} tabular-nums`}
         />

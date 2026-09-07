@@ -6,6 +6,7 @@ import { Send, Loader2, FileText, RefreshCw , AlertTriangle } from "lucide-react
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { ConfirmModal } from "@/components/confirm-modal";
+import { hayCambiosSinGuardar, guardarCambiosPendientes } from "@/components/cambios-sin-guardar";
 import { entregarCaso } from "@/app/actions/aula";
 import type { PDFSectionOptions, DisplayOverrides } from "@/lib/pdf/generate-plan-pdf";
 import { cn } from "@/lib/utils";
@@ -39,6 +40,9 @@ export function EntregarCaso({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [confirmando, setConfirmando] = useState(false);
+  // Si el alumno estaba tocando la planificación y le da a entregar, eso se guarda antes: si no,
+  // entregaría sin lo último que escribió y el caso se cierra (Guillermo, 7 sep 2026).
+  const [pendientes, setPendientes] = useState(false);
   const [abierto, setAbierto] = useState(false);
   const [notaAlumno, setNotaAlumno] = useState("");
   const planPorDefecto = opcionesPdf?.planId ?? planes.find((p) => p.activo)?.id ?? planes[0]?.id ?? "";
@@ -86,7 +90,7 @@ export function EntregarCaso({
 
   return (
     <form
-      onSubmit={(e) => { e.preventDefault(); setConfirmando(true); }}
+      onSubmit={(e) => { e.preventDefault(); setPendientes(hayCambiosSinGuardar()); setConfirmando(true); }}
       className="w-full space-y-3 border-t border-border pt-3"
     >
       <div>
@@ -168,14 +172,23 @@ export function EntregarCaso({
       <ConfirmModal
         open={confirmando}
         title={t("casos.confirmarTitulo")}
-        description={
-          planElegido
-            ? `${t("casos.vasAEntregar", { plan: planElegido.nombre })} ${t("casos.alEntregarSeCierra")}`
-            : t("casos.alEntregarSeCierra")
-        }
+        description={[
+          planElegido ? t("casos.vasAEntregar", { plan: planElegido.nombre }) : "",
+          pendientes ? t("casos.seGuardaAntes") : "",
+          t("casos.alEntregarSeCierra"),
+        ].filter(Boolean).join(" ")}
         confirmLabel={t("casos.confirmarEntrega")}
         loading={isPending}
-        onConfirm={() => { setConfirmando(false); entregar(); }}
+        onConfirm={() => {
+          startTransition(async () => {
+            if (pendientes && !(await guardarCambiosPendientes())) {
+              toast.error(t("casos.noSeHaPodidoGuardar"));
+              return;
+            }
+            setConfirmando(false);
+            entregar();
+          });
+        }}
         onCancel={() => setConfirmando(false)}
       />
     </form>

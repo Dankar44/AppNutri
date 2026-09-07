@@ -56,7 +56,9 @@
     "queEntregas": "¿Cuál de tus planes entregas?",
     "loQueEntregas": "Lo que entregas",
     "confirmarTitulo": "¿Entregar el caso?",
-    "vasAEntregar": "Vas a entregar «{plan}»."
+    "vasAEntregar": "Vas a entregar «{plan}».",
+    "seGuardaAntes": "Tienes cambios sin guardar en esta pantalla: se guardarán antes de entregar.",
+    "noSeHaPodidoGuardar": "No se han podido guardar tus cambios, así que no se ha entregado nada."
   },
   "volverAlAula": "Volver a mi aula",
   "delAl": "Del {inicio} al {fin}"

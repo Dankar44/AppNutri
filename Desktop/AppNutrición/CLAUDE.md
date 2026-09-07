@@ -147,6 +147,14 @@ The `predev` npm script (`rm -rf .next`) runs automatically before `npm run dev`
 - **Validation errors**: return `{ error: string }` instead of `throw new Error()` — thrown errors cause red overlays in production.
 - **Server→client boundary**: never pass functions or React components as props to "use client" components — use string keys and resolve on the client side.
 
+## Antes de dar cualquier cambio por terminado: `docs/DESARROLLO.md` §4
+
+Esa guía es la lista de lo que ya nos ha costado caro, y **hay que repasarla en cada cambio**, no
+solo al empezar en el proyecto. Las preguntas de la sección 4 (¿se ve?, ¿dónde más tiene que
+aparecer?, ¿qué ve el paciente?, ¿se rompe en móvil?, ¿el campo acepta lo que no debe?, ¿cuánto va
+a ocupar en la base?) han salido todas de bugs reales, y se repiten cuando no se miran. Cuando
+aparezca un patrón nuevo, **añádelo ahí** en vez de dejarlo solo en el commit.
+
 ## Product mindset — think like the dietitian using the app
 
 Don't implement requests literally and stop there: the user is building this for working nutritionists, and a feature that is technically done but unusable counts as unfinished.

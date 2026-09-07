@@ -17,6 +17,29 @@ import { useTranslations } from "next-intl";
  * Nacido en la pestaña de planificación; el horario del paciente lo pidió Guillermo el 3 sep 2026
  * ("que aparezca el típico aviso… y que funcione de verdad").
  */
+/**
+ * Registro de los editores que tienen cambios sin guardar ahora mismo.
+ *
+ * El hook de abajo intercepta clics en ENLACES, pero «Entregar» es un botón de la misma pantalla:
+ * el alumno tocaba la planificación, le daba a entregar y se entregaba sin lo último que había
+ * escrito —y como entregar cierra el caso, se perdía (Guillermo, 7 sep 2026). Con esto, cualquiera
+ * puede preguntar si queda algo por guardar, y guardarlo, antes de hacer algo irreversible.
+ */
+type EditorPendiente = { guardar: () => Promise<boolean> };
+const pendientes = new Set<EditorPendiente>();
+
+export function hayCambiosSinGuardar(): boolean {
+  return pendientes.size > 0;
+}
+
+/** Guarda lo que quede pendiente. Devuelve false si alguno falla, para no seguir adelante. */
+export async function guardarCambiosPendientes(): Promise<boolean> {
+  for (const editor of Array.from(pendientes)) {
+    if (!(await editor.guardar())) return false;
+  }
+  return true;
+}
+
 export function useCambiosSinGuardar({
   hayCambios,
   guardar,
@@ -35,6 +58,16 @@ export function useCambiosSinGuardar({
   const [navPendiente, setNavPendiente] = useState<string | null>(null);
   // Cuando se decide salir sin guardar, hay que dejar pasar la navegación aunque siga habiendo cambios.
   const descartadoRef = useRef(false);
+
+  // Se apunta al registro compartido mientras haya algo que guardar.
+  const guardarRef = useRef(guardar);
+  guardarRef.current = guardar;
+  useEffect(() => {
+    if (!hayCambios) return;
+    const editor = { guardar: () => guardarRef.current() };
+    pendientes.add(editor);
+    return () => { pendientes.delete(editor); };
+  }, [hayCambios]);
 
   useEffect(() => {
     if (!hayCambios) { descartadoRef.current = false; return; }

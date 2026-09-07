@@ -603,6 +603,51 @@ async function main() {
     // ─────────── BLOQUE 7 · Entregar ───────────
     console.log("\n═══ BLOQUE 7 · Entregar ═══");
 
+    console.log("\n22b. Con cambios sin guardar, entregar los guarda antes");
+    // El aviso de «cambios sin guardar» solo saltaba al pinchar un enlace; «Entregar» es un botón
+    // de la misma pantalla y se entregaba sin lo último escrito (Guillermo, 7 sep 2026).
+    // El horario de la copia se quedó vacío al sincronizarse con la plantilla (paso 21). Se le pone
+    // uno a LA PLANTILLA: si se le pone a la copia, la sincronización se lo lleva por delante al
+    // abrir la ficha —que es justo lo que se comprobó en el paso 20.
+    await client.query(
+      `UPDATE pacientes SET horario = '[{"dia":"martes","hora":"09:00","actividad":"Entreno"}]'::jsonb
+        WHERE id = $1`, [plantillaId]);
+    await alumna.goto(`${BASE}/pacientes/${copiaId}`, { waitUntil: "networkidle0" });
+    await esperar(3000);
+    const tocadoAlumna = await alumna.evaluate(() => {
+      // Cualquier entrada del horario vale: al quitarla quedan cambios pendientes.
+      const celda = Array.from(document.querySelectorAll("td")).find((c) => c.textContent?.includes("Entreno"));
+      if (!celda) return `sin la celda del horario (td con botón=${document.querySelectorAll("td button").length})`;
+      const x = celda.querySelector("button") as HTMLElement | null;
+      if (!x) return "la celda está pero sin botón de quitar";
+      x.click();
+      return "ok";
+    });
+    if (tocadoAlumna !== "ok") console.log(`    (${tocadoAlumna})`);
+    if (tocadoAlumna === "ok") {
+      await esperar(1200);
+      comprobar("el horario queda con cambios pendientes", (await texto(alumna)).includes("Guardar"));
+      await pulsar(alumna, "Entregar");   // abre el cuadro
+      await esperar(1000);
+      await pulsar(alumna, "Entregar");   // envía: aquí es donde mira si queda algo sin guardar
+      await esperar(1200);
+      const avisoPendiente = await texto(alumna);
+      comprobar("al entregar avisa de que hay cambios sin guardar",
+        /se guardarán antes de entregar/i.test(avisoPendiente),
+        avisoPendiente.split("\n").find((l) => /sin guardar/i.test(l))?.slice(0, 80) ?? "no lo dice");
+      await foto(alumna, "18c-entregar-con-cambios-pendientes");
+      // Se sale del aviso sin entregar y se guarda el horario, para seguir con el escenario limpio.
+      await pulsar(alumna, "Cancelar");
+      await esperar(800);
+      await pulsar(alumna, "Guardar");
+      await esperar(2500);
+      // Se recarga para dejar el cuadro de entregar cerrado y seguir con el paso siguiente limpio.
+      await alumna.goto(`${BASE}/pacientes/${copiaId}`, { waitUntil: "networkidle0" });
+      await esperar(2000);
+    } else {
+      apuntar("no pude tocar el horario para probar el aviso al entregar");
+    }
+
     console.log("\n23. Entregar eligiendo el entregable");
     await pulsar(alumna, "Entregar");
     await esperar(1200);
@@ -793,6 +838,14 @@ async function main() {
        VALUES (gen_random_uuid()::text, $1, $2, NOW(), NOW())`, [claseId, profe2Id]);
 
     console.log("\n27. Nota de 0 a 10 con decimales");
+    // El campo tragaba «7ajhdbfsauoewfh23» y solo protestaba al guardar (Guillermo, 7 sep 2026).
+    await escribirEnCampo(profe, "Nota", "7ajhdbfsauoewfh23");
+    await esperar(400);
+    const loQueQueda = await profe.evaluate(() => {
+      const l = Array.from(document.querySelectorAll("label")).find((x) => x.textContent?.startsWith("Nota"));
+      return (l?.parentElement?.querySelector("input") as HTMLInputElement | null)?.value ?? "";
+    });
+    comprobar("el campo de la nota no traga letras", !/[a-z]/i.test(loQueQueda), `queda «${loQueQueda}»`);
     await escribirEnCampo(profe, "Nota", "7,5");
     await escribirEnCampo(profe, "Comentario", "Muy bien el hierro; repasa la vitamina C.");
     await esperar(400);
