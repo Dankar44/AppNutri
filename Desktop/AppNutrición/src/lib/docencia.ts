@@ -205,3 +205,16 @@ export function claseQueLleva(profesorId: string, licenciaId: string | null) {
     ],
   };
 }
+
+/**
+ * Una asignación con la que puedo trabajar: o el caso es mío, o llevo la clase donde está puesto.
+ * Vive aquí porque lo usan tanto las acciones de casos como el endpoint del entregable en PDF.
+ */
+export function asignacionQuePuedoCorregir(profesorId: string, licenciaId: string | null) {
+  return {
+    OR: [
+      { caso: { profesorId } },
+      { clase: claseQueLleva(profesorId, licenciaId) },
+    ],
+  };
+}

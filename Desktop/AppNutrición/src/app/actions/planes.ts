@@ -106,25 +106,54 @@ async function bloqueoDelProfesor(origenId: string | null | undefined) {
   const t = await getTranslations("validation");
   throw new Error(t("plan.soloLecturaProfesor"));
 }
+
+/**
+ * Un caso ya entregado queda cerrado (Guillermo, 7 sep 2026: «lo entrega el lunes y hasta que el
+ * profesor lo vea el jueves, que no se pueda editar nada del paciente»).
+ *
+ * Esto es lo que permite **no guardar el PDF**: si el trabajo no puede cambiar después de
+ * entregarlo, el entregable se puede generar cuando el profesor lo pida y sale idéntico. Para
+ * volver a tocarlo, el alumno deshace su entrega —mientras no esté corregida— o se la reabre el
+ * profesor.
+ */
+async function bloqueoPorEntrega(pacienteId: string | null | undefined) {
+  if (!pacienteId) return;
+  const entregado = await prisma.entregaCaso.findFirst({
+    where: { pacienteId, entregadaAt: { not: null } },
+    select: { id: true },
+  });
+  if (!entregado) return;
+  const t = await getTranslations("validation");
+  throw new Error(t("plan.bloqueadoPorEntrega"));
+}
+
+/** Los dos candados: lo del profesor no se toca, y lo ya entregado tampoco. */
+async function asegurarEditable(plan: { origenId: string | null; pacienteId: string } | null | undefined) {
+  await bloqueoDelProfesor(plan?.origenId);
+  await bloqueoPorEntrega(plan?.pacienteId);
+}
+
+const DEL_PLAN = { origenId: true, pacienteId: true } as const;
+
 async function asegurarPlanEditable(planId: string) {
-  const p = await prisma.planAlimenticio.findUnique({ where: { id: planId }, select: { origenId: true } });
-  await bloqueoDelProfesor(p?.origenId);
+  const p = await prisma.planAlimenticio.findUnique({ where: { id: planId }, select: DEL_PLAN });
+  await asegurarEditable(p);
 }
 async function asegurarDiaEditable(diaId: string) {
-  const d = await prisma.diaDelPlan.findUnique({ where: { id: diaId }, select: { plan: { select: { origenId: true } } } });
-  await bloqueoDelProfesor(d?.plan.origenId);
+  const d = await prisma.diaDelPlan.findUnique({ where: { id: diaId }, select: { plan: { select: DEL_PLAN } } });
+  await asegurarEditable(d?.plan);
 }
 async function asegurarComidaEditable(comidaId: string) {
-  const c = await prisma.comidaDelDia.findUnique({ where: { id: comidaId }, select: { diaDelPlan: { select: { plan: { select: { origenId: true } } } } } });
-  await bloqueoDelProfesor(c?.diaDelPlan.plan.origenId);
+  const c = await prisma.comidaDelDia.findUnique({ where: { id: comidaId }, select: { diaDelPlan: { select: { plan: { select: DEL_PLAN } } } } });
+  await asegurarEditable(c?.diaDelPlan.plan);
 }
 async function asegurarItemEditable(alimentoEnComidaId: string) {
-  const a = await prisma.alimentoEnComida.findUnique({ where: { id: alimentoEnComidaId }, select: { comida: { select: { diaDelPlan: { select: { plan: { select: { origenId: true } } } } } } } });
-  await bloqueoDelProfesor(a?.comida.diaDelPlan.plan.origenId);
+  const a = await prisma.alimentoEnComida.findUnique({ where: { id: alimentoEnComidaId }, select: { comida: { select: { diaDelPlan: { select: { plan: { select: DEL_PLAN } } } } } } });
+  await asegurarEditable(a?.comida.diaDelPlan.plan);
 }
 async function asegurarAlternativaEditable(alternativaId: string) {
-  const alt = await prisma.alternativaAlimento.findUnique({ where: { id: alternativaId }, select: { alimentoEnComida: { select: { comida: { select: { diaDelPlan: { select: { plan: { select: { origenId: true } } } } } } } } } });
-  await bloqueoDelProfesor(alt?.alimentoEnComida.comida.diaDelPlan.plan.origenId);
+  const alt = await prisma.alternativaAlimento.findUnique({ where: { id: alternativaId }, select: { alimentoEnComida: { select: { comida: { select: { diaDelPlan: { select: { plan: { select: DEL_PLAN } } } } } } } } });
+  await asegurarEditable(alt?.alimentoEnComida.comida.diaDelPlan.plan);
 }
 
 export async function crearPlan(data: PlanFormData) {
@@ -482,9 +511,17 @@ export async function getPlanes(busqueda?: string) {
 export async function getPlan(id: string) {
   const dietista = await getCurrentDietista();
   if (!dietista) return null;
+  return planCompleto(id, dietista.id);
+}
 
+/**
+ * El plan entero de un dietista concreto. `getPlan` lo llama con el de la sesión; el profesor lo
+ * llama con el del alumno para montar el PDF de su entregable (#40), y ahí el permiso lo ha
+ * comprobado antes quien pregunta.
+ */
+async function planCompleto(id: string, dietistaId: string) {
   const plan = await prisma.planAlimenticio.findUnique({
-    where: { id, dietistaId: dietista.id },
+    where: { id, dietistaId },
     include: {
       paciente: true,
       dias: {
@@ -2585,6 +2622,48 @@ export async function getPlanPDFData(planId: string): Promise<PlanPDFData | null
   const plan = await getPlan(planId);
   if (!plan) return null;
 
+  return montarDatosPdf(plan, dietista);
+}
+
+/**
+ * Los datos del entregable de una entrega, para el profesor que la corrige (#40).
+ *
+ * El plan es del alumno, así que se lee con SUS ajustes de PDF: así el entregable sale idéntico al
+ * que entregó. Recibe la ENTREGA y no el plan a propósito: en un fichero "use server" cada export
+ * es un endpoint, y pidiendo un plan y un dueño cualquiera se podría leer el de otro. Aquí el
+ * permiso se comprueba dentro: tiene que ser de un caso suyo o de una clase que lleve.
+ */
+export async function getPlanPDFDataDeEntrega(entregaId: string): Promise<PlanPDFData | null> {
+  const quien = await getCurrentDietista();
+  if (!quien) return null;
+
+  // Lo puede pedir el alumno (es suyo) y el profesor del caso o de la clase. Nadie más: ni otro
+  // alumno de la misma clase ni otro profesor de la facultad.
+  const entrega = await prisma.entregaCaso.findFirst({
+    where: {
+      id: entregaId,
+      entregadaAt: { not: null },
+      OR: [
+        { alumnoId: quien.id },
+        { asignacion: { caso: { profesorId: quien.id } } },
+        { asignacion: { clase: { profesores: { some: { profesorId: quien.id } } } } },
+      ],
+    },
+    select: { entregablePlanId: true, alumnoId: true },
+  });
+  if (!entrega?.entregablePlanId) return null;
+
+  const alumno = await prisma.dietista.findUnique({ where: { id: entrega.alumnoId } });
+  if (!alumno) return null;
+  const plan = await planCompleto(entrega.entregablePlanId, entrega.alumnoId);
+  if (!plan) return null;
+  return montarDatosPdf(plan, alumno);
+}
+
+async function montarDatosPdf(
+  plan: NonNullable<Awaited<ReturnType<typeof getPlan>>>,
+  dietista: { nombre: string; apellidos: string; temaPdf: string | null; colorPrimarioPdf: string | null; marcaPdf: string | null; pdfLogoUrl: string | null; clinica: string | null },
+): Promise<PlanPDFData | null> {
   const recomendaciones = await getRecomendaciones(plan.pacienteId);
 
   const { getTheme } = await import("@/lib/pdf/pdf-themes");

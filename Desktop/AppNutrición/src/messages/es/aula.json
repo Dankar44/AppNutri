@@ -50,7 +50,9 @@
     "verPdf": "Ver el PDF",
     "sinEntregablePdf": "Sin PDF de entregable",
     "fotoFija": "Lo que cambies ahora no se refleja en la entrega, salvo que vuelvas a entregar.",
-    "entregarAlProfesor": "Entregar al profesor"
+    "entregarAlProfesor": "Entregar al profesor",
+    "alEntregarSeCierra": "Al entregar, el caso se cierra: no podrás tocar nada más de este paciente. Si necesitas cambiar algo después, tendrá que reabrírtelo tu profesor.",
+    "entregadoYCerrado": "Ya lo has entregado, así que este caso está cerrado. Si necesitas cambiar algo, pídele a tu profesor que te lo reabra."
   },
   "volverAlAula": "Volver a mi aula",
   "delAl": "Del {inicio} al {fin}"

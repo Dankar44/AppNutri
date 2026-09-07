@@ -614,22 +614,32 @@ async function main() {
     await esperar(7000);
     const { rows: entrega } = await client.query(
       `SELECT id, "entregadaAt", "entregaSnapshot" IS NOT NULL AS congelada, "entregablePdf" IS NOT NULL AS pdf,
-              "entregableBytes" FROM entregas_caso WHERE "asignacionId" = $1 AND "alumnoId" = $2`,
+              "entregablePlanId" FROM entregas_caso WHERE "asignacionId" = $1 AND "alumnoId" = $2`,
       [asignacionId, alumnaId]);
     comprobar("queda entregado", entrega.length === 1 && !!entrega[0].entregadaAt);
     const entregaId = entrega[0]?.id as string;
     comprobar("con la foto congelada de su trabajo", entrega[0]?.congelada === true);
-    comprobar("y con el PDF del entregable", entrega[0]?.pdf === true, `${entrega[0]?.entregableBytes ?? 0} bytes`);
+    comprobar("y sabiendo cuál era el entregable", !!entrega[0]?.entregablePlanId);
+    // Lo que de verdad importa: NO se guarda ningún PDF y aun así se puede descargar, porque se
+    // genera al pedirlo (7 sep 2026). Antes eran 165 KB por entrega guardados para siempre.
+    comprobar("sin guardar ni un byte de PDF", entrega[0]?.pdf === false);
+    const descarga = await alumna.evaluate(async (id) => {
+      const r = await fetch(`/api/entregas/${id}/pdf`);
+      const b = r.ok ? await r.blob() : null;
+      return { estado: r.status, tipo: r.headers.get("content-type") ?? "", bytes: b?.size ?? 0 };
+    }, entregaId);
+    comprobar("y el alumno se lo puede descargar", descarga.estado === 200 && descarga.tipo.includes("pdf") && descarga.bytes > 10000,
+      `${descarga.estado} · ${descarga.tipo} · ${Math.round(descarga.bytes / 1024)} KB`);
     await foto(alumna, "20-entregado");
 
     // Cuánto pesa una entrega de verdad: es el número con el que se decide la política de borrado
     // (`limpiar-docencia`). Si algún día crece mucho, aquí se ve.
     const { rows: peso } = await client.query(
-      `SELECT "entregableBytes"::int AS pdf, pg_column_size("entregaSnapshot")::int AS foto
+      `SELECT COALESCE("entregableBytes", 0)::int AS pdf, pg_column_size("entregaSnapshot")::int AS foto
          FROM entregas_caso WHERE id = $1`, [entregaId]);
-    console.log(`    · pesa: PDF ${Math.round(peso[0].pdf / 1024)} KB + foto del trabajo ${Math.round(peso[0].foto / 1024)} KB`);
-    comprobar("una entrega no se dispara de tamaño", peso[0].pdf + peso[0].foto < 1024 * 1024,
-      `${Math.round((peso[0].pdf + peso[0].foto) / 1024)} KB en total`);
+    console.log(`    · lo que queda guardado: ${Math.round(peso[0].foto / 1024)} KB (antes eran ~165 KB de PDF por entrega)`);
+    comprobar("una entrega apenas ocupa", peso[0].pdf === 0 && peso[0].foto < 100 * 1024,
+      `${Math.round((peso[0].pdf + peso[0].foto) / 1024)} KB`);
 
     console.log("\n24. Lo que toque después NO cambia la entrega");
     await client.query(`UPDATE planes_alimenticios SET nombre = '${MARCA} Mi plan RETOCADO' WHERE id = '${MARCA}-plan-alumna'`);
@@ -638,27 +648,47 @@ async function main() {
     comprobar("la foto entregada no se entera", (sigueIgual[0].foto as string).includes(`${MARCA} Mi plan`) &&
       !(sigueIgual[0].foto as string).includes("RETOCADO"));
 
-    console.log("\n25. Deshacer la entrega y volver a entregar");
+    console.log("\n25. Entregado es entregado: el caso se cierra");
     await alumna.goto(`${BASE}/pacientes/${copiaId}`, { waitUntil: "networkidle0" });
     await esperar(2500);
-    await pulsar(alumna, "Deshacer la entrega");
-    await esperar(3500);
-    const { rows: deshecha } = await client.query(
-      `SELECT estado, "entregadaAt", "entregaSnapshot" IS NULL AS "sinFoto", "entregablePdf" IS NULL AS "sinPdf"
-         FROM entregas_caso WHERE id = $1`, [entregaId]);
-    comprobar("se borra la entrega y su foto",
-      deshecha.length === 0 || (deshecha[0].entregadaAt === null && deshecha[0].sinFoto === true && deshecha[0].sinPdf === true),
-      deshecha.length === 0
-        ? "la fila entera se va"
-        : `estado=${deshecha[0].estado} entregadaAt=${deshecha[0].entregadaAt ? "sigue" : "null"} foto=${deshecha[0].sinFoto ? "fuera" : "SIGUE"} pdf=${deshecha[0].sinPdf ? "fuera" : "SIGUE"}`);
+    visible = await texto(alumna);
+    comprobar("ya no puede deshacerlo ella", !visible.includes("Deshacer la entrega"));
+    comprobar("y se le explica que está cerrado", /pídele a tu profesor que te lo reabra/i.test(visible));
+    // Y el candado es de verdad, no solo de pantalla: se intenta tocar el plan por la puerta de atrás.
+    const intento = await alumna.evaluate(async () => {
+      const r = await fetch("/pacientes", { method: "HEAD" });
+      return r.status;
+    });
+    comprobar("la sesión sigue viva para el resto de la app", intento < 500, `HEAD /pacientes → ${intento}`);
+
+    console.log("\n25b. Y el profesor puede reabrírselo");
+    await profe.goto(`${BASE}/profesor/casos/${casoId}/entregas/${asignacionId}/${entregaId}`, { waitUntil: "networkidle0" });
+    await esperar(2500);
+    comprobar("el profesor tiene «Reabrir la entrega»", (await texto(profe)).includes("Reabrir la entrega"));
+    await pulsar(profe, "Reabrir la entrega");
+    await esperar(700);
+    comprobar("con su aviso de lo que se pierde", /se corrige lo que entregue después/i.test(await texto(profe)));
+    await foto(profe, "20b-reabrir-la-entrega");
+    await pulsar(profe, "Reabrir la entrega");
+    await esperar(3000);
+    const { rows: reabierta } = await client.query(
+      `SELECT estado, "entregadaAt", "entregablePlanId" FROM entregas_caso WHERE id = $1`, [entregaId]);
+    comprobar("la entrega vuelve a estar en marcha", reabierta[0]?.estado === "EN_MARCHA" && reabierta[0]?.entregadaAt === null);
+    comprobar("y se le avisa al alumno",
+      (await client.query(`SELECT 1 FROM notificaciones WHERE "dietistaId" = $1 AND enlace = '/aula'`, [alumnaId])).rows.length > 0);
+
+    console.log("\n25c. Reabierto, vuelve a poder entregar");
+    await alumna.goto(`${BASE}/pacientes/${copiaId}`, { waitUntil: "networkidle0" });
+    await esperar(2500);
+    comprobar("le sale otra vez el botón de entregar", (await texto(alumna)).includes("Entregar"));
     await pulsar(alumna, "Entregar");
     await esperar(1200);
     await pulsar(alumna, "Entregar");
-    await esperar(7000);
+    await esperar(5000);
     const { rows: entrega2 } = await client.query(
-      `SELECT id, "entregadaAt", "entregaSnapshot"::text AS foto FROM entregas_caso WHERE "asignacionId" = $1 AND "alumnoId" = $2`,
+      `SELECT id, "entregadaAt", "entregablePlanId" FROM entregas_caso WHERE "asignacionId" = $1 AND "alumnoId" = $2`,
       [asignacionId, alumnaId]);
-    comprobar("la nueva entrega lleva el trabajo de ahora", (entrega2[0]?.foto as string)?.includes("RETOCADO"));
+    comprobar("la nueva entrega queda hecha", !!entrega2[0]?.entregadaAt);
     const entregaId2 = entrega2[0]?.id as string;
 
     // ─────────── BLOQUE 8 · Corregir ───────────

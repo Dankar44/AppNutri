@@ -2,10 +2,11 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Star, Undo2 } from "lucide-react";
+import { Loader2, Star, Undo2 , RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
-import { corregirEntrega, deshacerCorreccion } from "@/app/actions/casos";
+import { corregirEntrega, deshacerCorreccion, reabrirEntrega } from "@/app/actions/casos";
+import { ConfirmModal } from "@/components/confirm-modal";
 
 /**
  * #40 — La corrección: nota de 0 a 10 con decimales, comentario, y si el alumno lo ve ya.
@@ -20,18 +21,22 @@ export function Corregir({
   visibleParaAlumno,
   yaCorregida,
   puedeCorregirse,
+  estaEntregada,
 }: {
   entregaId: string;
   nota: number | null;
   comentario: string | null;
   visibleParaAlumno: boolean;
   yaCorregida: boolean;
+  /** Está entregada: se le puede reabrir para que el alumno la retoque. */
+  estaEntregada: boolean;
   /** Solo se corrige lo entregado: si no, el alumno se queda encerrado sin poder entregar. */
   puedeCorregirse: boolean;
 }) {
   const t = useTranslations("casos");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [reabriendo, setReabriendo] = useState(false);
   // La nota va como texto: si no, borrar el campo o escribir "8," se pelea con el estado.
   const [texto, setTexto] = useState(nota !== null ? String(nota) : "");
   const [nota_, setNota] = useState(comentario ?? "");
@@ -52,6 +57,19 @@ export function Corregir({
       });
       if (result.ok) {
         toast.success(t("entregas.corregida"));
+        router.refresh();
+      } else {
+        toast.error(result.error || t("errorGuardar"));
+      }
+    });
+  }
+
+  function reabrir() {
+    startTransition(async () => {
+      const result = await reabrirEntrega(entregaId);
+      if (result.ok) {
+        toast.success(t("entregas.reabierta"));
+        setReabriendo(false);
         router.refresh();
       } else {
         toast.error(result.error || t("errorGuardar"));
@@ -138,6 +156,34 @@ export function Corregir({
           </button>
         )}
       </div>
+
+      {/* Entregar cierra el caso al alumno: reabrirlo es lo único que le deja retocarlo, y es
+          decisión del profesor (Guillermo, 7 sep 2026). */}
+      {estaEntregada && (
+        <div className="border-t border-border pt-3">
+          <button
+            type="button"
+            onClick={() => setReabriendo(true)}
+            disabled={isPending}
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground disabled:opacity-50"
+          >
+            <RotateCcw className="w-4 h-4" />
+            {t("entregas.reabrir")}
+          </button>
+          <p className="text-xs text-muted-foreground mt-1">{t("entregas.reabrirAyuda")}</p>
+        </div>
+      )}
+
+      <ConfirmModal
+        open={reabriendo}
+        title={t("entregas.reabrirTitulo")}
+        description={t("entregas.reabrirTexto")}
+        confirmLabel={t("entregas.reabrir")}
+        destructive
+        loading={isPending}
+        onConfirm={reabrir}
+        onCancel={() => setReabriendo(false)}
+      />
     </form>
   );
 }

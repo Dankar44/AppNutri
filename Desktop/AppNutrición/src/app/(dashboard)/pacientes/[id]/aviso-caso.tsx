@@ -3,10 +3,9 @@
 import { useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ClipboardList, CalendarClock, Undo2, Loader2, Star, AlertTriangle, FileText, CheckCircle2 } from "lucide-react";
+import { ClipboardList, CalendarClock, Loader2, Star, AlertTriangle, FileText, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
-import { deshacerEntrega } from "@/app/actions/aula";
 import { EntregarCaso } from "@/components/docencia/entregar-caso";
 
 /**
@@ -55,18 +54,6 @@ export function AvisoCaso({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const entregada = estado === "ENTREGADA" || estado === "CORREGIDA";
-
-  function deshacer() {
-    startTransition(async () => {
-      const result = await deshacerEntrega(asignacionId);
-      if (result.ok) {
-        toast.success(t("casos.entregaDeshecha"));
-        router.refresh();
-      } else {
-        toast.error(result.error || t("casos.errorAbrir"));
-      }
-    });
-  }
 
   return (
     <section className="mb-6 py-4 lg:p-5 lg:rounded-xl lg:border lg:border-primary/30 lg:bg-primary/5 border-b border-border lg:border-b">
@@ -142,18 +129,9 @@ export function AvisoCaso({
       <div className="flex flex-wrap items-center gap-2 mt-3">
         {!entregada && <EntregarCaso asignacionId={asignacionId} planes={planes} />}
         {estado === "ENTREGADA" && (
-          <>
-            <EntregarCaso asignacionId={asignacionId} planes={planes} reentrega />
-            <button
-              type="button"
-              onClick={deshacer}
-              disabled={isPending}
-              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50 border border-border hover:bg-muted"
-            >
-              {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Undo2 className="w-4 h-4" />}
-              {t("casos.deshacerEntrega")}
-            </button>
-          </>
+          // Entregado es entregado: para volver a tocarlo, se lo tiene que reabrir su profesor
+          // (Guillermo, 7 sep 2026). Así el entregable en PDF no hay ni que guardarlo.
+          <p className="text-sm text-muted-foreground">{t("casos.entregadoYCerrado")}</p>
         )}
         <Link href="/aula" className="text-sm text-muted-foreground hover:text-foreground">
           {t("casos.volverAlAula")}

@@ -17,7 +17,7 @@ import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { isNextNavigation } from "@/lib/utils";
 import { sanitizeString, sanitizeStringOptional } from "@/lib/validation";
-import { claseQueLleva, cursoTerminado } from "@/lib/docencia";
+import { claseQueLleva, cursoTerminado, asignacionQuePuedoCorregir } from "@/lib/docencia";
 import { requireProfesor } from "./docencia";
 import {
   leerCongelado, leerPacienteCongelable, leerPlanificaciones, leerPlanParaVer,
@@ -417,23 +417,6 @@ export async function getAsignacionesDeCaso(casoId: string): Promise<AsignacionR
   });
 }
 
-/**
- * Una asignación con la que puedo trabajar: o el caso es mío, o llevo la clase donde está puesto.
- *
- * Lo segundo es lo que la pantalla promete —«todos los que estén aquí ven los mismos alumnos y el
- * mismo trabajo»— y no se cumplía: el adjunto veía las entregas en la clase y al abrir una le
- * decía que no existía (revisión 7 sep 2026). Editar el caso o su paciente sigue siendo solo de
- * quien lo creó: se comparte la corrección, no el material.
- */
-function asignacionQuePuedoCorregir(profesorId: string, licenciaId: string | null) {
-  return {
-    OR: [
-      { caso: { profesorId } },
-      { clase: claseQueLleva(profesorId, licenciaId) },
-    ],
-  };
-}
-
 /** Las clases del profesor a las que todavía no está puesto este caso. */
 export async function getClasesParaAsignar(
   casoId: string,
@@ -726,6 +709,114 @@ export async function corregirEntrega(
 }
 
 /** Deshacer la corrección: vuelve a estar entregada, sin nota. */
+/**
+ * Reabrir una entrega: el alumno vuelve a poder tocar su caso y entregar otra vez.
+ *
+ * Entregar cierra el caso (Guillermo, 7 sep 2026: «si ya la entregaste, se te bloquea y ya»), así
+ * que reabrir es cosa del profesor. Se lleva la corrección si la había: se corrige lo que se
+ * entregue después.
+ */
+export async function reabrirEntrega(entregaId: string): Promise<{ ok: boolean; error?: string }> {
+  const profesor = await requireProfesor();
+  const t = await getTranslations("validation");
+
+  const entrega = await prisma.entregaCaso.findFirst({
+    where: { id: entregaId, asignacion: asignacionQuePuedoCorregir(profesor.dietistaId, profesor.licencia?.id ?? null) },
+    select: { id: true, entregadaAt: true, alumnoId: true, asignacion: { select: { caso: { select: { nombre: true } } } } },
+  });
+  if (!entrega) return { ok: false, error: t("docencia.entregaNoEncontrada") };
+  if (!entrega.entregadaAt) return { ok: false, error: t("docencia.noEstaEntregada") };
+
+  try {
+    await prisma.entregaCaso.update({
+      where: { id: entrega.id },
+      data: {
+        estado: "EN_MARCHA",
+        entregadaAt: null,
+        // Lo entregado era de esa entrega: se va con ella, corrección incluida.
+        // El Json se vacía con el literal de la base: `Prisma` aquí solo está importado como tipo.
+        entregaSnapshot: { set: null },
+        entregablePlanId: null, entregableNombre: null, entregableBytes: null, entregablePdf: null,
+        nota: null, comentario: null, corregidaAt: null, corregidaPor: null, visibleParaAlumno: false,
+      },
+    });
+    // Se le avisa: tiene que enterarse de que puede volver a tocarlo. Se reutiliza el tipo de
+    // corrección para no tener que ampliar el enum —y con él, migrar los dos entornos— por un
+    // aviso; el texto ya dice de qué se trata.
+    const tAviso = await getTranslations("validation");
+    await prisma.notificacion.create({
+      data: {
+        dietistaId: entrega.alumnoId,
+        tipo: "CASO_CORREGIDO",
+        titulo: tAviso("notificaciones.titulos.casoReabierto"),
+        mensaje: entrega.asignacion.caso.nombre,
+        tituloKey: "notificaciones.titulos.casoReabierto",
+        params: { caso: entrega.asignacion.caso.nombre },
+        enlace: "/aula",
+      },
+    }).catch((e) => console.error("[docencia] No se pudo avisar de la reapertura:", e));
+    revalidarCasos();
+    revalidatePath("/aula");
+    return { ok: true };
+  } catch (e) {
+    if (isNextNavigation(e)) throw e;
+    console.error("[docencia] Error reabriendo la entrega:", e);
+    return { ok: false, error: t("general.errorDesconocido") };
+  }
+}
+
+/**
+ * Enseñar de golpe las notas de toda una clase (Guillermo, 7 sep 2026: «solo quiero que haya un
+ * botón de mandar corrección a todos los alumnos»).
+ *
+ * Corregir no publica: el profesor corrige a su ritmo y, cuando termina con todos, pulsa esto una
+ * vez y cada alumno ve su nota y su comentario. A cada uno se le avisa.
+ */
+export async function publicarNotasDeLaClase(
+  asignacionId: string,
+): Promise<{ ok: boolean; error?: string; publicadas?: number }> {
+  const profesor = await requireProfesor();
+  const t = await getTranslations("validation");
+
+  const asignacion = await prisma.asignacionCaso.findFirst({
+    where: { id: asignacionId, ...asignacionQuePuedoCorregir(profesor.dietistaId, profesor.licencia?.id ?? null) },
+    select: { id: true, caso: { select: { nombre: true } } },
+  });
+  if (!asignacion) return { ok: false, error: t("docencia.casoNoEncontrado") };
+
+  const porPublicar = await prisma.entregaCaso.findMany({
+    where: { asignacionId, estado: "CORREGIDA", visibleParaAlumno: false },
+    select: { id: true, alumnoId: true },
+  });
+  if (porPublicar.length === 0) return { ok: true, publicadas: 0 };
+
+  try {
+    await prisma.entregaCaso.updateMany({
+      where: { id: { in: porPublicar.map((e) => e.id) } },
+      data: { visibleParaAlumno: true },
+    });
+    const tAviso = await getTranslations("validation");
+    await prisma.notificacion.createMany({
+      data: porPublicar.map((e) => ({
+        dietistaId: e.alumnoId,
+        tipo: "CASO_CORREGIDO" as const,
+        titulo: tAviso("notificaciones.titulos.casoCorregido"),
+        mensaje: asignacion.caso.nombre,
+        tituloKey: "notificaciones.titulos.casoCorregido",
+        params: { caso: asignacion.caso.nombre },
+        enlace: "/aula",
+      })),
+    }).catch((e) => console.error("[docencia] No se pudo avisar de las notas:", e));
+    revalidarCasos();
+    revalidatePath("/aula");
+    return { ok: true, publicadas: porPublicar.length };
+  } catch (e) {
+    if (isNextNavigation(e)) throw e;
+    console.error("[docencia] Error publicando las notas:", e);
+    return { ok: false, error: t("general.errorDesconocido") };
+  }
+}
+
 export async function deshacerCorreccion(
   entregaId: string,
 ): Promise<{ ok: boolean; error?: string }> {
@@ -871,9 +962,9 @@ export async function getTrabajoDeEntrega(
           nombre: entrega.entregableNombre,
           planNombre: planes.find((p) => p.id === entrega.entregablePlanId)?.nombre ?? null,
           bytes: entrega.entregableBytes,
-          // El PDF se borra al acabar el curso para no acumular cientos de megas (`limpiar-docencia`).
-          // Cuando eso pasa, los bytes se ponen a NULL: queda el nombre de lo que entregó, sin descarga.
-          guardado: entrega.entregableBytes != null,
+          // El PDF no se guarda: se genera al abrirlo (`generarPdfDeEntrega`). Lo que dice si hay
+          // entregable es el plan que eligió; sin él, la entrega fue sin PDF.
+          guardado: entrega.entregablePlanId != null,
         }
       : null,
     paciente,

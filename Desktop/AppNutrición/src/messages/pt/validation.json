@@ -48,7 +48,8 @@
     "planNoValido": "Plano inválido",
     "nombreObligatorio": "O nome é obrigatório",
     "comidaNombreDuplicado": "Já existe outra refeição com esse nome neste dia. Escolha um nome diferente: a distribuição por refeição distingue as refeições próprias pelo nome.",
-    "soloLecturaProfesor": "Este plano é do professor e não se pode editar. Cria o teu e traz o que quiseres dele."
+    "soloLecturaProfesor": "Este plano é do professor e não se pode editar. Cria o teu e traz o que quiseres dele.",
+    "bloqueadoPorEntrega": "Este caso já o entregaste: para voltares a mexer nele, desfaz primeiro a entrega. Se já está corrigido, pede-o ao teu professor."
   },
   "cita": {
     "citaNoEncontrada": "Consulta não encontrada",
@@ -177,7 +178,8 @@
       "consulta": "Consulta",
       "ejercicio": "Exercício",
       "casoAsignado": "Tem um caso novo",
-      "casoCorregido": "Corrigiram-lhe um caso"
+      "casoCorregido": "Corrigiram-lhe um caso",
+      "casoReabierto": "O teu professor reabriu-te um caso: podes voltar a mexer nele e entregá-lo outra vez"
     },
     "mensajes": {
       "proponeCita": "{nombreDietista} propõe uma consulta para {fecha}",
@@ -309,7 +311,7 @@
     "fechaLimiteNoValida": "Essa data limite não é válida.",
     "abreloAntes": "Abra-o antes de o entregar: é assim que se cria o seu paciente.",
     "yaCorregida": "O seu professor já a corrigiu, por isso não se pode alterar.",
-    "entregaNoEncontrada": "Não se encontrou essa entrega.",
+    "entregaNoEncontrada": "Não se encontrou essa entrega",
     "notaFueraDeRango": "A nota vai de 0 a 10.",
     "todaviaNoHaEntregado": "Ainda não o entregou: espere que o entregue para o corrigir.",
     "notaOComentario": "Ponha pelo menos uma nota ou um comentário.",
@@ -323,6 +325,7 @@
     "noEstasEnUniversidad": "Neste momento não estás em nenhuma universidade",
     "soloElCreadorQuita": "Só quem criou a turma pode retirar outro professor. Para saíres tu, usa «Sair desta turma»",
     "soloElCreadorElimina": "Só quem criou a turma a pode eliminar. Tu podes arquivá-la, o que não apaga nada",
-    "salirBorraLaClase": "És o único professor: sair desta turma apaga-a por completo. Confirma se é isso que queres"
+    "salirBorraLaClase": "És o único professor: sair desta turma apaga-a por completo. Confirma se é isso que queres",
+    "noEstaEntregada": "Este aluno ainda não entregou"
   }
 }

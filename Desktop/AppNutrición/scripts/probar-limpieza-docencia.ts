@@ -118,6 +118,11 @@ async function main() {
       return e[0].id as string;
     };
 
+    // Un paciente de prácticas suyo, que es lo que la regla 4 se lleva cuando deja de ser alumna.
+    await client.query(
+      `INSERT INTO pacientes (id, "dietistaId", nombre, apellidos, "esDeClase", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, 'Practica', 'De la alumna', true, NOW(), NOW())`, [alumnaId]);
+
     const recienCorregida = await crearEntrega(enMarcha, 3);      // se queda: solo 3 días
     const corregidaVieja = await crearEntrega(enMarcha, 40);      // se le va el PDF
     const sinCorregir = await crearEntrega(enMarcha, null);       // se queda entera
@@ -171,6 +176,21 @@ async function main() {
     comprobar("del curso ya terminado se va el PDF", d.sinPdf === true);
     comprobar("y también la foto del trabajo", d.sinFoto === true);
     comprobar("pero la nota se queda para siempre", Number(d.nota) === 8.5);
+
+    // ── Los pacientes de prácticas: se van con el alumno, no antes ──
+    console.log("\n── El paciente de prácticas ──");
+    const { rows: sigueVivo } = await client.query(
+      `SELECT COUNT(*)::int n FROM pacientes WHERE "dietistaId" = $1 AND "esDeClase" = true`, [alumnaId]);
+    comprobar("mientras es alumna, su paciente de prácticas se queda", sigueVivo[0].n === 1, `${sigueVivo[0].n}`);
+    // Deja de ser alumna (su 31 de agosto ya pasó) y se vuelve a limpiar.
+    await client.query(`UPDATE dietistas SET "rolDocente" = NULL WHERE id = $1`, [alumnaId]);
+    execFileSync("npx", ["tsx", "scripts/limpiar-docencia.ts", "--ejecutar"],
+      { encoding: "utf8", env: { ...process.env, DB: "dev" } });
+    const { rows: yaNo } = await client.query(
+      `SELECT COUNT(*)::int n FROM pacientes WHERE "dietistaId" = $1 AND "esDeClase" = true`, [alumnaId]);
+    comprobar("cuando deja de serlo, se va con ella", yaNo[0].n === 0, `${yaNo[0].n}`);
+    const { rows: sigueCuenta } = await client.query(`SELECT 1 FROM dietistas WHERE id = $1`, [alumnaId]);
+    comprobar("pero su cuenta no se toca", sigueCuenta.length === 1);
 
     const { rows: despues } = await client.query(
       `SELECT pg_size_pretty(pg_total_relation_size('entregas_caso')) AS t`);

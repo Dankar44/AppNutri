@@ -48,7 +48,8 @@
     "planNoValido": "Plan no válido",
     "nombreObligatorio": "El nombre es obligatorio",
     "comidaNombreDuplicado": "Ya hay otra comida con ese nombre en este día. Ponle un nombre distinto: el reparto por comida distingue las comidas propias por su nombre.",
-    "soloLecturaProfesor": "Este plan es del profesor y no se puede editar. Crea el tuyo y tráete lo que quieras de él."
+    "soloLecturaProfesor": "Este plan es del profesor y no se puede editar. Crea el tuyo y tráete lo que quieras de él.",
+    "bloqueadoPorEntrega": "Este caso ya lo has entregado: para volver a tocarlo, deshaz la entrega primero. Si ya está corregido, pídeselo a tu profesor."
   },
   "cita": {
     "citaNoEncontrada": "Cita no encontrada",
@@ -177,7 +178,8 @@
       "consulta": "Consulta",
       "ejercicio": "Ejercicio",
       "casoAsignado": "Tienes un caso nuevo",
-      "casoCorregido": "Te han corregido un caso"
+      "casoCorregido": "Te han corregido un caso",
+      "casoReabierto": "Tu profesor te ha reabierto un caso: puedes volver a tocarlo y entregarlo otra vez"
     },
     "mensajes": {
       "proponeCita": "{nombreDietista} propone una cita para el {fecha}",
@@ -309,7 +311,7 @@
     "fechaLimiteNoValida": "Esa fecha límite no vale.",
     "abreloAntes": "Ábrelo antes de entregarlo: así se crea tu paciente.",
     "yaCorregida": "Tu profesor ya la ha corregido, así que no se puede tocar.",
-    "entregaNoEncontrada": "No se ha encontrado esa entrega.",
+    "entregaNoEncontrada": "No se ha encontrado esa entrega",
     "notaFueraDeRango": "La nota va de 0 a 10.",
     "todaviaNoHaEntregado": "Todavía no lo ha entregado: espera a que lo entregue para corregirlo.",
     "notaOComentario": "Ponle al menos una nota o un comentario.",
@@ -323,6 +325,7 @@
     "noEstasEnUniversidad": "Ahora mismo no estás en ninguna universidad",
     "soloElCreadorQuita": "Solo quien creó la clase puede sacar a otro profesor. Para irte tú, usa «Salir de esta clase»",
     "soloElCreadorElimina": "Solo quien creó la clase puede eliminarla. Tú puedes archivarla, que no borra nada",
-    "salirBorraLaClase": "Eres el único profesor: salir de esta clase la borra entera. Confírmalo si es lo que quieres"
+    "salirBorraLaClase": "Eres el único profesor: salir de esta clase la borra entera. Confírmalo si es lo que quieres",
+    "noEstaEntregada": "Este alumno no ha entregado todavía"
   }
 }

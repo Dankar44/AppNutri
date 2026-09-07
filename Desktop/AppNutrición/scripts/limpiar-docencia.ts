@@ -1,9 +1,12 @@
 /**
  * #39/#40 — Limpieza de lo que engorda la base por el módulo docente.
  *
- * El problema, con números reales (6 sep 2026): un PDF de entregable pesa ~165 KB. Una facultad de
- * 300 alumnos con 4 casos deja ~1.200 entregas, unos 240 MB solo en PDFs. La base de producción
- * entera ocupa hoy 120 MB. Es decir: **una sola universidad la duplicaría**.
+ * El problema era (6 sep 2026): un PDF de entregable pesa ~165 KB, y una facultad de 300 alumnos
+ * con 4 casos deja ~1.200 entregas: 240 MB por curso, con la base de producción entera en 120 MB.
+ *
+ * Desde el 7 sep 2026 **los PDF ya no se guardan**: se generan cuando alguien los pide, y salen
+ * idénticos porque entregar cierra el caso. De cada entrega solo queda ~1 KB. Lo que sigue
+ * creciendo son los pacientes de prácticas de los alumnos, y de eso va la regla 4.
  *
  * Lo que se borra, y solo esto:
  *
@@ -107,6 +110,22 @@ async function main() {
         `DELETE FROM invitaciones_docentes
           WHERE "aceptadaAt" IS NULL AND "expiraAt" < NOW() - ($1 || ' days')::interval`, [DIAS_INVITACION]);
       console.log("   → borradas");
+    }
+
+    // ── 4. Los pacientes de prácticas de quien ya no es alumno ──
+    // Guillermo, 7 sep 2026: «si te sales de una clase, se acaba el curso o te echan, lo pierdes;
+    // el PDF ya se lo habrá descargado». Solo los pacientes NACIDOS de un caso (`esDeClase`), y
+    // solo de quien ya dejó de ser alumno —pasado su 31 de agosto—: nunca los suyos propios.
+    const { rows: practicas } = await client.query(
+      `SELECT COUNT(*)::int AS n
+         FROM pacientes p JOIN dietistas d ON d.id = p."dietistaId"
+        WHERE p."esDeClase" = true AND d."rolDocente" IS DISTINCT FROM 'ALUMNO'`);
+    console.log(`4. Pacientes de prácticas de quien ya no es alumno: ${practicas[0].n}`);
+    if (EJECUTAR && practicas[0].n > 0) {
+      await client.query(
+        `DELETE FROM pacientes p USING dietistas d
+          WHERE d.id = p."dietistaId" AND p."esDeClase" = true AND d."rolDocente" IS DISTINCT FROM 'ALUMNO'`);
+      console.log("   → borrados con sus planes");
     }
 
     console.log(`\n${EJECUTAR ? "Liberado" : "Se liberaría"}: ${mb(liberado)}`);

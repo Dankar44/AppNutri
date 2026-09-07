@@ -100,11 +100,21 @@
     "notaDelAlumno": "Lo que te cuenta el alumno",
     "fotoFija": "Estás viendo la entrega tal y como la hizo el {fecha}. Lo que el alumno haya tocado después no está aquí, salvo que vuelva a entregar.",
     "entregable": "Entregable",
-    "entregableDe": "El PDF de «{plan}», tal y como lo entregó ({tamano}).",
+    "entregableDe": "El PDF de «{plan}», tal y como lo entregó.",
     "sinEntregable": "Entregó sin PDF: no adjuntó ningún entregable.",
     "abrirPdf": "Abrir el PDF",
     "compartidoPorTi": "compartido por ti",
-    "pdfYaNoGuardado": "Entregó «{plan}». El PDF ya no se guarda: se borran al acabar el curso para no ocupar sitio. La nota y el trabajo siguen aquí."
+    "pdfYaNoGuardado": "Entregó «{plan}», pero su plan ya no está: no se puede rehacer el PDF.",
+    "reabrir": "Reabrir la entrega",
+    "reabrirAyuda": "El alumno vuelve a poder tocar su caso y entregarlo otra vez.",
+    "reabrirTitulo": "¿Reabrir la entrega?",
+    "reabrirTexto": "El alumno podrá volver a tocar su caso y entregarlo otra vez. Lo que entregó y la corrección que le hayas puesto se pierden: se corrige lo que entregue después. Se le avisa.",
+    "reabierta": "Entrega reabierta",
+    "publicarNotas": "Enseñar las notas",
+    "sinPublicar": "{n, plural, one {# corrección hecha que el alumno todavía no ve} other {# correcciones hechas que los alumnos todavía no ven}}",
+    "publicarTitulo": "¿Enseñarles las notas?",
+    "publicarTexto": "{n, plural, one {# alumno verá su nota y tu comentario.} other {# alumnos verán su nota y tu comentario.}} Les llega un aviso. Puedes seguir corrigiendo a los demás: se les enseña cuando vuelvas a pulsar.",
+    "notasPublicadas": "{n, plural, =0 {No había ninguna por enseñar} one {# alumno ya ve su nota} other {# alumnos ya ven su nota}}"
   },
   "crearYRellenar": "Crear y rellenar el paciente",
   "paciente": {

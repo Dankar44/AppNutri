@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import type { EntregaResumen } from "@/app/actions/casos";
 import { formatDateTime } from "@/lib/utils";
 import { getLocale } from "@/i18n/locale";
+import { PublicarNotas } from "./publicar-notas";
 
 const ICONOS = {
   SIN_EMPEZAR: <Circle className="w-4 h-4 text-muted-foreground/50" />,
@@ -31,8 +32,12 @@ export async function ListaEntregas({
     return <p className="text-sm text-muted-foreground py-3">{t("entregas.sinAlumnos")}</p>;
   }
 
+  // Corregidas que el alumno todavía no puede ver: se publican todas de una vez.
+  const sinPublicar = entregas.filter((e) => e.estado === "CORREGIDA" && !e.visibleParaAlumno).length;
+
   return (
     <div className="divide-y divide-border">
+      {sinPublicar > 0 && <PublicarNotas asignacionId={asignacionId} cuantas={sinPublicar} />}
       {entregas.map((e) => {
         // Sin entrega todavía no hay nada que abrir: el alumno ni ha empezado.
         const puedeAbrirse = e.id !== "";

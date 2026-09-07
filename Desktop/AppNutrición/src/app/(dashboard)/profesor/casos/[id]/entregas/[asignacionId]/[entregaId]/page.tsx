@@ -211,6 +211,7 @@ export default async function EntregaPage({
         comentario={trabajo.comentario}
         visibleParaAlumno={trabajo.visibleParaAlumno}
         yaCorregida={trabajo.estado === "CORREGIDA"}
+        estaEntregada={trabajo.estado === "ENTREGADA" || trabajo.estado === "CORREGIDA"}
       />
     </div>
   );

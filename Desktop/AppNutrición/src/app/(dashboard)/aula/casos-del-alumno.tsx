@@ -3,11 +3,11 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ClipboardList, Loader2, CalendarClock, CheckCircle2, Undo2, User, AlertTriangle, Star, FileText,
+  ClipboardList, Loader2, CalendarClock, CheckCircle2, User, AlertTriangle, Star, FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
-import { abrirCaso, deshacerEntrega } from "@/app/actions/aula";
+import { abrirCaso } from "@/app/actions/aula";
 import { EntregarCaso } from "@/components/docencia/entregar-caso";
 
 export interface CasoParaAlumno {
@@ -60,20 +60,6 @@ export function CasosDelAlumno({ casos }: { casos: CasoParaAlumno[] }) {
       setTrabajando(null);
       if (result.ok && result.pacienteId) {
         router.push(`/pacientes/${result.pacienteId}?espacio=aula`);
-      } else {
-        toast.error(result.error || t("casos.errorAbrir"));
-      }
-    });
-  }
-
-  function deshacer(asignacionId: string) {
-    setTrabajando(asignacionId);
-    startTransition(async () => {
-      const result = await deshacerEntrega(asignacionId);
-      setTrabajando(null);
-      if (result.ok) {
-        toast.success(t("casos.entregaDeshecha"));
-        router.refresh();
       } else {
         toast.error(result.error || t("casos.errorAbrir"));
       }
@@ -181,18 +167,10 @@ export function CasosDelAlumno({ casos }: { casos: CasoParaAlumno[] }) {
                 </button>
 
                 {c.estado === "EN_MARCHA" && <EntregarCaso asignacionId={c.asignacionId} planes={c.planes} />}
-                {c.estado === "ENTREGADA" && <EntregarCaso asignacionId={c.asignacionId} planes={c.planes} reentrega />}
-
+                {/* Entregado es entregado: ni se vuelve a entregar ni se deshace. Para retocarlo,
+                    se lo reabre su profesor (Guillermo, 7 sep 2026). */}
                 {c.estado === "ENTREGADA" && (
-                  <button
-                    type="button"
-                    onClick={() => deshacer(c.asignacionId)}
-                    disabled={ocupado}
-                    className={`${boton} border border-border hover:bg-muted`}
-                  >
-                    <Undo2 className="w-4 h-4" />
-                    {t("casos.deshacerEntrega")}
-                  </button>
+                  <span className="text-xs text-muted-foreground">{t("casos.entregadoYCerrado")}</span>
                 )}
               </div>
 

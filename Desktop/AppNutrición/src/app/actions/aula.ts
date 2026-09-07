@@ -108,7 +108,7 @@ export interface CasoDelAlumno {
   planes: { id: string; nombre: string; activo: boolean }[];
   /** El PDF que entregó, si lo hizo. */
   entregableNombre: string | null;
-  /** El PDF sigue guardado. Se borra al acabar el curso (`limpiar-docencia`) y entonces no hay descarga. */
+  /** Hay entregable que descargar. El PDF no se guarda: se genera al pedirlo. */
   entregableGuardado: boolean;
   entregablePlanNombre: string | null;
 }
@@ -144,7 +144,7 @@ export async function getMisCasosDelAula(): Promise<CasoDelAlumno[]> {
         where: { alumnoId: dietista.id },
         select: {
           id: true, estado: true, pacienteId: true, entregadaAt: true, nota: true, comentario: true,
-          visibleParaAlumno: true, entregableNombre: true, entregablePlanId: true, entregableBytes: true,
+          visibleParaAlumno: true, entregableNombre: true, entregablePlanId: true,
           paciente: { select: { planes: { orderBy: [{ activo: "desc" }, { createdAt: "desc" }], select: { id: true, nombre: true, activo: true } } } },
         },
       },
@@ -171,7 +171,7 @@ export async function getMisCasosDelAula(): Promise<CasoDelAlumno[]> {
       comentario: visible ? entrega?.comentario ?? null : null,
       planes: entrega?.paciente?.planes ?? [],
       entregableNombre: entrega?.entregableNombre ?? null,
-      entregableGuardado: entrega?.entregableBytes != null,
+      entregableGuardado: entrega?.entregablePlanId != null,
       entregablePlanNombre: entrega?.paciente?.planes.find((p) => p.id === entrega.entregablePlanId)?.nombre ?? null,
     };
   });
@@ -325,21 +325,23 @@ export async function entregarCaso(
 
   // El PDF, del plan de ESTE paciente y de este alumno. Si falla el navegador, no se entrega a
   // medias: se le dice y puede volver a intentarlo o entregar sin PDF.
-  let entregable: { planId: string; nombre: string; pdf: Buffer } | null = null;
+    let entregable: { planId: string; nombre: string; sections?: PDFSectionOptions; displayOverrides?: DisplayOverrides } | null = null;
   if (opciones.entregable) {
     const plan = await prisma.planAlimenticio.findFirst({
       where: { id: opciones.entregable.planId, pacienteId: entrega.pacienteId, dietistaId: dietista.id },
-      select: { id: true },
+      select: { id: true, paciente: { select: { nombre: true, apellidos: true } } },
     });
     if (!plan) return { ok: false, error: t("docencia.planNoDelCaso") };
-    try {
-      const generado = await generarPdfDelPlan(plan.id, opciones.entregable.sections, opciones.entregable.displayOverrides);
-      if (!generado) return { ok: false, error: t("docencia.planNoDelCaso") };
-      entregable = { planId: plan.id, nombre: generado.nombre, pdf: generado.pdf };
-    } catch (e) {
-      console.error("[entregarCaso] PDF del entregable:", e);
-      return { ok: false, error: t("docencia.errorEntregable") };
-    }
+    // El PDF no se genera ni se guarda aquí: se hace cuando alguien lo pide (`generarPdfDeEntrega`).
+    // Sale idéntico porque entregar cierra el caso y el alumno ya no puede tocar el plan. Lo que sí
+    // se guarda es CUÁL es el entregable y con qué secciones lo quiso (7 sep 2026).
+    const nombrePaciente = `${plan.paciente.nombre} ${plan.paciente.apellidos}`.trim().replace(/\s+/g, "-");
+    entregable = {
+      planId: plan.id,
+      nombre: `Plan-${nombrePaciente}.pdf`,
+      sections: opciones.entregable.sections,
+      displayOverrides: opciones.entregable.displayOverrides,
+    };
   }
 
   const congelado = await congelarTrabajo(entrega.pacienteId);
@@ -351,11 +353,12 @@ export async function entregarCaso(
       estado: "ENTREGADA",
       entregadaAt: new Date(),
       notaAlumno: sanitizeStringOptional(opciones.notaAlumno, 4000) || null,
-      entregaSnapshot: congelado as unknown as Prisma.InputJsonValue,
+      // Con el entregable van sus opciones de presentación, para poder rehacerlo igual.
+      entregaSnapshot: { ...congelado, entregable: entregable ?? null } as unknown as Prisma.InputJsonValue,
       entregablePlanId: entregable?.planId ?? null,
       entregableNombre: entregable?.nombre ?? null,
-      entregableBytes: entregable?.pdf.byteLength ?? null,
-      entregablePdf: entregable ? new Uint8Array(entregable.pdf) : null,
+      entregableBytes: null,
+      entregablePdf: null,
     },
     select: { id: true },
   });
@@ -363,37 +366,12 @@ export async function entregarCaso(
   return { ok: true };
 }
 
-/** Deshacer la entrega para seguir tocándolo, mientras el profesor no la haya corregido. */
-export async function deshacerEntrega(
-  asignacionId: string,
-): Promise<{ ok: boolean; error?: string }> {
-  const dietista = await getCurrentDietista();
-  const t = await getTranslations("validation");
-  if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
-
-  if (!(await asignacionVigenteDelAlumno(asignacionId, dietista.id))) {
-    return { ok: false, error: t("docencia.casoNoEncontrado") };
-  }
-
-  const entrega = await prisma.entregaCaso.findUnique({
-    where: { asignacionId_alumnoId: { asignacionId, alumnoId: dietista.id } },
-    select: { id: true, estado: true },
-  });
-  if (!entrega) return { ok: false, error: t("docencia.casoNoEncontrado") };
-  if (entrega.estado === "CORREGIDA") return { ok: false, error: t("docencia.yaCorregida") };
-
-  await prisma.entregaCaso.update({
-    where: { id: entrega.id },
-    data: {
-      estado: "EN_MARCHA", entregadaAt: null,
-      // La foto y el PDF eran de esa entrega: se van con ella.
-      entregaSnapshot: Prisma.DbNull, entregablePlanId: null, entregableNombre: null, entregableBytes: null, entregablePdf: null,
-    },
-    select: { id: true },
-  });
-  revalidatePath("/aula");
-  return { ok: true };
-}
+/*
+ * Ya no hay «deshacer la entrega» del alumno: entregar cierra el caso y solo el profesor lo
+ * reabre (`reabrirEntrega`, en casos.ts). Se quitó la acción entera y no solo el botón porque cada
+ * export de un fichero "use server" es un endpoint: dejándola, el bloqueo se saltaba desde el
+ * navegador (Guillermo, 7 sep 2026).
+ */
 
 export interface CasoDeEstePaciente {
   asignacionId: string;
@@ -409,7 +387,7 @@ export interface CasoDeEstePaciente {
   /** El PDF que entregó, si lo hizo, y de qué plan. */
   entregableNombre: string | null;
   entregablePlanNombre: string | null;
-  /** El PDF sigue guardado: se borra al acabar el curso y entonces no hay nada que abrir. */
+  /** Hay entregable que descargar. El PDF no se guarda: se genera al pedirlo. */
   entregableGuardado: boolean;
   /** Sus planes, para elegir cuál va de entregable. */
   planes: { id: string; nombre: string; activo: boolean }[];
@@ -428,7 +406,7 @@ export async function getCasoDelPaciente(pacienteId: string): Promise<CasoDeEste
     where: { pacienteId, alumnoId: dietista.id },
     select: {
       id: true, estado: true, nota: true, comentario: true, visibleParaAlumno: true, entregadaAt: true,
-      entregableNombre: true, entregablePlanId: true, entregableBytes: true,
+      entregableNombre: true, entregablePlanId: true,
       asignacion: {
         select: {
           id: true, fechaLimite: true,
@@ -456,7 +434,7 @@ export async function getCasoDelPaciente(pacienteId: string): Promise<CasoDeEste
     entregadaAt: entrega.entregadaAt,
     entregableNombre: entrega.entregableNombre,
     entregablePlanNombre: planes.find((p) => p.id === entrega.entregablePlanId)?.nombre ?? null,
-    entregableGuardado: entrega.entregableBytes != null,
+    entregableGuardado: entrega.entregablePlanId != null,
     planes,
   };
 }

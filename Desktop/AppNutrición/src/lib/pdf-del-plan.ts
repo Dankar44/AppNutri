@@ -1,6 +1,6 @@
 import "server-only";
 import { getTranslations } from "next-intl/server";
-import { getPlanPDFData } from "@/app/actions/planes";
+import { getPlanPDFData, getPlanPDFDataDeEntrega } from "@/app/actions/planes";
 import { generatePlanPDF, type PDFSectionOptions, type DisplayOverrides } from "@/lib/pdf/generate-plan-pdf";
 import { getBrowser, resetBrowser } from "@/lib/browser";
 
@@ -53,4 +53,28 @@ async function renderizarPdf(html: string): Promise<Buffer> {
     }
   }
   throw ultimoError instanceof Error ? ultimoError : new Error("No se ha podido generar el PDF");
+}
+
+/**
+ * El entregable de una entrega, generado cuando el profesor lo pide (#40, 7 sep 2026).
+ *
+ * No se guarda ningún PDF: pesaban 165 KB cada uno y una facultad dejaba ~240 MB por curso. Sale
+ * idéntico al que entregó el alumno porque **entregar cierra el caso**: mientras la entrega esté
+ * viva, el alumno no puede tocar nada (`bloqueoPorEntrega`), así que el plan es exactamente el
+ * mismo. Las opciones de presentación que eligió se guardaron con la entrega.
+ */
+export async function generarPdfDeEntrega(
+  entregaId: string,
+  sections?: PDFSectionOptions,
+  displayOverrides?: DisplayOverrides,
+): Promise<{ pdf: Buffer; nombre: string } | null> {
+  const datos = await getPlanPDFDataDeEntrega(entregaId);
+  if (!datos) return null;
+  if (sections) datos.sections = sections;
+  if (displayOverrides) datos.displayOverrides = displayOverrides;
+
+  const tPdf = await getTranslations("pdf");
+  const html = generatePlanPDF(datos, tPdf);
+  const nombre = `Plan-${datos.pacienteNombre.replace(/\s+/g, "-")}.pdf`;
+  return { pdf: await renderizarPdf(html), nombre };
 }

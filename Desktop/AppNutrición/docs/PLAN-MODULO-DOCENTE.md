@@ -701,6 +701,41 @@ lo ha hecho X»). Solo ve **sus** clases, no las de otros profesores del mismo c
 sale de llevar la clase: en cuanto se le saca, deja de abrirse — comprobado en los dos sentidos
 (`probar-guion-completo`, 126 comprobaciones).
 
+### El entregable no se guarda: entregar cierra el caso (7 sep 2026)
+
+Idea de Guillermo, y resuelve el problema de espacio de raíz: **en vez de guardar el PDF, se genera
+cuando alguien lo pide**. Para que salga idéntico al que entregó el alumno, **entregar cierra el
+caso**: mientras la entrega esté viva, no puede tocar nada de ese paciente.
+
+| Antes | Ahora |
+|---|---|
+| 165 KB de PDF guardados por entrega | **0 bytes** |
+| ~240 MB por facultad y curso | ~1,2 MB (solo la foto del trabajo, 1 KB por entrega) |
+
+Las piezas:
+
+- **`bloqueoPorEntrega`** (`planes.ts`), al lado del que ya había para lo del profesor: un plan de
+  un paciente con entrega viva no se toca. Los cinco `asegurar*Editable` pasan por él, así que
+  cubre las 29 mutaciones de una vez.
+- **`generarPdfDeEntrega`** monta el PDF con los ajustes del ALUMNO (su tema, su logo): por eso
+  `getPlanPDFData` se partió en `montarDatosPdf` + `planCompleto(planId, dietistaId)`, sin cambiar
+  nada de lo que ya usaba la pestaña Entregables. Las secciones que eligió al entregar viajan
+  dentro de la foto.
+- **`/api/entregas/[id]/pdf`** lo genera al vuelo. El permiso sigue igual: el alumno y los
+  profesores del caso o de la clase.
+- **Se quitó `deshacerEntrega` entera**, no solo su botón: era un export de un fichero
+  `"use server"`, o sea un endpoint, y dejándolo el candado se saltaba desde el navegador.
+  Reabrir es ahora del profesor (**`reabrirEntrega`**), avisa al alumno y se lleva la corrección.
+- El alumno lo sabe **antes** de pulsar: aviso en ámbar en el cuadro de entregar.
+
+Y lo que pidió del mismo tirón:
+
+- **Un botón para enseñar las notas de toda la clase de golpe** (`publicarNotasDeLaClase`): se
+  corrige a ritmo y, cuando están todas, un clic y cada alumno ve la suya con su aviso.
+- **Los pacientes de prácticas se van con el alumno** (regla 4 de `limpiar-docencia`): cuando deja
+  de ser alumno —pasado su 31 de agosto— se borran los pacientes nacidos de un caso. Nunca los
+  suyos propios, y su cuenta no se toca. Es lo que más iba a crecer después de los PDF.
+
 ### Lo que queda de la fase 3
 
 - Repasar el menú del alumno cuando se vea el flujo con gente de verdad (Mensajes, Pagos).

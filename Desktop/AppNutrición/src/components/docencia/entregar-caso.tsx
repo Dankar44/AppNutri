@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Send, Loader2, FileText, RefreshCw } from "lucide-react";
+import { Send, Loader2, FileText, RefreshCw , AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { entregarCaso } from "@/app/actions/aula";
@@ -152,6 +152,12 @@ export function EntregarCaso({
         )}
         {reentrega && <p className="text-xs text-muted-foreground">{t("casos.reentregaSustituye")}</p>}
       </div>
+
+      {/* Entregar cierra el caso: es lo último que lee antes de pulsar (Guillermo, 7 sep 2026). */}
+      <p className="flex gap-2 rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200">
+        <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+        <span>{t("casos.alEntregarSeCierra")}</span>
+      </p>
 
       <div className="flex items-center gap-3">
         <button type="submit" disabled={isPending} className={cn(boton, "bg-primary text-primary-foreground hover:opacity-90")}>
