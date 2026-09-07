@@ -168,7 +168,11 @@ export function EntregarCaso({
       <ConfirmModal
         open={confirmando}
         title={t("casos.confirmarTitulo")}
-        description={t("casos.alEntregarSeCierra")}
+        description={
+          planElegido
+            ? `${t("casos.vasAEntregar", { plan: planElegido.nombre })} ${t("casos.alEntregarSeCierra")}`
+            : t("casos.alEntregarSeCierra")
+        }
         confirmLabel={t("casos.confirmarEntrega")}
         loading={isPending}
         onConfirm={() => { setConfirmando(false); entregar(); }}

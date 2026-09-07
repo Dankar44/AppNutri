@@ -34,9 +34,10 @@ export function PlanificacionDelAlumno({
     nombre: p.nombre,
     estado: p.estado,
     esDefecto: p.esDefecto,
-    fechaInicio: "",
-    fechaUltimoCambio: "",
-    fechaFinPrevista: null,
+    // Las fechas van en la foto desde el 7 sep 2026; las entregas viejas no las tienen.
+    fechaInicio: p.fechaInicio ?? "",
+    fechaUltimoCambio: p.fechaUltimoCambio ?? "",
+    fechaFinPrevista: p.fechaFinPrevista ?? null,
     datos: p.datos,
     origenId: p.origenId ?? null,
   }));

@@ -949,9 +949,11 @@ export function PlanificacionPorDefectoTab({
   const [reparto, setReparto] = useState<RepartoComida[]>(() => normalizeReparto(datos.repartoPorComida).comidas);
   // Fila expandida para editar el override de macros de esa comida (por tipo). null = todas plegadas.
   const [repartoExpandido, setRepartoExpandido] = useState<string | null>(null);
-  // Panel desplegado (solo visual, independiente de si el reparto está activo). Arranca plegado:
-  // la pestaña es larga y el resumen de la cabecera ya dice lo que hay guardado.
-  const [repartoAbierto, setRepartoAbierto] = useState(false);
+  // Panel desplegado (solo visual). Arranca plegado si el reparto está apagado —la pestaña es
+  // larga y el resumen de la cabecera basta—, pero ABIERTO si está activado: si no, en una vista
+  // que no se puede tocar (la entrega de un alumno) no había forma de ver el reparto que puso
+  // (Guillermo, 7 sep 2026).
+  const [repartoAbierto, setRepartoAbierto] = useState(datos.repartoPorComida?.activo ?? false);
   // Edición directa de kcal / gramos por comida: buffer mientras se teclea, se aplica al salir del
   // campo (mismo patrón que gramosEdit/gkgEdit de la tabla del día — evita que el input "salte").
   const [mealKcalEdit, setMealKcalEdit] = useState<{ tipo: string; val: string } | null>(null);

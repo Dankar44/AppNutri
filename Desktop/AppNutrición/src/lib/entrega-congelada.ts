@@ -39,6 +39,11 @@ export interface PlanificacionCongelada {
   datos: PlanificacionDatos;
   /** Compartida por el profesor (copia de la suya). */
   origenId?: string | null;
+  /** Las fechas, que también se pintan: sin ellas la pestaña sale con «Seleccionar mes» vacío
+   *  y el profesor no ve la duración que puso el alumno (Guillermo, 7 sep 2026). */
+  fechaInicio?: string | null;
+  fechaUltimoCambio?: string | null;
+  fechaFinPrevista?: string | null;
 }
 
 export interface EntregaCongelada {
@@ -87,9 +92,18 @@ export async function leerPlanificaciones(pacienteId: string): Promise<Planifica
   const filas = await prisma.planificacion.findMany({
     where: { pacienteId },
     orderBy: [{ esDefecto: "desc" }, { createdAt: "asc" }],
-    select: { id: true, nombre: true, esDefecto: true, estado: true, datos: true, origenId: true },
+    select: {
+      id: true, nombre: true, esDefecto: true, estado: true, datos: true, origenId: true,
+      fechaInicio: true, fechaUltimoCambio: true, fechaFinPrevista: true,
+    },
   });
-  return filas.map((f) => ({ ...f, datos: (f.datos ?? {}) as PlanificacionDatos }));
+  return filas.map((f) => ({
+    ...f,
+    datos: (f.datos ?? {}) as PlanificacionDatos,
+    fechaInicio: f.fechaInicio ? f.fechaInicio.toISOString() : null,
+    fechaUltimoCambio: f.fechaUltimoCambio ? f.fechaUltimoCambio.toISOString() : null,
+    fechaFinPrevista: f.fechaFinPrevista ? f.fechaFinPrevista.toISOString() : null,
+  }));
 }
 
 /** Un plan entero, en la forma en que lo pinta `PlanVisual`, con sus objetivos. */

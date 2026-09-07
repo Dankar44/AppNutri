@@ -55,7 +55,8 @@
     "entregadoYCerrado": "Já o entregaste, por isso este caso está fechado. Se precisares de mudar algo, pede ao teu professor que to reabra.",
     "queEntregas": "Qual dos teus planos entregas?",
     "loQueEntregas": "O que entregas",
-    "confirmarTitulo": "Entregar o caso?"
+    "confirmarTitulo": "Entregar o caso?",
+    "vasAEntregar": "Vais entregar «{plan}»."
   },
   "volverAlAula": "Voltar à minha sala",
   "delAl": "De {inicio} a {fin}"

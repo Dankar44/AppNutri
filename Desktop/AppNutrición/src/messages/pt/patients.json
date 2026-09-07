@@ -469,7 +469,8 @@
     "marcarDietaActual": "Marcar esta dieta como atual",
     "crearNuevoPlanParaPaciente": "Criar novo plano para este paciente",
     "dietaCount": "{count} {count, plural, one {dieta} other {dietas}}",
-    "dietaCountPlural": "{count} dietas"
+    "dietaCountPlural": "{count} dietas",
+    "elActualEs": "O atual é «{plan}»"
   },
   "entregables": {
     "portada": "Capa",

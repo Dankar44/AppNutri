@@ -226,11 +226,19 @@ export function PlanDeAlimentacionTab({
                   {tc("delProfesor")}
                 </span>
               )}
-              {esActivo && (
+              {esActivo ? (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-medium shrink-0">
                   <CheckCircle2 className="w-3 h-3" />
                   {t("actual")}
                 </span>
+              ) : (
+                // Mirando uno que no es el actual: se dice CUÁL lo es. Sin esto había que abrir el
+                // desplegable para saberlo (Guillermo, 7 sep 2026).
+                planActivoId && (
+                  <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs shrink-0">
+                    {t("elActualEs", { plan: planes.find((p) => p.id === planActivoId)?.nombre ?? "" })}
+                  </span>
+                )
               )}
               {selectedPlan.caloriasObjetivo != null && (
                 <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-medium shrink-0">

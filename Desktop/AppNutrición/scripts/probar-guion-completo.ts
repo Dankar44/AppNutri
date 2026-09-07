@@ -617,6 +617,10 @@ async function main() {
     const avisoEntregar = await texto(alumna);
     comprobar("pregunta antes de cerrar el caso", /¿Entregar el caso\?/i.test(avisoEntregar));
     comprobar("y avisa de que no podrá tocar nada más", /no podrás tocar nada más/i.test(avisoEntregar));
+    // Por defecto viene el plan ACTUAL, no el que mira: el aviso tiene que decir cuál manda, o se
+    // entrega el que no era (Guillermo, 7 sep 2026).
+    comprobar("y dice exactamente qué plan entrega", /Vas a entregar «/.test(avisoEntregar),
+      avisoEntregar.split("\n").find((l) => l.includes("Vas a entregar"))?.slice(0, 70) ?? "no lo dice");
     await foto(alumna, "19a-confirmar-entrega");
     await pulsar(alumna, "Entregar");
     await esperar(7000);
@@ -735,6 +739,11 @@ async function main() {
       `estado=${comoEsta[0]?.estado} entregada=${comoEsta[0]?.entregada} foto=${comoEsta[0]?.foto} v=${comoEsta[0]?.version}`);
     comprobar("ve su plan", visible.includes(`${MARCA} Mi plan`));
     comprobar("ve la planificación", visible.includes("Planificación"));
+    // Y la ve con su detalle, no a medias: el reparto por comida abierto si el alumno lo activó, y
+    // las fechas de duración, que no viajaban en la foto (Guillermo, 7 sep 2026).
+    comprobar("con la duración que puso el alumno, no vacía",
+      !/Seleccionar mes/.test(visible) || !/Reparto por comida/.test(visible),
+      visible.includes("Seleccionar mes") ? "sale «Seleccionar mes» vacío" : "");
     comprobar("y tiene el PDF del entregable", visible.includes("Entregable") || visible.includes("PDF"));
     comprobar("con el candado de solo lectura", /no puedes toc|solo lectura|tal y como/i.test(visible),
       visible.split("\n").find((l) => /tal y como|no puedes/i.test(l))?.slice(0, 90) ?? "no sale");
