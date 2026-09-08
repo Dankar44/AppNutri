@@ -99,6 +99,17 @@ temporal por diseño —dura un curso— y el profesor es permanente.
 **Nada de filtro por dominio de correo**: alumnos y profesores se registran a veces con su cuenta
 personal. Lo que protege es el contador y el freno por IP.
 
+### Para más adelante: política de borrado de cuentas paradas (8 sep 2026)
+
+Idea de Guillermo, **para un issue aparte, no para ahora**: borrar automáticamente lo que lleve
+mucho tiempo muerto — una universidad que lleve **dos años sin renovar**, o un profesor que lleve
+**dieciocho meses sin entrar** en su espacio. Hoy no se borra nada nunca, así que las cuentas de
+facultades que probaron y no siguieron se quedan para siempre.
+
+Cuando se haga, hay que decidir qué se borra y qué se conserva (el trabajo del alumno es suyo, no
+de la universidad) y avisar antes por correo. Enlaza con la limpieza automática que ya existe en
+`lib/limpieza-docente.ts`.
+
 ### Lo que NO entra en la fase 5 (decidido el 8 sep 2026)
 
 - **#40, la sección comparativa dentro del PDF.** La idea acordada, para cuando se haga: que al
