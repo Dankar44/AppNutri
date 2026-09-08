@@ -32,9 +32,9 @@ async function main() {
 
     // Las plazas, justas a lo que se monta: así se ve enseguida qué pasa al llenarlas.
     const { rows: lic } = await c.query(
-      `INSERT INTO licencias_docentes (id, institucion, "personaContacto", "maxProfesores", "maxAlumnos", activa, "fechaFin", "createdAt", "updatedAt")
-       VALUES (gen_random_uuid()::text, '${MARCA} Universidad de pruebas', 'Representante', $1, $2, true, NULL, NOW(), NOW())
-       RETURNING id`, [nProfes, nAlumnos]);
+      `INSERT INTO licencias_docentes (id, institucion, "personaContacto", "maxProfesores", "maxAlumnos", activa, "fechaInicio", "fechaFin", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, '${MARCA} Universidad de pruebas', 'Representante', $1, $2, true, $3::date, $4::date, NOW(), NOW())
+       RETURNING id`, [nProfes, nAlumnos, `${anioDelCurso()}-09-01`, finDeCurso()]);
     const licenciaId = lic[0].id as string;
 
     const profes: string[] = [];
@@ -75,9 +75,9 @@ async function main() {
 
     // El enlace de profesorado, con plazas de sobra para que puedas probarlo.
     const { rows: enl } = await c.query(
-      `INSERT INTO enlaces_profesores (id, "licenciaDocenteId", token, plazas, "creadoPor")
-       VALUES (gen_random_uuid()::text, $1, replace(gen_random_uuid()::text,'-',''), 2, 'banco')
-       RETURNING token`, [licenciaId]);
+      `INSERT INTO enlaces_profesores (id, "licenciaDocenteId", token, "cursoAnio", plazas, "creadoPor")
+       VALUES (gen_random_uuid()::text, $1, replace(gen_random_uuid()::text,'-',''), $2, 2, 'banco')
+       RETURNING token`, [licenciaId, anioDelCurso()]);
     await c.query(`UPDATE licencias_docentes SET "maxProfesores" = "maxProfesores" + 2 WHERE id = $1`, [licenciaId]);
 
     const base = "http://localhost:3001";
@@ -113,11 +113,14 @@ ${alumnos.map((e) => `     ${e}`).join("\n")}
   }
 }
 
+/** El año en que empieza el curso en el que estamos: 2026 es el curso 2026/27. */
+function anioDelCurso(hoy = new Date()): number {
+  return hoy.getUTCMonth() >= 8 ? hoy.getUTCFullYear() : hoy.getUTCFullYear() - 1;
+}
+
 /** El 31 de agosto con el que acaba el curso en el que estamos. */
 function finDeCurso(): string {
-  const hoy = new Date();
-  const anio = hoy.getUTCMonth() >= 8 ? hoy.getUTCFullYear() + 1 : hoy.getUTCFullYear();
-  return `${anio}-08-31`;
+  return `${anioDelCurso() + 1}-08-31`;
 }
 
 /** Una cuenta de verdad, con su usuario de autenticación, lista para entrar. */
