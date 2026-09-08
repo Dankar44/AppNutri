@@ -273,6 +273,16 @@ Antes de dar algo por terminado, pásale estas preguntas:
    con la base entera en 120 MB. Se arregló generándolo al pedirlo. Si el número sale grande,
    dilo antes de programarlo.
 
+7. **¿Hay otro sitio que haga ya esto mismo?** Antes de dar por bueno un mecanismo compartido,
+   busca si alguna pantalla trae **su propia copia** del mismo comportamiento. Si la trae, no se
+   entera de nada de lo que hagas en el compartido. El aviso de "cambios sin guardar" estaba dos
+   veces: el hook de `cambios-sin-guardar.tsx` y una copia dentro de la pestaña de planificación.
+   Al hacer que «Entregar» guardase lo pendiente, la planificación —que es justo donde el alumno
+   estaba escribiendo— no se apuntaba al registro, y se entregaba sin lo último (8 sep 2026).
+   Peor todavía: **la prueba estaba en verde**, porque probaba el horario, que sí usaba el
+   compartido. Cuando arregles un comportamiento común, `grep` de quién lo implementa por su
+   cuenta, y prueba el camino donde el usuario dijo que fallaba, no el que tenías a mano.
+
 Y dos normas de la casa:
 - **Interfaz optimista**: al guardar, refleja el cambio al instante y revierte con aviso si
   falla.
