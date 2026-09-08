@@ -184,6 +184,8 @@
     "nota": "Nota",
     "medianaClase": "Mediana da turma",
     "nadieHaEntregado": "Ainda ninguém entregou. Quando o fizerem, verás aqui num relance o que cada um fez.",
-    "comoLeerla": "«Objetivo dele» são as calorias que o próprio aluno definiu; «plano dele», as que o plano soma por dia. O desvio a vermelho passa dos 20%: o plano não cumpre o que ele próprio marcou. A mediana da turma serve para ver quem se afasta do grupo. Aqui não se avalia nada: a nota pões tu."
+    "comoLeerla": "«Objetivo dele» são as calorias que o próprio aluno definiu; «plano dele», as que o plano soma por dia. O desvio a vermelho passa dos 20%: o plano não cumpre o que ele próprio marcou. Em cima, a verde, está o que tens feito tu no caso, para leres a turma em comparação; e a mediana serve para ver quem se afasta do grupo. Aqui não se avalia nada: a nota pões tu.",
+    "tuyo": "Tu",
+    "tuCaso": "O teu caso"
   }
 }

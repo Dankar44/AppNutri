@@ -66,6 +66,11 @@ export function TablaComparativa({ comparativa }: { comparativa: Comparativa }) 
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
+          {/* Lo del profesor va arriba y con su color: es contra lo que quiere leer la clase, no
+              una fila más de la lista (Guillermo, 8 sep 2026). */}
+          {comparativa.referencia && (
+            <Fila f={comparativa.referencia} td={td} tc={tc} referencia />
+          )}
           {filas.map((f) => <Fila key={f.alumnoId} f={f} td={td} tc={tc} />)}
         </tbody>
         {comparativa.medianaKcal != null && (
@@ -83,13 +88,30 @@ export function TablaComparativa({ comparativa }: { comparativa: Comparativa }) 
   );
 }
 
-function Fila({ f, td, tc }: { f: FilaComparativa; td: string; tc: (k: string) => string }) {
+function Fila({ f, td, tc, referencia = false }: {
+  f: FilaComparativa;
+  td: string;
+  tc: (k: string) => string;
+  /** La del profesor: se distingue del resto y no se marca en rojo, que no se corrige a sí mismo. */
+  referencia?: boolean;
+}) {
+  const t = useTranslations("casos.comparativa");
   // Más de un 20% arriba o abajo de su propio objetivo: eso ya no es matizar, es otra dieta.
-  const seVa = f.desvio != null && Math.abs(f.desvio) > 20;
+  const seVa = !referencia && f.desvio != null && Math.abs(f.desvio) > 20;
   return (
-    <tr className={cn(f.planKcal == null && "text-muted-foreground")}>
-      <td className={`${td} font-medium`}>{f.alumno}</td>
-      <td className={`${td} text-xs`}>{tc(`estado.${f.estado}`)}</td>
+    <tr className={cn(
+      f.planKcal == null && !referencia && "text-muted-foreground",
+      referencia && "bg-primary/5",
+    )}>
+      <td className={`${td} font-medium`}>
+        {f.alumno}
+        {referencia && (
+          <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-medium">
+            {t("tuyo")}
+          </span>
+        )}
+      </td>
+      <td className={`${td} text-xs`}>{referencia ? t("tuCaso") : tc(`estado.${f.estado}`)}</td>
       <td className={`${td} tabular-nums`}>{f.objetivoKcal ? `${f.objetivoKcal} kcal` : "—"}</td>
       <td className={`${td} tabular-nums`}>{f.planKcal ? `${f.planKcal} kcal` : "—"}</td>
       <td className={cn(td, "tabular-nums", seVa && "text-red-600 dark:text-red-400 font-semibold")}>

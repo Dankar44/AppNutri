@@ -36,10 +36,23 @@ export interface Comparativa {
   filas: FilaComparativa[];
   /** La mediana de la clase, para ver quién se sale. Null si nadie ha entregado. */
   medianaKcal: number | null;
+  /**
+   * Lo que hizo el profesor en su propio caso, si lo hizo.
+   *
+   * Va arriba y destacada: es la referencia contra la que él quiere leer la clase (Guillermo, 8 sep
+   * 2026: "que apareciera también el tuyo, lo que has hecho tú de tu objetivo, como profesor").
+   */
+  referencia: FilaComparativa | null;
 }
 
+/** Lo mínimo que hace falta para contar un plan: da igual si viene de la foto o de la base. */
+export type PlanParaContar = {
+  caloriasObjetivo?: number | null;
+  dias?: { comidas: { alimentos: Parameters<typeof macrosDeItem>[0][] }[] }[];
+};
+
 /** Media diaria de un plan: se divide por los días que tienen algo, no por siete. */
-function mediaDiaria(plan: EntregaCongelada["planes"][number] | undefined): Macros | null {
+function mediaDiaria(plan: PlanParaContar | undefined): Macros | null {
   if (!plan?.dias?.length) return null;
   const porDia = plan.dias
     .map((d) => sumarMacros(d.comidas.flatMap((c) => c.alimentos.map((a) => macrosDeItem(a)))))
@@ -74,6 +87,38 @@ function medianaDe(valores: number[]): number | null {
   return orden.length % 2 ? orden[medio] : Math.round((orden[medio - 1] + orden[medio]) / 2);
 }
 
+/**
+ * Una fila a partir de un plan y de las planificaciones de quien lo hizo.
+ *
+ * La misma cuenta para el alumno (leyendo su foto) y para el profesor (leyendo su caso en vivo):
+ * si cada uno se calculara por su lado, la referencia no sería comparable con la clase.
+ */
+export function filaDe(
+  identidad: { alumnoId: string; alumno: string; estado: string; nota: number | null },
+  plan: PlanParaContar | undefined,
+  planificaciones: { esDefecto?: boolean; estado?: string; datos?: { kcalObjetivo?: unknown } | null }[],
+): FilaComparativa {
+  const real = mediaDiaria(plan);
+
+  // ¿Cuál es "su objetivo"? Por orden de lo más específico a lo más general:
+  //   1. Las calorías grabadas en el propio plan, si las tiene.
+  //   2. Su planificación activa, siempre que tenga un objetivo puesto.
+  //   3. Cualquier planificación suya con objetivo.
+  // La planificación POR DEFECTO no vale como criterio: se crea sola y vacía al abrir la ficha, así
+  // que cogerla dejaba la columna en «—» aunque tuviera sus 1.900 kcal en otra (8 sep 2026).
+  const conObjetivo = planificaciones.filter((p) => Number(p.datos?.kcalObjetivo) > 0);
+  const suya = conObjetivo.find((p) => p.estado === "activa") ?? conObjetivo[0];
+  const objetivoKcal = plan?.caloriasObjetivo || Number(suya?.datos?.kcalObjetivo) || null;
+
+  return {
+    ...identidad,
+    objetivoKcal,
+    planKcal: real?.calorias ?? null,
+    desvio: objetivoKcal && real ? Math.round(((real.calorias - objetivoKcal) / objetivoKcal) * 100) : null,
+    reparto: real ? repartoEnPorcentaje(real) : null,
+  };
+}
+
 export function construirComparativa(
   entregas: {
     alumnoId: string;
@@ -89,35 +134,16 @@ export function construirComparativa(
   const filas = entregas.map((e): FilaComparativa => {
     const foto = e.foto as EntregaCongelada | null;
     const plan = foto?.planes?.find((p) => p.id === e.entregablePlanId) ?? foto?.planes?.[0];
-    const real = mediaDiaria(plan);
-
-    // ¿Cuál es "su objetivo"? Por orden de lo más específico a lo más general:
-    //   1. Las calorías grabadas en el propio plan entregado, si las tiene.
-    //   2. Su planificación activa, siempre que tenga un objetivo puesto.
-    //   3. Cualquier planificación suya con objetivo.
-    // La planificación POR DEFECTO no vale como criterio: se crea sola y vacía al abrir la ficha,
-    // así que cogerla dejaba la columna en «—» aunque el alumno tuviera sus 1.900 kcal en otra
-    // (visto en la primera prueba, 8 sep 2026).
-    const conObjetivo = (foto?.planificaciones ?? []).filter(
-      (p) => Number(p.datos?.kcalObjetivo) > 0,
+    return filaDe(
+      { alumnoId: e.alumnoId, alumno: e.alumno, estado: e.estado, nota: e.nota },
+      plan,
+      foto?.planificaciones ?? [],
     );
-    const suya = conObjetivo.find((p) => p.estado === "activa") ?? conObjetivo[0];
-    const objetivoKcal = plan?.caloriasObjetivo || Number(suya?.datos?.kcalObjetivo) || null;
-
-    return {
-      alumnoId: e.alumnoId,
-      alumno: e.alumno,
-      estado: e.estado,
-      objetivoKcal,
-      planKcal: real?.calorias ?? null,
-      desvio: objetivoKcal && real ? Math.round(((real.calorias - objetivoKcal) / objetivoKcal) * 100) : null,
-      reparto: real ? repartoEnPorcentaje(real) : null,
-      nota: e.nota,
-    };
   });
 
   return {
     filas,
     medianaKcal: medianaDe(filas.map((f) => f.planKcal).filter((n): n is number => n != null)),
+    referencia: null,
   };
 }

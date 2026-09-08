@@ -184,6 +184,8 @@
     "nota": "Nota",
     "medianaClase": "Mediana de la clase",
     "nadieHaEntregado": "Todavía no ha entregado nadie. Cuando lo hagan, aquí verás de un vistazo qué ha hecho cada uno.",
-    "comoLeerla": "«Su objetivo» son las calorías que se puso el propio alumno; «su plan», las que suma de verdad su plan al día. El desvío en rojo pasa del 20%: el plan no cumple lo que él mismo se marcó. La mediana de la clase sirve para ver quién se sale del grupo. Aquí no se califica nada: la nota la pones tú."
+    "comoLeerla": "«Su objetivo» son las calorías que se puso el propio alumno; «su plan», las que suma de verdad su plan al día. El desvío en rojo pasa del 20%: el plan no cumple lo que él mismo se marcó. Arriba, en verde, va lo que tienes hecho tú en el caso, para leer la clase contra ello; y la mediana sirve para ver quién se sale del grupo. Aquí no se califica nada: la nota la pones tú.",
+    "tuyo": "Tú",
+    "tuCaso": "Tu caso"
   }
 }

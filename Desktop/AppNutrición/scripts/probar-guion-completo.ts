@@ -984,6 +984,24 @@ async function main() {
     console.log("\n═══ BLOQUE 9 · Fin de curso ═══");
 
     console.log("\n28b2. La comparativa de la clase, con los números de verdad");
+    // Lo que el profesor tiene hecho en su caso va arriba, como referencia contra la que leer a la
+    // clase (Guillermo, 8 sep 2026). Se le monta aquí para poder comprobarlo.
+    const { rows: pacDelCaso } = await client.query(`SELECT "pacienteId" FROM casos_clinicos WHERE id = $1`, [casoId]);
+    const { rows: planProfe } = await client.query(
+      `INSERT INTO planes_alimenticios (id, "pacienteId", "dietistaId", nombre, activo,
+              "caloriasObjetivo", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, $2, '${MARCA} Mi propuesta', true, 2000, NOW(), NOW())
+       RETURNING id`, [pacDelCaso[0].pacienteId, profeId]);
+    const { rows: diaProfe } = await client.query(
+      `INSERT INTO dias_del_plan (id, "planId", dia) VALUES (gen_random_uuid()::text, $1, 'LUNES') RETURNING id`,
+      [planProfe[0].id]);
+    const { rows: comProfe } = await client.query(
+      `INSERT INTO comidas_del_dia (id, "diaId", tipo, orden) VALUES (gen_random_uuid()::text, $1, 'ALMUERZO', 0) RETURNING id`,
+      [diaProfe[0].id]);
+    await client.query(
+      `INSERT INTO alimentos_en_comida (id, "comidaId", "alimentoId", cantidad, unidad, orden)
+       SELECT gen_random_uuid()::text, $1, a.id, 200, 'GRAMOS', 1
+         FROM (SELECT id FROM alimentos WHERE calorias > 80 ORDER BY id LIMIT 1) a`, [comProfe[0].id]);
     // Fase 5. Los números salen de la foto de la entrega, así que son los del día que entregó.
     await profe.goto(`${BASE}/profesor/casos/${casoId}`, { waitUntil: "networkidle0" });
     await esperar(2000);
@@ -997,6 +1015,8 @@ async function main() {
     comprobar("se abre la comparativa", /Comparar la clase/.test(comparativa) && profe.url().includes("/comparativa/"), profe.url());
     comprobar("con la alumna en la tabla", /Lucia|Alumna/.test(comparativa));
     comprobar("y explica contra qué se compara", /la nota la pones tú/i.test(comparativa));
+    comprobar("con lo del profesor arriba, como referencia", /Tu caso/.test(comparativa),
+      comparativa.split("\n").find((l) => /Tu caso/.test(l))?.slice(0, 60) ?? "no aparece");
     // Lo que de verdad importa: que el plan sume algo y no salga «—». Si el cálculo se rompe, esto
     // canta enseguida.
     const kcal = await profe.evaluate(() => {
@@ -1021,6 +1041,8 @@ async function main() {
     const { rows: planesAntes } = await client.query(
       `SELECT id FROM planes_alimenticios WHERE "pacienteId" = $1`, [copiaId]);
     await client.query(`DELETE FROM planes_alimenticios WHERE "pacienteId" = $1`, [copiaId]);
+    // Con `compartirPlanes` puesto, abrir la ficha vuelve a copiarle los del profesor: por eso la
+    // comprobación de abajo mira solo los propios.
     await alumna.goto(`${BASE}/pacientes/${copiaId}?pestana=plan-alimentacion`, { waitUntil: "networkidle0" });
     await esperar(2500);
     const sinPlanes = await texto(alumna);
@@ -1029,8 +1051,10 @@ async function main() {
       sinPlanes.split("\n").find((l) => /rimera dieta/i.test(l))?.slice(0, 60) ?? "");
     await foto(alumna, "24-entregado-sin-planes");
     // Y por detrás tampoco: la acción de crear tiene que rechazarlo aunque se llame sin pantalla.
+    // Se cuentan solo los SUYOS: los que llegan del profesor (con `origenId`) se le copian al abrir
+    // la ficha porque el caso comparte planes, y esos no los ha creado él.
     const { rows: creados } = await client.query(
-      `SELECT id FROM planes_alimenticios WHERE "pacienteId" = $1`, [copiaId]);
+      `SELECT id FROM planes_alimenticios WHERE "pacienteId" = $1 AND "origenId" IS NULL`, [copiaId]);
     comprobar("no se ha colado ningún plan nuevo", creados.length === 0, `${creados.length}`);
     console.log(`    (tenía ${planesAntes.length} plan(es) antes de la prueba)`);
 

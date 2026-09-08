@@ -27,7 +27,9 @@ import {
 import { copiarPaciente } from "@/lib/copiar-paciente";
 import type { Prisma } from "@/generated/prisma/client";
 import type { PlanVisualDetalle } from "@/components/paciente/plan-visual";
-import { construirComparativa, type Comparativa } from "@/lib/comparativa-clase";
+import { construirComparativa, filaDe, type Comparativa } from "@/lib/comparativa-clase";
+import { PLAN_COMPLETO, aDetalleVisual } from "@/lib/plan-para-ver";
+import { expandirGruposDeDias } from "@/lib/grupos-dias";
 
 /**
  * Avisa a los alumnos de una clase. Se hace de golpe con `createMany`: en una clase de 300, uno
@@ -1042,7 +1044,7 @@ export async function getComparativa(asignacionId: string): Promise<{
   const asignacion = await prisma.asignacionCaso.findFirst({
     where: { id: asignacionId, ...asignacionQuePuedoCorregir(profesor.dietistaId, profesor.licencia?.id ?? null) },
     select: {
-      caso: { select: { nombre: true } },
+      caso: { select: { nombre: true, pacienteId: true } },
       clase: {
         select: {
           nombre: true,
@@ -1078,9 +1080,42 @@ export async function getComparativa(asignacionId: string): Promise<{
       };
     });
 
+  const comparativa = construirComparativa(entregas);
+  comparativa.referencia = await referenciaDelProfesor(asignacion.caso.pacienteId, profesor.nombre);
+
   return {
     caso: asignacion.caso.nombre,
     clase: asignacion.clase.nombre,
-    comparativa: construirComparativa(entregas),
+    comparativa,
   };
+}
+
+/**
+ * Lo que el propio profesor tiene hecho en su caso, para leer la clase contra ello.
+ *
+ * Sale del paciente del caso, en vivo (no de ninguna foto): es SU trabajo y lo puede cambiar cuando
+ * quiera. Si no ha hecho plan, no hay referencia y la tabla se queda como estaba.
+ */
+async function referenciaDelProfesor(pacienteId: string | null, nombre: string) {
+  if (!pacienteId) return null;
+  const [plan, planificaciones] = await Promise.all([
+    prisma.planAlimenticio.findFirst({
+      where: { pacienteId },
+      orderBy: [{ activo: "desc" }, { updatedAt: "desc" }],
+      include: PLAN_COMPLETO,
+    }),
+    prisma.planificacion.findMany({
+      where: { pacienteId },
+      select: { esDefecto: true, estado: true, datos: true },
+    }),
+  ]);
+  if (!plan) return null;
+
+  // Los días agrupados enseñan el menú de su día representante, igual que en la foto del alumno.
+  const dias = await expandirGruposDeDias(plan.id, plan.dias);
+  return filaDe(
+    { alumnoId: "referencia", alumno: nombre, estado: "REFERENCIA", nota: null },
+    { ...aDetalleVisual(plan, dias), caloriasObjetivo: plan.caloriasObjetivo },
+    planificaciones as { esDefecto: boolean; estado: string; datos: { kcalObjetivo?: unknown } | null }[],
+  );
 }

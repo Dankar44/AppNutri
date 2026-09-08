@@ -89,39 +89,7 @@ async function hacerElCaso(
             activo, "caloriasObjetivo", "createdAt", "updatedAt")
      VALUES (gen_random_uuid()::text, $1, $2, 'Plan del caso', ARRAY[$3]::text[], true, $4, NOW(), NOW())
      RETURNING id`, [copiaId, alumnaId, plani[0].id, kcalObjetivo]);
-  for (const dia of ["LUNES", "MARTES", "MIERCOLES"]) {
-    const { rows: d } = await client.query(
-      `INSERT INTO dias_del_plan (id, "planId", dia) VALUES (gen_random_uuid()::text, $1, $2::"DiaSemana") RETURNING id`,
-      [plan[0].id, dia]);
-    for (const comida of ["DESAYUNO", "ALMUERZO", "CENA"]) {
-      const { rows: c } = await client.query(
-        `INSERT INTO comidas_del_dia (id, "diaId", tipo, orden) VALUES (gen_random_uuid()::text, $1, $2::"TipoComida", 0) RETURNING id`,
-        [d[0].id, comida]);
-      await client.query(
-        `INSERT INTO alimentos_en_comida (id, "comidaId", "alimentoId", cantidad, unidad, orden)
-         SELECT gen_random_uuid()::text, $1, a.id, 100, 'GRAMOS', row_number() OVER ()
-           FROM (SELECT id FROM alimentos WHERE calorias > 80 ORDER BY random() LIMIT 3) a`,
-        [c[0].id]);
-    }
-  }
-
-  // Las cantidades se ajustan para que el plan se acerque al objetivo: con gramos fijos y alimentos
-  // al azar salían 5.480 kcal al día, que no se parece a nada. `desvio` es lo que se quiere que le
-  // sobre o le falte, para que la comparativa enseñe un caso normal y otro claramente pasado.
-  const { rows: real } = await client.query(
-    `SELECT COALESCE(SUM(a.calorias * ac.cantidad / 100.0), 0) / 3 AS kcal_dia
-       FROM alimentos_en_comida ac
-       JOIN alimentos a ON a.id = ac."alimentoId"
-       JOIN comidas_del_dia c ON c.id = ac."comidaId"
-       JOIN dias_del_plan d ON d.id = c."diaId"
-      WHERE d."planId" = $1`, [plan[0].id]);
-  const kcalDia = Number(real[0].kcal_dia) || 1;
-  const factor = (kcalObjetivo * (1 + desvio / 100)) / kcalDia;
-  await client.query(
-    `UPDATE alimentos_en_comida SET cantidad = GREATEST(5, ROUND((cantidad * $2)::numeric))
-      WHERE "comidaId" IN (
-        SELECT c.id FROM comidas_del_dia c JOIN dias_del_plan d ON d.id = c."diaId" WHERE d."planId" = $1)`,
-    [plan[0].id, factor]);
+  await llenarPlan(client, plan[0].id, Math.round(kcalObjetivo * (1 + desvio / 100)));
 
   await page.goto(`${BASE}/pacientes/${copiaId}`, { waitUntil: "networkidle0" });
   await esperar(3000);
@@ -174,6 +142,38 @@ async function crearAlumna(
   return d[0].id as string;
 }
 
+/** Llena un plan con tres días y tres comidas, y ajusta las cantidades al objetivo pedido. */
+async function llenarPlan(client: pg.PoolClient, planId: string, kcalObjetivoDia: number) {
+  for (const dia of ["LUNES", "MARTES", "MIERCOLES"]) {
+    const { rows: d } = await client.query(
+      `INSERT INTO dias_del_plan (id, "planId", dia) VALUES (gen_random_uuid()::text, $1, $2::"DiaSemana") RETURNING id`,
+      [planId, dia]);
+    for (const comida of ["DESAYUNO", "ALMUERZO", "CENA"]) {
+      const { rows: c } = await client.query(
+        `INSERT INTO comidas_del_dia (id, "diaId", tipo, orden) VALUES (gen_random_uuid()::text, $1, $2::"TipoComida", 0) RETURNING id`,
+        [d[0].id, comida]);
+      await client.query(
+        `INSERT INTO alimentos_en_comida (id, "comidaId", "alimentoId", cantidad, unidad, orden)
+         SELECT gen_random_uuid()::text, $1, a.id, 100, 'GRAMOS', row_number() OVER ()
+           FROM (SELECT id FROM alimentos WHERE calorias > 80 ORDER BY random() LIMIT 3) a`,
+        [c[0].id]);
+    }
+  }
+  const { rows: real } = await client.query(
+    `SELECT COALESCE(SUM(a.calorias * ac.cantidad / 100.0), 0) / 3 AS kcal_dia
+       FROM alimentos_en_comida ac
+       JOIN alimentos a ON a.id = ac."alimentoId"
+       JOIN comidas_del_dia c ON c.id = ac."comidaId"
+       JOIN dias_del_plan d ON d.id = c."diaId"
+      WHERE d."planId" = $1`, [planId]);
+  const factor = kcalObjetivoDia / (Number(real[0].kcal_dia) || 1);
+  await client.query(
+    `UPDATE alimentos_en_comida SET cantidad = GREATEST(5, ROUND((cantidad * $2)::numeric))
+      WHERE "comidaId" IN (
+        SELECT c.id FROM comidas_del_dia c JOIN dias_del_plan d ON d.id = c."diaId" WHERE d."planId" = $1)`,
+    [planId, factor]);
+}
+
 async function main() {
   console.log("\n  Montando la clase de cero…");
   execFileSync("npx", ["tsx", "scripts/preparar-prueba-docente.ts"], {
@@ -193,6 +193,22 @@ async function main() {
 
     // La segunda alumna: cuenta nueva y matriculada en la misma clase.
     const alumna2Id = await crearAlumna(client, ALUMNA2);
+
+    // Y el profesor hace SU plan del caso: es la referencia contra la que quiere leer la clase.
+    const { rows: pacCaso } = await client.query(
+      `SELECT c."pacienteId", c."profesorId" FROM casos_clinicos c LIMIT 1`);
+    if (pacCaso[0]?.pacienteId) {
+      const { rows: planiProfe } = await client.query(
+        `INSERT INTO planificaciones (id, "pacienteId", "dietistaId", nombre, datos, "createdAt", "updatedAt")
+         VALUES (gen_random_uuid()::text, $1, $2, 'Objetivo del caso', '{"kcalObjetivo":2000}'::jsonb, NOW(), NOW())
+         RETURNING id`, [pacCaso[0].pacienteId, pacCaso[0].profesorId]);
+      const { rows: planProfe } = await client.query(
+        `INSERT INTO planes_alimenticios (id, "pacienteId", "dietistaId", nombre, "planificacionIds",
+                activo, "caloriasObjetivo", "createdAt", "updatedAt")
+         VALUES (gen_random_uuid()::text, $1, $2, 'Mi propuesta', ARRAY[$3]::text[], true, 2000, NOW(), NOW())
+         RETURNING id`, [pacCaso[0].pacienteId, pacCaso[0].profesorId, planiProfe[0].id]);
+      await llenarPlan(client, planProfe[0].id, 1980);
+    }
 
     console.log("  La alumna 1 hace su caso y entrega…");
     await hacerElCaso(navegador, client, ALUMNA, alumnaId, 1900, -4);
