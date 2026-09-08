@@ -127,11 +127,14 @@ async function main() {
     comprobar("la pantalla carga", visible.includes("Alumnos"), page.url());
 
     console.log("\n── Los números son los que se facturan ──");
-    comprobar("cuenta 3 plazas ocupadas, no 4 matrículas", /3\/10/.test(visible),
+    // Son 4 alumnos distintos y 5 matrículas: el que está en dos clases cuenta UNA vez, y el
+    // retirado SIGUE contando, porque la plaza se consume para todo el curso y no vuelve hasta el
+    // 31 de agosto (cambiado el 8 sep 2026; antes se liberaba y la bolsa bajaba sola).
+    comprobar("cuenta alumnos distintos, no matrículas", /4\/10/.test(visible),
       visible.match(/\d+\/10/)?.[0] ?? "no sale");
-    comprobar("dice cuántas quedan libres", /7 plazas libres/.test(visible),
+    comprobar("dice cuántas quedan libres", /6 plazas libres/.test(visible),
       visible.match(/\d+ plazas? libres?/)?.[0] ?? "no sale");
-    comprobar("el retirado no ocupa plaza", !/4\/10/.test(visible));
+    comprobar("y el retirado sigue ocupando la suya", !/3\/10/.test(visible));
     // El resumen de arriba es de TODA la base, no solo de lo que monta esta prueba: si se compara
     // contra números escritos a mano, cualquier clase que haya sembrada la tumba. Se contrasta
     // contra la base de datos, que es de donde salen.
