@@ -391,13 +391,10 @@ export async function getBadgesNavegacion(): Promise<Record<string, number>> {
   const stockBajo = suma(["STOCK_BAJO"]);
   if (stockBajo > 0) badges["/alimentos"] = (badges["/alimentos"] ?? 0) + stockBajo;
 
-  // Del espacio docente. El filtro de arriba deja pasar unos u otros, nunca los dos a la vez, así
-  // que estos solo salen dentro del aula o del espacio del profesor.
-  const entregas = suma(["ENTREGA_RECIBIDA"]);
-  if (entregas > 0) badges["/profesor/casos"] = entregas;
-
-  const delAula = suma(["CASO_ASIGNADO", "CASO_CORREGIDO"]);
-  if (delAula > 0) badges["/aula"] = delAula;
+  // Los avisos de docencia NO llevan globo en el menú: se quedaba puesto al entrar en la sección,
+  // porque solo se dan por leídos al abrir la propia notificación, y el número no se iba nunca
+  // (Guillermo, 8 sep 2026: "entro aquí y no desaparece… que salga solo en la notificación").
+  // Con la campana basta: desde ahí sí se marca leído y desaparece.
 
   return badges;
 }

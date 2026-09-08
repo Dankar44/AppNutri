@@ -6,6 +6,12 @@ import { getComparativa } from "@/app/actions/casos";
 import { TablaComparativa } from "./tabla-comparativa";
 
 /**
+ * Nada de caché: la fila del profesor sale de su caso en vivo, así que si acaba de tocar su
+ * planificación y entra aquí, tiene que ver el número nuevo y no el de hace un minuto.
+ */
+export const dynamic = "force-dynamic";
+
+/**
  * Comparar de un vistazo lo que ha hecho cada alumno con el mismo caso.
  *
  * En su propia pantalla: hay que leer la foto de cada entrega y con veinte alumnos eso no puede ir

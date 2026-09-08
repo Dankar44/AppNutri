@@ -144,7 +144,8 @@ async function crearAlumna(
 
 /** Llena un plan con tres días y tres comidas, y ajusta las cantidades al objetivo pedido. */
 async function llenarPlan(client: pg.PoolClient, planId: string, kcalObjetivoDia: number) {
-  for (const dia of ["LUNES", "MARTES", "MIERCOLES"]) {
+  // La semana entera: un plan de tres días no se parece a lo que entrega un alumno de verdad.
+  for (const dia of ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"]) {
     const { rows: d } = await client.query(
       `INSERT INTO dias_del_plan (id, "planId", dia) VALUES (gen_random_uuid()::text, $1, $2::"DiaSemana") RETURNING id`,
       [planId, dia]);
@@ -160,7 +161,7 @@ async function llenarPlan(client: pg.PoolClient, planId: string, kcalObjetivoDia
     }
   }
   const { rows: real } = await client.query(
-    `SELECT COALESCE(SUM(a.calorias * ac.cantidad / 100.0), 0) / 3 AS kcal_dia
+    `SELECT COALESCE(SUM(a.calorias * ac.cantidad / 100.0), 0) / 7 AS kcal_dia
        FROM alimentos_en_comida ac
        JOIN alimentos a ON a.id = ac."alimentoId"
        JOIN comidas_del_dia c ON c.id = ac."comidaId"
@@ -199,8 +200,8 @@ async function main() {
       `SELECT c."pacienteId", c."profesorId" FROM casos_clinicos c LIMIT 1`);
     if (pacCaso[0]?.pacienteId) {
       const { rows: planiProfe } = await client.query(
-        `INSERT INTO planificaciones (id, "pacienteId", "dietistaId", nombre, datos, "createdAt", "updatedAt")
-         VALUES (gen_random_uuid()::text, $1, $2, 'Objetivo del caso', '{"kcalObjetivo":2000}'::jsonb, NOW(), NOW())
+        `INSERT INTO planificaciones (id, "pacienteId", "dietistaId", nombre, "esDefecto", datos, "createdAt", "updatedAt")
+         VALUES (gen_random_uuid()::text, $1, $2, 'Objetivo del caso', true, '{"kcalObjetivo":2000}'::jsonb, NOW(), NOW())
          RETURNING id`, [pacCaso[0].pacienteId, pacCaso[0].profesorId]);
       const { rows: planProfe } = await client.query(
         `INSERT INTO planes_alimenticios (id, "pacienteId", "dietistaId", nombre, "planificacionIds",

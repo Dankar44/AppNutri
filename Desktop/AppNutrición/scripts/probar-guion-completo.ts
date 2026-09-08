@@ -1002,6 +1002,12 @@ async function main() {
       `INSERT INTO alimentos_en_comida (id, "comidaId", "alimentoId", cantidad, unidad, orden)
        SELECT gen_random_uuid()::text, $1, a.id, 200, 'GRAMOS', 1
          FROM (SELECT id FROM alimentos WHERE calorias > 80 ORDER BY id LIMIT 1) a`, [comProfe[0].id]);
+    // Su planificación dice 1500 y el plan lleva grabado 2000: manda la planificación, que es donde
+    // se decide el objetivo y lo que él toca (Guillermo, 8 sep 2026).
+    await client.query(
+      `INSERT INTO planificaciones (id, "pacienteId", "dietistaId", nombre, "esDefecto", datos, "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, $2, '${MARCA} Objetivo del caso', true, '{"kcalObjetivo":1500}'::jsonb, NOW(), NOW())`,
+      [pacDelCaso[0].pacienteId, profeId]);
     // Fase 5. Los números salen de la foto de la entrega, así que son los del día que entregó.
     await profe.goto(`${BASE}/profesor/casos/${casoId}`, { waitUntil: "networkidle0" });
     await esperar(2000);
@@ -1017,6 +1023,12 @@ async function main() {
     comprobar("y explica contra qué se compara", /la nota la pones tú/i.test(comparativa));
     comprobar("con lo del profesor arriba, como referencia", /Tu caso/.test(comparativa),
       comparativa.split("\n").find((l) => /Tu caso/.test(l))?.slice(0, 60) ?? "no aparece");
+    const suFila = await profe.evaluate(() => {
+      const tr = Array.from(document.querySelectorAll("tbody tr")).find((x) => /Tu caso/.test(x.textContent ?? ""));
+      return Array.from(tr?.querySelectorAll("td") ?? []).map((td) => td.textContent?.trim() ?? "");
+    });
+    comprobar("y su objetivo sale de su planificación, no del número viejo del plan",
+      suFila.includes("1500 kcal") && !suFila.includes("2000 kcal"), suFila.join(" · ").slice(0, 80));
     // Lo que de verdad importa: que el plan sume algo y no salga «—». Si el cálculo se rompe, esto
     // canta enseguida.
     const kcal = await profe.evaluate(() => {
@@ -1026,10 +1038,21 @@ async function main() {
     });
     comprobar("con las calorías de su plan calculadas", kcal.some((c) => /^\d{3,4} kcal$/.test(c)), kcal.join(" | ").slice(0, 90));
     comprobar("y el reparto de macros en %", kcal.some((c) => /^\d{1,2}\/\d{1,2}\/\d{1,2}$/.test(c)));
-    // Su objetivo son las 1.900 kcal que ella se puso en el paso 19, no la planificación vacía que
-    // se crea sola al abrir la ficha.
-    comprobar("y su propio objetivo, no el de la planificación vacía", kcal.includes("1900 kcal"),
-      kcal.join(" | ").slice(0, 90));
+    // Su objetivo sale de SU planificación, no del número que quedó grabado en el plan: es donde se
+    // decide y lo que el alumno toca.
+    //
+    // Y se lee de la FOTO, no de la base: al alumno se le compara con lo que entregó ese día, no
+    // con lo que tenga ahora. Son cosas distintas a propósito, y por eso la cifra puede no coincidir
+    // con su planificación actual.
+    const { rows: suObjetivo } = await client.query(
+      `SELECT p->'datos'->>'kcalObjetivo' AS kcal
+         FROM entregas_caso e,
+              jsonb_array_elements(("entregaSnapshot"::jsonb)->'planificaciones') p
+        WHERE e.id = $1 AND p->'datos'->>'kcalObjetivo' IS NOT NULL
+        ORDER BY (p->>'esDefecto')::boolean DESC LIMIT 1`, [entregaId]);
+    comprobar("y su propio objetivo, el de su planificación",
+      !!suObjetivo[0]?.kcal && kcal.includes(`${Math.round(Number(suObjetivo[0].kcal))} kcal`),
+      `planificación=${suObjetivo[0]?.kcal ?? "nada"} · tabla=${kcal.join(" | ").slice(0, 70)}`);
     comprobar("con el desvío calculado contra ese objetivo", kcal.some((c) => /^[+-]\d{1,3}%$/.test(c)));
     await foto(profe, "23-comparativa-de-la-clase");
 

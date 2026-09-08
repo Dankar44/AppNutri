@@ -100,15 +100,19 @@ export function filaDe(
 ): FilaComparativa {
   const real = mediaDiaria(plan);
 
-  // ¿Cuál es "su objetivo"? Por orden de lo más específico a lo más general:
-  //   1. Las calorías grabadas en el propio plan, si las tiene.
-  //   2. Su planificación activa, siempre que tenga un objetivo puesto.
-  //   3. Cualquier planificación suya con objetivo.
-  // La planificación POR DEFECTO no vale como criterio: se crea sola y vacía al abrir la ficha, así
-  // que cogerla dejaba la columna en «—» aunque tuviera sus 1.900 kcal en otra (8 sep 2026).
+  // ¿Cuál es "su objetivo"? Manda la PLANIFICACIÓN, que es donde se decide, y solo si ninguna tiene
+  // objetivo se usa el número guardado en el plan.
+  //
+  // Estaba al revés y era engañoso: el plan guarda una copia del objetivo de cuando se creó, así que
+  // el profesor cambiaba su planificación y la tabla seguía enseñando el número viejo (Guillermo,
+  // 8 sep 2026: "he tocado yo la planificación y no aparece"). Entre planificaciones, la por
+  // defecto es la que usa de verdad; si está vacía —se crea sola al abrir la ficha— se busca otra.
   const conObjetivo = planificaciones.filter((p) => Number(p.datos?.kcalObjetivo) > 0);
-  const suya = conObjetivo.find((p) => p.estado === "activa") ?? conObjetivo[0];
-  const objetivoKcal = plan?.caloriasObjetivo || Number(suya?.datos?.kcalObjetivo) || null;
+  const suya =
+    conObjetivo.find((p) => p.esDefecto) ??
+    conObjetivo.find((p) => p.estado === "activa") ??
+    conObjetivo[0];
+  const objetivoKcal = Number(suya?.datos?.kcalObjetivo) || plan?.caloriasObjetivo || null;
 
   return {
     ...identidad,
