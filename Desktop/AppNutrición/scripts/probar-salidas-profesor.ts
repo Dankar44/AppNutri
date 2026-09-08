@@ -211,6 +211,11 @@ async function main() {
     comprobar("desde el panel se ofrece salir de su universidad", visible.includes(`Salir de ${MARCA} Uno`));
     comprobar("y dejar de ser profesor", visible.includes("Dejar de ser profesor"));
     await foto(ana, "panel-salidas");
+    // Un caso suyo antes de irse: lo que hay que comprobar es que salir de la universidad no se
+    // lleva su trabajo por delante, y sin ningún caso eso no se prueba.
+    await client.query(
+      `INSERT INTO casos_clinicos (id, "profesorId", "licenciaDocenteId", nombre, "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, $2, '${MARCA} Caso de Ana', NOW(), NOW())`, [anaId, licenciaId]);
     await pulsar(ana, `Salir de ${MARCA} Uno`);
     await esperar(500);
     comprobar("el aviso avisa de que pierde el acceso a sus clases", /pierdes el acceso a sus clases/i.test(await texto(ana)));
@@ -230,11 +235,18 @@ async function main() {
       conOtra.profesorId === beaId ? "es de Bea" : "sigue siendo de Ana");
     await ana.goto(`${BASE}/profesor`, { waitUntil: "networkidle0" });
     visible = await texto(ana);
-    comprobar("su panel dice que no está en ninguna universidad", /no estás en ninguna universidad/i.test(visible));
-    comprobar("y que su cuenta sigue siendo de profesora", /sigue siendo de profesor/i.test(visible));
-    // Sin universidad `crearClase` la rechaza, así que ofrecerle crearla sería un botón que falla.
-    comprobar("no se le ofrece crear una clase que no podría crear", !visible.includes("Crear mi primera clase"));
-    comprobar("pero sus casos siguen siendo suyos", visible.includes("Crear mi primer caso"));
+    // Sin universidad no hay espacio docente (cambiado el 8 sep 2026): se le explica y se le manda
+    // a su cuenta, en vez de dejarle un panel vacío que podría seguir usando sin pagar.
+    comprobar("se le dice que no está en ninguna universidad", /no estás en ninguna universidad/i.test(visible),
+      ana.url());
+    comprobar("y que no se le ha borrado nada", /no se ha borrado nada|no se apagou nada/i.test(visible));
+    // Lo que de verdad importa no es lo que ponga la pantalla, sino que su trabajo siga en pie: se
+    // comprueba en la base, que es donde no hay interpretaciones.
+    const { rows: suyo } = await client.query(
+      `SELECT (SELECT COUNT(*)::int FROM casos_clinicos WHERE "profesorId" = $1) AS casos,
+              (SELECT "rolDocente" FROM dietistas WHERE id = $1) AS rol`, [anaId]);
+    comprobar("su cuenta sigue siendo de profesora", suyo[0]?.rol === "PROFESOR", `${suyo[0]?.rol}`);
+    comprobar("y sus casos siguen siendo suyos", suyo[0]?.casos > 0, `${suyo[0]?.casos} casos`);
     await foto(ana, "panel-sin-universidad");
     await ana.goto(`${BASE}/profesor/clases`, { waitUntil: "networkidle0" });
     comprobar("sin acceso a las clases de la facultad que dejó", !(await texto(ana)).includes(MARCA));

@@ -210,7 +210,10 @@ async function main() {
     comprobar("sale la universidad", visible.includes(`${MARCA} Universidad`));
     comprobar("con el curso en dos fechas", /Curso del \d{2}\/\d{2}\/\d{4} al \d{2}\/\d{2}\/\d{4}/.test(visible),
       visible.match(/Curso del [^\n]+/)?.[0] ?? "no sale");
-    comprobar("sin rastro de un curso escrito a mano", !/20\d\d\/\d\d/.test(visible));
+    // El «2026/27» ya no es texto libre escrito por nadie: es la etiqueta del curso elegido en el
+    // desplegable, y sale en los enlaces de profesorado (8 sep 2026).
+    comprobar("y el curso, en formato de curso escolar", /20\d\d\/\d\d/.test(visible),
+      visible.match(/20\d\d\/\d\d/)?.[0] ?? "no sale");
     comprobar("los cupos de profesor y alumno", /0 \/ 3|1 \/ 3|2 \/ 3/.test(visible) && visible.includes("/ 30"));
     comprobar("y los dominios de la facultad", visible.includes("urjc.es"));
     comprobar("que solo avisan, nunca bloquean", /nunca impide dar de alta/i.test(visible));

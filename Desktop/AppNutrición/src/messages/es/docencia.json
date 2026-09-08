@@ -258,6 +258,9 @@
     "nadaSeBorra": "No se ha borrado nada",
     "loQueGuardas": "{casos, plural, =0 {} =1 {Tu caso} other {Tus # casos}}{clases, plural, =0 {} =1 { y tu clase} other { y tus # clases}} siguen guardados tal y como los dejaste.",
     "alRenovar": "En cuanto tu universidad renueve, recuperas el espacio con todo tu trabajo. Habla con quien lleve la licencia.",
-    "irAMiCuenta": "Ir a mi cuenta"
+    "irAMiCuenta": "Ir a mi cuenta",
+    "tituloSinUniversidad": "No estás en ninguna universidad",
+    "explicacionSinUniversidad": "Ahora mismo no perteneces a ninguna universidad, así que no hay espacio docente al que entrar.",
+    "alVolverAEntrar": "En cuanto te den de alta en una universidad —la misma u otra— recuperas el espacio con todo tu trabajo."
   }
 }

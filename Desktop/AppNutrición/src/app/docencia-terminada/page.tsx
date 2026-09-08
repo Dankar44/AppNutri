@@ -30,6 +30,9 @@ export default async function DocenciaTerminadaPage() {
   if (licenciaVigente(licencia)) redirect("/profesor");
 
   const t = await getTranslations("docencia.docenciaTerminada");
+  // No es lo mismo que tu universidad no haya renovado que haberte ido tú de ella: el aviso lo
+  // dice bien, que si no el que se fue lee que "el curso ha acabado" y no entiende nada.
+  const sinUniversidad = !licencia;
   const [casos, clases] = await Promise.all([
     prisma.casoClinico.count({ where: { profesorId: dietista.id } }),
     prisma.clase.count({ where: { profesorId: dietista.id } }),
@@ -40,14 +43,14 @@ export default async function DocenciaTerminadaPage() {
       <div className="max-w-md w-full">
         <div className="text-center mb-6">
           <GraduationCap className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-          <h1 className="text-xl font-semibold">{t("titulo")}</h1>
+          <h1 className="text-xl font-semibold">{sinUniversidad ? t("tituloSinUniversidad") : t("titulo")}</h1>
           {licencia?.institucion && (
             <p className="text-sm text-muted-foreground mt-1">{licencia.institucion}</p>
           )}
         </div>
 
         <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-          <p className="text-sm">{t("explicacion")}</p>
+          <p className="text-sm">{sinUniversidad ? t("explicacionSinUniversidad") : t("explicacion")}</p>
 
           <div className="flex items-start gap-3 rounded-lg bg-muted/40 p-3">
             <Archive className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
@@ -61,7 +64,7 @@ export default async function DocenciaTerminadaPage() {
 
           <div className="flex items-start gap-3 rounded-lg bg-muted/40 p-3">
             <RefreshCw className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
-            <p className="text-sm text-muted-foreground">{t("alRenovar")}</p>
+            <p className="text-sm text-muted-foreground">{sinUniversidad ? t("alVolverAEntrar") : t("alRenovar")}</p>
           </div>
 
           <Link

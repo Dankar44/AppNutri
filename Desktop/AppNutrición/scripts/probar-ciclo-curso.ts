@@ -284,7 +284,12 @@ async function main() {
     const profe2 = await sesionDe(navegador, `profe@${DOMINIO}`);
     await profe2.goto(`${BASE}/profesor`, { waitUntil: "networkidle0" });
     await esperar(1500);
-    comprobar("pero el profesor sí sigue entrando", profe2.url().includes("/profesor"), profe2.url());
+    // El profesor SÍ pierde el espacio cuando la facultad no renueva (cambiado el 8 sep 2026: antes
+    // seguía entrando y usaba el módulo sin pagar). El alumno aguanta hasta su 31 de agosto.
+    comprobar("y el profesor pierde el suyo hasta que renueven",
+      profe2.url().includes("/docencia-terminada"), profe2.url());
+    comprobar("con el aviso de que no se ha borrado nada",
+      /no se ha borrado nada/i.test(await profe2.evaluate(() => document.body.innerText)));
   } finally {
     await limpiar(client);
     client.release();
