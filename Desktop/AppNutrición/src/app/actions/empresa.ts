@@ -568,7 +568,9 @@ export async function crearMiembroCentro(data: {
       nuevoDietista.id,
     );
 
-    crearPacienteDemoSiNoExiste(prisma, nuevoDietista.id, "es").catch(() => {});
+    crearPacienteDemoSiNoExiste(prisma, nuevoDietista.id, "es").catch((e) =>
+      console.error("[empresa] Sin paciente de ejemplo para el miembro nuevo:", e),
+    );
 
     sendEmail({
       to: email,

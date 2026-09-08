@@ -239,7 +239,11 @@ export async function apuntarseAClase(data: {
     // que ese correo se volvía inservible para siempre (auditoría 1 sep 2026).
     if (!alta.ok) return { ok: false, error: t("docencia.sinPlazas") };
 
-    crearPacienteDemoSiNoExiste(prisma, alta.valor, locale).catch(() => {});
+    // Si esto falla, la cuenta queda sin paciente de ejemplo y nadie se entera: al menos que se
+    // vea en el log. No se espera a propósito: el alta ya está hecha y no debe caerse por esto.
+    crearPacienteDemoSiNoExiste(prisma, alta.valor, locale).catch((e) =>
+      console.error("[docencia] Sin paciente de ejemplo para el alumno del enlace:", e),
+    );
     return { ok: true };
   } catch (e) {
     if (isNextNavigation(e)) throw e;

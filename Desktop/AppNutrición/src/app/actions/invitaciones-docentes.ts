@@ -472,7 +472,10 @@ export async function aceptarInvitacionDocente(data: {
       return { ok: false, error: t(resultado.error ?? "general.errorDesconocido") };
     }
 
-    crearPacienteDemoSiNoExiste(prisma, resultado.dietistaId, locale).catch(() => {});
+    // Igual que en el alta por enlace: si falla, que quede en el log y no en el olvido.
+    crearPacienteDemoSiNoExiste(prisma, resultado.dietistaId, locale).catch((e) =>
+      console.error("[docencia] Sin paciente de ejemplo para la invitación aceptada:", e),
+    );
 
     revalidatePath("/admin/universidades");
     if (inv.licenciaDocenteId) revalidatePath(`/admin/universidades/${inv.licenciaDocenteId}`);
