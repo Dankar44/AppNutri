@@ -11,7 +11,7 @@ import { ConfirmModal } from "@/components/confirm-modal";
 
 export function AltaAlumnos({
   claseId,
-  plazasLibres,
+  plazas,
   enlace,
   enlaceAbierto,
   puedeDarAltas,
@@ -20,7 +20,8 @@ export function AltaAlumnos({
   cupoUsado,
 }: {
   claseId: string;
-  plazasLibres: number | null;
+  /** Cuántas plazas de alumno van y cuántas hay en la facultad. */
+  plazas: { libres: number; usadas: number; total: number } | null;
   enlace: string | null;
   enlaceAbierto: boolean;
   /** De la licencia de la facultad: si está caducada, no se dan altas en ninguna clase. */
@@ -37,6 +38,9 @@ export function AltaAlumnos({
   const [isPending, startTransition] = useTransition();
   const [confirmando, setConfirmando] = useState(false);
   const [cupo, setCupo] = useState("");
+  // El cupo es obligatorio y no puede pedir más plazas de las que le quedan a la facultad: abrir
+  // el enlace sin número dejaba entrar hasta agotar la bolsa de todos (Guillermo, 9 sep 2026).
+  const cupoSePasa = !!cupo && !!plazas && Number(cupo) > plazas.libres;
   const [modo, setModo] = useState<"correos" | "enlace">("correos");
   const [correos, setCorreos] = useState("");
   const [copiado, setCopiado] = useState(false);
@@ -116,9 +120,9 @@ export function AltaAlumnos({
     <div className="lg:border lg:border-border lg:rounded-xl lg:bg-card lg:p-5 space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h3 className="font-semibold">{t("alumnos.titulo")}</h3>
-        {plazasLibres !== null && (
+        {plazas && (
           <span className="text-xs text-muted-foreground tabular-nums" title={t("alumnos.plazasAyuda")}>
-            {t("alumnos.plazasLibres", { n: plazasLibres })}
+            {t("alumnos.plazasDe", { usadas: plazas.usadas, total: plazas.total })}
           </span>
         )}
       </div>
@@ -188,10 +192,14 @@ export function AltaAlumnos({
                 value={cupo}
                 onChange={(e) => setCupo(e.target.value.replace(/\D/g, "").slice(0, 4))}
                 inputMode="numeric"
-                placeholder={t("alumnos.cupoPlaceholder")}
+                placeholder={String(Math.min(60, plazas?.libres ?? 60))}
                 className="mt-1 w-28 rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
-              <p className="text-xs text-muted-foreground mt-1">{t("alumnos.cupoAyuda")}</p>
+              <p className={cn("text-xs mt-1", cupoSePasa ? "text-red-600 dark:text-red-400" : "text-muted-foreground")}>
+                {cupoSePasa
+                  ? t("alumnos.cupoSePasa", { n: plazas?.libres ?? 0 })
+                  : t("alumnos.cupoAyuda", { n: plazas?.libres ?? 0 })}
+              </p>
             </div>
           )}
           {enlaceAbierto && cupoActual != null && (
@@ -203,7 +211,7 @@ export function AltaAlumnos({
           <button
             type="button"
             onClick={() => cambiarEnlace(!enlaceAbierto)}
-            disabled={isPending}
+            disabled={isPending || (!enlaceAbierto && (!cupo || cupoSePasa))}
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium hover:bg-muted disabled:opacity-50 transition-colors"
           >
             {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}

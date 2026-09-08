@@ -55,8 +55,9 @@ async function main() {
       await profe.goto(`${BASE}/profesor/clases/${claseId}`, { waitUntil: "networkidle0" });
       await esperar(2200);
       const txt = await profe.evaluate(() => document.body.innerText);
-      const m = txt.match(/(\d+)\s+plazas? libres?/i) ?? (/sin plazas libres/i.test(txt) ? ["", "0"] : null);
-      return m ? Number(m[1]) : null;
+      // El indicador dice «usadas de total»: las libres se sacan restando.
+      const m = txt.match(/(\d+)\s+de\s+(\d+)\s+plazas/i);
+      return m ? Number(m[2]) - Number(m[1]) : null;
     };
 
     console.log("\n── Una plaza se gasta al entrar ──");
@@ -198,8 +199,14 @@ async function matricular(c: pg.PoolClient, claseId: string, alumnoId: string, a
 
 async function limpiar(c: pg.PoolClient) {
   await c.query(`DELETE FROM clases WHERE nombre LIKE '${MARCA}%'`);
-  const { rows } = await c.query(`SELECT "authId" FROM dietistas WHERE nombre = '${MARCA}'`);
-  await c.query(`DELETE FROM dietistas WHERE nombre = '${MARCA}'`);
+  // Por NOMBRE y por CORREO: las cuentas que crea el propio formulario se llaman «Nueva», así que
+  // borrando solo por nombre sobrevivían de una ejecución a otra y falseaban la comprobación.
+  const patron = `${MARCA.toLowerCase()}.%@prueba.dev`;
+  const { rows } = await c.query(
+    `SELECT "authId" FROM dietistas WHERE nombre = '${MARCA}' OR email LIKE $1`, [patron]);
+  await c.query(`DELETE FROM pacientes WHERE "dietistaId" IN (
+     SELECT id FROM dietistas WHERE nombre = '${MARCA}' OR email LIKE $1)`, [patron]);
+  await c.query(`DELETE FROM dietistas WHERE nombre = '${MARCA}' OR email LIKE $1`, [patron]);
   for (const r of rows) {
     if (!r.authId) continue;
     await c.query(`DELETE FROM auth.identities WHERE user_id = $1::uuid`, [r.authId]);

@@ -108,7 +108,7 @@ export default async function ClaseDetallePage({
       {!clase.archivada && (
         <AltaAlumnos
           claseId={clase.id}
-          plazasLibres={plazasLibres}
+          plazas={plazasLibres}
           enlace={clase.enlaceInvitacion}
           enlaceAbierto={clase.invitacionAbierta && clase.enlaceInvitacion !== null}
           puedeDarAltas={profesor.puedeDarAltas}

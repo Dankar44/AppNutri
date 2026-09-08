@@ -337,6 +337,8 @@
     "alumnoNoProfesor": "A tua conta é de aluno: não pode ser também de professor.",
     "yaExisteEntraConTuCuenta": "Esse email já tem conta no Annonia. Entra com ela e volta a abrir o link.",
     "claseLlena": "Esta turma já está completa. Fala com o teu professor.",
-    "renovarHaciaAtras": "Não se pode renovar para um ano letivo anterior ao que já tem."
+    "renovarHaciaAtras": "Não se pode renovar para um ano letivo anterior ao que já tem.",
+    "cupoObligatorio": "Indica quantos alunos cabem na tua turma.",
+    "cupoSePasaDeLaBolsa": "Não podes abrir o link para mais vagas do que as que restam à faculdade."
   }
 }

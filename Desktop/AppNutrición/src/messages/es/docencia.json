@@ -170,8 +170,10 @@
     "confirmarAltaTexto": "{n, plural, =1 {Consume 1 plaza del curso} other {Consume # plazas del curso}} y no vuelven hasta el 31 de agosto, aunque después se vaya alguien. Los que ya estén en la clase no gastan plaza.",
     "cupoClase": "Cuántos caben en tu clase",
     "cupoPlaceholder": "60",
-    "cupoAyuda": "Opcional. El enlace se cierra solo al llegar a ese número, aunque a la facultad le queden plazas.",
-    "cupoPuesto": "Tope de esta clase: {usadas} de {n}"
+    "cupoAyuda": "Obligatorio. El enlace se cierra solo al llegar a ese número. Como mucho {n}, que son las plazas que le quedan a la facultad.",
+    "cupoPuesto": "Tope de esta clase: {usadas} de {n}",
+    "plazasDe": "{usadas} de {total} plazas",
+    "cupoSePasa": "A la facultad solo le quedan {n} plazas: pon ese número o menos."
   },
   "cursoTerminado": {
     "titulo": "Se ha acabado tu año escolar",

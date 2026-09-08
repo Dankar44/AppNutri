@@ -170,8 +170,10 @@
     "confirmarAltaTexto": "{n, plural, =1 {Consome 1 vaga do curso} other {Consome # vagas do curso}} e não voltam até 31 de agosto, mesmo que depois alguém saia. Quem já estiver na turma não gasta vaga.",
     "cupoClase": "Quantos cabem na tua turma",
     "cupoPlaceholder": "60",
-    "cupoAyuda": "Opcional. O link fecha-se sozinho ao chegar a esse número, mesmo que a faculdade tenha vagas.",
-    "cupoPuesto": "Limite desta turma: {usadas} de {n}"
+    "cupoAyuda": "Obrigatório. O link fecha-se sozinho ao chegar a esse número. No máximo {n}, que são as vagas que restam à faculdade.",
+    "cupoPuesto": "Limite desta turma: {usadas} de {n}",
+    "plazasDe": "{usadas} de {total} vagas",
+    "cupoSePasa": "À faculdade só restam {n} vagas: põe esse número ou menos."
   },
   "cursoTerminado": {
     "titulo": "O seu ano letivo terminou",

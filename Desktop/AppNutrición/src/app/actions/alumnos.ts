@@ -242,7 +242,7 @@ export async function cambiarEnlaceClase(
 
   const clase = await prisma.clase.findFirst({
     where: { id: claseId, ...claseQueLleva(profesor.dietistaId, profesor.licencia?.id ?? null) },
-    select: { id: true, tokenInvitacion: true },
+    select: { id: true, tokenInvitacion: true, licenciaDocenteId: true },
   });
   if (!clase) return { ok: false, error: t("docencia.claseNoEncontrada") };
 
@@ -255,7 +255,18 @@ export async function cambiarEnlaceClase(
       : (clase.tokenInvitacion ?? randomBytes(18).toString("base64url"));
     // El cupo se guarda al abrir: es cuando el profesor dice "en mi clase somos 60". Al cerrar no
     // se toca, para que al reabrir siga estando el suyo.
-    const cupoLimpio = cupo == null || cupo <= 0 ? null : Math.min(Math.floor(cupo), 1000);
+    //
+    // Y es obligatorio, y no puede pedir más plazas de las que le quedan a la facultad: sin tope,
+    // un profesor abría el enlace y se llevaba la bolsa de todos. La pantalla ya lo impide, pero
+    // esto es lo que autoriza.
+    let cupoLimpio: number | null = null;
+    if (abierto) {
+      const pedido = Math.floor(Number(cupo));
+      if (!Number.isFinite(pedido) || pedido < 1) return { ok: false, error: t("docencia.cupoObligatorio") };
+      const libres = clase.licenciaDocenteId ? await plazasLibresDeLicencia(clase.licenciaDocenteId) : 0;
+      if (pedido > libres) return { ok: false, error: t("docencia.cupoSePasaDeLaBolsa") };
+      cupoLimpio = pedido;
+    }
     await prisma.clase.update({
       where: { id: claseId },
       data: {
@@ -274,10 +285,24 @@ export async function cambiarEnlaceClase(
 }
 
 /** Cuántas plazas quedan en la bolsa de la institución del profesor. */
-export async function getPlazasLibres(): Promise<number | null> {
+export interface PlazasDeLaFacultad {
+  libres: number;
+  usadas: number;
+  total: number;
+}
+
+/**
+ * Las plazas de alumno de la facultad: cuántas van y cuántas hay.
+ *
+ * Se devuelven las tres cifras porque «1 plaza libre» no dice nada por sí solo: el profesor
+ * necesita ver «3 de 60» para saber si va sobrado o justo (Guillermo, 9 sep 2026).
+ */
+export async function getPlazasLibres(): Promise<PlazasDeLaFacultad | null> {
   const profesor = await requireProfesor();
   if (!profesor.licencia) return null;
-  return plazasLibresDeLicencia(profesor.licencia.id);
+  const libres = await plazasLibresDeLicencia(profesor.licencia.id);
+  const total = profesor.licencia.maxAlumnos;
+  return { libres, usadas: Math.max(0, total - libres), total };
 }
 
 /** ¿Ese correo es del dominio de la institución? Solo para avisar, nunca para bloquear. */
