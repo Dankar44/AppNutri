@@ -58,6 +58,19 @@ dejaría fuera a gente que ya tenemos, así que:
 4. **Corrección** — panel del profesor, nota y comentarios, aula del alumno, sección del entregable (#40).
 5. **Remates** — avisos, exportar resultados, comparativa, nota legal (#79).
 
+### Estado de la fase 5 (8 sep 2026): hecha
+
+| | Qué | Dónde |
+|---|---|---|
+| ✅ | **Descargar las notas** de una clase en CSV para el acta | `api/asignaciones/[id]/notas` · `probar-exportar-notas` (10) |
+| ✅ | **Avisos** al profesor cuando le entregan, dentro de la app | `avisarAlProfesor` en `actions/aula.ts` |
+| ✅ | **Separación de espacios**: en docencia solo avisos de docencia | `filtroDelEspacio` en `actions/notificaciones.ts` · `probar-avisos-espacios` (7) |
+| ✅ | **Comparativa entre alumnos** con desvío y mediana de la clase | `lib/comparativa-clase.ts` · en el guion (pasos 28b2) |
+| ✅ | **Nota legal para universidades** (#79) | `docs/LEGAL-UNIVERSIDADES.md` |
+
+Nada de correos: el plan gratuito de Resend son 3.000 al mes y 100 al día, y una facultad de 300
+alumnos se los come sola (decidido con Guillermo el 8 sep 2026).
+
 ### Lo que NO entra en la fase 5 (decidido el 8 sep 2026)
 
 - **#40, la sección comparativa dentro del PDF.** La idea acordada, para cuando se haga: que al
