@@ -80,10 +80,15 @@ export function cursoActual(hoy: Date = new Date()): Curso {
   return cursoDeAnio(hoy.getUTCMonth() >= 8 ? hoy.getUTCFullYear() : hoy.getUTCFullYear() - 1);
 }
 
-/** Los cursos que se pueden elegir: el de ahora y los tres siguientes. */
+/**
+ * Los cursos que se pueden elegir: el de ahora y los diez siguientes.
+ *
+ * Sobran para lo normal, pero no cuestan nada y evitan el caso de no poder cerrar un trato a
+ * varios años (Guillermo, 9 sep 2026).
+ */
 export function cursosParaElegir(hoy: Date = new Date()): Curso[] {
   const actual = cursoActual(hoy).anio;
-  return [0, 1, 2, 3].map((n) => cursoDeAnio(actual + n));
+  return Array.from({ length: 11 }, (_, n) => cursoDeAnio(actual + n));
 }
 
 /** De qué curso es una fecha de fin de licencia. Null si no tiene. */
