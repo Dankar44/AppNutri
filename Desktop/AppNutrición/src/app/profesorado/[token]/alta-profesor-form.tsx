@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { apuntarmeComoProfesor } from "@/app/actions/enlaces-profesores";
+import { createClient } from "@/lib/supabase/client";
 
 /** El alta del profesor que todavía no usa Annonia. */
 export function AltaProfesorForm({ token }: { token: string }) {
@@ -21,12 +22,15 @@ export function AltaProfesorForm({ token }: { token: string }) {
     e.preventDefault();
     startTransition(async () => {
       const r = await apuntarmeComoProfesor({ token, nombre, apellidos, email, password });
-      if (r.ok) {
-        // Entra a su espacio con la contraseña que acaba de elegir.
-        router.push(`/login?next=${encodeURIComponent("/profesor")}`);
-      } else {
+      if (!r.ok) {
         toast.error(r.error ?? "");
+        return;
       }
+      // Y se le deja dentro: acaba de escribir su correo y su contraseña, mandarle al login a
+      // repetirlos es hacerle trabajar dos veces (Guillermo, 9 sep 2026).
+      const { error } = await createClient().auth.signInWithPassword({ email, password });
+      // Si el inicio de sesión fallara, la cuenta está creada igual: se le manda al login.
+      window.location.href = error ? "/login" : "/entrar";
     });
   }
 
@@ -38,7 +42,7 @@ export function AltaProfesorForm({ token }: { token: string }) {
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-xs font-medium text-muted-foreground">{t("nombre")}</label>
-          <input value={nombre} onChange={(e) => setNombre(e.target.value)} required maxLength={100} className={input} />
+          <input value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={100} className={input} />
         </div>
         <div>
           <label className="text-xs font-medium text-muted-foreground">{t("apellidos")}</label>
@@ -55,7 +59,7 @@ export function AltaProfesorForm({ token }: { token: string }) {
       </div>
       <button
         type="submit"
-        disabled={isPending || !nombre.trim() || !email.trim() || password.length < 8}
+        disabled={isPending || !email.trim() || password.length < 8}
         className="w-full inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
       >
         {isPending && <Loader2 className="w-4 h-4 animate-spin" />}

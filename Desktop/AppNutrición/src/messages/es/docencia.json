@@ -231,7 +231,7 @@
   "enlaceProfesorado": {
     "titulo": "Alta de profesorado",
     "subtitulo": "{institucion}",
-    "explicacion": "Crea tu cuenta de profesor. Podrás montar tus clases, dar de alta a tus alumnos y corregir sus casos.",
+    "explicacion": "Crea tu cuenta de profesor, o entra con la que ya tengas. Podrás montar tus clases, dar de alta a tus alumnos y corregir sus casos.",
     "quedan": "{n, plural, =1 {Queda # plaza} other {Quedan # plazas}}",
     "agotado": "Ya no quedan plazas en este enlace",
     "agotadoAyuda": "Habla con tu universidad para que pida más.",
@@ -243,7 +243,7 @@
     "contrasena": "Contraseña",
     "crearCuenta": "Crear mi cuenta de profesor",
     "yaTengoCuenta": "Ya uso Annonia",
-    "yaTengoCuentaAyuda": "Si ya tienes cuenta, entra con ella y vuelve a abrir este enlace: se te añade el acceso de profesor sin perder nada de lo tuyo.",
+    "yaTengoCuentaAyuda": "Si ya usas Annonia, entra aquí mismo con tu correo y tu contraseña de siempre: se te añade el acceso de profesor sin perder nada de lo tuyo.",
     "entrarConMiCuenta": "Entrar con mi cuenta",
     "unirmeConMiCuenta": "Añadir el acceso de profesor a mi cuenta",
     "unirmeHecho": "Ya tienes acceso de profesor",

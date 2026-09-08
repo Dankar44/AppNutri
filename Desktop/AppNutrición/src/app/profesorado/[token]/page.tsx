@@ -81,16 +81,9 @@ export default async function AltaProfesoradoPage({
           <>
             <p className="text-sm text-muted-foreground mb-4">{t("explicacion")}</p>
             <AltaProfesorForm token={token} />
-            <div className="mt-6 rounded-xl border border-border bg-muted/30 p-4">
-              <p className="text-sm font-medium">{t("yaTengoCuenta")}</p>
-              <p className="text-xs text-muted-foreground mt-1 mb-3">{t("yaTengoCuentaAyuda")}</p>
-              <Link
-                href={`/login?next=${encodeURIComponent(`/profesorado/${token}`)}`}
-                className="text-sm font-medium text-primary hover:underline"
-              >
-                {t("entrarConMiCuenta")}
-              </Link>
-            </div>
+            {/* Sin enlace al login: el mismo formulario sirve para los dos casos. Si el correo ya
+                tiene cuenta, con su contraseña de siempre se le añade el acceso de profesor. */}
+            <p className="text-xs text-muted-foreground mt-4">{t("yaTengoCuentaAyuda")}</p>
           </>
         )}
       </div>

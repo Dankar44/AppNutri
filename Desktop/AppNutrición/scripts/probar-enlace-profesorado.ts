@@ -34,7 +34,7 @@ const texto = (page: Page) => page.evaluate(() => document.body.innerText);
 
 /** Rellena el alta del enlace y la envía. El botón se busca dentro del formulario: por texto se
  *  pulsaba el «Aceptar todas» del aviso de cookies. */
-async function altaConEse(page: Page, email: string) {
+async function altaConEse(page: Page, email: string, clave: string = PASS) {
   await page.evaluate((correo, clave) => {
     const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")!.set!;
     const inputs = Array.from(document.querySelectorAll("form input"));
@@ -47,7 +47,7 @@ async function altaConEse(page: Page, email: string) {
       setter.call(c, clave);
       c.dispatchEvent(new Event("input", { bubbles: true }));
     }
-  }, email, PASS);
+  }, email, clave);
   await esperar(800);
   await page.evaluate(() => {
     const b = document.querySelector('form button[type="submit"]') as HTMLElement | null;
@@ -120,7 +120,41 @@ async function main() {
     const { rows: usadas1 } = await client.query(`SELECT usadas FROM enlaces_profesores WHERE token = $1`, [enl[0].token]);
     comprobar("y el enlace gasta una plaza", usadas1[0]?.usadas === 1, `${usadas1[0]?.usadas}`);
 
-    console.log("\n── Un nutricionista que YA usa Annonia entra con la suya ──");
+    console.log("\n── Y queda dentro, sin pasar por el login ──");
+    comprobar("tras darse de alta ya está dentro", !page.url().includes("/login"), page.url());
+
+    console.log("\n── Un nutricionista que YA usa Annonia, por el MISMO formulario ──");
+    // Antes se le mandaba al login y volvía; ahora entra aquí con su contraseña de siempre.
+    const { rows: normal } = await client.query(
+      `SELECT email FROM dietistas WHERE "rolDocente" IS NULL AND verificado = true
+         AND email NOT LIKE $1 ORDER BY "createdAt" DESC LIMIT 1`, [`%@${DOMINIO}`]);
+    if (normal.length) {
+      await client.query(`UPDATE auth.users SET encrypted_password = crypt($2, gen_salt('bf')) WHERE email = $1`,
+        [normal[0].email, PASS]);
+      await client.query(`UPDATE enlaces_profesores SET usadas = 0 WHERE token = $1`, [enl[0].token]);
+      const suya = await (await navegador.createBrowserContext()).newPage();
+      await suya.setViewport({ width: 1440, height: 950 });
+      await suya.goto(url, { waitUntil: "networkidle0" });
+      await esperar(2000);
+      comprobar("el formulario le dice que puede entrar con su cuenta",
+        /entra aquí mismo con tu correo/i.test(await texto(suya)));
+      // Con una contraseña equivocada NO se le añade nada: tener el correo de alguien no demuestra
+      // ser esa persona.
+      await altaConEse(suya, normal[0].email, "otraQueNoEs2026");
+      const { rows: sinPasar } = await client.query(`SELECT "rolDocente" FROM dietistas WHERE email = $1`, [normal[0].email]);
+      comprobar("con la contraseña mal, no se le añade el rol", sinPasar[0]?.rolDocente === null, `${sinPasar[0]?.rolDocente}`);
+      // Y con la suya, sí.
+      await altaConEse(suya, normal[0].email);
+      const { rows: ahora } = await client.query(`SELECT "rolDocente" FROM dietistas WHERE email = $1`, [normal[0].email]);
+      comprobar("y con la suya pasa a ser profesor sin crear otra cuenta", ahora[0]?.rolDocente === "PROFESOR", `${ahora[0]?.rolDocente}`);
+      comprobar("y también queda dentro", !suya.url().includes("/login"), suya.url());
+      await client.query(`UPDATE dietistas SET "rolDocente" = NULL, "licenciaDocenteId" = NULL, "altaPorEnlaceId" = NULL WHERE email = $1`, [normal[0].email]);
+      await suya.close();
+    } else {
+      console.log("    (no hay ninguna cuenta normal para probarlo)");
+    }
+
+    console.log("\n── El botón de «unirme» para quien ya tiene la sesión abierta ──");
     const { rows: yaEsta } = await client.query(
       `SELECT email FROM dietistas WHERE "rolDocente" IS NULL AND verificado = true
          AND email NOT LIKE $1 ORDER BY "createdAt" DESC LIMIT 1`, [`%@${DOMINIO}`]);

@@ -20,6 +20,7 @@ import { randomUUID } from "node:crypto";
 import { requireAdmin } from "@/lib/admin";
 import { licenciaVigente, cursoActual, cursoDeAnio, cursoDeFechaFin } from "@/lib/docencia";
 import { getCurrentDietista } from "./auth";
+import { createClient } from "@supabase/supabase-js";
 import type { Prisma } from "@/generated/prisma/client";
 import { headers } from "next/headers";
 import { getLocale } from "@/i18n/locale";
@@ -339,7 +340,7 @@ export async function apuntarmeComoProfesor(data: {
   apellidos?: string;
   email: string;
   password: string;
-}): Promise<{ ok: boolean; error?: string }> {
+}): Promise<{ ok: boolean; error?: string; yaTeniaCuenta?: boolean }> {
   const t = await getTranslations("validation");
 
   const email = validateEmail(sanitizeString(data.email, 200).normalize("NFC"));
@@ -358,14 +359,52 @@ export async function apuntarmeComoProfesor(data: {
     return { ok: false, error: t("auth.rateLimitRegistro") };
   }
 
-  const existente = await prisma.dietista.findUnique({ where: { email }, select: { id: true } });
-  if (existente) return { ok: false, error: t("docencia.yaExisteEntraConTuCuenta") };
-  const existingAuth = await prisma.$queryRawUnsafe<{ id: string }[]>(
-    `SELECT id FROM auth.users WHERE email = $1 LIMIT 1`, email,
-  );
-  if (existingAuth.length > 0) return { ok: false, error: t("docencia.yaExisteEntraConTuCuenta") };
+  const existente = await prisma.dietista.findUnique({
+    where: { email },
+    select: { id: true, rolDocente: true },
+  });
 
   try {
+    // Quien YA usa Annonia entra por el mismo formulario, con su correo y su contraseña de siempre:
+    // mandarle al login y que volviera era un rodeo, y encima acababa en su panel en vez de aquí
+    // (Guillermo, 9 sep 2026). Se le pide la contraseña porque tener el correo de alguien no
+    // demuestra ser esa persona: si no, con el enlace se metía la cuenta de otro y se le gastaba
+    // una plaza a la universidad.
+    if (existente) {
+      if (existente.rolDocente === "PROFESOR") return { ok: false, error: t("docencia.yaTieneRolDocente") };
+      if (existente.rolDocente === "ALUMNO") return { ok: false, error: t("docencia.alumnoNoProfesor") };
+
+      const suApp = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        { auth: { persistSession: false, autoRefreshToken: false } },
+      );
+      const { error } = await suApp.auth.signInWithPassword({ email, password: data.password });
+      if (error) return { ok: false, error: t("docencia.contrasenaDeSuCuenta") };
+
+      const unido = await conPlazaDelEnlace(data.token, async (tx, enlace) => {
+        await tx.dietista.update({
+          where: { id: existente.id },
+          data: {
+            rolDocente: "PROFESOR",
+            licenciaDocenteId: enlace.licenciaDocenteId,
+            altaPorEnlaceId: enlace.id,
+          },
+        });
+      });
+      if (!unido.ok) {
+        return { ok: false, error: t(unido.motivo === "agotado" ? "docencia.enlaceAgotado" : "docencia.enlaceProfesorNoValido") };
+      }
+      return { ok: true, yaTeniaCuenta: true };
+    }
+
+    // Un usuario de autenticación sin ficha de dietista es una cuenta a medias de un alta que se
+    // quedó por el camino: no se puede reutilizar el correo sin más.
+    const existingAuth = await prisma.$queryRawUnsafe<{ id: string }[]>(
+      `SELECT id FROM auth.users WHERE email = $1 LIMIT 1`, email,
+    );
+    if (existingAuth.length > 0) return { ok: false, error: t("docencia.yaExisteEntraConTuCuenta") };
+
     const alta = await conPlazaDelEnlace(data.token, async (tx, enlace) => {
       const authRows = await tx.$queryRawUnsafe<{ id: string }[]>(
         `INSERT INTO auth.users (

@@ -231,7 +231,7 @@
   "enlaceProfesorado": {
     "titulo": "Registo de docentes",
     "subtitulo": "{institucion}",
-    "explicacion": "Cria a tua conta de professor. Poderás criar as tuas turmas, inscrever alunos e corrigir os seus casos.",
+    "explicacion": "Cria a tua conta de professor, ou entra com a que já tens. Poderás criar as tuas turmas, inscrever alunos e corrigir os seus casos.",
     "quedan": "{n, plural, =1 {Resta # vaga} other {Restam # vagas}}",
     "agotado": "Já não restam vagas neste link",
     "agotadoAyuda": "Fala com a tua universidade para pedir mais.",
@@ -243,7 +243,7 @@
     "contrasena": "Palavra-passe",
     "crearCuenta": "Criar a minha conta de professor",
     "yaTengoCuenta": "Já uso o Annonia",
-    "yaTengoCuentaAyuda": "Se já tens conta, entra com ela e volta a abrir este link: adiciona-se o acesso de professor sem perderes nada do teu.",
+    "yaTengoCuentaAyuda": "Se já usas o Annonia, entra aqui mesmo com o teu email e a tua palavra-passe de sempre: adiciona-se o acesso de professor sem perderes nada do teu.",
     "entrarConMiCuenta": "Entrar com a minha conta",
     "unirmeConMiCuenta": "Adicionar o acesso de professor à minha conta",
     "unirmeHecho": "Já tens acesso de professor",

@@ -5,6 +5,7 @@ import { Eye, EyeOff, Loader2, UserPlus, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { apuntarseAClase } from "@/app/actions/clase-publica";
+import { createClient } from "@/lib/supabase/client";
 import { signOut } from "@/app/actions/auth";
 import { emailDelDominio } from "@/lib/docencia";
 
@@ -43,7 +44,10 @@ export function ApuntarseForm({
           await signOut();
           return;
         }
-        window.location.href = "/login";
+        // Y se le deja dentro con lo que acaba de escribir: mandarle al login a repetir su correo
+        // y su contraseña es hacerle el trabajo dos veces (Guillermo, 9 sep 2026).
+        const { error } = await createClient().auth.signInWithPassword({ email, password });
+        window.location.href = error ? "/login" : "/entrar";
       } else {
         toast.error(result.error || t("invitacion.errorGenerico"));
       }

@@ -56,8 +56,9 @@ async function main() {
     comprobar("el enlace de profesorado se crea para este curso", !!enlaceProfes);
 
     console.log("\n── 2. Un profesor entra por el enlace ──");
-    const page = await (await navegador.createBrowserContext()).newPage();
-    await page.setViewport({ width: 1440, height: 950 });
+    // Cada alta, en una ventana limpia: desde el 9 sep 2026 quien se da de alta queda dentro, así
+    // que reutilizar la misma llevaría la sesión del anterior al enlace siguiente.
+    const page = await nuevaVentana(navegador);
     await page.goto(`${BASE}/profesorado/${enlaceProfes}`, { waitUntil: "networkidle0" });
     await esperar(2000);
     const bienvenida = await texto(page);
@@ -81,9 +82,10 @@ async function main() {
        VALUES (gen_random_uuid()::text, $1, $2, NOW(), NOW())`, [clase[0].id, profe[0].id]);
 
     // Por el enlace de la clase.
-    await page.goto(`${BASE}/clase/${clase[0].tokenInvitacion}`, { waitUntil: "networkidle0" });
+    const porEnlace = await nuevaVentana(navegador);
+    await porEnlace.goto(`${BASE}/clase/${clase[0].tokenInvitacion}`, { waitUntil: "networkidle0" });
     await esperar(2000);
-    await altaEnFormulario(page, `alumno.enlace@${DOMINIO}`);
+    await altaEnFormulario(porEnlace, `alumno.enlace@${DOMINIO}`);
     const { rows: a1 } = await client.query(`SELECT id FROM dietistas WHERE email = $1`, [`alumno.enlace@${DOMINIO}`]);
     comprobar("el alumno del enlace entra", a1.length === 1);
 
@@ -92,9 +94,10 @@ async function main() {
       `INSERT INTO invitaciones_docentes (id, email, rol, token, "licenciaDocenteId", "claseId", "invitadoPor", "expiraAt", "createdAt", "updatedAt")
        VALUES (gen_random_uuid()::text, $1, 'ALUMNO', replace(gen_random_uuid()::text,'-',''), $2, $3, $4, NOW() + INTERVAL '7 days', NOW(), NOW())
        RETURNING token`, [`alumno.correo@${DOMINIO}`, licenciaId, clase[0].id, profe[0].id]);
-    await page.goto(`${BASE}/invitacion/${inv[0].token}`, { waitUntil: "networkidle0" });
+    const porCorreo = await nuevaVentana(navegador);
+    await porCorreo.goto(`${BASE}/invitacion/${inv[0].token}`, { waitUntil: "networkidle0" });
     await esperar(2000);
-    await altaEnFormulario(page, `alumno.correo@${DOMINIO}`);
+    await altaEnFormulario(porCorreo, `alumno.correo@${DOMINIO}`);
     const { rows: a2 } = await client.query(`SELECT id FROM dietistas WHERE email = $1`, [`alumno.correo@${DOMINIO}`]);
     comprobar("el alumno invitado por correo entra", a2.length === 1);
 
@@ -130,18 +133,20 @@ async function main() {
 
     console.log("\n── 6. En enero se vende el curso siguiente ──");
     const enlaceFuturo = await crearEnlace(client, licenciaId, cursoAhora + 1, 2);
-    await page.goto(`${BASE}/profesorado/${enlaceFuturo}`, { waitUntil: "networkidle0" });
+    const paraFuturo = await nuevaVentana(navegador);
+    await paraFuturo.goto(`${BASE}/profesorado/${enlaceFuturo}`, { waitUntil: "networkidle0" });
     await esperar(2000);
-    comprobar("el enlace del curso que viene ya admite", /Alta de profesorado/i.test(await texto(page)));
-    await altaEnFormulario(page, `profe.futuro@${DOMINIO}`);
+    comprobar("el enlace del curso que viene ya admite", /Alta de profesorado/i.test(await texto(paraFuturo)));
+    await altaEnFormulario(paraFuturo, `profe.futuro@${DOMINIO}`);
     const { rows: pf } = await client.query(`SELECT "rolDocente" FROM dietistas WHERE email = $1`, [`profe.futuro@${DOMINIO}`]);
     comprobar("y da de alta desde ya", pf[0]?.rolDocente === "PROFESOR", `${pf[0]?.rolDocente ?? "no existe"}`);
 
     console.log("\n── 7. Y el enlace del curso pasado no revive ──");
     const enlaceViejo = await crearEnlace(client, licenciaId, cursoAhora - 1, 5);
-    await page.goto(`${BASE}/profesorado/${enlaceViejo}`, { waitUntil: "networkidle0" });
+    const conElViejo = await nuevaVentana(navegador);
+    await conElViejo.goto(`${BASE}/profesorado/${enlaceViejo}`, { waitUntil: "networkidle0" });
     await esperar(2000);
-    comprobar("dice que no vale", /Este enlace no vale/i.test(await texto(page)));
+    comprobar("dice que no vale", /Este enlace no vale/i.test(await texto(conElViejo)));
 
     await limpiar(client);
   } finally {
@@ -151,6 +156,14 @@ async function main() {
   }
   console.log(`\n${mal === 0 ? "✓" : "✗"} ${ok} bien, ${mal} mal`);
   process.exit(mal === 0 ? 0 : 1);
+}
+
+/** Una ventana sin sesión ni rastro de la anterior. */
+async function nuevaVentana(nav: Browser): Promise<Page> {
+  const page = await (await nav.createBrowserContext()).newPage();
+  await page.setViewport({ width: 1440, height: 950 });
+  await page.evaluateOnNewDocument(() => { try { localStorage.setItem("annonia-welcome-dietista", "1"); } catch { /* ignore */ } });
+  return page;
 }
 
 async function crearEnlace(c: pg.PoolClient, licenciaId: string, curso: number, plazas: number) {
