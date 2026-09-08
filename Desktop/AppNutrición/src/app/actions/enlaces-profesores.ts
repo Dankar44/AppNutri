@@ -18,7 +18,7 @@ import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { randomUUID } from "node:crypto";
 import { requireAdmin } from "@/lib/admin";
-import { licenciaVigente } from "@/lib/docencia";
+import { licenciaVigente, cursoActual, cursoDeAnio, cursoDeFechaFin } from "@/lib/docencia";
 import { getCurrentDietista } from "./auth";
 import type { Prisma } from "@/generated/prisma/client";
 import { headers } from "next/headers";
@@ -33,6 +33,8 @@ import { escapeHtml } from "@/lib/email-citas-template";
 export interface EnlaceProfesoresResumen {
   id: string;
   url: string;
+  /** «2026/27»: de qué curso es. Los enlaces no se reinician; para el siguiente se crea otro. */
+  curso: string;
   plazas: number;
   usadas: number;
   agotado: boolean;
@@ -55,7 +57,7 @@ export async function getEnlacesProfesores(licenciaId: string): Promise<EnlacePr
     where: { licenciaDocenteId: licenciaId },
     orderBy: { createdAt: "desc" },
     select: {
-      id: true, token: true, plazas: true, usadas: true, enviadoA: true,
+      id: true, token: true, plazas: true, usadas: true, enviadoA: true, cursoAnio: true,
       ultimoEnvioAt: true, createdAt: true,
       altas: { select: { nombre: true, apellidos: true, email: true }, orderBy: { createdAt: "asc" } },
     },
@@ -64,6 +66,7 @@ export async function getEnlacesProfesores(licenciaId: string): Promise<EnlacePr
   return enlaces.map((e) => ({
     id: e.id,
     url: urlDelEnlace(e.token),
+    curso: cursoDeAnio(e.cursoAnio).etiqueta,
     plazas: e.plazas,
     usadas: e.usadas,
     agotado: e.usadas >= e.plazas,
@@ -78,6 +81,8 @@ export async function getEnlacesProfesores(licenciaId: string): Promise<EnlacePr
 export async function crearEnlaceProfesores(
   licenciaId: string,
   plazas: number,
+  /** Año en que empieza el curso para el que vale. Por defecto, el de ahora. */
+  cursoAnio?: number,
 ): Promise<{ ok: boolean; error?: string; url?: string }> {
   const admin = await requireAdmin();
   if (!admin) redirect("/admin-login");
@@ -90,26 +95,33 @@ export async function crearEnlaceProfesores(
 
   const licencia = await prisma.licenciaDocente.findUnique({
     where: { id: licenciaId },
-    select: { id: true, maxProfesores: true },
+    select: { id: true, maxProfesores: true, fechaFin: true },
   });
   if (!licencia) return { ok: false, error: t("docencia.licenciaNoEncontrada") };
 
   try {
-    // Las plazas del enlace se suman a las de la universidad: es lo que se acaba de vender.
+    // Las plazas del enlace se suman a las de ESTE curso, no al tope de siempre: al renovar se
+    // ponen las del curso nuevo y no se arrastra nada (Guillermo, 8 sep 2026: "si tienen diez un
+    // año y me piden otras diez, no quiero que tengan veinte").
+    const delCurso = cursoAnio ?? cursoActual().anio;
     const enlace = await prisma.$transaction(async (tx) => {
       const creado = await tx.enlaceProfesores.create({
         data: {
           licenciaDocenteId: licenciaId,
           token: randomUUID().replace(/-/g, ""),
+          cursoAnio: delCurso,
           plazas: cupo,
           creadoPor: admin.email,
         },
         select: { token: true },
       });
-      await tx.licenciaDocente.update({
-        where: { id: licenciaId },
-        data: { maxProfesores: { increment: cupo } },
-      });
+      // Solo sube el tope si el enlace es para el curso que la licencia tiene contratado.
+      if (delCurso === cursoDeFechaFin(licencia.fechaFin)?.anio) {
+        await tx.licenciaDocente.update({
+          where: { id: licenciaId },
+          data: { maxProfesores: { increment: cupo } },
+        });
+      }
       return creado;
     });
 
@@ -217,6 +229,8 @@ export interface EnlacePublico {
   institucion: string;
   quedan: number;
   agotado: boolean;
+  /** «2026/27»: para que quien lo abre sepa de qué curso es. */
+  curso: string;
 }
 
 /** Lo que se enseña a quien abre el enlace. No se dice el cupo total, solo si queda sitio. */
@@ -224,14 +238,21 @@ export async function getEnlaceProfesoresPorToken(token: string): Promise<Enlace
   const enlace = await prisma.enlaceProfesores.findUnique({
     where: { token },
     select: {
-      plazas: true, usadas: true,
+      plazas: true, usadas: true, cursoAnio: true,
       licenciaDocente: { select: { institucion: true, activa: true, fechaFin: true } },
     },
   });
-  // Vigente de verdad: una licencia caducada no puede seguir dando altas por el enlace.
+  // Vigente de verdad, y del curso en el que estamos o de uno futuro: los de cursos pasados no
+  // reviven al renovar.
   if (!enlace || !licenciaVigente(enlace.licenciaDocente)) return null;
+  if (enlace.cursoAnio < cursoActual().anio) return null;
   const quedan = Math.max(0, enlace.plazas - enlace.usadas);
-  return { institucion: enlace.licenciaDocente.institucion, quedan, agotado: quedan === 0 };
+  return {
+    institucion: enlace.licenciaDocente.institucion,
+    quedan,
+    agotado: quedan === 0,
+    curso: cursoDeAnio(enlace.cursoAnio).etiqueta,
+  };
 }
 
 /**
@@ -246,13 +267,18 @@ async function conPlazaDelEnlace<T>(
   trabajo: (tx: Prisma.TransactionClient, enlace: { id: string; licenciaDocenteId: string }) => Promise<T>,
 ): Promise<{ ok: true; valor: T } | { ok: false; motivo: "noValido" | "agotado" }> {
   return prisma.$transaction(async (tx) => {
-    const filas = await tx.$queryRawUnsafe<{ id: string; plazas: number; usadas: number; licenciaDocenteId: string }[]>(
-      `SELECT id, plazas, usadas, "licenciaDocenteId" FROM enlaces_profesores WHERE token = $1 FOR UPDATE`,
+    const filas = await tx.$queryRawUnsafe<{ id: string; plazas: number; usadas: number; cursoAnio: number; licenciaDocenteId: string }[]>(
+      `SELECT id, plazas, usadas, "cursoAnio", "licenciaDocenteId" FROM enlaces_profesores WHERE token = $1 FOR UPDATE`,
       token,
     );
     const enlace = filas[0];
     if (!enlace) return { ok: false as const, motivo: "noValido" as const };
     if (enlace.usadas >= enlace.plazas) return { ok: false as const, motivo: "agotado" as const };
+
+    // Un enlace de un curso YA PASADO no revive al renovar: para el curso nuevo se crea otro. Los de
+    // cursos futuros sí admiten desde ya, que es lo que se vende cuando pagan en enero para el año
+    // siguiente (Guillermo, 8 sep 2026: "que admita desde ya").
+    if (enlace.cursoAnio < cursoActual().anio) return { ok: false as const, motivo: "noValido" as const };
 
     // La licencia se comprueba AQUÍ y no solo al pintar la página: entre que se abre el enlace y se
     // envía el formulario puede haber caducado, y la vista no es lo que autoriza.

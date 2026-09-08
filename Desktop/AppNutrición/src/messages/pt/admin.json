@@ -510,7 +510,9 @@
       "emailPlaceholder": "professor@universidade.pt",
       "enviarInvitacion": "Enviar convite",
       "ayudaInvitar": "É enviado um correio para que crie a conta com a palavra-passe que escolher. Se esse correio já tiver conta na Annonia não se cria outra: é-lhe atribuída a função e é avisado.",
-      "fechaInicio": "Início do curso"
+      "fechaInicio": "Início do curso",
+      "curso": "Ano letivo",
+      "cursoAyuda": "De 1 de setembro a 31 de agosto. É o que se vende: passado 31 de agosto, professores e alunos perdem o espaço docente até se renovar."
     },
     "contactoEtiqueta": "Contacto: {persona}",
     "toastInvitacionEnviada": "Convite enviado por correio",

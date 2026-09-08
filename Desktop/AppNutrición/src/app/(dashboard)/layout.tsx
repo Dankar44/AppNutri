@@ -16,7 +16,7 @@ import { DemoProvider } from "@/contexts/demo-context";
 import { prisma } from "@/lib/prisma";
 import { getLocale } from "@/i18n/locale";
 import { revisarCursoDelAlumno } from "@/lib/docencia-acceso";
-import { COOKIE_ESPACIO, espacioGuardado } from "@/lib/docencia";
+import { COOKIE_ESPACIO, espacioGuardado, licenciaVigente } from "@/lib/docencia";
 import { avisarDePlazosVencidos } from "@/lib/avisos-docencia";
 
 export default async function DashboardLayout({
@@ -37,7 +37,19 @@ export default async function DashboardLayout({
 
   // `getCurrentDietista` ya devuelve la fila entera del dietista, así que el rol sale de ahí:
   // una consulta más en el layout la pagarían TODOS los nutricionistas en cada carga del panel.
-  const profesor = dietista.rolDocente === "PROFESOR";
+  // Profesor CON licencia vigente: sin ella no hay espacio docente hasta que la universidad
+  // renueve, así que tampoco se le enseña la puerta —un enlace que te echa es peor que no tenerlo—.
+  // La consulta solo la pagan los profesores, que son pocos, no los cientos de nutricionistas.
+  const profesor =
+    dietista.rolDocente === "PROFESOR" &&
+    licenciaVigente(
+      dietista.licenciaDocenteId
+        ? await prisma.licenciaDocente.findUnique({
+            where: { id: dietista.licenciaDocenteId },
+            select: { activa: true, fechaFin: true },
+          })
+        : null,
+    );
 
   // El curso se cierra solo, sin tarea programada: se mira aquí, que es el único momento en el
   // que importa. Al alumno no se le echa — si se ha quedado sin clases pasa a cuenta normal y se

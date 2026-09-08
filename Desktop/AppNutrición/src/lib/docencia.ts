@@ -48,6 +48,52 @@ export function inicioDeAnioEscolar(hoy: Date = new Date()): Date {
   return new Date(Date.UTC(anio, 8, 1, 0, 0, 0, 0));
 }
 
+/**
+ * Un curso escolar, del 1 de septiembre al 31 de agosto siguiente. Se identifica por el año en que
+ * empieza: 2026 es el curso 2026/27.
+ *
+ * Se eligen así y no con dos fechas sueltas porque lo que se vende es un curso entero: poner el
+ * inicio a mano dejaba licencias que empezaban un martes de septiembre y acababan el 31 de agosto,
+ * y nada garantizaba que las dos fechas fueran del mismo curso (Guillermo, 8 sep 2026).
+ */
+export interface Curso {
+  anio: number;
+  /** «2026/27», para pintarlo. */
+  etiqueta: string;
+  /** 1 de septiembre de ese año, en UTC. */
+  inicio: Date;
+  /** 31 de agosto del siguiente, fin del día, en UTC. */
+  fin: Date;
+}
+
+export function cursoDeAnio(anio: number): Curso {
+  return {
+    anio,
+    etiqueta: `${anio}/${String(anio + 1).slice(2)}`,
+    inicio: new Date(Date.UTC(anio, 8, 1, 0, 0, 0, 0)),
+    fin: new Date(Date.UTC(anio + 1, 7, 31, 23, 59, 59, 999)),
+  };
+}
+
+/** El curso en el que estamos: el que empezó el 1 de septiembre más reciente. */
+export function cursoActual(hoy: Date = new Date()): Curso {
+  return cursoDeAnio(hoy.getUTCMonth() >= 8 ? hoy.getUTCFullYear() : hoy.getUTCFullYear() - 1);
+}
+
+/** Los cursos que se pueden elegir: el de ahora y los tres siguientes. */
+export function cursosParaElegir(hoy: Date = new Date()): Curso[] {
+  const actual = cursoActual(hoy).anio;
+  return [0, 1, 2, 3].map((n) => cursoDeAnio(actual + n));
+}
+
+/** De qué curso es una fecha de fin de licencia. Null si no tiene. */
+export function cursoDeFechaFin(fechaFin: Date | null | undefined): Curso | null {
+  if (!fechaFin) return null;
+  const d = new Date(fechaFin);
+  // El fin de curso es el 31 de agosto: el curso es el año anterior a ese agosto.
+  return cursoDeAnio(d.getUTCMonth() >= 8 ? d.getUTCFullYear() : d.getUTCFullYear() - 1);
+}
+
 /** Inicio del curso por defecto: hoy, en formato de campo de fecha (YYYY-MM-DD). */
 export function inicioDeCursoPorDefecto(hoy: Date = new Date()): string {
   return hoy.toISOString().slice(0, 10);

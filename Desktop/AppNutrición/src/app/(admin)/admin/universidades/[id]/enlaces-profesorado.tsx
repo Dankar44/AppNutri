@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Loader2, Link2, Copy, Check, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { crearEnlaceProfesores, enviarEnlaceProfesores, type EnlaceProfesoresResumen } from "@/app/actions/enlaces-profesores";
+import { SelectorCurso } from "@/components/docencia/selector-curso";
+import { cursoActual } from "@/lib/docencia";
 
 /**
  * Los enlaces con los que una universidad da de alta a su profesorado.
@@ -16,6 +18,8 @@ export function EnlacesProfesorado({ licenciaId, enlaces }: { licenciaId: string
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [plazas, setPlazas] = useState("");
+  // Para qué curso vale el enlace. Si en enero venden el año siguiente, se crea ya con ese curso.
+  const [curso, setCurso] = useState(cursoActual().anio);
   const [copiado, setCopiado] = useState<string | null>(null);
   const [enviando, setEnviando] = useState<string | null>(null);
   const [correos, setCorreos] = useState("");
@@ -23,7 +27,7 @@ export function EnlacesProfesorado({ licenciaId, enlaces }: { licenciaId: string
   function crear(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
-      const r = await crearEnlaceProfesores(licenciaId, Number(plazas));
+      const r = await crearEnlaceProfesores(licenciaId, Number(plazas), curso);
       if (r.ok) {
         toast.success("Enlace creado");
         setPlazas("");
@@ -75,7 +79,7 @@ export function EnlacesProfesorado({ licenciaId, enlaces }: { licenciaId: string
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <span className="text-sm font-medium inline-flex items-center gap-2">
                   <Link2 className="w-4 h-4 text-muted-foreground" />
-                  {e.usadas} de {e.plazas} usadas
+                  {e.curso} · {e.usadas} de {e.plazas} usadas
                   {e.agotado && <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">agotado</span>}
                 </span>
                 <div className="flex items-center gap-2">
@@ -120,6 +124,10 @@ export function EnlacesProfesorado({ licenciaId, enlaces }: { licenciaId: string
       )}
 
       <form onSubmit={crear} className="flex items-end gap-2 flex-wrap">
+        <div className="w-32">
+          <label className="text-[11px] text-muted-foreground">Curso</label>
+          <SelectorCurso value={curso} onChange={setCurso} />
+        </div>
         <div>
           <label className="text-[11px] text-muted-foreground">Plazas del enlace nuevo</label>
           {/* Solo dígitos: un campo de plazas que trague letras acaba en un error al guardar. */}

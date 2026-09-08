@@ -72,6 +72,12 @@ async function getDatosProfesor(): Promise<DatosProfesor | null> {
   });
   if (!ficha || ficha.rolDocente !== "PROFESOR") return null;
 
+  // Sin licencia vigente no hay espacio docente: el 31 de agosto se acaba, como a los alumnos, y
+  // hasta que la universidad no renueve no se entra (Guillermo, 8 sep 2026: "si no, la usan igual
+  // sin pagar"). No se borra nada: sus casos, sus clases y su trabajo siguen ahí, y al renovar
+  // vuelve todo. Antes una licencia caducada solo impedía dar altas, y el espacio seguía abierto.
+  if (!licenciaVigente(ficha.licenciaDocente)) return null;
+
   const licencia = ficha.licenciaDocente;
   // La misma regla que la bolsa y que administración: alumnos DISTINTOS con el acceso puesto en
   // clases vivas. Contar la columna del alumno metía a los retirados y a los de clases archivadas,
@@ -104,7 +110,12 @@ export async function esAlumno(): Promise<boolean> {
 /** Igual que `getDatosProfesor`, pero echa a quien no sea profesor. Para las páginas de /profesor. */
 export async function requireProfesor(): Promise<DatosProfesor> {
   const datos = await getDatosProfesor();
-  if (!datos) redirect("/dashboard");
+  if (!datos) {
+    // Si es profesor pero su universidad no ha renovado, se le explica en vez de dejarle en el
+    // panel sin saber por qué ha desaparecido su espacio.
+    const dietista = await getCurrentDietista();
+    redirect(dietista?.rolDocente === "PROFESOR" ? "/docencia-terminada" : "/dashboard");
+  }
   return datos;
 }
 

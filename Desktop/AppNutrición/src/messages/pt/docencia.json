@@ -251,5 +251,13 @@
     "eresAlumno": "A tua conta é de aluno, por isso não pode ser também de professor.",
     "yaEresProfesor": "Já tens acesso de professor.",
     "irAMiEspacio": "Ir ao meu espaço docente"
+  },
+  "docenciaTerminada": {
+    "titulo": "O teu acesso docente terminou",
+    "explicacion": "O ano letivo da tua universidade acabou e ainda não foi renovado, por isso de momento não podes entrar no espaço docente.",
+    "nadaSeBorra": "Não se apagou nada",
+    "loQueGuardas": "{casos, plural, =0 {} =1 {O teu caso} other {Os teus # casos}}{clases, plural, =0 {} =1 { e a tua turma} other { e as tuas # turmas}} continuam guardados tal como os deixaste.",
+    "alRenovar": "Assim que a tua universidade renovar, recuperas o espaço com todo o teu trabalho. Fala com quem trata da licença.",
+    "irAMiCuenta": "Ir para a minha conta"
   }
 }

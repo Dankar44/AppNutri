@@ -6,7 +6,8 @@ import { GraduationCap, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { crearLicenciaDocente } from "@/app/actions/admin-docencia";
-import { DatePicker } from "@/components/date-picker";
+import { SelectorCurso } from "@/components/docencia/selector-curso";
+import { cursoActual, cursoDeAnio } from "@/lib/docencia";
 import { finDeCursoPorDefecto, inicioDeCursoPorDefecto } from "@/lib/docencia";
 
 export function CrearLicenciaForm() {
@@ -21,8 +22,8 @@ export function CrearLicenciaForm() {
   // valor que ya había salía "0200" o "13" en vez de lo que se quería (visto el 30 ago 2026).
   const [maxProfesores, setMaxProfesores] = useState("1");
   const [maxAlumnos, setMaxAlumnos] = useState("0");
-  const [fechaInicio, setFechaInicio] = useState(inicioDeCursoPorDefecto());
-  const [fechaFin, setFechaFin] = useState(finDeCursoPorDefecto());
+  // El curso es lo que se vende: del 1 de septiembre al 31 de agosto. Las fechas salen de él.
+  const [curso, setCurso] = useState(cursoActual().anio);
   const [notas, setNotas] = useState("");
 
   /** Selecciona lo que hay al entrar en el campo, para que al escribir se reemplace. */
@@ -38,8 +39,8 @@ export function CrearLicenciaForm() {
         dominioEmail: dominioEmail || undefined,
         maxProfesores: Number(maxProfesores || 0),
         maxAlumnos: Number(maxAlumnos || 0),
-        fechaInicio: fechaInicio || undefined,
-        fechaFin: fechaFin || undefined,
+        fechaInicio: cursoDeAnio(curso).inicio.toISOString().slice(0, 10),
+        fechaFin: cursoDeAnio(curso).fin.toISOString().slice(0, 10),
         notas: notas || undefined,
       });
       if (result.ok) {
@@ -125,20 +126,10 @@ export function CrearLicenciaForm() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">{t("form.fechaInicio")}</label>
-            <div className="mt-1">
-              <DatePicker value={fechaInicio} onChange={setFechaInicio} />
-            </div>
-          </div>
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">{t("form.fechaFin")}</label>
-            <div className="mt-1">
-              <DatePicker value={fechaFin} onChange={setFechaFin} />
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">{t("form.fechaFinAyuda")}</p>
-          </div>
+        <div>
+          <label className="text-xs font-medium text-muted-foreground" htmlFor="curso">{t("form.curso")}</label>
+          <SelectorCurso id="curso" value={curso} onChange={setCurso} />
+          <p className="text-xs text-muted-foreground mt-1">{t("form.cursoAyuda")}</p>
         </div>
 
         <div>

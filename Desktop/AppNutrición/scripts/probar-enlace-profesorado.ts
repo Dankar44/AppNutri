@@ -22,6 +22,11 @@ const DOMINIO = "profeenlace.dev";
 const PASS = "ProfeEnlace2026";
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL!, ssl: { rejectUnauthorized: false } });
 
+/** El curso en el que estamos, por el año en que empieza: los enlaces son de un curso concreto. */
+function anioDelCursoActual(hoy = new Date()): number {
+  return hoy.getUTCMonth() >= 8 ? hoy.getUTCFullYear() : hoy.getUTCFullYear() - 1;
+}
+
 let ok = 0, mal = 0;
 const comprobar = (t: string, c: boolean, d = "") => { console.log(`  ${c ? "✓" : "✗"} ${t}${d ? ` — ${d}` : ""}`); c ? ok++ : mal++; };
 const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -88,9 +93,9 @@ async function main() {
 
     console.log("\n── Un enlace de 2 plazas ──");
     const { rows: enl } = await client.query(
-      `INSERT INTO enlaces_profesores (id, "licenciaDocenteId", token, plazas, "creadoPor")
-       VALUES (gen_random_uuid()::text, $1, replace(gen_random_uuid()::text,'-',''), 2, 'prueba')
-       RETURNING token`, [lic[0].id]);
+      `INSERT INTO enlaces_profesores (id, "licenciaDocenteId", token, "cursoAnio", plazas, "creadoPor")
+       VALUES (gen_random_uuid()::text, $1, replace(gen_random_uuid()::text,'-',''), $2, 2, 'prueba')
+       RETURNING token`, [lic[0].id, anioDelCursoActual()]);
     const url = `${BASE}/profesorado/${enl[0].token}`;
 
     const page = await (await navegador.createBrowserContext()).newPage();

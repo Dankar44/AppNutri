@@ -9,6 +9,7 @@ import { formatDate } from "@/lib/utils";
 import { EditarLicenciaForm } from "./editar-licencia-form";
 import { AsignarProfesorForm } from "./asignar-profesor-form";
 import { EnlacesProfesorado } from "./enlaces-profesorado";
+import { RenovarLicencia } from "./renovar-licencia";
 import { getEnlacesProfesores } from "@/app/actions/enlaces-profesores";
 import { QuitarRolButton } from "./quitar-rol-button";
 import { AccionesInvitacion } from "./acciones-invitacion";
@@ -154,6 +155,16 @@ export default async function UniversidadDetallePage({
         {/* Y la vía de repartir: un enlace para que se den de alta ellos, sin pedirle a la
             universidad los correos de su profesorado. */}
         <EnlacesProfesorado licenciaId={licencia.id} enlaces={enlaces} />
+      </section>
+
+      {/* Renovar: lo de cada verano, sin tener que crear otra universidad. */}
+      <section className="mb-8">
+        <RenovarLicencia
+          licenciaId={licencia.id}
+          fechaFin={licencia.fechaFin ? new Date(licencia.fechaFin).toISOString() : null}
+          maxProfesores={licencia.maxProfesores}
+          maxAlumnos={licencia.maxAlumnos}
+        />
       </section>
 
       {alumnos.length > 0 && (

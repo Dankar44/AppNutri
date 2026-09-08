@@ -510,7 +510,9 @@
       "emailPlaceholder": "profesor@universidad.es",
       "enviarInvitacion": "Enviar invitación",
       "ayudaInvitar": "Se le manda un correo para que cree su cuenta con la contraseña que él elija. Si ese correo ya tiene cuenta en Annonia no se crea otra: se le añade el rol y se le avisa.",
-      "fechaInicio": "Inicio del curso"
+      "fechaInicio": "Inicio del curso",
+      "curso": "Curso",
+      "cursoAyuda": "Del 1 de septiembre al 31 de agosto. Es lo que se vende: pasado el 31 de agosto, profesores y alumnos pierden el espacio docente hasta que se renueve."
     },
     "contactoEtiqueta": "Contacto: {persona}",
     "toastInvitacionEnviada": "Invitación enviada por correo",

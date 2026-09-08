@@ -6,7 +6,8 @@ import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { editarLicenciaDocente } from "@/app/actions/admin-docencia";
-import { DatePicker } from "@/components/date-picker";
+import { SelectorCurso } from "@/components/docencia/selector-curso";
+import { cursoActual, cursoDeAnio, cursoDeFechaFin } from "@/lib/docencia";
 
 interface LicenciaEditable {
   id: string;
@@ -37,8 +38,10 @@ export function EditarLicenciaForm({ licencia }: { licencia: LicenciaEditable })
 
   const alEnfocarNumero = (e: React.FocusEvent<HTMLInputElement>) => e.target.select();
   const soloDigitos = (v: string) => v.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
-  const [fechaInicio, setFechaInicio] = useState(licencia.fechaInicio);
-  const [fechaFin, setFechaFin] = useState(licencia.fechaFin ?? "");
+  // El curso al que corresponde la licencia. Si no tenía fecha de fin, se propone el de ahora.
+  const [curso, setCurso] = useState(
+    (licencia.fechaFin ? cursoDeFechaFin(new Date(licencia.fechaFin)) : null)?.anio ?? cursoActual().anio,
+  );
   const [activa, setActiva] = useState(licencia.activa);
   const [notas, setNotas] = useState(licencia.notas ?? "");
 
@@ -51,8 +54,8 @@ export function EditarLicenciaForm({ licencia }: { licencia: LicenciaEditable })
         dominioEmail: dominioEmail || undefined,
         maxProfesores: Number(maxProfesores || 0),
         maxAlumnos: Number(maxAlumnos || 0),
-        fechaInicio: fechaInicio || undefined,
-        fechaFin: fechaFin || undefined,
+        fechaInicio: cursoDeAnio(curso).inicio.toISOString().slice(0, 10),
+        fechaFin: cursoDeAnio(curso).fin.toISOString().slice(0, 10),
         activa,
         notas: notas || undefined,
       });
@@ -132,19 +135,10 @@ export function EditarLicenciaForm({ licencia }: { licencia: LicenciaEditable })
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="text-xs font-medium text-muted-foreground">{t("form.fechaInicio")}</label>
-          <div className="mt-1">
-            <DatePicker value={fechaInicio} onChange={setFechaInicio} />
-          </div>
-        </div>
-        <div>
-          <label className="text-xs font-medium text-muted-foreground">{t("form.fechaFin")}</label>
-          <div className="mt-1">
-            <DatePicker value={fechaFin} onChange={setFechaFin} />
-          </div>
-        </div>
+      <div>
+        <label className="text-xs font-medium text-muted-foreground" htmlFor="curso">{t("form.curso")}</label>
+        <SelectorCurso id="curso" value={curso} onChange={setCurso} />
+        <p className="text-xs text-muted-foreground mt-1">{t("form.cursoAyuda")}</p>
       </div>
 
       <div>

@@ -16,6 +16,7 @@ import { getTranslations } from "next-intl/server";
 import { isNextNavigation } from "@/lib/utils";
 import { sanitizeString, sanitizeStringOptional } from "@/lib/validation";
 import { crearCuentaNutricionista } from "./admin";
+import { cursoDeAnio } from "@/lib/docencia";
 import { contarAlumnosDeLicencia, plazasLibresDeLicencia, contarInvitacionesVivas } from "@/lib/docencia-bolsa";
 import { sacarDeLaUniversidad } from "@/lib/docencia-salida";
 
@@ -592,4 +593,62 @@ export async function getConsumoDeLicencias(): Promise<
       };
     }),
   );
+}
+
+/**
+ * Renovar una universidad para el curso siguiente, sin crear otra licencia.
+ *
+ * Es lo que pasa cada verano: «seguimos, y este año somos 13 profesores y 350 alumnos». Se cambian
+ * las fechas al curso nuevo y las plazas a las vendidas, y con eso profesores y alumnos recuperan
+ * el espacio docente con todo su trabajo donde lo dejaron (Guillermo, 8 sep 2026).
+ *
+ * Las plazas se ponen, no se suman: «13» quiere decir 13 ese curso, no 13 más los del año pasado.
+ * Si no se acumularan, una facultad con tres renovaciones acabaría con plazas de sobra sin pagarlas.
+ */
+export async function renovarLicenciaDocente(data: {
+  licenciaId: string;
+  /** Año en que empieza el curso: 2027 es el curso 2027/28. */
+  curso: number;
+  maxProfesores: number;
+  maxAlumnos: number;
+}): Promise<{ ok: boolean; error?: string }> {
+  const admin = await requireAdmin();
+  if (!admin || admin.role !== "admin") redirect("/admin-login");
+  const t = await getTranslations("validation");
+
+  const profes = Math.floor(Number(data.maxProfesores));
+  const alumnos = Math.floor(Number(data.maxAlumnos));
+  if (!Number.isFinite(profes) || profes < 0 || profes > 200) return { ok: false, error: t("docencia.plazasNoValidas") };
+  if (!Number.isFinite(alumnos) || alumnos < 0 || alumnos > 5000) return { ok: false, error: t("docencia.plazasNoValidas") };
+
+  const curso = cursoDeAnio(Math.floor(Number(data.curso)));
+  const licencia = await prisma.licenciaDocente.findUnique({
+    where: { id: data.licenciaId },
+    select: { id: true, fechaFin: true },
+  });
+  if (!licencia) return { ok: false, error: t("docencia.licenciaNoEncontrada") };
+  // Hacia atrás no se renueva: sería quitarle el acceso a quien lo tiene.
+  if (licencia.fechaFin && curso.fin.getTime() < licencia.fechaFin.getTime()) {
+    return { ok: false, error: t("docencia.renovarHaciaAtras") };
+  }
+
+  try {
+    await prisma.licenciaDocente.update({
+      where: { id: data.licenciaId },
+      data: {
+        activa: true,
+        fechaInicio: curso.inicio,
+        fechaFin: curso.fin,
+        maxProfesores: profes,
+        maxAlumnos: alumnos,
+      },
+    });
+    revalidatePath("/admin/universidades");
+    revalidatePath(`/admin/universidades/${data.licenciaId}`);
+    return { ok: true };
+  } catch (e) {
+    if (isNextNavigation(e)) throw e;
+    console.error("[docencia] Error renovando la licencia:", e);
+    return { ok: false, error: t("general.errorDesconocido") };
+  }
 }

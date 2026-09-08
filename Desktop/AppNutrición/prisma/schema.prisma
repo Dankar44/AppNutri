@@ -1103,6 +1103,9 @@ model EnlaceProfesores {
   licenciaDocenteId String
   licenciaDocente   LicenciaDocente @relation(fields: [licenciaDocenteId], references: [id], onDelete: Cascade)
   token             String    @unique
+  /// Curso para el que vale, por el año en que empieza: 2026 es el curso 2026/27. Los enlaces no
+  /// se reinician — para el curso siguiente se crea otro.
+  cursoAnio         Int
   plazas            Int
   /// Solo sube. Un profesor que se va no devuelve su uso.
   usadas            Int       @default(0)

@@ -336,6 +336,7 @@
     "enlaceProfesorNoValido": "Este link não é válido ou já não está ativo.",
     "alumnoNoProfesor": "A tua conta é de aluno: não pode ser também de professor.",
     "yaExisteEntraConTuCuenta": "Esse email já tem conta no Annonia. Entra com ela e volta a abrir o link.",
-    "claseLlena": "Esta turma já está completa. Fala com o teu professor."
+    "claseLlena": "Esta turma já está completa. Fala com o teu professor.",
+    "renovarHaciaAtras": "Não se pode renovar para um ano letivo anterior ao que já tem."
   }
 }
