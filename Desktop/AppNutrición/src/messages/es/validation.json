@@ -202,7 +202,7 @@
       "preconsultaCompletada": "{nombrePaciente} ha rellenado su anamnesis",
       "horarioCompletado": "{nombrePaciente} ha rellenado su horario semanal",
       "motivo": "Motivo: {motivo}",
-      "plazoTerminado": "Tienes {n} entregas por revisar en «{caso}» ({clase})"
+      "plazoTerminado": "Tienes {n, plural, =1 {# entrega} other {# entregas}} por revisar en «{caso}» ({clase})"
     }
   },
   "pacienteAuth": {

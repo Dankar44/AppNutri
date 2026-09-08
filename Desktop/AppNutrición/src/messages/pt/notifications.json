@@ -33,6 +33,9 @@
     "EMPRESA_LIDER_TRANSFERIDO": "Liderança transferida",
     "STOCK_BAJO": "Stock baixo",
     "PRECONSULTA_COMPLETADA": "Anamnese",
+    "CASO_ASIGNADO": "Caso novo",
+    "CASO_CORREGIDO": "Caso corrigido",
+    "ENTREGA_RECIBIDA": "Entregas por rever",
     "default": "Notificação"
   },
   "dot": {

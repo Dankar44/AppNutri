@@ -15,11 +15,14 @@ import { getTranslations } from "next-intl/server";
  * aviso le sirve de algo. `avisoPlazoAt` es lo que impide repetirlo al día siguiente.
  */
 export async function avisarDePlazosVencidos(prisma: PrismaClient): Promise<number> {
+  // Solo el último mes: si el plazo venció hace medio año y nadie entregó, ya no hay nada que
+  // anunciar y no tiene sentido seguir mirándolo en cada visita.
+  const haceUnMes = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
   const vencidas = await prisma.asignacionCaso.findMany({
     where: {
       avisoPlazoAt: null,
       retiradaAt: null,
-      fechaLimite: { not: null, lt: new Date() },
+      fechaLimite: { lt: new Date(), gte: haceUnMes },
     },
     select: {
       id: true,
@@ -41,6 +44,13 @@ export async function avisarDePlazosVencidos(prisma: PrismaClient): Promise<numb
   for (const a of vencidas) {
     // Solo lo que queda por hacer: si ya están todas corregidas, no hay nada que revisar y el
     // aviso sería ruido. Se marca igual para no volver a mirarlo.
+    // Si no hay nada por revisar no se avisa, y **tampoco se marca**: puede que alguien entregue
+    // tarde, o que el profesor reabra una entrega, y entonces sí habrá algo que anunciar. Marcarlo
+    // aquí dejaba la asignación muda para siempre (visto al montar el escenario de prueba, 8 sep
+    // 2026: todas corregidas → cerrojo puesto → ningún aviso nunca más).
+    const porRevisar = a.entregas.filter((e) => e.estado === "ENTREGADA").length;
+    if (porRevisar === 0) continue;
+
     // Cerrojo: se marca ANTES de avisar, y solo si seguía sin marcar. Si dos peticiones entran a la
     // vez —dos profesores de la misma clase abriendo su espacio—, solo una pasa de aquí.
     const cerrojo = await prisma.asignacionCaso.updateMany({
@@ -49,8 +59,7 @@ export async function avisarDePlazosVencidos(prisma: PrismaClient): Promise<numb
     });
     if (cerrojo.count === 0) continue;
 
-    const porRevisar = a.entregas.filter((e) => e.estado === "ENTREGADA").length;
-    if (porRevisar > 0) {
+    {
       const destinatarios = new Set(a.clase.profesores.map((p) => p.profesorId));
       destinatarios.add(a.caso.profesorId);
       const params = { n: porRevisar, caso: a.caso.nombre, clase: a.clase.nombre };
