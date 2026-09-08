@@ -55,17 +55,25 @@ Formalmente son datos de salud, pero **de una persona que no existe**.
 | Dónde | Qué | Región |
 |---|---|---|
 | Supabase (PostgreSQL + autenticación) | Toda la base de datos | **eu-west-1, Irlanda (UE)** — verificado en la configuración |
-| Oracle Cloud | El servidor de la aplicación | **Pendiente de confirmar la región** en la consola de Oracle |
+| Oracle Cloud | El servidor de la aplicación | **eu-madrid-1 — Madrid, España** (verificado el 8 sep 2026 en el propio servidor) |
 
-**Tarea pendiente:** confirmar y documentar la región del servidor de Oracle. Si no estuviera en
-la UE, hay que decirlo o moverlo antes de la reunión.
+Es decir: **los datos no salen de España**. La base está en Irlanda y el servidor en Madrid, los
+dos dentro de la UE. Se comprobó preguntándoselo a la propia máquina:
+
+```
+curl -H "Authorization: Bearer Oracle" http://169.254.169.254/opc/v2/instance/
+→ "region": "eu-madrid-1", "availabilityDomain": "TOlz:EU-MADRID-1-AD-1"
+```
+
+Para una universidad española esto es de lo mejor que se puede contar, y conviene decirlo pronto
+en la conversación.
 
 ## 5. Proveedores que intervienen (subencargados)
 
 | Proveedor | Para qué | Datos que ve | Dónde |
 |---|---|---|---|
 | Supabase | Base de datos y cuentas | Todos | UE (Irlanda) |
-| Oracle Cloud | Servidor de la aplicación | Todos, en tránsito | Por confirmar |
+| Oracle Cloud | Servidor de la aplicación | Todos, en tránsito | **Madrid (España)** |
 | Resend | Correos (invitaciones, avisos) | Correo y nombre | EE. UU. |
 | Groq | Generación de dietas con IA | Ver el punto 6 | EE. UU. |
 | Stripe | Pagos | Datos de facturación | EE. UU. / UE |
@@ -133,7 +141,6 @@ Por orden de lo que más bloquea:
 
 1. **Contrato de encargo de tratamiento (DPA)** redactado por un abogado. Sin esto no se firma nada.
 2. **Añadir Groq, Resend y Oracle a la política de privacidad.** Rápido y visible.
-3. **Confirmar la región del servidor de Oracle** y ponerlo por escrito.
 4. **Consentimiento específico de uso de IA** (#51), aunque en docencia sea menos crítico.
 5. **Registro de actividades de tratamiento** y **base legal** de cada uno.
 6. **Procedimiento de brechas de seguridad**: quién avisa, a quién y en cuánto tiempo (72 horas).
@@ -141,4 +148,4 @@ Por orden de lo que más bloquea:
 8. **Términos de uso para centros** y modelo de licencia.
 9. **Backups**: frecuencia y retención, por escrito.
 
-Los puntos 2, 3 y 9 son de hoy para mañana. El 1, el 5 y el 6 necesitan abogado.
+Los puntos 2 y 8 son de hoy para mañana. El 1, el 4 y el 5 necesitan abogado.

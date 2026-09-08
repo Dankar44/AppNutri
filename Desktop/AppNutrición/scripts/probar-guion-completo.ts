@@ -732,15 +732,22 @@ async function main() {
       `${descarga.estado} · ${descarga.tipo} · ${Math.round(descarga.bytes / 1024)} KB`);
     await foto(alumna, "20-entregado");
 
-    // Fase 5 — Y la profesora se entera sin tener que ir a mirar. En la app, no por correo.
-    const { rows: avisoProfe } = await client.query(
-      `SELECT tipo, params, enlace FROM notificaciones WHERE "dietistaId" = $1 AND tipo = 'ENTREGA_RECIBIDA'`,
-      [profeId]);
-    comprobar("al profesor le avisa de la entrega", avisoProfe.length === 1, `${avisoProfe.length}`);
-    comprobar("diciendo quién y de qué caso",
-      /Alumna/.test(String(avisoProfe[0]?.params?.alumno ?? "")) && !!avisoProfe[0]?.params?.caso,
-      `${avisoProfe[0]?.params?.alumno ?? "?"} · ${avisoProfe[0]?.params?.caso ?? "?"}`);
-    comprobar("y llevándola a su caso", String(avisoProfe[0]?.enlace ?? "").startsWith("/profesor/casos/"));
+    // Fase 5 — Entregar NO genera aviso: con veinte alumnos sería una lluvia (Guillermo, 8 sep
+    // 2026). El profesor se entera cuando acaba el plazo, y eso se prueba justo abajo.
+    const { rows: sinAviso } = await client.query(
+      `SELECT 1 FROM notificaciones WHERE "dietistaId" = $1 AND tipo = 'ENTREGA_RECIBIDA'`, [profeId]);
+    comprobar("entregar no le llena la campana al profesor", sinAviso.length === 0, `${sinAviso.length} avisos`);
+
+    // Y al pasar el plazo, un solo aviso con lo que queda por revisar.
+    await client.query(`UPDATE asignaciones_caso SET "fechaLimite" = CURRENT_DATE - 1, "avisoPlazoAt" = NULL WHERE id = $1`, [asignacionId]);
+    await profe.goto(`${BASE}/profesor`, { waitUntil: "networkidle0" });
+    await esperar(3500);
+    const { rows: avisoPlazo } = await client.query(
+      `SELECT params, enlace FROM notificaciones WHERE "dietistaId" = $1 AND tipo = 'ENTREGA_RECIBIDA'`, [profeId]);
+    comprobar("al acabar el plazo sí le avisa, y una sola vez", avisoPlazo.length === 1, `${avisoPlazo.length}`);
+    comprobar("diciendo cuántas quedan por revisar", Number(avisoPlazo[0]?.params?.n) >= 1,
+      `n=${avisoPlazo[0]?.params?.n} · ${avisoPlazo[0]?.params?.caso ?? "?"}`);
+    comprobar("y llevándole a su caso", String(avisoPlazo[0]?.enlace ?? "").startsWith("/profesor/casos/"));
 
     // Lo que pidió Guillermo el 8 sep 2026: que entregar NO se lleve por delante lo que estabas
     // tocando en la planificación. Se comprueba en la base, no en la pantalla.

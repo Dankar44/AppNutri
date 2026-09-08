@@ -72,23 +72,73 @@
       "headerFinalidad": "Finalidad",
       "headerBaseLegal": "Base legal",
       "filas": {
-        "registro": { "finalidad": "Gestión del registro y autenticación", "base": "Ejecución del contrato (art. 6.1.b)" },
-        "servicio": { "finalidad": "Prestación del servicio contratado", "base": "Ejecución del contrato (art. 6.1.b)" },
-        "facturacion": { "finalidad": "Facturación y suscripciones", "base": "Contrato + obligación legal (art. 6.1.b y 6.1.c)" },
-        "datosSalud": { "finalidad": "Tratamiento de datos de salud", "base": "Interés vital + medicina preventiva (art. 9.2.c y 9.2.h)" },
-        "notificaciones": { "finalidad": "Notificaciones del servicio", "base": "Ejecución del contrato (art. 6.1.b)" },
-        "comunicaciones": { "finalidad": "Comunicaciones comerciales propias", "base": "Interés legítimo (art. 6.1.f) — con derecho de oposición" },
-        "mejora": { "finalidad": "Mejora del servicio y análisis", "base": "Interés legítimo (art. 6.1.f)" },
-        "obligaciones": { "finalidad": "Cumplimiento de obligaciones legales", "base": "Obligación legal (art. 6.1.c)" }
+        "registro": {
+          "finalidad": "Gestión del registro y autenticación",
+          "base": "Ejecución del contrato (art. 6.1.b)"
+        },
+        "servicio": {
+          "finalidad": "Prestación del servicio contratado",
+          "base": "Ejecución del contrato (art. 6.1.b)"
+        },
+        "facturacion": {
+          "finalidad": "Facturación y suscripciones",
+          "base": "Contrato + obligación legal (art. 6.1.b y 6.1.c)"
+        },
+        "datosSalud": {
+          "finalidad": "Tratamiento de datos de salud",
+          "base": "Interés vital + medicina preventiva (art. 9.2.c y 9.2.h)"
+        },
+        "notificaciones": {
+          "finalidad": "Notificaciones del servicio",
+          "base": "Ejecución del contrato (art. 6.1.b)"
+        },
+        "comunicaciones": {
+          "finalidad": "Comunicaciones comerciales propias",
+          "base": "Interés legítimo (art. 6.1.f) — con derecho de oposición"
+        },
+        "mejora": {
+          "finalidad": "Mejora del servicio y análisis",
+          "base": "Interés legítimo (art. 6.1.f)"
+        },
+        "obligaciones": {
+          "finalidad": "Cumplimiento de obligaciones legales",
+          "base": "Obligación legal (art. 6.1.c)"
+        }
       }
     },
     "destinatarios": {
       "titulo": "4. Destinatarios de los datos",
       "servicios": {
-        "supabase": { "nombre": "Supabase", "desc": "Autenticación y base de datos", "ubicacion": "Servidores en la UE" },
-        "stripe": { "nombre": "Stripe", "desc": "Procesamiento de pagos", "ubicacion": "Data Privacy Framework" },
-        "google": { "nombre": "Google", "desc": "Google Calendar (si se activa)", "ubicacion": "Data Privacy Framework" },
-        "openai": { "nombre": "OpenAI", "desc": "Generación con IA (datos mínimos)", "ubicacion": "Data Privacy Framework" }
+        "supabase": {
+          "nombre": "Supabase",
+          "desc": "Autenticación y base de datos",
+          "ubicacion": "Servidores en Irlanda (UE)"
+        },
+        "stripe": {
+          "nombre": "Stripe",
+          "desc": "Procesamiento de pagos",
+          "ubicacion": "Data Privacy Framework"
+        },
+        "google": {
+          "nombre": "Google",
+          "desc": "Google Calendar (si se activa)",
+          "ubicacion": "Data Privacy Framework"
+        },
+        "oracle": {
+          "nombre": "Oracle Cloud",
+          "desc": "Alojamiento del servidor de la aplicación",
+          "ubicacion": "Servidor en Madrid (España)"
+        },
+        "groq": {
+          "nombre": "Groq",
+          "desc": "Generación de dietas con IA. Se envían sexo, peso, objetivo y restricciones alimentarias: nunca el nombre, los apellidos, el email ni la fecha de nacimiento",
+          "ubicacion": "Estados Unidos"
+        },
+        "resend": {
+          "nombre": "Resend",
+          "desc": "Envío de correos (avisos, invitaciones y verificación)",
+          "ubicacion": "Estados Unidos"
+        }
       },
       "noVendemos": "No vendemos ni cedemos datos a terceros con fines comerciales. Las transferencias internacionales están amparadas por decisiones de adecuación de la Comisión Europea o el DPF UE-EE.UU."
     },
@@ -97,23 +147,59 @@
       "headerTipo": "Tipo de datos",
       "headerPlazo": "Plazo",
       "filas": {
-        "cuenta": { "tipo": "Datos de cuenta", "plazo": "Mientras esté activa + 30 días tras baja" },
-        "facturacion": { "tipo": "Facturación", "plazo": "5 años (Ley General Tributaria)" },
-        "pacientes": { "tipo": "Datos de pacientes", "plazo": "Mientras el nutricionista tenga cuenta activa; máx. 90 días tras baja" },
-        "adjuntos": { "tipo": "Adjuntos de mensajes", "plazo": "30 días (limpieza automática)" },
-        "mensajes": { "tipo": "Mensajes de texto", "plazo": "60 días (limpieza automática)" },
-        "logs": { "tipo": "Logs de actividad", "plazo": "Máximo 12 meses" }
+        "cuenta": {
+          "tipo": "Datos de cuenta",
+          "plazo": "Mientras esté activa + 30 días tras baja"
+        },
+        "facturacion": {
+          "tipo": "Facturación",
+          "plazo": "5 años (Ley General Tributaria)"
+        },
+        "pacientes": {
+          "tipo": "Datos de pacientes",
+          "plazo": "Mientras el nutricionista tenga cuenta activa; máx. 90 días tras baja"
+        },
+        "adjuntos": {
+          "tipo": "Adjuntos de mensajes",
+          "plazo": "30 días (limpieza automática)"
+        },
+        "mensajes": {
+          "tipo": "Mensajes de texto",
+          "plazo": "60 días (limpieza automática)"
+        },
+        "logs": {
+          "tipo": "Logs de actividad",
+          "plazo": "Máximo 12 meses"
+        }
       }
     },
     "derechos": {
       "titulo": "6. Tus derechos",
       "lista": {
-        "acceso": { "derecho": "Acceso", "desc": "Confirmar si tratamos tus datos y acceder a ellos" },
-        "rectificacion": { "derecho": "Rectificación", "desc": "Corregir datos inexactos" },
-        "supresion": { "derecho": "Supresión", "desc": "Solicitar eliminación (derecho al olvido)" },
-        "limitacion": { "derecho": "Limitación", "desc": "Restringir el tratamiento" },
-        "portabilidad": { "derecho": "Portabilidad", "desc": "Recibir datos en formato estructurado" },
-        "oposicion": { "derecho": "Oposición", "desc": "Oponerse al tratamiento por interés legítimo" }
+        "acceso": {
+          "derecho": "Acceso",
+          "desc": "Confirmar si tratamos tus datos y acceder a ellos"
+        },
+        "rectificacion": {
+          "derecho": "Rectificación",
+          "desc": "Corregir datos inexactos"
+        },
+        "supresion": {
+          "derecho": "Supresión",
+          "desc": "Solicitar eliminación (derecho al olvido)"
+        },
+        "limitacion": {
+          "derecho": "Limitación",
+          "desc": "Restringir el tratamiento"
+        },
+        "portabilidad": {
+          "derecho": "Portabilidad",
+          "desc": "Recibir datos en formato estructurado"
+        },
+        "oposicion": {
+          "derecho": "Oposición",
+          "desc": "Oponerse al tratamiento por interés legítimo"
+        }
       },
       "instrucciones": "Envía un email a privacidad@annonia.com con tu nombre, email y el derecho que deseas ejercer. Responderemos en máximo 30 días.",
       "reclamacion": "Si no estás satisfecho, puedes reclamar ante la Agencia Española de Protección de Datos (AEPD): www.aepd.es"
@@ -309,19 +395,47 @@
       "titulo": "2. Cookies estrictamente necesarias",
       "descripcion": "Imprescindibles para el funcionamiento de la Plataforma. Sin ellas, no podríamos prestar el servicio. <strong>No requieren consentimiento</strong> (art. 22.2 LSSI-CE).",
       "cookies": {
-        "supabaseAuth": { "nombre": "sb-*-auth-token", "proposito": "Sesión de autenticación del nutricionista (Supabase Auth). Mantiene tu sesión iniciada.", "duracion": "Sesión / 30 días" },
-        "adminSession": { "nombre": "annonia-admin-session", "proposito": "Sesión del panel de administración. JWT cifrado con HS256.", "duracion": "7 días" },
-        "pacienteSession": { "nombre": "annonia-paciente-session", "proposito": "Sesión del portal del paciente. JWT cifrado con HS256.", "duracion": "30 días" }
+        "supabaseAuth": {
+          "nombre": "sb-*-auth-token",
+          "proposito": "Sesión de autenticación del nutricionista (Supabase Auth). Mantiene tu sesión iniciada.",
+          "duracion": "Sesión / 30 días"
+        },
+        "adminSession": {
+          "nombre": "annonia-admin-session",
+          "proposito": "Sesión del panel de administración. JWT cifrado con HS256.",
+          "duracion": "7 días"
+        },
+        "pacienteSession": {
+          "nombre": "annonia-paciente-session",
+          "proposito": "Sesión del portal del paciente. JWT cifrado con HS256.",
+          "duracion": "30 días"
+        }
       }
     },
     "preferencias": {
       "titulo": "3. Cookies de preferencias",
       "descripcion": "Recuerdan tus preferencias para personalizar la experiencia. Se almacenan en el <code>localStorage</code> del navegador.",
       "cookies": {
-        "theme": { "nombre": "annonia-theme", "proposito": "Tu preferencia de tema visual (claro u oscuro).", "duracion": "Persistente" },
-        "tours": { "nombre": "annonia-tours-*", "proposito": "Registro de qué tours guiados has completado, para no volver a mostrarlos.", "duracion": "Persistente" },
-        "welcome": { "nombre": "annonia-welcome-*", "proposito": "Marca de que ya se ha mostrado la pantalla de bienvenida.", "duracion": "Persistente" },
-        "consent": { "nombre": "annonia-cookie-consent", "proposito": "Registro de tu elección sobre cookies (aceptar/rechazar).", "duracion": "365 días" }
+        "theme": {
+          "nombre": "annonia-theme",
+          "proposito": "Tu preferencia de tema visual (claro u oscuro).",
+          "duracion": "Persistente"
+        },
+        "tours": {
+          "nombre": "annonia-tours-*",
+          "proposito": "Registro de qué tours guiados has completado, para no volver a mostrarlos.",
+          "duracion": "Persistente"
+        },
+        "welcome": {
+          "nombre": "annonia-welcome-*",
+          "proposito": "Marca de que ya se ha mostrado la pantalla de bienvenida.",
+          "duracion": "Persistente"
+        },
+        "consent": {
+          "nombre": "annonia-cookie-consent",
+          "proposito": "Registro de tu elección sobre cookies (aceptar/rechazar).",
+          "duracion": "365 días"
+        }
       }
     },
     "terceros": {
@@ -330,10 +444,26 @@
       "ga4Condicion": "Solo se activa si aceptas las cookies. No usamos Facebook Pixel ni ningún servicio de tracking publicitario.",
       "descripcion": "Los únicos servicios de terceros que pueden establecer cookies son:",
       "cookies": {
-        "supabase": { "nombre": "Supabase", "proposito": "Cookies de autenticación necesarias para el funcionamiento del servicio de login.", "duracion": "Variable" },
-        "stripe": { "nombre": "Stripe", "proposito": "Cookies de prevención de fraude durante el proceso de pago. Solo cuando accedes a la pasarela.", "duracion": "Variable" },
-        "googleCalendar": { "nombre": "Google (Calendar)", "proposito": "Cuando conectas voluntariamente tu Google Calendar, Google puede establecer cookies de sesión propias.", "duracion": "Variable" },
-        "ga4": { "nombre": "_ga, _ga_* (Google Analytics 4)", "proposito": "Cookies de análisis anónimo de uso. Solo se cargan si aceptas las cookies al visitar la web.", "duracion": "Hasta 2 años" }
+        "supabase": {
+          "nombre": "Supabase",
+          "proposito": "Cookies de autenticación necesarias para el funcionamiento del servicio de login.",
+          "duracion": "Variable"
+        },
+        "stripe": {
+          "nombre": "Stripe",
+          "proposito": "Cookies de prevención de fraude durante el proceso de pago. Solo cuando accedes a la pasarela.",
+          "duracion": "Variable"
+        },
+        "googleCalendar": {
+          "nombre": "Google (Calendar)",
+          "proposito": "Cuando conectas voluntariamente tu Google Calendar, Google puede establecer cookies de sesión propias.",
+          "duracion": "Variable"
+        },
+        "ga4": {
+          "nombre": "_ga, _ga_* (Google Analytics 4)",
+          "proposito": "Cookies de análisis anónimo de uso. Solo se cargan si aceptas las cookies al visitar la web.",
+          "duracion": "Hasta 2 años"
+        }
       }
     },
     "gestion": {

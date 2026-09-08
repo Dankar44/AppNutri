@@ -168,6 +168,17 @@ funciona en tu máquina y **falla en silencio en producción** porque nadie ejec
 - Si añades una variable de entorno, dilo en el PR: hay que ponerla en el servidor.
 - Si depende de datos, incluye el script y dilo.
 
+### 3.2.5 `prisma generate` con el servidor arrancado
+
+Tras tocar `schema.prisma` y regenerar el cliente, **hay que reiniciar `npm run dev:desarrollo`**.
+El servidor tiene el cliente viejo cargado en memoria y sigue sin conocer el campo o el valor de
+enum nuevo. Lo peor es cómo se manifiesta: la página muestra *"El navegador cargó una versión
+antigua del código"* —que no tiene nada que ver— o, si el trabajo va en segundo plano, **no pasa
+nada en absoluto** y el error solo aparece en el log del servidor
+(`PrismaClientValidationError`). Pasó dos veces el 8 sep 2026, con `ENTREGA_RECIBIDA` y con
+`avisoPlazoAt`, y las dos veces se buscó el fallo en el sitio equivocado. Ante un comportamiento
+raro justo después de una migración: mira el log del servidor **antes** que el código.
+
 ### 3.3 Caché obsoleta en desarrollo
 Cambias algo y "no se aplica". No busques el bug: es la caché de Turbopack.
 

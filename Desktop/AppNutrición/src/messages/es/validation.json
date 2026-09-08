@@ -180,7 +180,7 @@
       "casoAsignado": "Tienes un caso nuevo",
       "casoCorregido": "Te han corregido un caso",
       "casoReabierto": "Tu profesor te ha reabierto un caso: puedes volver a tocarlo y entregarlo otra vez",
-      "entregaRecibida": "Un alumno te ha entregado"
+      "plazoTerminado": "Se acabó el plazo"
     },
     "mensajes": {
       "proponeCita": "{nombreDietista} propone una cita para el {fecha}",
@@ -202,7 +202,7 @@
       "preconsultaCompletada": "{nombrePaciente} ha rellenado su anamnesis",
       "horarioCompletado": "{nombrePaciente} ha rellenado su horario semanal",
       "motivo": "Motivo: {motivo}",
-      "entregaRecibida": "{alumno} ha entregado «{caso}»"
+      "plazoTerminado": "Tienes {n} entregas por revisar en «{caso}» ({clase})"
     }
   },
   "pacienteAuth": {

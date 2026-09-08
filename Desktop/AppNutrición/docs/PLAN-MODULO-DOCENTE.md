@@ -71,6 +71,18 @@ dejaría fuera a gente que ya tenemos, así que:
 Nada de correos: el plan gratuito de Resend son 3.000 al mes y 100 al día, y una facultad de 300
 alumnos se los come sola (decidido con Guillermo el 8 sep 2026).
 
+**Los avisos al profesor son por PLAZO, no por entrega** (rectificado el mismo día: *"con cada
+entrega puede ser un poco petada… prefiero que sea como ya ha acabado el período de esta clase,
+revisa las entregas"*). Un solo aviso por asignación cuando pasa la fecha límite, diciendo cuántas
+quedan por revisar. Una asignación sin fecha límite no tiene final que anunciar y no avisa.
+
+**Pendiente de Guillermo, no de programación:** el nombre real de la base de datos de aminoácidos
+que pidió la universidad (#121). Lo apuntado como "GEPCAT" es una transcripción dudosa y **no
+corresponde a ninguna base real**. Las que sí tienen perfil completo de aminoácidos son **USDA
+FoodData Central** (gratis), **FAO/INFOODS** y **Souci-Fachmann-Kraut** (de pago); BEDCA y CESNID
+solo lo tienen parcial. Cuando se confirme, es una mejora del catálogo para TODA la aplicación, no
+solo para docencia.
+
 ### Lo que NO entra en la fase 5 (decidido el 8 sep 2026)
 
 - **#40, la sección comparativa dentro del PDF.** La idea acordada, para cuando se haga: que al

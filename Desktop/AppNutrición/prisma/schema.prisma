@@ -1217,6 +1217,8 @@ model AsignacionCaso {
   asignadoPor String?
   /// Retirar la asignación no borra lo entregado: deja de verse como pendiente y ya.
   retiradaAt  DateTime?
+  /// Cuándo se avisó al profesor de que el plazo terminó. Para no repetírselo cada día.
+  avisoPlazoAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @default(now()) @updatedAt
 

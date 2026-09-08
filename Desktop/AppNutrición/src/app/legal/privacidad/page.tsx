@@ -99,7 +99,11 @@ export default async function PrivacidadPage() {
     { name: t("privacidad.destinatarios.servicios.supabase.nombre"), desc: t("privacidad.destinatarios.servicios.supabase.desc"), flag: t("privacidad.destinatarios.servicios.supabase.ubicacion") },
     { name: t("privacidad.destinatarios.servicios.stripe.nombre"), desc: t("privacidad.destinatarios.servicios.stripe.desc"), flag: t("privacidad.destinatarios.servicios.stripe.ubicacion") },
     { name: t("privacidad.destinatarios.servicios.google.nombre"), desc: t("privacidad.destinatarios.servicios.google.desc"), flag: t("privacidad.destinatarios.servicios.google.ubicacion") },
-    { name: t("privacidad.destinatarios.servicios.openai.nombre"), desc: t("privacidad.destinatarios.servicios.openai.desc"), flag: t("privacidad.destinatarios.servicios.openai.ubicacion") },
+    { name: t("privacidad.destinatarios.servicios.oracle.nombre"), desc: t("privacidad.destinatarios.servicios.oracle.desc"), flag: t("privacidad.destinatarios.servicios.oracle.ubicacion") },
+    // El proveedor de IA es Groq, no OpenAI: de OpenAI solo se usa el SDK, y nombrar a quien no
+    // trata los datos es lo primero que detecta el departamento legal de una universidad (#79).
+    { name: t("privacidad.destinatarios.servicios.groq.nombre"), desc: t("privacidad.destinatarios.servicios.groq.desc"), flag: t("privacidad.destinatarios.servicios.groq.ubicacion") },
+    { name: t("privacidad.destinatarios.servicios.resend.nombre"), desc: t("privacidad.destinatarios.servicios.resend.desc"), flag: t("privacidad.destinatarios.servicios.resend.ubicacion") },
   ];
 
   const DERECHOS = [
