@@ -50,19 +50,18 @@ export default async function ComparativaPage({
         {datos.caso} · {datos.clase}
       </p>
 
-      {entregados === 0 ? (
-        <p className="text-sm text-muted-foreground mt-8">{t("nadieHaEntregado")}</p>
-      ) : (
-        <>
-          {/* Sin esta línea la tabla son números sueltos: hay que decir contra qué se compara. */}
-          <p className="text-xs text-muted-foreground mt-4 mb-3 leading-relaxed">
-            {t("comoLeerla")}
-          </p>
-          <div className="lg:border lg:border-border lg:rounded-xl lg:bg-card lg:p-2">
-            <TablaComparativa comparativa={datos.comparativa} />
-          </div>
-        </>
+      {/* La tabla se pinta aunque no haya entregado nadie: ahí está lo del profesor, que es lo que
+          quiere poder mirar mientras espera (Guillermo, 8 sep 2026). */}
+      {entregados === 0 && (
+        <p className="text-sm text-muted-foreground mt-4">{t("nadieHaEntregado")}</p>
       )}
+      {/* Sin esta línea la tabla son números sueltos: hay que decir contra qué se compara. */}
+      <p className="text-xs text-muted-foreground mt-4 mb-3 leading-relaxed">
+        {t("comoLeerla")}
+      </p>
+      <div className="lg:border lg:border-border lg:rounded-xl lg:bg-card lg:p-2">
+        <TablaComparativa comparativa={datos.comparativa} />
+      </div>
     </div>
   );
 }

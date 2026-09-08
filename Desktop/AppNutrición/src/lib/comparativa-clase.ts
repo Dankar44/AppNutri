@@ -136,7 +136,11 @@ export function construirComparativa(
   }[],
 ): Comparativa {
   const filas = entregas.map((e): FilaComparativa => {
-    const foto = e.foto as EntregaCongelada | null;
+    // Solo cuentan las entregadas. Al reabrir una entrega la foto se conserva, y sin esto la tabla
+    // seguiría enseñando las cifras del trabajo que el alumno ya retiró mientras lo rehace: el
+    // profesor corregiría mirando números que no son (8 sep 2026).
+    const entregada = e.estado === "ENTREGADA" || e.estado === "CORREGIDA";
+    const foto = entregada ? (e.foto as EntregaCongelada | null) : null;
     const plan = foto?.planes?.find((p) => p.id === e.entregablePlanId) ?? foto?.planes?.[0];
     return filaDe(
       { alumnoId: e.alumnoId, alumno: e.alumno, estado: e.estado, nota: e.nota },

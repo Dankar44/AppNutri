@@ -1056,6 +1056,22 @@ async function main() {
     comprobar("con el desvío calculado contra ese objetivo", kcal.some((c) => /^[+-]\d{1,3}%$/.test(c)));
     await foto(profe, "23-comparativa-de-la-clase");
 
+    console.log("\n28b3. Al reabrir, la comparativa deja de dar sus cifras por buenas");
+    // La foto se conserva al reabrir. Sin cuidado, la tabla seguiría enseñando lo que ya retiró
+    // mientras lo rehace, y el profesor corregiría mirando números que no son.
+    await client.query(`UPDATE entregas_caso SET estado = 'EN_MARCHA', "entregadaAt" = NULL WHERE id = $1`, [entregaId]);
+    await profe.goto(`${BASE}/profesor/casos/${casoId}/comparativa/${asignacionId}`, { waitUntil: "networkidle0" });
+    await esperar(2500);
+    const filaReabierta = await profe.evaluate(() => {
+      const tr = Array.from(document.querySelectorAll("tbody tr")).find((x) => /Lucia|Alumna/.test(x.textContent ?? ""));
+      return Array.from(tr?.querySelectorAll("td") ?? []).map((td) => td.textContent?.trim() ?? "");
+    });
+    comprobar("su fila se queda sin cifras mientras la rehace",
+      !filaReabierta.some((c) => /kcal/.test(c)), filaReabierta.join(" · ").slice(0, 70));
+    // Y se deja como estaba para el resto del guion.
+    await client.query(
+      `UPDATE entregas_caso SET estado = 'CORREGIDA', "entregadaAt" = NOW() WHERE id = $1`, [entregaId]);
+
     console.log("\n28c. Entregado y SIN ningún plan, tampoco se puede crear uno");
     // Se puede entregar el caso sin haber hecho plan de alimentación. La pestaña tiene una salida
     // temprana para "no hay planes" que se saltaba el cierre y dejaba el botón de crear: quedaba un
