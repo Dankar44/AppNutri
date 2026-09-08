@@ -2653,7 +2653,10 @@ export async function getPlanPDFDataDeEntrega(entregaId: string): Promise<PlanPD
         { asignacion: { clase: { profesores: { some: { profesorId: quien.id } } } } },
       ],
     },
-    select: { entregablePlanId: true, alumnoId: true },
+    select: {
+      entregablePlanId: true, alumnoId: true,
+      asignacion: { select: { caso: { select: { nombre: true } }, clase: { select: { nombre: true } } } },
+    },
   });
   if (!entrega?.entregablePlanId) return null;
 
@@ -2661,7 +2664,16 @@ export async function getPlanPDFDataDeEntrega(entregaId: string): Promise<PlanPD
   if (!alumno) return null;
   const plan = await planCompleto(entrega.entregablePlanId, entrega.alumnoId);
   if (!plan) return null;
-  return montarDatosPdf(plan, alumno);
+  const datos = await montarDatosPdf(plan, alumno);
+  // De quién es y de qué clase: con veinte entregas del mismo caso, los PDF son indistinguibles.
+  if (datos) {
+    datos.entregaDeClase = {
+      alumno: `${alumno.nombre} ${alumno.apellidos}`.trim(),
+      caso: entrega.asignacion.caso.nombre,
+      clase: entrega.asignacion.clase.nombre,
+    };
+  }
+  return datos;
 }
 
 async function montarDatosPdf(

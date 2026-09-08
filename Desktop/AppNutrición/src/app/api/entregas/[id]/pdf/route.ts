@@ -40,7 +40,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   // Mismo 404 si no existe, si no es suya o si no llevaba entregable: no se revela nada.
   if (!generado) return new NextResponse(null, { status: 404 });
 
-  const nombre = (entrega.entregableNombre ?? generado.nombre).replace(/[^\w.\-áéíóúÁÉÍÓÚñÑ]/g, "_");
+  // El nombre lo pone el generador: lleva alumno, caso y clase, que es lo que le sirve al profesor
+  // cuando tiene veinte descargados. `entregableNombre` es el del plan del alumno, y se repite.
+  const nombre = generado.nombre.replace(/[^\w.\-áéíóúÁÉÍÓÚñÑ]/g, "_");
   return new NextResponse(new Uint8Array(generado.pdf), {
     headers: {
       "Content-Type": "application/pdf",

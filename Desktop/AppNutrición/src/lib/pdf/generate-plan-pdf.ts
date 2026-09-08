@@ -159,9 +159,22 @@ export interface PDFSectionOptions {
   valoresNutricionales?: boolean;
 }
 
+/**
+ * De quién es esta entrega, para que el profesor no confunda veinte PDF iguales.
+ *
+ * Solo lo lleva el PDF de una entrega de clase; en la consulta normal no existe y no se pinta nada
+ * (Guillermo, 8 sep 2026: "que no salga si el alumno usa su cuenta normal").
+ */
+export interface DatosDeLaEntrega {
+  alumno: string;
+  caso: string;
+  clase: string;
+}
+
 export interface PlanPDFData {
   planNombre: string;
   pacienteNombre: string;
+  entregaDeClase?: DatosDeLaEntrega | null;
   dietistaNombre: string;
   dias: Dia[];
   recomendaciones: string;
@@ -203,6 +216,8 @@ function generateCSS(t: PdfColorTheme): string {
   .cover-title { font-size: 28px; color: ${t.textMedium}; font-weight: 300; margin-bottom: 4px; }
   .cover-title strong { font-weight: 800; color: ${t.primary}; }
   .cover-name { background: ${t.primary}; color: white; padding: 8px 24px; font-weight: 700; font-size: 14px; margin-top: 16px; display: inline-block; letter-spacing: 0.5px; border-radius: 4px; }
+  .cover-clase { margin-top: 28px; font-size: 15px; font-weight: 700; color: ${t.textMedium}; }
+  .cover-clase span { display: block; margin-top: 4px; font-size: 12px; font-weight: 400; color: ${t.textLight ?? t.textMedium}; }
   .cover-logo { margin-top: 60px; font-size: 24px; font-weight: 800; color: ${t.primary}; }
   .cover-logo-img { max-width: 180px; max-height: 80px; }
   .cover-platform { text-align: center; font-size: 18px; font-weight: 700; color: #c0c8c3; letter-spacing: 1px; margin-top: 60px; }
@@ -343,7 +358,12 @@ export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
 
   // === PORTADA ===
   if (sec.portada) {
-    html += `<div class="page cover"><div class="cover-box"><div class="cover-title">${tt("planDietetico.portada.titulo")}<br><strong>${tt("planDietetico.portada.subtitulo")}</strong></div><div class="cover-name">${pacNombre}</div></div><div class="cover-logo">${logoCoverHtml}</div><p class="cover-platform">Annonia</p></div>`;
+    // En una entrega de clase, quién lo entrega y de qué caso: con veinte PDF encima de la mesa, sin
+    // esto no se sabe cuál es cuál. En la consulta normal no aparece.
+    const deClase = data.entregaDeClase
+      ? `<div class="cover-clase">${escapeHtml(data.entregaDeClase.alumno)}<span>${escapeHtml(data.entregaDeClase.caso)} · ${escapeHtml(data.entregaDeClase.clase)}</span></div>`
+      : "";
+    html += `<div class="page cover"><div class="cover-box"><div class="cover-title">${tt("planDietetico.portada.titulo")}<br><strong>${tt("planDietetico.portada.subtitulo")}</strong></div><div class="cover-name">${pacNombre}</div>${deClase}</div><div class="cover-logo">${logoCoverHtml}</div><p class="cover-platform">Annonia</p></div>`;
   }
 
   // === RESUMEN SEMANAL ===

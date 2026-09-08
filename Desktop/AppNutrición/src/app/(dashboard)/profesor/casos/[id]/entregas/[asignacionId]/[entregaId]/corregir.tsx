@@ -21,8 +21,11 @@ export function Corregir({
   visibleParaAlumno,
   yaCorregida,
   puedeCorregirse,
+  volverA,
 }: {
   entregaId: string;
+  /** A dónde se sale al guardar la nota: la lista de la clase, con esta entrega ya despachada. */
+  volverA: string;
   nota: number | null;
   comentario: string | null;
   visibleParaAlumno: boolean;
@@ -53,6 +56,9 @@ export function Corregir({
       });
       if (result.ok) {
         toast.success(t("entregas.corregida"));
+        // Puesta la nota, este alumno está visto: se vuelve a la lista para seguir con el siguiente,
+        // que es lo que se hace de verdad al corregir una clase (Guillermo, 8 sep 2026).
+        router.push(volverA);
         router.refresh();
       } else {
         toast.error(result.error || t("errorGuardar"));

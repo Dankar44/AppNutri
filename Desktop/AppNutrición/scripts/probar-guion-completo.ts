@@ -726,10 +726,17 @@ async function main() {
     const descarga = await alumna.evaluate(async (id) => {
       const r = await fetch(`/api/entregas/${id}/pdf`);
       const b = r.ok ? await r.blob() : null;
-      return { estado: r.status, tipo: r.headers.get("content-type") ?? "", bytes: b?.size ?? 0 };
+      return {
+        estado: r.status, tipo: r.headers.get("content-type") ?? "", bytes: b?.size ?? 0,
+        nombre: decodeURIComponent(r.headers.get("content-disposition") ?? ""),
+      };
     }, entregaId);
     comprobar("y el alumno se lo puede descargar", descarga.estado === 200 && descarga.tipo.includes("pdf") && descarga.bytes > 10000,
       `${descarga.estado} · ${descarga.tipo} · ${Math.round(descarga.bytes / 1024)} KB`);
+    // El fichero lleva alumno, caso y clase: con veinte descargados, «Plan-Marta.pdf» no sirve.
+    comprobar("y el fichero se llama con su nombre, el caso y la clase",
+      /Lucia|Alumna/.test(descarga.nombre) && /vegana/i.test(descarga.nombre) && /Dietoterapia/i.test(descarga.nombre),
+      descarga.nombre);
     await foto(alumna, "20-entregado");
 
     // Fase 5 — Entregar NO genera aviso: con veinte alumnos sería una lluvia (Guillermo, 8 sep
@@ -946,6 +953,10 @@ async function main() {
     await foto(alumna, "23-aula-sin-la-nota-todavia");
 
     console.log("\n28b. Y cuando la profesora la enseña, la ve");
+    // Al guardar la nota se sale a la lista de la clase (es lo que se hace al corregir a veinte),
+    // así que para tocar el interruptor hay que volver a entrar en esta entrega.
+    await profe.goto(`${BASE}/profesor/casos/${casoId}/entregas/${asignacionId}/${entregaId2}`, { waitUntil: "networkidle0" });
+    await esperar(2500);
     await profe.evaluate(() => {
       const l = Array.from(document.querySelectorAll("label")).find((x) => x.textContent?.includes("Que el alumno vea la nota"));
       const c = (l?.querySelector("input") ?? l?.parentElement?.querySelector("input")) as HTMLInputElement | null;

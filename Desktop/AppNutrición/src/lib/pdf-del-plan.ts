@@ -24,7 +24,13 @@ export async function generarPdfDelPlan(
 
   const tPdf = await getTranslations("pdf");
   const html = generatePlanPDF(datos, tPdf);
-  const nombre = `Plan-${datos.pacienteNombre.replace(/\s+/g, "-")}.pdf`;
+  // El nombre del fichero lleva alumno, caso y clase: es lo que el profesor va a tener en su
+  // carpeta de descargas, y «Plan-Marta-Vegana.pdf» veinte veces no le sirve de nada.
+  const d = datos.entregaDeClase;
+  const limpio = (x: string) => x.replace(/\s+/g, "-").replace(/[^\w.\-áéíóúÁÉÍÓÚñÑ]/g, "");
+  const nombre = d
+    ? `${limpio(d.alumno)}-${limpio(d.caso)}-${limpio(d.clase)}.pdf`
+    : `Plan-${datos.pacienteNombre.replace(/\s+/g, "-")}.pdf`;
   return { pdf: await renderizarPdf(html), nombre };
 }
 
@@ -75,6 +81,12 @@ export async function generarPdfDeEntrega(
 
   const tPdf = await getTranslations("pdf");
   const html = generatePlanPDF(datos, tPdf);
-  const nombre = `Plan-${datos.pacienteNombre.replace(/\s+/g, "-")}.pdf`;
+  // El nombre del fichero lleva alumno, caso y clase: es lo que el profesor va a tener en su
+  // carpeta de descargas, y «Plan-Marta-Vegana.pdf» veinte veces no le sirve de nada.
+  const d = datos.entregaDeClase;
+  const limpio = (x: string) => x.replace(/\s+/g, "-").replace(/[^\w.\-áéíóúÁÉÍÓÚñÑ]/g, "");
+  const nombre = d
+    ? `${limpio(d.alumno)}-${limpio(d.caso)}-${limpio(d.clase)}.pdf`
+    : `Plan-${datos.pacienteNombre.replace(/\s+/g, "-")}.pdf`;
   return { pdf: await renderizarPdf(html), nombre };
 }

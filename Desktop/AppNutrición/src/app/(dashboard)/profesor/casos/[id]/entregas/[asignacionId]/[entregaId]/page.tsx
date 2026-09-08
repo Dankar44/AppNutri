@@ -213,6 +213,7 @@ export default async function EntregaPage({
 
       <Corregir
         entregaId={trabajo.entregaId}
+        volverA={`/profesor/casos/${id}?clase=${asignacionId}#clase-${asignacionId}`}
         puedeCorregirse={trabajo.estado === "ENTREGADA" || trabajo.estado === "CORREGIDA"}
         nota={trabajo.nota}
         comentario={trabajo.comentario}
