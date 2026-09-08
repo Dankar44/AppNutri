@@ -330,6 +330,11 @@
     "salirBorraLaClase": "Eres el único profesor: salir de esta clase la borra entera. Confírmalo si es lo que quieres",
     "noEstaEntregada": "Este alumno no ha entregado todavía",
     "cursoAlReves": "El curso no puede acabar antes de empezar. Revisa las fechas.",
-    "fechaNoValida": "Esa fecha no es válida."
+    "fechaNoValida": "Esa fecha no es válida.",
+    "plazasNoValidas": "Pon un número de plazas entre 1 y 500.",
+    "enlaceAgotado": "Este enlace ya ha dado todas sus plazas. Habla con tu universidad.",
+    "enlaceProfesorNoValido": "Este enlace no vale o ya no está activo.",
+    "alumnoNoProfesor": "Tu cuenta es de alumno: no puede ser también de profesor.",
+    "yaExisteEntraConTuCuenta": "Ese correo ya tiene cuenta en Annonia. Entra con ella y vuelve a abrir el enlace."
   }
 }

@@ -47,6 +47,9 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/invitacion") ||
     // El enlace de clase: el alumno que lo abre todavía no tiene cuenta.
     request.nextUrl.pathname.startsWith("/clase/") ||
+    // Y el de profesorado, por lo mismo: la universidad lo reparte y quien lo abre puede no tener
+    // cuenta. Sin esto se le mandaba al login y no había forma de darse de alta (8 sep 2026).
+    request.nextUrl.pathname.startsWith("/profesorado/") ||
     request.nextUrl.pathname.startsWith("/paciente") ||
     request.nextUrl.pathname.startsWith("/admin-login") ||
     request.nextUrl.pathname.startsWith("/admin") ||

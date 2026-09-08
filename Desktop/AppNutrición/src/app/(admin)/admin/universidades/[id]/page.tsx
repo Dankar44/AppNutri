@@ -8,6 +8,8 @@ import { dominiosDeLicencia, licenciaVigente } from "@/lib/docencia";
 import { formatDate } from "@/lib/utils";
 import { EditarLicenciaForm } from "./editar-licencia-form";
 import { AsignarProfesorForm } from "./asignar-profesor-form";
+import { EnlacesProfesorado } from "./enlaces-profesorado";
+import { getEnlacesProfesores } from "@/app/actions/enlaces-profesores";
 import { QuitarRolButton } from "./quitar-rol-button";
 import { AccionesInvitacion } from "./acciones-invitacion";
 
@@ -21,6 +23,7 @@ export default async function UniversidadDetallePage({
 
   const { id } = await params;
   const licencia = await getLicenciaDocenteDetalle(id);
+  const enlaces = await getEnlacesProfesores(id);
   if (!licencia) notFound();
 
   const t = await getTranslations("admin.universidades");
@@ -147,6 +150,10 @@ export default async function UniversidadDetallePage({
           sinCupo={licencia.profesores + licencia.invitaciones.length >= licencia.maxProfesores}
           dominios={dominios}
         />
+
+        {/* Y la vía de repartir: un enlace para que se den de alta ellos, sin pedirle a la
+            universidad los correos de su profesorado. */}
+        <EnlacesProfesorado licenciaId={licencia.id} enlaces={enlaces} />
       </section>
 
       {alumnos.length > 0 && (

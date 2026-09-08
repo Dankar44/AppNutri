@@ -68,6 +68,9 @@ model Dietista {
   rolDocente         RolDocente?
   licenciaDocenteId  String?
   licenciaDocente    LicenciaDocente? @relation(fields: [licenciaDocenteId], references: [id], onDelete: SetNull)
+  /// Por qué enlace entró, si entró por uno. Para ver en admin quién vino de cada reparto.
+  altaPorEnlaceId    String?
+  altaPorEnlace      EnlaceProfesores? @relation("AltaPorEnlace", fields: [altaPorEnlaceId], references: [id], onDelete: SetNull)
   /// La cuenta nació de una clase. No se convierte en cuenta normal: al quitarle el acceso al
   /// acabar el curso, registrarse otra vez con ese correo no le devolvería el uso gratis.
   cuentaDeClase      Boolean   @default(false)
@@ -1082,6 +1085,7 @@ model LicenciaDocente {
 
   miembros      Dietista[]
   invitaciones  InvitacionDocente[]
+  enlacesProfesores EnlaceProfesores[]
   casos         CasoClinico[]
   clases        Clase[]
 
@@ -1091,6 +1095,30 @@ model LicenciaDocente {
 /// Invitación para entrar en el módulo docente. Nadie pone la contraseña de otro: se manda un
 /// correo con un enlace y la persona completa su registro. Guarda el rol porque el mismo
 /// mecanismo sirve para los profesores (fase 1) y para los alumnos (fase 2).
+/// El enlace para dar de alta profesores de una universidad de golpe: se le manda al
+/// representante y él lo reparte por su facultad. Las plazas se cuentan por USOS y no vuelven:
+/// para vender más se crea otro enlace (acordado con Guillermo el 8 sep 2026).
+model EnlaceProfesores {
+  id                String    @id @default(dbgenerated("gen_random_uuid()::text"))
+  licenciaDocenteId String
+  licenciaDocente   LicenciaDocente @relation(fields: [licenciaDocenteId], references: [id], onDelete: Cascade)
+  token             String    @unique
+  plazas            Int
+  /// Solo sube. Un profesor que se va no devuelve su uso.
+  usadas            Int       @default(0)
+  creadoPor         String?
+  /// A quién se le ha mandado, para saber quién tiene el enlace.
+  enviadoA          String[]  @default([])
+  ultimoEnvioAt     DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @default(now()) @updatedAt
+
+  altas             Dietista[] @relation("AltaPorEnlace")
+
+  @@index([licenciaDocenteId])
+  @@map("enlaces_profesores")
+}
+
 model InvitacionDocente {
   id                String    @id @default(dbgenerated("gen_random_uuid()::text"))
   token             String    @unique

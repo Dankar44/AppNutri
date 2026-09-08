@@ -220,5 +220,29 @@
     "dejarDocenciaConfirmar": "Dejar de ser profesor",
     "fueraUniversidad": "Has salido de la universidad",
     "fueraDocencia": "Ya no eres profesor"
+  },
+  "enlaceProfesorado": {
+    "titulo": "Alta de profesorado",
+    "subtitulo": "{institucion}",
+    "explicacion": "Crea tu cuenta de profesor. Podrás montar tus clases, dar de alta a tus alumnos y corregir sus casos.",
+    "quedan": "{n, plural, =1 {Queda # plaza} other {Quedan # plazas}}",
+    "agotado": "Ya no quedan plazas en este enlace",
+    "agotadoAyuda": "Habla con tu universidad para que pida más.",
+    "noValido": "Este enlace no vale",
+    "noValidoAyuda": "Puede que se haya retirado. Pregunta en tu universidad.",
+    "nombre": "Nombre",
+    "apellidos": "Apellidos",
+    "correo": "Correo",
+    "contrasena": "Contraseña",
+    "crearCuenta": "Crear mi cuenta de profesor",
+    "yaTengoCuenta": "Ya uso Annonia",
+    "yaTengoCuentaAyuda": "Si ya tienes cuenta, entra con ella y vuelve a abrir este enlace: se te añade el acceso de profesor sin perder nada de lo tuyo.",
+    "entrarConMiCuenta": "Entrar con mi cuenta",
+    "unirmeConMiCuenta": "Añadir el acceso de profesor a mi cuenta",
+    "unirmeHecho": "Ya tienes acceso de profesor",
+    "sesionDe": "Estás dentro como {email}",
+    "eresAlumno": "Tu cuenta es de alumno, así que no puede ser también de profesor.",
+    "yaEresProfesor": "Ya tienes acceso de profesor.",
+    "irAMiEspacio": "Ir a mi espacio docente"
   }
 }
