@@ -72,6 +72,26 @@ export async function getMisClases(incluirArchivadas = false): Promise<ClaseResu
   }));
 }
 
+/**
+ * Un curso no puede acabar antes de empezar.
+ *
+ * Se colaba tal cual: «Del 15/09/2027 al 31/08/2027» (Guillermo, 8 sep 2026). Y no es cosmético:
+ * de la fecha de fin depende cuándo pierden el acceso los alumnos, así que una clase al revés
+ * nace con el curso ya terminado y nadie entra. Se comprueba aquí porque el selector de fechas es
+ * compartido con media aplicación y no distingue de qué par de fechas se trata.
+ */
+function cursoAlReves(inicio: string, fin: string): boolean {
+  const i = new Date(inicio).getTime();
+  const f = new Date(fin).getTime();
+  if (Number.isNaN(i) || Number.isNaN(f)) return false;
+  return f <= i;
+}
+
+/** Una fecha que el navegador no manda bien: mejor decirlo que guardar un `Invalid Date`. */
+function fechaImposible(valor: string | undefined): boolean {
+  return !!valor && Number.isNaN(new Date(valor).getTime());
+}
+
 export async function crearClase(data: {
   nombre: string;
   /** YYYY-MM-DD. Sin ellas: empieza hoy y acaba el próximo 31 de agosto. */
@@ -87,6 +107,13 @@ export async function crearClase(data: {
   const nombre = sanitizeString(data.nombre, 120);
   if (!nombre) return { ok: false, error: t("docencia.nombreClaseObligatorio") };
 
+  const inicio = data.fechaInicioCurso || inicioDeCursoPorDefecto();
+  const fin = data.fechaFinCurso || finDeCursoPorDefecto();
+  if (fechaImposible(data.fechaInicioCurso) || fechaImposible(data.fechaFinCurso)) {
+    return { ok: false, error: t("docencia.fechaNoValida") };
+  }
+  if (cursoAlReves(inicio, fin)) return { ok: false, error: t("docencia.cursoAlReves") };
+
   try {
     const clase = await prisma.clase.create({
       data: {
@@ -95,8 +122,8 @@ export async function crearClase(data: {
         nombre,
         // El curso va de la fecha de inicio a la de fin (por defecto de hoy al próximo 31 de
         // agosto); a partir de ahí sus alumnos pierden la clase.
-        fechaInicioCurso: new Date(data.fechaInicioCurso || inicioDeCursoPorDefecto()),
-        fechaFinCurso: new Date(data.fechaFinCurso || finDeCursoPorDefecto()),
+        fechaInicioCurso: new Date(inicio),
+        fechaFinCurso: new Date(fin),
         // El que la crea es el primero de la lista de quienes la llevan: así el permiso se
         // comprueba en un solo sitio, mire quien mire.
         profesores: { create: { profesorId: profesor.dietistaId } },
@@ -124,6 +151,13 @@ export async function editarClase(
 
   const nombre = sanitizeString(data.nombre, 120);
   if (!nombre) return { ok: false, error: t("docencia.nombreClaseObligatorio") };
+
+  if (fechaImposible(data.fechaInicioCurso) || fechaImposible(data.fechaFinCurso)) {
+    return { ok: false, error: t("docencia.fechaNoValida") };
+  }
+  if (data.fechaInicioCurso && data.fechaFinCurso && cursoAlReves(data.fechaInicioCurso, data.fechaFinCurso)) {
+    return { ok: false, error: t("docencia.cursoAlReves") };
+  }
 
   try {
     await prisma.clase.update({

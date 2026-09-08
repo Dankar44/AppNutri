@@ -33,6 +33,9 @@ export function AccionesClase({ clase, soyElCreador }: { clase: ClaseEditable; s
   const [fechaInicio, setFechaInicio] = useState(clase.fechaInicioCurso ?? "");
   const [fechaFin, setFechaFin] = useState(clase.fechaFinCurso ?? "");
 
+  // Las dos fechas llegan como YYYY-MM-DD, así que se comparan tal cual.
+  const cursoAlReves = !!fechaInicio && !!fechaFin && fechaFin <= fechaInicio;
+
   function guardar(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
@@ -171,11 +174,17 @@ export function AccionesClase({ clase, soyElCreador }: { clase: ClaseEditable; s
                 </div>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground -mt-2">{t("clases.finCursoAyuda")}</p>
+            {/* De la fecha de fin depende cuándo pierden el acceso los alumnos: una clase al revés
+                deja el curso ya terminado. Se avisa aquí y se comprueba también en el servidor. */}
+            {cursoAlReves ? (
+              <p className="text-xs text-red-600 dark:text-red-400 -mt-2">{t("clases.cursoAlReves")}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground -mt-2">{t("clases.finCursoAyuda")}</p>
+            )}
 
             <button
               type="submit"
-              disabled={isPending || !nombre.trim()}
+              disabled={isPending || !nombre.trim() || cursoAlReves}
               className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
             >
               {isPending && <Loader2 className="w-4 h-4 animate-spin" />}

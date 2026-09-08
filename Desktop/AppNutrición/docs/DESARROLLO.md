@@ -266,6 +266,18 @@ Antes de dar algo por terminado, pásale estas preguntas:
    entienda, lo segundo porque el navegador no es de fiar. Hay ejemplos de los dos en
    `crear-licencia-form.tsx` (`soloDigitos`) y en `corregirEntrega`.
 
+5b. **¿Y si el campo depende de otro?** Un rango se comprueba **como pareja**, no campo a campo.
+   Se creó una clase «Del 15/09/2027 al 31/08/2027»: nace con el curso ya terminado, y de esa
+   fecha depende cuándo pierden el acceso los alumnos (8 sep 2026). El `DatePicker` es compartido
+   y no sabe de qué par de fechas se trata, así que la comprobación va en la pantalla **y** en la
+   acción — ver `cursoAlReves` en `actions/clases.ts`.
+
+5c. **¿Qué pasa por el camino vacío?** Una salida temprana del tipo
+   `if (no hay nada) return <estado vacío>` se salta todo lo que protege más abajo. Con el caso
+   entregado y sin ningún plan seguía apareciendo el botón de crear uno, porque el cierre estaba
+   después de ese `return` (8 sep 2026). Cuando bloquees una pantalla, recorre **todos** sus
+   estados: vacío, cargando, error, y el normal.
+
 6. **¿Cuánto va a ocupar en la base?** Antes de guardar algo nuevo —una columna `Bytes`, un
    `Json` grande, una tabla que crece por alumno o por mes— calcula `tamaño × filas esperadas` y
    compáralo con lo que ocupa hoy la base (`pg_database_size`, `pg_column_size`). El módulo

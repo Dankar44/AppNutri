@@ -109,7 +109,8 @@
     "delAl": "Del {inicio} al {fin}",
     "eliminar": "Eliminar",
     "eliminarTexto": "{n, plural, =0 {Se borra la clase con sus casos asignados y sus entregas.} one {Se borra la clase, su alumno matriculado, sus casos asignados y sus entregas.} other {Se borra la clase, sus # alumnos matriculados, sus casos asignados y sus entregas.}} Las plazas vuelven a la bolsa. Los alumnos conservan su cuenta y sus pacientes. No se puede deshacer: si solo quieres apartarla, usa «Archivar».",
-    "eliminada": "Clase eliminada"
+    "eliminada": "Clase eliminada",
+    "cursoAlReves": "El curso no puede acabar antes de empezar."
   },
   "clasePublica": {
     "titulo": "Únete a la clase",

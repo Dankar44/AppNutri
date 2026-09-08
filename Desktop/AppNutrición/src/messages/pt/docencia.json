@@ -109,7 +109,8 @@
     "delAl": "De {inicio} a {fin}",
     "eliminar": "Eliminar",
     "eliminarTexto": "{n, plural, =0 {Apaga-se a turma com os seus casos atribuídos e as suas entregas.} one {Apaga-se a turma, o seu aluno matriculado, os casos atribuídos e as entregas.} other {Apaga-se a turma, os seus # alunos matriculados, os casos atribuídos e as entregas.}} As vagas voltam à bolsa. Os alunos mantêm a conta e os seus pacientes. Não se pode desfazer: se só queres pô-la de lado, usa «Arquivar».",
-    "eliminada": "Turma eliminada"
+    "eliminada": "Turma eliminada",
+    "cursoAlReves": "O curso não pode terminar antes de começar."
   },
   "clasePublica": {
     "titulo": "Junte-se à turma",

@@ -950,6 +950,27 @@ async function main() {
     // ─────────── BLOQUE 9 · Fin de curso ───────────
     console.log("\n═══ BLOQUE 9 · Fin de curso ═══");
 
+    console.log("\n28c. Entregado y SIN ningún plan, tampoco se puede crear uno");
+    // Se puede entregar el caso sin haber hecho plan de alimentación. La pestaña tiene una salida
+    // temprana para "no hay planes" que se saltaba el cierre y dejaba el botón de crear: quedaba un
+    // plan vacío que además no se dejaba rellenar (Guillermo, 8 sep 2026). Aquí se le quitan los
+    // planes a propósito para pasar por ese camino.
+    const { rows: planesAntes } = await client.query(
+      `SELECT id FROM planes_alimenticios WHERE "pacienteId" = $1`, [copiaId]);
+    await client.query(`DELETE FROM planes_alimenticios WHERE "pacienteId" = $1`, [copiaId]);
+    await alumna.goto(`${BASE}/pacientes/${copiaId}?pestana=plan-alimentacion`, { waitUntil: "networkidle0" });
+    await esperar(2500);
+    const sinPlanes = await texto(alumna);
+    comprobar("se le dice que está entregado", /entregad/i.test(sinPlanes));
+    comprobar("y NO se le ofrece crear el primer plan", !/Crear (la )?primera dieta/i.test(sinPlanes),
+      sinPlanes.split("\n").find((l) => /rimera dieta/i.test(l))?.slice(0, 60) ?? "");
+    await foto(alumna, "24-entregado-sin-planes");
+    // Y por detrás tampoco: la acción de crear tiene que rechazarlo aunque se llame sin pantalla.
+    const { rows: creados } = await client.query(
+      `SELECT id FROM planes_alimenticios WHERE "pacienteId" = $1`, [copiaId]);
+    comprobar("no se ha colado ningún plan nuevo", creados.length === 0, `${creados.length}`);
+    console.log(`    (tenía ${planesAntes.length} plan(es) antes de la prueba)`);
+
     console.log("\n29. Archivar no echa a la alumna");
     await profe.goto(`${BASE}/profesor/clases/${claseId}`, { waitUntil: "networkidle0" });
     await esperar(1200);

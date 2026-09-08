@@ -185,12 +185,21 @@ export function PlanDeAlimentacionTab({
         <p className="text-sm text-muted-foreground mb-3">
           {t("sinPlanAlimentacion")}
         </p>
-        <Link
-          href={`/dietas/nuevo?pacienteId=${pacienteId}`}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
-        >
-          {t("crearPrimeraDieta")}
-        </Link>
+        {/* Se puede entregar el caso sin plan ninguno, y entonces esta salida temprana se saltaba
+            el cierre de más abajo: quedaba el botón de crear (Guillermo, 8 sep 2026). */}
+        {entregado ? (
+          <p className="inline-flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400">
+            <Lock className="w-4 h-4" />
+            {tc("entregadoSoloLectura")}
+          </p>
+        ) : (
+          <Link
+            href={`/dietas/nuevo?pacienteId=${pacienteId}`}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            {t("crearPrimeraDieta")}
+          </Link>
+        )}
       </section>
     );
   }

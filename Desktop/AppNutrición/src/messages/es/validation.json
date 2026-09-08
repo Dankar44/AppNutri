@@ -326,6 +326,8 @@
     "soloElCreadorQuita": "Solo quien creó la clase puede sacar a otro profesor. Para irte tú, usa «Salir de esta clase»",
     "soloElCreadorElimina": "Solo quien creó la clase puede eliminarla. Tú puedes archivarla, que no borra nada",
     "salirBorraLaClase": "Eres el único profesor: salir de esta clase la borra entera. Confírmalo si es lo que quieres",
-    "noEstaEntregada": "Este alumno no ha entregado todavía"
+    "noEstaEntregada": "Este alumno no ha entregado todavía",
+    "cursoAlReves": "El curso no puede acabar antes de empezar. Revisa las fechas.",
+    "fechaNoValida": "Esa fecha no es válida."
   }
 }

@@ -172,6 +172,10 @@ export async function crearPlan(data: PlanFormData) {
     select: { id: true },
   });
   if (!suyo) throw new Error(t("paciente.pacienteNoEncontrado"));
+  // Entregado el caso, tampoco se crean planes nuevos: el resto de acciones ya lo miraban, pero
+  // esta no, y con el caso cerrado se podía añadir un plan vacío que además no se dejaba rellenar
+  // (Guillermo, 8 sep 2026). El profesor no lo ve, pero el alumno se queda con un plan huérfano.
+  await bloqueoPorEntrega(data.pacienteId);
   const caloriasObjetivo = data.caloriasObjetivo != null
     ? validateNumber(data.caloriasObjetivo, 0, LIMITS.CALORIAS_MAX)
     : null;

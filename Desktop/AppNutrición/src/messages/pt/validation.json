@@ -326,6 +326,8 @@
     "soloElCreadorQuita": "Só quem criou a turma pode retirar outro professor. Para saíres tu, usa «Sair desta turma»",
     "soloElCreadorElimina": "Só quem criou a turma a pode eliminar. Tu podes arquivá-la, o que não apaga nada",
     "salirBorraLaClase": "És o único professor: sair desta turma apaga-a por completo. Confirma se é isso que queres",
-    "noEstaEntregada": "Este aluno ainda não entregou"
+    "noEstaEntregada": "Este aluno ainda não entregou",
+    "cursoAlReves": "O curso não pode terminar antes de começar. Verifica as datas.",
+    "fechaNoValida": "Essa data não é válida."
   }
 }
