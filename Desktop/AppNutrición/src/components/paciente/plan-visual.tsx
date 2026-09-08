@@ -30,7 +30,7 @@ import {
   Unlink,
 } from "lucide-react";
 import { cn, isNextNavigation } from "@/lib/utils";
-import { calcularMacrosPorcion, sumarMacros, convertirAGramos } from "@/lib/macros";
+import { calcularMacrosPorcion, sumarMacros, convertirAGramos, macrosDeItem } from "@/lib/macros";
 import { ordenarComidasPorHora } from "@/lib/comida-horas";
 import {
   objetivosPorComidaDia,
@@ -3215,31 +3215,6 @@ export function PlanVisual({
 }
 
 // TIPO_LABELS removed — now derived from t() inside ResumenSemanal
-
-function macrosDeItem(a: PlanVisualItem) {
-  if (a.receta) {
-    return {
-      calorias: Math.round(a.receta.calorias * a.cantidad * 10) / 10,
-      proteinas: Math.round(a.receta.proteinas * a.cantidad * 10) / 10,
-      carbohidratos: Math.round(a.receta.carbohidratos * a.cantidad * 10) / 10,
-      grasas: Math.round(a.receta.grasas * a.cantidad * 10) / 10,
-      fibra: Math.round((a.receta.fibra || 0) * a.cantidad * 10) / 10,
-    };
-  }
-  if (a.alimento) {
-    return calcularMacrosPorcion(
-      {
-        calorias: a.alimento.calorias,
-        proteinas: a.alimento.proteinas,
-        carbohidratos: a.alimento.carbohidratos,
-        grasas: a.alimento.grasas,
-        fibra: a.alimento.fibra || 0,
-      },
-      convertirAGramos(a.cantidad, a.unidad, a.alimento.porcion || 100)
-    );
-  }
-  return { calorias: 0, proteinas: 0, carbohidratos: 0, grasas: 0, fibra: 0 };
-}
 
 function ResumenSemanal({
   plan,

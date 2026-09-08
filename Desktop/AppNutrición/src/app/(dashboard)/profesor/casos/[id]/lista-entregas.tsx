@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckCircle2, Clock, Circle, Star, AlertTriangle, ChevronRight, FileText, Download } from "lucide-react";
+import { CheckCircle2, Clock, Circle, Star, AlertTriangle, ChevronRight, FileText, Download, BarChart3 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import type { EntregaResumen } from "@/app/actions/casos";
 import { formatDateTime } from "@/lib/utils";
@@ -37,20 +37,33 @@ export async function ListaEntregas({
 
   // Alguna nota puesta: hasta que no hay ninguna, descargar el acta no tiene sentido.
   const hayNotas = entregas.some((e) => e.nota != null);
+  // Y comparar tampoco, mientras no haya entregado nadie.
+  const hayEntregas = entregas.some((e) => e.estado === "ENTREGADA" || e.estado === "CORREGIDA");
 
   return (
     <div className="divide-y divide-border">
       {sinPublicar > 0 && <PublicarNotas asignacionId={asignacionId} cuantas={sinPublicar} />}
-      {hayNotas && (
-        <div className="flex justify-end py-2">
-          {/* Un enlace normal, no fetch: así el navegador se encarga de la descarga y del nombre. */}
-          <a
-            href={`/api/asignaciones/${asignacionId}/notas`}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors"
-          >
-            <Download className="w-3.5 h-3.5" />
-            {t("entregas.descargarNotas")}
-          </a>
+      {(hayNotas || hayEntregas) && (
+        <div className="flex justify-end gap-2 py-2">
+          {hayEntregas && (
+            <Link
+              href={`/profesor/casos/${casoId}/comparativa/${asignacionId}`}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors"
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+              {t("entregas.compararClase")}
+            </Link>
+          )}
+          {hayNotas && (
+            /* Un enlace normal, no fetch: así el navegador se encarga de la descarga y del nombre. */
+            <a
+              href={`/api/asignaciones/${asignacionId}/notas`}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" />
+              {t("entregas.descargarNotas")}
+            </a>
+          )}
         </div>
       )}
       {entregas.map((e) => {

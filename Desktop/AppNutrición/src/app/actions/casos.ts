@@ -27,6 +27,7 @@ import {
 import { copiarPaciente } from "@/lib/copiar-paciente";
 import type { Prisma } from "@/generated/prisma/client";
 import type { PlanVisualDetalle } from "@/components/paciente/plan-visual";
+import { construirComparativa, type Comparativa } from "@/lib/comparativa-clase";
 
 /**
  * Avisa a los alumnos de una clase. Se hace de golpe con `createMany`: en una clase de 300, uno
@@ -1023,4 +1024,63 @@ export async function getCasosDeClase(claseId: string): Promise<
     entregadas: a._count.entregas,
     alumnos: clase._count.alumnos,
   }));
+}
+
+/**
+ * La comparativa de una clase con un caso: qué ha hecho cada alumno, en una tabla.
+ *
+ * Va en su propia pantalla y no en la ficha del caso porque hay que leer la foto entera de cada
+ * entrega, y con veinte alumnos eso es mucho para una página que se abre a cada rato.
+ */
+export async function getComparativa(asignacionId: string): Promise<{
+  caso: string;
+  clase: string;
+  comparativa: Comparativa;
+} | null> {
+  const profesor = await requireProfesor();
+
+  const asignacion = await prisma.asignacionCaso.findFirst({
+    where: { id: asignacionId, ...asignacionQuePuedoCorregir(profesor.dietistaId, profesor.licencia?.id ?? null) },
+    select: {
+      caso: { select: { nombre: true } },
+      clase: {
+        select: {
+          nombre: true,
+          alumnos: {
+            where: { activa: true },
+            select: { alumno: { select: { id: true, nombre: true, apellidos: true } } },
+          },
+        },
+      },
+      entregas: {
+        select: {
+          alumnoId: true, estado: true, nota: true,
+          entregaSnapshot: true, entregablePlanId: true,
+        },
+      },
+    },
+  });
+  if (!asignacion) return null;
+
+  const porAlumno = new Map(asignacion.entregas.map((e) => [e.alumnoId, e]));
+  const entregas = asignacion.clase.alumnos
+    .map((m) => m.alumno)
+    .sort((a, b) => `${a.apellidos} ${a.nombre}`.localeCompare(`${b.apellidos} ${b.nombre}`, "es"))
+    .map((alumno) => {
+      const e = porAlumno.get(alumno.id);
+      return {
+        alumnoId: alumno.id,
+        alumno: `${alumno.nombre} ${alumno.apellidos}`,
+        estado: e?.estado ?? "SIN_EMPEZAR",
+        nota: e?.nota ?? null,
+        foto: e?.entregaSnapshot ?? null,
+        entregablePlanId: e?.entregablePlanId ?? null,
+      };
+    });
+
+  return {
+    caso: asignacion.caso.nombre,
+    clase: asignacion.clase.nombre,
+    comparativa: construirComparativa(entregas),
+  };
 }

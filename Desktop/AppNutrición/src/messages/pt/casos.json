@@ -115,7 +115,8 @@
     "publicarTitulo": "Mostrar-lhes as notas?",
     "publicarTexto": "{n, plural, one {# aluno verá a sua nota e o teu comentário.} other {# alunos verão a sua nota e o teu comentário.}} Recebem um aviso. Podes continuar a corrigir os restantes: são mostradas quando voltares a carregar.",
     "notasPublicadas": "{n, plural, =0 {Não havia nenhuma por mostrar} one {# aluno já vê a sua nota} other {# alunos já veem a sua nota}}",
-    "descargarNotas": "Transferir notas"
+    "descargarNotas": "Transferir notas",
+    "compararClase": "Comparar a turma"
   },
   "crearYRellenar": "Criar e preencher o paciente",
   "paciente": {
@@ -170,5 +171,19 @@
       "ENTREGADA": "Entregue",
       "CORREGIDA": "Corrigida"
     }
+  },
+  "comparativa": {
+    "titulo": "Comparar a turma",
+    "volver": "Voltar ao caso",
+    "alumno": "Aluno",
+    "estado": "Estado",
+    "suObjetivo": "Objetivo dele",
+    "suPlan": "Plano dele",
+    "desvio": "Desvio",
+    "reparto": "P/C/G %",
+    "nota": "Nota",
+    "medianaClase": "Mediana da turma",
+    "nadieHaEntregado": "Ainda ninguém entregou. Quando o fizerem, verás aqui num relance o que cada um fez.",
+    "comoLeerla": "«Objetivo dele» são as calorias que o próprio aluno definiu; «plano dele», as que o plano soma por dia. O desvio a vermelho passa dos 20%: o plano não cumpre o que ele próprio marcou. A mediana da turma serve para ver quem se afasta do grupo. Aqui não se avalia nada: a nota pões tu."
   }
 }

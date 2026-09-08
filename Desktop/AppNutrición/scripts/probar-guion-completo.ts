@@ -529,9 +529,25 @@ async function main() {
        RETURNING id`, [copiaId, alumnaId]);
     await client.query(
       `INSERT INTO planes_alimenticios (id, "pacienteId", "dietistaId", nombre, "planificacionIds",
-              activo, "createdAt", "updatedAt")
-       VALUES ('${MARCA}-plan-alumna', $1, $2, '${MARCA} Mi plan', ARRAY[$3]::text[], true, NOW(), NOW())`,
+              activo, "caloriasObjetivo", "createdAt", "updatedAt")
+       VALUES ('${MARCA}-plan-alumna', $1, $2, '${MARCA} Mi plan', ARRAY[$3]::text[], true, 1900, NOW(), NOW())`,
       [copiaId, alumnaId, planiSuya[0].id]);
+    // Con comida de verdad dentro: un plan vacío no tiene calorías que sumar, y la comparativa
+    // del paso 28b2 no podría comprobar ningún número.
+    for (const dia of ["LUNES", "MARTES"]) {
+      const { rows: d } = await client.query(
+        `INSERT INTO dias_del_plan (id, "planId", dia) VALUES (gen_random_uuid()::text, $1, $2::"DiaSemana") RETURNING id`,
+        [`${MARCA}-plan-alumna`, dia]);
+      const { rows: c } = await client.query(
+        `INSERT INTO comidas_del_dia (id, "diaId", tipo, orden) VALUES (gen_random_uuid()::text, $1, 'ALMUERZO', 0) RETURNING id`,
+        [d[0].id]);
+      // Tres alimentos cualesquiera del catálogo: lo que importa es que sumen algo real.
+      await client.query(
+        `INSERT INTO alimentos_en_comida (id, "comidaId", "alimentoId", cantidad, unidad, orden)
+         SELECT gen_random_uuid()::text, $1, a.id, 150, 'GRAMOS', row_number() OVER ()
+           FROM (SELECT id FROM alimentos WHERE calorias > 50 ORDER BY id LIMIT 3) a`,
+        [c[0].id]);
+    }
     await alumna.goto(`${BASE}/pacientes/${copiaId}?pestana=plan-alimentacion`, { waitUntil: "networkidle0" });
     await esperar(2500);
     // Los planes de un paciente viven en un desplegable: solo se pinta el elegido, así que hay
@@ -959,6 +975,36 @@ async function main() {
 
     // ─────────── BLOQUE 9 · Fin de curso ───────────
     console.log("\n═══ BLOQUE 9 · Fin de curso ═══");
+
+    console.log("\n28b2. La comparativa de la clase, con los números de verdad");
+    // Fase 5. Los números salen de la foto de la entrega, así que son los del día que entregó.
+    await profe.goto(`${BASE}/profesor/casos/${casoId}`, { waitUntil: "networkidle0" });
+    await esperar(2000);
+    comprobar("desde el caso se ofrece comparar", (await texto(profe)).includes("Comparar la clase"));
+    await profe.evaluate(() => {
+      const a = Array.from(document.querySelectorAll("a")).find((x) => x.textContent?.includes("Comparar la clase"));
+      (a as HTMLElement | undefined)?.click();
+    });
+    await esperar(3000);
+    const comparativa = await texto(profe);
+    comprobar("se abre la comparativa", /Comparar la clase/.test(comparativa) && profe.url().includes("/comparativa/"), profe.url());
+    comprobar("con la alumna en la tabla", /Lucia|Alumna/.test(comparativa));
+    comprobar("y explica contra qué se compara", /la nota la pones tú/i.test(comparativa));
+    // Lo que de verdad importa: que el plan sume algo y no salga «—». Si el cálculo se rompe, esto
+    // canta enseguida.
+    const kcal = await profe.evaluate(() => {
+      const fila = Array.from(document.querySelectorAll("tbody tr"))
+        .find((tr) => /Lucia|Alumna/.test(tr.textContent ?? ""));
+      return Array.from(fila?.querySelectorAll("td") ?? []).map((td) => td.textContent?.trim() ?? "");
+    });
+    comprobar("con las calorías de su plan calculadas", kcal.some((c) => /^\d{3,4} kcal$/.test(c)), kcal.join(" | ").slice(0, 90));
+    comprobar("y el reparto de macros en %", kcal.some((c) => /^\d{1,2}\/\d{1,2}\/\d{1,2}$/.test(c)));
+    // Su objetivo son las 1.900 kcal que ella se puso en el paso 19, no la planificación vacía que
+    // se crea sola al abrir la ficha.
+    comprobar("y su propio objetivo, no el de la planificación vacía", kcal.includes("1900 kcal"),
+      kcal.join(" | ").slice(0, 90));
+    comprobar("con el desvío calculado contra ese objetivo", kcal.some((c) => /^[+-]\d{1,3}%$/.test(c)));
+    await foto(profe, "23-comparativa-de-la-clase");
 
     console.log("\n28c. Entregado y SIN ningún plan, tampoco se puede crear uno");
     // Se puede entregar el caso sin haber hecho plan de alimentación. La pestaña tiene una salida
