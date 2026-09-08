@@ -268,6 +268,14 @@ async function main() {
     await escribirEnCampo(profe, "Correos de los alumnos", `${ALUMNA.email}\nfuera.dominio@gmail.com`);
     await esperar(400);
     await pulsar(profe, "Enviar invitaciones");
+    // El alta pregunta antes: las plazas se gastan para todo el curso y no vuelven.
+    await esperar(900);
+    await profe.evaluate(() => {
+      const dialogo = document.querySelector("[role='dialog']");
+      const b = Array.from(dialogo?.querySelectorAll("button") ?? [])
+        .find((x) => /Enviar invitaciones/i.test(x.textContent ?? ""));
+      (b as HTMLElement | undefined)?.click();
+    });
     await esperar(3000);
     visible = await texto(profe);
     const { rows: invitaciones } = await client.query(

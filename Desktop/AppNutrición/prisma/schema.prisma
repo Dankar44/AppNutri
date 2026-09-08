@@ -1161,6 +1161,8 @@ model Clase {
   fechaInicioCurso  DateTime?
   tokenInvitacion   String?   @unique
   invitacionAbierta Boolean   @default(true)
+  /// Cuánta gente admite el enlace de esta clase. Nulo = solo manda el tope de la facultad.
+  cupoEnlace        Int?
   /// Fin del curso de esta clase: pasada la fecha, sus alumnos pierden el acceso. El profesor no.
   fechaFinCurso     DateTime?
   /// Archivar no borra nada: es lo que pasa cuando a un profesor se le retira el rol.

@@ -147,6 +147,15 @@ async function main() {
     comprobar("lo dice claro", /Ya no quedan plazas/i.test(lleno));
     comprobar("y no deja darse de alta", !(await page.evaluate(() => !!document.querySelector("form input[type=email]"))));
 
+    console.log("\n── Con la licencia caducada, el enlace deja de valer ──");
+    await client.query(`UPDATE enlaces_profesores SET usadas = 0 WHERE token = $1`, [enl[0].token]);
+    await client.query(`UPDATE licencias_docentes SET "fechaFin" = CURRENT_DATE - 1 WHERE id = $1`, [lic[0].id]);
+    await page.goto(url, { waitUntil: "networkidle0" });
+    await esperar(2000);
+    comprobar("no se puede usar", /Este enlace no vale/i.test(await texto(page)));
+    await client.query(`UPDATE licencias_docentes SET "fechaFin" = NULL WHERE id = $1`, [lic[0].id]);
+    await client.query(`UPDATE enlaces_profesores SET usadas = plazas WHERE token = $1`, [enl[0].token]);
+
     console.log("\n── Y si se va un profesor, la plaza NO vuelve ──");
     await client.query(`DELETE FROM dietistas WHERE email = $1`, [sinCuenta]);
     const { rows: tras } = await client.query(`SELECT usadas, plazas FROM enlaces_profesores WHERE token = $1`, [enl[0].token]);

@@ -17,7 +17,7 @@ import { sanitizeString, sanitizeStringOptional, validateEmail } from "@/lib/val
 import { checkRateLimit, LIMITES } from "@/lib/rate-limit";
 import { getLocale } from "@/i18n/locale";
 import { dominiosDeLicencia, licenciaVigente, cursoTerminado } from "@/lib/docencia";
-import { plazasLibresDeLicencia, conPlazaDeLaBolsa } from "@/lib/docencia-bolsa";
+import { plazasLibresDeLicencia, conPlazaDeLaBolsa, plazasLibresDeLaClase } from "@/lib/docencia-bolsa";
 import { getCurrentDietista } from "./auth";
 import { crearPacienteDemoSiNoExiste } from "@/lib/paciente-demo";
 
@@ -63,6 +63,11 @@ export async function getClasePorToken(token: string): Promise<ClasePublica | nu
  * (Guillermo, 4 sep 2026: "si ya estoy logueado, la gracia es que se me agregue automáticamente").
  * Las mismas condiciones que el alta normal: clase viva, enlace abierto, licencia vigente, plaza.
  */
+/** Se lanza cuando el enlace de la clase ya ha dado su cupo. No es un fallo: es un tope. */
+class ClaseLlena extends Error {
+  constructor() { super("CLASE_LLENA"); this.name = "ClaseLlena"; }
+}
+
 export async function apuntarmeConMiCuenta(token: string): Promise<{ ok: boolean; error?: string }> {
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
@@ -83,7 +88,10 @@ export async function apuntarmeConMiCuenta(token: string): Promise<{ ok: boolean
     return { ok: false, error: t("docencia.enlaceClaseNoValido") };
   }
 
+  // Este camino no tiene try/catch alrededor, así que el tope de la clase se comprueba y se
+  // contesta aquí en vez de lanzar.
   const hecho = await conPlazaDeLaBolsa(clase.licenciaDocenteId, { alumnoId: dietista.id, email: dietista.email }, async (tx) => {
+    if ((await plazasLibresDeLaClase(clase.id, tx)) === 0) return "claseLlena" as const;
     await tx.alumnoClase.upsert({
       where: { claseId_alumnoId: { claseId: clase.id, alumnoId: dietista.id } },
       create: { claseId: clase.id, alumnoId: dietista.id },
@@ -94,8 +102,10 @@ export async function apuntarmeConMiCuenta(token: string): Promise<{ ok: boolean
       where: { id: dietista.id, rolDocente: null },
       data: { rolDocente: "ALUMNO", licenciaDocenteId: clase.licenciaDocenteId },
     });
+    return "hecho" as const;
   });
   if (!hecho.ok) return { ok: false, error: t("docencia.sinPlazas") };
+  if (hecho.valor === "claseLlena") return { ok: false, error: t("docencia.claseLlena") };
   return { ok: true };
 }
 
@@ -131,6 +141,11 @@ export async function apuntarseAClase(data: {
     const fin = new Date(clase.fechaFinCurso);
     fin.setHours(23, 59, 59, 999);
     if (fin.getTime() < Date.now()) return { ok: false, error: t("docencia.enlaceClaseNoValido") };
+  }
+  // El cupo que puso el profesor para SU clase, si lo puso. Se vuelve a mirar dentro de la
+  // transacción, justo antes de crear la cuenta: entre abrir la página y enviar entran otros.
+  if ((await plazasLibresDeLaClase(clase.id)) === 0) {
+    return { ok: false, error: t("docencia.claseLlena") };
   }
 
   const email = validateEmail(sanitizeString(data.email, 200).normalize("NFC"));
@@ -197,6 +212,7 @@ export async function apuntarseAClase(data: {
     // La plaza se coge dentro de la transacción, justo antes de crear la cuenta: entre que se
     // abre la página y se envía el formulario pueden haberse apuntado otros.
     const alta = await conPlazaDeLaBolsa(clase.licenciaDocenteId, { email }, async (tx) => {
+      if ((await plazasLibresDeLaClase(clase.id, tx)) === 0) throw new ClaseLlena();
       const authRows = await tx.$queryRawUnsafe<{ id: string }[]>(
         `INSERT INTO auth.users (
            instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
@@ -247,6 +263,8 @@ export async function apuntarseAClase(data: {
     return { ok: true };
   } catch (e) {
     if (isNextNavigation(e)) throw e;
+    // El cupo de la clase no es un fallo: se dice y ya, sin ensuciar el log.
+    if (e instanceof ClaseLlena) return { ok: false, error: t("docencia.claseLlena") };
     console.error("[docencia] Error apuntando a la clase:", e);
     return { ok: false, error: t("general.errorDesconocido") };
   }

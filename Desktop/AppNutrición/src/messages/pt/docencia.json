@@ -164,7 +164,14 @@
     "devolverTexto": "{nombre} volta a entrar com todo o seu trabalho tal como o deixou. Ocupará um lugar da licença.",
     "accesoRetirado": "Acesso retirado",
     "accesoDevuelto": "Acesso devolvido",
-    "cursoTerminadoAviso": "Este ano letivo já terminou, por isso registar alguém não serviria de nada: não conseguiria entrar. Edite a turma e coloque uma nova data de fim para começar outro ano."
+    "cursoTerminadoAviso": "Este ano letivo já terminou, por isso registar alguém não serviria de nada: não conseguiria entrar. Edite a turma e coloque uma nova data de fim para começar outro ano.",
+    "plazasAyuda": "As vagas gastam-se para todo o curso: voltam a estar livres a 31 de agosto.",
+    "confirmarAltaTitulo": "{n, plural, =1 {Inscrever 1 aluno?} other {Inscrever # alunos?}}",
+    "confirmarAltaTexto": "{n, plural, =1 {Consome 1 vaga do curso} other {Consome # vagas do curso}} e não voltam até 31 de agosto, mesmo que depois alguém saia. Quem já estiver na turma não gasta vaga.",
+    "cupoClase": "Quantos cabem na tua turma",
+    "cupoPlaceholder": "60",
+    "cupoAyuda": "Opcional. O link fecha-se sozinho ao chegar a esse número, mesmo que a faculdade tenha vagas.",
+    "cupoPuesto": "Limite desta turma: {usadas} de {n}"
   },
   "cursoTerminado": {
     "titulo": "O seu ano letivo terminou",

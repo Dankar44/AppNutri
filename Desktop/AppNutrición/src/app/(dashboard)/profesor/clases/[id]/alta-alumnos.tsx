@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { invitarAlumnos, cambiarEnlaceClase } from "@/app/actions/alumnos";
 import { cn } from "@/lib/utils";
+import { ConfirmModal } from "@/components/confirm-modal";
 
 export function AltaAlumnos({
   claseId,
@@ -15,6 +16,8 @@ export function AltaAlumnos({
   enlaceAbierto,
   puedeDarAltas,
   cursoTerminado,
+  cupoActual,
+  cupoUsado,
 }: {
   claseId: string;
   plazasLibres: number | null;
@@ -24,16 +27,32 @@ export function AltaAlumnos({
   puedeDarAltas: boolean;
   /** De esta clase en concreto: su curso ya pasó. Se dice aparte porque se arregla de otra forma. */
   cursoTerminado: boolean;
+  /** El tope que puso el profesor a SU enlace, si puso alguno. */
+  cupoActual: number | null;
+  /** Cuántos de ese cupo van gastados este curso. */
+  cupoUsado: number | null;
 }) {
   const t = useTranslations("docencia");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [confirmando, setConfirmando] = useState(false);
+  const [cupo, setCupo] = useState("");
   const [modo, setModo] = useState<"correos" | "enlace">("correos");
   const [correos, setCorreos] = useState("");
   const [copiado, setCopiado] = useState(false);
 
+  /** Cuántos correos hay escritos: es lo que va a costar en plazas. */
+  const cuantos = correos.split(/[\s,;]+/).filter((c) => c.includes("@")).length;
+
   function enviar(e: React.FormEvent) {
     e.preventDefault();
+    // Las plazas se gastan para todo el curso y no vuelven, así que se pregunta antes: pegar la
+    // lista dos veces, o con erratas, quemaba plazas hasta septiembre sin avisar de nada
+    // (Guillermo, 8 sep 2026).
+    setConfirmando(true);
+  }
+
+  function darDeAlta() {
     startTransition(async () => {
       const result = await invitarAlumnos({ claseId, correos });
       if (!result.ok) {
@@ -51,13 +70,14 @@ export function AltaAlumnos({
       if (cuenta("invalido")) partes.push(t("alumnos.resInvalidos", { n: cuenta("invalido") }));
       toast.success(partes.join(" · ") || t("alumnos.altaHecha"));
       setCorreos("");
+      setConfirmando(false);
       router.refresh();
     });
   }
 
   function cambiarEnlace(abrir: boolean) {
     startTransition(async () => {
-      const result = await cambiarEnlaceClase(claseId, abrir);
+      const result = await cambiarEnlaceClase(claseId, abrir, abrir ? Number(cupo) || null : undefined);
       if (result.ok) {
         toast.success(abrir ? t("alumnos.enlaceAbierto") : t("alumnos.enlaceCerrado"));
         router.refresh();
@@ -97,7 +117,7 @@ export function AltaAlumnos({
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h3 className="font-semibold">{t("alumnos.titulo")}</h3>
         {plazasLibres !== null && (
-          <span className="text-xs text-muted-foreground tabular-nums">
+          <span className="text-xs text-muted-foreground tabular-nums" title={t("alumnos.plazasAyuda")}>
             {t("alumnos.plazasLibres", { n: plazasLibres })}
           </span>
         )}
@@ -159,6 +179,27 @@ export function AltaAlumnos({
             </div>
           )}
 
+          {/* El tope de ESTA clase. Sin él, un profesor con la bolsa de la facultad entera puede
+              llenarla él solo y dejar sin sitio a los demás (Guillermo, 8 sep 2026). */}
+          {!enlaceAbierto && (
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{t("alumnos.cupoClase")}</label>
+              <input
+                value={cupo}
+                onChange={(e) => setCupo(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                inputMode="numeric"
+                placeholder={t("alumnos.cupoPlaceholder")}
+                className="mt-1 w-28 rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+              <p className="text-xs text-muted-foreground mt-1">{t("alumnos.cupoAyuda")}</p>
+            </div>
+          )}
+          {enlaceAbierto && cupoActual != null && (
+            <p className="text-xs text-muted-foreground">
+              {t("alumnos.cupoPuesto", { n: cupoActual, usadas: cupoUsado ?? 0 })}
+            </p>
+          )}
+
           <button
             type="button"
             onClick={() => cambiarEnlace(!enlaceAbierto)}
@@ -173,6 +214,15 @@ export function AltaAlumnos({
           </p>
         </div>
       )}
+      <ConfirmModal
+        open={confirmando}
+        title={t("alumnos.confirmarAltaTitulo", { n: cuantos })}
+        description={t("alumnos.confirmarAltaTexto", { n: cuantos })}
+        confirmLabel={t("alumnos.enviarInvitaciones")}
+        loading={isPending}
+        onConfirm={darDeAlta}
+        onCancel={() => setConfirmando(false)}
+      />
     </div>
   );
 }

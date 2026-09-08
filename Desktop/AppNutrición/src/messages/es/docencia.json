@@ -164,7 +164,14 @@
     "devolverTexto": "{nombre} vuelve a entrar con todo su trabajo tal y como lo dejó. Ocupará una plaza de la licencia.",
     "accesoRetirado": "Acceso retirado",
     "accesoDevuelto": "Acceso devuelto",
-    "cursoTerminadoAviso": "Este curso ya ha terminado, así que dar de alta a alguien no serviría de nada: no podría entrar. Edita la clase y pon una fecha de fin nueva para empezar otro curso."
+    "cursoTerminadoAviso": "Este curso ya ha terminado, así que dar de alta a alguien no serviría de nada: no podría entrar. Edita la clase y pon una fecha de fin nueva para empezar otro curso.",
+    "plazasAyuda": "Las plazas se gastan para todo el curso: vuelven a estar libres el 31 de agosto.",
+    "confirmarAltaTitulo": "{n, plural, =1 {¿Dar de alta a 1 alumno?} other {¿Dar de alta a # alumnos?}}",
+    "confirmarAltaTexto": "{n, plural, =1 {Consume 1 plaza del curso} other {Consume # plazas del curso}} y no vuelven hasta el 31 de agosto, aunque después se vaya alguien. Los que ya estén en la clase no gastan plaza.",
+    "cupoClase": "Cuántos caben en tu clase",
+    "cupoPlaceholder": "60",
+    "cupoAyuda": "Opcional. El enlace se cierra solo al llegar a ese número, aunque a la facultad le queden plazas.",
+    "cupoPuesto": "Tope de esta clase: {usadas} de {n}"
   },
   "cursoTerminado": {
     "titulo": "Se ha acabado tu año escolar",

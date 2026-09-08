@@ -36,6 +36,18 @@ export function finDeAnioEscolar(desde: Date): Date {
   return new Date(Date.UTC(anio, 7, 31, 23, 59, 59, 999));
 }
 
+/**
+ * El 1 de septiembre con el que empezó el curso en el que estamos. El complemento exacto de
+ * `finDeAnioEscolar`: en octubre de 2026 devuelve el 1/09/2026, y en marzo de 2027 también.
+ *
+ * Es el corte con el que se cuentan las plazas de alumno vendidas: una plaza se consume para todo
+ * el curso y no vuelve hasta el siguiente 1 de septiembre (Guillermo, 8 sep 2026).
+ */
+export function inicioDeAnioEscolar(hoy: Date = new Date()): Date {
+  const anio = hoy.getUTCMonth() >= 8 ? hoy.getUTCFullYear() : hoy.getUTCFullYear() - 1;
+  return new Date(Date.UTC(anio, 8, 1, 0, 0, 0, 0));
+}
+
 /** Inicio del curso por defecto: hoy, en formato de campo de fecha (YYYY-MM-DD). */
 export function inicioDeCursoPorDefecto(hoy: Date = new Date()): string {
   return hoy.toISOString().slice(0, 10);

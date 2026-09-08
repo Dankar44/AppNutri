@@ -1,7 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma/client";
-import { inicioDeHoy } from "@/lib/docencia";
+import { inicioDeHoy, inicioDeAnioEscolar } from "@/lib/docencia";
 
 /**
  * #39 — Cuántas licencias de alumno consume una institución de verdad.
@@ -10,11 +10,15 @@ import { inicioDeHoy } from "@/lib/docencia";
  *
  * 1. **Un alumno = una licencia**, aunque esté en las clases de dos profesores distintos. Por eso
  *    se cuentan alumnos distintos y no matrículas.
- * 2. **Solo cuentan los que tienen el acceso activo y en clases vivas.** A quien se le retiró al
- *    acabar el curso no ocupa plaza: su sitio queda libre, y sus datos siguen intactos. Una clase
- *    archivada no cuenta, y una cuyo curso ya pasó tampoco: si no se descontara, la bolsa de una
- *    facultad seguiría llena de los alumnos del año anterior hasta que a alguien se le ocurriera
- *    archivar las clases a mano (encontrado al probar el ciclo del curso, 1 sep 2026).
+ 2. **La plaza se consume PARA TODO EL CURSO.** Quien entra en septiembre la ocupa hasta el 31 de
+ *    agosto, aunque se salga de todas las clases al día siguiente, aunque le retiren el acceso o
+ *    aunque se archive la clase. Y el 1 de septiembre la facultad recupera sus plazas enteras
+ *    (Guillermo, 8 sep 2026: "hay trescientas plazas… si un alumno se mete a una clase, va a estar
+ *    esa plaza para todo el año escolar, por mucho que se vaya").
+ *
+ *    Antes se contaban solo los activos, así que la bolsa subía y bajaba sola y una facultad podía
+ *    rotar gente para estirar lo comprado. Ahora el contador solo sube dentro del curso, que es lo
+ *    que se vende y lo que se entiende sin explicaciones.
  * 3. **Las invitaciones sin usar también reservan.** Si no, se mandarían doscientas invitaciones
  *    para cincuenta plazas y el problema aparecería al aceptarlas, cuando ya es tarde.
  *
@@ -38,10 +42,17 @@ export async function contarAlumnosDeLicencia(
   licenciaId: string,
   cliente: ClientePrisma = prisma,
 ): Promise<number> {
-  // Se cuentan MATRÍCULAS activas y se agrupan por alumno: así el alumno que está en las clases de
-  // dos profesores de la misma facultad sale una vez, no dos.
+  // Cuenta quien haya pasado por una clase de esta facultad DURANTE ESTE CURSO, siga o no. Y
+  // también quien siga activo desde antes, que su alta es de un curso anterior pero sigue ocupando.
+  // Se agrupa por alumno: el que está en las clases de dos profesores sale una vez, no dos.
   const alumnos = await cliente.alumnoClase.findMany({
-    where: { activa: true, clase: claseViva(licenciaId) },
+    where: {
+      clase: { licenciaDocenteId: licenciaId },
+      OR: [
+        { altaAt: { gte: inicioDeAnioEscolar() } },
+        { activa: true, clase: claseViva(licenciaId) },
+      ],
+    },
     select: { alumnoId: true },
     distinct: ["alumnoId"],
   });
@@ -86,12 +97,13 @@ export async function plazasLibresDeLicencia(
 }
 
 /**
- * ¿Este alumno ya está ocupando una plaza de esta institución?
+ * ¿Este alumno ya tiene gastada una plaza de esta institución en este curso?
  *
- * Hace falta antes de dar de alta: si ya está en la clase de otro profesor de la misma facultad,
- * meterlo en una segunda clase no consume otra plaza (regla 1), así que no se le puede rechazar
- * por bolsa llena. Sin esto, en una facultad con la bolsa justa el segundo profesor no podría
- * añadir a sus propios alumnos.
+ * Hace falta antes de dar de alta, por dos motivos: si ya está en la clase de otro profesor de la
+ * misma facultad, meterlo en una segunda no consume otra plaza (regla 1); y si estuvo y se fue,
+ * volver a entrar tampoco, porque su plaza ya está gastada para todo el curso (regla 2). Sin esto,
+ * el alumno que cambia de clase a mitad de curso pagaría dos veces, y en una facultad con la bolsa
+ * justa el segundo profesor no podría añadir a sus propios alumnos.
  */
 export async function alumnoYaOcupaPlaza(
   licenciaId: string,
@@ -99,7 +111,14 @@ export async function alumnoYaOcupaPlaza(
   cliente: ClientePrisma = prisma,
 ): Promise<boolean> {
   const matricula = await cliente.alumnoClase.findFirst({
-    where: { alumnoId, activa: true, clase: claseViva(licenciaId) },
+    where: {
+      alumnoId,
+      clase: { licenciaDocenteId: licenciaId },
+      OR: [
+        { altaAt: { gte: inicioDeAnioEscolar() } },
+        { activa: true, clase: claseViva(licenciaId) },
+      ],
+    },
     select: { id: true },
   });
   return matricula !== null;
@@ -148,4 +167,35 @@ export async function conPlazaDeLaBolsa<T>(
     timeout: 20_000,
     maxWait: 15_000,
   });
+}
+
+/**
+ * ¿Le queda sitio al enlace de ESTA clase?
+ *
+ * El tope de la facultad no basta: un profesor con 300 en la bolsa podía llenarla él solo y dejar
+ * sin sitio a los demás. Con su cupo puesto —"en mi clase somos 60"— manda el que se agote antes
+ * (Guillermo, 8 sep 2026). Sin cupo, como hasta ahora: solo cuenta el de la facultad.
+ *
+ * Se cuenta como la bolsa: quien haya pasado por la clase este curso, siga o no. Si no, bastaría
+ * con que se fuera uno para colar a otro por el enlace, y el cupo no querría decir nada.
+ */
+export async function plazasLibresDeLaClase(
+  claseId: string,
+  cliente: ClientePrisma = prisma,
+): Promise<number | null> {
+  const clase = await cliente.clase.findUnique({
+    where: { id: claseId },
+    select: { cupoEnlace: true },
+  });
+  if (!clase?.cupoEnlace) return null;
+
+  const matriculas = await cliente.alumnoClase.findMany({
+    where: {
+      claseId,
+      OR: [{ altaAt: { gte: inicioDeAnioEscolar() } }, { activa: true }],
+    },
+    select: { alumnoId: true },
+    distinct: ["alumnoId"],
+  });
+  return Math.max(0, clase.cupoEnlace - matriculas.length);
 }

@@ -124,6 +124,17 @@ async function limpiar(client: pg.PoolClient) {
   await client.query(`DELETE FROM licencias_docentes WHERE institucion = '${MARCA} Facultad'`);
 }
 
+/** El alta pregunta antes de gastar plazas: hay que confirmar en el cuadro. */
+async function confirmarAlta(page: Page) {
+  await esperar(900);
+  await page.evaluate(() => {
+    const dialogo = document.querySelector("[role='dialog']");
+    const b = Array.from(dialogo?.querySelectorAll("button") ?? [])
+      .find((x) => /Enviar invitaciones/i.test(x.textContent ?? ""));
+    (b as HTMLElement | undefined)?.click();
+  });
+}
+
 async function main() {
   const client = await pool.connect();
   const navegador = await puppeteer.launch({
@@ -166,6 +177,7 @@ async function main() {
     console.log("\n── Tres correos de golpe, uno repetido y uno mal escrito ──");
     await escribirCorreos(p1, "ana@pruebaalta.dev\nluis@pruebaalta.dev\nana@pruebaalta.dev\nesto-no-es-un-correo");
     await pulsar(p1, "Enviar invitaciones", "form");
+    await confirmarAlta(p1);
     await esperar(3500);
     const toast1 = await textoDelToast(p1);
     comprobar("el aviso cuenta 2 invitados", /2 invitados/.test(toast1), toast1);
@@ -191,6 +203,7 @@ async function main() {
        VALUES (gen_random_uuid()::text, $1, 'PROFESIONAL', 'ACTIVA', NOW(), NOW())`, [nutriId]);
     await escribirCorreos(p1, "nutri@pruebaalta.dev");
     await pulsar(p1, "Enviar invitaciones", "form");
+    await confirmarAlta(p1);
     await esperar(3500);
     const toast2 = await textoDelToast(p1);
     comprobar("se le matricula, no se le invita", /1 añadido/.test(toast2), toast2);
@@ -206,6 +219,7 @@ async function main() {
     console.log("\n── El mismo correo otra vez ──");
     await escribirCorreos(p1, "nutri@pruebaalta.dev");
     await pulsar(p1, "Enviar invitaciones", "form");
+    await confirmarAlta(p1);
     await esperar(3500);
     const toast3 = await textoDelToast(p1);
     comprobar("dice que ya estaba", /1 ya estaba/.test(toast3), toast3);
@@ -215,6 +229,7 @@ async function main() {
     console.log("\n── El tope de la bolsa ──");
     await escribirCorreos(p1, "sobra1@pruebaalta.dev\nsobra2@pruebaalta.dev\nsobra3@pruebaalta.dev");
     await pulsar(p1, "Enviar invitaciones", "form");
+    await confirmarAlta(p1);
     await esperar(4000);
     const toast4 = await textoDelToast(p1);
     comprobar("entra uno y sobran dos", /1 invitado/.test(toast4) && /2 sin plaza/.test(toast4), toast4);
@@ -222,7 +237,7 @@ async function main() {
       `SELECT COUNT(*)::int n FROM invitaciones_docentes WHERE "claseId" = $1 AND "aceptadaAt" IS NULL`, [clase1]);
     comprobar("nunca se pasa de las 4 vendidas", total[0].n + 1 === 4, `${total[0].n} invitaciones + 1 matriculado`);
 
-    console.log("\n── Retirar el acceso libera plaza y no borra nada ──");
+    console.log("\n── Retirar el acceso NO libera plaza, y no borra nada ──");
     await p1.reload({ waitUntil: "networkidle0" });
     await esperar(1200);
     comprobar("ya no quedan plazas", /sin plazas libres/.test(await texto(p1)));
@@ -240,7 +255,10 @@ async function main() {
       (await client.query(`SELECT COUNT(*)::int n FROM dietistas WHERE id = $1`, [nutriId])).rows[0].n === 1);
     await p1.reload({ waitUntil: "networkidle0" });
     await esperar(1200);
-    comprobar("su plaza vuelve a la bolsa", /1 plaza libre/.test(await texto(p1)));
+    // La plaza se consume para todo el curso: retirar a alguien no la devuelve, y no vuelve hasta
+    // el 31 de agosto (Guillermo, 8 sep 2026). Antes se liberaba y se podía rotar gente.
+    comprobar("su plaza NO vuelve a la bolsa", /sin plazas libres/.test(await texto(p1)),
+      (await texto(p1)).split("\n").find((l) => /plaza/i.test(l)) ?? "");
 
     console.log("\n── Un alumno en las clases de dos profesores = una plaza ──");
     // El profesor 2 mete al mismo alumno que ya tiene el 1: no puede consumir una segunda plaza.

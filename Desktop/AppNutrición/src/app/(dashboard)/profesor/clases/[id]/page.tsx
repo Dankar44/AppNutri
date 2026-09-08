@@ -113,6 +113,8 @@ export default async function ClaseDetallePage({
           enlaceAbierto={clase.invitacionAbierta && clase.enlaceInvitacion !== null}
           puedeDarAltas={profesor.puedeDarAltas}
           cursoTerminado={terminado}
+          cupoActual={clase.cupoEnlace}
+          cupoUsado={clase.cupoUsado}
         />
       )}
 

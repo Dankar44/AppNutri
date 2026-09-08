@@ -16,6 +16,7 @@ import { isNextNavigation, urlPublica } from "@/lib/utils";
 import { sanitizeString } from "@/lib/validation";
 import { finDeCursoPorDefecto, inicioDeCursoPorDefecto, claseQueLleva } from "@/lib/docencia";
 import { plazasLibresDeLicencia } from "@/lib/docencia-bolsa";
+import { inicioDeAnioEscolar } from "@/lib/docencia";
 import { requireProfesor } from "./docencia";
 
 function revalidarClases(claseId?: string) {
@@ -90,6 +91,16 @@ function cursoAlReves(inicio: string, fin: string): boolean {
 /** Una fecha que el navegador no manda bien: mejor decirlo que guardar un `Invalid Date`. */
 function fechaImposible(valor: string | undefined): boolean {
   return !!valor && Number.isNaN(new Date(valor).getTime());
+}
+
+/** Cuántos alumnos distintos han pasado por esta clase durante el curso, se hayan ido o no. */
+async function alumnosDelCurso(claseId: string): Promise<number> {
+  const filas = await prisma.alumnoClase.findMany({
+    where: { claseId, OR: [{ altaAt: { gte: inicioDeAnioEscolar() } }, { activa: true }] },
+    select: { alumnoId: true },
+    distinct: ["alumnoId"],
+  });
+  return filas.length;
 }
 
 export async function crearClase(data: {
@@ -244,6 +255,10 @@ export interface ClaseDetalle extends ClaseResumen {
   profesorId: string;
   /** El enlace completo, ya montado con el dominio que toca en cada entorno. */
   enlaceInvitacion: string | null;
+  /** Tope propio del enlace de esta clase, si el profesor puso uno. */
+  cupoEnlace: number | null;
+  /** Cuántos de ese tope van gastados este curso. Null si no hay tope. */
+  cupoUsado: number | null;
   alumnos: {
     id: string;
     nombre: string;
@@ -281,6 +296,9 @@ export async function getClase(claseId: string): Promise<ClaseDetalle | null> {
     fechaFinCurso: clase.fechaFinCurso,
     invitacionAbierta: clase.invitacionAbierta,
     enlaceInvitacion: clase.tokenInvitacion ? `${urlPublica()}/clase/${clase.tokenInvitacion}` : null,
+    // El tope que puso el profesor a su enlace y cuánto lleva gastado este curso.
+    cupoEnlace: clase.cupoEnlace,
+    cupoUsado: clase.cupoEnlace == null ? null : await alumnosDelCurso(clase.id),
     alumnosActivos: clase.alumnos.filter((a) => a.activa).length,
     alumnosRetirados: clase.alumnos.filter((a) => !a.activa).length,
     alumnos: clase.alumnos.map((m) => ({

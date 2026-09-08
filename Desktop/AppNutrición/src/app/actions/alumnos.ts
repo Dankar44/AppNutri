@@ -234,6 +234,8 @@ export async function cambiarAccesoAlumno(
 export async function cambiarEnlaceClase(
   claseId: string,
   abierto: boolean,
+  /** Cuánta gente admite el enlace de esta clase. 0 o nada = sin tope propio. */
+  cupo?: number | null,
 ): Promise<{ ok: boolean; error?: string; token?: string }> {
   const profesor = await requireProfesor();
   const t = await getTranslations("validation");
@@ -251,9 +253,16 @@ export async function cambiarEnlaceClase(
     const token = abierto
       ? randomBytes(18).toString("base64url")
       : (clase.tokenInvitacion ?? randomBytes(18).toString("base64url"));
+    // El cupo se guarda al abrir: es cuando el profesor dice "en mi clase somos 60". Al cerrar no
+    // se toca, para que al reabrir siga estando el suyo.
+    const cupoLimpio = cupo == null || cupo <= 0 ? null : Math.min(Math.floor(cupo), 1000);
     await prisma.clase.update({
       where: { id: claseId },
-      data: { invitacionAbierta: abierto, tokenInvitacion: token },
+      data: {
+        invitacionAbierta: abierto,
+        tokenInvitacion: token,
+        ...(abierto ? { cupoEnlace: cupoLimpio } : {}),
+      },
     });
     revalidatePath(`/profesor/clases/${claseId}`);
     return { ok: true, token };

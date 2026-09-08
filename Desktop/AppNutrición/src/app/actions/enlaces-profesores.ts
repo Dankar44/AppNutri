@@ -18,6 +18,7 @@ import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { randomUUID } from "node:crypto";
 import { requireAdmin } from "@/lib/admin";
+import { licenciaVigente } from "@/lib/docencia";
 import { getCurrentDietista } from "./auth";
 import type { Prisma } from "@/generated/prisma/client";
 import { headers } from "next/headers";
@@ -222,9 +223,13 @@ export interface EnlacePublico {
 export async function getEnlaceProfesoresPorToken(token: string): Promise<EnlacePublico | null> {
   const enlace = await prisma.enlaceProfesores.findUnique({
     where: { token },
-    select: { plazas: true, usadas: true, licenciaDocente: { select: { institucion: true, activa: true } } },
+    select: {
+      plazas: true, usadas: true,
+      licenciaDocente: { select: { institucion: true, activa: true, fechaFin: true } },
+    },
   });
-  if (!enlace || !enlace.licenciaDocente.activa) return null;
+  // Vigente de verdad: una licencia caducada no puede seguir dando altas por el enlace.
+  if (!enlace || !licenciaVigente(enlace.licenciaDocente)) return null;
   const quedan = Math.max(0, enlace.plazas - enlace.usadas);
   return { institucion: enlace.licenciaDocente.institucion, quedan, agotado: quedan === 0 };
 }
@@ -248,6 +253,14 @@ async function conPlazaDelEnlace<T>(
     const enlace = filas[0];
     if (!enlace) return { ok: false as const, motivo: "noValido" as const };
     if (enlace.usadas >= enlace.plazas) return { ok: false as const, motivo: "agotado" as const };
+
+    // La licencia se comprueba AQUÍ y no solo al pintar la página: entre que se abre el enlace y se
+    // envía el formulario puede haber caducado, y la vista no es lo que autoriza.
+    const licencia = await tx.licenciaDocente.findUnique({
+      where: { id: enlace.licenciaDocenteId },
+      select: { activa: true, fechaFin: true },
+    });
+    if (!licenciaVigente(licencia)) return { ok: false as const, motivo: "noValido" as const };
 
     const valor = await trabajo(tx, enlace);
     // El uso se marca aquí, con el alta ya hecha: si algo falla arriba, la plaza no se gasta.
