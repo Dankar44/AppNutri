@@ -12,9 +12,12 @@ export function TourWelcome() {
 
   if (!isFirstVisit) return null;
   // #39 — En el espacio docente no: el tour recorre la cuenta de nutricionista (pacientes,
-  // dietas, agenda) y el profesor aterriza aquí, así que le taparía la pantalla con una guía
-  // de otro sitio. Se le ofrecerá igual en cuanto entre en su cuenta profesional.
-  if (pathname.startsWith("/profesor")) return null;
+  // dietas, agenda) y aquí aterrizan el profesor y el alumno, así que les taparía la pantalla con
+  // una guía de otro sitio. Se les ofrece igual en cuanto entren en su cuenta profesional.
+  //
+  // El aula estaba sin cubrir: solo se había pensado en el profesor, y al alumno recién dado de
+  // alta —que aterriza en /aula— le salía la guía de nutricionista (8 sep 2026).
+  if (pathname.startsWith("/profesor") || pathname.startsWith("/aula")) return null;
 
   const firstTourId = tours[0]?.id;
 
