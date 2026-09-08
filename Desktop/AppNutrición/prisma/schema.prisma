@@ -840,6 +840,8 @@ enum TipoNotificacion {
   /// #40 — Del aula: al alumno le han puesto un caso, o se lo han corregido.
   CASO_ASIGNADO
   CASO_CORREGIDO
+  /// Fase 5 — Y del espacio del profesor: un alumno le ha entregado.
+  ENTREGA_RECIBIDA
 }
 
 model Notificacion {

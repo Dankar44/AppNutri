@@ -179,7 +179,8 @@
       "ejercicio": "Exercício",
       "casoAsignado": "Tem um caso novo",
       "casoCorregido": "Corrigiram-lhe um caso",
-      "casoReabierto": "O teu professor reabriu-te um caso: podes voltar a mexer nele e entregá-lo outra vez"
+      "casoReabierto": "O teu professor reabriu-te um caso: podes voltar a mexer nele e entregá-lo outra vez",
+      "entregaRecibida": "Um aluno entregou-te"
     },
     "mensajes": {
       "proponeCita": "{nombreDietista} propõe uma consulta para {fecha}",
@@ -200,7 +201,8 @@
       "pacienteRegistroSeguimiento": "{nombrePaciente} registrou seu acompanhamento hoje",
       "preconsultaCompletada": "{nombrePaciente} preencheu sua anamnese",
       "horarioCompletado": "{nombrePaciente} preencheu o seu horário semanal",
-      "motivo": "Motivo: {motivo}"
+      "motivo": "Motivo: {motivo}",
+      "entregaRecibida": "{alumno} entregou «{caso}»"
     }
   },
   "pacienteAuth": {

@@ -145,8 +145,12 @@ export function espacioGuardado(valor: string | undefined | null): Espacio | nul
  * Rutas que son de los DOS espacios: el material que el profesor comparte con su clase y que
  * también usa en su consulta, los ajustes y las novedades, que son de la cuenta entera, y los
  * pacientes — porque los casos de clase del alumno SON pacientes suyos y los trabaja ahí.
+ *
+ * Las notificaciones también, desde el 8 sep 2026: la campana está en la barra de los dos
+ * espacios, y sin esto abrirla desde el aula te devolvía al menú de la consulta. Además la lista
+ * enseña los avisos del espacio en el que estás, así que salir de él cambiaría lo que se ve.
  */
-export const RUTAS_COMPARTIDAS = ["/dietas", "/alimentos", "/recetas", "/ajustes", "/novedades", "/pacientes"] as const;
+export const RUTAS_COMPARTIDAS = ["/dietas", "/alimentos", "/recetas", "/ajustes", "/novedades", "/pacientes", "/notificaciones"] as const;
 
 /**
  * ¿Se ha acabado ya el curso de una clase?

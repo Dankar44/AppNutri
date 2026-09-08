@@ -114,7 +114,8 @@
     "sinPublicar": "{n, plural, one {# correção feita que o aluno ainda não vê} other {# correções feitas que os alunos ainda não veem}}",
     "publicarTitulo": "Mostrar-lhes as notas?",
     "publicarTexto": "{n, plural, one {# aluno verá a sua nota e o teu comentário.} other {# alunos verão a sua nota e o teu comentário.}} Recebem um aviso. Podes continuar a corrigir os restantes: são mostradas quando voltares a carregar.",
-    "notasPublicadas": "{n, plural, =0 {Não havia nenhuma por mostrar} one {# aluno já vê a sua nota} other {# alunos já veem a sua nota}}"
+    "notasPublicadas": "{n, plural, =0 {Não havia nenhuma por mostrar} one {# aluno já vê a sua nota} other {# alunos já veem a sua nota}}",
+    "descargarNotas": "Transferir notas"
   },
   "crearYRellenar": "Criar e preencher o paciente",
   "paciente": {
@@ -150,5 +151,24 @@
     "talCual": "Tal e qual como o aluno a vê. Não se pode alterar."
   },
   "deOtroProfesor": "Este caso foi feito por {nombre}.",
-  "deOtroProfesorAyuda": "Podes ver e corrigir as entregas das tuas turmas. O caso e o seu paciente são dele: é ele quem os altera."
+  "deOtroProfesorAyuda": "Podes ver e corrigir as entregas das tuas turmas. O caso e o seu paciente são dele: é ele quem os altera.",
+  "notasCsv": {
+    "fichero": "notas",
+    "apellidos": "Apelidos",
+    "nombre": "Nome",
+    "correo": "Email",
+    "estadoCol": "Estado",
+    "fechaEntrega": "Data de entrega",
+    "nota": "Nota",
+    "publicada": "Nota publicada",
+    "comentario": "Comentário",
+    "si": "Sim",
+    "no": "Não",
+    "estado": {
+      "SIN_EMPEZAR": "Por começar",
+      "EN_MARCHA": "Em curso",
+      "ENTREGADA": "Entregue",
+      "CORREGIDA": "Corrigida"
+    }
+  }
 }

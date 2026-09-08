@@ -7,6 +7,8 @@ import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { getLocale } from "@/i18n/locale";
 import { PACIENTES_REALES } from "@/lib/filtros-pacientes";
+import { cookies } from "next/headers";
+import { COOKIE_ESPACIO, espacioGuardado } from "@/lib/docencia";
 
 const generacionEnCurso = new Map<string, number>();
 
@@ -291,6 +293,24 @@ export async function eliminarTodasNotificaciones() {
   revalidatePath("/", "layout");
 }
 
+/**
+ * Los avisos del espacio docente NO se mezclan con los de la consulta.
+ *
+ * Un profesor tiene las dos cosas en la misma cuenta, y mientras corregía le salía «paciente sin
+ * consulta hace 30 días» (Guillermo, 8 sep 2026: "quiero que el espacio docente tanto para los
+ * profesores y para el otro estén separados"). El espacio en el que está ya se guarda en una
+ * cookie para que el menú no parpadee, así que se reutiliza: dentro del aula o del espacio del
+ * profesor se ven solo estos tipos, y en la consulta solo los demás.
+ */
+const TIPOS_DOCENTES = ["CASO_ASIGNADO", "CASO_CORREGIDO", "ENTREGA_RECIBIDA"] as const;
+
+async function filtroDelEspacio() {
+  const espacio = espacioGuardado((await cookies()).get(COOKIE_ESPACIO)?.value);
+  return espacio
+    ? { tipo: { in: [...TIPOS_DOCENTES] } }
+    : { tipo: { notIn: [...TIPOS_DOCENTES] } };
+}
+
 export async function getNotificaciones(soloNoLeidas = false) {
   const dietista = await getCurrentDietista();
   if (!dietista) return [];
@@ -299,6 +319,7 @@ export async function getNotificaciones(soloNoLeidas = false) {
     where: {
       dietistaId: dietista.id,
       ...(soloNoLeidas ? { leida: false } : {}),
+      ...(await filtroDelEspacio()),
     },
     orderBy: { createdAt: "desc" },
     take: 100,
@@ -310,7 +331,7 @@ export async function getNotificacionesCount() {
   if (!dietista) return 0;
 
   return prisma.notificacion.count({
-    where: { dietistaId: dietista.id, leida: false },
+    where: { dietistaId: dietista.id, leida: false, ...(await filtroDelEspacio()) },
   });
 }
 
@@ -324,7 +345,7 @@ export async function getBadgesNavegacion(): Promise<Record<string, number>> {
 
   const rows = await prisma.notificacion.groupBy({
     by: ["tipo"],
-    where: { dietistaId: dietista.id, leida: false },
+    where: { dietistaId: dietista.id, leida: false, ...(await filtroDelEspacio()) },
     _count: { _all: true },
   });
 
@@ -369,6 +390,14 @@ export async function getBadgesNavegacion(): Promise<Record<string, number>> {
 
   const stockBajo = suma(["STOCK_BAJO"]);
   if (stockBajo > 0) badges["/alimentos"] = (badges["/alimentos"] ?? 0) + stockBajo;
+
+  // Del espacio docente. El filtro de arriba deja pasar unos u otros, nunca los dos a la vez, así
+  // que estos solo salen dentro del aula o del espacio del profesor.
+  const entregas = suma(["ENTREGA_RECIBIDA"]);
+  if (entregas > 0) badges["/profesor/casos"] = entregas;
+
+  const delAula = suma(["CASO_ASIGNADO", "CASO_CORREGIDO"]);
+  if (delAula > 0) badges["/aula"] = delAula;
 
   return badges;
 }
@@ -529,8 +558,9 @@ export async function marcarTodasLeidas() {
   if (!dietista) return;
   if (dietista.isDemo) return;
 
+  // Solo las del espacio en el que está: desde el aula no se dan por vistas las de la consulta.
   await prisma.notificacion.updateMany({
-    where: { dietistaId: dietista.id, leida: false },
+    where: { dietistaId: dietista.id, leida: false, ...(await filtroDelEspacio()) },
     data: { leida: true },
   });
 

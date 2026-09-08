@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckCircle2, Clock, Circle, Star, AlertTriangle, ChevronRight, FileText } from "lucide-react";
+import { CheckCircle2, Clock, Circle, Star, AlertTriangle, ChevronRight, FileText, Download } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import type { EntregaResumen } from "@/app/actions/casos";
 import { formatDateTime } from "@/lib/utils";
@@ -35,9 +35,24 @@ export async function ListaEntregas({
   // Corregidas que el alumno todavía no puede ver: se publican todas de una vez.
   const sinPublicar = entregas.filter((e) => e.estado === "CORREGIDA" && !e.visibleParaAlumno).length;
 
+  // Alguna nota puesta: hasta que no hay ninguna, descargar el acta no tiene sentido.
+  const hayNotas = entregas.some((e) => e.nota != null);
+
   return (
     <div className="divide-y divide-border">
       {sinPublicar > 0 && <PublicarNotas asignacionId={asignacionId} cuantas={sinPublicar} />}
+      {hayNotas && (
+        <div className="flex justify-end py-2">
+          {/* Un enlace normal, no fetch: así el navegador se encarga de la descarga y del nombre. */}
+          <a
+            href={`/api/asignaciones/${asignacionId}/notas`}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors"
+          >
+            <Download className="w-3.5 h-3.5" />
+            {t("entregas.descargarNotas")}
+          </a>
+        </div>
+      )}
       {entregas.map((e) => {
         // Sin entrega todavía no hay nada que abrir: el alumno ni ha empezado.
         const puedeAbrirse = e.id !== "";

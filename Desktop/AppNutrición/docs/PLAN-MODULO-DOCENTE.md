@@ -58,6 +58,19 @@ dejaría fuera a gente que ya tenemos, así que:
 4. **Corrección** — panel del profesor, nota y comentarios, aula del alumno, sección del entregable (#40).
 5. **Remates** — avisos, exportar resultados, comparativa, nota legal (#79).
 
+### Lo que NO entra en la fase 5 (decidido el 8 sep 2026)
+
+- **#40, la sección comparativa dentro del PDF.** La idea acordada, para cuando se haga: que al
+  descargar el entregable se pueda elegir **«normal» o «con la comparativa»**, no que salga
+  siempre. Se queda fuera de la primera versión a propósito: *"cuanto menos contaminemos sus cosas
+  la primera versión, menos se pueden quejar y más pueden pedir"* (Guillermo). En pantalla el
+  profesor ya ve la planificación del alumno al corregir, que es el 80% del valor. Lo difícil de
+  verdad no es la tabla de kcal y macros, sino **comprobar que los alimentos respetan las
+  patologías**, y eso depende de un issue aparte (restricciones por patología) que no existe aún.
+- **#121, aminoácidos y desglose de grasas.** Es una mejora del catálogo de alimentos de toda la
+  aplicación, no del módulo docente: se hará "para todos" cuando toque, no aquí. Sigue pendiente
+  confirmar con la universidad el nombre de la base de datos que pidieron (¿GEPCAT?).
+
 Cada fase lleva su plan de 100+ pasos, verificación cada pocos pasos y **auditoría completa** al final.
 
 ---

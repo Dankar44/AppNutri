@@ -362,8 +362,53 @@ export async function entregarCaso(
     },
     select: { id: true },
   });
+  await avisarAlProfesor(asignacionId, dietista);
   revalidatePath("/aula");
   return { ok: true };
+}
+
+/**
+ * El camino de vuelta: al alumno ya se le avisa cuando le ponen un caso o se lo corrigen, pero el
+ * profesor no se enteraba de que le habian entregado y tenía que ir a mirar (fase 5).
+ *
+ * Solo dentro de la app. Nada de correo: con veinte alumnos entregando el mismo día son veinte
+ * correos, y el plan gratuito de Resend son 100 al día.
+ *
+ * Se avisa a TODOS los que llevan la clase, más al autor del caso si no es uno de ellos: la clase
+ * puede tener varios profesores y cualquiera corrige. Si falla, la entrega no se deshace.
+ */
+async function avisarAlProfesor(asignacionId: string, alumno: { nombre: string; apellidos: string }) {
+  try {
+    const asignacion = await prisma.asignacionCaso.findUnique({
+      where: { id: asignacionId },
+      select: {
+        casoId: true,
+        caso: { select: { nombre: true, profesorId: true } },
+        clase: { select: { profesores: { select: { profesorId: true } } } },
+      },
+    });
+    if (!asignacion) return;
+
+    const destinatarios = new Set(asignacion.clase.profesores.map((p) => p.profesorId));
+    destinatarios.add(asignacion.caso.profesorId);
+
+    const t = await getTranslations("validation");
+    const params = { alumno: `${alumno.nombre} ${alumno.apellidos}`, caso: asignacion.caso.nombre };
+    await prisma.notificacion.createMany({
+      data: Array.from(destinatarios).map((profesorId) => ({
+        dietistaId: profesorId,
+        tipo: "ENTREGA_RECIBIDA" as const,
+        titulo: t("notificaciones.titulos.entregaRecibida"),
+        mensaje: t("notificaciones.mensajes.entregaRecibida", params),
+        tituloKey: "notificaciones.titulos.entregaRecibida",
+        mensajeKey: "notificaciones.mensajes.entregaRecibida",
+        params,
+        enlace: `/profesor/casos/${asignacion.casoId}`,
+      })),
+    });
+  } catch (e) {
+    console.error("[docencia] No se pudo avisar de la entrega:", e);
+  }
 }
 
 /*
