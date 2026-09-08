@@ -648,6 +648,30 @@ async function main() {
       apuntar("no pude tocar el horario para probar el aviso al entregar");
     }
 
+    console.log("\n22c. Lo mismo desde la PLANIFICACIÓN, que es donde de verdad se perdía");
+    // El horario usa el registro compartido; la planificación traía su propio aviso de salida y
+    // nunca se apuntaba a él, así que entregar se llevaba por delante lo último tocado ahí
+    // (Guillermo, 8 sep 2026: "aquí directamente se envía"). El cambio se deja SIN guardar a
+    // propósito: lo tiene que guardar el botón de entregar, en el paso siguiente.
+    await alumna.goto(`${BASE}/pacientes/${copiaId}?pestana=planificacion`, { waitUntil: "networkidle0" });
+    await esperar(4000);
+    const fuenteNueva = await alumna.evaluate(() => {
+      const s = Array.from(document.querySelectorAll("select")).find(
+        (x) => (x as HTMLSelectElement).value === "fnb_iom"
+      ) as HTMLSelectElement | undefined;
+      if (!s) return "";
+      const otra = Array.from(s.options).find((o) => o.value && o.value !== "fnb_iom");
+      if (!otra) return "";
+      // React ignora `select.value = x` a secas: hay que pasar por el setter nativo.
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, "value")!.set!;
+      setter.call(s, otra.value);
+      s.dispatchEvent(new Event("change", { bubbles: true }));
+      return otra.value;
+    });
+    comprobar("se puede tocar la planificación", fuenteNueva !== "", fuenteNueva || "no encontré el selector");
+    await esperar(1500);
+    comprobar("y queda con cambios sin guardar", (await texto(alumna)).includes("Guardar"));
+
     console.log("\n23. Entregar eligiendo el entregable");
     await pulsar(alumna, "Entregar");
     await esperar(1200);
@@ -662,6 +686,9 @@ async function main() {
     const avisoEntregar = await texto(alumna);
     comprobar("pregunta antes de cerrar el caso", /¿Entregar el caso\?/i.test(avisoEntregar));
     comprobar("y avisa de que no podrá tocar nada más", /no podrás tocar nada más/i.test(avisoEntregar));
+    comprobar("y de que lo que está tocando se guarda antes",
+      fuenteNueva === "" || /se guardarán antes de entregar/i.test(avisoEntregar),
+      avisoEntregar.split("\n").find((l) => /sin guardar/i.test(l))?.slice(0, 80) ?? "no lo dice");
     // Por defecto viene el plan ACTUAL, no el que mira: el aviso tiene que decir cuál manda, o se
     // entrega el que no era (Guillermo, 7 sep 2026).
     comprobar("y dice exactamente qué plan entrega", /Vas a entregar «/.test(avisoEntregar),
@@ -688,6 +715,22 @@ async function main() {
     comprobar("y el alumno se lo puede descargar", descarga.estado === 200 && descarga.tipo.includes("pdf") && descarga.bytes > 10000,
       `${descarga.estado} · ${descarga.tipo} · ${Math.round(descarga.bytes / 1024)} KB`);
     await foto(alumna, "20-entregado");
+
+    // Lo que pidió Guillermo el 8 sep 2026: que entregar NO se lleve por delante lo que estabas
+    // tocando en la planificación. Se comprueba en la base, no en la pantalla.
+    if (fuenteNueva) {
+      const { rows: guardado } = await client.query(
+        `SELECT datos->>'fibraFuente' AS fuente FROM planificaciones
+          WHERE "pacienteId" = $1 AND "origenId" IS NULL ORDER BY "updatedAt" DESC LIMIT 1`, [copiaId]);
+      comprobar("lo que estaba tocando se guardó al entregar", guardado[0]?.fuente === fuenteNueva,
+        `guardado="${guardado[0]?.fuente ?? "nada"}" · tocado="${fuenteNueva}"`);
+      const { rows: enLaFoto } = await client.query(
+        `SELECT EXISTS (
+           SELECT 1 FROM jsonb_array_elements(("entregaSnapshot"::jsonb)->'planificaciones') p
+            WHERE p->'datos'->>'fibraFuente' = $2
+         ) AS ok FROM entregas_caso WHERE id = $1`, [entregaId, fuenteNueva]);
+      comprobar("y viajó dentro de la foto de la entrega", enLaFoto[0]?.ok === true);
+    }
 
     // Cuánto pesa una entrega de verdad: es el número con el que se decide la política de borrado
     // (`limpiar-docencia`). Si algún día crece mucho, aquí se ve.

@@ -1501,7 +1501,8 @@
     },
     "repartoAvisoNoMostrar": "Entendido e não mostrar mais este aviso",
     "repartoNuevaQue": "Qual refeição",
-    "repartoNuevaPropia": "Nova refeição (pré-treino, lanche…)"
+    "repartoNuevaPropia": "Nova refeição (pré-treino, lanche…)",
+    "errorGuardar": "Não foi possível guardar as alterações. Tenta de novo."
   },
   "planVisual": {
     "sinPlan": "Sem plano",

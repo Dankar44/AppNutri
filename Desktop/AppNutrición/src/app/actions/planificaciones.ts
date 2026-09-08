@@ -140,6 +140,24 @@ export async function getObjetivosPlanificacionActiva(
 
 /* ─── Ensure default exists ─── */
 
+/**
+ * El paciente tiene que ser de quien lo pide.
+ *
+ * Los dos INSERT de este fichero guardan el `pacienteId` que les llega, y no lo comprobaban: con
+ * sesión iniciada se podían dejar filas colgadas del paciente de otro nutricionista (encontrado el
+ * 8 sep 2026 revisando qué botones quedaban vivos en la vista del profesor). No filtraba datos
+ * —todo lo demás se lee y se escribe filtrando también por dietista— pero ocupaba sitio en la base
+ * y no debía poder hacerse. El resto de funciones de aquí ya llevan su `"dietistaId" = $x`.
+ */
+async function esMiPaciente(pacienteId: string, dietistaId: string): Promise<boolean> {
+  const filas = await prisma.$queryRawUnsafe<{ id: string }[]>(
+    `SELECT id FROM pacientes WHERE id = $1 AND "dietistaId" = $2 LIMIT 1`,
+    pacienteId,
+    dietistaId
+  );
+  return filas.length > 0;
+}
+
 export async function ensurePlanificacionDefecto(pacienteId: string): Promise<Planificacion> {
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
@@ -155,6 +173,8 @@ export async function ensurePlanificacionDefecto(pacienteId: string): Promise<Pl
     const all = await getPlanificaciones(pacienteId);
     return all.find((p) => p.esDefecto)!;
   }
+
+  if (!(await esMiPaciente(pacienteId, dietista.id))) throw new Error(t("auth.noAutorizado"));
 
   if (dietista.isDemo) {
     // Demo: do not create, return a stub
@@ -184,6 +204,7 @@ export async function crearPlanificacion(
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return "";
+  if (!(await esMiPaciente(pacienteId, dietista.id))) throw new Error(t("auth.noAutorizado"));
 
   const datosJson = JSON.stringify(datosIniciales ?? {});
   const nombreFinal = nombre || t("planificacion.nueva");

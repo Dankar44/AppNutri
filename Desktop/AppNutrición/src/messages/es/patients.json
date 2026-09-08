@@ -1501,7 +1501,8 @@
     },
     "repartoAvisoNoMostrar": "Entendido y no volver a mostrar este aviso",
     "repartoNuevaQue": "Qué comida",
-    "repartoNuevaPropia": "Comida nueva (pre-entreno, snack…)"
+    "repartoNuevaPropia": "Comida nueva (pre-entreno, snack…)",
+    "errorGuardar": "No se pudieron guardar los cambios. Inténtalo de nuevo."
   },
   "planVisual": {
     "sinPlan": "Sin plan",

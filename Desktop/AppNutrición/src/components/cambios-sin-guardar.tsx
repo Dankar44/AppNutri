@@ -40,6 +40,31 @@ export async function guardarCambiosPendientes(): Promise<boolean> {
   return true;
 }
 
+/**
+ * Apunta un editor al registro mientras tenga cambios sin guardar, y nada más.
+ *
+ * Va suelto del hook de abajo porque la pestaña de planificación trae su propio aviso de salida
+ * (es anterior a este fichero) y solo le falta esto: que «Entregar» se entere de que queda algo
+ * por guardar. Sin ello, el alumno tocaba la planificación, entregaba, y se iba sin lo último
+ * (Guillermo, 8 sep 2026: "aquí directamente se envía").
+ */
+export function useRegistrarPendiente({
+  hayCambios,
+  guardar,
+}: {
+  hayCambios: boolean;
+  guardar: () => Promise<boolean>;
+}) {
+  const guardarRef = useRef(guardar);
+  guardarRef.current = guardar;
+  useEffect(() => {
+    if (!hayCambios) return;
+    const editor = { guardar: () => guardarRef.current() };
+    pendientes.add(editor);
+    return () => { pendientes.delete(editor); };
+  }, [hayCambios]);
+}
+
 export function useCambiosSinGuardar({
   hayCambios,
   guardar,
@@ -60,14 +85,7 @@ export function useCambiosSinGuardar({
   const descartadoRef = useRef(false);
 
   // Se apunta al registro compartido mientras haya algo que guardar.
-  const guardarRef = useRef(guardar);
-  guardarRef.current = guardar;
-  useEffect(() => {
-    if (!hayCambios) return;
-    const editor = { guardar: () => guardarRef.current() };
-    pendientes.add(editor);
-    return () => { pendientes.delete(editor); };
-  }, [hayCambios]);
+  useRegistrarPendiente({ hayCambios, guardar });
 
   useEffect(() => {
     if (!hayCambios) { descartadoRef.current = false; return; }

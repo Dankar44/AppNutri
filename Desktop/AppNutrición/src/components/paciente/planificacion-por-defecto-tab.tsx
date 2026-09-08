@@ -45,6 +45,7 @@ import {
 import { horaEfectiva, minutosDeHora, horaEntreComidas } from "@/lib/comida-horas";
 import { getPlanesPaciente, actualizarPlan, guardarRepartoDePlan } from "@/app/actions/planes";
 import { toast } from "sonner";
+import { useRegistrarPendiente } from "@/components/cambios-sin-guardar";
 
 /* ─── Types ─── */
 
@@ -1587,6 +1588,10 @@ export function PlanificacionPorDefectoTab({
     setIsDirty(camposActuales !== baseCamposRef.current);
   }, [camposActuales]);
 
+  // «Entregar» está en la MISMA pantalla, así que no es un enlace y el aviso de abajo no lo pilla:
+  // se apunta al registro compartido para que guarde esto antes de cerrar el caso.
+  useRegistrarPendiente({ hayCambios: isDirty, guardar: handleGuardar });
+
   // Aviso del navegador al cerrar/recargar la pestaña con cambios sin guardar.
   useEffect(() => {
     if (!isDirty) return;
@@ -1652,12 +1657,20 @@ export function PlanificacionPorDefectoTab({
     };
   }
 
-  async function handleGuardar() {
-    if (blockIfDemo()) return;
-    if (!selectedPlan || !isDirty) return;
+  // Devuelve si se ha guardado: quien va a hacer algo irreversible (entregar el caso) necesita
+  // saber si puede seguir. Si falla el guardado NO se sigue: entregar cierra el caso.
+  async function handleGuardar(): Promise<boolean> {
+    if (blockIfDemo()) return true;
+    if (!selectedPlan || !isDirty) return true;
     setIsSaving(true);
     const snapshot = buildDatosSnapshot();
-    await guardarPlanificacion(selectedPlan.id, snapshot);
+    try {
+      await guardarPlanificacion(selectedPlan.id, snapshot);
+    } catch {
+      setIsSaving(false);
+      toast.error(t("errorGuardar"));
+      return false;
+    }
     setPlanificaciones((prev) =>
       prev.map((p) =>
         p.id === selectedPlan.id
@@ -1674,6 +1687,7 @@ export function PlanificacionPorDefectoTab({
     // Aviso al guardar si el reparto no cuadra: guardar no falla (a veces se guarda a medias a
     // propósito), pero conviene decirlo. Con comidas por días la suma global no aplica, así que se
     // avisa solo del caso en que el 100% SÍ es alcanzable.
+    return true;
   }
 
   /* ─── Date save handlers ─── */
