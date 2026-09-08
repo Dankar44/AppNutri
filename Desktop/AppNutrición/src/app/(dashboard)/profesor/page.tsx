@@ -3,7 +3,6 @@ import { GraduationCap, Users, UserCog, CalendarRange, AlertTriangle, Plus, Clip
 import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { limpiarDocenciaSiToca } from "@/lib/limpieza-docente";
-import { avisarDePlazos } from "@/lib/avisos-docencia";
 import { requireProfesor } from "@/app/actions/docencia";
 import { SalidasDelProfesor } from "./salidas";
 import { getMisClases } from "@/app/actions/clases";
@@ -63,8 +62,6 @@ function Contador({
 export default async function ProfesorPage() {
   // Una vez al día, sin esperar: el módulo se limpia solo (`limpieza-docente`).
   limpiarDocenciaSiToca(prisma);
-  // Aquí es donde el aviso sirve de algo: cuando el profesor entra a su espacio.
-  avisarDePlazos(prisma);
   const datos = await requireProfesor();
   const t = await getTranslations("docencia");
   const locale = await getLocale();

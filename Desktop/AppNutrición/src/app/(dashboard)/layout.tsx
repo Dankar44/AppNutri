@@ -17,6 +17,7 @@ import { prisma } from "@/lib/prisma";
 import { getLocale } from "@/i18n/locale";
 import { revisarCursoDelAlumno } from "@/lib/docencia-acceso";
 import { COOKIE_ESPACIO, espacioGuardado } from "@/lib/docencia";
+import { avisarDePlazosVencidos } from "@/lib/avisos-docencia";
 
 export default async function DashboardLayout({
   children,
@@ -47,6 +48,23 @@ export default async function DashboardLayout({
     if (avisoPendiente) redirect("/curso-terminado");
   }
 
+  // El espacio (docente / aula / consulta) en el que estaba: el menú arranca ahí y no parpadea.
+  const espacioInicial = espacioGuardado((await cookies()).get(COOKIE_ESPACIO)?.value);
+
+  // Los plazos vencidos se miran en cualquier página del espacio docente, no solo en su inicio: si
+  // el profesor pulsa la campana nada más entrar, el aviso tiene que estar ya ahí (Guillermo, 8 sep
+  // 2026, que abrió /notificaciones directo y no vio nada).
+  //
+  // Va AQUÍ, antes de contar las notificaciones, y se ESPERA: lanzarlo y olvidarlo dejaba el aviso
+  // creado después de pintar, y ponerlo más abajo hacía que el contador de la campana se calculase
+  // sin él. Es una consulta pequeña, acotada al último mes, y en cuanto avisa el candado hace que
+  // no vuelva a encontrar nada. Solo corre en el espacio docente.
+  if (espacioInicial === "docente") {
+    await avisarDePlazosVencidos(prisma).catch((e) =>
+      console.error("[docencia] No se pudo avisar de los plazos:", e),
+    );
+  }
+
   let notifCount = 0;
   let mensajesCount = 0;
   let badges: Record<string, number> = {};
@@ -66,9 +84,6 @@ export default async function DashboardLayout({
       data: { lastAccessAt: new Date() },
     }).catch(() => {});
   }
-
-  // El espacio (docente / aula / consulta) en el que estaba: el menú arranca ahí y no parpadea.
-  const espacioInicial = espacioGuardado((await cookies()).get(COOKIE_ESPACIO)?.value);
 
   return (
     <DemoProvider isDemo={dietista.isDemo}>

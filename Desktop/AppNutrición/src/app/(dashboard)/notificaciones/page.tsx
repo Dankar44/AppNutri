@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { Bell, Settings } from "lucide-react";
 import { getNotificaciones } from "@/app/actions/notificaciones";
+import { cookies } from "next/headers";
+import { prisma } from "@/lib/prisma";
+import { COOKIE_ESPACIO, espacioGuardado } from "@/lib/docencia";
+import { avisarDePlazosVencidos } from "@/lib/avisos-docencia";
 import { NotificacionActions } from "./notificacion-actions";
 import { NotificacionItem } from "./notificacion-item";
 import { PageHeader } from "@/components/page-header";
@@ -58,6 +62,12 @@ export default async function NotificacionesPage() {
   const t = await getTranslations("notifications");
   const locale = await getLocale();
   const localeTag = locale === "pt" ? "pt-BR" : "es-ES";
+  // La página y el layout se pintan a la vez, así que aquí no vale con que el layout lo genere:
+  // esta lista se calcularía antes. Se mira también aquí, que es donde se va a leer.
+  const espacio = espacioGuardado((await cookies()).get(COOKIE_ESPACIO)?.value);
+  if (espacio === "docente") {
+    await avisarDePlazosVencidos(prisma).catch(() => {});
+  }
   const notificaciones = await getNotificaciones();
   const noLeidas = notificaciones.filter((n) => !n.leida).length;
   const grupos = agruparPorDia(notificaciones, t, localeTag);

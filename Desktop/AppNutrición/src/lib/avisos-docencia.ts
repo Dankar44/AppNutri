@@ -80,17 +80,3 @@ export async function avisarDePlazosVencidos(prisma: PrismaClient): Promise<numb
   }
   return avisadas;
 }
-
-/**
- * Se mira en cada entrada al espacio del profesor, sin bloquear la página.
- *
- * A diferencia de la limpieza, aquí NO hay ventana de "una vez al día por proceso": con ella, el
- * aviso podía tardar 24 h en aparecer, y si otra visita ya había gastado la ventana no salía nunca.
- * Quien impide los duplicados es el cerrojo sobre `avisoPlazoAt`, que además funciona entre
- * procesos distintos. La consulta es pequeña: solo asignaciones sin avisar y con el plazo pasado.
- */
-export function avisarDePlazos(prisma: PrismaClient): void {
-  void avisarDePlazosVencidos(prisma)
-    .then((n) => { if (n > 0) console.log(`[docencia] Avisados ${n} plazos terminados`); })
-    .catch((e) => console.error("[docencia] No se pudo avisar de los plazos:", e));
-}
