@@ -83,6 +83,22 @@ FoodData Central** (gratis), **FAO/INFOODS** y **Souci-Fachmann-Kraut** (de pago
 solo lo tienen parcial. Cuando se confirme, es una mejora del catálogo para TODA la aplicación, no
 solo para docencia.
 
+### Cómo se cuentan las plazas (decidido el 8 sep 2026)
+
+**Alumnos: por CURSO.** Una plaza se gasta al entrar y no vuelve hasta el 31 de agosto, aunque al
+alumno se le retire o se archive su clase. El 1 de septiembre la facultad recupera las suyas
+enteras. El mismo alumno en dos clases gasta UNA, y volver tras irse no gasta otra. Con eso el
+contador solo sube dentro del curso, que es lo que se vende y lo que se entiende sin explicaciones.
+Además cada clase puede poner su tope propio («somos 60»), y manda el que se agote antes.
+
+**Profesores: por USOS del enlace.** Un enlace de 10 admite 10 altas y se agota; si después un
+profesor se va, ese hueco no lo coge nadie por ahí. Para vender tres más se crea otro enlace de
+tres y la universidad pasa a 13. La diferencia con los alumnos está justificada: el alumno es
+temporal por diseño —dura un curso— y el profesor es permanente.
+
+**Nada de filtro por dominio de correo**: alumnos y profesores se registran a veces con su cuenta
+personal. Lo que protege es el contador y el freno por IP.
+
 ### Lo que NO entra en la fase 5 (decidido el 8 sep 2026)
 
 - **#40, la sección comparativa dentro del PDF.** La idea acordada, para cuando se haga: que al
