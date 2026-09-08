@@ -176,13 +176,22 @@ function getNavSections(
           },
         ]
       : []),
-    // #39 — Solo para profesores. Enlace normal: ninguna dirección del menú puede tener efectos
-    // secundarios, porque Next hace prefetch de los enlaces visibles y los dispararía él solo.
-    ...(opts?.esProfesor
+    // #39 — La puerta de vuelta al espacio docente, para quien lo tenga. Enlace normal: ninguna
+    // dirección del menú puede tener efectos secundarios, porque Next hace prefetch de los enlaces
+    // visibles y los dispararía él solo.
+    //
+    // El alumno la necesita igual que el profesor: estaba solo para profesores, así que el alumno
+    // que se pasaba a su cuenta profesional se quedaba encerrado, sin ningún botón para volver a su
+    // aula (Guillermo, 8 sep 2026).
+    ...(opts?.esProfesor || opts?.esAlumno
       ? [
           {
-            title: t("nav.docencia"),
-            items: [{ href: "/profesor", label: t("navItems.espacioDocente"), icon: GraduationCap }],
+            title: opts.esAlumno ? t("nav.aula") : t("nav.docencia"),
+            items: [
+              opts.esAlumno
+                ? { href: "/aula", label: t("navItems.misClases"), icon: GraduationCap }
+                : { href: "/profesor", label: t("navItems.espacioDocente"), icon: GraduationCap },
+            ],
           },
         ]
       : []),

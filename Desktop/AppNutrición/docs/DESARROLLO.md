@@ -306,6 +306,14 @@ Antes de dar algo por terminado, pásale estas preguntas:
    compartido. Cuando arregles un comportamiento común, `grep` de quién lo implementa por su
    cuenta, y prueba el camino donde el usuario dijo que fallaba, no el que tenías a mano.
 
+8. **¿Y los demás roles?** Casi todo lo que se añade para un rol tiene su espejo en otro, y el
+   espejo se olvida. La puerta para volver del panel normal al espacio docente estaba escrita solo
+   para el profesor, así que **el alumno que se pasaba a su cuenta profesional se quedaba encerrado**,
+   sin ningún botón de vuelta (8 sep 2026). Hoy hay cuatro roles —nutricionista, profesor, alumno y
+   admin— y una cuenta puede cambiar de espacio: al tocar un menú, un permiso o una salida, recorre
+   los cuatro y pregúntate en cada uno *¿puede entrar?* y *¿puede volver?*. Se comprueba a clics en
+   `probar-ida-y-vuelta-espacios`.
+
 Y dos normas de la casa:
 - **Interfaz optimista**: al guardar, refleja el cambio al instante y revierte con aviso si
   falla.
