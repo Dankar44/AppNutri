@@ -110,6 +110,20 @@ Cuando se haga, hay que decidir qué se borra y qué se conserva (el trabajo del
 de la universidad) y avisar antes por correo. Enlaza con la limpieza automática que ya existe en
 `lib/limpieza-docente.ts`.
 
+### El profesor que sale de la universidad pierde el espacio (decidido el 9 sep 2026)
+
+Se valoró dejarle entrar hasta el 31 de agosto, ya que su plaza está pagada para todo el curso, y
+se descartó: **al salir, su espacio se queda vacío**. Sus clases se transfieren a otro profesor o
+se archivan, así que entraría a un panel sin clases y con botones que fallan —crear una clase sin
+universidad lo rechaza la propia acción—.
+
+La diferencia con el alumno, que sí conserva su aula hasta su 31 de agosto, es que **el alumno
+tiene ahí su trabajo** (sus casos y su paciente de prácticas) y el profesor no: lo suyo son las
+clases, y se han ido con él.
+
+No pierde nada: sus casos siguen siendo suyos y, si le readmiten —en esa universidad o en otra—,
+recupera el espacio con todo. Vale para los dos casos: irse por su cuenta y que le saquen.
+
 ### Lo que NO entra en la fase 5 (decidido el 8 sep 2026)
 
 - **#40, la sección comparativa dentro del PDF.** La idea acordada, para cuando se haga: que al
