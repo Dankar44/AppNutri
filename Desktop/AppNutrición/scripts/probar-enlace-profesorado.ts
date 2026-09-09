@@ -195,8 +195,9 @@ async function main() {
     console.log("\n── Un nutricionista que YA usa Annonia, por el MISMO formulario ──");
     // Antes se le mandaba al login y volvía; ahora entra aquí con su contraseña de siempre.
     const { rows: normal } = await client.query(
-      `SELECT email FROM dietistas WHERE "rolDocente" IS NULL AND verificado = true
-         AND email NOT LIKE $1 ORDER BY "createdAt" DESC LIMIT 1`, [`%@${DOMINIO}`]);
+      `SELECT d.email FROM dietistas d JOIN auth.users u ON u.id::text = d."authId"
+        WHERE d."rolDocente" IS NULL AND d.verificado = true AND u.email_confirmed_at IS NOT NULL
+          AND d.email NOT LIKE $1 ORDER BY d."createdAt" DESC LIMIT 1`, [`%@${DOMINIO}`]);
     if (normal.length) {
       await client.query(`UPDATE auth.users SET encrypted_password = crypt($2, gen_salt('bf')) WHERE email = $1`,
         [normal[0].email, PASS]);
@@ -229,8 +230,9 @@ async function main() {
 
     console.log("\n── El botón de «unirme» para quien ya tiene la sesión abierta ──");
     const { rows: yaEsta } = await client.query(
-      `SELECT email FROM dietistas WHERE "rolDocente" IS NULL AND verificado = true
-         AND email NOT LIKE $1 ORDER BY "createdAt" DESC LIMIT 1`, [`%@${DOMINIO}`]);
+      `SELECT d.email FROM dietistas d JOIN auth.users u ON u.id::text = d."authId"
+        WHERE d."rolDocente" IS NULL AND d.verificado = true AND u.email_confirmed_at IS NOT NULL
+          AND d.email NOT LIKE $1 ORDER BY d."createdAt" DESC LIMIT 1`, [`%@${DOMINIO}`]);
     if (!yaEsta.length) {
       console.log("    (no hay ninguna cuenta normal para probarlo)");
     } else {

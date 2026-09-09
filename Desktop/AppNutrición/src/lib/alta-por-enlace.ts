@@ -11,9 +11,9 @@
  */
 
 import type { Prisma } from "@/generated/prisma/client";
-import { headers } from "next/headers";
 import { getLocale } from "@/i18n/locale";
 import { generateVerifyToken, sendVerificationEmail } from "@/lib/verify-email";
+import { urlPublica } from "@/lib/utils";
 
 /**
  * El usuario de autenticación y su identidad, con el correo por confirmar.
@@ -83,13 +83,13 @@ export async function mandarCorreoDeVerificacion(
     !/annonia\.com/i.test(process.env.NEXT_PUBLIC_APP_URL ?? "");
   let enlace = "";
   try {
-    const cabeceras = await headers();
-    const proto = cabeceras.get("x-forwarded-proto") || "https";
-    const host = cabeceras.get("host") || "localhost:3000";
+    // La dirección sale de `urlPublica`, no de las cabeceras: un correo con un enlace a localhost
+    // no le sirve a nadie, y esa función ya se encarga de que en producción nunca lo sea aunque la
+    // variable de entorno esté mal puesta (Guillermo, 9 sep 2026, antes de subirlo).
+    const appUrl = urlPublica();
     let locale: "es" | "pt" = "es";
     try { if ((await getLocale()) === "pt") locale = "pt"; } catch { /* es por defecto */ }
     const token = await generateVerifyToken(authId, email);
-    const appUrl = `${proto}://${host}`;
     enlace = `${appUrl}/auth/verify-email?token=${token}`;
     await sendVerificationEmail(email, nombre, token, appUrl, locale);
     // En local el correo no sale (lo corta el propio `mailer`), así que el enlace se enseña en la

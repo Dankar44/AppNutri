@@ -38,6 +38,23 @@ export type Novedad = {
 
 const NOVEDADES: Novedad[] = [
   {
+    id: "modulo-docente",
+    fecha: "2026-09-09",
+    destacada: true,
+    titulo: {
+      es: "Annonia para clase: da de alta a tus alumnos y corrige sus casos",
+      pt: "Annonia para aulas: cadastre seus alunos e corrija os casos deles",
+    },
+    descripcion: {
+      es: "Si das clase —en una universidad o por tu cuenta— ahora puedes montar tu clase en Annonia: das de alta a tus alumnos por correo o con un enlace que pegas en el aula virtual, cada uno se crea su cuenta gratis, y les pones casos clínicos que resuelven con la aplicación entera (ficha del paciente, planificación y plan de alimentación). Tú ves lo que ha entregado cada uno tal y como lo dejó, lo comparas con tu propia solución y con lo que ha hecho el resto de la clase, y le pones nota y comentario. Al acabar te descargas las notas para el acta. Tu cuenta de siempre no cambia: tus pacientes y tu trabajo siguen donde estaban, y pasas de un lado a otro desde el menú. Escríbenos a annonianutri@gmail.com si quieres acceso gratuito para tu clase o tu universidad durante este curso.",
+      pt: "Se você dá aula —numa universidade ou por conta própria— agora pode montar sua turma no Annonia: cadastra seus alunos por email ou com um link que cola na sala virtual, cada um cria sua conta grátis, e você propõe casos clínicos que eles resolvem com o aplicativo inteiro (ficha do paciente, planejamento e plano alimentar). Você vê o que cada um entregou tal como o deixou, compara com a sua própria solução e com o que fez o resto da turma, e dá nota e comentário. No final baixa as notas para a ata. Sua conta de sempre não muda: seus pacientes e seu trabalho seguem onde estavam, e você passa de um lado ao outro pelo menu. Escreva para annonianutri@gmail.com se quiser acesso gratuito para sua turma ou sua universidade durante este ano letivo.",
+    },
+    donde: {
+      es: "Escríbenos a annonianutri@gmail.com y te damos el acceso. A partir de ahí lo tienes en el menú, en «Docencia».",
+      pt: "Escreva para annonianutri@gmail.com e damos o acesso. A partir daí você o tem no menu, em «Docência».",
+    },
+  },
+  {
     id: "reparto-por-comidas",
     fecha: "2026-08-27",
     destacada: true,
