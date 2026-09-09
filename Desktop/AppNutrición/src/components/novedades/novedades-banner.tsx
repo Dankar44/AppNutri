@@ -34,7 +34,6 @@ export function NovedadesBanner({
               href="/novedades"
               target="_blank"
               rel="noopener noreferrer"
-              onClick={onCerrar}
               className="font-semibold underline underline-offset-2 hover:text-green-700 dark:hover:text-green-100 inline-flex items-center gap-1 whitespace-nowrap"
             >
               {t("banner.enlace")}

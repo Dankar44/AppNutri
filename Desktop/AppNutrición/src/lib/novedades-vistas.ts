@@ -66,11 +66,23 @@ export function marcarNovedadesVistas(fechaUltimaNovedad: string) {
   }
 }
 
-/** ¿Hay que enseñar el banner de esta novedad destacada? */
+/**
+ * ¿Hay que enseñar el banner de esta novedad destacada?
+ *
+ * Solo mira si se ha cerrado ESE banner, no si se ha abierto la página de novedades. Antes miraba
+ * las dos cosas, así que entrar una vez en /novedades lo apagaba para siempre aunque nunca lo
+ * hubieras cerrado —y como esa página se abre en otra pestaña, la de atrás lo seguía enseñando
+ * hasta recargar: parecía que se quitaba solo (Guillermo, 9 sep 2026)—. Son dos cosas distintas:
+ * haber leído la lista y haber dicho «quita este aviso».
+ */
 export function bannerPendiente(fechaDestacada: string): boolean {
   const descartado = leer(CLAVE_BANNER);
   if (descartado && descartado >= fechaDestacada) return false;
-  return esNueva(fechaDestacada, getCorteNovedades());
+  // La ventana de 30 días sigue valiendo: quien se registre dentro de meses no arranca con avisos
+  // de cosas que para él siempre han estado ahí.
+  const d = new Date();
+  d.setDate(d.getDate() - VENTANA_NUEVAS_DIAS);
+  return esNueva(fechaDestacada, d.toISOString().slice(0, 10));
 }
 
 /**
