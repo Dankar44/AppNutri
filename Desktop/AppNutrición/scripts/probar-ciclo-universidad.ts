@@ -166,11 +166,18 @@ async function nuevaVentana(nav: Browser): Promise<Page> {
   return page;
 }
 
+/**
+ * Un enlace, como lo crea la aplicación: sus plazas SUMAN a las de la universidad, porque es lo que
+ * se acaba de vender. Insertarlo a pelo dejaba la universidad en 0 y el enlace no admitía a nadie,
+ * que es justo lo que pasa de verdad si alguien mete el enlace sin vender las plazas.
+ */
 async function crearEnlace(c: pg.PoolClient, licenciaId: string, curso: number, plazas: number) {
   const { rows } = await c.query(
     `INSERT INTO enlaces_profesores (id, "licenciaDocenteId", token, "cursoAnio", plazas, "creadoPor")
      VALUES (gen_random_uuid()::text, $1, replace(gen_random_uuid()::text,'-',''), $2, $3, '${MARCA}')
      RETURNING token`, [licenciaId, curso, plazas]);
+  await c.query(`UPDATE licencias_docentes SET "maxProfesores" = "maxProfesores" + $2 WHERE id = $1`,
+    [licenciaId, plazas]);
   return rows[0].token as string;
 }
 

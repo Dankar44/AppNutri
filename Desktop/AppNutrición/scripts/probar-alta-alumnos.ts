@@ -171,7 +171,8 @@ async function main() {
     await esperar(1200);
     let visible = await texto(p1);
     comprobar("se ve el alta de alumnos", visible.includes("Dar de alta alumnos"));
-    comprobar("dice cuántas plazas quedan", /4 plazas libres/.test(visible), visible.match(/\d+ plazas? libres?/)?.[0] ?? "no sale");
+    comprobar("dice cuántas plazas van de cuántas", /0 de 4 plazas/.test(visible),
+      visible.match(/\d+ de \d+ plazas/)?.[0] ?? "no sale");
     comprobar("no se ve el aviso de curso cerrado", !visible.includes("El curso está cerrado"));
 
     console.log("\n── Tres correos de golpe, uno repetido y uno mal escrito ──");
@@ -194,7 +195,8 @@ async function main() {
     await p1.reload({ waitUntil: "networkidle0" });
     await esperar(1000);
     visible = await texto(p1);
-    comprobar("quedan 2 plazas libres", /2 plazas libres/.test(visible), visible.match(/\d+ plazas? libres?|sin plazas libres/)?.[0] ?? "no sale");
+    comprobar("van 2 de 4 usadas", /2 de 4 plazas/.test(visible),
+      visible.match(/\d+ de \d+ plazas/)?.[0] ?? "no sale");
 
     console.log("\n── Un correo que ya tiene cuenta de nutricionista ──");
     const nutriId = await crearCuenta(client, "nutri@pruebaalta.dev", "NutriPrueba_1", "Nutricionista");
@@ -240,7 +242,8 @@ async function main() {
     console.log("\n── Retirar el acceso NO libera plaza, y no borra nada ──");
     await p1.reload({ waitUntil: "networkidle0" });
     await esperar(1200);
-    comprobar("ya no quedan plazas", /sin plazas libres/.test(await texto(p1)));
+    comprobar("ya no quedan plazas", /4 de 4 plazas/.test(await texto(p1)),
+      (await texto(p1)).match(/\d+ de \d+ plazas/)?.[0] ?? "no sale");
     comprobar("el alumno matriculado sale en la lista", (await texto(p1)).includes("nutri@pruebaalta.dev"),
       (await texto(p1)).split("\n").filter((l) => l.includes("@")).join(" / ") || "lista vacía");
     await pulsar(p1, "Retirar acceso");
@@ -257,7 +260,7 @@ async function main() {
     await esperar(1200);
     // La plaza se consume para todo el curso: retirar a alguien no la devuelve, y no vuelve hasta
     // el 31 de agosto (Guillermo, 8 sep 2026). Antes se liberaba y se podía rotar gente.
-    comprobar("su plaza NO vuelve a la bolsa", /sin plazas libres/.test(await texto(p1)),
+    comprobar("su plaza NO vuelve a la bolsa", /4 de 4 plazas/.test(await texto(p1)),
       (await texto(p1)).split("\n").find((l) => /plaza/i.test(l)) ?? "");
 
     console.log("\n── Un alumno en las clases de dos profesores = una plaza ──");
@@ -276,7 +279,27 @@ async function main() {
     await esperar(1200);
     await pulsar(p1, "Con un enlace");
     await esperar(400);
+    // Para abrir el enlace hace falta que a la facultad le queden plazas: a estas alturas la bolsa
+    // está llena de los pasos anteriores, así que se le venden tres más.
+    await client.query(`UPDATE licencias_docentes SET "maxAlumnos" = "maxAlumnos" + 3 WHERE id = $1`, [licenciaId]);
+    await p1.reload({ waitUntil: "networkidle0" });
+    await esperar(1200);
+    await pulsar(p1, "Con un enlace");
+    await esperar(400);
     comprobar("por defecto está cerrado", (await texto(p1)).includes("nadie puede apuntarse"));
+    // El cupo es obligatorio desde el 9 sep 2026: sin número, el botón de abrir está bloqueado.
+    comprobar("sin decir cuántos caben, no deja abrirlo", await p1.evaluate(() => {
+      const b = Array.from(document.querySelectorAll("button")).find((x) => /Abrir el enlace/i.test(x.textContent ?? ""));
+      return (b as HTMLButtonElement | undefined)?.disabled ?? false;
+    }));
+    await p1.evaluate(() => {
+      const caja = Array.from(document.querySelectorAll("input")).find((i) => i.inputMode === "numeric");
+      if (!caja) return;
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")!.set!;
+      setter.call(caja, "3");
+      caja.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await esperar(500);
     await pulsar(p1, "Abrir el enlace");
     await esperar(3000);
     const { rows: tok } = await client.query(
@@ -313,7 +336,10 @@ async function main() {
     await p1.goto(`${BASE}/profesor/clases/${clase1}`, { waitUntil: "networkidle0" });
     await esperar(1200);
     visible = await texto(p1);
-    comprobar("se explica que el curso está cerrado", visible.includes("El curso está cerrado"));
+    // Con la licencia caducada el profesor ya no entra en su espacio (cambiado el 9 sep 2026):
+    // se le manda a la pantalla que se lo explica, en vez de dejarle dentro sin poder hacer nada.
+    comprobar("se le explica y no entra en sus clases", p1.url().includes("/docencia-terminada"), p1.url());
+    comprobar("con el aviso de que no se ha borrado nada", /no se ha borrado nada/i.test(visible));
     comprobar("y no hay caja para pegar correos", (await p1.$("textarea")) === null);
   } finally {
     await limpiar(client);

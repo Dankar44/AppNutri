@@ -239,15 +239,25 @@ export async function getEnlaceProfesoresPorToken(token: string): Promise<Enlace
   const enlace = await prisma.enlaceProfesores.findUnique({
     where: { token },
     select: {
-      plazas: true, usadas: true, cursoAnio: true,
-      licenciaDocente: { select: { institucion: true, activa: true, fechaFin: true } },
+      plazas: true, usadas: true, cursoAnio: true, licenciaDocenteId: true,
+      licenciaDocente: { select: { institucion: true, activa: true, fechaFin: true, maxProfesores: true } },
     },
   });
   // Vigente de verdad, y del curso en el que estamos o de uno futuro: los de cursos pasados no
   // reviven al renovar.
   if (!enlace || !licenciaVigente(enlace.licenciaDocente)) return null;
   if (enlace.cursoAnio < cursoActual().anio) return null;
-  const quedan = Math.max(0, enlace.plazas - enlace.usadas);
+
+  // Lo que queda de verdad es lo menor de las dos cosas: lo que admite este enlace y lo que le
+  // queda a la universidad. Enseñar solo lo del enlace prometía plazas que no existen.
+  const [profesores, pendientes] = await Promise.all([
+    prisma.dietista.count({ where: { licenciaDocenteId: enlace.licenciaDocenteId, rolDocente: "PROFESOR" } }),
+    prisma.invitacionDocente.count({
+      where: { rol: "PROFESOR", licenciaDocenteId: enlace.licenciaDocenteId, aceptadaAt: null, expiraAt: { gte: new Date() } },
+    }),
+  ]);
+  const enLaUniversidad = Math.max(0, enlace.licenciaDocente.maxProfesores - profesores - pendientes);
+  const quedan = Math.min(Math.max(0, enlace.plazas - enlace.usadas), enLaUniversidad);
   return {
     institucion: enlace.licenciaDocente.institucion,
     quedan,
@@ -285,9 +295,28 @@ async function conPlazaDelEnlace<T>(
     // envía el formulario puede haber caducado, y la vista no es lo que autoriza.
     const licencia = await tx.licenciaDocente.findUnique({
       where: { id: enlace.licenciaDocenteId },
-      select: { activa: true, fechaFin: true },
+      select: { activa: true, fechaFin: true, maxProfesores: true },
     });
     if (!licenciaVigente(licencia)) return { ok: false as const, motivo: "noValido" as const };
+
+    // Y el tope de verdad son los PROFESORES QUE YA HAY en la universidad, no los usos del enlace:
+    // las tres vías —darle el rol a quien ya usa Annonia, invitar por correo y este enlace— comen
+    // de la misma bolsa, así que un enlace de seis no puede meter al séptimo profesor (Guillermo,
+    // 9 sep 2026). Las invitaciones sin usar también reservan, como en las otras vías.
+    const [profesores, pendientes] = await Promise.all([
+      tx.dietista.count({ where: { licenciaDocenteId: enlace.licenciaDocenteId, rolDocente: "PROFESOR" } }),
+      tx.invitacionDocente.count({
+        where: {
+          rol: "PROFESOR",
+          licenciaDocenteId: enlace.licenciaDocenteId,
+          aceptadaAt: null,
+          expiraAt: { gte: new Date() },
+        },
+      }),
+    ]);
+    if (profesores + pendientes >= (licencia?.maxProfesores ?? 0)) {
+      return { ok: false as const, motivo: "agotado" as const };
+    }
 
     const valor = await trabajo(tx, enlace);
     // El uso se marca aquí, con el alta ya hecha: si algo falla arriba, la plaza no se gasta.

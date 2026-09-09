@@ -178,6 +178,21 @@ async function main() {
       await client.query(`UPDATE dietistas SET "rolDocente" = NULL, "licenciaDocenteId" = NULL, "altaPorEnlaceId" = NULL WHERE email = $1`, [yaEsta[0].email]);
     }
 
+    console.log("\n── El tope de verdad son los profesores de la universidad ──");
+    // Un enlace de 6 no puede meter al séptimo profesor: las tres vías comen de la misma bolsa.
+    await client.query(`UPDATE enlaces_profesores SET plazas = 6, usadas = 0 WHERE token = $1`, [enl[0].token]);
+    const { rows: cuantos } = await client.query(
+      `SELECT COUNT(*)::int n FROM dietistas WHERE "licenciaDocenteId" = $1 AND "rolDocente" = 'PROFESOR'`, [lic[0].id]);
+    await client.query(`UPDATE licencias_docentes SET "maxProfesores" = $2 WHERE id = $1`, [lic[0].id, cuantos[0].n]);
+    const tope = await (await navegador.createBrowserContext()).newPage();
+    await tope.setViewport({ width: 1440, height: 950 });
+    await tope.goto(url, { waitUntil: "networkidle0" });
+    await esperar(2000);
+    comprobar("aunque al enlace le sobren plazas, se cierra", /Ya no quedan plazas/i.test(await texto(tope)),
+      `enlace 0/6 · universidad ${cuantos[0].n}/${cuantos[0].n}`);
+    await tope.close();
+    await client.query(`UPDATE licencias_docentes SET "maxProfesores" = $2 WHERE id = $1`, [lic[0].id, cuantos[0].n + 5]);
+
     console.log("\n── Con el cupo lleno, el enlace se cierra solo ──");
     await client.query(`UPDATE enlaces_profesores SET usadas = plazas WHERE token = $1`, [enl[0].token]);
     await page.goto(url, { waitUntil: "networkidle0" });

@@ -14,7 +14,16 @@ import { cursoActual } from "@/lib/docencia";
  * Cada uno lleva su cupo y su contador, y el contador solo sube: para vender tres plazas más se
  * crea otro enlace de tres, no se toca el anterior (Guillermo, 8 sep 2026).
  */
-export function EnlacesProfesorado({ licenciaId, enlaces }: { licenciaId: string; enlaces: EnlaceProfesoresResumen[] }) {
+export function EnlacesProfesorado({
+  licenciaId,
+  enlaces,
+  contacto,
+}: {
+  licenciaId: string;
+  enlaces: EnlaceProfesoresResumen[];
+  /** El correo de quien lleva el trato: es a quien se le manda el enlace casi siempre. */
+  contacto: string | null;
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [plazas, setPlazas] = useState("");
@@ -22,7 +31,9 @@ export function EnlacesProfesorado({ licenciaId, enlaces }: { licenciaId: string
   const [curso, setCurso] = useState(cursoActual().anio);
   const [copiado, setCopiado] = useState<string | null>(null);
   const [enviando, setEnviando] = useState<string | null>(null);
-  const [correos, setCorreos] = useState("");
+  // Viene puesto el de la persona de contacto: es a quien se le manda, y así no hay que copiarlo
+  // de más arriba cada vez (Guillermo, 9 sep 2026).
+  const [correos, setCorreos] = useState(contacto ?? "");
 
   function crear(e: React.FormEvent) {
     e.preventDefault();
@@ -110,6 +121,9 @@ export function EnlacesProfesorado({ licenciaId, enlaces }: { licenciaId: string
                     <label className="text-[11px] text-muted-foreground">Correos (uno o varios, separados por comas)</label>
                     <input value={correos} onChange={(ev) => setCorreos(ev.target.value)}
                       placeholder="representante@universidad.es" className={`${input} w-full mt-1`} />
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      Le llega un correo con el enlace listo para que lo reenvíe a su profesorado.
+                    </p>
                   </div>
                   <button type="button" onClick={() => enviar(e.id)} disabled={isPending || !correos.includes("@")}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-2 text-xs font-medium hover:opacity-90 disabled:opacity-50 transition-opacity">

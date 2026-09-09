@@ -27,6 +27,10 @@ export default async function UniversidadDetallePage({
   const enlaces = await getEnlacesProfesores(id);
   if (!licencia) notFound();
 
+  // La persona de contacto suele ser un correo; si lo es, se usa como destinatario por defecto del
+  // enlace de profesorado. Si escribieron un nombre, se deja vacío en vez de mandar a "Marta".
+  const correoDelContacto = licencia.personaContacto?.includes("@") ? licencia.personaContacto : null;
+
   const t = await getTranslations("admin.universidades");
   const vigente = licenciaVigente(licencia);
   const dominios = dominiosDeLicencia(licencia.dominioEmail);
@@ -154,7 +158,7 @@ export default async function UniversidadDetallePage({
 
         {/* Y la vía de repartir: un enlace para que se den de alta ellos, sin pedirle a la
             universidad los correos de su profesorado. */}
-        <EnlacesProfesorado licenciaId={licencia.id} enlaces={enlaces} />
+        <EnlacesProfesorado licenciaId={licencia.id} enlaces={enlaces} contacto={correoDelContacto} />
       </section>
 
       {/* Renovar: lo de cada verano, sin tener que crear otra universidad. */}
