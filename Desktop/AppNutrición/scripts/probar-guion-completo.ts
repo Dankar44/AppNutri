@@ -292,6 +292,15 @@ async function main() {
     await pulsar(profe, "Con un enlace");
     visible = await texto(profe);
     comprobar("antes de abrirlo avisa de que nadie puede apuntarse", /nadie puede apuntarse/i.test(visible));
+    // El cupo es obligatorio desde el 9 sep 2026: hay que decir cuántos caben en la clase.
+    await profe.evaluate(() => {
+      const caja = Array.from(document.querySelectorAll("input")).find((i) => i.inputMode === "numeric");
+      if (!caja) return;
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")!.set!;
+      setter.call(caja, "5");
+      caja.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await esperar(500);
     await pulsar(profe, "Abrir el enlace");
     await esperar(2500);
     const { rows: conEnlace } = await client.query(`SELECT "tokenInvitacion", "invitacionAbierta" FROM clases WHERE id = $1`, [claseId]);
@@ -356,8 +365,10 @@ async function main() {
     comprobar("la cuenta se crea", nueva.length === 1);
     comprobar("con rol de alumna", nueva[0]?.rolDocente === "ALUMNO");
     comprobar("y marcada como nacida en el aula", nueva[0]?.cuentaDeClase === true);
-    comprobar("y se le manda a iniciar sesión con la contraseña que eligió",
-      anonima.url().includes("/login"), anonima.url().replace(BASE, ""));
+    // Desde el 9 sep 2026 se queda dentro: acaba de escribir su correo y su contraseña, mandarle
+    // al login a repetirlos era hacerle el trabajo dos veces.
+    comprobar("y entra directamente a su aula, sin pasar por el login",
+      anonima.url().includes("/aula"), anonima.url().replace(BASE, ""));
     await foto(anonima, "07-alumna-nueva-tras-crear-cuenta");
     // Y entrando de verdad, aterriza en su aula.
     const recien = await sesionDe(navegador, NUEVA.email, NUEVA.pass);
