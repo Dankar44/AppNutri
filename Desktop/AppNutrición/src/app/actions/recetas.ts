@@ -256,30 +256,39 @@ export async function actualizarReceta(
     unidad: ing.unidad,
   }));
 
-  // La propiedad se comprueba ANTES de borrar: hasta el 1 sep 2026 el deleteMany iba primero y el
-  // update fallaba después, así que cualquiera con una sesión podía dejar sin ingredientes la
-  // receta de otro pasando su id. El borrado ya estaba confirmado cuando saltaba el error.
-  const suya = await prisma.receta.findFirst({ where: { id, dietistaId: dietista.id }, select: { id: true } });
-  if (!suya) throw new Error(t("receta.recetaNoEncontrada"));
-
-  await prisma.recetaIngrediente.deleteMany({ where: { recetaId: id } });
-
-  await prisma.receta.update({
+  // De quién es la receta, ANTES de tocar nada. Las recetas del catálogo tienen
+  // `dietistaId` nulo, así que este findFirst no las devuelve. Es la puerta que faltaba:
+  // basta con escribir /recetas/<id>/editar a mano sobre una receta de la app para llegar
+  // hasta aquí, y con la comprobación al final (la hacía el `where` del update) el
+  // deleteMany de abajo ya había dejado esa receta sin ingredientes para los demás.
+  const propia = await prisma.receta.findFirst({
     where: { id, dietistaId: dietista.id },
-    data: {
-      nombre: nombreSanitizado,
-      nombreNormalizado: normalizarParaBusqueda(nombreSanitizado),
-      descripcion: descripcionSanitizada,
-      instrucciones: instruccionesSanitizadas,
-      porciones: porcionesValidadas,
-      ...((await puedeCompartirMaterial(dietista)) && data.compartido !== undefined
-        ? { compartido: data.compartido }
-        : {}),
-      ingredientes: {
-        create: ingredientesValidados,
-      },
-    },
+    select: { id: true },
   });
+  if (!propia) throw new Error(t("receta.recetaNoEncontrada"));
+
+  // Borrado y alta de ingredientes en la misma transacción: si el alta falla a medias, el
+  // borrado se deshace y la receta no se queda vacía.
+  await prisma.$transaction([
+    prisma.recetaIngrediente.deleteMany({ where: { recetaId: id } }),
+    prisma.receta.update({
+      where: { id, dietistaId: dietista.id },
+      data: {
+        nombre: nombreSanitizado,
+        nombreNormalizado: normalizarParaBusqueda(nombreSanitizado),
+        descripcion: descripcionSanitizada,
+        instrucciones: instruccionesSanitizadas,
+        porciones: porcionesValidadas,
+        // Compartir con el centro o con la clase, si puede: es una decisión suya y se respeta.
+        ...((await puedeCompartirMaterial(dietista)) && data.compartido !== undefined
+          ? { compartido: data.compartido }
+          : {}),
+        ingredientes: {
+          create: ingredientesValidados,
+        },
+      },
+    }),
+  ]);
 
   await setTiempoPreparacion(id, tiempoEntero);
   await recalcularMacrosReceta(id);
@@ -294,12 +303,17 @@ export async function eliminarReceta(id: string) {
   if (!dietista) throw new Error(t("auth.noAutorizado"));
   if (dietista.isDemo) return;
 
-  // Igual que en actualizarReceta: primero se comprueba de quién es.
-  const suya = await prisma.receta.findFirst({ where: { id, dietistaId: dietista.id }, select: { id: true } });
-  if (!suya) throw new Error(t("receta.recetaNoEncontrada"));
+  // Igual que al actualizar: comprobar de quién es antes de borrar nada.
+  const propia = await prisma.receta.findFirst({
+    where: { id, dietistaId: dietista.id },
+    select: { id: true },
+  });
+  if (!propia) throw new Error(t("receta.recetaNoEncontrada"));
 
-  await prisma.recetaIngrediente.deleteMany({ where: { recetaId: id } });
-  await prisma.receta.delete({ where: { id, dietistaId: dietista.id } });
+  await prisma.$transaction([
+    prisma.recetaIngrediente.deleteMany({ where: { recetaId: id } }),
+    prisma.receta.delete({ where: { id, dietistaId: dietista.id } }),
+  ]);
 
   revalidatePath("/recetas");
 }

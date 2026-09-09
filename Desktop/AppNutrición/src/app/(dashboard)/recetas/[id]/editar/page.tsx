@@ -17,7 +17,11 @@ export default async function EditarRecetaPage({ params }: Props) {
     getReceta(id), getTranslations("recipes"), getCurrentDietista(),
   ]);
   if (!receta) notFound();
-  // Solo se edita lo propio: lo que le comparten se ve y se copia, pero no se toca.
+  // Las recetas del catálogo no son editables: se comparten con todos los nutricionistas.
+  // `getReceta` sí las devuelve (hay que poder verlas), así que sin esto el formulario se
+  // abría con una receta de la app dentro a quien escribiese la URL a mano.
+  if (receta.esGlobal) notFound();
+  // Y solo se edita lo propio: lo que le comparten se ve y se copia, pero no se toca.
   if (receta.dietistaId !== dietista?.id) notFound();
 
   const compartirCon = dietista?.empresaId
