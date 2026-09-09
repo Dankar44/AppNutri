@@ -134,7 +134,7 @@
   },
   "alumnos": {
     "titulo": "Dar de alta alumnos",
-    "plazasLibres": "{n, plural, =0 {sin plazas libres} one {# plaza libre} other {# plazas libres}}",
+    "plazasLibres": "· {n, plural, =0 {sin plazas libres} one {# libre} other {# libres}}",
     "porCorreo": "Por correo",
     "porEnlace": "Con un enlace",
     "correos": "Correos de los alumnos",
@@ -172,7 +172,7 @@
     "cupoPlaceholder": "60",
     "cupoAyuda": "Obligatorio. El enlace se cierra solo al llegar a ese número. Como mucho {n}, que son las plazas que le quedan a la facultad.",
     "cupoPuesto": "Tope de esta clase: {usadas} de {n}",
-    "plazasDe": "{usadas} de {total} plazas",
+    "plazasDe": "{usadas} de {total}",
     "cupoSePasa": "A la facultad solo le quedan {n} plazas: pon ese número o menos."
   },
   "cursoTerminado": {

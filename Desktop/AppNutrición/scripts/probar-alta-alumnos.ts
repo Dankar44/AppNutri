@@ -171,8 +171,8 @@ async function main() {
     await esperar(1200);
     let visible = await texto(p1);
     comprobar("se ve el alta de alumnos", visible.includes("Dar de alta alumnos"));
-    comprobar("dice cuántas plazas van de cuántas", /0 de 4 plazas/.test(visible),
-      visible.match(/\d+ de \d+ plazas/)?.[0] ?? "no sale");
+    comprobar("dice cuántas van y cuántas quedan", /0 de 4/.test(visible) && /4 libres/.test(visible),
+      visible.match(/\d+ de \d+[^\n]*/)?.[0] ?? "no sale");
     comprobar("no se ve el aviso de curso cerrado", !visible.includes("El curso está cerrado"));
 
     console.log("\n── Tres correos de golpe, uno repetido y uno mal escrito ──");
@@ -195,8 +195,8 @@ async function main() {
     await p1.reload({ waitUntil: "networkidle0" });
     await esperar(1000);
     visible = await texto(p1);
-    comprobar("van 2 de 4 usadas", /2 de 4 plazas/.test(visible),
-      visible.match(/\d+ de \d+ plazas/)?.[0] ?? "no sale");
+    comprobar("van 2 de 4 y quedan 2", /2 de 4/.test(visible) && /2 libres/.test(visible),
+      visible.match(/\d+ de \d+[^\n]*/)?.[0] ?? "no sale");
 
     console.log("\n── Un correo que ya tiene cuenta de nutricionista ──");
     const nutriId = await crearCuenta(client, "nutri@pruebaalta.dev", "NutriPrueba_1", "Nutricionista");
@@ -242,8 +242,8 @@ async function main() {
     console.log("\n── Retirar el acceso NO libera plaza, y no borra nada ──");
     await p1.reload({ waitUntil: "networkidle0" });
     await esperar(1200);
-    comprobar("ya no quedan plazas", /4 de 4 plazas/.test(await texto(p1)),
-      (await texto(p1)).match(/\d+ de \d+ plazas/)?.[0] ?? "no sale");
+    comprobar("ya no quedan plazas", /sin plazas libres/.test(await texto(p1)),
+      (await texto(p1)).match(/\d+ de \d+[^\n]*/)?.[0] ?? "no sale");
     comprobar("el alumno matriculado sale en la lista", (await texto(p1)).includes("nutri@pruebaalta.dev"),
       (await texto(p1)).split("\n").filter((l) => l.includes("@")).join(" / ") || "lista vacía");
     await pulsar(p1, "Retirar acceso");
@@ -260,7 +260,7 @@ async function main() {
     await esperar(1200);
     // La plaza se consume para todo el curso: retirar a alguien no la devuelve, y no vuelve hasta
     // el 31 de agosto (Guillermo, 8 sep 2026). Antes se liberaba y se podía rotar gente.
-    comprobar("su plaza NO vuelve a la bolsa", /4 de 4 plazas/.test(await texto(p1)),
+    comprobar("su plaza NO vuelve a la bolsa", /sin plazas libres/.test(await texto(p1)),
       (await texto(p1)).split("\n").find((l) => /plaza/i.test(l)) ?? "");
 
     console.log("\n── Un alumno en las clases de dos profesores = una plaza ──");

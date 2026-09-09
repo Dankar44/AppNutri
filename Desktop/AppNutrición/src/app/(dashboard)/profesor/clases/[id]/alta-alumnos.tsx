@@ -121,8 +121,24 @@ export function AltaAlumnos({
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h3 className="font-semibold">{t("alumnos.titulo")}</h3>
         {plazas && (
-          <span className="text-xs text-muted-foreground tabular-nums" title={t("alumnos.plazasAyuda")}>
-            {t("alumnos.plazasDe", { usadas: plazas.usadas, total: plazas.total })}
+          /* La barrita es para verlo de un vistazo; el número de libres, para no tener que restar
+             (Guillermo, 9 sep 2026). Se pone en ámbar cuando queda poco y en rojo al llenarse. */
+          <span className="inline-flex items-center gap-2 shrink-0" title={t("alumnos.plazasAyuda")}>
+            <span className="h-1.5 w-20 rounded-full bg-muted overflow-hidden" aria-hidden>
+              <span
+                className={cn(
+                  "block h-full rounded-full transition-all",
+                  plazas.libres === 0 ? "bg-red-500" : plazas.libres <= 3 ? "bg-amber-500" : "bg-primary",
+                )}
+                style={{ width: `${plazas.total > 0 ? Math.min(100, (plazas.usadas / plazas.total) * 100) : 0}%` }}
+              />
+            </span>
+            <span className="text-xs text-muted-foreground tabular-nums">
+              {t("alumnos.plazasDe", { usadas: plazas.usadas, total: plazas.total })}
+              <span className={cn("ml-1.5 font-medium", plazas.libres === 0 && "text-red-600 dark:text-red-400")}>
+                {t("alumnos.plazasLibres", { n: plazas.libres })}
+              </span>
+            </span>
           </span>
         )}
       </div>

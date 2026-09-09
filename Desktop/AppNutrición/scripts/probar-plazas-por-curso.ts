@@ -55,9 +55,10 @@ async function main() {
       await profe.goto(`${BASE}/profesor/clases/${claseId}`, { waitUntil: "networkidle0" });
       await esperar(2200);
       const txt = await profe.evaluate(() => document.body.innerText);
-      // El indicador dice «usadas de total»: las libres se sacan restando.
-      const m = txt.match(/(\d+)\s+de\s+(\d+)\s+plazas/i);
-      return m ? Number(m[2]) - Number(m[1]) : null;
+      // El indicador dice «usadas de total · N libres»: se lee directamente lo que queda.
+      if (/sin plazas libres/i.test(txt)) return 0;
+      const m = txt.match(/(\d+)\s+libres?/i);
+      return m ? Number(m[1]) : null;
     };
 
     console.log("\n── Una plaza se gasta al entrar ──");

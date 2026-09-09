@@ -134,7 +134,7 @@
   },
   "alumnos": {
     "titulo": "Registar alunos",
-    "plazasLibres": "{n, plural, =0 {sem lugares livres} one {# lugar livre} other {# lugares livres}}",
+    "plazasLibres": "· {n, plural, =0 {sem vagas livres} one {# livre} other {# livres}}",
     "porCorreo": "Por correio",
     "porEnlace": "Com um link",
     "correos": "Correios dos alunos",
@@ -172,7 +172,7 @@
     "cupoPlaceholder": "60",
     "cupoAyuda": "Obrigatório. O link fecha-se sozinho ao chegar a esse número. No máximo {n}, que são as vagas que restam à faculdade.",
     "cupoPuesto": "Limite desta turma: {usadas} de {n}",
-    "plazasDe": "{usadas} de {total} vagas",
+    "plazasDe": "{usadas} de {total}",
     "cupoSePasa": "À faculdade só restam {n} vagas: põe esse número ou menos."
   },
   "cursoTerminado": {
