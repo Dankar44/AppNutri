@@ -29,7 +29,9 @@ export function NovedadesBanner({
         <div className="flex-1 min-w-0">
           <p className="text-sm text-green-900 dark:text-green-200">
             <span className="font-semibold">{t("banner.etiqueta")}</span>{" "}
-            {novedad.titulo[locale]}{" "}
+            {/* Si la novedad trae texto propio para la franja, se cuenta aquí lo importante: esto
+                lo lee todo el mundo, entre o no en la página (Guillermo, 9 sep 2026). */}
+            {(novedad.banner ?? novedad.titulo)[locale]}{" "}
             <Link
               href="/novedades"
               target="_blank"

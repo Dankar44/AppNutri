@@ -11,8 +11,14 @@
 
 /** Fecha ISO de la novedad más reciente que el nutri ya ha visto. */
 const CLAVE_VISTAS = "annonia-novedades-vistas";
-/** Fecha ISO de la última novedad destacada cuyo banner se cerró. */
-const CLAVE_BANNER = "annonia-novedades-banner-descartado";
+/**
+ * Fecha ISO de la última novedad destacada cuyo banner se cerró.
+ *
+ * Lleva versión en el nombre a propósito: subirla vuelve a enseñar el banner a todo el mundo,
+ * incluido quien ya lo había cerrado. Se usa cuando hay algo que de verdad tiene que ver todo el
+ * mundo —la v2 es el módulo docente, 9 sep 2026— y no cada vez que se publica una novedad.
+ */
+const CLAVE_BANNER = "annonia-novedades-banner-descartado-v2";
 /** Clave del banner de beta (la que ya usaba `beta-banner`). */
 const CLAVE_BETA = "annonia-beta-banner-dismissed";
 

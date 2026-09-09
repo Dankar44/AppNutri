@@ -34,6 +34,14 @@ export type Novedad = {
    * fase 2 (banner "hay novedades" / aviso destacado en el dashboard).
    */
   destacada?: boolean;
+  /**
+   * Texto propio para la franja verde del dashboard, cuando el título solo no basta.
+   *
+   * El banner lo lee todo el mundo aunque no entre en la página, así que a veces interesa contar
+   * ahí lo importante —qué es y qué hacer— en vez de un titular (Guillermo, 9 sep 2026). Si no se
+   * pone, la franja enseña el título, como siempre.
+   */
+  banner?: TextoBilingue;
 };
 
 const NOVEDADES: Novedad[] = [
@@ -41,6 +49,10 @@ const NOVEDADES: Novedad[] = [
     id: "modulo-docente",
     fecha: "2026-09-09",
     destacada: true,
+    banner: {
+      es: "Ya puedes dar clase con Annonia. Si eres profesor de universidad —o das clases por tu cuenta— monta tu clase, da de alta a tus alumnos y ponles casos clínicos que resuelven con la aplicación entera. Este curso es gratis: escríbenos a annonianutri@gmail.com y te damos el acceso para tu clase o tu universidad.",
+      pt: "Já pode dar aula com o Annonia. Se você é professor universitário —ou dá aulas por conta própria— monte sua turma, cadastre seus alunos e proponha casos clínicos que eles resolvem com o aplicativo inteiro. Este ano letivo é grátis: escreva para annonianutri@gmail.com e damos o acesso para sua turma ou sua universidade.",
+    },
     titulo: {
       es: "Annonia para clase: da de alta a tus alumnos y corrige sus casos",
       pt: "Annonia para aulas: cadastre seus alunos e corrija os casos deles",
