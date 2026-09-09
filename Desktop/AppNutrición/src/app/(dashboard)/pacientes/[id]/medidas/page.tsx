@@ -113,7 +113,12 @@ export default async function MedidasPage({ params }: Props) {
                         {m.perimetroCintura ? `${m.perimetroCintura} cm` : "-"}
                       </td>
                       <td className="py-2">
-                        <MedidaDeleteButton medidaId={m.id as string} />
+                        <MedidaDeleteButton
+                          medidaId={m.id as string}
+                          cantidadMediciones={Object.entries(m).filter(
+                            ([key, value]) => key !== "imc" && typeof value === "number"
+                          ).length}
+                        />
                       </td>
                     </tr>
                   ))}
