@@ -4,7 +4,6 @@ import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { limpiarDocenciaSiToca } from "@/lib/limpieza-docente";
 import { requireProfesor } from "@/app/actions/docencia";
-import { SalidasDelProfesor } from "./salidas";
 import { getMisClases } from "@/app/actions/clases";
 import { getMisCasos } from "@/app/actions/casos";
 import type { Metadata } from "next";
@@ -89,7 +88,20 @@ export default async function ProfesorPage() {
       </section>
 
       {!licencia && (
-        <p className="text-sm text-muted-foreground">{t("panel.sinLicencia")}</p>
+        /* Se ha ido de su facultad (o le han sacado). Conserva el espacio y sus casos hasta el 31
+           de agosto de ese curso, y hay que decírselo con la fecha: si no, ve sus casos pero
+           ninguna clase y no entiende qué ha pasado (Guillermo, 9 sep 2026). */
+        <div className="flex gap-3 py-4 lg:p-4 lg:rounded-xl lg:border lg:border-amber-200 dark:lg:border-amber-500/30 lg:bg-amber-50 dark:lg:bg-amber-500/10 border-b border-border lg:border-b-0">
+          <AlertTriangle strokeWidth={1.75} className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <div className="text-sm">
+            <p className="font-medium text-amber-900 dark:text-amber-200">{t("panel.sinUniversidadTitulo")}</p>
+            <p className="text-amber-800/80 dark:text-amber-200/70 mt-0.5">
+              {datos.sinUniversidadHasta
+                ? t("panel.sinUniversidadHasta", { fecha: formatDate(datos.sinUniversidadHasta, locale) })
+                : t("panel.sinLicencia")}
+            </p>
+          </div>
+        </div>
       )}
 
       {licencia && !datos.puedeDarAltas && (
@@ -171,8 +183,6 @@ export default async function ProfesorPage() {
           aquí solo se recuerda que sigue ahí. */}
       <p className="text-xs text-muted-foreground pt-2">{t("panel.irACuentaProfesionalAyuda")}</p>
 
-      {/* Irse es cosa suya, no solo de administración: plegado, para que no compita con el resto. */}
-      <SalidasDelProfesor institucion={licencia?.institucion ?? null} />
     </div>
   );
 }

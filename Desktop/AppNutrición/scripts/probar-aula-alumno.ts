@@ -9,6 +9,7 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import pg from "pg";
+import { conexionResistente, type Conexion } from "./_conexion-viva";
 import puppeteer, { type Page, type Browser } from "puppeteer-core";
 import { createClient } from "@supabase/supabase-js";
 
@@ -24,7 +25,7 @@ const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const texto = (page: Page) => page.evaluate(() => document.body.innerText);
 const menuDe = (page: Page) => page.evaluate(() => (document.querySelector("aside, nav") as HTMLElement | null)?.innerText ?? "");
 
-async function crearCuenta(client: pg.PoolClient, email: string, apellidos: string, extra: Record<string, unknown> = {}) {
+async function crearCuenta(client: Conexion, email: string, apellidos: string, extra: Record<string, unknown> = {}) {
   const { rows: u } = await client.query(
     `INSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
        created_at, updated_at, raw_app_meta_data, raw_user_meta_data, is_sso_user, is_anonymous,
@@ -64,7 +65,7 @@ async function sesionDe(navegador: Browser, email: string): Promise<Page> {
   return page;
 }
 
-async function limpiar(client: pg.PoolClient) {
+async function limpiar(client: Conexion) {
   await client.query(`DELETE FROM clases WHERE nombre LIKE '${MARCA}%'`);
   const { rows } = await client.query(`SELECT id FROM auth.users WHERE email LIKE '%@${DOMINIO}'`);
   for (const r of rows) {
@@ -76,7 +77,7 @@ async function limpiar(client: pg.PoolClient) {
 }
 
 async function main() {
-  const client = await pool.connect();
+  const client = conexionResistente(pool);
   const navegador = await puppeteer.launch({
     executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     headless: true, args: ["--no-sandbox"],
@@ -170,7 +171,6 @@ async function main() {
     comprobar("y se le dice que su trabajo sigue guardado", /sigue guardado/i.test(aulaDespues));
   } finally {
     await limpiar(client);
-    client.release();
     await navegador.close();
     await pool.end();
   }

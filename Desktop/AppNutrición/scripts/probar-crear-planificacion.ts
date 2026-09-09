@@ -14,6 +14,7 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import pg from "pg";
+import { conexionResistente, type Conexion } from "./_conexion-viva";
 import puppeteer, { type Page } from "puppeteer-core";
 import { createClient } from "@supabase/supabase-js";
 
@@ -33,7 +34,7 @@ const pulsar = (page: Page, txt: string) => page.evaluate((t) => {
 }, txt);
 
 async function main() {
-  const client = await pool.connect();
+  const client = conexionResistente(pool);
   const navegador = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ["--no-sandbox"] });
   try {
     await client.query(`DELETE FROM planificaciones WHERE nombre = $1`, [NOMBRE]);
@@ -102,7 +103,6 @@ async function main() {
 
     await client.query(`DELETE FROM pacientes WHERE nombre = $1`, [NOMBRE]);
   } finally {
-    client.release();
     await navegador.close();
     await pool.end();
   }

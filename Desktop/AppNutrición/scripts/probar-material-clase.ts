@@ -16,6 +16,7 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import pg from "pg";
+import { conexionResistente, type Conexion } from "./_conexion-viva";
 import puppeteer, { type Page, type Browser } from "puppeteer-core";
 import { createClient } from "@supabase/supabase-js";
 
@@ -41,7 +42,7 @@ async function pulsar(page: Page, tx: string) {
   if (!hecho) throw new Error(`botón "${tx}" no encontrado`);
 }
 
-async function crearCuenta(client: pg.PoolClient, email: string, extra: Record<string, unknown> = {}) {
+async function crearCuenta(client: Conexion, email: string, extra: Record<string, unknown> = {}) {
   const { rows: u } = await client.query(
     `INSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
        created_at, updated_at, raw_app_meta_data, raw_user_meta_data, is_sso_user, is_anonymous,
@@ -82,7 +83,7 @@ async function sesionDe(navegador: Browser, email: string): Promise<Page> {
   return page;
 }
 
-async function crearAlimento(client: pg.PoolClient, dietistaId: string, nombre: string, compartido: boolean) {
+async function crearAlimento(client: Conexion, dietistaId: string, nombre: string, compartido: boolean) {
   const { rows } = await client.query(
     `INSERT INTO alimentos (id, nombre, "nombreNormalizado", categoria, calorias, proteinas, carbohidratos,
        grasas, fibra, porcion, unidad, origen, "dietistaId", compartido, "createdAt", "updatedAt")
@@ -92,7 +93,7 @@ async function crearAlimento(client: pg.PoolClient, dietistaId: string, nombre: 
   return rows[0].id as string;
 }
 
-async function crearReceta(client: pg.PoolClient, dietistaId: string, nombre: string, compartido: boolean, alimentoId: string) {
+async function crearReceta(client: Conexion, dietistaId: string, nombre: string, compartido: boolean, alimentoId: string) {
   const { rows } = await client.query(
     `INSERT INTO recetas (id, nombre, "nombreNormalizado", porciones, calorias, proteinas, carbohidratos,
        grasas, fibra, "dietistaId", compartido, "createdAt", "updatedAt")
@@ -105,7 +106,7 @@ async function crearReceta(client: pg.PoolClient, dietistaId: string, nombre: st
   return recetaId;
 }
 
-async function limpiar(client: pg.PoolClient) {
+async function limpiar(client: Conexion) {
   await client.query(`DELETE FROM recetas WHERE nombre LIKE '${MARCA}%'`);
   await client.query(`DELETE FROM empresas WHERE nombre LIKE '${MARCA}%'`);
   await client.query(`DELETE FROM alimentos WHERE nombre LIKE '${MARCA}%'`);
@@ -120,7 +121,7 @@ async function limpiar(client: pg.PoolClient) {
 }
 
 async function main() {
-  const client = await pool.connect();
+  const client = conexionResistente(pool);
   const navegador = await puppeteer.launch({
     executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     headless: true, args: ["--no-sandbox"],
@@ -294,7 +295,6 @@ async function main() {
     comprobar("le ofrece compartir con su centro", (await texto(socio)).includes("Compartir con el centro"));
   } finally {
     await limpiar(client);
-    client.release();
     await navegador.close();
     await pool.end();
   }

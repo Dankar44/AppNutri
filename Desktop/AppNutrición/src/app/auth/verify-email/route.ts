@@ -10,7 +10,10 @@ function getBaseUrl(req: NextRequest): string {
   return `${proto}://${host}`;
 }
 
-// Confirma el email e inicia sesión automáticamente, redirigiendo al dashboard.
+// Confirma el email e inicia sesión automáticamente, redirigiendo a /entrar, que decide en el
+// servidor a dónde va cada uno: el profesor a su espacio docente, el alumno a su aula y el resto
+// al panel de siempre. Antes iba derecho a /dashboard, y quien se daba de alta por un enlace de
+// universidad aterrizaba en el panel de nutricionista (Guillermo, 9 sep 2026).
 // Si el auto-login falla por cualquier motivo, cae a /login?verified=true (comportamiento
 // anterior), de modo que verificar el email nunca se rompe para nadie.
 async function confirmarYEntrar(req: NextRequest, origin: string, email: string): Promise<NextResponse> {
@@ -21,7 +24,7 @@ async function confirmarYEntrar(req: NextRequest, origin: string, email: string)
   if (!url || !anon || !serviceKey) return fallback;
 
   try {
-    const response = NextResponse.redirect(`${origin}/dashboard`);
+    const response = NextResponse.redirect(`${origin}/entrar`);
     const supabase = createServerClient(url, anon, {
       cookies: {
         getAll() {

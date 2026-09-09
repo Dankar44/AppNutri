@@ -13,6 +13,7 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import pg from "pg";
+import { conexionResistente, type Conexion } from "./_conexion-viva";
 import { SignJWT } from "jose";
 import puppeteer, { type Page } from "puppeteer-core";
 import { createClient } from "@supabase/supabase-js";
@@ -38,7 +39,7 @@ async function cookieAdmin() {
   return { name: "annonia-admin-session", value: token, domain: "localhost", path: "/" };
 }
 
-async function limpiar(client: pg.PoolClient) {
+async function limpiar(client: Conexion) {
   await client.query(`DELETE FROM alimentos WHERE nombre LIKE '${MARCA}%'`);
   await client.query(`DELETE FROM casos_clinicos WHERE nombre LIKE '${MARCA}%'`);
   await client.query(`DELETE FROM pacientes WHERE nombre = '${MARCA} Paciente'`);
@@ -61,7 +62,7 @@ async function cronometrar<T>(etiqueta: string, fn: () => Promise<T>): Promise<T
 }
 
 async function main() {
-  const client = await pool.connect();
+  const client = conexionResistente(pool);
   const navegador = await puppeteer.launch({
     executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     headless: true, args: ["--no-sandbox"],
@@ -221,7 +222,6 @@ async function main() {
     await esperar(300);
   } finally {
     await limpiar(client);
-    client.release();
     await navegador.close();
     await pool.end();
   }

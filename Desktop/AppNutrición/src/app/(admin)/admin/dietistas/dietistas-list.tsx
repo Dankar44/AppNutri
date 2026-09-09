@@ -241,6 +241,18 @@ export function DietistasList({ dietistas }: Props) {
                     <span className="font-semibold truncate">
                       {capitalizarNombre(d.nombre)} {capitalizarNombre(d.apellidos)}
                     </span>
+                    {/* #39 — Un profesor sí es cliente, pero conviene verlo de un vistazo: si no,
+                        en la lista parece un nutricionista de a pie (Guillermo, 9 sep 2026). */}
+                    {d.rolDocente && (
+                      <span
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium shrink-0 bg-indigo-100 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-400"
+                        title={d.institucion ?? undefined}
+                      >
+                        <GraduationCap className="w-2.5 h-2.5" />
+                        {d.rolDocente === "PROFESOR" ? "Profesor" : "Alumno"}
+                        {d.institucion ? ` · ${d.institucion}` : ""}
+                      </span>
+                    )}
                     {d.incompleta && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium shrink-0 bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400">
                         Sin verificar

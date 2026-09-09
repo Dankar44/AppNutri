@@ -339,6 +339,13 @@
     "claseLlena": "Esta turma já está completa. Fala com o teu professor.",
     "renovarHaciaAtras": "Não se pode renovar para um ano letivo anterior ao que já tem.",
     "cupoObligatorio": "Indica quantos alunos cabem na tua turma.",
-    "cupoSePasaDeLaBolsa": "Não podes abrir o link para mais vagas do que as que restam à faculdade."
+    "cupoSePasaDeLaBolsa": "O total da turma não pode passar de {n}: é o que cabe entre os que já tem e o que resta à faculdade.",
+    "verificaTuCorreoPrimero": "Você já começou a criar sua conta com esse email, mas falta verificá-la. Abra a mensagem que enviamos e clique no botão de verificar; se não chegou, peça de novo na tela de login.",
+    "yaEstaEnOtraUniversidad": "Você já é professor de outra universidade. Não dá para estar em duas ao mesmo tempo.",
+    "enlacePasaDelCupo": "Esse link distribuiria mais vagas do que restam: só há {libres}. Aumente as licenças de professor se quiser vender mais.",
+    "correoYaTieneCuentaUsaEntrar": "Esse email já tem conta no Annonia. Use «Já uso o Annonia» e entre com sua senha de sempre.",
+    "noHayCuentaConEseCorreo": "Não há nenhuma conta com esse email. Use «Criar minha conta».",
+    "cupoSinSitio": "Essa turma já tem {n} alunos: o limite tem que ser maior ou o link não admitiria ninguém.",
+    "sinCupoProfesoresYa": "Sua universidade já não tem vagas de professor livres. Fale com quem cuida da licença."
   }
 }

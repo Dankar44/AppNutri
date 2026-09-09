@@ -21,7 +21,9 @@
     "dosPasos": "São dois passos: uma turma com os seus alunos, e os casos que lhes vai propondo.",
     "delAl": "De {inicio} a {fin}",
     "desde": "Desde {inicio}",
-    "sinUniversidadTexto": "Enquanto não estiveres numa universidade não podes criar turmas, mas os teus casos são teus: podes continuar a prepará-los para quando precisares."
+    "sinUniversidadTexto": "Enquanto não estiveres numa universidade não podes criar turmas, mas os teus casos são teus: podes continuar a prepará-los para quando precisares.",
+    "sinUniversidadTitulo": "Você já não está em nenhuma universidade",
+    "sinUniversidadHasta": "Você mantém seu espaço docente e seus casos até {fecha}. Suas turmas ficaram na faculdade. Se entrar em outra —a mesma ou outra—, recupera tudo."
   },
   "invitacion": {
     "titulo": "Crie a sua conta de professor",
@@ -110,12 +112,15 @@
     "eliminar": "Eliminar",
     "eliminarTexto": "{n, plural, =0 {Apaga-se a turma com os seus casos atribuídos e as suas entregas.} one {Apaga-se a turma, o seu aluno matriculado, os casos atribuídos e as entregas.} other {Apaga-se a turma, os seus # alunos matriculados, os casos atribuídos e as entregas.}} As vagas voltam à bolsa. Os alunos mantêm a conta e os seus pacientes. Não se pode desfazer: se só queres pô-la de lado, usa «Arquivar».",
     "eliminada": "Turma eliminada",
-    "cursoAlReves": "O curso não pode terminar antes de começar."
+    "cursoAlReves": "O curso não pode terminar antes de começar.",
+    "sinVerificar": "pendente de verificar o email",
+    "cuantosAlumnos": "Quantos alunos há na sua turma?",
+    "cuantosAlumnosAyuda": "O total da sua turma. É o que corta: seja por email ou pelo link, não entrarão mais. Pode ser alterado depois."
   },
   "clasePublica": {
     "titulo": "Junte-se à turma",
     "explicacion": "Crie a sua conta para fazer as práticas. A palavra-passe escolhe-a você.",
-    "contrasenaAyuda": "Pelo menos 6 caracteres, a que quiser. Se já tiver conta na Annonia com esse correio, escreva a palavra-passe da sua conta: é o que nos diz que é você.",
+    "contrasenaAyuda": "Pelo menos 6 caracteres, a que você quiser.",
     "apuntarme": "Juntar-me à turma",
     "dominioSugerido": "Use o correio da universidade ({dominios}) se o tiver.",
     "avisoDominio": "Esse correio não é da universidade. Pode juntar-se na mesma.",
@@ -130,7 +135,20 @@
     "apuntado": "Já estás na turma",
     "eresProfesorTitulo": "Estás dentro como professor",
     "eresProfesorTexto": "Esta ligação é para os teus alunos se inscreverem: um professor não pode ser aluno de uma turma. Se querias inscrever alguém, envia-lhe a ligação.",
-    "irAMisClases": "Ir para as minhas turmas"
+    "irAMisClases": "Ir para as minhas turmas",
+    "yaEstasEnEstaClase": "Você já está nesta turma.",
+    "irAMiAula": "Ir para minha sala",
+    "irAMiCuenta": "Ir para minha conta",
+    "repetirContrasena": "Repetir senha",
+    "contrasenaCorta": "A senha precisa de pelo menos {minimo} caracteres.",
+    "contrasenasNoCoinciden": "As duas senhas não são iguais.",
+    "pestanaCrear": "Criar minha conta",
+    "pestanaEntrar": "Já uso o Annonia",
+    "explicacionEntrar": "Entre com sua conta de sempre e o inscrevemos nesta turma. Você não perde nada do que é seu.",
+    "tuContrasenaDeSiempre": "Sua senha de sempre",
+    "escribeTuContrasena": "Digite a senha da sua conta.",
+    "claseLlenaTitulo": "Esta turma já está completa",
+    "claseLlenaTexto": "Seu professor definiu um limite de alunos e já está cheio. Fale com ele: pode ampliá-lo ou cadastrar você manualmente."
   },
   "alumnos": {
     "titulo": "Registar alunos",
@@ -146,7 +164,7 @@
     "resInvitados": "{n, plural, one {# convidado} other {# convidados}}",
     "resMatriculados": "{n, plural, one {# adicionado} other {# adicionados}}",
     "resYaEstaban": "{n, plural, one {# já estava} other {# já estavam}}",
-    "resSinPlazas": "{n, plural, one {# sem lugar} other {# sem lugar}}",
+    "resSinPlazas": "{n} sem vaga na faculdade",
     "resInvalidos": "{n, plural, one {# correio mal escrito} other {# correios mal escritos}}",
     "enlaceExplicacion": "Cole este link na sua sala virtual e os alunos juntam-se sozinhos. Feche-o quando já estiverem todos.",
     "abrirEnlace": "Abrir o link",
@@ -165,15 +183,25 @@
     "accesoRetirado": "Acesso retirado",
     "accesoDevuelto": "Acesso devolvido",
     "cursoTerminadoAviso": "Este ano letivo já terminou, por isso registar alguém não serviria de nada: não conseguiria entrar. Edite a turma e coloque uma nova data de fim para começar outro ano.",
-    "plazasAyuda": "As vagas gastam-se para todo o curso: voltam a estar livres a 31 de agosto.",
+    "plazasAyuda": "São as vagas de aluno de toda a universidade, repartidas entre seus professores. Gastam-se para o curso inteiro: voltam a ficar livres em 31 de agosto.",
     "confirmarAltaTitulo": "{n, plural, =1 {Inscrever 1 aluno?} other {Inscrever # alunos?}}",
     "confirmarAltaTexto": "{n, plural, =1 {Consome 1 vaga do curso} other {Consome # vagas do curso}} e não voltam até 31 de agosto, mesmo que depois alguém saia. Quem já estiver na turma não gasta vaga.",
-    "cupoClase": "Quantos cabem na tua turma",
     "cupoPlaceholder": "60",
-    "cupoAyuda": "Obrigatório. O link fecha-se sozinho ao chegar a esse número. No máximo {n}, que são as vagas que restam à faculdade.",
-    "cupoPuesto": "Limite desta turma: {usadas} de {n}",
-    "plazasDe": "{usadas} de {total}",
-    "cupoSePasa": "À faculdade só restam {n} vagas: põe esse número ou menos."
+    "plazasDe": "{usadas} de {total} na faculdade",
+    "cupoSePasa": "No máximo {n}: é o que cabe entre os que já tem e o que resta à sua faculdade.",
+    "resClaseLlena": "{n} não cabem: sua turma está no limite",
+    "resEsProfesor": "{n} são professores e não podem ser alunos",
+    "cupoSinSitio": "Você já tem {n} alunos: coloque mais de {n} ou o link nasce cheio e não serve para nada.",
+    "cambiarTope": "Alterar",
+    "guardarTope": "Salvar",
+    "cancelarTope": "Cancelar",
+    "topeGuardado": "Limite atualizado",
+    "cuantosEnTuClase": "Alunos na sua turma",
+    "diNosCuantosSois": "Diga quantos alunos há na sua turma para poder cadastrá-los. Esse número manda tanto para o email como para o link.",
+    "confirmarTopeTitulo": "Definir o limite da sua turma em {n} alunos?",
+    "confirmarTopeTexto": "É o total da sua turma: seja por email ou pelo link, não entrarão mais de {n}. Sua faculdade tem {libres} vagas livres, e só se gastam quando alguém entra de verdade.",
+    "alumnosEnTuClase": "alunos na sua turma · já são {usadas}",
+    "plazasNuevosAyuda": "{n, plural, =0 {Não restam vagas para alunos novos} one {Resta # vaga para um aluno novo} other {Restam # vagas para alunos novos}}. Quem já estiver em outra turma da sua faculdade neste curso não gasta outra."
   },
   "cursoTerminado": {
     "titulo": "O seu ano letivo terminou",
@@ -220,9 +248,9 @@
     "titulo": "Deixar a docência",
     "dejarUniversidad": "Sair de {institucion}",
     "dejarDocencia": "Deixar de ser professor",
-    "ayuda": "Nos dois casos manténs a tua conta, os teus pacientes e os teus casos. Nada é apagado.",
+    "ayuda": "Nos dois casos você mantém sua conta, seus pacientes e seus casos. Nada é apagado.",
     "dejarUniversidadTitulo": "Sair desta universidade?",
-    "dejarUniversidadTexto": "Deixas {institucion} e libertas a sua vaga de professor. Perdes o acesso às suas turmas —são arquivadas, ou passam para os professores que as levem contigo—, mas continuas a ser docente: quando te colocarem noutra universidade, voltas a ter o teu espaço com turmas.",
+    "dejarUniversidadTexto": "Você sai de {institucion} e perde o acesso às suas turmas —são arquivadas, ou passam aos professores que as dão com você—. Mantém seu espaço docente e seus casos até 31 de agosto, que é até quando sua vaga está paga; a vaga não volta para a universidade. Se entrar em outra, recupera tudo.",
     "dejarUniversidadConfirmar": "Sair da universidade",
     "dejarDocenciaTitulo": "Deixar de ser professor?",
     "dejarDocenciaTexto": "Voltas à tua conta de nutricionista de sempre, com os teus pacientes e o teu trabalho intactos. As tuas turmas são arquivadas e os teus casos ficam guardados. Para voltares a dar aulas teria de te ser atribuída uma universidade outra vez.",
@@ -252,7 +280,22 @@
     "sesionDe": "Estás dentro como {email}",
     "eresAlumno": "A tua conta é de aluno, por isso não pode ser também de professor.",
     "yaEresProfesor": "Já tens acesso de professor.",
-    "irAMiEspacio": "Ir ao meu espaço docente"
+    "irAMiEspacio": "Ir ao meu espaço docente",
+    "yaEstaEnOtra": "Você já é professor de outra universidade, e não dá para estar em duas ao mesmo tempo. Se mudou de faculdade, escreva para nós e transferimos.",
+    "sinUniversidadAyuda": "Você já tem conta de professor, mas agora não está em nenhuma universidade. Com este link entra nesta e recupera seu espaço docente com todo o seu trabalho.",
+    "unirmeAEstaUniversidad": "Entrar nesta universidade",
+    "repetirContrasena": "Repetir senha",
+    "contrasenaMinimo": "Pelo menos {minimo} caracteres.",
+    "contrasenaCorta": "A senha precisa de pelo menos {minimo} caracteres.",
+    "contrasenasNoCoinciden": "As duas senhas não são iguais.",
+    "verContrasena": "Ver a senha",
+    "pestanaCrear": "Criar minha conta",
+    "pestanaEntrar": "Já uso o Annonia",
+    "explicacionCrear": "Crie sua conta de professor. Poderá montar suas turmas, cadastrar seus alunos e corrigir os casos.",
+    "explicacionEntrar": "Entre com sua conta de sempre: adicionamos o acesso de professor e você não perde nada do que é seu.",
+    "tuContrasenaDeSiempre": "Sua senha de sempre",
+    "escribeTuContrasena": "Digite a senha da sua conta.",
+    "entrarYUnirme": "Entrar e adicionar o acesso de professor"
   },
   "docenciaTerminada": {
     "titulo": "O teu acesso docente terminou",
@@ -264,5 +307,21 @@
     "tituloSinUniversidad": "Não estás em nenhuma universidade",
     "explicacionSinUniversidad": "Neste momento não pertences a nenhuma universidade, por isso não há espaço docente onde entrar.",
     "alVolverAEntrar": "Assim que te inscreverem numa universidade —a mesma ou outra— recuperas o espaço com todo o teu trabalho."
+  },
+  "verificacion": {
+    "titulo": "Quase pronto: verifique seu email",
+    "mandadoA": "Enviamos uma mensagem para <correo></correo>.",
+    "queHacer": "Abra e clique no botão de verificar. Você entrará direto no seu espaço, sem digitar nada de novo.",
+    "noSalio": "O email não chegou a sair. Sua conta está criada; peça de novo aqui embaixo.",
+    "noLoVeo": "Não está vendo? Confira também o spam.",
+    "reenviar": "Enviar de novo",
+    "yaReenviado": "Enviado de novo",
+    "reenviado": "Enviamos novamente",
+    "soloEnLocal": "Só no ambiente local: aqui o email não chega a ser enviado",
+    "verificarAqui": "Verificar minha conta"
+  },
+  "ajustesProfesor": {
+    "titulo": "Docência",
+    "descripcion": "Sua universidade e como sair da docência."
   }
 }

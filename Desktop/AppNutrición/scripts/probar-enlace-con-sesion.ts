@@ -7,6 +7,7 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import pg from "pg";
+import { conexionResistente, type Conexion } from "./_conexion-viva";
 import { mkdirSync } from "node:fs";
 import puppeteer, { type Page } from "puppeteer-core";
 import { createClient } from "@supabase/supabase-js";
@@ -20,7 +21,7 @@ const comprobar = (t: string, c: boolean, d = "") => { console.log(`  ${c ? "✓
 const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const texto = (p: Page) => p.evaluate(() => document.body.innerText);
 
-async function limpiar(client: pg.PoolClient) {
+async function limpiar(client: Conexion) {
   const { rows } = await client.query(`SELECT id FROM auth.users WHERE email = $1`, [EMAIL]);
   for (const r of rows) {
     await client.query(`DELETE FROM dietistas WHERE "authId" = $1`, [r.id]);
@@ -30,7 +31,7 @@ async function limpiar(client: pg.PoolClient) {
 }
 
 async function main() {
-  const client = await pool.connect();
+  const client = conexionResistente(pool);
   const navegador = await puppeteer.launch({ executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: true, args: ["--no-sandbox"] });
   try {
     await limpiar(client);
@@ -111,7 +112,7 @@ async function main() {
     comprobar("se le dice que es profesor y no se le matricula", mp[0].n === 0 && !pp.url().endsWith("/aula"), pp.url());
   } finally {
     await limpiar(client);
-    client.release();
+
     await navegador.close();
     await pool.end();
   }

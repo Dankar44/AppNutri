@@ -99,6 +99,54 @@ temporal por diseño —dura un curso— y el profesor es permanente.
 **Nada de filtro por dominio de correo**: alumnos y profesores se registran a veces con su cuenta
 personal. Lo que protege es el contador y el freno por IP.
 
+### Verificación de correo en las altas por enlace (9 sep 2026)
+
+Las dos altas públicas —`/profesorado/<token>` y `/clase/<token>`— creaban la cuenta **ya
+confirmada** y metían a la persona dentro. Guillermo lo vio probando: *"encima no tengo que hacer
+doble verificación, entro directamente. Quiero que hicieras esto, y el alumno también"*.
+
+Ahora la cuenta nace con `email_confirmed_at` a NULL (`lib/alta-por-enlace.ts`, común a las dos) y
+se manda el correo de verificación de siempre. Hasta que no se abre, **Supabase rechaza el inicio
+de sesión** con "Email not confirmed". Al pulsar el botón del correo, `/auth/verify-email` confirma,
+inicia la sesión con un enlace mágico de un solo uso y redirige a **`/entrar`** —no a `/dashboard`,
+como hacía antes—, que reparte a `/profesor`, `/aula` o `/dashboard` según el rol. Es decir: se
+entra al espacio propio **sin volver a escribir correo ni contraseña**, que es lo que se pidió.
+
+Detalles que costaron una vuelta:
+
+- **La invitación nominal por correo sigue naciendo verificada.** Ese enlace llegó a ese buzón, y
+  abrirlo ya demuestra que es suyo. Pedir una segunda verificación sería pedir lo mismo dos veces.
+- **La plaza se gasta aunque no verifique.** Si se guardara para después, con correos inventados se
+  podrían reservar todas las de la facultad. Quien está pendiente sale marcado —«sin verificar» en
+  la ficha del admin, «pendiente de verificar su correo» en la lista de la clase—, para que no
+  falten plazas sin explicación.
+- **Quien ya tiene cuenta pero sin verificar** y prueba el camino de «ya uso Annonia» recibe un
+  mensaje que lo dice; antes le salía "contraseña incorrecta" y volvía a intentarlo en bucle.
+- **En local no hay servidor de correo**, así que el enlace de verificación se escribe en el log y
+  se enseña en la propia pantalla. Solo fuera de producción, con doble cierre: `NODE_ENV` distinto
+  de producción **y** que `NEXT_PUBLIC_APP_URL` no sea annonia.com. Ese enlace es la credencial.
+- **Los tokens toleran espacios**: los clientes de correo parten las URL largas y llegan con un
+  `%20` en medio; la página decía "este enlace no vale" siendo bueno.
+
+Lo único que no se puede comprobar en desarrollo es **que el correo llegue de verdad al buzón**.
+Se probará en producción, y hasta entonces no se da por hecho.
+
+### El enlace REPARTE plazas, no las crea (9 sep 2026)
+
+Al crear un enlace de profesorado desde administración, sus plazas se **sumaban** al tope de la
+licencia. Venía de cuando el tope lo marcaban los enlaces; con el modelo de ahora —manda el campo
+«Licencias de profesor»— eso permitía inflarlo sin querer: Guillermo tenía 5 licencias con 4
+ocupadas, creó un enlace de 4 y la universidad pasó a 9.
+
+Ahora el enlace no toca el tope. Su cupo no puede pasar de lo que queda libre, y lo que queda libre
+descuenta **tres cosas**: los profesores que ya están, las invitaciones sin usar y lo que ya
+prometen los enlaces vivos de este curso (`plazasLibresDeProfesor`). Sin lo tercero, dos enlaces de
+tres plazas meterían seis profesores en una universidad de cuatro. La ficha lo dice arriba del
+formulario —«Quedan N plazas de profesor por repartir»— y el botón no deja pasarse.
+
+Un enlace de un curso **futuro** no se valida contra nada: se vende por adelantado y su tope se
+pondrá al renovar. Se comprueba a clics en `probar-cupo-enlaces` (7).
+
 ### Para más adelante: política de borrado de cuentas paradas (8 sep 2026)
 
 Idea de Guillermo, **para un issue aparte, no para ahora**: borrar automáticamente lo que lleve
@@ -110,19 +158,31 @@ Cuando se haga, hay que decidir qué se borra y qué se conserva (el trabajo del
 de la universidad) y avisar antes por correo. Enlaza con la limpieza automática que ya existe en
 `lib/limpieza-docente.ts`.
 
-### El profesor que sale de la universidad pierde el espacio (decidido el 9 sep 2026)
+### El profesor que sale de la universidad conserva el espacio hasta agosto (9 sep 2026)
 
-Se valoró dejarle entrar hasta el 31 de agosto, ya que su plaza está pagada para todo el curso, y
-se descartó: **al salir, su espacio se queda vacío**. Sus clases se transfieren a otro profesor o
-se archivan, así que entraría a un panel sin clases y con botones que fallan —crear una clase sin
-universidad lo rechaza la propia acción—.
+**Rectificado el mismo día.** Por la mañana se decidió que al salir perdía el espacio en el acto,
+con el argumento de que entraría a un panel sin clases. Por la tarde Guillermo lo corrigió: *"aún
+así te quedas con el apartado docente, también habiendo abandonado la universidad… puedes seguir
+con tus casos hasta que acaba el año"*.
 
-La diferencia con el alumno, que sí conserva su aula hasta su 31 de agosto, es que **el alumno
-tiene ahí su trabajo** (sus casos y su paciente de prácticas) y el profesor no: lo suyo son las
-clases, y se han ido con él.
+Así queda:
 
-No pierde nada: sus casos siguen siendo suyos y, si le readmiten —en esa universidad o en otra—,
-recupera el espacio con todo. Vale para los dos casos: irse por su cuenta y que le saquen.
+- **Se va de la facultad (o le sacan)**: conserva el espacio docente y sus casos **hasta el 31 de
+  agosto de ese curso**, que es hasta cuando está pagada su plaza. Sus clases se quedan en la
+  facultad —se traspasan o se archivan—, y el panel se lo dice con la fecha, para que no vea un
+  espacio a medias sin entender por qué. La columna es `dietistas.docenciaHasta`, que se rellena en
+  `sacarDeLaUniversidad` —un solo sitio, para que no se olvide en ninguna de las dos vías— y se
+  limpia al entrar en otra universidad.
+- **La universidad no renueva**: fuera el 1 de septiembre, profesor y alumno. Eso no cambia: *"si
+  no, la usan igual sin pagar"*. Son dos cosas distintas y conviene no confundirlas.
+- **La plaza no vuelve nunca**, se vaya quien se vaya. Ya estaba así.
+- **Las dos salidas del profesor viven en Ajustes** (sección «Docencia»), no escondidas en un
+  desplegable del espacio docente: ahí no las buscaba nadie.
+- **El alumno no tiene ninguna salida**: ni dejar la clase, ni dejar la universidad, ni dejar de ser
+  alumno. Se le quita solo al acabar su curso. Comprobado que hoy no hay ningún botón así.
+
+Se comprueba a clics en `probar-salidas-profesor` (41) y `probar-enlaces-logueado` (20), esta
+última recorriendo las seis situaciones posibles contra los dos enlaces.
 
 ### Lo que NO entra en la fase 5 (decidido el 8 sep 2026)
 

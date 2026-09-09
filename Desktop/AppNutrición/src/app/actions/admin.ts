@@ -220,6 +220,10 @@ export interface DietistaAdminItem {
   authId?: string | null;
   /** true = cuenta registrada en auth.users pero sin verificar el email y sin ficha en dietistas (ver aportación #124) */
   incompleta?: boolean;
+  /** #39 — Si además es profesor o alumno de alguna universidad, y de cuál. Se marca en la lista
+   *  para no confundir a un profesor con un cliente de a pie (Guillermo, 9 sep 2026). */
+  rolDocente?: "PROFESOR" | "ALUMNO" | null;
+  institucion?: string | null;
 }
 
 export async function getDietistasAdmin(busqueda?: string): Promise<DietistaAdminItem[]> {
@@ -257,6 +261,10 @@ export async function getDietistasAdmin(busqueda?: string): Promise<DietistaAdmi
       fuenteContacto: true,
       createdAt: true,
       lastAccessAt: true,
+      // #39 — Para marcar en la lista quién es profesor: un profesor sí es cliente (usa su cuenta
+      // de nutricionista), pero conviene distinguirlo de un cliente de a pie.
+      rolDocente: true,
+      licenciaDocente: { select: { institucion: true } },
       _count: {
         select: {
           pacientes: { where: { ...PACIENTES_REALES } },
@@ -307,8 +315,9 @@ export async function getDietistasAdmin(busqueda?: string): Promise<DietistaAdmi
     } catch { /* auth schema might not be accessible */ }
   }
 
-  const base: DietistaAdminItem[] = dietistas.map((d) => ({
+  const base: DietistaAdminItem[] = dietistas.map(({ licenciaDocente, ...d }) => ({
     ...d,
+    institucion: licenciaDocente?.institucion ?? null,
     lastSignIn: (d.authId && signInMap[d.authId]) || null,
     suscripcion: suscMap[d.id] || null,
   }));

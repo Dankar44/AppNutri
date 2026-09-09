@@ -14,6 +14,8 @@ export interface AlumnoEnLista {
   activa: boolean;
   /** Ya formateado en el servidor: el cliente no traduce fechas. */
   ultimoAcceso: string;
+  /** Se apuntó por el enlace y aún no ha abierto su correo: ocupa plaza pero todavía no entra. */
+  sinVerificar?: boolean;
 }
 
 /**
@@ -44,7 +46,7 @@ export function ListaAlumnos({
           {a.nombre} {a.apellidos}
         </p>
         <p className="text-xs text-muted-foreground truncate">
-          {a.email} · {a.ultimoAcceso}
+          {a.email} · {a.sinVerificar ? t("clases.sinVerificar") : a.ultimoAcceso}
         </p>
       </div>
       {!claseArchivada && (

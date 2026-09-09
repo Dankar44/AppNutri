@@ -9,6 +9,7 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import pg from "pg";
+import { conexionResistente, type Conexion } from "./_conexion-viva";
 import { mkdirSync } from "node:fs";
 import puppeteer, { type Page } from "puppeteer-core";
 import { createClient } from "@supabase/supabase-js";
@@ -61,7 +62,7 @@ async function escribir(p: Page, selector: string, valor: string) {
 
 async function main() {
   mkdirSync(DIR, { recursive: true });
-  const client = await pool.connect();
+  const client = conexionResistente(pool);
   const navegador = await puppeteer.launch({
     executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     headless: true, args: ["--no-sandbox"],
@@ -223,7 +224,6 @@ async function main() {
     console.log(`  capturas en ${DIR}`);
   } finally {
     await navegador.close();
-    client.release();
     await pool.end();
   }
   if (mal > 0) process.exit(1);

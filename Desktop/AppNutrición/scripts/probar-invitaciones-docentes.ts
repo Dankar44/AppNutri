@@ -16,6 +16,7 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import pg from "pg";
+import { conexionResistente, type Conexion } from "./_conexion-viva";
 import puppeteer, { type Page } from "puppeteer-core";
 import { SignJWT } from "jose";
 
@@ -51,7 +52,7 @@ async function pulsar(page: Page, texto: string) {
 }
 
 async function main() {
-  const client = await pool.connect();
+  const client = conexionResistente(pool);
   const navegador = await puppeteer.launch({
     executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     headless: true, args: ["--no-sandbox"],
@@ -145,6 +146,11 @@ async function main() {
     }
     const { rows: usada } = await client.query(`SELECT "aceptadaAt" FROM invitaciones_docentes WHERE email = $1`, [EMAIL_INVITADO]);
     comprobar("la invitación queda marcada como usada", usada[0]?.aceptadaAt !== null);
+    // Y queda DENTRO: la cuenta nace verificada porque el enlace llegó a su correo, así que
+    // mandarle al login a repetir lo que acaba de escribir es hacerle el trabajo dos veces
+    // (Guillermo, 9 sep 2026).
+    comprobar("y entra directamente, sin pasar por el login",
+      !pagina2.url().includes("/login"), pagina2.url().replace(BASE, ""));
 
     console.log("\n── Entra con la contraseña que eligió ──");
     await pagina2.goto(`${BASE}/login`, { waitUntil: "networkidle0" });
@@ -191,7 +197,6 @@ async function main() {
     if (mal > 0) process.exitCode = 1;
   } finally {
     await navegador.close();
-    client.release();
     await pool.end();
   }
 }

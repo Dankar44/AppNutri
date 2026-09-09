@@ -18,6 +18,7 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import pg from "pg";
+import { conexionResistente, type Conexion } from "./_conexion-viva";
 import { createClient } from "@supabase/supabase-js";
 import { SignJWT } from "jose";
 import { rutaInternaSegura } from "../src/lib/utils";
@@ -86,7 +87,7 @@ async function cookieSesion(): Promise<string> {
 }
 
 /** Cuenta desechable: la del colaborador no se toca. */
-async function crearUsuarioPrueba(client: pg.PoolClient): Promise<string> {
+async function crearUsuarioPrueba(client: Conexion): Promise<string> {
   await borrarUsuarioPrueba(client);
   const { rows } = await client.query(
     `INSERT INTO auth.users (
@@ -120,7 +121,7 @@ async function crearUsuarioPrueba(client: pg.PoolClient): Promise<string> {
   return die[0].id as string;
 }
 
-async function borrarUsuarioPrueba(client: pg.PoolClient) {
+async function borrarUsuarioPrueba(client: Conexion) {
   const { rows } = await client.query(`SELECT id FROM auth.users WHERE email = $1`, [EMAIL_PRUEBA]);
   for (const r of rows) {
     await client.query(`DELETE FROM dietistas WHERE "authId" = $1`, [r.id]);
@@ -130,7 +131,7 @@ async function borrarUsuarioPrueba(client: pg.PoolClient) {
 }
 
 async function main() {
-  const client = await pool.connect();
+  const client = conexionResistente(pool);
   try {
     const dietistaId = await crearUsuarioPrueba(client);
     const sesion = await cookieSesion();
@@ -149,7 +150,7 @@ async function main() {
     await client.query(`DELETE FROM licencias_docentes WHERE institucion LIKE 'PRUEBA %'`);
     const { rows: lic } = await client.query(
       `INSERT INTO licencias_docentes (institucion, "dominioEmail", "maxProfesores", "maxAlumnos", "fechaFin")
-       VALUES ('PRUEBA Universidad Rey Juan Carlos', 'urjc.es,alumnos.urjc.es', 3, 300, '2027-08-31') RETURNING id`,
+       VALUES ('PRUEBA Universidad Rey Juan Carlos', 'urjc.dev,alumnos.urjc.dev', 3, 300, '2027-08-31') RETURNING id`,
     );
     const licenciaId = lic[0].id as string;
     const { rows: caducada } = await client.query(
@@ -176,7 +177,7 @@ async function main() {
     const detalle = await pedir(`/admin/universidades/${licenciaId}`, admin);
     comprobar("el detalle responde 200", detalle.estado === 200, `estado ${detalle.estado}`);
     comprobar("lista al profesor asignado", detalle.cuerpo.includes(EMAIL_PRUEBA));
-    comprobar("pinta los dos dominios", detalle.cuerpo.includes("@urjc.es") && detalle.cuerpo.includes("@alumnos.urjc.es"));
+    comprobar("pinta los dos dominios", detalle.cuerpo.includes("@urjc.dev") && detalle.cuerpo.includes("@alumnos.urjc.dev"));
     comprobar("no pinta el aviso de cerrada (está vigente)", !/text-amber-900[^>]*>Licencia cerrada/.test(detalle.cuerpo));
 
     const detalleCaducada = await pedir(`/admin/universidades/${caducada[0].id}`, admin);
@@ -237,25 +238,52 @@ async function main() {
     // ─── 6. Casos límite del profesor ───
     console.log("\n── Casos límite ──");
     await client.query(`UPDATE licencias_docentes SET "fechaFin" = '2026-08-01' WHERE id = $1`, [licenciaId]);
+    // Desde el 9 sep 2026 el curso cerrado NO deja un espacio docente con un aviso dentro: saca
+    // al profesor a /docencia-terminada. Si no, la universidad seguiría usándolo sin renovar
+    // (Guillermo: "si no, la usan igual sin pagar").
     const cerrada = await pedir("/profesor", sesion);
-    comprobar("con el curso cerrado sigue entrando", cerrada.estado === 200, `estado ${cerrada.estado}`);
-    comprobar("y ve el aviso de curso cerrado", AVISO_CERRADO.test(cerrada.cuerpo));
+    comprobar("con el curso cerrado se le saca del espacio docente",
+      cerrada.estado >= 300 && cerrada.estado < 400 && cerrada.destino.includes("/docencia-terminada"),
+      `${cerrada.estado} → ${cerrada.destino}`);
+    const finCurso = await pedir("/docencia-terminada", sesion);
+    comprobar("y se le explica que el curso terminó, sin borrarle nada",
+      /no se ha borrado nada/i.test(finCurso.cuerpo), `estado ${finCurso.estado}`);
 
     // Una licencia que termina HOY tiene que seguir valiendo hoy: la fecha se elige en un
     // selector de día y se guarda a medianoche, así que comparar tal cual la daría por caducada
     // durante todo su último día.
     await client.query(`UPDATE licencias_docentes SET "fechaFin" = CURRENT_DATE WHERE id = $1`, [licenciaId]);
     const ultimoDia = await pedir("/profesor", sesion);
-    comprobar("una licencia que acaba hoy sigue valiendo hoy", !AVISO_CERRADO.test(ultimoDia.cuerpo));
+    // Se mira que ENTRA (200), no que no salga el aviso: con la redirección el cuerpo viene vacío
+    // y «no aparece el aviso» sería verdad también con el profesor fuera.
+    comprobar("una licencia que acaba hoy sigue valiendo hoy",
+      ultimoDia.estado === 200 && !AVISO_CERRADO.test(ultimoDia.cuerpo), `estado ${ultimoDia.estado}`);
     await client.query(`UPDATE licencias_docentes SET "fechaFin" = '2026-08-01' WHERE id = $1`, [licenciaId]);
 
     await client.query(`UPDATE dietistas SET "licenciaDocenteId" = NULL WHERE id = $1`, [dietistaId]);
+    // Quien se fue de su facultad conserva el espacio hasta el 31 de agosto de ese curso: su plaza
+    // está pagada y sus casos son suyos (Guillermo, 9 sep 2026, rectificando lo de esa mañana).
+    await client.query(
+      `UPDATE dietistas SET "docenciaHasta" = $2 WHERE id = $1`,
+      [dietistaId, new Date(Date.UTC(new Date().getUTCFullYear() + 1, 7, 31, 23, 59, 59))]);
     const sinLicencia = await pedir("/profesor", sesion);
-    comprobar("un profesor sin licencia no revienta", sinLicencia.estado === 200, `estado ${sinLicencia.estado}`);
-    // Desde el 6 sep 2026 un profesor puede quedarse sin universidad por haberse salido él, no
-    // solo por no habérsela asignado nunca: el panel se lo dice sin dar por hecho lo segundo.
-    comprobar("y se le dice claramente", sinLicencia.cuerpo.includes("no estás en ninguna universidad"));
+    comprobar("el profesor que se fue de su facultad sigue entrando", sinLicencia.estado === 200,
+      `estado ${sinLicencia.estado}`);
+    comprobar("y se le dice que ya no está en ninguna universidad y hasta cuándo",
+      /Ya no estás en ninguna universidad/i.test(sinLicencia.cuerpo));
+    // Pasado ese 31 de agosto sí se acaba: ahí ya no hay nada pagado.
+    await client.query(`UPDATE dietistas SET "docenciaHasta" = '2020-08-31' WHERE id = $1`, [dietistaId]);
+    const plazoAcabado = await pedir("/profesor", sesion);
+    comprobar("pasado su 31 de agosto ya no entra",
+      plazoAcabado.estado >= 300 && plazoAcabado.estado < 400 && plazoAcabado.destino.includes("/docencia-terminada"),
+      `${plazoAcabado.estado} → ${plazoAcabado.destino}`);
+    const sinUni = await pedir("/docencia-terminada", sesion);
+    comprobar("y se le dice claramente", sinUni.cuerpo.includes("no estás en ninguna universidad"),
+      `estado ${sinUni.estado}`);
+    await client.query(`UPDATE dietistas SET "docenciaHasta" = NULL WHERE id = $1`, [dietistaId]);
     await client.query(`UPDATE dietistas SET "licenciaDocenteId" = $1 WHERE id = $2`, [licenciaId, dietistaId]);
+    // La licencia vuelve a estar vigente: lo que se prueba después es el espacio docente de verdad.
+    await client.query(`UPDATE licencias_docentes SET "fechaFin" = NULL WHERE id = $1`, [licenciaId]);
 
     // ─── 7. Sin permisos ───
     console.log("\n── Sin permisos ──");
@@ -336,7 +364,6 @@ async function main() {
     console.log(`\n${mal === 0 ? "✓ TODO CORRECTO" : "✗ HAY FALLOS"} — ${ok} bien, ${mal} mal\n`);
     if (mal > 0) process.exitCode = 1;
   } finally {
-    client.release();
     await pool.end();
   }
 }

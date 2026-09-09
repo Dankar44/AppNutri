@@ -18,7 +18,7 @@ import { getTranslations } from "next-intl/server";
 import { isNextNavigation, urlPublica } from "@/lib/utils";
 import { sanitizeString, validateEmail } from "@/lib/validation";
 import { sendEmail } from "@/lib/mailer";
-import { plazasLibresDeLicencia, conPlazaDeLaBolsa } from "@/lib/docencia-bolsa";
+import { plazasLibresDeLicencia, plazasLibresDeLaClase, conPlazaDeLaBolsa } from "@/lib/docencia-bolsa";
 import { emailDelDominio, cursoTerminado, claseQueLleva } from "@/lib/docencia";
 import { requireProfesor } from "./docencia";
 
@@ -58,7 +58,11 @@ export interface ResultadoAltaAlumnos {
   ok: boolean;
   error?: string;
   /** Qué ha pasado con cada correo, para poder decírselo al profesor uno a uno. */
-  detalle?: { email: string; resultado: "invitado" | "matriculado" | "yaEstaba" | "sinPlazas" | "invalido" }[];
+  detalle?: {
+    email: string;
+    /** `claseLlena` es el tope que puso el profesor a SU clase; `sinPlazas`, la bolsa de la facultad. */
+    resultado: "invitado" | "matriculado" | "yaEstaba" | "sinPlazas" | "claseLlena" | "esProfesor" | "invalido";
+  }[];
 }
 
 /**
@@ -103,7 +107,16 @@ export async function invitarAlumnos(data: {
         continue;
       }
 
-      const existente = await prisma.dietista.findUnique({ where: { email }, select: { id: true } });
+      const existente = await prisma.dietista.findUnique({
+        where: { email },
+        select: { id: true, rolDocente: true },
+      });
+      // Un profesor no puede ser alumno de una clase, tampoco invitándole por correo: se le
+      // matriculaba y le gastaba una plaza de alumno a su propia facultad (9 sep 2026).
+      if (existente?.rolDocente === "PROFESOR") {
+        detalle.push({ email, resultado: "esProfesor" });
+        continue;
+      }
 
       // Contar la bolsa y dar el alta van DENTRO de la misma transacción, con la fila de la
       // licencia bloqueada: si se cuenta fuera, dos profesores pegando sus listas a la vez se
@@ -112,7 +125,19 @@ export async function invitarAlumnos(data: {
       const resultado = await conPlazaDeLaBolsa(
         clase.licenciaDocenteId,
         { alumnoId: existente?.id ?? null, email },
-        async (tx): Promise<"invitado" | "matriculado" | "yaEstaba"> => {
+        async (tx): Promise<"invitado" | "matriculado" | "yaEstaba" | "claseLlena"> => {
+          // El tope de la clase manda también aquí. El profesor dice «en mi clase somos 60» y esos
+          // 60 son el total, se llenen por el enlace o por correo: si el correo no lo mirase, se
+          // podría pasar del número que él mismo puso (Guillermo, 9 sep 2026).
+          //
+          // Pero a quien YA está contado en esa clase no se le aplica: al que se le retiró el
+          // acceso sigue ocupando su hueco del curso, así que devolvérselo no gasta nada nuevo.
+          // Sin esto, quitar a un alumno y volver a meterlo decía «fuera del tope» y no había
+          // manera de readmitirle (Guillermo, 9 sep 2026).
+          const yaCuentaAqui = existente
+            ? (await tx.alumnoClase.count({ where: { claseId: clase.id, alumnoId: existente.id } })) > 0
+            : false;
+          if (!yaCuentaAqui && (await plazasLibresDeLaClase(clase.id, tx)) === 0) return "claseLlena";
           if (existente) {
             const yaMatriculado = await tx.alumnoClase.findUnique({
               where: { claseId_alumnoId: { claseId: clase.id, alumnoId: existente.id } },
@@ -231,20 +256,64 @@ export async function cambiarAccesoAlumno(
 }
 
 /** Abre o cierra el enlace de invitación de la clase. Al abrirlo por primera vez se genera. */
+/**
+ * Cambiar el tope de la clase sin tocar el enlace.
+ *
+ * Hasta ahora solo se podía poner al ABRIR el enlace, así que un profesor que da de alta por correo
+ * se quedaba encerrado: su clase llena, plazas libres en la facultad y ninguna forma de subir el
+ * número sin abrir un enlace que no quería (Guillermo, 9 sep 2026).
+ *
+ * Las mismas dos reglas que al abrirlo: no por debajo de los que ya tiene, y sin pasarse de lo que
+ * cabe entre ellos y lo que le quede a la facultad.
+ */
+export async function cambiarCupoClase(
+  claseId: string,
+  cupo: number,
+): Promise<{ ok: boolean; error?: string }> {
+  const profesor = await requireProfesor();
+  const t = await getTranslations("validation");
+
+  const clase = await prisma.clase.findFirst({
+    where: { id: claseId, ...claseQueLleva(profesor.dietistaId, profesor.licencia?.id ?? null) },
+    select: { id: true, licenciaDocenteId: true },
+  });
+  if (!clase) return { ok: false, error: t("docencia.claseNoEncontrada") };
+
+  const pedido = Math.floor(Number(cupo));
+  if (!Number.isFinite(pedido) || pedido < 1) return { ok: false, error: t("docencia.cupoObligatorio") };
+
+  try {
+    const libres = clase.licenciaDocenteId ? await plazasLibresDeLicencia(clase.licenciaDocenteId) : 0;
+    const dentro = await prisma.alumnoClase.count({ where: { claseId, activa: true } });
+    if (pedido > dentro + libres) {
+      return { ok: false, error: t("docencia.cupoSePasaDeLaBolsa", { n: dentro + libres }) };
+    }
+    if (pedido < dentro) return { ok: false, error: t("docencia.cupoSinSitio", { n: dentro }) };
+    await prisma.clase.update({ where: { id: claseId }, data: { cupoEnlace: pedido } });
+    revalidatePath(`/profesor/clases/${claseId}`);
+    return { ok: true };
+  } catch (e) {
+    if (isNextNavigation(e)) throw e;
+    console.error("[docencia] Error cambiando el tope de la clase:", e);
+    return { ok: false, error: t("general.errorDesconocido") };
+  }
+}
+
 export async function cambiarEnlaceClase(
   claseId: string,
   abierto: boolean,
-  /** Cuánta gente admite el enlace de esta clase. 0 o nada = sin tope propio. */
-  cupo?: number | null,
 ): Promise<{ ok: boolean; error?: string; token?: string }> {
   const profesor = await requireProfesor();
   const t = await getTranslations("validation");
 
   const clase = await prisma.clase.findFirst({
     where: { id: claseId, ...claseQueLleva(profesor.dietistaId, profesor.licencia?.id ?? null) },
-    select: { id: true, tokenInvitacion: true, licenciaDocenteId: true },
+    select: { id: true, tokenInvitacion: true, licenciaDocenteId: true, cupoEnlace: true },
   });
   if (!clase) return { ok: false, error: t("docencia.claseNoEncontrada") };
+  // Sin saber cuántos son en la clase no se abre el enlace: ese número es el que corta, y sin él
+  // el enlace dejaría entrar hasta agotar la bolsa de toda la facultad (Guillermo, 9 sep 2026).
+  if (abierto && clase.cupoEnlace == null) return { ok: false, error: t("docencia.cupoObligatorio") };
 
   try {
     // Al ABRIRLO se genera uno nuevo siempre. Cerrar el enlace es lo que hace el profesor cuando
@@ -253,27 +322,9 @@ export async function cambiarEnlaceClase(
     const token = abierto
       ? randomBytes(18).toString("base64url")
       : (clase.tokenInvitacion ?? randomBytes(18).toString("base64url"));
-    // El cupo se guarda al abrir: es cuando el profesor dice "en mi clase somos 60". Al cerrar no
-    // se toca, para que al reabrir siga estando el suyo.
-    //
-    // Y es obligatorio, y no puede pedir más plazas de las que le quedan a la facultad: sin tope,
-    // un profesor abría el enlace y se llevaba la bolsa de todos. La pantalla ya lo impide, pero
-    // esto es lo que autoriza.
-    let cupoLimpio: number | null = null;
-    if (abierto) {
-      const pedido = Math.floor(Number(cupo));
-      if (!Number.isFinite(pedido) || pedido < 1) return { ok: false, error: t("docencia.cupoObligatorio") };
-      const libres = clase.licenciaDocenteId ? await plazasLibresDeLicencia(clase.licenciaDocenteId) : 0;
-      if (pedido > libres) return { ok: false, error: t("docencia.cupoSePasaDeLaBolsa") };
-      cupoLimpio = pedido;
-    }
     await prisma.clase.update({
       where: { id: claseId },
-      data: {
-        invitacionAbierta: abierto,
-        tokenInvitacion: token,
-        ...(abierto ? { cupoEnlace: cupoLimpio } : {}),
-      },
+      data: { invitacionAbierta: abierto, tokenInvitacion: token },
     });
     revalidatePath(`/profesor/clases/${claseId}`);
     return { ok: true, token };

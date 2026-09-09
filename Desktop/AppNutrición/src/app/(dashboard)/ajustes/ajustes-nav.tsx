@@ -36,6 +36,9 @@ const SECTIONS: NavSection[] = [
   { id: "profesional", labelKey: "nav.profesional", icon: Briefcase },
   // Solo la ve el alumno: para los demás no existe esa sección en la página.
   { id: "clase", labelKey: "nav.clase", icon: GraduationCap },
+  // Solo la ve el profesor: es donde están sus dos salidas (Guillermo, 9 sep 2026, que las quería
+  // aquí y no escondidas en un desplegable del espacio docente).
+  { id: "docencia", labelKey: "nav.docencia", icon: GraduationCap },
   { id: "documentos", labelKey: "nav.documentos", icon: FileText },
   { id: "empresa", labelKey: "nav.empresa", icon: Building2 },
   { id: "integraciones", labelKey: "nav.integraciones", icon: Plug },
@@ -50,7 +53,11 @@ const SECTIONS: NavSection[] = [
  * Barra lateral de secciones del panel de Ajustes. En desktop se pega arriba
  * (sticky) y el item activo cambia cuando el scroll atraviesa cada sección.
  */
-export function AjustesNav({ hideCentro, hideClase }: { hideCentro?: boolean; hideClase?: boolean } = {}) {
+export function AjustesNav({
+  hideCentro,
+  hideClase,
+  hideDocencia,
+}: { hideCentro?: boolean; hideClase?: boolean; hideDocencia?: boolean } = {}) {
   const t = useTranslations("settings");
   const [activeId, setActiveId] = useState<string>(SECTIONS[0]?.id ?? "");
   const clickLockRef = useRef<number>(0);
@@ -84,7 +91,10 @@ export function AjustesNav({ hideCentro, hideClase }: { hideCentro?: boolean; hi
     );
 
     const visibleSections = SECTIONS.filter(
-      (s) => !(hideCentro && s.id === "empresa") && !(hideClase && s.id === "clase"),
+      (s) =>
+        !(hideCentro && s.id === "empresa") &&
+        !(hideClase && s.id === "clase") &&
+        !(hideDocencia && s.id === "docencia"),
     );
     for (const s of visibleSections) {
       const el = document.getElementById(s.id);
@@ -117,7 +127,10 @@ export function AjustesNav({ hideCentro, hideClase }: { hideCentro?: boolean; hi
       </p>
       <ul className="flex flex-row lg:flex-col gap-1 overflow-x-auto lg:overflow-visible scrollbar-thin pb-1 lg:pb-0 -mx-1 px-1 lg:mx-0">
         {SECTIONS.filter(
-          (s) => !(hideCentro && s.id === "empresa") && !(hideClase && s.id === "clase"),
+          (s) =>
+            !(hideCentro && s.id === "empresa") &&
+            !(hideClase && s.id === "clase") &&
+            !(hideDocencia && s.id === "docencia"),
         ).map((s) => {
           const active = activeId === s.id;
           const Icon = s.icon;

@@ -37,6 +37,11 @@ export interface DatosProfesor {
   profesoresDados: number;
   /** Si la licencia caducó o se desactivó: sigue entrando y viendo lo suyo, pero no da altas. */
   puedeDarAltas: boolean;
+  /**
+   * Si ya no está en ninguna universidad, hasta cuándo conserva el espacio docente. El panel se lo
+   * dice: si no, ve sus casos pero sin clases y no entiende qué ha pasado.
+   */
+  sinUniversidadHasta: Date | null;
 }
 
 /** ¿La cuenta que ha iniciado sesión es de profesor? */
@@ -61,7 +66,7 @@ async function getDatosProfesor(): Promise<DatosProfesor | null> {
   const ficha = await prisma.dietista.findUnique({
     where: { id: dietista.id },
     select: {
-      id: true, nombre: true, apellidos: true, rolDocente: true,
+      id: true, nombre: true, apellidos: true, rolDocente: true, docenciaHasta: true,
       licenciaDocente: {
         select: {
           id: true, institucion: true, dominioEmail: true, maxProfesores: true,
@@ -72,11 +77,21 @@ async function getDatosProfesor(): Promise<DatosProfesor | null> {
   });
   if (!ficha || ficha.rolDocente !== "PROFESOR") return null;
 
-  // Sin licencia vigente no hay espacio docente: el 31 de agosto se acaba, como a los alumnos, y
-  // hasta que la universidad no renueve no se entra (Guillermo, 8 sep 2026: "si no, la usan igual
-  // sin pagar"). No se borra nada: sus casos, sus clases y su trabajo siguen ahí, y al renovar
-  // vuelve todo. Antes una licencia caducada solo impedía dar altas, y el espacio seguía abierto.
-  if (!licenciaVigente(ficha.licenciaDocente)) return null;
+  // Dos situaciones que parecen la misma y no lo son (Guillermo, 9 sep 2026):
+  //
+  //  · **La universidad no ha renovado**: fuera hasta que renueve. Su plaza no está pagada este
+  //    curso y, si se le dejara entrar, la facultad seguiría usando el módulo sin pagarlo.
+  //  · **Él se ha ido de la universidad** (o le han sacado): conserva el espacio y sus casos hasta
+  //    el 31 de agosto de ese curso, porque esa plaza sí está pagada. Sus clases se quedan en la
+  //    facultad, pero su trabajo es suyo.
+  //
+  // En las dos, nada se borra y al volver a una universidad se recupera todo.
+  const sinUniversidad = !ficha.licenciaDocente;
+  if (sinUniversidad) {
+    if (!ficha.docenciaHasta || ficha.docenciaHasta.getTime() < Date.now()) return null;
+  } else if (!licenciaVigente(ficha.licenciaDocente)) {
+    return null;
+  }
 
   const licencia = ficha.licenciaDocente;
   // La misma regla que la bolsa y que administración: alumnos DISTINTOS con el acceso puesto en
@@ -98,6 +113,7 @@ async function getDatosProfesor(): Promise<DatosProfesor | null> {
     alumnosDados,
     profesoresDados,
     puedeDarAltas: licenciaVigente(licencia),
+    sinUniversidadHasta: sinUniversidad ? ficha.docenciaHasta : null,
   };
 }
 
@@ -135,11 +151,8 @@ export async function dejarLaUniversidad(): Promise<{ ok: boolean; error?: strin
 
   try {
     await prisma.$transaction(async (tx) => {
+      // `sacarDeLaUniversidad` ya quita la licencia y apunta hasta cuándo conserva el espacio.
       await sacarDeLaUniversidad(tx, profesor.dietistaId, profesor.licencia!.id);
-      await tx.dietista.update({
-        where: { id: profesor.dietistaId },
-        data: { licenciaDocenteId: null },
-      });
     });
     revalidarEspacioDocente();
     return { ok: true };
@@ -171,7 +184,8 @@ export async function dejarDeSerProfesor(): Promise<{ ok: boolean; error?: strin
       });
       await tx.dietista.update({
         where: { id: profesor.dietistaId },
-        data: { rolDocente: null, licenciaDocenteId: null },
+        // También el plazo: ya no es profesor, así que no hay espacio docente que conservar.
+        data: { rolDocente: null, licenciaDocenteId: null, docenciaHasta: null },
       });
     });
     revalidarEspacioDocente();

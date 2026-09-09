@@ -15,6 +15,7 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import pg from "pg";
+import { conexionResistente, type Conexion } from "./_conexion-viva";
 import puppeteer, { type Page, type Browser } from "puppeteer-core";
 import { createClient } from "@supabase/supabase-js";
 
@@ -37,7 +38,7 @@ let ok = 0, mal = 0;
 const comprobar = (t: string, c: boolean, d = "") => { console.log(`  ${c ? "✓" : "✗"} ${t}${d ? ` — ${d}` : ""}`); c ? ok++ : mal++; };
 
 async function main() {
-  const client = await pool.connect();
+  const client = conexionResistente(pool);
   const navegador = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ["--no-sandbox"] });
   try {
     await limpiar(client);
@@ -99,6 +100,63 @@ async function main() {
       `SELECT 1 FROM dietistas WHERE email = $1`, [`${MARCA.toLowerCase()}.nueva@prueba.dev`]);
     comprobar("con el cupo lleno (1 y ya hay 1), no deja entrar", entro.length === 0, `${entro.length} creada(s)`);
     comprobar("y a la facultad le quedaban plazas", (await plazasEnPantalla(claseB) ?? 0) > 0);
+    // Y se dice AL ABRIR el enlace, no después de rellenarlo entero: llegar hasta el final para que
+    // te digan que no hay sitio es de las cosas que más molestan (Guillermo, 9 sep 2026).
+    await page.goto(`${BASE}/clase/${tk[0].tokenInvitacion}`, { waitUntil: "networkidle0" });
+    await esperar(1500);
+    const conLaClaseLlena = await page.evaluate(() => document.body.innerText);
+    comprobar("se avisa nada más abrir el enlace", /Esta clase ya está completa/i.test(conLaClaseLlena),
+      conLaClaseLlena.split("\n").filter(Boolean).slice(2, 5).join(" · "));
+    comprobar("y no se le pide rellenar nada", !/Crear mi cuenta/i.test(conLaClaseLlena));
+    comprobar("se le manda a hablar con su profesor", /Habla con él/i.test(conLaClaseLlena));
+
+    console.log("\n── Una invitación por correo GUARDA el sitio en la clase ──");
+    // Si no lo guardara, el invitado gastaría su plaza de la facultad y al aceptar se encontraría
+    // la clase llena porque otro entró por el enlace mientras tanto (Guillermo, 9 sep 2026).
+    {
+      const { rows: cuantos } = await client.query(
+        `SELECT COUNT(*)::int n FROM alumnos_clase WHERE "claseId" = $1`, [claseB]);
+      // Tope justo para uno más, y ese uno lo reserva una invitación por correo.
+      await client.query(`UPDATE clases SET "cupoEnlace" = $2 WHERE id = $1`, [claseB, cuantos[0].n + 1]);
+      await client.query(
+        `INSERT INTO invitaciones_docentes (id, email, rol, token, "claseId", "licenciaDocenteId", "invitadoPor", "expiraAt", "createdAt", "updatedAt")
+         VALUES (gen_random_uuid()::text, $1, 'ALUMNO', replace(gen_random_uuid()::text,'-',''), $2, $3, $4, NOW() + INTERVAL '7 days', NOW(), NOW())`,
+        [`${MARCA.toLowerCase()}.invitado@prueba.dev`, claseB, licenciaId, profesorId]);
+      await page.goto(`${BASE}/clase/${tk[0].tokenInvitacion}`, { waitUntil: "networkidle0" });
+      await esperar(1800);
+      comprobar("con el sitio reservado, el enlace ya no admite a nadie más",
+        /Esta clase ya está completa/i.test(await page.evaluate(() => document.body.innerText)));
+      await client.query(`DELETE FROM invitaciones_docentes WHERE email = $1`, [`${MARCA.toLowerCase()}.invitado@prueba.dev`]);
+      await page.goto(`${BASE}/clase/${tk[0].tokenInvitacion}`, { waitUntil: "networkidle0" });
+      await esperar(1500);
+      comprobar("y si la invitación se retira, vuelve a caber",
+        !/Esta clase ya está completa/i.test(await page.evaluate(() => document.body.innerText)));
+      await client.query(`UPDATE clases SET "cupoEnlace" = 9 WHERE id = $1`, [claseB]);
+    }
+
+    console.log("\n── Un profesor NO puede colarse de alumno por el formulario ──");
+    // Con la sesión abierta ya no se le ofrece, pero de incógnito puede escribir su correo. Si se
+    // le dejara, gastaría una plaza de alumno de su propia facultad (Guillermo, 9 sep 2026).
+    await client.query(`UPDATE clases SET "cupoEnlace" = 9 WHERE id = $1`, [claseB]);
+    const { rows: elProfe } = await client.query(
+      `SELECT email FROM dietistas WHERE "rolDocente" = 'PROFESOR' AND "licenciaDocenteId" IS NOT NULL LIMIT 1`);
+    if (elProfe.length) {
+      const antes = await plazasEnPantalla(claseB);
+      await client.query(`UPDATE auth.users SET encrypted_password = crypt($2, gen_salt('bf')) WHERE email = $1`,
+        [elProfe[0].email, PASS]);
+      await page.goto(`${BASE}/clase/${tk[0].tokenInvitacion}`, { waitUntil: "networkidle0" });
+      await esperar(1800);
+      await altaPorElEnlace(page, elProfe[0].email);
+      const { rows: metido } = await client.query(
+        `SELECT 1 FROM alumnos_clase a JOIN dietistas d ON d.id = a."alumnoId"
+          WHERE a."claseId" = $1 AND d.email = $2`, [claseB, elProfe[0].email]);
+      comprobar("no se le matricula", metido.length === 0, `${metido.length} matrícula(s)`);
+      comprobar("y no se gasta ninguna plaza", (await plazasEnPantalla(claseB)) === antes,
+        `antes ${antes}, ahora ${await plazasEnPantalla(claseB)}`);
+    } else {
+      console.log("    (no hay ningún profesor con universidad para probarlo)");
+    }
+    await client.query(`UPDATE clases SET "cupoEnlace" = 1 WHERE id = $1`, [claseB]);
 
     console.log("\n── Con sitio en el cupo, sí entra ──");
     await client.query(`UPDATE clases SET "cupoEnlace" = 3 WHERE id = $1`, [claseB]);
@@ -111,7 +169,6 @@ async function main() {
 
     await limpiar(client);
   } finally {
-    client.release();
     await navegador.close();
     await pool.end();
   }
@@ -159,7 +216,7 @@ async function sesion(nav: Browser, email: string): Promise<Page> {
 }
 
 /** Cuenta de verdad, con su usuario de autenticación, para poder entrar con ella. */
-async function crearCuenta(c: pg.PoolClient, email: string, apellidos: string, rol: string, licenciaId: string) {
+async function crearCuenta(c: Conexion, email: string, apellidos: string, rol: string, licenciaId: string) {
   const { rows: u } = await c.query(
     `INSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
        created_at, updated_at, raw_app_meta_data, raw_user_meta_data, is_sso_user, is_anonymous,
@@ -182,7 +239,7 @@ async function crearCuenta(c: pg.PoolClient, email: string, apellidos: string, r
   return rows[0].id as string;
 }
 
-async function crearClase(c: pg.PoolClient, licenciaId: string, profesorId: string, nombre: string, cupo: number | null) {
+async function crearClase(c: Conexion, licenciaId: string, profesorId: string, nombre: string, cupo: number | null) {
   const { rows } = await c.query(
     `INSERT INTO clases (id, "profesorId", "licenciaDocenteId", nombre, "cupoEnlace", "createdAt", "updatedAt")
      VALUES (gen_random_uuid()::text, $1, $2, '${MARCA} ' || $3, $4, NOW(), NOW()) RETURNING id`,
@@ -190,7 +247,7 @@ async function crearClase(c: pg.PoolClient, licenciaId: string, profesorId: stri
   return rows[0].id as string;
 }
 
-async function matricular(c: pg.PoolClient, claseId: string, alumnoId: string, altaAt: Date, activa = true) {
+async function matricular(c: Conexion, claseId: string, alumnoId: string, altaAt: Date, activa = true) {
   await c.query(
     `INSERT INTO alumnos_clase (id, "claseId", "alumnoId", activa, "altaAt", "createdAt", "updatedAt")
      VALUES (gen_random_uuid()::text, $1, $2, $3, $4, NOW(), NOW())
@@ -198,7 +255,7 @@ async function matricular(c: pg.PoolClient, claseId: string, alumnoId: string, a
     [claseId, alumnoId, activa, altaAt]);
 }
 
-async function limpiar(c: pg.PoolClient) {
+async function limpiar(c: Conexion) {
   await c.query(`DELETE FROM clases WHERE nombre LIKE '${MARCA}%'`);
   // Por NOMBRE y por CORREO: las cuentas que crea el propio formulario se llaman «Nueva», así que
   // borrando solo por nombre sobrevivían de una ejecución a otra y falseaban la comprobación.

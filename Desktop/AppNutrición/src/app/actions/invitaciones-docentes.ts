@@ -20,7 +20,7 @@ import { sendEmail } from "@/lib/mailer";
 import { crearPacienteDemoSiNoExiste } from "@/lib/paciente-demo";
 import { getLocale } from "@/i18n/locale";
 import { cursoTerminado, licenciaVigente } from "@/lib/docencia";
-import { plazasLibresDeLicencia } from "@/lib/docencia-bolsa";
+import { plazasLibresDeLicencia, plazasLibresDeLaClase } from "@/lib/docencia-bolsa";
 
 /** Un mes: tiempo de sobra para que un profesor abra un correo, y no eterno. */
 const DIAS_DE_VALIDEZ = 30;
@@ -129,14 +129,22 @@ export async function invitarProfesor(data: {
     // ¿Ya es usuario de Annonia? Entonces no hay registro que hacer.
     const existente = await prisma.dietista.findUnique({
       where: { email },
-      select: { id: true, rolDocente: true },
+      select: { id: true, rolDocente: true, licenciaDocenteId: true },
     });
 
     if (existente) {
-      if (existente.rolDocente) return { ok: false, error: t("docencia.yaTieneRolDocente") };
+      // Se admite al que YA es profesor pero no está en ninguna universidad: es justo el caso de
+      // quien salió de una facultad y entra en otra, y por el enlace y por el buscador ya se podía.
+      // Aquí no, así que invitar por correo a un profesor recién sacado decía «ya tiene un rol
+      // docente» y no había manera de readmitirle por esta vía (Guillermo, 9 sep 2026).
+      const esAlumno = existente.rolDocente === "ALUMNO";
+      const yaEnOtra = existente.rolDocente === "PROFESOR" && !!existente.licenciaDocenteId;
+      if (esAlumno) return { ok: false, error: t("docencia.alumnoNoProfesor") };
+      if (yaEnOtra) return { ok: false, error: t("docencia.yaEstaEnOtraUniversidad") };
       await prisma.dietista.update({
         where: { id: existente.id },
-        data: { rolDocente: "PROFESOR", licenciaDocenteId: licencia.id },
+        // Vuelve a estar en una facultad: el plazo de «sin universidad» ya no aplica.
+        data: { rolDocente: "PROFESOR", licenciaDocenteId: licencia.id, docenciaHasta: null },
       });
       sendEmail({
         to: email,
@@ -390,6 +398,22 @@ export async function aceptarInvitacionDocente(data: {
       if (esAlumno && inv.licenciaDocenteId) {
         if ((await plazasLibresDeLicencia(inv.licenciaDocenteId, tx)) <= 0) {
           return { error: "docencia.sinPlazas" as const, dietistaId: null };
+        }
+        // Y el tope de la clase, que es otro número distinto: el profesor dijo «somos 60» y esos 60
+        // valen para todas las vías, también para el correo (Guillermo, 9 sep 2026).
+        if (inv.claseId && (await plazasLibresDeLaClase(inv.claseId, tx)) === 0) {
+          return { error: "docencia.claseLlena" as const, dietistaId: null };
+        }
+      }
+      // El profesor también tiene su tope. Su invitación ya reservaba plaza, pero entre que se
+      // manda y se acepta pueden haber entrado otros por el enlace y agotarla.
+      if (!esAlumno && inv.licenciaDocenteId) {
+        const [licencia, dentro] = await Promise.all([
+          tx.licenciaDocente.findUnique({ where: { id: inv.licenciaDocenteId }, select: { maxProfesores: true } }),
+          tx.dietista.count({ where: { licenciaDocenteId: inv.licenciaDocenteId, rolDocente: "PROFESOR" } }),
+        ]);
+        if (dentro >= (licencia?.maxProfesores ?? 0)) {
+          return { error: "docencia.sinCupoProfesoresYa" as const, dietistaId: null };
         }
       }
 

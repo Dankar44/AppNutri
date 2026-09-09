@@ -16,6 +16,7 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import pg from "pg";
+import { conexionResistente, type Conexion } from "./_conexion-viva";
 import puppeteer, { type Page, type Browser } from "puppeteer-core";
 import { createClient } from "@supabase/supabase-js";
 
@@ -69,7 +70,7 @@ async function textoDelToast(page: Page): Promise<string> {
     Array.from(document.querySelectorAll("[data-sonner-toast]")).map((t) => t.textContent ?? "").join(" | "));
 }
 
-async function crearCuenta(client: pg.PoolClient, email: string, pass: string, apellidos: string, extra: Record<string, unknown> = {}) {
+async function crearCuenta(client: Conexion, email: string, pass: string, apellidos: string, extra: Record<string, unknown> = {}) {
   const { rows } = await client.query(
     `INSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
        created_at, updated_at, raw_app_meta_data, raw_user_meta_data, is_sso_user, is_anonymous,
@@ -111,7 +112,7 @@ async function sesionDe(navegador: Browser, email: string, pass: string): Promis
   return page;
 }
 
-async function limpiar(client: pg.PoolClient) {
+async function limpiar(client: Conexion) {
   await client.query(`DELETE FROM invitaciones_docentes WHERE email LIKE '%@pruebaalta.dev' OR email LIKE 'alta.%@annonia.dev'`);
   await client.query(`DELETE FROM clases WHERE nombre LIKE '${MARCA}%'`);
   const { rows } = await client.query(
@@ -136,7 +137,7 @@ async function confirmarAlta(page: Page) {
 }
 
 async function main() {
-  const client = await pool.connect();
+  const client = conexionResistente(pool);
   const navegador = await puppeteer.launch({
     executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     headless: true, args: ["--no-sandbox"],
@@ -174,6 +175,11 @@ async function main() {
     comprobar("dice cuántas van y cuántas quedan", /0 de 4/.test(visible) && /4 libres/.test(visible),
       visible.match(/\d+ de \d+[^\n]*/)?.[0] ?? "no sale");
     comprobar("no se ve el aviso de curso cerrado", !visible.includes("El curso está cerrado"));
+
+    // Desde el 9 sep 2026 el número de alumnos de la clase es obligatorio para las DOS vías.
+    await client.query(`UPDATE clases SET "cupoEnlace" = 99 WHERE id = $1`, [clase1]);
+    await p1.reload({ waitUntil: "networkidle0" });
+    await esperar(1500);
 
     console.log("\n── Tres correos de golpe, uno repetido y uno mal escrito ──");
     await escribirCorreos(p1, "ana@pruebaalta.dev\nluis@pruebaalta.dev\nana@pruebaalta.dev\nesto-no-es-un-correo");
@@ -238,6 +244,148 @@ async function main() {
     const { rows: total } = await client.query(
       `SELECT COUNT(*)::int n FROM invitaciones_docentes WHERE "claseId" = $1 AND "aceptadaAt" IS NULL`, [clase1]);
     comprobar("nunca se pasa de las 4 vendidas", total[0].n + 1 === 4, `${total[0].n} invitaciones + 1 matriculado`);
+
+    console.log("\n── El tope de la clase es el TOTAL, no las plazas nuevas ──");
+    // La escala se coló una vez en la pantalla y otra en el servidor: el máximo son los alumnos que
+    // ya hay MÁS lo que le quede a la facultad. Comparándolo con las plazas libres a secas no había
+    // ningún número válido (Guillermo, 9 sep 2026: "ya se contradicen").
+    {
+      const { rows: hay } = await client.query(
+        `SELECT COUNT(*)::int n FROM alumnos_clase WHERE "claseId" = $1 AND activa`, [clase1]);
+      const { rows: lic } = await client.query(
+        `SELECT "maxAlumnos" FROM licencias_docentes WHERE id = $1`, [licenciaId]);
+      // Se deja exactamente UNA plaza libre en la FACULTAD, que cuenta a todos sus alumnos, no
+      // solo a los de esta clase: si se pone el tope contando solo los de la clase, la bolsa se
+      // queda a cero y el botón sale apagado por otro motivo.
+      // Y las invitaciones sin usar también ocupan: sin contarlas, la bolsa se queda a cero y el
+      // botón sale apagado por otro motivo distinto al que se está probando.
+      const { rows: ocupadas } = await client.query(
+        `SELECT (SELECT COUNT(DISTINCT a."alumnoId")::int FROM alumnos_clase a
+                   JOIN clases c ON c.id = a."claseId" WHERE c."licenciaDocenteId" = $1 AND a.activa)
+              + (SELECT COUNT(*)::int FROM invitaciones_docentes i
+                   WHERE i."licenciaDocenteId" = $1 AND i.rol = 'ALUMNO' AND i."aceptadaAt" IS NULL
+                     AND i."expiraAt" >= NOW()) AS n`, [licenciaId]);
+      await client.query(`UPDATE licencias_docentes SET "maxAlumnos" = $2 WHERE id = $1`,
+        [licenciaId, ocupadas[0].n + 1]);
+      await client.query(`UPDATE clases SET "invitacionAbierta" = false WHERE id = $1`, [clase1]);
+      // Recargar DESPUÉS de tocar la licencia: las plazas libres las pinta el servidor, así que sin
+      // esto la pantalla sigue con las de antes y el botón sale apagado por un número viejo.
+      await p1.reload({ waitUntil: "networkidle0" });
+      await esperar(2000);
+      // El tope se pone arriba a la derecha, no dentro del enlace (Guillermo, 9 sep 2026).
+      await p1.evaluate(() => {
+        const b = Array.from(document.querySelectorAll("button")).find((x) => /^Cambiar$/i.test(x.textContent?.trim() ?? ""));
+        (b as HTMLElement | undefined)?.click();
+      });
+      await esperar(600);
+      const escribirCupo = async (n: number) => {
+        await p1.evaluate((v) => {
+          const c = Array.from(document.querySelectorAll("input")).find((i) => (i as HTMLInputElement).inputMode === "numeric");
+          if (!c) return;
+          Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(c, String(v));
+          c.dispatchEvent(new Event("input", { bubbles: true }));
+        }, n);
+        await esperar(400);
+      };
+      // Con el mismo número que ya hay, el enlace nacería lleno: no se puede abrir.
+      await escribirCupo(hay[0].n);
+      const sinSitio = await texto(p1);
+      comprobar("con el mismo número que ya hay, avisa de que nace lleno",
+        /el enlace nace lleno/i.test(sinSitio),
+        sinSitio.split("\n").find((l) => /nace lleno|Como mucho|total de tu clase/i.test(l)) ?? "");
+      const apagado = await p1.evaluate(() => {
+        const b = Array.from(document.querySelectorAll("button")).find((x) => /^Guardar$/i.test(x.textContent?.trim() ?? ""));
+        return b ? (b as HTMLButtonElement).disabled : "no está";
+      });
+      comprobar("y no deja guardarlo", apagado === true, String(apagado));
+
+      await escribirCupo(hay[0].n + 1);
+      await esperar(600);
+      const conElBueno = await texto(p1);
+      comprobar("con «los que hay + lo que queda» no protesta",
+        !/Como mucho/i.test(conElBueno) || !/text-red/.test(conElBueno),
+        conElBueno.split("\n").find((l) => /Como mucho|total de tu clase/i.test(l)) ?? "");
+      await p1.evaluate(() => {
+        const b = Array.from(document.querySelectorAll("button")).find((x) => /^Guardar$/i.test(x.textContent?.trim() ?? ""));
+        (b as HTMLElement | undefined)?.click();
+      });
+      await esperar(800);
+      // Cambiar el número toca lo que la facultad tiene vendido: se pregunta antes.
+      comprobar("avisa antes de cambiar el tope", /Es el total de tu clase/i.test(await texto(p1)));
+      await p1.evaluate(() => {
+        const b = Array.from(document.querySelectorAll("button")).find((x) => /^Guardar$/i.test(x.textContent?.trim() ?? ""));
+        (b as HTMLElement | undefined)?.click();
+      });
+      await esperar(3500);
+      const { rows: guardado } = await client.query(
+        `SELECT "cupoEnlace" FROM clases WHERE id = $1`, [clase1]);
+      comprobar("y se guarda el tope de la clase", guardado[0].cupoEnlace === hay[0].n + 1,
+        `cupo=${guardado[0].cupoEnlace} · ${await textoDelToast(p1)}`);
+      await client.query(`UPDATE licencias_docentes SET "maxAlumnos" = $2 WHERE id = $1`, [licenciaId, lic[0].maxAlumnos]);
+      await client.query(`UPDATE clases SET "invitacionAbierta" = false, "cupoEnlace" = NULL WHERE id = $1`, [clase1]);
+      // Se vuelve a la pestaña de correos: lo que viene después la necesita.
+      await p1.reload({ waitUntil: "networkidle0" });
+      await esperar(1500);
+    }
+
+    console.log("\n── El tope de la clase manda también por correo ──");
+    // El profesor dice «en mi clase somos N» y esos N son el total, se llenen por el enlace o por
+    // correo. Antes el correo solo miraba la bolsa de la facultad y se pasaba del número que él
+    // mismo había puesto (Guillermo, 9 sep 2026).
+    const { rows: dentroAhora } = await client.query(
+      `SELECT COUNT(*)::int n FROM alumnos_clase WHERE "claseId" = $1 AND activa`, [clase1]);
+    await client.query(`UPDATE clases SET "cupoEnlace" = $2 WHERE id = $1`, [clase1, dentroAhora[0].n]);
+    await client.query(`UPDATE licencias_docentes SET "maxAlumnos" = 99 WHERE id = $1`, [licenciaId]);
+    await escribirCorreos(p1, "mastope@pruebaalta.dev");
+    await pulsar(p1, "Enviar invitaciones", "form");
+    await confirmarAlta(p1);
+    await esperar(3500);
+    // Y se ve ANTES de intentarlo, también desde la pestaña de correos: el número de arriba es el
+    // de la facultad y el que corta es el de la clase (Guillermo, 9 sep 2026: "pone 1 libre y no
+    // puedo enviarle").
+    comprobar("se avisa de que la clase está en su tope, sin tener que intentarlo",
+      /está en su tope/i.test(await texto(p1)),
+      (await texto(p1)).split("\n").find((l) => /tope|facultad/i.test(l)) ?? "no lo dice");
+    const toastTope = await textoDelToast(p1);
+    comprobar("con la clase en su tope, el correo no mete a nadie más",
+      (await client.query(`SELECT 1 FROM invitaciones_docentes WHERE email = $1`, ["mastope@pruebaalta.dev"])).rows.length === 0,
+      toastTope);
+    comprobar("y se dice que es por el tope de la clase, no por la facultad",
+      /en su tope/i.test(toastTope), toastTope);
+    // Se deja como estaba para lo que viene después.
+    await client.query(`UPDATE clases SET "cupoEnlace" = NULL WHERE id = $1`, [clase1]);
+    await client.query(`UPDATE licencias_docentes SET "maxAlumnos" = 4 WHERE id = $1`, [licenciaId]);
+
+    console.log("\n── A quien se le retiró el acceso se le puede volver a meter ──");
+    // Sigue ocupando su hueco del curso, así que devolvérselo no gasta nada nuevo. Sin esto, quitar
+    // a un alumno y volver a invitarle decía «fuera del tope» y no había manera (Guillermo, 9 sep).
+    {
+      const { rows: alguno } = await client.query(
+        `SELECT d.email FROM alumnos_clase a JOIN dietistas d ON d.id = a."alumnoId"
+          WHERE a."claseId" = $1 AND a.activa LIMIT 1`, [clase1]);
+      if (alguno.length) {
+        await client.query(
+          `UPDATE alumnos_clase SET activa = false, "bajaAt" = NOW()
+            WHERE "claseId" = $1 AND "alumnoId" = (SELECT id FROM dietistas WHERE email = $2)`,
+          [clase1, alguno[0].email]);
+        // La clase se deja en su tope justo: con el retirado dentro, no cabe nadie nuevo.
+        const { rows: cuantos } = await client.query(
+          `SELECT COUNT(*)::int n FROM alumnos_clase WHERE "claseId" = $1`, [clase1]);
+        await client.query(`UPDATE clases SET "cupoEnlace" = $2 WHERE id = $1`, [clase1, cuantos[0].n]);
+        await p1.reload({ waitUntil: "networkidle0" });
+        await esperar(1500);
+        await escribirCorreos(p1, alguno[0].email);
+        await pulsar(p1, "Enviar invitaciones", "form");
+        await confirmarAlta(p1);
+        await esperar(3500);
+        const { rows: vuelto } = await client.query(
+          `SELECT a.activa FROM alumnos_clase a JOIN dietistas d ON d.id = a."alumnoId"
+            WHERE a."claseId" = $1 AND d.email = $2`, [clase1, alguno[0].email]);
+        comprobar("vuelve a entrar aunque la clase esté en su tope", vuelto[0]?.activa === true,
+          `activa=${vuelto[0]?.activa} · ${await textoDelToast(p1)}`);
+        await client.query(`UPDATE clases SET "cupoEnlace" = NULL WHERE id = $1`, [clase1]);
+      }
+    }
 
     console.log("\n── Retirar el acceso NO libera plaza, y no borra nada ──");
     await p1.reload({ waitUntil: "networkidle0" });
@@ -343,7 +491,6 @@ async function main() {
     comprobar("y no hay caja para pegar correos", (await p1.$("textarea")) === null);
   } finally {
     await limpiar(client);
-    client.release();
     await navegador.close();
     await pool.end();
   }

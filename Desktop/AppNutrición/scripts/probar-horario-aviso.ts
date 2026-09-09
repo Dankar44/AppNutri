@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import pg from "pg";
+import { conexionResistente, type Conexion } from "./_conexion-viva";
 import puppeteer from "puppeteer-core";
 import { createClient } from "@supabase/supabase-js";
 const BASE = "http://localhost:3001";
@@ -12,7 +13,7 @@ const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms));
 let ok = 0, mal = 0;
 const comprobar = (t: string, c: boolean, d = "") => { console.log(`  ${c ? "✓" : "✗"} ${t}${d ? ` — ${d}` : ""}`); c ? ok++ : mal++; };
 async function main() {
-  const client = await pool.connect();
+  const client = conexionResistente(pool);
   const navegador = await puppeteer.launch({ executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: true, args: ["--no-sandbox"] });
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const sb = createClient(url, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { auth: { persistSession: false } });
@@ -88,7 +89,7 @@ async function main() {
   await esperar(1500);
   comprobar("sin cambios no hay botón de guardar ni aviso al salir", !/\bGuardar\b/.test(await p.evaluate(() => (Array.from(document.querySelectorAll("h3")).find((x) => x.textContent?.includes("Horario semanal"))?.closest("section") as HTMLElement | null)?.innerText ?? "")));
   await client.query(`UPDATE pacientes SET horario = '[]'::jsonb WHERE id = $1`, [pacienteId]);
-  client.release(); await navegador.close(); await pool.end();
+  await navegador.close(); await pool.end();
   console.log(`\n${mal === 0 ? "✓" : "✗"} ${ok} bien, ${mal} mal`);
 }
 main().catch((e) => { console.error(e); process.exit(1); });

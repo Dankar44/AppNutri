@@ -16,8 +16,10 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import pg from "pg";
+import { conexionResistente, type Conexion } from "./_conexion-viva";
 import { randomBytes } from "node:crypto";
 import puppeteer, { type Page, type Browser } from "puppeteer-core";
+import { verificarCorreo } from "./_verificar-correo";
 import { createClient } from "@supabase/supabase-js";
 
 const BASE = "http://localhost:3001";
@@ -36,18 +38,48 @@ const texto = (page: Page) => page.evaluate(() => document.body.innerText);
  * Los avisos se van solos a los pocos segundos, así que no vale mirar cuando ya ha terminado la
  * espera: hay que estar pendiente mientras salen.
  */
-async function esperarToast(page: Page, maxMs = 8000): Promise<string> {
+/**
+ * Espera a que haya un aviso en pantalla, y que sea DISTINTO al que hubiera antes.
+ *
+ * Los avisos de sonner tardan en irse, así que sin `distintoDe` se leía el de la acción anterior y
+ * la comprobación pasaba o fallaba por un mensaje que no era el que se estaba probando. Borrarlos
+ * del DOM a mano no vale: son nodos de React y quitarlos rompe la página entera con un
+ * «insertBefore» (probado el 9 sep 2026).
+ */
+async function esperarToast(page: Page, maxMs = 8000, distintoDe = ""): Promise<string> {
   const hasta = Date.now() + maxMs;
   while (Date.now() < hasta) {
     const t = await page.evaluate(() =>
       Array.from(document.querySelectorAll("[data-sonner-toast]")).map((x) => x.textContent ?? "").join(" | "));
-    if (t.trim()) return t;
+    if (t.trim() && t !== distintoDe) return t;
     await esperar(200);
   }
   return "";
 }
 
+/**
+ * Escribe en el campo de una etiqueta. Si es la contraseña, rellena también la de repetir: el
+ * formulario pide las dos desde el 9 sep 2026, y si no coinciden no deja enviar.
+ */
+/** Cambia entre las dos pestañas del formulario del enlace. */
+async function pestana(page: Page, cual: string) {
+  await page.evaluate((tx) => {
+    const b = Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.trim() === tx);
+    (b as HTMLElement | undefined)?.click();
+  }, cual);
+  await esperar(500);
+}
+
 async function rellenar(page: Page, etiqueta: string, valor: string) {
+  if (etiqueta === "Contraseña") {
+    await escribirEn(page, "Contraseña", valor);
+    await escribirEn(page, "Repetir contraseña", valor).catch(() => { /* no siempre está */ });
+    return;
+  }
+  await escribirEn(page, etiqueta, valor);
+}
+
+async function escribirEn(page: Page, etiqueta: string, valor: string) {
   const hecho = await page.evaluate((tx, v) => {
     const l = Array.from(document.querySelectorAll("label")).find((x) => x.textContent?.trim().startsWith(tx));
     const c = (l?.parentElement?.querySelector("input") ?? l?.nextElementSibling?.querySelector("input")) as HTMLInputElement | null;
@@ -69,7 +101,7 @@ async function pulsar(page: Page, tx: string) {
   if (!hecho) throw new Error(`botón "${tx}" no encontrado`);
 }
 
-async function crearAuth(client: pg.PoolClient, email: string, pass: string) {
+async function crearAuth(client: Conexion, email: string, pass: string) {
   const { rows } = await client.query(
     `INSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
        created_at, updated_at, raw_app_meta_data, raw_user_meta_data, is_sso_user, is_anonymous,
@@ -88,7 +120,7 @@ async function crearAuth(client: pg.PoolClient, email: string, pass: string) {
   return authId;
 }
 
-async function crearDietista(client: pg.PoolClient, authId: string, email: string, extra: Record<string, unknown> = {}) {
+async function crearDietista(client: Conexion, authId: string, email: string, extra: Record<string, unknown> = {}) {
   const campos = Object.keys(extra);
   const { rows } = await client.query(
     `INSERT INTO dietistas (id, "authId", email, nombre, apellidos, verificado, "createdAt", "updatedAt"${campos.map((c) => `, "${c}"`).join("")})
@@ -103,7 +135,7 @@ async function puedeEntrar(email: string, pass: string): Promise<boolean> {
   return !error;
 }
 
-async function limpiar(client: pg.PoolClient) {
+async function limpiar(client: Conexion) {
   await client.query(`DELETE FROM invitaciones_docentes WHERE email LIKE '%@${DOMINIO}'`);
   await client.query(`DELETE FROM clases WHERE nombre LIKE '${MARCA}%'`);
   const { rows } = await client.query(`SELECT id FROM auth.users WHERE email LIKE '%@${DOMINIO}'`);
@@ -116,7 +148,7 @@ async function limpiar(client: pg.PoolClient) {
 }
 
 async function main() {
-  const client = await pool.connect();
+  const client = conexionResistente(pool);
   const navegador = await puppeteer.launch({
     executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     headless: true, args: ["--no-sandbox"],
@@ -172,8 +204,12 @@ async function main() {
     comprobar("colgada de la licencia de su facultad", creada[0]?.licenciaDocenteId === licenciaId);
     comprobar("SIN suscripción: no es una venta", creada[0]?.subs === 0, `${creada[0]?.subs} suscripciones`);
     comprobar("matriculada en la clase", creada[0]?.matriculas === 1);
-    comprobar("no tiene que verificar el correo", creada[0]?.verificado === true);
-    comprobar("entra con la contraseña que ella eligió", await puedeEntrar(ana.email, ana.pass));
+    comprobar("la ficha queda aprobada, sin cola de revisión", creada[0]?.verificado === true);
+    // Desde el 9 sep 2026 la cuenta nace con el correo sin confirmar: hasta que no abre el correo
+    // no entra, para que nadie se apunte con el correo de otro y le gaste una plaza a la facultad.
+    comprobar("pero no entra hasta verificar el correo", !(await puedeEntrar(ana.email, ana.pass)));
+    await verificarCorreo(client, ana.email, BASE);
+    comprobar("y en cuanto verifica, entra con la contraseña que eligió", await puedeEntrar(ana.email, ana.pass));
 
     console.log("\n── Al entrar va a su sitio, no al de profesor ──");
     const sesion = await anonimo();
@@ -208,18 +244,31 @@ async function main() {
     page = await anonimo();
     await page.goto(`${BASE}/clase/${token}`, { waitUntil: "networkidle0" });
     await esperar(700);
+    // Si prueba por la pestaña de crear, se le manda a la otra en vez de pedirle una contraseña
+    // que él cree que se está inventando.
     await rellenar(page, "Nombre", "Luis");
     await rellenar(page, "Apellidos", "Otro");
     await rellenar(page, "Correo", luis.email);
     await rellenar(page, "Contraseña", "LaQueMeInventoAhora_9");
     await pulsar(page, "Apuntarme");
-    const avisoContrasena = await esperarToast(page);
+    const avisoOtraPestana = await esperarToast(page);
+    comprobar("desde «crear cuenta» se le manda a la otra pestaña",
+      /Ya uso Annonia/i.test(avisoOtraPestana), avisoOtraPestana);
+
+    await pestana(page, "Ya uso Annonia");
+    const soloEntrar = await texto(page);
+    comprobar("ahí no se le pide repetir la contraseña", !/Repetir contraseña/i.test(soloEntrar));
+    await rellenar(page, "Correo", luis.email);
+    await rellenar(page, "Tu contraseña de siempre", "LaQueMeInventoAhora_9");
+    await pulsar(page, "Apuntarme");
+    const avisoContrasena = await esperarToast(page, 8000, avisoOtraPestana);
+    if (!avisoContrasena) console.log("      (sin aviso; en pantalla:", (await texto(page)).split("\n").filter(Boolean).slice(0, 8).join(" · "), ")");
     comprobar("con una contraseña inventada no se le matricula",
       (await client.query(`SELECT COUNT(*)::int n FROM alumnos_clase a JOIN dietistas d ON d.id = a."alumnoId" WHERE d.email = $1`, [luis.email])).rows[0].n === 0);
     comprobar("y se le dice que use la suya", /contraseña de tu cuenta/i.test(avisoContrasena), avisoContrasena);
 
     // Con SU contraseña de siempre sí: es lo que demuestra que la cuenta es suya.
-    await rellenar(page, "Contraseña", luis.pass);
+    await rellenar(page, "Tu contraseña de siempre", luis.pass);
     await pulsar(page, "Apuntarme");
     await esperar(5000);
     const { rows: luisAhora } = await client.query(
@@ -323,7 +372,6 @@ async function main() {
       (await texto(page)).split("\n").slice(0, 3).join(" / "));
   } finally {
     await limpiar(client);
-    client.release();
     await navegador.close();
     await pool.end();
   }

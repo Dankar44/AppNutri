@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { aceptarInvitacionDocente } from "@/app/actions/invitaciones-docentes";
 import { signOut } from "@/app/actions/auth";
+import { createClient } from "@/lib/supabase/client";
 import { AlertTriangle } from "lucide-react";
 
 export function AceptarInvitacionForm({
@@ -34,14 +35,18 @@ export function AceptarInvitacionForm({
       const result = await aceptarInvitacionDocente({ token, nombre, apellidos, password });
       if (result.ok) {
         toast.success(t("invitacion.cuentaCreada"));
-        // Si había otra sesión abierta (el profesor probando), se cierra: si no, al ir a /login
-        // se le colaría dentro con SU cuenta y parecería que la del alumno no se ha creado.
+        // Si había otra sesión abierta (el profesor probando), se cierra: si no, se le colaría
+        // dentro con SU cuenta y parecería que la del alumno no se ha creado.
         if (sesionAbierta) {
           await signOut();
           return;
         }
-        // Recarga completa para que el servidor vea la sesión nueva al identificarse.
-        window.location.href = "/login";
+        // Y se le deja dentro con lo que acaba de escribir. La cuenta nace ya verificada —el enlace
+        // llegó a su correo, eso ES la prueba—, así que mandarle al login a repetir su correo y su
+        // contraseña era hacerle el trabajo dos veces (Guillermo, 9 sep 2026).
+        const { error } = await createClient().auth.signInWithPassword({ email, password });
+        // Recarga completa para que el servidor vea la sesión nueva; si el inicio fallara, al login.
+        window.location.href = error ? "/login" : "/entrar";
       } else {
         toast.error(result.error || t("invitacion.errorGenerico"));
       }

@@ -7,6 +7,7 @@ import { getAlumnosAdmin, getConsumoDeLicencias } from "@/app/actions/admin-doce
 import { formatDate } from "@/lib/utils";
 import { getLocale } from "@/i18n/locale";
 import { FiltroAlumnos } from "./filtro-alumnos";
+import { AccesoAlumno } from "./acceso-alumno";
 
 /**
  * #39 — Los alumnos, vistos desde administración.
@@ -102,7 +103,9 @@ export default async function AlumnosAdminPage({
                   <th className="text-left font-medium px-4 py-3">{t("col.clase")}</th>
                   <th className="text-left font-medium px-4 py-3">{t("col.alta")}</th>
                   <th className="text-left font-medium px-4 py-3">{t("col.ultimoAcceso")}</th>
+                  <th className="text-left font-medium px-4 py-3">{t("col.pacientes")}</th>
                   <th className="text-left font-medium px-4 py-3">{t("col.estado")}</th>
+                  <th className="text-right font-medium px-4 py-3 sr-only">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -138,6 +141,10 @@ export default async function AlumnosAdminPage({
                     <td className="px-4 py-3 text-muted-foreground tabular-nums">
                       {a.ultimoAcceso ? formatDate(a.ultimoAcceso, locale) : t("nunca")}
                     </td>
+                    {/* Si usa la aplicación de verdad o solo ocupa plaza. */}
+                    <td className="px-4 py-3 text-muted-foreground tabular-nums">
+                      {a.pacientes > 0 ? a.pacientes : "—"}
+                    </td>
                     <td className="px-4 py-3">
                       {a.activo ? (
                         <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
@@ -148,6 +155,18 @@ export default async function AlumnosAdminPage({
                         <span className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
                           {a.bajaAt ? t("estado.retiradoEl", { fecha: formatDate(a.bajaAt, locale) }) : t("estado.retirado")}
                         </span>
+                      )}
+                    </td>
+                    {/* Lo mismo que puede hacer su profesor: hasta ahora se veían pero no se podía
+                        tocar nada desde aquí (Guillermo, 9 sep 2026). */}
+                    <td className="px-4 py-3 text-right">
+                      {a.claseId && (
+                        <AccesoAlumno
+                          alumnoId={a.id}
+                          claseId={a.claseId}
+                          nombre={`${a.nombre} ${a.apellidos}`.trim()}
+                          activo={a.activo}
+                        />
                       )}
                     </td>
                   </tr>

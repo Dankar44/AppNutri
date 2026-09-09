@@ -27,7 +27,8 @@
       "centros": "Centros",
       "ofertas": "Ofertas",
       "universidades": "Universidades",
-      "alumnos": "Alumnos"
+      "alumnos": "Alumnos",
+      "profesores": "Profesores"
     },
     "roles": {
       "creator": "Creador de cuentas",
@@ -532,7 +533,9 @@
     "sacarDeLaUniversidadTitulo": "¿Sacarle de esta universidad?",
     "sacarDeLaUniversidadTexto": "{nombre} deja esta universidad y libera su plaza de profesor. Pierde el acceso a sus clases (se archivan, o pasan a quien las lleve con él), pero SIGUE siendo docente: podrás asignarle a otra universidad cuando quieras. Su cuenta, sus casos y sus pacientes no se tocan.",
     "toastFueraDeLaUniversidad": "Profesor fuera de la universidad",
-    "yaEsDocente": "Ya es profesor, sin universidad"
+    "yaEsDocente": "Ya es profesor, sin universidad",
+    "sinVerificar": "sin verificar",
+    "clasesYPacientes": "{clases, plural, =0 {sin clases} one {# clase} other {# clases}} · {pacientes, plural, =0 {sin pacientes propios} one {# paciente} other {# pacientes}}"
   },
   "alumnos": {
     "title": "Alumnos",
@@ -552,7 +555,8 @@
       "clase": "Clase y profesor",
       "alta": "Alta",
       "ultimoAcceso": "Último acceso",
-      "estado": "Estado"
+      "estado": "Estado",
+      "pacientes": "Pacientes"
     },
     "estado": {
       "activo": "Con acceso",

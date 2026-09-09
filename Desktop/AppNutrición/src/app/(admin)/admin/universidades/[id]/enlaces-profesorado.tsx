@@ -18,11 +18,15 @@ export function EnlacesProfesorado({
   licenciaId,
   enlaces,
   contacto,
+  libres,
 }: {
   licenciaId: string;
   enlaces: EnlaceProfesoresResumen[];
   /** El correo de quien lleva el trato: es a quien se le manda el enlace casi siempre. */
   contacto: string | null;
+  /** Cuántos profesores más admite la universidad este curso, contando lo que ya prometen los
+   *  enlaces vivos. El enlace reparte plazas, no las crea, así que no puede pasar de aquí. */
+  libres: number;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -34,6 +38,12 @@ export function EnlacesProfesorado({
   // Viene puesto el de la persona de contacto: es a quien se le manda, y así no hay que copiarlo
   // de más arriba cada vez (Guillermo, 9 sep 2026).
   const [correos, setCorreos] = useState(contacto ?? "");
+
+  // El tope solo aplica al curso contratado: un enlace del curso siguiente se vende por adelantado
+  // y sus plazas se pondrán al renovar.
+  const delCursoContratado = curso === cursoActual().anio;
+  const sePasa = delCursoContratado && Number(plazas) > libres;
+  const sinSitio = delCursoContratado && libres === 0;
 
   function crear(e: React.FormEvent) {
     e.preventDefault();
@@ -137,6 +147,14 @@ export function EnlacesProfesorado({
         </div>
       )}
 
+      {/* Cuántas quedan de verdad: el enlace reparte plazas de la universidad, no las inventa. Sin
+          este número se creaban enlaces para más profesores de los vendidos (Guillermo, 9 sep 2026). */}
+      <p className="text-xs text-muted-foreground">
+        {sinSitio
+          ? "No quedan plazas de profesor libres: sube las licencias en la ficha de arriba para poder repartir más."
+          : `${libres === 1 ? "Queda" : "Quedan"} ${libres} plaza${libres === 1 ? "" : "s"} de profesor por repartir en este curso.`}
+      </p>
+
       <form onSubmit={crear} className="flex items-end gap-2 flex-wrap">
         <div className="w-32">
           <label className="text-[11px] text-muted-foreground">Curso</label>
@@ -146,9 +164,10 @@ export function EnlacesProfesorado({
           <label className="text-[11px] text-muted-foreground">Plazas del enlace nuevo</label>
           {/* Solo dígitos: un campo de plazas que trague letras acaba en un error al guardar. */}
           <input value={plazas} onChange={(ev) => setPlazas(ev.target.value.replace(/\D/g, "").slice(0, 3))}
-            inputMode="numeric" placeholder="10" className={`${input} w-24 mt-1`} />
+            inputMode="numeric" placeholder={String(Math.max(1, libres))} className={`${input} w-24 mt-1`} />
+          {sePasa && <p className="text-[11px] text-red-500 mt-1">Solo quedan {libres}</p>}
         </div>
-        <button type="submit" disabled={isPending || !plazas || Number(plazas) < 1}
+        <button type="submit" disabled={isPending || !plazas || Number(plazas) < 1 || sePasa || sinSitio}
           className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-muted disabled:opacity-50 transition-colors">
           {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link2 className="w-3.5 h-3.5" />}
           Crear enlace

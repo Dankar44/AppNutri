@@ -198,6 +198,15 @@ que dan "ya registrado" sin poder recuperarse.
 - Al buscar a alguien: recuerda que puede existir en autenticación y **no** tener ficha todavía
   (la ficha se crea en el primer acceso verificado). Varios bugs han salido de olvidar ese caso.
 
+**Y decide a conciencia si el correo nace confirmado.** Es un `email_confirmed_at` en el `INSERT`
+que no se ve, pero cambia quién puede entrar. Ponerlo a `NOW()` significa *«me fío de que ese
+correo es suyo»*: sirve cuando el enlace llegó a ese buzón (invitación nominal, recuperación), y
+no sirve cuando cualquiera escribe el correo que quiera en un formulario público. Las altas por
+enlace de universidad se creaban confirmadas, así que con el correo de otra persona se le creaba
+la cuenta y **se le gastaba una plaza a la facultad** (9 sep 2026). Ojo también al revés: si la
+ficha de la aplicación ya existe, `ensureDietista` devuelve la ficha sin volver a mirar la
+confirmación, así que lo único que frena a quien no ha verificado es el propio inicio de sesión.
+
 ### 3.5 La frontera servidor → cliente
 Nunca pases funciones ni componentes como props de un componente de servidor a uno de cliente
 (`"use client"`). Usa claves de texto y resuélvelas en el cliente.
@@ -313,6 +322,23 @@ Antes de dar algo por terminado, pásale estas preguntas:
    admin— y una cuenta puede cambiar de espacio: al tocar un menú, un permiso o una salida, recorre
    los cuatro y pregúntate en cada uno *¿puede entrar?* y *¿puede volver?*. Se comprueba a clics en
    `probar-ida-y-vuelta-espacios`.
+
+9. **Las pruebas también envejecen mal.** Una prueba que da por bueno el estado que le dejó otra
+   falla luego por motivos que no son suyos: la del enlace de profesorado cogía «la primera
+   licencia que hubiera» y se puso roja cuando otro script llenó esa universidad de profesores
+   (9 sep 2026). Que cada prueba **fije el estado del que depende y lo devuelva como estaba** al
+   terminar. Dos cosas más, de la misma tarde: las pruebas largas con navegador no pueden quedarse
+   con una conexión de base de datos abierta —el pooler la corta a los pocos minutos y la prueba
+   muere con «Connection terminated unexpectedly», que parece un fallo del código— y **no se toca
+   el código mientras corre una prueba**, porque el servidor recompila y las navegaciones caducan.
+
+10. **¿Quién manda en este número?** Un contador que se puede subir desde dos sitios acaba
+   inflado. Las plazas de profesor de una universidad las pone su ficha, pero crear un enlace se
+   las sumaba además: con 5 vendidas y 4 ocupadas se creaba un enlace de 4 y la universidad pasaba
+   a 9 (9 sep 2026). Cuando toques un cupo, un saldo o un tope, busca **todos** los sitios que lo
+   escriben y déjalo en uno solo; el resto lo consulta. Y al calcular «cuánto queda», acuérdate de
+   lo que está **prometido pero sin usar** —invitaciones enviadas, enlaces repartidos—, que es lo
+   que siempre se olvida.
 
 Y dos normas de la casa:
 - **Interfaz optimista**: al guardar, refleja el cambio al instante y revierte con aviso si

@@ -115,6 +115,7 @@ export default async function ClaseDetallePage({
           cursoTerminado={terminado}
           cupoActual={clase.cupoEnlace}
           cupoUsado={clase.cupoUsado}
+          alumnosActivos={clase.alumnosActivos}
         />
       )}
 
@@ -188,6 +189,7 @@ export default async function ClaseDetallePage({
           ultimoAcceso: a.ultimoAcceso
             ? t("clases.ultimoAcceso", { fecha: formatDate(a.ultimoAcceso, locale) })
             : t("clases.nuncaHaEntrado"),
+          sinVerificar: a.sinVerificar,
         }))}
       />
     </div>

@@ -26,6 +26,7 @@ import { headers } from "next/headers";
 import { getLocale } from "@/i18n/locale";
 import { checkRateLimit, LIMITES } from "@/lib/rate-limit";
 import { crearPacienteDemoSiNoExiste } from "@/lib/paciente-demo";
+import { crearUsuarioSinVerificar, mandarCorreoDeVerificacion } from "@/lib/alta-por-enlace";
 import { sanitizeString, sanitizeStringOptional, validateEmail } from "@/lib/validation";
 import { sendEmail } from "@/lib/mailer";
 import { isNextNavigation, urlPublica } from "@/lib/utils";
@@ -44,6 +45,41 @@ export interface EnlaceProfesoresResumen {
   createdAt: Date;
   /** Quién ha entrado por este enlace. */
   altas: { nombre: string; apellidos: string; email: string }[];
+}
+
+/**
+ * Un token sin espacios ni saltos.
+ *
+ * El enlace se reenvía por correo y algunos clientes lo parten por la mitad al ajustar el ancho,
+ * así que llega con un espacio dentro y la página decía «este enlace no vale» aunque fuera bueno
+ * (Guillermo, 9 sep 2026). Los tokens son hexadecimales, así que quitar espacios es seguro.
+ */
+function limpiarToken(token: string) {
+  return token.replace(/\s+/g, "");
+}
+
+/**
+ * Cuántos profesores más admite la universidad: el tope menos los que ya están, menos las
+ * invitaciones sin usar y menos lo que ya prometen los enlaces vivos de este curso.
+ *
+ * Lo de los enlaces cuenta porque un enlace repartido es una promesa: si se ignorase, dos enlaces
+ * de tres plazas cada uno meterían seis profesores en una universidad de cuatro.
+ */
+export async function plazasLibresDeProfesor(licenciaId: string, maxProfesores: number): Promise<number> {
+  const [profesores, pendientes, enlaces] = await Promise.all([
+    prisma.dietista.count({ where: { licenciaDocenteId: licenciaId, rolDocente: "PROFESOR" } }),
+    prisma.invitacionDocente.count({
+      where: { rol: "PROFESOR", licenciaDocenteId: licenciaId, aceptadaAt: null, expiraAt: { gte: new Date() } },
+    }),
+    prisma.enlaceProfesores.findMany({
+      where: { licenciaDocenteId: licenciaId, cursoAnio: cursoActual().anio },
+      select: { plazas: true, usadas: true },
+    }),
+  ]);
+  // De cada enlace solo queda pendiente lo que no se ha usado; lo usado ya está contado en
+  // `profesores`, y sumarlo otra vez descontaría dos veces la misma plaza.
+  const prometidas = enlaces.reduce((n, e) => n + Math.max(0, e.plazas - e.usadas), 0);
+  return Math.max(0, maxProfesores - profesores - pendientes - prometidas);
 }
 
 function urlDelEnlace(token: string) {
@@ -78,7 +114,14 @@ export async function getEnlacesProfesores(licenciaId: string): Promise<EnlacePr
   }));
 }
 
-/** Un enlace nuevo con su cupo. Para ampliar no se toca el anterior: se crea otro. */
+/**
+ * Un enlace nuevo con su cupo. Para ampliar no se toca el anterior: se crea otro.
+ *
+ * El enlace **reparte** plazas de la universidad, no las crea: su cupo no puede pasar de lo que
+ * queda libre. Antes las sumaba al tope de la licencia, así que con 5 licencias vendidas y 4
+ * ocupadas se podía crear un enlace de 4 y acababan entrando 8 (Guillermo, 9 sep 2026). Quien
+ * decide cuántas hay es el campo «Licencias de profesor» de la ficha, y nada más.
+ */
 export async function crearEnlaceProfesores(
   licenciaId: string,
   plazas: number,
@@ -100,11 +143,17 @@ export async function crearEnlaceProfesores(
   });
   if (!licencia) return { ok: false, error: t("docencia.licenciaNoEncontrada") };
 
+  const delCurso = cursoAnio ?? cursoActual().anio;
+  // Solo se comprueba contra el tope si el enlace es del curso que la licencia tiene contratado:
+  // el de un curso futuro se vende por adelantado y su tope se pondrá al renovar.
+  if (delCurso === cursoDeFechaFin(licencia.fechaFin)?.anio) {
+    const libres = await plazasLibresDeProfesor(licenciaId, licencia.maxProfesores);
+    if (cupo > libres) {
+      return { ok: false, error: t("docencia.enlacePasaDelCupo", { libres }) };
+    }
+  }
+
   try {
-    // Las plazas del enlace se suman a las de ESTE curso, no al tope de siempre: al renovar se
-    // ponen las del curso nuevo y no se arrastra nada (Guillermo, 8 sep 2026: "si tienen diez un
-    // año y me piden otras diez, no quiero que tengan veinte").
-    const delCurso = cursoAnio ?? cursoActual().anio;
     const enlace = await prisma.$transaction(async (tx) => {
       const creado = await tx.enlaceProfesores.create({
         data: {
@@ -116,13 +165,6 @@ export async function crearEnlaceProfesores(
         },
         select: { token: true },
       });
-      // Solo sube el tope si el enlace es para el curso que la licencia tiene contratado.
-      if (delCurso === cursoDeFechaFin(licencia.fechaFin)?.anio) {
-        await tx.licenciaDocente.update({
-          where: { id: licenciaId },
-          data: { maxProfesores: { increment: cupo } },
-        });
-      }
       return creado;
     });
 
@@ -227,6 +269,8 @@ function correoDelEnlace(institucion: string, url: string, plazas: number, queda
 /* ─── Lo público: lo que ve y hace quien abre el enlace ─── */
 
 export interface EnlacePublico {
+  /** De qué universidad es el enlace: sirve para saber si quien lo abre ya está en ESA o en otra. */
+  licenciaId: string;
   institucion: string;
   quedan: number;
   agotado: boolean;
@@ -237,7 +281,7 @@ export interface EnlacePublico {
 /** Lo que se enseña a quien abre el enlace. No se dice el cupo total, solo si queda sitio. */
 export async function getEnlaceProfesoresPorToken(token: string): Promise<EnlacePublico | null> {
   const enlace = await prisma.enlaceProfesores.findUnique({
-    where: { token },
+    where: { token: limpiarToken(token) },
     select: {
       plazas: true, usadas: true, cursoAnio: true, licenciaDocenteId: true,
       licenciaDocente: { select: { institucion: true, activa: true, fechaFin: true, maxProfesores: true } },
@@ -259,6 +303,7 @@ export async function getEnlaceProfesoresPorToken(token: string): Promise<Enlace
   const enLaUniversidad = Math.max(0, enlace.licenciaDocente.maxProfesores - profesores - pendientes);
   const quedan = Math.min(Math.max(0, enlace.plazas - enlace.usadas), enLaUniversidad);
   return {
+    licenciaId: enlace.licenciaDocenteId,
     institucion: enlace.licenciaDocente.institucion,
     quedan,
     agotado: quedan === 0,
@@ -280,7 +325,7 @@ async function conPlazaDelEnlace<T>(
   return prisma.$transaction(async (tx) => {
     const filas = await tx.$queryRawUnsafe<{ id: string; plazas: number; usadas: number; cursoAnio: number; licenciaDocenteId: string }[]>(
       `SELECT id, plazas, usadas, "cursoAnio", "licenciaDocenteId" FROM enlaces_profesores WHERE token = $1 FOR UPDATE`,
-      token,
+      limpiarToken(token),
     );
     const enlace = filas[0];
     if (!enlace) return { ok: false as const, motivo: "noValido" as const };
@@ -330,8 +375,14 @@ export async function unirmeComoProfesor(token: string): Promise<{ ok: boolean; 
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
-  if (dietista.rolDocente === "PROFESOR") return { ok: false, error: t("docencia.yaTieneRolDocente") };
   if (dietista.rolDocente === "ALUMNO") return { ok: false, error: t("docencia.alumnoNoProfesor") };
+  // Ser profesor no basta para rechazarle: quien salió de una facultad conserva el rol y se queda
+  // SIN universidad, y este enlace es justo por donde entra en la siguiente. Lo que no se puede es
+  // estar en dos a la vez (Guillermo, 9 sep 2026: el enlace no hacía nada y acababa en un espacio
+  // docente vacío).
+  if (dietista.rolDocente === "PROFESOR" && dietista.licenciaDocenteId) {
+    return { ok: false, error: t("docencia.yaEstaEnOtraUniversidad") };
+  }
 
   try {
     const hecho = await conPlazaDelEnlace(token, async (tx, enlace) => {
@@ -341,6 +392,8 @@ export async function unirmeComoProfesor(token: string): Promise<{ ok: boolean; 
           rolDocente: "PROFESOR",
           licenciaDocenteId: enlace.licenciaDocenteId,
           altaPorEnlaceId: enlace.id,
+          // Vuelve a estar en una facultad: el plazo de «sin universidad» ya no aplica.
+          docenciaHasta: null,
         },
       });
     });
@@ -369,15 +422,36 @@ export async function apuntarmeComoProfesor(data: {
   apellidos?: string;
   email: string;
   password: string;
-}): Promise<{ ok: boolean; error?: string; yaTeniaCuenta?: boolean }> {
+  /**
+   * Qué está intentando: crear su cuenta o entrar con la que ya tiene. Lo dice el formulario, que
+   * ahora tiene las dos cosas separadas, y sirve para dar el error exacto —«ese correo ya tiene
+   * cuenta, usa la otra pestaña» o «no hay ninguna cuenta con ese correo»— en vez de uno que sirva
+   * para los dos y no ayude a nadie (Guillermo, 9 sep 2026).
+   */
+  modo?: "crear" | "entrar";
+}): Promise<{
+  ok: boolean;
+  error?: string;
+  yaTeniaCuenta?: boolean;
+  /** Cuenta nueva: está creada pero no entra hasta que abra el correo que le acabamos de mandar. */
+  verificaTuCorreo?: boolean;
+  /** Si el correo no salió, para poder decírselo y ofrecerle el reenvío. */
+  correoEnviado?: boolean;
+  /** Solo fuera de producción: el enlace de verificación, para poder probar sin buzón. */
+  enlaceDePrueba?: string;
+}> {
   const t = await getTranslations("validation");
 
   const email = validateEmail(sanitizeString(data.email, 200).normalize("NFC"));
   if (!email) return { ok: false, error: t("admin.emailNoValido") };
-  const nombre = sanitizeString(data.nombre, 100);
+  const entrando = data.modo === "entrar";
+  // Quien entra con su cuenta no escribe su nombre: ya lo tiene puesto.
+  const nombre = entrando ? "—" : sanitizeString(data.nombre, 100);
   if (!nombre) return { ok: false, error: t("admin.nombreObligatorio") };
   const apellidos = sanitizeStringOptional(data.apellidos, 100) ?? "";
-  if (!data.password || data.password.length < 8) return { ok: false, error: t("admin.contrasenaMinima") };
+  // El mismo mínimo que el registro de siempre: dos reglas distintas para lo mismo solo sirven
+  // para que la gente se quede fuera sin entender por qué (Guillermo, 9 sep 2026).
+  if (!data.password || data.password.length < 6) return { ok: false, error: t("admin.contrasenaMinima") };
 
   // Un enlace repartido por una facultad entera es público de hecho: sin freno, cualquiera podría
   // probar altas en cadena hasta agotar las plazas de la universidad.
@@ -390,7 +464,7 @@ export async function apuntarmeComoProfesor(data: {
 
   const existente = await prisma.dietista.findUnique({
     where: { email },
-    select: { id: true, rolDocente: true },
+    select: { id: true, rolDocente: true, licenciaDocenteId: true },
   });
 
   try {
@@ -400,8 +474,14 @@ export async function apuntarmeComoProfesor(data: {
     // demuestra ser esa persona: si no, con el enlace se metía la cuenta de otro y se le gastaba
     // una plaza a la universidad.
     if (existente) {
-      if (existente.rolDocente === "PROFESOR") return { ok: false, error: t("docencia.yaTieneRolDocente") };
+      // Venía a crear una cuenta y ese correo ya tiene una: se le manda a la otra pestaña en vez
+      // de pedirle una contraseña que él cree que está inventando.
+      if (!entrando) return { ok: false, error: t("docencia.correoYaTieneCuentaUsaEntrar") };
       if (existente.rolDocente === "ALUMNO") return { ok: false, error: t("docencia.alumnoNoProfesor") };
+      // Igual que arriba: el profesor sin universidad entra por aquí; el que ya está en otra, no.
+      if (existente.rolDocente === "PROFESOR" && existente.licenciaDocenteId) {
+        return { ok: false, error: t("docencia.yaEstaEnOtraUniversidad") };
+      }
 
       const suApp = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -409,7 +489,17 @@ export async function apuntarmeComoProfesor(data: {
         { auth: { persistSession: false, autoRefreshToken: false } },
       );
       const { error } = await suApp.auth.signInWithPassword({ email, password: data.password });
-      if (error) return { ok: false, error: t("docencia.contrasenaDeSuCuenta") };
+      // Distinguir el correo sin confirmar de la contraseña mal: si no, a quien se dio de alta hace
+      // un rato y aún no ha abierto el correo se le decía que su contraseña no valía, y volvía a
+      // intentarlo una y otra vez (9 sep 2026).
+      if (error) {
+        return {
+          ok: false,
+          error: t(/not confirmed/i.test(error.message)
+            ? "docencia.verificaTuCorreoPrimero"
+            : "docencia.contrasenaDeSuCuenta"),
+        };
+      }
 
       const unido = await conPlazaDelEnlace(data.token, async (tx, enlace) => {
         await tx.dietista.update({
@@ -418,6 +508,7 @@ export async function apuntarmeComoProfesor(data: {
             rolDocente: "PROFESOR",
             licenciaDocenteId: enlace.licenciaDocenteId,
             altaPorEnlaceId: enlace.id,
+            docenciaHasta: null,
           },
         });
       });
@@ -428,36 +519,30 @@ export async function apuntarmeComoProfesor(data: {
     }
 
     // Un usuario de autenticación sin ficha de dietista es una cuenta a medias de un alta que se
-    // quedó por el camino: no se puede reutilizar el correo sin más.
-    const existingAuth = await prisma.$queryRawUnsafe<{ id: string }[]>(
-      `SELECT id FROM auth.users WHERE email = $1 LIMIT 1`, email,
+    // quedó por el camino: no se puede reutilizar el correo sin más. Pero hay que distinguir por
+    // qué se quedó a medias: lo más normal es que se diera de alta y no llegara a abrir el correo,
+    // y ahí decirle "entra con tu cuenta" es mandarle a un sitio donde tampoco va a poder entrar
+    // (Guillermo, 9 sep 2026).
+    const existingAuth = await prisma.$queryRawUnsafe<{ id: string; email_confirmed_at: Date | null }[]>(
+      `SELECT id, email_confirmed_at FROM auth.users WHERE email = $1 LIMIT 1`, email,
     );
-    if (existingAuth.length > 0) return { ok: false, error: t("docencia.yaExisteEntraConTuCuenta") };
+    if (existingAuth.length > 0) {
+      return {
+        ok: false,
+        error: t(existingAuth[0].email_confirmed_at
+          ? "docencia.yaExisteEntraConTuCuenta"
+          : "docencia.verificaTuCorreoPrimero"),
+      };
+    }
+
+    // Venía a entrar con su cuenta y no hay ninguna con ese correo: se le dice, en vez de crearle
+    // una sin que se entere.
+    if (entrando) return { ok: false, error: t("docencia.noHayCuentaConEseCorreo") };
 
     const alta = await conPlazaDelEnlace(data.token, async (tx, enlace) => {
-      const authRows = await tx.$queryRawUnsafe<{ id: string }[]>(
-        `INSERT INTO auth.users (
-           instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
-           created_at, updated_at, raw_app_meta_data, raw_user_meta_data, is_sso_user, is_anonymous,
-           confirmation_token, recovery_token, email_change_token_new, email_change,
-           email_change_token_current, reauthentication_token, phone_change, phone_change_token
-         ) VALUES (
-           '00000000-0000-0000-0000-000000000000', gen_random_uuid(), 'authenticated', 'authenticated',
-           $1, crypt($2, gen_salt('bf')), NOW(), NOW(), NOW(),
-           '{"provider":"email","providers":["email"]}',
-           jsonb_build_object('nombre', $3::text, 'apellidos', $4::text, 'email_verified', true, 'phone_verified', false),
-           false, false, '', '', '', '', '', '', '', ''
-         ) RETURNING id`,
-        email, data.password, nombre, apellidos,
-      );
-      const authId = authRows[0].id;
-      await tx.$queryRawUnsafe(
-        `INSERT INTO auth.identities (id, user_id, provider_id, provider, identity_data, last_sign_in_at, created_at, updated_at)
-         VALUES (gen_random_uuid(), $1::uuid, $1::text, 'email',
-           jsonb_build_object('sub',$1::text,'email',$2::text,'email_verified',true,'provider','email'),
-           NOW(), NOW(), NOW())`,
-        authId, email,
-      );
+      const authId = await crearUsuarioSinVerificar(tx, {
+        email, password: data.password, nombre, apellidos,
+      });
       const profesor = await tx.dietista.create({
         data: {
           authId, email, nombre, apellidos,
@@ -469,17 +554,26 @@ export async function apuntarmeComoProfesor(data: {
         },
         select: { id: true },
       });
-      return profesor.id;
+      return { id: profesor.id, authId };
     });
     if (!alta.ok) {
       return { ok: false, error: t(alta.motivo === "agotado" ? "docencia.enlaceAgotado" : "docencia.enlaceProfesorNoValido") };
     }
 
     // Su paciente de ejemplo, igual que en cualquier otra alta. Si falla, que quede en el log.
-    crearPacienteDemoSiNoExiste(prisma, alta.valor, await getLocale()).catch((e) =>
+    crearPacienteDemoSiNoExiste(prisma, alta.valor.id, await getLocale()).catch((e) =>
       console.error("[docencia] Sin paciente de ejemplo para el profesor del enlace:", e),
     );
-    return { ok: true };
+
+    // La plaza se gasta aunque todavía no haya verificado: si se guardara para después, con un
+    // correo inventado se podrían reservar todas las de la universidad sin que nadie las use.
+    const envio = await mandarCorreoDeVerificacion(alta.valor.authId, email, nombre);
+    return {
+      ok: true,
+      verificaTuCorreo: true,
+      correoEnviado: envio.enviado,
+      enlaceDePrueba: envio.enlaceDePrueba,
+    };
   } catch (e) {
     if (isNextNavigation(e)) throw e;
     console.error("[docencia] Error dando de alta al profesor por el enlace:", e);

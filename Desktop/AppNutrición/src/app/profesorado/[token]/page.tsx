@@ -38,8 +38,15 @@ export default async function AltaProfesoradoPage({
     );
   }
 
-  const esProfesor = dentro?.rolDocente === "PROFESOR";
+  // Ser profesor no es una sola situación, y tratarlas igual dejaba un callejón sin salida: a quien
+  // salió de su facultad se le decía «ya tienes acceso» y el botón le llevaba a un espacio docente
+  // que no existe (Guillermo, 9 sep 2026). Son tres casos distintos.
   const esAlumno = dentro?.rolDocente === "ALUMNO";
+  const yaEnEsta = dentro?.rolDocente === "PROFESOR" && dentro.licenciaDocenteId === enlace.licenciaId;
+  const enOtra =
+    dentro?.rolDocente === "PROFESOR" &&
+    !!dentro.licenciaDocenteId &&
+    dentro.licenciaDocenteId !== enlace.licenciaId;
 
   return (
     <main className="min-h-dvh flex items-center justify-center p-6 bg-background">
@@ -59,12 +66,25 @@ export default async function AltaProfesoradoPage({
             <p className="font-medium">{t("agotado")}</p>
             <p className="text-sm text-muted-foreground mt-1">{t("agotadoAyuda")}</p>
           </div>
-        ) : esProfesor ? (
+        ) : yaEnEsta ? (
           <div className="rounded-xl border border-border bg-card p-6 text-center">
             <p className="font-medium">{t("yaEresProfesor")}</p>
             <Link
               href="/profesor"
               className="inline-flex items-center gap-2 mt-4 bg-primary text-primary-foreground px-4 py-2.5 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+            >
+              {t("irAMiEspacio")}
+            </Link>
+          </div>
+        ) : enOtra ? (
+          /* No se puede estar en dos universidades a la vez: se dice, en vez de mandarle a un
+             espacio que no es el de este enlace. */
+          <div className="rounded-xl border border-border bg-card p-6 text-center">
+            <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto mb-3" />
+            <p className="text-sm">{t("yaEstaEnOtra")}</p>
+            <Link
+              href="/profesor"
+              className="inline-flex items-center gap-2 mt-4 rounded-lg border border-border px-4 py-2.5 text-sm font-medium hover:bg-muted transition-colors"
             >
               {t("irAMiEspacio")}
             </Link>
@@ -76,15 +96,11 @@ export default async function AltaProfesoradoPage({
           </div>
         ) : dentro ? (
           /* Ya usa Annonia: no se le crea nada, se le añade el rol a lo suyo. */
-          <UnirmeConMiCuenta token={token} email={dentro.email} />
+          <UnirmeConMiCuenta token={token} email={dentro.email} yaEraProfesor={dentro.rolDocente === "PROFESOR"} />
         ) : (
-          <>
-            <p className="text-sm text-muted-foreground mb-4">{t("explicacion")}</p>
-            <AltaProfesorForm token={token} />
-            {/* Sin enlace al login: el mismo formulario sirve para los dos casos. Si el correo ya
-                tiene cuenta, con su contraseña de siempre se le añade el acceso de profesor. */}
-            <p className="text-xs text-muted-foreground mt-4">{t("yaTengoCuentaAyuda")}</p>
-          </>
+          /* El formulario lleva dentro las dos cosas —crear cuenta y entrar con la de siempre—
+             en dos pestañas, así que aquí no hace falta explicarlo por fuera. */
+          <AltaProfesorForm token={token} />
         )}
       </div>
     </main>

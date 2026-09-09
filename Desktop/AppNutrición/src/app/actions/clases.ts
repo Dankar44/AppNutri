@@ -94,13 +94,25 @@ function fechaImposible(valor: string | undefined): boolean {
 }
 
 /** Cuántos alumnos distintos han pasado por esta clase durante el curso, se hayan ido o no. */
+/**
+ * Cuántos del tope de la clase van gastados: los matriculados MÁS las invitaciones sin usar.
+ *
+ * Las invitaciones cuentan porque guardan el sitio: si no se enseñaran, el profesor invitaría a
+ * treinta por correo, vería «van 0» y creería que su clase está vacía (Guillermo, 9 sep 2026). Es
+ * el mismo número que usa `plazasLibresDeLaClase` para decidir quién entra.
+ */
 async function alumnosDelCurso(claseId: string): Promise<number> {
-  const filas = await prisma.alumnoClase.findMany({
-    where: { claseId, OR: [{ altaAt: { gte: inicioDeAnioEscolar() } }, { activa: true }] },
-    select: { alumnoId: true },
-    distinct: ["alumnoId"],
-  });
-  return filas.length;
+  const [filas, invitaciones] = await Promise.all([
+    prisma.alumnoClase.findMany({
+      where: { claseId, OR: [{ altaAt: { gte: inicioDeAnioEscolar() } }, { activa: true }] },
+      select: { alumnoId: true },
+      distinct: ["alumnoId"],
+    }),
+    prisma.invitacionDocente.count({
+      where: { claseId, rol: "ALUMNO", aceptadaAt: null, expiraAt: { gte: new Date() } },
+    }),
+  ]);
+  return filas.length + invitaciones;
 }
 
 export async function crearClase(data: {
@@ -108,6 +120,9 @@ export async function crearClase(data: {
   /** YYYY-MM-DD. Sin ellas: empieza hoy y acaba el próximo 31 de agosto. */
   fechaInicioCurso?: string;
   fechaFinCurso?: string;
+  /** Cuántos alumnos son. Sin esto no se puede dar de alta a nadie, así que se pide ya al crearla
+   *  y el profesor no tiene que volver después (Guillermo, 9 sep 2026). */
+  cupoEnlace?: number;
 }): Promise<{ ok: boolean; error?: string; claseId?: string }> {
   const profesor = await requireProfesor();
   const t = await getTranslations("validation");
@@ -125,6 +140,16 @@ export async function crearClase(data: {
   }
   if (cursoAlReves(inicio, fin)) return { ok: false, error: t("docencia.cursoAlReves") };
 
+  // El número de alumnos es del profesor, pero no puede pasarse de lo que le queda a su facultad.
+  let cupo: number | null = null;
+  if (data.cupoEnlace != null) {
+    const pedido = Math.floor(Number(data.cupoEnlace));
+    if (!Number.isFinite(pedido) || pedido < 1) return { ok: false, error: t("docencia.cupoObligatorio") };
+    const libres = profesor.licencia ? await plazasLibresDeLicencia(profesor.licencia.id) : 0;
+    if (pedido > libres) return { ok: false, error: t("docencia.cupoSePasaDeLaBolsa", { n: libres }) };
+    cupo = pedido;
+  }
+
   try {
     const clase = await prisma.clase.create({
       data: {
@@ -135,6 +160,7 @@ export async function crearClase(data: {
         // agosto); a partir de ahí sus alumnos pierden la clase.
         fechaInicioCurso: new Date(inicio),
         fechaFinCurso: new Date(fin),
+        cupoEnlace: cupo,
         // El que la crea es el primero de la lista de quienes la llevan: así el permiso se
         // comprueba en un solo sitio, mire quien mire.
         profesores: { create: { profesorId: profesor.dietistaId } },
@@ -268,6 +294,8 @@ export interface ClaseDetalle extends ClaseResumen {
     altaAt: Date;
     bajaAt: Date | null;
     ultimoAcceso: Date | null;
+    /** Se apuntó por el enlace y aún no ha abierto su correo: ocupa plaza pero todavía no entra. */
+    sinVerificar: boolean;
   }[];
 }
 
@@ -280,12 +308,24 @@ export async function getClase(claseId: string): Promise<ClaseDetalle | null> {
       alumnos: {
         orderBy: [{ activa: "desc" }, { altaAt: "asc" }],
         include: {
-          alumno: { select: { id: true, nombre: true, apellidos: true, email: true, lastAccessAt: true } },
+          alumno: { select: { id: true, nombre: true, apellidos: true, email: true, lastAccessAt: true, authId: true } },
         },
       },
     },
   });
   if (!clase) return null;
+
+  // Quien se apuntó por el enlace y no ha abierto el correo ocupa plaza pero no puede entrar. El
+  // profesor tiene que verlo: si no, ve a alguien en su lista que «nunca ha entrado» y no sabe si
+  // es que pasa de la asignatura o que no le llegó el correo (9 sep 2026).
+  const authIds = clase.alumnos.map((m) => m.alumno.authId).filter(Boolean) as string[];
+  const porVerificar = new Set(
+    authIds.length === 0 ? [] :
+    (await prisma.$queryRawUnsafe<{ id: string }[]>(
+      `SELECT id::text AS id FROM auth.users WHERE id = ANY($1::uuid[]) AND email_confirmed_at IS NULL`,
+      authIds,
+    )).map((r) => r.id),
+  );
 
   return {
     id: clase.id,
@@ -310,6 +350,7 @@ export async function getClase(claseId: string): Promise<ClaseDetalle | null> {
       altaAt: m.altaAt,
       bajaAt: m.bajaAt,
       ultimoAcceso: m.alumno.lastAccessAt,
+      sinVerificar: m.alumno.authId ? porVerificar.has(m.alumno.authId) : false,
     })),
   };
 }

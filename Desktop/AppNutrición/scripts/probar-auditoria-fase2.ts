@@ -12,6 +12,7 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import pg from "pg";
+import { conexionResistente, type Conexion } from "./_conexion-viva";
 import puppeteer, { type Page, type Browser } from "puppeteer-core";
 import { createClient } from "@supabase/supabase-js";
 
@@ -51,7 +52,7 @@ async function pulsar(page: Page, tx: string, dentroDe?: string) {
   if (!hecho) throw new Error(`botón "${tx}" no encontrado`);
 }
 
-async function crearCuenta(client: pg.PoolClient, email: string, extra: Record<string, unknown> = {}) {
+async function crearCuenta(client: Conexion, email: string, extra: Record<string, unknown> = {}) {
   const { rows: u } = await client.query(
     `INSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
        created_at, updated_at, raw_app_meta_data, raw_user_meta_data, is_sso_user, is_anonymous,
@@ -92,7 +93,7 @@ async function sesionDe(navegador: Browser, email: string): Promise<Page> {
   return page;
 }
 
-async function limpiar(client: pg.PoolClient) {
+async function limpiar(client: Conexion) {
   await client.query(`DELETE FROM invitaciones_docentes WHERE email LIKE '%@${DOMINIO}'`);
   await client.query(`DELETE FROM recetas WHERE nombre LIKE '${MARCA}%'`);
   await client.query(`DELETE FROM alimentos WHERE nombre LIKE '${MARCA}%'`);
@@ -107,7 +108,7 @@ async function limpiar(client: pg.PoolClient) {
 }
 
 /** Las dos cuentas de la bolsa, en SQL, para poder comprobarlas desde fuera de Next. */
-async function ocupadas(client: pg.PoolClient, licenciaId: string): Promise<number> {
+async function ocupadas(client: Conexion, licenciaId: string): Promise<number> {
   const { rows } = await client.query(
     `SELECT COUNT(DISTINCT ac."alumnoId")::int n FROM alumnos_clase ac JOIN clases c ON c.id = ac."claseId"
       WHERE ac.activa AND c."licenciaDocenteId" = $1 AND c.archivada = false
@@ -115,7 +116,7 @@ async function ocupadas(client: pg.PoolClient, licenciaId: string): Promise<numb
   return rows[0].n;
 }
 
-async function libres(client: pg.PoolClient, licenciaId: string): Promise<number> {
+async function libres(client: Conexion, licenciaId: string): Promise<number> {
   const { rows } = await client.query(
     `SELECT GREATEST(0, l."maxAlumnos"
        - (SELECT COUNT(DISTINCT ac."alumnoId") FROM alumnos_clase ac JOIN clases c ON c.id = ac."claseId"
@@ -129,7 +130,7 @@ async function libres(client: pg.PoolClient, licenciaId: string): Promise<number
 }
 
 async function main() {
-  const client = await pool.connect();
+  const client = conexionResistente(pool);
   const navegador = await puppeteer.launch({
     executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     headless: true, args: ["--no-sandbox"],
@@ -373,7 +374,6 @@ async function main() {
       `${await ocupadas(client, licenciaId)} ocupadas`);
   } finally {
     await limpiar(client);
-    client.release();
     await navegador.close();
     await pool.end();
   }

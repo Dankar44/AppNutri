@@ -39,6 +39,9 @@ const navItems = [
   { href: "/admin/centros", labelKey: "nav.centros" as const, icon: Building2 },
   { href: "/admin/universidades", labelKey: "nav.universidades" as const, icon: GraduationCap },
   { href: "/admin/alumnos", labelKey: "nav.alumnos" as const, icon: BookOpen },
+  // Debajo de universidades, los dos lados por separado: todos los profesores y todos los alumnos
+  // de todas las facultades juntos (Guillermo, 9 sep 2026).
+  { href: "/admin/profesores", labelKey: "nav.profesores" as const, icon: GraduationCap },
   { href: "/admin/ofertas", labelKey: "nav.ofertas" as const, icon: Briefcase },
 ];
 

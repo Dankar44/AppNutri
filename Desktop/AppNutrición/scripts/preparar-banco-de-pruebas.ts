@@ -1,8 +1,10 @@
 /**
  * Monta una universidad de prueba entera y te da todas las llaves.
  *
- * Para probar a mano sin tener que inventarse correos ni pasar por el registro: en desarrollo las
- * cuentas nacen verificadas, así que cualquier dirección vale y no hace falta recibir ningún email.
+ * Para probar a mano sin tener que inventarse correos ni pasar por el registro: las cuentas que
+ * monta aquí nacen ya verificadas y entran directas. Las que se creen desde los enlaces sí piden
+ * verificar el correo, como en producción; en local no hay servidor de correo, así que el enlace de
+ * verificación sale en la propia pantalla y en el log del servidor.
  *
  *   DB=dev npx tsx scripts/preparar-banco-de-pruebas.ts                 (2 profesores, 4 alumnos)
  *   DB=dev npx tsx scripts/preparar-banco-de-pruebas.ts 3 10            (3 y 10)
@@ -73,6 +75,28 @@ async function main() {
     const normal = `nutri@${DOMINIO}`;
     await cuenta(c, normal, "Nutricionista", null, null);
 
+    // Las demás situaciones en las que alguien puede abrir un enlace ya con la sesión puesta.
+    // Cada una ve una cosa distinta, y es donde se esconden los callejones sin salida
+    // (Guillermo, 9 sep 2026: "quiero mirar todos los ángulos posibles").
+    const { rows: otraLic } = await c.query(
+      `INSERT INTO licencias_docentes (id, institucion, "maxProfesores", "maxAlumnos", activa, "fechaInicio", "fechaFin", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, '${MARCA} Otra universidad', 3, 10, true, $1::date, $2::date, NOW(), NOW())
+       RETURNING id`, [`${anioDelCurso()}-09-01`, finDeCurso()]);
+    const profeOtra = `profe.otrauni@${DOMINIO}`;
+    await cuenta(c, profeOtra, "De otra universidad", "PROFESOR", otraLic[0].id);
+    const profeSinUni = `profe.sinuni@${DOMINIO}`;
+    const sinUniId = await cuenta(c, profeSinUni, "Sin universidad", "PROFESOR", null);
+    // Se fue de su facultad este curso, así que conserva el espacio docente hasta el 31 de agosto:
+    // sin esa fecha sería un profesor al que ya se le acabó el plazo, que es otro caso distinto.
+    await c.query(`UPDATE dietistas SET "docenciaHasta" = $2 WHERE id = $1`, [sinUniId, finDeCurso()]);
+    const profeCaducado = `profe.plazoacabado@${DOMINIO}`;
+    const caducadoId = await cuenta(c, profeCaducado, "Con el plazo acabado", "PROFESOR", null);
+    await c.query(`UPDATE dietistas SET "docenciaHasta" = '2020-08-31' WHERE id = $1`, [caducadoId]);
+
+    // Un alumno de otra facultad: se puede apuntar igual, un alumno no está atado a una sola.
+    const alumnoOtra = `alumno.otrauni@${DOMINIO}`;
+    await cuenta(c, alumnoOtra, "De otra universidad", "ALUMNO", otraLic[0].id);
+
     // El enlace de profesorado, con plazas de sobra para que puedas probarlo.
     const { rows: enl } = await c.query(
       `INSERT INTO enlaces_profesores (id, "licenciaDocenteId", token, "cursoAnio", plazas, "creadoPor")
@@ -81,6 +105,7 @@ async function main() {
     await c.query(`UPDATE licencias_docentes SET "maxProfesores" = "maxProfesores" + 2 WHERE id = $1`, [licenciaId]);
 
     const base = "http://localhost:3001";
+    const plazasProfe = nProfes + 2;
     console.log(`
   ══════════════════════════════════════════════════════════════
    ${MARCA} · universidad de pruebas lista
@@ -89,18 +114,35 @@ async function main() {
    Todas las cuentas usan la misma contraseña:  ${PASS}
    Entra en ${base}/login
 
-   PROFESORES (${nProfes} plazas vendidas, ${nProfes} usadas)
+   PROFESORES — ${plazasProfe} plazas en la universidad, ${nProfes} ya ocupadas por estos:
 ${profes.map((e) => `     ${e}`).join("\n")}
+   Quedan ${plazasProfe - nProfes} libres. El admin enseña esa cuenta (los de arriba + tú si
+   entras por el enlace), no los usos del enlace: el tope es la universidad entera.
 
-   ALUMNOS (${nAlumnos} plazas, ${dentro} usadas · quedan ${nAlumnos - dentro})
+   ALUMNOS — ${nAlumnos} plazas, ${dentro} ya ocupadas por estos:
 ${alumnos.map((e) => `     ${e}`).join("\n")}
+   Quedan ${nAlumnos - dentro} libres.
 
    NUTRICIONISTA SIN ROL — para probar «ya uso Annonia»
      ${normal}
 
-   ENLACES
-     Profesorado (2 plazas):  ${base}/profesorado/${enl[0].token}
-     Clase (cupo ${nAlumnos}):${" ".repeat(Math.max(1, 10 - String(nAlumnos).length))}${base}/clase/${clase[0].tokenInvitacion}
+   Y PARA VER QUÉ PASA CON LA SESIÓN YA PUESTA (abre los enlaces con cada una):
+     ${profes[0]}  → profesor de ESTA universidad
+     ${profeOtra}  → profesor de OTRA universidad
+     ${profeSinUni}  → profesor que se fue de su facultad (conserva el espacio hasta agosto)
+     ${profeCaducado}  → profesor al que ya se le acabó el plazo (ya no tiene espacio docente)
+     ${alumnos[0]}  → alumno YA matriculado en esta clase
+     ${alumnoOtra}  → alumno de otra facultad
+     ${normal}  → nutricionista sin nada de docencia
+
+   ENLACE DE PROFESORADO (2 usos)
+${base}/profesorado/${enl[0].token}
+
+   ENLACE DE LA CLASE (cupo ${nAlumnos})
+${base}/clase/${clase[0].tokenInvitacion}
+
+   Al darte de alta por un enlace se te pedirá verificar el correo. Aquí no hay servidor de
+   correo, así que en esa misma pantalla te sale el enlace de verificación para pulsarlo.
 
    ADMIN
      ${base}/admin-login  ·  la universidad se llama «${MARCA} Universidad de pruebas»
@@ -149,6 +191,7 @@ async function cuenta(c: pg.PoolClient, email: string, apellidos: string, rol: s
 
 async function limpiar(c: pg.PoolClient) {
   await c.query(`DELETE FROM clases WHERE nombre LIKE '${MARCA}%'`);
+  await c.query(`DELETE FROM enlaces_profesores WHERE "licenciaDocenteId" IN (SELECT id FROM licencias_docentes WHERE institucion LIKE '${MARCA}%')`);
   const { rows } = await c.query(`SELECT "authId" FROM dietistas WHERE email LIKE $1`, [`%@${DOMINIO}`]);
   await c.query(`DELETE FROM pacientes WHERE "dietistaId" IN (SELECT id FROM dietistas WHERE email LIKE $1)`, [`%@${DOMINIO}`]);
   await c.query(`DELETE FROM dietistas WHERE email LIKE $1`, [`%@${DOMINIO}`]);

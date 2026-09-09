@@ -16,6 +16,7 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import pg from "pg";
+import { conexionResistente, type Conexion } from "./_conexion-viva";
 import { SignJWT } from "jose";
 import puppeteer, { type Page } from "puppeteer-core";
 
@@ -39,7 +40,7 @@ async function cookieAdmin() {
   return { name: "annonia-admin-session", value: token, domain: "localhost", path: "/" };
 }
 
-async function crearDietista(client: pg.PoolClient, email: string, apellidos: string, extra: Record<string, unknown> = {}) {
+async function crearDietista(client: Conexion, email: string, apellidos: string, extra: Record<string, unknown> = {}) {
   const { rows: usuarios } = await client.query(
     `INSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
        created_at, updated_at, raw_app_meta_data, raw_user_meta_data, is_sso_user, is_anonymous,
@@ -57,7 +58,7 @@ async function crearDietista(client: pg.PoolClient, email: string, apellidos: st
   return rows[0].id as string;
 }
 
-async function limpiar(client: pg.PoolClient) {
+async function limpiar(client: Conexion) {
   await client.query(`DELETE FROM clases WHERE nombre LIKE '${MARCA}%'`);
   const { rows } = await client.query(`SELECT id FROM auth.users WHERE email LIKE '%@${DOMINIO}'`);
   for (const r of rows) {
@@ -69,7 +70,7 @@ async function limpiar(client: pg.PoolClient) {
 }
 
 async function main() {
-  const client = await pool.connect();
+  const client = conexionResistente(pool);
   const navegador = await puppeteer.launch({
     executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     headless: true, args: ["--no-sandbox"],
@@ -178,6 +179,42 @@ async function main() {
     comprobar("hay un enlace al detalle de sus alumnos", (await page.evaluate((id) =>
       Array.from(document.querySelectorAll("a")).some((a) => a.getAttribute("href") === `/admin/alumnos?licencia=${id}`), licenciaId)));
 
+    console.log("\n── Desde aquí se le puede quitar el acceso, como haría su profesor ──");
+    // Antes se veían pero no se podía tocar nada: cuando llamaba una facultad había que pedirle al
+    // profesor que lo hiciera él (Guillermo, 9 sep 2026).
+    await page.goto(`${BASE}/admin/alumnos?licencia=${licenciaId}&buscar=normal@${DOMINIO}`, { waitUntil: "networkidle0" });
+    await esperar(1200);
+    comprobar("hay un botón para quitarle el acceso", /Quitar acceso/i.test(await texto(page)));
+    await page.evaluate(() => {
+      const b = Array.from(document.querySelectorAll("button")).find((x) => /Quitar acceso/i.test(x.textContent ?? ""));
+      (b as HTMLElement | undefined)?.click();
+    });
+    await esperar(700);
+    comprobar("avisa antes de hacerlo", /no se borra nada/i.test(await texto(page)));
+    await page.evaluate(() => {
+      const b = Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.trim() === "Quitar el acceso");
+      (b as HTMLElement | undefined)?.click();
+    });
+    await esperar(3000);
+    const { rows: fuera } = await client.query(
+      `SELECT a.activa, a."bajaAt" FROM alumnos_clase a JOIN dietistas d ON d.id = a."alumnoId"
+        WHERE d.email = $1`, [`normal@${DOMINIO}`]);
+    comprobar("se le retira de verdad", fuera[0]?.activa === false, `activa=${fuera[0]?.activa}`);
+    comprobar("y queda apuntado cuándo", fuera[0]?.bajaAt !== null);
+
+    await page.reload({ waitUntil: "networkidle0" });
+    await esperar(1200);
+    comprobar("y se le puede devolver", /Devolver acceso/i.test(await texto(page)));
+    await page.evaluate(() => {
+      const b = Array.from(document.querySelectorAll("button")).find((x) => /Devolver acceso/i.test(x.textContent ?? ""));
+      (b as HTMLElement | undefined)?.click();
+    });
+    await esperar(3000);
+    const { rows: devuelto } = await client.query(
+      `SELECT a.activa FROM alumnos_clase a JOIN dietistas d ON d.id = a."alumnoId" WHERE d.email = $1`,
+      [`normal@${DOMINIO}`]);
+    comprobar("y vuelve a estar dentro", devuelto[0]?.activa === true);
+
     console.log("\n── Y no la ve cualquiera ──");
     const sinCookie = await (await navegador.createBrowserContext()).newPage();
     await sinCookie.goto(`${BASE}/admin/alumnos`, { waitUntil: "networkidle0" });
@@ -185,7 +222,6 @@ async function main() {
     comprobar("sin sesión de administración no se entra", !sinCookie.url().includes("/admin/alumnos"), sinCookie.url());
   } finally {
     await limpiar(client);
-    client.release();
     await navegador.close();
     await pool.end();
   }

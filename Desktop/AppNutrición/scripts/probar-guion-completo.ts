@@ -17,8 +17,10 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import pg from "pg";
+import { conexionResistente, type Conexion } from "./_conexion-viva";
 import { mkdirSync } from "node:fs";
 import puppeteer, { type Page, type Browser } from "puppeteer-core";
+import { verificarCorreo } from "./_verificar-correo";
 import { createClient } from "@supabase/supabase-js";
 
 const BASE = "http://localhost:3001";
@@ -28,8 +30,8 @@ const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL!, ssl: { r
 
 const PROFE = { email: "guion.profe@annonia.dev", pass: "GuionPrueba_1", nombre: "Elena", apellidos: "Profesora" };
 const PROFE2 = { email: "guion.profe2@annonia.dev", pass: "GuionPrueba_2", nombre: "Marcos", apellidos: "Adjunto" };
-const ALUMNA = { email: "guion.alumna@alumnos.urjc.es", pass: "GuionPrueba_3", nombre: "Lucia", apellidos: "Alumna" };
-const NUEVA = { email: "guion.nueva@alumnos.urjc.es", pass: "GuionPrueba_4", nombre: "Sara", apellidos: "Recien" };
+const ALUMNA = { email: "guion.alumna@alumnos.urjc.dev", pass: "GuionPrueba_3", nombre: "Lucia", apellidos: "Alumna" };
+const NUEVA = { email: "guion.nueva@alumnos.urjc.dev", pass: "GuionPrueba_4", nombre: "Sara", apellidos: "Recien" };
 
 let ok = 0, mal = 0;
 const dudas: string[] = [];
@@ -108,7 +110,7 @@ async function enviarDialogo(p: Page) {
   return hecho;
 }
 
-async function crearCuenta(client: pg.PoolClient, quien: { email: string; pass: string; nombre: string; apellidos: string }, extra: Record<string, unknown> = {}) {
+async function crearCuenta(client: Conexion, quien: { email: string; pass: string; nombre: string; apellidos: string }, extra: Record<string, unknown> = {}) {
   const { rows } = await client.query(
     `INSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
        created_at, updated_at, raw_app_meta_data, raw_user_meta_data, is_sso_user, is_anonymous,
@@ -141,6 +143,9 @@ async function sesionDe(navegador: Browser, email: string, pass: string): Promis
   const ref = url.match(/https:\/\/([a-z0-9]+)\.supabase\.co/)?.[1];
   const page = await (await navegador.createBrowserContext()).newPage();
   await page.setViewport({ width: 1440, height: 950 });
+  // El servidor de desarrollo compila cada ruta la primera vez que se pide: con 30 s (lo que trae
+  // puppeteer) caducaba la navegación y la prueba moría por algo que no era del código.
+  page.setDefaultNavigationTimeout(90_000);
   await page.evaluateOnNewDocument(() => {
     try {
       localStorage.setItem("annonia-welcome-dietista", "1");
@@ -155,7 +160,7 @@ async function sesionDe(navegador: Browser, email: string, pass: string): Promis
   return page;
 }
 
-async function limpiar(client: pg.PoolClient) {
+async function limpiar(client: Conexion) {
   await client.query(`DELETE FROM clases WHERE nombre LIKE '${MARCA}%'`);
   await client.query(`DELETE FROM casos_clinicos WHERE nombre LIKE '${MARCA}%'`);
   for (const q of [PROFE, PROFE2, ALUMNA, NUEVA]) {
@@ -172,7 +177,7 @@ async function limpiar(client: pg.PoolClient) {
 
 async function main() {
   mkdirSync(DIR, { recursive: true });
-  const client = await pool.connect();
+  const client = conexionResistente(pool);
   const navegador = await puppeteer.launch({
     executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     headless: true, args: ["--no-sandbox"],
@@ -185,7 +190,7 @@ async function main() {
     const { rows: lic } = await client.query(
       `INSERT INTO licencias_docentes (id, institucion, "personaContacto", "maxProfesores", "maxAlumnos",
          "dominioEmail", "fechaInicio", "fechaFin", "createdAt", "updatedAt")
-       VALUES (gen_random_uuid()::text, $1, 'Guillermo', 3, 30, 'urjc.es,alumnos.urjc.es',
+       VALUES (gen_random_uuid()::text, $1, 'Guillermo', 3, 30, 'urjc.dev,alumnos.urjc.dev',
          NOW(), '2027-08-31', NOW(), NOW()) RETURNING id`, [`${MARCA} Universidad`]);
     const licenciaId = lic[0].id as string;
     const profeId = await crearCuenta(client, PROFE, { rolDocente: "PROFESOR", licenciaDocenteId: licenciaId });
@@ -194,6 +199,7 @@ async function main() {
     const profe = await sesionDe(navegador, PROFE.email, PROFE.pass);
     const admin = await navegador.newPage();
     await admin.setViewport({ width: 1440, height: 950 });
+    admin.setDefaultNavigationTimeout(90_000);
 
     // ─────────── BLOQUE 1 · La universidad (admin) ───────────
     console.log("\n═══ BLOQUE 1 · La universidad (admin) ═══");
@@ -215,7 +221,7 @@ async function main() {
     comprobar("y el curso, en formato de curso escolar", /20\d\d\/\d\d/.test(visible),
       visible.match(/20\d\d\/\d\d/)?.[0] ?? "no sale");
     comprobar("los cupos de profesor y alumno", /0 \/ 3|1 \/ 3|2 \/ 3/.test(visible) && visible.includes("/ 30"));
-    comprobar("y los dominios de la facultad", visible.includes("urjc.es"));
+    comprobar("y los dominios de la facultad", visible.includes("urjc.dev"));
     comprobar("que solo avisan, nunca bloquean", /nunca impide dar de alta/i.test(visible));
     await foto(admin, "01-admin-universidad");
 
@@ -268,7 +274,7 @@ async function main() {
     console.log("\n6. Alta por correo: el dominio avisa pero no bloquea");
     await profe.goto(`${BASE}/profesor/clases/${claseId}`, { waitUntil: "networkidle0" });
     await esperar(1000);
-    await escribirEnCampo(profe, "Correos de los alumnos", `${ALUMNA.email}\nfuera.dominio@gmail.com`);
+    await escribirEnCampo(profe, "Correos de los alumnos", `${ALUMNA.email}\nfuera.dominio@correo-de-fuera.dev`);
     await esperar(400);
     await pulsar(profe, "Enviar invitaciones");
     // El alta pregunta antes: las plazas se gastan para todo el curso y no vuelven.
@@ -285,7 +291,7 @@ async function main() {
       `SELECT email FROM invitaciones_docentes WHERE "claseId" = $1 ORDER BY email`, [claseId]);
     comprobar("invita a los dos, sea cual sea el dominio", invitaciones.length === 2,
       invitaciones.map((i) => i.email).join(", "));
-    comprobar("el de fuera de la facultad entra igual", invitaciones.some((i) => i.email === "fuera.dominio@gmail.com"));
+    comprobar("el de fuera de la facultad entra igual", invitaciones.some((i) => i.email === "fuera.dominio@correo-de-fuera.dev"));
     await foto(profe, "03-alta-por-correo");
 
     console.log("\n7. El enlace de la clase");
@@ -306,6 +312,12 @@ async function main() {
     const { rows: conEnlace } = await client.query(`SELECT "tokenInvitacion", "invitacionAbierta" FROM clases WHERE id = $1`, [claseId]);
     comprobar("al abrirlo nace el enlace", !!conEnlace[0].tokenInvitacion && conEnlace[0].invitacionAbierta === true);
     const token = conEnlace[0].tokenInvitacion as string;
+    // Se espera POR LA CONDICIÓN, no un rato fijo: el enlace aparece cuando el refresco del
+    // servidor vuelve, y con la ruta recién compilada eso puede tardar más de dos segundos.
+    await profe.waitForFunction(
+      (t: string) => Array.from(document.querySelectorAll("input")).some((i) => (i as HTMLInputElement).value.includes(t)),
+      { timeout: 20_000 }, token,
+    ).catch(() => { /* si no llega, lo dice la comprobación de abajo */ });
     const enlaceEnPantalla = await profe.evaluate(() =>
       Array.from(document.querySelectorAll("input")).map((i) => i.value).join(" "));
     comprobar("y se le enseña para copiarlo", enlaceEnPantalla.includes(`/clase/${token}`),
@@ -332,6 +344,7 @@ async function main() {
     console.log("\n9. El enlace sin sesión: crear cuenta");
     const anonima = await (await navegador.createBrowserContext()).newPage();
     await anonima.setViewport({ width: 1440, height: 950 });
+    anonima.setDefaultNavigationTimeout(90_000);
     await anonima.goto(`${BASE}/clase/${token}`, { waitUntil: "networkidle0" });
     await esperar(1200);
     visible = await texto(anonima);
@@ -341,7 +354,7 @@ async function main() {
     comprobar("y sugiere el correo de la universidad", /usa tu correo de la universidad/i.test(visible));
     await escribirEnCampo(anonima, "Nombre", NUEVA.nombre);
     await escribirEnCampo(anonima, "Apellidos", NUEVA.apellidos);
-    await escribirEnCampo(anonima, "Correo", "fuera@gmail.com");
+    await escribirEnCampo(anonima, "Correo", "fuera@correo-de-fuera.dev");
     await esperar(800);
     comprobar("un correo de fuera avisa, pero deja seguir", /no es de la universidad/i.test(await texto(anonima)));
     const bloqueado = await anonima.evaluate(() =>
@@ -351,6 +364,14 @@ async function main() {
     await escribirEnCampo(anonima, "Correo", NUEVA.email);
     // La contraseña va dentro de un envoltorio con el botón de ver/ocultar: se busca por tipo.
     await escribir(anonima, 'input[type="password"]', NUEVA.pass);
+    // Hay dos campos de contraseña desde el 9 sep 2026: la segunda es para repetirla.
+    await anonima.evaluate((clave) => {
+      const claves = Array.from(document.querySelectorAll('input[type="password"]'));
+      const segunda = claves[1] as HTMLInputElement | undefined;
+      if (!segunda) return;
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(segunda, clave);
+      segunda.dispatchEvent(new Event("input", { bubbles: true }));
+    }, NUEVA.pass);
     await esperar(600);
     const listoParaEnviar = await anonima.evaluate(() => {
       const correo = document.querySelector('input[type="email"]') as HTMLInputElement | null;
@@ -365,12 +386,14 @@ async function main() {
     comprobar("la cuenta se crea", nueva.length === 1);
     comprobar("con rol de alumna", nueva[0]?.rolDocente === "ALUMNO");
     comprobar("y marcada como nacida en el aula", nueva[0]?.cuentaDeClase === true);
-    // Desde el 9 sep 2026 se queda dentro: acaba de escribir su correo y su contraseña, mandarle
-    // al login a repetirlos era hacerle el trabajo dos veces.
-    comprobar("y entra directamente a su aula, sin pasar por el login",
-      anonima.url().includes("/aula"), anonima.url().replace(BASE, ""));
+    // Desde el 9 sep 2026 la cuenta nace sin el correo confirmado: no entra hasta abrirlo, para
+    // que nadie se apunte con el correo de otro y le gaste una plaza a la facultad.
+    const trasCrear = await texto(anonima);
+    comprobar("se le pide verificar el correo", /verifica tu correo/i.test(trasCrear),
+      trasCrear.split("\n").find((l) => /verifica/i.test(l)) ?? "");
     await foto(anonima, "07-alumna-nueva-tras-crear-cuenta");
-    // Y entrando de verdad, aterriza en su aula.
+    // Y al pulsar el enlace del correo aterriza en su aula, sin escribir nada otra vez.
+    await verificarCorreo(client, NUEVA.email, BASE);
     const recien = await sesionDe(navegador, NUEVA.email, NUEVA.pass);
     await recien.goto(`${BASE}/entrar`, { waitUntil: "networkidle0" });
     await esperar(2500);
@@ -1211,7 +1234,7 @@ async function main() {
   } finally {
     await navegador.close();
     await limpiar(client).catch(() => {});
-    client.release();
+
     await pool.end();
   }
   if (mal > 0) process.exit(1);

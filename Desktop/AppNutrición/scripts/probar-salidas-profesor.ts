@@ -17,6 +17,7 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import pg from "pg";
+import { conexionResistente, type Conexion } from "./_conexion-viva";
 import puppeteer, { type Page, type Browser } from "puppeteer-core";
 import { createClient } from "@supabase/supabase-js";
 import { mkdirSync } from "node:fs";
@@ -56,7 +57,7 @@ async function pulsar(page: Page, tx: string) {
   return hecho;
 }
 
-async function crearProfesor(client: pg.PoolClient, quien: typeof ANA, licenciaId: string | null) {
+async function crearProfesor(client: Conexion, quien: typeof ANA, licenciaId: string | null) {
   const { rows } = await client.query(
     `INSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
        created_at, updated_at, raw_app_meta_data, raw_user_meta_data, is_sso_user, is_anonymous,
@@ -98,7 +99,7 @@ async function sesionDe(navegador: Browser, email: string, pass: string): Promis
   return page;
 }
 
-async function limpiar(client: pg.PoolClient) {
+async function limpiar(client: Conexion) {
   await client.query(`DELETE FROM clases WHERE nombre LIKE '${MARCA}%'`);
   for (const p of [ANA, BEA]) {
     const { rows } = await client.query(`SELECT id FROM auth.users WHERE email = $1`, [p.email]);
@@ -113,7 +114,7 @@ async function limpiar(client: pg.PoolClient) {
 
 async function main() {
   mkdirSync(DIR, { recursive: true });
-  const client = await pool.connect();
+  const client = conexionResistente(pool);
   const navegador = await puppeteer.launch({
     executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     headless: true, args: ["--no-sandbox"],
@@ -203,14 +204,18 @@ async function main() {
     comprobar("pero ella sigue siendo profesora de su facultad",
       sigueSiendo[0].rolDocente === "PROFESOR" && sigueSiendo[0].licenciaDocenteId === licenciaId);
 
-    console.log("\n── 3. Salir de la universidad ──");
+    console.log("\n── 3. Salir de la universidad, desde Ajustes ──");
+    // Las salidas viven en Ajustes, con lo demás de su cuenta: estaban escondidas en un desplegable
+    // del espacio docente y ahí no las buscaba nadie (Guillermo, 9 sep 2026).
     await ana.goto(`${BASE}/profesor`, { waitUntil: "networkidle0" });
-    await pulsar(ana, "Dejar la docencia");
-    await esperar(400);
+    await esperar(800);
+    comprobar("ya no están escondidas en el espacio docente", !/Dejar de ser profesor/i.test(await texto(ana)));
+    await ana.goto(`${BASE}/ajustes`, { waitUntil: "networkidle0" });
+    await esperar(2000);
     visible = await texto(ana);
-    comprobar("desde el panel se ofrece salir de su universidad", visible.includes(`Salir de ${MARCA} Uno`));
+    comprobar("desde Ajustes se ofrece salir de su universidad", visible.includes(`Salir de ${MARCA} Uno`));
     comprobar("y dejar de ser profesor", visible.includes("Dejar de ser profesor"));
-    await foto(ana, "panel-salidas");
+    await foto(ana, "ajustes-salidas");
     // Un caso suyo antes de irse: lo que hay que comprobar es que salir de la universidad no se
     // lleva su trabajo por delante, y sin ningún caso eso no se prueba.
     await client.query(
@@ -219,6 +224,7 @@ async function main() {
     await pulsar(ana, `Salir de ${MARCA} Uno`);
     await esperar(500);
     comprobar("el aviso avisa de que pierde el acceso a sus clases", /pierdes el acceso a sus clases/i.test(await texto(ana)));
+    comprobar("y de que conserva su espacio hasta el 31 de agosto", /hasta el 31 de agosto/i.test(await texto(ana)));
     await foto(ana, "aviso-dejar-universidad");
     await pulsar(ana, "Salir de la universidad");
     await esperar(2500);
@@ -234,12 +240,18 @@ async function main() {
       conOtra.profesorId === beaId && conOtra.archivada === false,
       conOtra.profesorId === beaId ? "es de Bea" : "sigue siendo de Ana");
     await ana.goto(`${BASE}/profesor`, { waitUntil: "networkidle0" });
+    await esperar(1000);
     visible = await texto(ana);
-    // Sin universidad no hay espacio docente (cambiado el 8 sep 2026): se le explica y se le manda
-    // a su cuenta, en vez de dejarle un panel vacío que podría seguir usando sin pagar.
-    comprobar("se le dice que no está en ninguna universidad", /no estás en ninguna universidad/i.test(visible),
-      ana.url());
-    comprobar("y que no se le ha borrado nada", /no se ha borrado nada|no se apagou nada/i.test(visible));
+    // Conserva el espacio hasta el 31 de agosto de ese curso: su plaza está pagada y sus casos son
+    // suyos (Guillermo, 9 sep 2026). Lo que NO conserva son las clases, que se quedan en la
+    // facultad, y por eso el panel se lo explica con la fecha.
+    comprobar("sigue entrando en su espacio docente", ana.url().includes("/profesor"), ana.url().replace(BASE, ""));
+    comprobar("se le dice que ya no está en ninguna universidad", /Ya no estás en ninguna universidad/i.test(visible));
+    comprobar("y hasta cuándo lo conserva", /Conservas tu espacio docente y tus casos hasta/i.test(visible),
+      visible.split("\n").find((l) => /Conservas tu espacio/i.test(l)) ?? "no lo dice");
+    const { rows: plazo } = await client.query(`SELECT "docenciaHasta" FROM dietistas WHERE id = $1`, [anaId]);
+    comprobar("y queda apuntado el plazo en su ficha", plazo[0]?.docenciaHasta !== null,
+      `${plazo[0]?.docenciaHasta}`);
     // Lo que de verdad importa no es lo que ponga la pantalla, sino que su trabajo siga en pie: se
     // comprueba en la base, que es donde no hay interpretaciones.
     const { rows: suyo } = await client.query(
@@ -249,6 +261,7 @@ async function main() {
     comprobar("y sus casos siguen siendo suyos", suyo[0]?.casos > 0, `${suyo[0]?.casos} casos`);
     await foto(ana, "panel-sin-universidad");
     await ana.goto(`${BASE}/profesor/clases`, { waitUntil: "networkidle0" });
+    await esperar(800);
     comprobar("sin acceso a las clases de la facultad que dejó", !(await texto(ana)).includes(MARCA));
     await ana.goto(`${BASE}/profesor/clases/${suya}`, { waitUntil: "networkidle0" });
     comprobar("ni entrando por la dirección directa", !(await texto(ana)).includes(`${MARCA} solo de Ana`), ana.url().replace(BASE, ""));
@@ -277,13 +290,20 @@ async function main() {
     await admin.goto(`${BASE}/admin/universidades/${otraLicenciaId}`, { waitUntil: "networkidle0" });
     await esperar(800);
     comprobar("la administración deja entrar", admin.url().includes("/admin"), admin.url().replace(BASE, ""));
-    await admin.evaluate((v) => {
+    // Si el campo de buscar no está, la comprobación de abajo fallaba sin decir por qué: hay que
+    // saber si es que el buscador no encuentra a nadie o es que ni siquiera se está pintando.
+    const hayBuscador = await admin.evaluate((v) => {
       const c = document.querySelector('input[placeholder^="Buscar por nombre"]') as HTMLInputElement | null;
-      if (!c) return;
+      if (!c) return false;
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(c, v);
       c.dispatchEvent(new Event("input", { bubbles: true }));
+      return true;
     }, ANA.email);
-    await esperar(2000);
+    comprobar("hay campo de búsqueda en la ficha de la universidad", hayBuscador,
+      hayBuscador ? "" : (await texto(admin)).split("\n").filter(Boolean).slice(-6).join(" · "));
+    // Se espera a que aparezca, no un rato fijo: la búsqueda va al servidor.
+    await admin.waitForFunction((correo: string) => document.body.innerText.includes(correo),
+      { timeout: 15_000 }, ANA.email).catch(() => { /* lo dice la comprobación */ });
     visible = await texto(admin);
     comprobar("el buscador sí la encuentra ahora", visible.includes(ANA.email), visible.includes(ANA.email) ? "" : "no sale en la lista");
     comprobar("y avisa de que ya es profesora, solo sin universidad", /ya es profesor/i.test(visible));
@@ -296,10 +316,37 @@ async function main() {
     comprobar("entra en la segunda universidad", anaOtra[0].licenciaDocenteId === otraLicenciaId);
     comprobar("con su rol de siempre", anaOtra[0].rolDocente === "PROFESOR");
 
-    console.log("\n── 5. Dejar de ser profesora del todo ──");
-    await ana.goto(`${BASE}/profesor`, { waitUntil: "networkidle0" });
-    await pulsar(ana, "Dejar la docencia");
+    console.log("\n── 4b. Y por las TRES vías, no solo por el buscador ──");
+    // Las tres formas de meter a un profesor —buscador, invitación por correo y enlace— tienen que
+    // admitir al que se quedó sin universidad. El buscador ya lo hacía; la invitación por correo
+    // decía «esta cuenta ya tiene un rol docente» y no había manera (Guillermo, 9 sep 2026).
+    await client.query(`UPDATE dietistas SET "licenciaDocenteId" = NULL WHERE id = $1`, [anaId]);
+    await client.query(`DELETE FROM invitaciones_docentes WHERE email = $1`, [ANA.email]);
+    await admin.goto(`${BASE}/admin/universidades/${otraLicenciaId}`, { waitUntil: "networkidle0" });
+    await esperar(1200);
+    await admin.evaluate(() => {
+      const b = Array.from(document.querySelectorAll("button")).find((x) => /Invitar por correo/i.test(x.textContent ?? ""));
+      (b as HTMLElement | undefined)?.click();
+    });
+    await esperar(600);
+    await admin.evaluate((correo) => {
+      const c = Array.from(document.querySelectorAll("input")).find((i) => i.type === "email" || i.type === "text");
+      if (!c) return;
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(c, correo);
+      c.dispatchEvent(new Event("input", { bubbles: true }));
+    }, ANA.email);
     await esperar(400);
+    await pulsar(admin, "Enviar invitación");
+    await esperar(3000);
+    const { rows: porCorreo } = await client.query(
+      `SELECT "licenciaDocenteId" FROM dietistas WHERE id = $1`, [anaId]);
+    comprobar("invitar por correo a una docente sin universidad la mete en esta",
+      porCorreo[0]?.licenciaDocenteId === otraLicenciaId,
+      `${porCorreo[0]?.licenciaDocenteId === otraLicenciaId ? "" : "sigue fuera"}`);
+
+    console.log("\n── 5. Dejar de ser profesora del todo, desde Ajustes ──");
+    await ana.goto(`${BASE}/ajustes`, { waitUntil: "networkidle0" });
+    await esperar(2000);
     await pulsar(ana, "Dejar de ser profesor");
     await esperar(500);
     comprobar("el aviso promete que sus pacientes siguen ahí", /pacientes y tu trabajo intactos/i.test(await texto(ana)));
@@ -325,7 +372,6 @@ async function main() {
   } finally {
     await navegador.close();
     await limpiar(client).catch(() => {});
-    client.release();
     await pool.end();
   }
   if (mal > 0) process.exit(1);

@@ -75,7 +75,7 @@ async function main() {
     const { rows: lic } = await client.query(
       `INSERT INTO licencias_docentes (id, institucion, "personaContacto", "maxProfesores", "maxAlumnos",
          "fechaFin", "dominioEmail", "createdAt", "updatedAt")
-       VALUES (gen_random_uuid()::text, $1, 'Guillermo', 3, 30, '2027-08-31', 'urjc.es,alumnos.urjc.es', NOW(), NOW())
+       VALUES (gen_random_uuid()::text, $1, 'Guillermo', 3, 30, '2027-08-31', 'urjc.dev,alumnos.urjc.dev', NOW(), NOW())
        RETURNING id`, [INSTITUCION]);
     const licenciaId = lic[0].id as string;
 

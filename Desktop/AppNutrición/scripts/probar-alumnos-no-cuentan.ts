@@ -15,6 +15,7 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import pg from "pg";
+import { conexionResistente, type Conexion } from "./_conexion-viva";
 import { SignJWT } from "jose";
 
 const BASE = process.env.PRUEBAS_URL ?? "http://localhost:3001";
@@ -47,7 +48,7 @@ async function contarEnListado(cookie: string) {
   return (html.match(new RegExp(MARCA, "g")) || []).length;
 }
 
-async function borrarAlumnos(client: pg.PoolClient) {
+async function borrarAlumnos(client: Conexion) {
   const { rows } = await client.query(`SELECT id FROM auth.users WHERE email LIKE $1`, [`${MARCA}%`]);
   for (const r of rows) {
     await client.query(`DELETE FROM dietistas WHERE "authId" = $1`, [r.id]);
@@ -57,7 +58,7 @@ async function borrarAlumnos(client: pg.PoolClient) {
 }
 
 async function main() {
-  const client = await pool.connect();
+  const client = conexionResistente(pool);
   try {
     const cookie = await cookieAdmin();
     await borrarAlumnos(client);
@@ -129,7 +130,6 @@ async function main() {
     console.log(`\n${mal === 0 ? "✓ TODO CORRECTO" : "✗ HAY FALLOS"} — ${ok} bien, ${mal} mal\n`);
     if (mal > 0) process.exitCode = 1;
   } finally {
-    client.release();
     await pool.end();
   }
 }

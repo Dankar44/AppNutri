@@ -14,6 +14,7 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import pg from "pg";
+import { conexionResistente, type Conexion } from "./_conexion-viva";
 import puppeteer, { type Page, type Browser } from "puppeteer-core";
 
 const BASE = "http://localhost:3001";
@@ -56,13 +57,13 @@ async function rellenarYEnviar(page: Page, email: string) {
 }
 
 /** Cuántos pacientes tiene esa cuenta, y cómo se llama el primero. */
-async function pacientesDe(client: pg.PoolClient, email: string) {
+async function pacientesDe(client: Conexion, email: string) {
   const { rows } = await client.query(
     `SELECT p.nombre FROM pacientes p JOIN dietistas d ON d.id = p."dietistaId" WHERE d.email = $1`, [email]);
   return rows.map((r) => r.nombre as string);
 }
 
-async function limpiar(client: pg.PoolClient) {
+async function limpiar(client: Conexion) {
   const { rows } = await client.query(`SELECT id FROM auth.users WHERE email LIKE $1`, [`%@${DOMINIO}`]);
   await client.query(`DELETE FROM dietistas WHERE email LIKE $1`, [`%@${DOMINIO}`]);
   for (const r of rows) {
@@ -73,7 +74,7 @@ async function limpiar(client: pg.PoolClient) {
 }
 
 async function main() {
-  const client = await pool.connect();
+  const client = conexionResistente(pool);
   const navegador = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ["--no-sandbox"] });
   try {
     await limpiar(client);
@@ -130,7 +131,6 @@ async function main() {
 
     await limpiar(client);
   } finally {
-    client.release();
     await navegador.close();
     await pool.end();
   }

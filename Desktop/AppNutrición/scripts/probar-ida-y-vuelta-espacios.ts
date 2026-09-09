@@ -13,6 +13,7 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import pg from "pg";
+import { conexionResistente, type Conexion } from "./_conexion-viva";
 import puppeteer, { type Page, type Browser } from "puppeteer-core";
 import { createClient } from "@supabase/supabase-js";
 
@@ -53,7 +54,7 @@ async function sesion(nav: Browser, quien: { email: string; pass: string }): Pro
 }
 
 async function main() {
-  const client = await pool.connect();
+  const client = conexionResistente(pool);
   const navegador = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ["--no-sandbox"] });
   try {
     const { rows } = await client.query(`SELECT email FROM dietistas WHERE email IN ($1, $2)`, [PROFE.email, ALUMNA.email]);
@@ -91,7 +92,6 @@ async function main() {
       comprobar("hay con quién comprobarlo", true, normal[0].email);
     }
   } finally {
-    client.release();
     await navegador.close();
     await pool.end();
   }

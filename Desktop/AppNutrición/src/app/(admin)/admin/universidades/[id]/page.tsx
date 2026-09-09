@@ -10,7 +10,7 @@ import { EditarLicenciaForm } from "./editar-licencia-form";
 import { AsignarProfesorForm } from "./asignar-profesor-form";
 import { EnlacesProfesorado } from "./enlaces-profesorado";
 import { RenovarLicencia } from "./renovar-licencia";
-import { getEnlacesProfesores } from "@/app/actions/enlaces-profesores";
+import { getEnlacesProfesores, plazasLibresDeProfesor } from "@/app/actions/enlaces-profesores";
 import { QuitarRolButton } from "./quitar-rol-button";
 import { AccionesInvitacion } from "./acciones-invitacion";
 
@@ -114,6 +114,13 @@ export default async function UniversidadDetallePage({
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium truncate">
                     {p.nombre} {p.apellidos}
+                    {/* Ocupa plaza aunque todavía no pueda entrar: si no se dice, en el admin
+                        faltan plazas y no se sabe por qué (9 sep 2026). */}
+                    {p.sinVerificar && (
+                      <span className="ml-2 align-middle rounded-full bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 px-2 py-0.5 text-[11px] font-medium">
+                        {t("sinVerificar")}
+                      </span>
+                    )}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
                     {p.email}
@@ -121,6 +128,10 @@ export default async function UniversidadDetallePage({
                     {p.lastAccessAt
                       ? t("ultimoAcceso", { fecha: formatDate(p.lastAccessAt) })
                       : t("nuncaHaEntrado")}
+                    {/* Si usa la aplicación de verdad o solo figura en la lista: sus clases y sus
+                        pacientes propios (Guillermo, 9 sep 2026). */}
+                    {" · "}
+                    {t("clasesYPacientes", { clases: p.clases, pacientes: p.pacientes })}
                   </p>
                 </div>
                 <QuitarRolButton dietistaId={p.id} nombre={`${p.nombre} ${p.apellidos}`} />
@@ -158,7 +169,12 @@ export default async function UniversidadDetallePage({
 
         {/* Y la vía de repartir: un enlace para que se den de alta ellos, sin pedirle a la
             universidad los correos de su profesorado. */}
-        <EnlacesProfesorado licenciaId={licencia.id} enlaces={enlaces} contacto={correoDelContacto} />
+        <EnlacesProfesorado
+          licenciaId={licencia.id}
+          enlaces={enlaces}
+          contacto={correoDelContacto}
+          libres={await plazasLibresDeProfesor(licencia.id, licencia.maxProfesores)}
+        />
       </section>
 
       {/* Renovar: lo de cada verano, sin tener que crear otra universidad. */}

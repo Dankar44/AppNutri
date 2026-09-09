@@ -25,6 +25,9 @@ export default async function ClasePublicaPage({
   // Un profesor no puede ser alumno de una clase (lo rechaza `apuntarmeConMiCuenta`), así que
   // tampoco se le enseña el botón: se le dice para qué es el enlace (Guillermo, 6 sep 2026).
   const esProfesor = dentro?.rolDocente === "PROFESOR";
+  // Pero si se quedó sin universidad, «ir a mis clases» le lleva a un espacio que no existe: ese
+  // botón es el mismo callejón sin salida que había en el enlace de profesorado (9 sep 2026).
+  const profesorSinUniversidad = esProfesor && !dentro?.licenciaDocenteId;
   const t = await getTranslations("docencia");
 
   return (
@@ -56,10 +59,17 @@ export default async function ClasePublicaPage({
               {t("invitacion.irALogin")}
             </Link>
           </div>
-        ) : clase.plazasLibres <= 0 ? (
+        ) : clase.plazasLibres <= 0 || clase.claseLlena ? (
+          /* Dos motivos distintos para lo mismo: se ha llenado la clase o se ha agotado la bolsa de
+             la facultad. Al alumno le da igual cuál sea, pero tiene que verlo ANTES de rellenar
+             nada, como al profesor con su enlace (Guillermo, 9 sep 2026). */
           <div className="rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-5 text-sm">
-            <p className="font-medium text-amber-900 dark:text-amber-200">{t("clasePublica.sinPlazasTitulo")}</p>
-            <p className="text-amber-800/80 dark:text-amber-200/70 mt-1">{t("clasePublica.sinPlazasTexto")}</p>
+            <p className="font-medium text-amber-900 dark:text-amber-200">
+              {clase.claseLlena ? t("clasePublica.claseLlenaTitulo") : t("clasePublica.sinPlazasTitulo")}
+            </p>
+            <p className="text-amber-800/80 dark:text-amber-200/70 mt-1">
+              {clase.claseLlena ? t("clasePublica.claseLlenaTexto") : t("clasePublica.sinPlazasTexto")}
+            </p>
           </div>
         ) : esProfesor ? (
           <div className="bg-card border border-border rounded-xl p-5 space-y-4">
@@ -68,12 +78,23 @@ export default async function ClasePublicaPage({
               <p className="text-sm text-muted-foreground mt-1">{t("clasePublica.eresProfesorTexto")}</p>
             </div>
             <Link
-              href="/profesor/clases"
+              href={profesorSinUniversidad ? "/dashboard" : "/profesor/clases"}
               className="w-full inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
             >
-              {t("clasePublica.irAMisClases")}
+              {t(profesorSinUniversidad ? "clasePublica.irAMiCuenta" : "clasePublica.irAMisClases")}
             </Link>
             <CerrarSesionParaOtraCuenta />
+          </div>
+        ) : clase.yaMatriculado ? (
+          /* Ya está en esta clase: ofrecerle apuntarse otra vez es un botón que no hace nada. */
+          <div className="bg-card border border-border rounded-xl p-5 space-y-4 text-center">
+            <p className="font-medium text-sm">{t("clasePublica.yaEstasEnEstaClase")}</p>
+            <Link
+              href="/aula"
+              className="w-full inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+            >
+              {t("clasePublica.irAMiAula")}
+            </Link>
           </div>
         ) : sesionAbierta ? (
           // Ya hay alguien dentro en este navegador: se le apunta con esa cuenta de un clic.

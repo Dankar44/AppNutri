@@ -29,7 +29,9 @@ import { SuscripcionCard } from "./suscripcion-card";
 import { IntegracionesCard } from "./integraciones-card";
 import { EliminarCuentaButton } from "./eliminar-cuenta-button";
 import { PageHeader } from "@/components/page-header";
+import { prisma } from "@/lib/prisma";
 import { AjustesNav } from "./ajustes-nav";
+import { SalidasDelProfesor } from "@/app/(dashboard)/profesor/salidas";
 import { PacienteDemoCard } from "./paciente-demo-card";
 import { GoogleLoginCard } from "./google-login-card";
 import { DocumentosPdfSection } from "./documentos-pdf-section";
@@ -101,6 +103,16 @@ export default async function AjustesPage({
   const locale = await getLocale();
   // Solo se pregunta por la clase si es alumno: los demás no pagan la consulta.
   const claseDelAlumno = dietista.rolDocente === "ALUMNO" ? await claseVivaDeAlumno(dietista.id) : null;
+  // Las salidas del profesor viven aquí, con lo demás de su cuenta, y no escondidas en un
+  // desplegable dentro del espacio docente (Guillermo, 9 sep 2026). Se le enseñan a todo el que
+  // tenga el rol, esté o no en una universidad: el que se fue también tiene que poder dejarlo.
+  const esProfesor = dietista.rolDocente === "PROFESOR";
+  const universidadDelProfesor = esProfesor && dietista.licenciaDocenteId
+    ? (await prisma.licenciaDocente.findUnique({
+        where: { id: dietista.licenciaDocenteId },
+        select: { institucion: true },
+      }))?.institucion ?? null
+    : null;
   // Solo mientras está en clase: al dejar de serlo, la cuenta es suya y hace con ella lo que quiera.
   const esAlumnoEnClase = dietista.cuentaDeClase && dietista.rolDocente === "ALUMNO";
 
@@ -166,7 +178,7 @@ export default async function AjustesPage({
 
       {/* Layout con nav lateral + contenido */}
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-10 items-start">
-        <AjustesNav hideClase={!claseDelAlumno} />
+        <AjustesNav hideClase={!claseDelAlumno} hideDocencia={!esProfesor} />
 
         <main className="flex-1 min-w-0 space-y-10">
           {/* PERFIL */}
@@ -360,6 +372,21 @@ export default async function AjustesPage({
                       : tDocencia("ajustesAlumno.hasta", { fecha: formatDate(claseDelAlumno.fechaFinCurso, locale) })}
                   </p>
                 )}
+              </div>
+            </section>
+          )}
+
+          {/* DOCENCIA — las dos salidas del profesor */}
+          {esProfesor && (
+            <section>
+              <SectionHeader
+                id="docencia"
+                icon={GraduationCap}
+                title={tDocencia("ajustesProfesor.titulo")}
+                description={tDocencia("ajustesProfesor.descripcion")}
+              />
+              <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
+                <SalidasDelProfesor institucion={universidadDelProfesor} />
               </div>
             </section>
           )}

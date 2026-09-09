@@ -10,6 +10,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
+import { PACIENTES_REALES } from "@/lib/filtros-pacientes";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
@@ -47,6 +48,12 @@ export interface LicenciaDocenteDetalle extends LicenciaDocenteItem {
     rolDocente: "PROFESOR" | "ALUMNO" | null;
     createdAt: Date;
     lastAccessAt: Date | null;
+    /** Se dio de alta por un enlace y todavía no ha abierto el correo: ocupa plaza pero no entra. */
+    sinVerificar: boolean;
+    /** Pacientes propios, sin el de ejemplo: dice si usa la aplicación de verdad o solo figura. */
+    pacientes: number;
+    /** Clases que lleva ahora mismo, sin contar las archivadas. */
+    clases: number;
   }[];
 }
 
@@ -136,8 +143,16 @@ export async function getLicenciaDocenteDetalle(licenciaId: string): Promise<Lic
     include: {
       miembros: {
         select: {
-          id: true, nombre: true, apellidos: true, email: true,
+          id: true, nombre: true, apellidos: true, email: true, authId: true,
           rolDocente: true, createdAt: true, lastAccessAt: true,
+          // Si usa la aplicación de verdad o solo figura en la lista: pacientes suyos —sin el de
+          // ejemplo ni los del aula— y clases vivas (Guillermo, 9 sep 2026).
+          _count: {
+            select: {
+              pacientes: { where: { ...PACIENTES_REALES } },
+              clasesImpartidas: { where: { archivada: false } },
+            },
+          },
         },
         orderBy: [{ rolDocente: "asc" }, { createdAt: "asc" }],
       },
@@ -149,6 +164,17 @@ export async function getLicenciaDocenteDetalle(licenciaId: string): Promise<Lic
     },
   });
   if (!licencia) return null;
+
+  // Quien se apuntó por un enlace y no ha abierto el correo ocupa plaza igual, así que tiene que
+  // verse: si no, en el admin faltan plazas y no se sabe por qué (9 sep 2026).
+  const authIds = licencia.miembros.map((m) => m.authId).filter(Boolean) as string[];
+  const porVerificar = new Set(
+    authIds.length === 0 ? [] :
+    (await prisma.$queryRawUnsafe<{ id: string }[]>(
+      `SELECT id::text AS id FROM auth.users WHERE id = ANY($1::uuid[]) AND email_confirmed_at IS NULL`,
+      authIds,
+    )).map((r) => r.id),
+  );
 
   return {
     id: licencia.id,
@@ -163,7 +189,12 @@ export async function getLicenciaDocenteDetalle(licenciaId: string): Promise<Lic
     notas: licencia.notas,
     createdAt: licencia.createdAt,
     invitaciones: licencia.invitaciones,
-    miembros: licencia.miembros,
+    miembros: licencia.miembros.map(({ authId, _count, ...m }) => ({
+      ...m,
+      sinVerificar: authId ? porVerificar.has(authId) : false,
+      pacientes: _count.pacientes,
+      clases: _count.clasesImpartidas,
+    })),
     ...(await contarMiembros(licencia.id)),
   };
 }
@@ -388,7 +419,8 @@ export async function asignarProfesorLicencia(data: {
 
     await prisma.dietista.update({
       where: { id: dietistaId },
-      data: { rolDocente: "PROFESOR", licenciaDocenteId: licencia.id },
+      // `docenciaHasta` se limpia: si venía de otra facultad, ese plazo ya no pinta nada.
+      data: { rolDocente: "PROFESOR", licenciaDocenteId: licencia.id, docenciaHasta: null },
     });
 
     revalidarDocencia();
@@ -430,8 +462,9 @@ export async function sacarProfesorDeLaUniversidad(
 
   try {
     await prisma.$transaction(async (tx) => {
+      // Quita la licencia y apunta hasta cuándo conserva el espacio docente: lo hace ella para que
+      // no haya dos sitios que tengan que acordarse.
       await sacarDeLaUniversidad(tx, dietistaId, profesor.licenciaDocenteId!);
-      await tx.dietista.update({ where: { id: dietistaId }, data: { licenciaDocenteId: null } });
     });
     revalidarDocencia();
     return { ok: true };
@@ -468,7 +501,8 @@ export async function quitarRolDocente(dietistaId: string): Promise<{ ok: boolea
       });
       await tx.dietista.update({
         where: { id: dietistaId },
-        data: { rolDocente: null, licenciaDocenteId: null },
+        // También el plazo: ya no es profesor, así que no hay espacio docente que conservar.
+        data: { rolDocente: null, licenciaDocenteId: null, docenciaHasta: null },
       });
     });
     revalidarDocencia();
@@ -499,6 +533,8 @@ export interface AlumnoAdmin {
   ultimoAcceso: Date | null;
   /** Nunca ha llegado a entrar: la facultad está pagando una plaza que no se usa. */
   nuncaEntro: boolean;
+  /** Pacientes propios, sin contar el de ejemplo: dice si usa la aplicación o solo ocupa plaza. */
+  pacientes: number;
 }
 
 /**
@@ -538,7 +574,14 @@ export async function getAlumnosAdmin(filtros?: {
     orderBy: [{ activa: "desc" }, { altaAt: "desc" }],
     take: 500,
     include: {
-      alumno: { select: { id: true, nombre: true, apellidos: true, email: true, cuentaDeClase: true, lastAccessAt: true } },
+      alumno: {
+        select: {
+          id: true, nombre: true, apellidos: true, email: true, cuentaDeClase: true, lastAccessAt: true,
+          // Pacientes suyos, sin el de ejemplo ni los del aula: dice si usa la aplicación de verdad
+          // o solo ocupa una plaza (Guillermo, 9 sep 2026).
+          _count: { select: { pacientes: { where: { ...PACIENTES_REALES } } } },
+        },
+      },
       clase: {
         select: {
           id: true, nombre: true,
@@ -554,6 +597,7 @@ export async function getAlumnosAdmin(filtros?: {
     nombre: m.alumno.nombre,
     apellidos: m.alumno.apellidos,
     email: m.alumno.email,
+    pacientes: m.alumno._count.pacientes,
     cuentaDeClase: m.alumno.cuentaDeClase,
     institucion: m.clase.licenciaDocente?.institucion ?? null,
     licenciaId: m.clase.licenciaDocente?.id ?? null,
@@ -569,6 +613,138 @@ export async function getAlumnosAdmin(filtros?: {
 }
 
 /** Lo que consume cada institución de verdad, para cobrar y para renovar. */
+/**
+ * Quitar o devolver el acceso a un alumno desde administración.
+ *
+ * Lo mismo que puede hacer su profesor en su clase, pero para cuando llama la facultad y hay que
+ * resolverlo desde aquí: hasta ahora se veían pero no se podía tocar nada (Guillermo, 9 sep 2026).
+ *
+ * No borra nada: su cuenta y su trabajo siguen intactos, y devolvérselo le deja como estaba. La
+ * plaza NO vuelve a la bolsa hasta el 31 de agosto, igual que cuando lo hace el profesor: se gasta
+ * por curso y esa es la regla de la que depende lo que se cobra.
+ */
+export async function cambiarAccesoAlumno(
+  alumnoId: string,
+  claseId: string,
+  darAcceso: boolean,
+): Promise<{ ok: boolean; error?: string }> {
+  const admin = await requireAdmin();
+  if (!admin || admin.role !== "admin") redirect("/admin-login");
+  const t = await getTranslations("validation");
+
+  try {
+    const { count } = await prisma.alumnoClase.updateMany({
+      where: { alumnoId, claseId },
+      data: darAcceso ? { activa: true, bajaAt: null } : { activa: false, bajaAt: new Date() },
+    });
+    if (count === 0) return { ok: false, error: t("docencia.claseNoEncontrada") };
+    revalidatePath("/admin/alumnos");
+    revalidatePath("/admin/universidades");
+    return { ok: true };
+  } catch (e) {
+    if (isNextNavigation(e)) throw e;
+    console.error("[docencia] Error cambiando el acceso del alumno:", e);
+    return { ok: false, error: t("general.errorDesconocido") };
+  }
+}
+
+export interface ProfesorAdmin {
+  id: string;
+  nombre: string;
+  apellidos: string;
+  email: string;
+  institucion: string | null;
+  licenciaId: string | null;
+  /** Se fue de su facultad y conserva el espacio docente hasta esta fecha. */
+  docenciaHasta: Date | null;
+  /** Se dio de alta por un enlace y no ha abierto el correo: ocupa plaza pero todavía no entra. */
+  sinVerificar: boolean;
+  clases: number;
+  /** Casos clínicos que ha creado: es lo que dice si usa el módulo docente de verdad. */
+  casos: number;
+  /** Pacientes propios, sin el de ejemplo: si usa la aplicación como nutricionista. */
+  pacientes: number;
+  altaAt: Date;
+  ultimoAcceso: Date | null;
+  nuncaEntro: boolean;
+}
+
+/**
+ * #39 — Todos los profesores de todas las universidades, juntos.
+ *
+ * El equivalente de la pantalla de alumnos, que faltaba: para verlos de un vistazo sin entrar
+ * universidad por universidad, y sobre todo para saber quién la usa de verdad —clases, casos y
+ * pacientes propios— y quién solo ocupa una plaza pagada (Guillermo, 9 sep 2026).
+ */
+export async function getProfesoresAdmin(filtros?: {
+  licenciaId?: string;
+  /** "sinUniversidad" | "sinEstrenar" | undefined (todos) */
+  estado?: string;
+  buscar?: string;
+}): Promise<ProfesorAdmin[]> {
+  const admin = await requireAdmin();
+  if (!admin || admin.role !== "admin") redirect("/admin-login");
+
+  const buscar = filtros?.buscar?.trim();
+  const profesores = await prisma.dietista.findMany({
+    where: {
+      rolDocente: "PROFESOR",
+      ...(filtros?.licenciaId ? { licenciaDocenteId: filtros.licenciaId } : {}),
+      ...(filtros?.estado === "sinUniversidad" ? { licenciaDocenteId: null } : {}),
+      ...(filtros?.estado === "sinEstrenar" ? { lastAccessAt: null } : {}),
+      ...(buscar
+        ? {
+            OR: [
+              { nombre: { contains: buscar, mode: "insensitive" } },
+              { apellidos: { contains: buscar, mode: "insensitive" } },
+              { email: { contains: buscar, mode: "insensitive" } },
+            ],
+          }
+        : {}),
+    },
+    orderBy: [{ createdAt: "desc" }],
+    take: 500,
+    select: {
+      id: true, nombre: true, apellidos: true, email: true, authId: true,
+      createdAt: true, lastAccessAt: true, docenciaHasta: true,
+      licenciaDocente: { select: { id: true, institucion: true } },
+      _count: {
+        select: {
+          clasesImpartidas: { where: { archivada: false } },
+          casosClinicos: true,
+          pacientes: { where: { ...PACIENTES_REALES } },
+        },
+      },
+    },
+  });
+
+  const authIds = profesores.map((p) => p.authId).filter(Boolean) as string[];
+  const porVerificar = new Set(
+    authIds.length === 0 ? [] :
+    (await prisma.$queryRawUnsafe<{ id: string }[]>(
+      `SELECT id::text AS id FROM auth.users WHERE id = ANY($1::uuid[]) AND email_confirmed_at IS NULL`,
+      authIds,
+    )).map((r) => r.id),
+  );
+
+  return profesores.map((p) => ({
+    id: p.id,
+    nombre: p.nombre,
+    apellidos: p.apellidos,
+    email: p.email,
+    institucion: p.licenciaDocente?.institucion ?? null,
+    licenciaId: p.licenciaDocente?.id ?? null,
+    docenciaHasta: p.docenciaHasta,
+    sinVerificar: p.authId ? porVerificar.has(p.authId) : false,
+    clases: p._count.clasesImpartidas,
+    casos: p._count.casosClinicos,
+    pacientes: p._count.pacientes,
+    altaAt: p.createdAt,
+    ultimoAcceso: p.lastAccessAt,
+    nuncaEntro: p.lastAccessAt === null,
+  }));
+}
+
 export async function getConsumoDeLicencias(): Promise<
   { id: string; institucion: string; maxAlumnos: number; ocupadas: number; libres: number; activa: boolean }[]
 > {

@@ -76,6 +76,11 @@ model Dietista {
   cuentaDeClase      Boolean   @default(false)
   /// Cuándo dejó de ser alumno (se quedó sin clases vivas y pasó a cuenta normal).
   exAlumnoDesde       DateTime?
+  /// Hasta cuándo conserva el espacio docente un profesor que ya no está en ninguna universidad.
+  /// Al salir de una facultad NO se le quita el apartado en el acto: su plaza de ese curso está
+  /// pagada y sus casos son suyos, así que lo termina (Guillermo, 9 sep 2026). El 1 de septiembre,
+  /// si nadie le ha metido en otra, pasa a ser nutricionista normal sin perder nada.
+  docenciaHasta       DateTime?
   /// Si ya se le enseñó el aviso de que su año escolar terminó y la cuenta se le queda.
   avisoFinCursoVisto  Boolean   @default(false)
   clasesImpartidas   Clase[]

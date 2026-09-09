@@ -21,6 +21,9 @@ export function CrearClaseBoton({ puedeCrear }: { puedeCrear: boolean }) {
   const [nombre, setNombre] = useState("");
   const [fechaInicio, setFechaInicio] = useState(inicioDeCursoPorDefecto());
   const [fechaFin, setFechaFin] = useState(finDeCursoPorDefecto());
+  // Cuántos alumnos son. Se pide aquí para no tener que volver después: sin ese número no se puede
+  // dar de alta a nadie, ni por correo ni por enlace (Guillermo, 9 sep 2026).
+  const [cuantos, setCuantos] = useState("");
 
   // Las dos fechas llegan como YYYY-MM-DD, así que se comparan tal cual.
   const cursoAlReves = !!fechaInicio && !!fechaFin && fechaFin <= fechaInicio;
@@ -28,7 +31,12 @@ export function CrearClaseBoton({ puedeCrear }: { puedeCrear: boolean }) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
-      const result = await crearClase({ nombre, fechaInicioCurso: fechaInicio || undefined, fechaFinCurso: fechaFin || undefined });
+      const result = await crearClase({
+        nombre,
+        fechaInicioCurso: fechaInicio || undefined,
+        fechaFinCurso: fechaFin || undefined,
+        cupoEnlace: Number(cuantos) || undefined,
+      });
       if (result.ok && result.claseId) {
         toast.success(t("clases.creada"));
         setAbierto(false);
@@ -108,6 +116,18 @@ export function CrearClaseBoton({ puedeCrear }: { puedeCrear: boolean }) {
                 </div>
               </div>
             </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{t("clases.cuantosAlumnos")}</label>
+              <input
+                value={cuantos}
+                onChange={(e) => setCuantos(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                inputMode="numeric"
+                placeholder="60"
+                className={`${input} w-28`}
+              />
+              <p className="text-xs text-muted-foreground mt-1">{t("clases.cuantosAlumnosAyuda")}</p>
+            </div>
+
             {/* De la fecha de fin depende cuándo pierden el acceso los alumnos: una clase al revés
                 nace con el curso ya terminado. Se avisa aquí y se comprueba también en el servidor. */}
             {cursoAlReves ? (

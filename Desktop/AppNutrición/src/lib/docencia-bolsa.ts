@@ -189,13 +189,22 @@ export async function plazasLibresDeLaClase(
   });
   if (!clase?.cupoEnlace) return null;
 
-  const matriculas = await cliente.alumnoClase.findMany({
-    where: {
-      claseId,
-      OR: [{ altaAt: { gte: inicioDeAnioEscolar() } }, { activa: true }],
-    },
-    select: { alumnoId: true },
-    distinct: ["alumnoId"],
-  });
-  return Math.max(0, clase.cupoEnlace - matriculas.length);
+  // Cuentan los matriculados Y las invitaciones de esta clase que están sin usar: una invitación
+  // por correo le guarda el sitio a esa persona, igual que le reserva la plaza en la bolsa de la
+  // facultad. Sin esto, quien entrase por el enlace le quitaba el hueco y al aceptar su correo se
+  // encontraba la clase llena, con la plaza ya gastada (Guillermo, 9 sep 2026).
+  const [matriculas, invitaciones] = await Promise.all([
+    cliente.alumnoClase.findMany({
+      where: {
+        claseId,
+        OR: [{ altaAt: { gte: inicioDeAnioEscolar() } }, { activa: true }],
+      },
+      select: { alumnoId: true },
+      distinct: ["alumnoId"],
+    }),
+    cliente.invitacionDocente.count({
+      where: { claseId, rol: "ALUMNO", aceptadaAt: null, expiraAt: { gte: new Date() } },
+    }),
+  ]);
+  return Math.max(0, clase.cupoEnlace - matriculas.length - invitaciones);
 }

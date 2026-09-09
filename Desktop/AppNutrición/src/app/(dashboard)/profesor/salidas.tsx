@@ -11,9 +11,13 @@ import { ConfirmModal } from "@/components/confirm-modal";
 /**
  * #39 — Las dos salidas que decide el profesor por su cuenta (Guillermo, 6 sep 2026).
  *
- * Dejar la universidad libera su plaza y le quita las clases de esa facultad, pero sigue siendo
- * docente, esperando a que le metan en otra. Dejar de ser profesor le devuelve a su cuenta de
- * nutricionista de siempre. En las dos, sus pacientes y su trabajo siguen donde estaban.
+ * Dejar la universidad le quita las clases de esa facultad, pero **sigue siendo docente hasta el
+ * 31 de agosto de ese curso**: su plaza está pagada y sus casos son suyos. La plaza no vuelve a la
+ * bolsa. Dejar de ser profesor le devuelve ya a su cuenta de nutricionista de siempre. En las dos,
+ * sus pacientes y su trabajo siguen donde estaban.
+ *
+ * Vive en Ajustes, con lo demás de su cuenta: estaba escondido en un desplegable dentro del espacio
+ * docente y ahí no lo buscaba nadie (Guillermo, 9 sep 2026).
  */
 export function SalidasDelProfesor({ institucion }: { institucion: string | null }) {
   const t = useTranslations("docencia");
@@ -38,14 +42,8 @@ export function SalidasDelProfesor({ institucion }: { institucion: string | null
   }
 
   return (
-    <section className="pt-2">
-      <details className="group">
-        <summary className="text-xs text-muted-foreground hover:text-foreground cursor-pointer inline-flex items-center gap-1.5 list-none">
-          <LogOut className="w-3.5 h-3.5" />
-          {t("salidas.titulo")}
-        </summary>
-
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+    <div>
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           {institucion && (
             <button
               type="button"
@@ -64,9 +62,8 @@ export function SalidasDelProfesor({ institucion }: { institucion: string | null
             <GraduationCap className="w-4 h-4" />
             {t("salidas.dejarDocencia")}
           </button>
-        </div>
-        <p className="text-xs text-muted-foreground mt-2">{t("salidas.ayuda")}</p>
-      </details>
+      </div>
+      <p className="text-xs text-muted-foreground mt-3">{t("salidas.ayuda")}</p>
 
       <ConfirmModal
         open={abierto !== null}
@@ -82,6 +79,6 @@ export function SalidasDelProfesor({ institucion }: { institucion: string | null
         onConfirm={confirmar}
         onCancel={() => setAbierto(null)}
       />
-    </section>
+    </div>
   );
 }

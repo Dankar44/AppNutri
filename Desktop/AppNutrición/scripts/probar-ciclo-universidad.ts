@@ -17,7 +17,9 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import pg from "pg";
+import { conexionResistente, type Conexion } from "./_conexion-viva";
 import puppeteer, { type Page, type Browser } from "puppeteer-core";
+import { verificarCorreo } from "./_verificar-correo";
 import { createClient } from "@supabase/supabase-js";
 
 const BASE = "http://localhost:3001";
@@ -40,7 +42,7 @@ function anioDelCursoActual(hoy = new Date()): number {
 const finDelCurso = (anio: number) => `${anio + 1}-08-31`;
 
 async function main() {
-  const client = await pool.connect();
+  const client = conexionResistente(pool);
   const navegador = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ["--no-sandbox"] });
   try {
     await limpiar(client);
@@ -101,6 +103,9 @@ async function main() {
     const { rows: a2 } = await client.query(`SELECT id FROM dietistas WHERE email = $1`, [`alumno.correo@${DOMINIO}`]);
     comprobar("el alumno invitado por correo entra", a2.length === 1);
 
+    // Las altas por enlace nacen sin el correo confirmado, así que primero se abre el correo: es
+    // exactamente lo que hace la persona antes de poder entrar (9 sep 2026).
+    await verificarCorreo(client, `profe@${DOMINIO}`, BASE);
     const profeSesion = await sesion(navegador, `profe@${DOMINIO}`);
     await profeSesion.goto(`${BASE}/profesor`, { waitUntil: "networkidle0" });
     await esperar(2500);
@@ -150,7 +155,6 @@ async function main() {
 
     await limpiar(client);
   } finally {
-    client.release();
     await navegador.close();
     await pool.end();
   }
@@ -171,7 +175,7 @@ async function nuevaVentana(nav: Browser): Promise<Page> {
  * se acaba de vender. Insertarlo a pelo dejaba la universidad en 0 y el enlace no admitía a nadie,
  * que es justo lo que pasa de verdad si alguien mete el enlace sin vender las plazas.
  */
-async function crearEnlace(c: pg.PoolClient, licenciaId: string, curso: number, plazas: number) {
+async function crearEnlace(c: Conexion, licenciaId: string, curso: number, plazas: number) {
   const { rows } = await c.query(
     `INSERT INTO enlaces_profesores (id, "licenciaDocenteId", token, "cursoAnio", plazas, "creadoPor")
      VALUES (gen_random_uuid()::text, $1, replace(gen_random_uuid()::text,'-',''), $2, $3, '${MARCA}')
@@ -217,7 +221,7 @@ async function sesion(nav: Browser, email: string): Promise<Page> {
   return page;
 }
 
-async function limpiar(c: pg.PoolClient) {
+async function limpiar(c: Conexion) {
   await c.query(`DELETE FROM clases WHERE nombre LIKE '${MARCA}%'`);
   const { rows } = await c.query(`SELECT "authId" FROM dietistas WHERE email LIKE $1`, [`%@${DOMINIO}`]);
   await c.query(`DELETE FROM pacientes WHERE "dietistaId" IN (SELECT id FROM dietistas WHERE email LIKE $1)`, [`%@${DOMINIO}`]);

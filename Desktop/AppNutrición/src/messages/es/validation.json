@@ -339,6 +339,13 @@
     "claseLlena": "Esta clase ya está completa. Habla con tu profesor.",
     "renovarHaciaAtras": "No se puede renovar a un curso anterior al que ya tiene.",
     "cupoObligatorio": "Pon cuántos alumnos caben en tu clase.",
-    "cupoSePasaDeLaBolsa": "No puedes abrir el enlace para más plazas de las que le quedan a la facultad."
+    "cupoSePasaDeLaBolsa": "El total de la clase no puede pasar de {n}: es lo que cabe entre los que ya tiene y lo que le queda a la facultad.",
+    "verificaTuCorreoPrimero": "Ya empezaste a crear tu cuenta con ese correo, pero falta verificarla. Abre el mensaje que te mandamos y pulsa el botón de verificar; si no te llegó, pídelo otra vez desde la pantalla de inicio de sesión.",
+    "yaEstaEnOtraUniversidad": "Ya eres profesor de otra universidad. No se puede estar en dos a la vez.",
+    "enlacePasaDelCupo": "Ese enlace repartiría más plazas de las que quedan: solo hay {libres}. Sube las licencias de profesor si quieres vender más.",
+    "correoYaTieneCuentaUsaEntrar": "Ese correo ya tiene cuenta en Annonia. Usa «Ya uso Annonia» y entra con tu contraseña de siempre.",
+    "noHayCuentaConEseCorreo": "No hay ninguna cuenta con ese correo. Usa «Crear mi cuenta».",
+    "cupoSinSitio": "Esa clase ya tiene {n} alumnos: el tope tiene que ser mayor o el enlace no admitiría a nadie.",
+    "sinCupoProfesoresYa": "Tu universidad ya no tiene plazas de profesor libres. Habla con quien lleve la licencia."
   }
 }

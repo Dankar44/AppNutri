@@ -14,6 +14,7 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import pg from "pg";
+import { conexionResistente, type Conexion } from "./_conexion-viva";
 import puppeteer, { type Page, type Browser } from "puppeteer-core";
 import { createClient } from "@supabase/supabase-js";
 
@@ -53,7 +54,7 @@ async function pulsar(page: Page, texto: string, dentroDe?: string) {
   if (!hecho) throw new Error(`botón "${texto}" no encontrado`);
 }
 
-async function crearProfesor(client: pg.PoolClient, email: string, pass: string, apellidos: string, licenciaId: string) {
+async function crearProfesor(client: Conexion, email: string, pass: string, apellidos: string, licenciaId: string) {
   const { rows } = await client.query(
     `INSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
        created_at, updated_at, raw_app_meta_data, raw_user_meta_data, is_sso_user, is_anonymous,
@@ -94,7 +95,7 @@ async function sesionDe(navegador: Browser, email: string, pass: string): Promis
   return page;
 }
 
-async function limpiar(client: pg.PoolClient) {
+async function limpiar(client: Conexion) {
   await client.query(`DELETE FROM clases WHERE nombre LIKE 'PRUEBA clase%'`);
   for (const p of PROFES) {
     const { rows } = await client.query(`SELECT id FROM auth.users WHERE email = $1`, [p.email]);
@@ -108,7 +109,7 @@ async function limpiar(client: pg.PoolClient) {
 }
 
 async function main() {
-  const client = await pool.connect();
+  const client = conexionResistente(pool);
   const navegador = await puppeteer.launch({
     executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     headless: true, args: ["--no-sandbox"],
@@ -277,7 +278,6 @@ async function main() {
     if (mal > 0) process.exitCode = 1;
   } finally {
     await navegador.close();
-    client.release();
     await pool.end();
   }
 }

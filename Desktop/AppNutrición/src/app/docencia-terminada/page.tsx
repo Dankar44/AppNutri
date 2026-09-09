@@ -26,8 +26,13 @@ export default async function DocenciaTerminadaPage() {
         select: { institucion: true, activa: true, fechaFin: true },
       })
     : null;
-  // Si la licencia está viva, aquí no pinta nada: se le manda a su espacio.
+  // Si la licencia está viva, aquí no pinta nada: se le manda a su espacio. Y lo mismo si se fue
+  // de su facultad pero aún le queda plazo: ese conserva el espacio hasta el 31 de agosto de su
+  // curso (Guillermo, 9 sep 2026), así que esta página tampoco es para él.
   if (licenciaVigente(licencia)) redirect("/profesor");
+  if (!licencia && dietista.docenciaHasta && dietista.docenciaHasta.getTime() >= Date.now()) {
+    redirect("/profesor");
+  }
 
   const t = await getTranslations("docencia.docenciaTerminada");
   // No es lo mismo que tu universidad no haya renovado que haberte ido tú de ella: el aviso lo

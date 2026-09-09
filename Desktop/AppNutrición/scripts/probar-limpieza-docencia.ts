@@ -15,6 +15,7 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import pg from "pg";
+import { conexionResistente, type Conexion } from "./_conexion-viva";
 import { execFileSync } from "node:child_process";
 import puppeteer, { type Browser, type Page } from "puppeteer-core";
 import { createClient } from "@supabase/supabase-js";
@@ -47,7 +48,7 @@ async function sesionDe(navegador: Browser, email: string): Promise<Page> {
 }
 const comprobar = (t: string, c: boolean, d = "") => { console.log(`  ${c ? "✓" : "✗"} ${t}${d ? ` — ${d}` : ""}`); c ? ok++ : mal++; };
 
-async function limpiar(client: pg.PoolClient) {
+async function limpiar(client: Conexion) {
   await client.query(`DELETE FROM clases WHERE nombre LIKE '${MARCA}%'`);
   await client.query(`DELETE FROM casos_clinicos WHERE nombre LIKE '${MARCA}%'`);
   for (const email of [`${MARCA}.profe@annonia.dev`, `${MARCA}.alumna@annonia.dev`]) {
@@ -62,7 +63,7 @@ async function limpiar(client: pg.PoolClient) {
   await client.query(`DELETE FROM licencias_docentes WHERE institucion LIKE '${MARCA}%'`);
 }
 
-async function crearCuenta(client: pg.PoolClient, email: string, extra: Record<string, unknown>) {
+async function crearCuenta(client: Conexion, email: string, extra: Record<string, unknown>) {
   const { rows } = await client.query(
     `INSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
        created_at, updated_at, raw_app_meta_data, raw_user_meta_data, is_sso_user, is_anonymous,
@@ -87,7 +88,7 @@ async function crearCuenta(client: pg.PoolClient, email: string, extra: Record<s
 }
 
 async function main() {
-  const client = await pool.connect();
+  const client = conexionResistente(pool);
   try {
     await limpiar(client);
 
@@ -258,7 +259,6 @@ async function main() {
     console.log(`\n${mal === 0 ? "✓ TODO CORRECTO" : "✗ HAY FALLOS"} — ${ok} bien, ${mal} mal`);
   } finally {
     await limpiar(client).catch(() => {});
-    client.release();
     await pool.end();
   }
   if (mal > 0) process.exit(1);
