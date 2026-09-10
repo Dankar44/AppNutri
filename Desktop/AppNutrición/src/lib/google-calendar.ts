@@ -175,3 +175,18 @@ export async function deleteGoogleEvent(
     throw e;
   }
 }
+
+export async function obtenerEnlaceEventoGoogle(
+  integracion: IntegracionNutri,
+  eventId: string,
+): Promise<string | null> {
+  const integracionActualizada = await ensureFreshToken(integracion, "nutri");
+  const auth = buildAuthedClient(integracionActualizada, "nutri");
+  const calendar = google.calendar({ version: "v3", auth });
+  const respuesta = await calendar.events.get({
+    calendarId: integracionActualizada.calendarId || "primary",
+    eventId,
+  });
+
+  return respuesta.data.htmlLink ?? null;
+}

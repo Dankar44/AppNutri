@@ -74,6 +74,10 @@
     "confirm": "Confirmar",
     "complete": "Completar",
     "consultationDefault": "Consulta de nutrición",
+    "openInGoogleCalendar": "Abrir en Google Calendar",
+    "openSyncedGoogleEvent": "Abrir evento sincronizado en Google Calendar",
+    "googleEventOpenError": "No se pudo abrir el evento sincronizado de Google Calendar",
+    "googlePopupBlocked": "El navegador ha bloqueado la nueva pestaña de Google Calendar",
     "toastAccepted": "Cita aceptada",
     "toastConfirmed": "Cita confirmada",
     "toastCompleted": "Cita completada",
@@ -97,6 +101,9 @@
     "cancel": "Cancelar",
     "markAsCompleted": "Marcar como completada",
     "openInGoogleCalendar": "Abrir en Google Calendar",
+    "openSyncedGoogleEvent": "Abrir evento sincronizado",
+    "googleEventOpenError": "No se pudo abrir el evento sincronizado de Google Calendar",
+    "googlePopupBlocked": "El navegador ha bloqueado la nueva pestaña de Google Calendar",
     "notifyByEmail": "Avisar por email",
     "notifyByWhatsApp": "Avisar por WhatsApp",
     "toastEmailSent": "Email enviado al paciente",
@@ -147,6 +154,17 @@
       "noviembre": "noviembre",
       "diciembre": "diciembre"
     }
+  },
+  "avisoCopiaGoogle": {
+    "titulo": "Se creará una copia manual",
+    "cerrar": "Cerrar aviso",
+    "descripcion": "Google Calendar abrirá un formulario con los datos de esta cita. Si la guardas, será un evento independiente: los cambios posteriores no se actualizarán entre Google Calendar y Annonia.",
+    "sincronizacionTitulo": "¿Quieres mantenerlas sincronizadas?",
+    "sincronizacionDescripcion": "Conecta Google Calendar para que las citas sincronizadas se gestionen automáticamente desde Annonia.",
+    "configurarSincronizacion": "Configurar sincronización",
+    "noMostrarDeNuevo": "No volver a mostrar este aviso en este navegador",
+    "cancelar": "Cancelar",
+    "crearCopiaManual": "Crear copia manual"
   },
   "contraproponerModal": {
     "title": "Proponer otra fecha",

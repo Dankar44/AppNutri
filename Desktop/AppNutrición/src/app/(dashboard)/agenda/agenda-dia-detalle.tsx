@@ -16,6 +16,12 @@ import { isNextNavigation } from "@/lib/utils";
 import { useTranslations, useLocale } from "next-intl";
 import { intlTag, type Locale } from "@/i18n/config";
 import { ContraproponerModal } from "./contraproponer-modal";
+import { AvisoCopiaGoogleModal } from "./aviso-copia-google-modal";
+import {
+  abrirCopiaGoogleManual,
+  abrirEventoGoogleSincronizado,
+  estaOcultoAvisoCopiaGoogle,
+} from "./google-calendar-cliente";
 
 const ESTADO_STYLES: Record<string, string> = {
   PENDIENTE: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30",
@@ -34,6 +40,7 @@ interface Cita {
   notas: string | null;
   origen?: string;
   propuestoPor?: string;
+  googleEventId?: string | null;
   paciente: { nombre: string; apellidos: string };
 }
 
@@ -49,6 +56,8 @@ export function AgendaDiaDetalle({ fecha, citas, onClose }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [contraponerId, setContraponerId] = useState<string | null>(null);
+  const [citaGoogle, setCitaGoogle] = useState<Cita | null>(null);
+  const [abriendoGoogleId, setAbriendoGoogleId] = useState<string | null>(null);
   const fechaObj = new Date(fecha + "T12:00:00");
   const fechaFormateada = fechaObj.toLocaleDateString(tag, {
     weekday: "long",
@@ -135,6 +144,27 @@ export function AgendaDiaDetalle({ fecha, citas, onClose }: Props) {
     const title = encodeURIComponent(`${t("consultationDefault")}: ${cita.paciente.nombre} ${cita.paciente.apellidos}`);
     const details = encodeURIComponent(cita.motivo || t("consultationDefault"));
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${fmt(start)}/${fmt(end)}&details=${details}`;
+  }
+
+  async function abrirGoogleCalendar(cita: Cita) {
+    if (!cita.googleEventId) {
+      const url = googleCalendarUrl(cita);
+      if (estaOcultoAvisoCopiaGoogle()) {
+        abrirCopiaGoogleManual(url);
+      } else {
+        setCitaGoogle(cita);
+      }
+      return;
+    }
+
+    setAbriendoGoogleId(cita.id);
+    const resultado = await abrirEventoGoogleSincronizado(cita.id);
+    setAbriendoGoogleId(null);
+    if (resultado === "bloqueado") {
+      toast.error(t("googlePopupBlocked"));
+    } else if (resultado === "no-disponible") {
+      toast.error(t("googleEventOpenError"));
+    }
   }
 
   return (
@@ -288,14 +318,19 @@ export function AgendaDiaDetalle({ fecha, citas, onClose }: Props) {
                     </button>
                   )}
                   {cita.estado !== "CANCELADA" && cita.estado !== "COMPLETADA" && (
-                    <a
-                      href={googleCalendarUrl(cita)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-1 rounded-lg border border-border hover:bg-muted transition-colors"
+                    <button
+                      type="button"
+                      onClick={() => abrirGoogleCalendar(cita)}
+                      disabled={abriendoGoogleId === cita.id}
+                      aria-label={cita.googleEventId ? t("openSyncedGoogleEvent") : t("openInGoogleCalendar")}
+                      className="w-9 h-9 inline-flex items-center justify-center rounded-lg border border-border hover:bg-muted disabled:opacity-60 transition-colors"
                     >
-                      <Calendar className="w-3.5 h-3.5" />
-                    </a>
+                      {abriendoGoogleId === cita.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+                      ) : (
+                        <Calendar className="w-3.5 h-3.5" aria-hidden="true" />
+                      )}
+                    </button>
                   )}
                   <button
                     onClick={() => handleEliminar(cita.id)}
@@ -316,6 +351,13 @@ export function AgendaDiaDetalle({ fecha, citas, onClose }: Props) {
           citaActual={citas.find((c) => c.id === contraponerId) || null}
           onClose={() => setContraponerId(null)}
           onDone={() => { setContraponerId(null); router.refresh(); }}
+        />
+      )}
+
+      {citaGoogle && (
+        <AvisoCopiaGoogleModal
+          urlGoogle={googleCalendarUrl(citaGoogle)}
+          onClose={() => setCitaGoogle(null)}
         />
       )}
     </div>
