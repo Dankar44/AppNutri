@@ -79,10 +79,12 @@
     "toastCompleted": "Consulta concluída",
     "toastRejected": "Consulta recusada",
     "toastCancelled": "Consulta cancelada",
-    "toastError": "Não foi possível atualizar a consulta"
+    "toastError": "Não foi possível atualizar a consulta",
+    "editAppointment": "Editar consulta"
   },
   "citaDetalleModal": {
     "title": "Detalhes da consulta",
+    "editAppointment": "Editar consulta",
     "viewPatientFile": "Ver ficha do paciente",
     "requestedByPatient": "Solicitada pelo paciente",
     "counterproposalByPatient": "Contraproposta do paciente",
@@ -147,6 +149,30 @@
       "noviembre": "novembro",
       "diciembre": "dezembro"
     }
+  },
+  "citaEditarModal": {
+    "title": "Editar consulta",
+    "cerrar": "Fechar edição",
+    "fecha": "Data *",
+    "hora": "Horário *",
+    "duracion": "Duração",
+    "minutos": "{minutos} minutos",
+    "motivo": "Motivo",
+    "motivoPlaceholder": "Ex. Primeira consulta, revisão mensal…",
+    "notas": "Notas internas",
+    "notasPlaceholder": "Lembretes, preparação prévia, temas a tratar…",
+    "notasPrivadas": "São visíveis apenas para você e não são compartilhadas com o paciente.",
+    "online": "Consulta online",
+    "onlineHint": "Se o Google Calendar estiver conectado, o link do Meet será mantido ou gerado.",
+    "enlace": "Link de videochamada (opcional)",
+    "enlacePlaceholder": "https://zoom.us/j/... ou Meet, Teams...",
+    "enlaceHint": "Você pode adicionar ou alterar aqui um link manual para o paciente.",
+    "cancelar": "Cancelar",
+    "guardar": "Salvar alterações",
+    "guardando": "Salvando…",
+    "toastGuardada": "Consulta atualizada",
+    "toastError": "Não foi possível atualizar a consulta",
+    "fechaPasadaError": "A nova data e hora devem estar no futuro"
   },
   "contraproponerModal": {
     "title": "Propor outra data",

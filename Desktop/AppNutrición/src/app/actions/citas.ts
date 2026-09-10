@@ -32,6 +32,15 @@ export interface CitaFormData {
   modo?: "directa" | "proponer";
 }
 
+export interface CitaActualizacionData {
+  fechaHora: string;
+  duracion?: number;
+  motivo?: string;
+  notas?: string;
+  isOnline?: boolean;
+  enlaceVideollamada?: string;
+}
+
 export async function crearCita(data: CitaFormData) {
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
@@ -107,6 +116,66 @@ export async function crearCita(data: CitaFormData) {
   revalidatePath("/agenda");
   revalidatePath("/paciente/portal/citas");
   return cita;
+}
+
+export async function actualizarCita(
+  id: string,
+  data: CitaActualizacionData,
+): Promise<{ ok: boolean; error?: string }> {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
+  if (dietista.isDemo) return { ok: true };
+
+  const citaActual = await prisma.cita.findFirst({
+    where: { id, dietistaId: dietista.id },
+    select: { fechaHora: true, estado: true, origen: true },
+  });
+  if (!citaActual) return { ok: false, error: t("cita.citaNoEncontrada") };
+
+  const esEditable =
+    citaActual.fechaHora > new Date() &&
+    (citaActual.estado === "CONFIRMADA" ||
+      (citaActual.estado === "PENDIENTE" && citaActual.origen === "DIETISTA"));
+  if (!esEditable) return { ok: false, error: t("cita.noPuedeEditar") };
+
+  const fechaHora = fromMadridLocalString(data.fechaHora);
+  if (!fechaHora) return { ok: false, error: t("cita.fechaHoraInvalidas") };
+  if (fechaHora <= new Date()) return { ok: false, error: t("cita.fechaNoPuedePasada") };
+
+  const duracion = validateNumber(
+    data.duracion ?? 30,
+    LIMITS.DURACION_MIN,
+    LIMITS.DURACION_MAX,
+  );
+  const motivo = sanitizeStringOptional(data.motivo, LIMITS.MOTIVO);
+  const notas = sanitizeStringOptional(data.notas, LIMITS.NOTAS);
+  const enlaceVideollamada = validateUrl(data.enlaceVideollamada);
+  if (data.enlaceVideollamada?.trim() && !enlaceVideollamada) {
+    return { ok: false, error: t("cita.enlaceVideollamadaInvalido") };
+  }
+
+  try {
+    await prisma.cita.update({
+      where: { id, dietistaId: dietista.id },
+      data: {
+        fechaHora,
+        duracion,
+        motivo,
+        notas,
+        isOnline: data.isOnline ?? false,
+        enlaceVideollamada,
+      },
+    });
+
+    await syncCitaAmbos(id);
+    revalidatePath("/agenda");
+    revalidatePath("/paciente/portal/citas");
+    return { ok: true };
+  } catch (error) {
+    console.error("[actualizarCita]", error);
+    return { ok: false, error: t("general.errorDesconocido") };
+  }
 }
 
 export async function actualizarEstadoCita(id: string, estado: EstadoCita) {
