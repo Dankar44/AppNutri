@@ -25,6 +25,7 @@ export interface CitaFormData {
   isOnline?: boolean;
   /** Enlace de videollamada manual (Zoom, Meet, Teams...). Se incluye en el aviso al paciente. */
   enlaceVideollamada?: string;
+  permitirSolapamiento?: boolean;
   /**
    * - "directa" (por defecto): crea la cita CONFIRMADA directamente, útil para citas ya acordadas en persona.
    * - "proponer": crea PENDIENTE y notifica al paciente, que decidirá si aceptarla/contraponerla/rechazarla.
@@ -32,7 +33,76 @@ export interface CitaFormData {
   modo?: "directa" | "proponer";
 }
 
-export async function crearCita(data: CitaFormData) {
+export interface CitaActualizacionData {
+  fechaHora: string;
+  duracion?: number;
+  motivo?: string;
+  notas?: string;
+  isOnline?: boolean;
+  enlaceVideollamada?: string;
+  permitirSolapamiento?: boolean;
+}
+
+export interface ConflictoCita {
+  pacienteNombre: string;
+  fechaHora: string;
+  duracion: number;
+}
+
+export interface ResultadoActualizarCita {
+  ok: boolean;
+  error?: string;
+  conflicto?: ConflictoCita;
+}
+
+export interface ResultadoCrearCita {
+  id?: string;
+  conflicto?: ConflictoCita;
+}
+
+async function buscarConflictoCita(
+  dietistaId: string,
+  fechaHora: Date,
+  duracion: number,
+  excluirCitaId?: string,
+): Promise<ConflictoCita | null> {
+  const fin = new Date(fechaHora.getTime() + duracion * 60 * 1000);
+  const desde = new Date(
+    fechaHora.getTime() - LIMITS.DURACION_MAX * 60 * 1000,
+  );
+  const candidatas = await prisma.cita.findMany({
+    where: {
+      dietistaId,
+      ...(excluirCitaId ? { id: { not: excluirCitaId } } : {}),
+      estado: { in: ["PENDIENTE", "CONFIRMADA", "CONTRAPROPUESTA"] },
+      fechaHora: { gte: desde, lt: fin },
+      paciente: { ...PACIENTES_REALES },
+    },
+    select: {
+      fechaHora: true,
+      duracion: true,
+      paciente: { select: { nombre: true, apellidos: true } },
+    },
+    orderBy: { fechaHora: "asc" },
+  });
+  const solapada = candidatas.find((otra) => {
+    const finOtra = new Date(
+      otra.fechaHora.getTime() + otra.duracion * 60 * 1000,
+    );
+    return fechaHora < finOtra && fin > otra.fechaHora;
+  });
+
+  if (!solapada) return null;
+  return {
+    pacienteNombre: `${solapada.paciente.nombre} ${solapada.paciente.apellidos}`.trim(),
+    fechaHora: solapada.fechaHora.toISOString(),
+    duracion: solapada.duracion,
+  };
+}
+
+export async function crearCita(
+  data: CitaFormData,
+): Promise<ResultadoCrearCita | undefined> {
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) throw new Error(t("auth.noAutorizado"));
@@ -56,6 +126,15 @@ export async function crearCita(data: CitaFormData) {
     select: { id: true, nombre: true, apellidos: true },
   });
   if (!paciente) throw new Error(t("paciente.pacienteNoEncontrado"));
+
+  if (!data.permitirSolapamiento) {
+    const conflicto = await buscarConflictoCita(
+      dietista.id,
+      fechaHora,
+      duracion,
+    );
+    if (conflicto) return { conflicto };
+  }
 
   const cita = await prisma.cita.create({
     data: {
@@ -107,6 +186,78 @@ export async function crearCita(data: CitaFormData) {
   revalidatePath("/agenda");
   revalidatePath("/paciente/portal/citas");
   return cita;
+}
+
+export async function actualizarCita(
+  id: string,
+  data: CitaActualizacionData,
+): Promise<ResultadoActualizarCita> {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
+  if (dietista.isDemo) return { ok: true };
+
+  const citaActual = await prisma.cita.findFirst({
+    where: { id, dietistaId: dietista.id },
+    select: { fechaHora: true, estado: true, origen: true },
+  });
+  if (!citaActual) return { ok: false, error: t("cita.citaNoEncontrada") };
+
+  const esEditable =
+    citaActual.fechaHora > new Date() &&
+    (citaActual.estado === "CONFIRMADA" ||
+      (citaActual.estado === "PENDIENTE" && citaActual.origen === "DIETISTA"));
+  if (!esEditable) return { ok: false, error: t("cita.noPuedeEditar") };
+
+  const fechaHora = fromMadridLocalString(data.fechaHora);
+  if (!fechaHora) return { ok: false, error: t("cita.fechaHoraInvalidas") };
+  if (fechaHora <= new Date()) return { ok: false, error: t("cita.fechaNoPuedePasada") };
+
+  const duracion = validateNumber(
+    data.duracion ?? 30,
+    LIMITS.DURACION_MIN,
+    LIMITS.DURACION_MAX,
+  );
+  const motivo = sanitizeStringOptional(data.motivo, LIMITS.MOTIVO);
+  const notas = sanitizeStringOptional(data.notas, LIMITS.NOTAS);
+  const enlaceVideollamada = validateUrl(data.enlaceVideollamada);
+  if (data.enlaceVideollamada?.trim() && !enlaceVideollamada) {
+    return { ok: false, error: t("cita.enlaceVideollamadaInvalido") };
+  }
+
+  // Avisar antes de pisar otra cita, pero permitir que el nutricionista lo confirme
+  // expresamente por si necesita mantener dos citas simultáneas de forma excepcional.
+  if (!data.permitirSolapamiento) {
+    const conflicto = await buscarConflictoCita(
+      dietista.id,
+      fechaHora,
+      duracion,
+      id,
+    );
+    if (conflicto) return { ok: false, conflicto };
+  }
+
+  try {
+    await prisma.cita.update({
+      where: { id, dietistaId: dietista.id },
+      data: {
+        fechaHora,
+        duracion,
+        motivo,
+        notas,
+        isOnline: data.isOnline ?? false,
+        enlaceVideollamada,
+      },
+    });
+
+    await syncCitaAmbos(id);
+    revalidatePath("/agenda");
+    revalidatePath("/paciente/portal/citas");
+    return { ok: true };
+  } catch (error) {
+    console.error("[actualizarCita]", error);
+    return { ok: false, error: t("general.errorDesconocido") };
+  }
 }
 
 export async function actualizarEstadoCita(id: string, estado: EstadoCita) {

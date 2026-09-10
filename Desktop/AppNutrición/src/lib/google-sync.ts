@@ -19,18 +19,23 @@ async function loadCitaFull(citaId: string) {
   });
 }
 
-function toCalendarData(cita: NonNullable<Awaited<ReturnType<typeof loadCitaFull>>>): CitaCalendarData {
+function toCalendarData(
+  cita: NonNullable<Awaited<ReturnType<typeof loadCitaFull>>>,
+  incluirNotas: boolean,
+): CitaCalendarData {
   return {
     id: cita.id,
     fechaHora: cita.fechaHora,
     duracion: cita.duracion,
     motivo: cita.motivo,
-    notas: cita.notas,
+    // Las notas son internas: solo se copian al calendario del nutricionista.
+    notas: incluirNotas ? cita.notas : null,
     pacienteNombre: `${cita.paciente.nombre} ${cita.paciente.apellidos}`.trim(),
     pacienteEmail: cita.paciente.email,
     dietistaNombre: `${cita.dietista.nombre} ${cita.dietista.apellidos}`.trim(),
     dietistaEmail: cita.dietista.email,
     isOnline: cita.isOnline,
+    enlaceVideollamada: cita.enlaceVideollamada,
   };
 }
 
@@ -65,7 +70,7 @@ export async function syncCitaNutri(citaId: string): Promise<void> {
 
     if (!debeEstarEnGoogle) return;
 
-    const data = toCalendarData(cita);
+    const data = toCalendarData(cita, true);
     const createMeet = cita.isOnline;
 
     if (cita.googleEventId) {
@@ -76,7 +81,7 @@ export async function syncCitaNutri(citaId: string): Promise<void> {
         data,
         { createMeet },
       );
-      if (meetLink && meetLink !== cita.googleMeetLink) {
+      if (meetLink !== cita.googleMeetLink) {
         await prisma.cita.update({
           where: { id: cita.id },
           data: { googleMeetLink: meetLink },
@@ -127,7 +132,7 @@ export async function syncCitaPaciente(citaId: string): Promise<void> {
 
     if (!debeEstarEnGoogle) return;
 
-    const data = toCalendarData(cita);
+    const data = toCalendarData(cita, false);
 
     if (cita.googleEventIdPaciente) {
       await updateGoogleEvent(
@@ -232,7 +237,7 @@ export async function backfillCitasNutri(dietistaId: string): Promise<{ creadas:
 
   for (const cita of citas) {
     try {
-      const data = toCalendarData(cita);
+      const data = toCalendarData(cita, true);
       const { eventId, meetLink } = await createGoogleEvent(
         integracion,
         "nutri",
@@ -279,7 +284,7 @@ export async function backfillCitasPaciente(pacienteId: string): Promise<{ cread
 
   for (const cita of citas) {
     try {
-      const data = toCalendarData(cita);
+      const data = toCalendarData(cita, false);
       const { eventId } = await createGoogleEvent(
         integracion,
         "paciente",

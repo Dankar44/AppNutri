@@ -79,10 +79,12 @@
     "toastCompleted": "Cita completada",
     "toastRejected": "Cita rechazada",
     "toastCancelled": "Cita cancelada",
-    "toastError": "No se pudo actualizar la cita"
+    "toastError": "No se pudo actualizar la cita",
+    "editAppointment": "Editar cita"
   },
   "citaDetalleModal": {
     "title": "Detalle de la cita",
+    "editAppointment": "Editar cita",
     "viewPatientFile": "Ver ficha del paciente",
     "requestedByPatient": "Solicitada por el paciente",
     "counterproposalByPatient": "Contrapropuesta del paciente",
@@ -147,6 +149,37 @@
       "noviembre": "noviembre",
       "diciembre": "diciembre"
     }
+  },
+  "citaEditarModal": {
+    "title": "Editar cita",
+    "cerrar": "Cerrar edición",
+    "fecha": "Fecha *",
+    "hora": "Hora *",
+    "duracion": "Duración",
+    "minutos": "{minutos} minutos",
+    "motivo": "Motivo",
+    "motivoPlaceholder": "Ej. Primera consulta, revisión mensual…",
+    "notas": "Notas internas",
+    "notasPlaceholder": "Recordatorios, preparación previa, temas a tratar…",
+    "notasPrivadas": "Sólo son visibles para ti y no se comparten con el paciente.",
+    "online": "Cita online",
+    "onlineHint": "Si Google Calendar está conectado, se conservará o generará el enlace de Meet.",
+    "enlace": "Enlace de videollamada (opcional)",
+    "enlacePlaceholder": "https://zoom.us/j/... o Meet, Teams...",
+    "enlaceHint": "Puedes añadir o cambiar aquí un enlace manual para el paciente.",
+    "cancelar": "Cancelar",
+    "guardar": "Guardar cambios",
+    "guardando": "Guardando…",
+    "toastGuardada": "Cita actualizada",
+    "toastError": "No se pudo actualizar la cita",
+    "fechaPasadaError": "La nueva fecha y hora deben estar en el futuro"
+  },
+  "avisoSolapamiento": {
+    "titulo": "Este horario coincide con otra cita",
+    "descripcion": "Se solapa con la cita de {paciente}, programada el {fecha} de {inicio} a {fin}. No se ha guardado ningún cambio.",
+    "revisar": "Revisar horario",
+    "guardarIgualmente": "Guardar de todas formas",
+    "guardando": "Guardando…"
   },
   "contraproponerModal": {
     "title": "Proponer otra fecha",
