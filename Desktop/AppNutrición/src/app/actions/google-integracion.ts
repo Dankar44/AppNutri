@@ -8,7 +8,7 @@ import { getCurrentDietista } from "@/app/actions/auth";
 import { getCurrentPaciente } from "@/lib/patient-auth";
 import { prisma } from "@/lib/prisma";
 import { buildAuthUrl, isGoogleConfigured } from "@/lib/google-oauth";
-import { deleteGoogleEvent } from "@/lib/google-calendar";
+import { deleteGoogleEvent, obtenerEnlaceEventoGoogle } from "@/lib/google-calendar";
 import { backfillCitasNutri, backfillCitasPaciente } from "@/lib/google-sync";
 import { getTranslations } from "next-intl/server";
 
@@ -197,6 +197,30 @@ export async function getIntegracionNutri() {
     },
   });
   return integracion;
+}
+
+export async function getEnlaceEventoGoogleCita(citaId: string) {
+  const dietista = await getCurrentDietista();
+  if (!dietista) return { ok: false as const };
+
+  const cita = await prisma.cita.findFirst({
+    where: { id: citaId, dietistaId: dietista.id },
+    select: { googleEventId: true },
+  });
+  if (!cita?.googleEventId) return { ok: false as const };
+
+  const integracion = await prisma.googleIntegracion.findUnique({
+    where: { dietistaId: dietista.id },
+  });
+  if (!integracion) return { ok: false as const };
+
+  try {
+    const url = await obtenerEnlaceEventoGoogle(integracion, cita.googleEventId);
+    return url ? { ok: true as const, url } : { ok: false as const };
+  } catch (error) {
+    console.error(`[google] No se pudo abrir el evento de la cita ${citaId}:`, error);
+    return { ok: false as const };
+  }
 }
 
 export async function getIntegracionPaciente() {

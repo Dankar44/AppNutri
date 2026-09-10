@@ -43,6 +43,7 @@ interface Cita {
   propuestoPor?: string;
   isOnline?: boolean;
   googleMeetLink?: string | null;
+  googleEventId?: string | null;
   paciente: { id: string; nombre: string; apellidos: string; fotoUrl?: string | null };
 }
 

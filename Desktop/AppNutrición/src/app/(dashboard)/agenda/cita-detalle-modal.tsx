@@ -17,6 +17,12 @@ import {
   rechazarContrapropuestaDietista,
 } from "@/app/actions/citas-flujo";
 import { ContraproponerModal } from "./contraproponer-modal";
+import { AvisoCopiaGoogleModal } from "./aviso-copia-google-modal";
+import {
+  abrirCopiaGoogleManual,
+  abrirEventoGoogleSincronizado,
+  estaOcultoAvisoCopiaGoogle,
+} from "./google-calendar-cliente";
 import { useDemoGuard } from "@/contexts/demo-context";
 import { toMadridTimeStr } from "@/lib/tz";
 
@@ -41,6 +47,7 @@ export interface CitaDetalle {
   propuestoPor?: string;
   isOnline?: boolean;
   googleMeetLink?: string | null;
+  googleEventId?: string | null;
   enlaceVideollamada?: string | null;
   paciente: { id: string; nombre: string; apellidos: string; fotoUrl?: string | null };
 }
@@ -92,6 +99,8 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
   const [pending, startTransition] = useTransition();
   const blockIfDemo = useDemoGuard();
   const [showContraponer, setShowContraponer] = useState(false);
+  const [showAvisoGoogle, setShowAvisoGoogle] = useState(false);
+  const [abriendoGoogle, setAbriendoGoogle] = useState(false);
   const [confirmEliminar, setConfirmEliminar] = useState(false);
   const [info, setInfo] = useState<{
     tieneEmail: boolean;
@@ -126,6 +135,27 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
     info?.telefono && info.mensajeWhatsApp
       ? `https://wa.me/${info.telefono.replace(/[^\d]/g, "")}?text=${encodeURIComponent(info.mensajeWhatsApp)}`
       : null;
+
+  async function abrirGoogleCalendar() {
+    if (!cita.googleEventId) {
+      const url = googleCalendarUrl(cita);
+      if (estaOcultoAvisoCopiaGoogle()) {
+        abrirCopiaGoogleManual(url);
+      } else {
+        setShowAvisoGoogle(true);
+      }
+      return;
+    }
+
+    setAbriendoGoogle(true);
+    const resultado = await abrirEventoGoogleSincronizado(cita.id);
+    setAbriendoGoogle(false);
+    if (resultado === "bloqueado") {
+      toast.error(t("citaDetalleModal.googlePopupBlocked"));
+    } else if (resultado === "no-disponible") {
+      toast.error(t("citaDetalleModal.googleEventOpenError"));
+    }
+  }
 
   const horaFin = new Date(
     new Date(cita.fechaHora).getTime() + cita.duracion * 60000,
@@ -396,14 +426,21 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
 
             {/* Acciones auxiliares */}
             <div className="flex items-center justify-between pt-2 border-t border-border">
-              <a
-                href={googleCalendarUrl(cita)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground font-medium"
+              <button
+                type="button"
+                onClick={abrirGoogleCalendar}
+                disabled={abriendoGoogle}
+                className="min-h-9 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground disabled:opacity-60 font-medium"
               >
-                <Calendar className="w-3.5 h-3.5" /> {t("citaDetalleModal.openInGoogleCalendar")}
-              </a>
+                {abriendoGoogle ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+                ) : (
+                  <Calendar className="w-3.5 h-3.5" aria-hidden="true" />
+                )}
+                {cita.googleEventId
+                  ? t("citaDetalleModal.openSyncedGoogleEvent")
+                  : t("citaDetalleModal.openInGoogleCalendar")}
+              </button>
               <button
                 type="button"
                 onClick={() => setConfirmEliminar(true)}
@@ -432,6 +469,13 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
             setShowContraponer(false);
             refrescar();
           }}
+        />
+      )}
+
+      {showAvisoGoogle && (
+        <AvisoCopiaGoogleModal
+          urlGoogle={googleCalendarUrl(cita)}
+          onClose={() => setShowAvisoGoogle(false)}
         />
       )}
 
