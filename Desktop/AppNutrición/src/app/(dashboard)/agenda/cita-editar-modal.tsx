@@ -4,11 +4,15 @@ import { useEffect, useState } from "react";
 import { CalendarClock, Loader2, Video, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { actualizarCita } from "@/app/actions/citas";
+import {
+  actualizarCita,
+  type ConflictoCita,
+} from "@/app/actions/citas";
 import { DatePicker } from "@/components/date-picker";
 import { TimePicker } from "@/components/time-picker";
 import { useDemoGuard } from "@/contexts/demo-context";
 import { toMadridDateStr, toMadridTimeStr } from "@/lib/tz";
+import { AvisoSolapamientoCita } from "./aviso-solapamiento-cita";
 
 export interface CitaEditable {
   id: string;
@@ -42,6 +46,7 @@ export function CitaEditarModal({ cita, onClose, onGuardado }: Props) {
     cita.enlaceVideollamada ?? "",
   );
   const [guardando, setGuardando] = useState(false);
+  const [conflicto, setConflicto] = useState<ConflictoCita | null>(null);
   const duraciones = Array.from(new Set([15, 30, 45, 60, 90, 120, cita.duracion])).sort(
     (a, b) => a - b,
   );
@@ -54,8 +59,7 @@ export function CitaEditarModal({ cita, onClose, onGuardado }: Props) {
     return () => document.removeEventListener("keydown", cerrarConEscape);
   }, [onClose]);
 
-  async function guardar(evento: React.FormEvent<HTMLFormElement>) {
-    evento.preventDefault();
+  async function guardarCambios(permitirSolapamiento = false) {
     if (blockIfDemo()) return;
     if (new Date(`${fecha}T${hora}`) <= new Date()) {
       toast.error(t("fechaPasadaError"));
@@ -71,7 +75,12 @@ export function CitaEditarModal({ cita, onClose, onGuardado }: Props) {
         notas,
         isOnline,
         enlaceVideollamada,
+        permitirSolapamiento,
       });
+      if (resultado.conflicto) {
+        setConflicto(resultado.conflicto);
+        return;
+      }
       if (!resultado.ok) {
         toast.error(resultado.error || t("toastError"));
         return;
@@ -83,6 +92,15 @@ export function CitaEditarModal({ cita, onClose, onGuardado }: Props) {
     } finally {
       setGuardando(false);
     }
+  }
+
+  async function guardar(evento: React.FormEvent<HTMLFormElement>) {
+    evento.preventDefault();
+    await guardarCambios();
+  }
+
+  function limpiarConflicto() {
+    setConflicto(null);
   }
 
   return (
@@ -117,13 +135,24 @@ export function CitaEditarModal({ cita, onClose, onGuardado }: Props) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium mb-1.5">{t("fecha")}</label>
-                <DatePicker value={fecha} onChange={setFecha} required futureOnly />
+                <DatePicker
+                  value={fecha}
+                  onChange={(valor) => {
+                    setFecha(valor);
+                    limpiarConflicto();
+                  }}
+                  required
+                  futureOnly
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">{t("hora")}</label>
                 <TimePicker
                   value={hora}
-                  onChange={setHora}
+                  onChange={(valor) => {
+                    setHora(valor);
+                    limpiarConflicto();
+                  }}
                   fecha={fecha}
                   ariaLabel={t("hora")}
                   inputClassName="w-full px-3 py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
@@ -135,7 +164,10 @@ export function CitaEditarModal({ cita, onClose, onGuardado }: Props) {
               <label className="block text-sm font-medium mb-1.5">{t("duracion")}</label>
               <select
                 value={duracion}
-                onChange={(evento) => setDuracion(Number(evento.target.value))}
+                onChange={(evento) => {
+                  setDuracion(Number(evento.target.value));
+                  limpiarConflicto();
+                }}
                 className="w-full px-3 py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
               >
                 {duraciones.map((minutos) => (
@@ -198,6 +230,15 @@ export function CitaEditarModal({ cita, onClose, onGuardado }: Props) {
               />
               <p className="text-xs text-muted-foreground mt-1.5">{t("enlaceHint")}</p>
             </div>
+
+            {conflicto && (
+              <AvisoSolapamientoCita
+                conflicto={conflicto}
+                guardando={guardando}
+                onRevisar={limpiarConflicto}
+                onConfirmar={() => void guardarCambios(true)}
+              />
+            )}
           </div>
 
           <div className="p-5 border-t border-border bg-muted/20 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
