@@ -260,7 +260,8 @@
   "ai": {
     "noApiKeys": "Não há chaves de API de IA configuradas",
     "timeout": "Tempo máximo de espera esgotado. Tente novamente mais tarde.",
-    "rateLimitExhausted": "Muitas tentativas por limite de taxa. Tente novamente mais tarde."
+    "rateLimitExhausted": "Lamentamos, a capacidade diária do serviço de geração com IA esgotou-se por hoje. Poderá voltar a utilizá-lo amanhã.",
+    "temporaryFailure": "Lamentamos, não foi possível gerar o plano devido a uma falha pontual. Tente novamente agora."
   },
   "empresa": {
     "nombreRequerido": "O nome da empresa é obrigatório",
