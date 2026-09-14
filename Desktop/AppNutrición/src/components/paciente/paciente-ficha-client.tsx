@@ -75,6 +75,7 @@ type PacienteSerializado = {
   intolerancias: string[];
   suplementos: string[];
   fichaInformacion: unknown;
+  estructuraAnamnesis: unknown;
   preconsultaCompletadaAt?: string | null;
   plantillaAnamnesisId?: string | null;
   esDemo?: boolean;
@@ -326,6 +327,8 @@ export function PacienteFichaClient({
             patologias: paciente.patologias,
             medicamentos: paciente.medicamentos,
             suplementos: paciente.suplementos,
+            antecedentesPersonales: ficha?.clinica?.antecedentesPersonales ?? null,
+            antecedentesFamiliares: ficha?.clinica?.antecedentesFamiliares ?? null,
             // La plantilla de un caso no tiene portal: no hay persona real que entre con un PIN.
             esCasoDocente: paciente.esCasoDocente,
           }}
@@ -347,6 +350,7 @@ export function PacienteFichaClient({
           estructura={estructuraAnamnesis ?? estructuraBase()}
           plantillas={plantillasAnamnesis}
           plantillaActualId={paciente.plantillaAnamnesisId ?? null}
+          tieneEstructuraPropia={paciente.estructuraAnamnesis != null}
           resumen={{
             patologias: paciente.patologias,
             medicamentos: paciente.medicamentos,

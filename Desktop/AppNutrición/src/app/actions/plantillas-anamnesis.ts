@@ -138,7 +138,10 @@ export async function renombrarPlantillaAnamnesis(
   return { ok: true };
 }
 
-export async function eliminarPlantillaAnamnesis(id: string): Promise<{ ok: boolean; error?: string }> {
+export async function eliminarPlantillaAnamnesis(
+  id: string,
+  pacienteId?: string,
+): Promise<{ ok: boolean; error?: string }> {
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
   if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
@@ -146,6 +149,7 @@ export async function eliminarPlantillaAnamnesis(id: string): Promise<{ ok: bool
   // ON DELETE SET NULL en BD: los pacientes que la usaban vuelven a la anamnesis genérica.
   await prisma.plantillaAnamnesis.deleteMany({ where: { id, dietistaId: dietista.id } });
   revalidatePath("/ajustes");
+  if (pacienteId) revalidatePath(`/pacientes/${pacienteId}`);
   return { ok: true };
 }
 
@@ -191,7 +195,12 @@ export async function guardarEstructuraPaciente(
   const limpia = sanitizeEstructura(estructura);
   const res = await prisma.paciente.updateMany({
     where: { id: pacienteId, dietistaId: dietista.id },
-    data: { estructuraAnamnesis: limpia as unknown as Prisma.InputJsonValue },
+    // Una versión personal deja de estar vinculada a la plantilla anterior para que la interfaz
+    // pueda distinguirla de una plantilla reutilizable. La plantilla original no se modifica.
+    data: {
+      estructuraAnamnesis: limpia as unknown as Prisma.InputJsonValue,
+      plantillaAnamnesisId: null,
+    },
   });
   if (res.count === 0) return { ok: false, error: t("paciente.pacienteNoEncontrado") };
   revalidatePath(`/pacientes/${pacienteId}`);
