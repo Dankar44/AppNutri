@@ -73,6 +73,35 @@
       "recena": "23:00"
     }
   },
+  "recetario": {
+    "tituloDefault": "O meu livro de receitas",
+    "tituloPlan": "Receitas do plano de {pacienteNombre}",
+    "portada": {
+      "sobretitulo": "LIVRO DE RECEITAS",
+      "cantidad": "{count, plural, one {# RECEITA} other {# RECEITAS}}"
+    },
+    "header": {
+      "subtitulo": "LIVRO DE RECEITAS"
+    },
+    "indice": {
+      "titulo": "ÍNDICE DE RECEITAS"
+    },
+    "receta": {
+      "minutos": "{count} min",
+      "rinde": "Rende {count} porções",
+      "ingredientes": "INGREDIENTES",
+      "preparacion": "PREPARAÇÃO",
+      "sinIngredientes": "Esta receita não tem ingredientes.",
+      "sinInstrucciones": "Esta receita ainda não tem instruções.",
+      "macrosPorRacion": "Valores nutricionais por porção"
+    },
+    "contraportada": {
+      "generadoPor": "Gerado por {dietistaNombre}"
+    },
+    "footer": {
+      "texto": "{brandName} — {fecha}"
+    }
+  },
   "anamnesis": {
     "titulo": "Anamnese nutricional",
     "pacienteLabel": "Paciente:",

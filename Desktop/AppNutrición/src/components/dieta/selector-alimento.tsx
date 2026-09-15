@@ -523,7 +523,7 @@ export function SelectorAlimento({ open, onClose, onSelect, comidaId, macrosObje
                 {recetas.map((r) => (
                   <div
                     key={r.id}
-                    className="rounded-lg border border-purple-200 dark:border-purple-500/30 bg-purple-50/30 overflow-hidden"
+                    className="overflow-hidden rounded-lg border border-purple-200 bg-purple-50/30 dark:border-purple-400/30 dark:bg-purple-500/10"
                   >
                     <div
                       className="w-full text-left p-3 hover:bg-purple-50 dark:hover:bg-purple-500/15 transition-colors cursor-pointer"

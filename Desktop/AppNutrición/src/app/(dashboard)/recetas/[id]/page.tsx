@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { getCurrentDietista } from "@/app/actions/auth";
 import { CopiarMaterialButton } from "@/components/copiar-material-button";
 import Link from "next/link";
-import { ArrowLeft, Pencil, Clock, Sparkles } from "lucide-react";
+import { ArrowLeft, Pencil, Clock, Download, Sparkles } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { getReceta } from "@/app/actions/recetas";
 import { convertirAGramos } from "@/lib/macros";
@@ -73,6 +73,13 @@ export default async function RecetaDetailPage({ params }: Props) {
             )}
           </div>
           <div className="flex items-center gap-2">
+            <Link
+              href={`/recetas/recetario?ids=${encodeURIComponent(receta.id)}`}
+              className="inline-flex min-h-11 items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium"
+            >
+              <Download className="w-4 h-4" />
+              {t("detail.descargarPdf")}
+            </Link>
             {receta.esGlobal && (
               <FavoritoButton recetaId={receta.id} inicial={receta.favorito} />
             )}

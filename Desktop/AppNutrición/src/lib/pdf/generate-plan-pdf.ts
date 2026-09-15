@@ -1,6 +1,7 @@
 import { generarListaCompra } from "@/lib/shopping-list";
 import { calcularMacrosPorcion, sumarMacros, macrosVacios, convertirAGramos } from "@/lib/macros";
 import { type PdfColorTheme, TEMAS_PDF } from "./pdf-themes";
+import { extraerRecetasDelPlan, generateRecetarioCSS, generateRecetarioPages, type DistribucionRecetarioPDF } from "./generate-recetario-pdf";
 
 import { UNIDAD_LABELS, UNIDAD_LABELS_FULL, formatQuantity } from "@/lib/units";
 import { etiquetaPorciones, ingredientesDeReceta } from "@/lib/receta-porciones";
@@ -93,6 +94,13 @@ function altLinesHtml(a: AlimentoEnComida, tt: TFunc, conCantidades = true): str
  * Prisma ({nombrePersonalizado, alimento, receta}) para que el exportador del
  * paciente pueda pasar el plan tal cual.
  */
+interface RecetaPDF {
+  id: string; nombre: string; descripcion?: string | null; instrucciones?: string | null;
+  porciones: number; calorias: number; proteinas: number; carbohidratos: number; grasas: number;
+  /** `categoria` sirve para desglosar la receta en la lista de la compra por secciones. */
+  ingredientes: { alimento: { id?: string; nombre: string; categoria?: string | null; porcion?: number | null; enlaceProducto?: string | null; imagenUrl?: string | null }; cantidad: number; unidad: string }[];
+}
+
 interface AlternativaPDF {
   cantidad: number;
   unidad: string;
@@ -100,7 +108,7 @@ interface AlternativaPDF {
   nombrePersonalizado?: string | null;
   esReceta?: boolean;
   alimento?: { nombre: string } | null;
-  receta?: { nombre: string } | null;
+  receta?: RecetaPDF | null;
 }
 
 function getAltNombre(alt: AlternativaPDF): string {
@@ -120,12 +128,7 @@ interface AlimentoEnComida {
     enlaceProducto?: string | null;
     imagenUrl?: string | null;
   } | null;
-  receta: {
-    id: string; nombre: string; descripcion?: string | null; instrucciones?: string | null;
-    porciones: number; calorias: number; proteinas: number; carbohidratos: number; grasas: number;
-    /** `categoria` sirve para desglosar la receta en la lista de la compra por secciones. */
-    ingredientes: { alimento: { id?: string; nombre: string; categoria?: string | null; porcion?: number | null; enlaceProducto?: string | null; imagenUrl?: string | null }; cantidad: number; unidad: string }[];
-  } | null;
+  receta: RecetaPDF | null;
   /** Alias visual del nutri (#5). Las vías mapeadas ya lo resuelven en `nombre`; la cruda (exportador del paciente) lo trae aquí. */
   nombrePersonalizado?: string | null;
   alternativas?: AlternativaPDF[];
@@ -157,6 +160,9 @@ export interface PDFSectionOptions {
   listaCompra?: boolean;
   cantidadesSemanal?: boolean;
   valoresNutricionales?: boolean;
+  recetasDelPlan?: boolean;
+  valoresNutricionalesRecetas?: boolean;
+  distribucionRecetas?: DistribucionRecetarioPDF;
 }
 
 /**
@@ -334,10 +340,11 @@ function getDayMacros(dia: Dia) {
 export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
   const tt = t ?? ((key: string) => key);
   const theme = data.tema ?? TEMAS_PDF.verde;
-  const sec = { portada: true, planSemanal: true, detalleDiario: true, recomendaciones: true, listaCompra: true, cantidadesSemanal: false, valoresNutricionales: true, ...data.sections };
+  const sec = { portada: true, planSemanal: true, detalleDiario: true, recomendaciones: true, listaCompra: true, cantidadesSemanal: false, valoresNutricionales: true, recetasDelPlan: false, valoresNutricionalesRecetas: true, distribucionRecetas: "automatica" as DistribucionRecetarioPDF, ...data.sections };
   const brandName = escapeHtml(data.brandName || "Annonia");
   const ov = data.displayOverrides ?? {};
   const sortedDias = DIAS_ORDEN.map((d) => data.dias.find((dia) => dia.dia === d)).filter(Boolean) as Dia[];
+  const recetasDelPlan = sec.recetasDelPlan ? extraerRecetasDelPlan(sortedDias) : [];
   const fechaLocale = data.locale === "pt" ? "pt-BR" : "es-ES";
   const fecha = new Date().toLocaleDateString(fechaLocale, { day: "numeric", month: "long", year: "numeric" });
   const listaCompra = generarListaCompra(sortedDias as unknown as Parameters<typeof generarListaCompra>[0], ov);
@@ -522,10 +529,29 @@ export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
     html += `</div>${footer}</div>`;
   }
 
+  // === RECETAS DEL PLAN ===
+  // Se añaden una sola vez, aunque la misma receta aparezca varios días. La contraportada general
+  // sigue siendo la última página del entregable para mantener la estructura del documento.
+  if (recetasDelPlan.length > 0) {
+    html += generateRecetarioPages({
+      titulo: tt("recetario.tituloPlan", { pacienteNombre: data.pacienteNombre }),
+      dietistaNombre: data.dietistaNombre,
+      recetas: recetasDelPlan,
+      tema: theme,
+      brandName: data.brandName,
+      logoDataUrl: data.logoDataUrl,
+      clinica: data.clinica,
+      locale: data.locale,
+      isEmail: data.isEmail,
+      opciones: { portada: false, indice: false, valoresNutricionales: sec.valoresNutricionalesRecetas, distribucion: sec.distribucionRecetas },
+    }, tt, false);
+  }
+
   // === CONTRAPORTADA ===
   const clinicaLine = data.clinica ? ` &mdash; ${escapeHtml(data.clinica)}` : "";
   html += `<div class="page cover"><div class="cover-logo" style="font-size:32px;">${logoCoverHtml}</div><p style="color:#666; margin-top:12px; font-size:12px;">${tt("planDietetico.contraportada.generadoPor", { dietistaNombre: escapeHtml(data.dietistaNombre) })}${clinicaLine}</p><p style="color:#b0b8b3; margin-top:24px; font-size:10px;">${tt("planDietetico.contraportada.plataforma")}</p></div>`;
 
   const printScript = data.isEmail ? "" : "<script>window.onload=function(){window.print();}</script>";
-  return `<!DOCTYPE html><html><head><title>Plan Dietético - ${data.pacienteNombre}</title><style>${generateCSS(theme)}</style></head><body>${html}${printScript}</body></html>`;
+  const cssRecetas = recetasDelPlan.length > 0 ? generateRecetarioCSS(theme) : "";
+  return `<!DOCTYPE html><html><head><title>Plan Dietético - ${data.pacienteNombre}</title><style>${generateCSS(theme)}${cssRecetas}</style></head><body>${html}${printScript}</body></html>`;
 }

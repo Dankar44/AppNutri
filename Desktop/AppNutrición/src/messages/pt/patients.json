@@ -483,6 +483,8 @@
     "recomendacionesDescripcion": "Água, exercício, alimentos a evitar, observações personalizadas",
     "listaCompra": "Lista de compras",
     "listaCompraDescripcion": "Todos os ingredientes do plano agrupados por categoria",
+    "recetasDelPlan": "{count, plural, one {Receita do plano (#)} other {Receitas do plano (#)}}",
+    "recetasDelPlanDescripcion": "Adiciona ao final do mesmo PDF as receitas incluídas no plano.",
     "valoresNutricionalesPorComida": "Valores nutricionais por refeição",
     "valoresNutricionalesPorComidaDescripcion": "Tabela com kcal, proteínas, carboidratos, gorduras e fibra por refeição",
     "cantidadesSemanal": "Quantidades no resumo semanal",

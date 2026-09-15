@@ -266,6 +266,24 @@ export async function enviarPlanPorEmail(
             cantidad: alt.cantidad,
             unidad: alt.unidad,
             esReceta: !!alt.receta,
+            receta: alt.receta
+              ? {
+                  id: alt.receta.id,
+                  nombre: alt.nombrePersonalizado || alt.receta.nombre,
+                  descripcion: alt.receta.descripcion,
+                  instrucciones: alt.receta.instrucciones,
+                  porciones: alt.receta.porciones ?? 1,
+                  calorias: alt.receta.calorias ?? 0,
+                  proteinas: alt.receta.proteinas ?? 0,
+                  carbohidratos: alt.receta.carbohidratos ?? 0,
+                  grasas: alt.receta.grasas ?? 0,
+                  ingredientes: (alt.receta.ingredientes ?? []).map((i) => ({
+                    alimento: { id: i.alimento.id, nombre: i.alimento.nombre, categoria: i.alimento.categoria, porcion: i.alimento.porcion, enlaceProducto: i.alimento.enlaceProducto, imagenUrl: i.alimento.imagenUrl },
+                    cantidad: i.cantidad,
+                    unidad: i.unidad,
+                  })),
+                }
+              : null,
           })),
           receta: a.receta
             ? {

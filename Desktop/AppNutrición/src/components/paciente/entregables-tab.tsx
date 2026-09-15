@@ -31,6 +31,7 @@ import {
   type QuantityOverride,
   UNIDAD_LABELS_FULL,
 } from "@/lib/pdf/generate-plan-pdf";
+import { extraerRecetasDelPlan, type DistribucionRecetarioPDF } from "@/lib/pdf/generate-recetario-pdf";
 import { downloadPDF } from "@/lib/pdf/pdf-download";
 import { EntregarCaso } from "@/components/docencia/entregar-caso";
 
@@ -60,7 +61,12 @@ type PDFOptions = {
   recomendaciones: boolean;
   listaCompra: boolean;
   valoresNutricionales: boolean;
+  recetasDelPlan: boolean;
+  valoresNutricionalesRecetas: boolean;
+  distribucionRecetas: DistribucionRecetarioPDF;
 };
+
+type PDFOptionBooleana = Exclude<keyof PDFOptions, "distribucionRecetas">;
 
 const PDF_OPTIONS_DEFAULT: PDFOptions = {
   portada: true,
@@ -70,10 +76,13 @@ const PDF_OPTIONS_DEFAULT: PDFOptions = {
   recomendaciones: true,
   listaCompra: true,
   valoresNutricionales: true,
+  recetasDelPlan: false,
+  valoresNutricionalesRecetas: true,
+  distribucionRecetas: "automatica",
 };
 
 const PDF_OPTIONS_KEYS: {
-  key: keyof PDFOptions;
+  key: PDFOptionBooleana;
   labelKey: string;
   descriptionKey: string;
   disabled?: boolean;
@@ -329,11 +338,16 @@ export function EntregablesTab({
   const t = useTranslations("patients.entregables");
   const tAula = useTranslations("aula");
   const tPdf = useTranslations("pdf");
+  const tRecetario = useTranslations("recipes.recetario");
   const [sendingPlan, startSendingPlan] = useTransition();
 
   // PDF configurator state. Si el paciente tiene "ocultar calorías", los valores
   // nutricionales arrancan desactivados para no enviarle un PDF con kcal sin querer.
-  const opcionesIniciales: PDFOptions = { ...PDF_OPTIONS_DEFAULT, valoresNutricionales: !ocultarCalorias };
+  const opcionesIniciales: PDFOptions = {
+    ...PDF_OPTIONS_DEFAULT,
+    valoresNutricionales: !ocultarCalorias,
+    valoresNutricionalesRecetas: !ocultarCalorias,
+  };
   const [pdfOptions, setPdfOptions] = useState<PDFOptions>(opcionesIniciales);
   const [appliedOptions, setAppliedOptions] = useState<PDFOptions>(opcionesIniciales);
   const [pdfData, setPdfData] = useState<PlanPDFData | null>(null);
@@ -345,6 +359,7 @@ export function EntregablesTab({
   const [totalPages, setTotalPages] = useState(1);
   const [displayOverrides, setDisplayOverrides] = useState<DisplayOverrides>({});
   const [appliedOverrides, setAppliedOverrides] = useState<DisplayOverrides>({});
+  const numeroRecetasPlan = pdfData ? extraerRecetasDelPlan(pdfData.dias).length : 0;
 
   // Cargar la lista de planes del paciente
   useEffect(() => {
@@ -368,6 +383,10 @@ export function EntregablesTab({
     getPlanPDFData(selectedPlanId).then((data) => {
       if (cancelled) return;
       setPdfData(data);
+      if (!data || extraerRecetasDelPlan(data.dias).length === 0) {
+        setPdfOptions((prev) => ({ ...prev, recetasDelPlan: false }));
+        setAppliedOptions((prev) => ({ ...prev, recetasDelPlan: false }));
+      }
       setLoadingPdf(false);
     }).catch(() => {
       if (!cancelled) setLoadingPdf(false);
@@ -399,6 +418,9 @@ export function EntregablesTab({
       recomendaciones: opts.recomendaciones,
       listaCompra: opts.listaCompra,
       valoresNutricionales: opts.valoresNutricionales,
+      recetasDelPlan: opts.recetasDelPlan,
+      valoresNutricionalesRecetas: opts.valoresNutricionalesRecetas,
+      distribucionRecetas: opts.distribucionRecetas,
     };
   }
 
@@ -419,7 +441,7 @@ export function EntregablesTab({
     JSON.stringify(displayOverrides) !== JSON.stringify(appliedOverrides);
 
 
-  function handlePdfOptionChange(key: keyof PDFOptions, value: boolean) {
+  function handlePdfOptionChange(key: PDFOptionBooleana, value: boolean) {
     setPdfOptions((prev) => {
       const next = { ...prev, [key]: value };
       if (key === "planSemanal" && !value) next.cantidadesSemanal = false;
@@ -544,6 +566,83 @@ export function EntregablesTab({
                   );
                 })}
               </div>
+
+              {numeroRecetasPlan > 0 && (
+                <div className="mt-4 rounded-xl border border-border bg-card p-3">
+                  <label className="flex cursor-pointer items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={pdfOptions.recetasDelPlan}
+                      onChange={(evento) => handlePdfOptionChange("recetasDelPlan", evento.target.checked)}
+                      className="mt-0.5 h-4 w-4 shrink-0 rounded border-border accent-primary focus:ring-primary/20"
+                    />
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold text-foreground">
+                        {t("recetasDelPlan", { count: numeroRecetasPlan })}
+                      </span>
+                      <span className="mt-0.5 block text-xs text-muted-foreground">
+                        {t("recetasDelPlanDescripcion")}
+                      </span>
+                    </span>
+                  </label>
+
+                  {pdfOptions.recetasDelPlan && (
+                    <div className="mt-3 space-y-3 border-t border-border pt-3">
+                      <label className="flex cursor-pointer items-start gap-3 rounded-lg px-1 py-1.5 transition-colors hover:bg-muted/50">
+                        <input
+                          type="checkbox"
+                          checked={pdfOptions.valoresNutricionalesRecetas}
+                          onChange={(evento) => handlePdfOptionChange("valoresNutricionalesRecetas", evento.target.checked)}
+                          className="mt-0.5 h-4 w-4 shrink-0 rounded border-border accent-primary focus:ring-primary/20"
+                        />
+                        <span className="min-w-0">
+                          <span className="block text-sm font-medium text-foreground">{tRecetario("macros")}</span>
+                          <span className="mt-0.5 block text-xs text-muted-foreground">{tRecetario("macrosDescripcion")}</span>
+                        </span>
+                      </label>
+
+                      <fieldset className="border-t border-border pt-3">
+                        <legend className="text-sm font-medium text-foreground">{tRecetario("distribucionTitulo")}</legend>
+                        <p className="mt-1 text-xs text-muted-foreground">{tRecetario("distribucionAyuda")}</p>
+                        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                          {["automatica", "unaPorPagina"].map((distribucion) => {
+                            const valor = distribucion as DistribucionRecetarioPDF;
+                            const seleccionada = pdfOptions.distribucionRecetas === valor;
+                            return (
+                              <label
+                                key={valor}
+                                className={cn(
+                                  "flex min-h-11 cursor-pointer items-start gap-2.5 rounded-lg border p-3 transition-colors",
+                                  seleccionada
+                                    ? "border-primary bg-primary/5"
+                                    : "border-border hover:bg-muted/50",
+                                )}
+                              >
+                                <input
+                                  type="radio"
+                                  name="distribucion-recetas-plan"
+                                  value={valor}
+                                  checked={seleccionada}
+                                  onChange={() => setPdfOptions((previa) => ({ ...previa, distribucionRecetas: valor }))}
+                                  className="mt-0.5 h-4 w-4 shrink-0 accent-primary focus:ring-primary/20"
+                                />
+                                <span className="min-w-0">
+                                  <span className="block text-sm font-medium text-foreground">
+                                    {tRecetario(valor === "automatica" ? "distribucionAutomatica" : "unaPorPagina")}
+                                  </span>
+                                  <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
+                                    {tRecetario(valor === "automatica" ? "distribucionAutomaticaDescripcion" : "unaPorPaginaDescripcion")}
+                                  </span>
+                                </span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </fieldset>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Editor de cantidades */}
               {pdfData && !loadingPdf && (

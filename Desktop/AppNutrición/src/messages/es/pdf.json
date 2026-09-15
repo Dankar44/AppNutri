@@ -73,6 +73,35 @@
       "recena": "23:00"
     }
   },
+  "recetario": {
+    "tituloDefault": "Mi recetario",
+    "tituloPlan": "Recetas del plan de {pacienteNombre}",
+    "portada": {
+      "sobretitulo": "RECETARIO",
+      "cantidad": "{count, plural, one {# RECETA} other {# RECETAS}}"
+    },
+    "header": {
+      "subtitulo": "RECETARIO"
+    },
+    "indice": {
+      "titulo": "ÍNDICE DE RECETAS"
+    },
+    "receta": {
+      "minutos": "{count} min",
+      "rinde": "Rinde {count} raciones",
+      "ingredientes": "INGREDIENTES",
+      "preparacion": "PREPARACIÓN",
+      "sinIngredientes": "Esta receta no tiene ingredientes.",
+      "sinInstrucciones": "Esta receta todavía no tiene instrucciones.",
+      "macrosPorRacion": "Valores nutricionales por ración"
+    },
+    "contraportada": {
+      "generadoPor": "Generado por {dietistaNombre}"
+    },
+    "footer": {
+      "texto": "{brandName} — {fecha}"
+    }
+  },
   "anamnesis": {
     "titulo": "Anamnesis nutricional",
     "pacienteLabel": "Paciente:",

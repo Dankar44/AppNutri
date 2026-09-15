@@ -16,6 +16,13 @@ const TEMAS_LISTA = [
   { id: "oscuro", key: "oscuro" as const, color: "#4a5568" },
 ] as const;
 
+const COLOR_PERSONALIZADO_DEFAULT = "#6b9e80";
+const COLOR_HEX_REGEX = /^#[0-9a-fA-F]{6}$/;
+
+function colorInicialValido(color: string | null): string {
+  return color && COLOR_HEX_REGEX.test(color) ? color.toLowerCase() : COLOR_PERSONALIZADO_DEFAULT;
+}
+
 interface Props {
   temaPdfInicial: string | null;
   colorPrimarioInicial: string | null;
@@ -25,31 +32,45 @@ interface Props {
 export function TemaPdfForm({ temaPdfInicial, colorPrimarioInicial, onThemeChange }: Props) {
   const t = useTranslations("settings.temaPdf");
   const [selected, setSelected] = useState(temaPdfInicial || "verde");
-  const [customColor, setCustomColor] = useState(colorPrimarioInicial || "#6b9e80");
+  const colorInicial = colorInicialValido(colorPrimarioInicial);
+  const [customColor, setCustomColor] = useState(colorInicial);
+  const [mostrarErrorColor, setMostrarErrorColor] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const customColorValido = COLOR_HEX_REGEX.test(customColor) ? customColor.toLowerCase() : null;
+  const colorParaVistaPrevia = customColorValido || colorInicial;
 
   const currentTheme = getTheme(
     selected,
-    selected === "personalizado" ? customColor : null
+    selected === "personalizado" ? colorParaVistaPrevia : null
   );
 
   function handleSelectTheme(id: string) {
     setSelected(id);
-    const theme = getTheme(id, id === "personalizado" ? customColor : null);
+    const theme = getTheme(id, id === "personalizado" ? colorParaVistaPrevia : null);
     onThemeChange?.(theme);
   }
 
   function handleColorChange(hex: string) {
-    setCustomColor(hex);
-    if (selected === "personalizado") {
-      onThemeChange?.(getTheme("personalizado", hex));
+    const valor = hex.slice(0, 7);
+    setCustomColor(valor);
+    if (selected === "personalizado" && COLOR_HEX_REGEX.test(valor)) {
+      onThemeChange?.(getTheme("personalizado", valor));
     }
+  }
+
+  function handleColorTextChange(hex: string) {
+    setMostrarErrorColor(false);
+    handleColorChange(hex);
   }
 
   function handleSave() {
     startTransition(async () => {
       try {
-        await actualizarTemaPdf(selected, selected === "personalizado" ? customColor : null);
+        if (selected === "personalizado" && !customColorValido) {
+          toast.error(t("colorFormato"));
+          return;
+        }
+        await actualizarTemaPdf(selected, selected === "personalizado" ? customColorValido : null);
         toast.success(t("toastSuccess"));
       } catch (e) {
         toast.error(e instanceof Error ? e.message : t("toastErrorGenerico"));
@@ -58,7 +79,8 @@ export function TemaPdfForm({ temaPdfInicial, colorPrimarioInicial, onThemeChang
   }
 
   const hasChanges = selected !== (temaPdfInicial || "verde") ||
-    (selected === "personalizado" && customColor !== colorPrimarioInicial);
+    (selected === "personalizado" && customColorValido !== colorInicialValido(colorPrimarioInicial));
+  const puedeGuardar = hasChanges && (selected !== "personalizado" || Boolean(customColorValido));
 
   return (
     <div>
@@ -105,7 +127,7 @@ export function TemaPdfForm({ temaPdfInicial, colorPrimarioInicial, onThemeChang
         >
           <div
             className="w-8 h-8 rounded-full border-2 border-dashed border-muted-foreground flex items-center justify-center overflow-hidden"
-            style={selected === "personalizado" ? { backgroundColor: customColor, borderStyle: "solid", borderColor: customColor } : {}}
+            style={selected === "personalizado" ? { backgroundColor: colorParaVistaPrevia, borderStyle: "solid", borderColor: colorParaVistaPrevia } : {}}
           >
             {selected === "personalizado" && <Check className="w-4 h-4 text-white" />}
           </div>
@@ -114,16 +136,40 @@ export function TemaPdfForm({ temaPdfInicial, colorPrimarioInicial, onThemeChang
       </div>
 
       {selected === "personalizado" && (
-        <div className="flex items-center gap-3 mb-4 p-3 rounded-lg bg-muted/50 border border-border">
+        <div className="mb-4 flex items-start gap-3 rounded-lg border border-border bg-muted/50 p-3">
           <input
             type="color"
-            value={customColor}
+            value={colorParaVistaPrevia}
             onChange={(e) => handleColorChange(e.target.value)}
-            className="w-10 h-10 rounded-lg cursor-pointer border-0 p-0"
+            aria-label={t("abrirSelectorColor")}
+            title={t("abrirSelectorColor")}
+            className="h-11 w-11 shrink-0 cursor-pointer rounded-lg border border-border bg-transparent p-0.5 focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
-          <div>
-            <p className="text-sm font-medium">{t("colorPersonalizado")}</p>
-            <p className="text-xs text-muted-foreground font-mono">{customColor}</p>
+          <div className="min-w-0 flex-1">
+            <label htmlFor="color-personalizado-hex" className="text-sm font-medium">
+              {t("colorPersonalizado")}
+            </label>
+            <input
+              id="color-personalizado-hex"
+              type="text"
+              value={customColor}
+              onChange={(e) => handleColorTextChange(e.target.value)}
+              onBlur={() => setMostrarErrorColor(true)}
+              maxLength={7}
+              spellCheck={false}
+              autoCapitalize="none"
+              aria-invalid={mostrarErrorColor && !customColorValido}
+              aria-describedby={mostrarErrorColor && !customColorValido ? "color-personalizado-error" : undefined}
+              className={cn(
+                "mt-1 w-full max-w-36 rounded-md border bg-background px-2.5 py-1.5 font-mono text-sm uppercase focus:outline-none focus:ring-2 focus:ring-primary/30",
+                mostrarErrorColor && !customColorValido ? "border-destructive" : "border-border",
+              )}
+            />
+            {mostrarErrorColor && !customColorValido && (
+              <p id="color-personalizado-error" className="mt-1 text-xs text-destructive">
+                {t("colorFormato")}
+              </p>
+            )}
           </div>
         </div>
       )}
@@ -141,10 +187,10 @@ export function TemaPdfForm({ temaPdfInicial, colorPrimarioInicial, onThemeChang
       <button
         type="button"
         onClick={handleSave}
-        disabled={isPending || !hasChanges}
+        disabled={isPending || !puedeGuardar}
         className={cn(
           "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-          hasChanges
+          puedeGuardar
             ? "bg-primary text-primary-foreground hover:bg-primary/90"
             : "bg-muted text-muted-foreground cursor-not-allowed"
         )}
