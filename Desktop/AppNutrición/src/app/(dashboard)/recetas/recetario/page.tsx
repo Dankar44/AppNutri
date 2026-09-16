@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, BookOpen } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { getRecetarioPDFData } from "@/app/actions/recetas";
+import { getPacientes } from "@/app/actions/pacientes";
 import { PageHeader } from "@/components/page-header";
 import { RecetarioEditor } from "./recetario-editor";
 
@@ -13,8 +14,9 @@ export default async function RecetarioPage({ searchParams }: Props) {
   const sp = await searchParams;
   const raw = Array.isArray(sp.ids) ? sp.ids[0] : sp.ids;
   const ids = raw ? raw.split(",").map((id) => id.trim()).filter(Boolean) : [];
-  const [resultado, t] = await Promise.all([
+  const [resultado, pacientes, t] = await Promise.all([
     getRecetarioPDFData(ids),
+    getPacientes(undefined, true),
     getTranslations("recipes"),
   ]);
 
@@ -46,6 +48,12 @@ export default async function RecetarioPage({ searchParams }: Props) {
               ? resultado.data.recetas[0].nombre
               : t("recetario.tituloDefault")
           }
+          pacientes={pacientes.map((paciente) => ({
+            id: paciente.id,
+            nombre: paciente.nombre,
+            apellidos: paciente.apellidos,
+            email: paciente.email,
+          }))}
         />
       ) : (
         <div className="rounded-xl border border-dashed border-border bg-card p-8 text-center">

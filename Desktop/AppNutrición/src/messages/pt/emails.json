@@ -69,6 +69,14 @@
     "portal": "Você também pode consultá-lo a qualquer momento no seu portal de paciente.",
     "botonPortal": "Acessar o portal"
   },
+  "recetario": {
+    "subject": "O seu livro de receitas — {titulo}",
+    "titulo": "O seu livro de receitas",
+    "saludo": "Olá {pacienteNombre}, {dietistaNombre} enviou-lhe um livro de receitas.",
+    "adjunto": "O seu livro de receitas está anexado a este email.",
+    "portal": "Também pode consultar o seu plano no portal de paciente.",
+    "botonPortal": "Aceder ao portal"
+  },
   "recuperarPassword": {
     "subject": "Redefina sua senha — Annonia",
     "titulo": "Redefinir senha",

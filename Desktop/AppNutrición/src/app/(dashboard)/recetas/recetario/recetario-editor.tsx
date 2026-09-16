@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import {
   ChevronLeft,
@@ -8,12 +8,14 @@ import {
   Download,
   Eye,
   Loader2,
+  Mail,
   Palette,
   Sparkles,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { enviarRecetarioPorEmail } from "@/app/actions/email";
 import {
   generateRecetarioPDF,
   type DistribucionRecetarioPDF,
@@ -25,6 +27,12 @@ import { downloadPDF } from "@/lib/pdf/pdf-download";
 interface Props {
   data: RecetarioPDFData;
   tituloInicial: string;
+  pacientes: Array<{
+    id: string;
+    nombre: string;
+    apellidos: string;
+    email: string | null;
+  }>;
 }
 
 interface ConfiguracionEditor {
@@ -52,7 +60,7 @@ function nombreArchivo(titulo: string): string {
   return `${limpio || "Recetario"}.pdf`;
 }
 
-export function RecetarioEditor({ data, tituloInicial }: Props) {
+export function RecetarioEditor({ data, tituloInicial, pacientes }: Props) {
   const t = useTranslations("recipes.recetario");
   const tPdf = useTranslations("pdf");
   const inicial: ConfiguracionEditor = {
@@ -64,11 +72,15 @@ export function RecetarioEditor({ data, tituloInicial }: Props) {
   const [configuracion, setConfiguracion] = useState<ConfiguracionEditor>(inicial);
   const [aplicada, setAplicada] = useState<ConfiguracionEditor>(inicial);
   const [descargando, setDescargando] = useState(false);
+  const [mostrarEnvio, setMostrarEnvio] = useState(false);
+  const [pacienteId, setPacienteId] = useState("");
+  const [enviandoEmail, iniciarEnvioEmail] = useTransition();
   const [paginaPrevia, setPaginaPrevia] = useState(0);
   const [totalPaginas, setTotalPaginas] = useState(1);
   const [escalaPrevia, setEscalaPrevia] = useState(1);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const contenedorPreviaRef = useRef<HTMLDivElement>(null);
+  const pacientesConEmail = useMemo(() => pacientes.filter((paciente) => paciente.email), [pacientes]);
 
   const pdfHtml = useMemo(() => {
     const html = generateRecetarioPDF(
@@ -130,6 +142,38 @@ export function RecetarioEditor({ data, tituloInicial }: Props) {
     } finally {
       setDescargando(false);
     }
+  }
+
+  function enviarEmail() {
+    if (!configuracion.titulo.trim()) {
+      toast.error(t("tituloObligatorio"));
+      return;
+    }
+    if (!pacienteId) {
+      toast.error(t("selectorPacienteObligatorio"));
+      return;
+    }
+    iniciarEnvioEmail(async () => {
+      try {
+        const resultado = await enviarRecetarioPorEmail(
+          pacienteId,
+          data.recetas.map((receta) => receta.id),
+          {
+            titulo: configuracion.titulo.trim(),
+            indice: configuracion.indice,
+            valoresNutricionales: configuracion.valoresNutricionales,
+            distribucion: configuracion.distribucion,
+          },
+        );
+        if (resultado.ok) {
+          toast.success(t("emailEnviado"));
+        } else {
+          toast.error(resultado.error || t("errorEmail"));
+        }
+      } catch {
+        toast.error(t("errorEmail"));
+      }
+    });
   }
 
   function prepararPaginasPrevia() {
@@ -278,7 +322,7 @@ export function RecetarioEditor({ data, tituloInicial }: Props) {
             onClick={aplicarVistaPrevia}
             disabled={!hayCambios || !configuracion.titulo.trim()}
             className={cn(
-              "inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition-colors",
+              "inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors",
               hayCambios && configuracion.titulo.trim()
                 ? "bg-primary text-primary-foreground hover:bg-primary/90"
                 : "cursor-not-allowed bg-muted text-muted-foreground",
@@ -288,20 +332,79 @@ export function RecetarioEditor({ data, tituloInicial }: Props) {
             {hayCambios ? t("generarVistaPrevia") : t("vistaPreviaActualizada")}
           </button>
 
-          <button
-            type="button"
-            onClick={descargar}
-            disabled={descargando || !configuracion.titulo.trim()}
-            className={cn(
-              "inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border px-4 text-sm font-semibold transition-colors",
-              !descargando && configuracion.titulo.trim()
-                ? "border-border hover:bg-muted"
-                : "cursor-not-allowed border-border/50 text-muted-foreground",
-            )}
-          >
-            {descargando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-            {t("descargarPdf")}
-          </button>
+          <div className="flex items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => setMostrarEnvio((visible) => !visible)}
+              disabled={!configuracion.titulo.trim()}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors",
+                configuracion.titulo.trim()
+                  ? "bg-green-600 text-white hover:bg-green-700"
+                  : "cursor-not-allowed bg-muted text-muted-foreground",
+              )}
+            >
+              <Mail className="h-4 w-4" />
+              {t("enviarEmail")}
+            </button>
+
+            <button
+              type="button"
+              onClick={descargar}
+              disabled={descargando || !configuracion.titulo.trim()}
+              className={cn(
+                "inline-flex min-h-11 items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition-colors",
+                !descargando && configuracion.titulo.trim()
+                  ? "border-border hover:bg-muted"
+                  : "cursor-not-allowed border-border/50 text-muted-foreground",
+              )}
+            >
+              {descargando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              {t("descargarPdf")}
+            </button>
+          </div>
+
+          {mostrarEnvio && (
+            <div className="rounded-lg border border-border bg-muted/30 p-3">
+              {pacientesConEmail.length === 0 ? (
+                <p className="text-sm text-muted-foreground">{t("sinPacientesConEmail")}</p>
+              ) : (
+                <>
+                  <label htmlFor="recetario-paciente" className="block text-sm font-medium text-foreground">
+                    {t("selectorPaciente")}
+                  </label>
+                  <select
+                    id="recetario-paciente"
+                    value={pacienteId}
+                    onChange={(evento) => setPacienteId(evento.target.value)}
+                    className="mt-2 min-h-11 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  >
+                    <option value="">{t("seleccionarPaciente")}</option>
+                    {pacientesConEmail.map((paciente) => (
+                      <option key={paciente.id} value={paciente.id}>
+                        {paciente.nombre} {paciente.apellidos} · {paciente.email}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1.5 text-xs text-muted-foreground">{t("selectorPacienteAyuda")}</p>
+                  <button
+                    type="button"
+                    onClick={enviarEmail}
+                    disabled={enviandoEmail || !pacienteId}
+                    className={cn(
+                      "mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition-colors",
+                      !enviandoEmail && pacienteId
+                        ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                        : "cursor-not-allowed bg-muted text-muted-foreground",
+                    )}
+                  >
+                    {enviandoEmail ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                    {enviandoEmail ? t("enviando") : t("enviar")}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
 
           <Link
             href="/ajustes#documentos"

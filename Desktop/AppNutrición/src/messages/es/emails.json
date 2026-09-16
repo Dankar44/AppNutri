@@ -69,6 +69,14 @@
     "portal": "También puedes consultarlo en cualquier momento desde tu portal de paciente.",
     "botonPortal": "Acceder al portal"
   },
+  "recetario": {
+    "subject": "Tu recetario — {titulo}",
+    "titulo": "Tu recetario",
+    "saludo": "Hola {pacienteNombre}, {dietistaNombre} te ha enviado un recetario.",
+    "adjunto": "Tu recetario está adjunto a este email.",
+    "portal": "También puedes consultar tu plan desde tu portal de paciente.",
+    "botonPortal": "Acceder al portal"
+  },
   "recuperarPassword": {
     "subject": "Restablece tu contraseña — Annonia",
     "titulo": "Restablecer contraseña",

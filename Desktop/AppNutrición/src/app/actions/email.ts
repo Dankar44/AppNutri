@@ -9,8 +9,10 @@ import { getPlan } from "./planes";
 import { getOrCreatePreconsultaLink } from "./preconsulta";
 import { getTranslations } from "next-intl/server";
 import { generatePlanPDF, type PlanPDFData } from "@/lib/pdf/generate-plan-pdf";
+import { generateRecetarioPDF, type DistribucionRecetarioPDF } from "@/lib/pdf/generate-recetario-pdf";
 import { htmlToPdf } from "@/lib/html-to-pdf";
 import { getRecomendaciones } from "./pacientes";
+import { getRecetarioPDFData } from "./recetas";
 import type { FichaInformacionData, CampoPersonalizadoDefinicion } from "@/lib/ficha-informacion-types";
 import {
   OPCION_VACIA,
@@ -387,6 +389,101 @@ export async function enviarPlanPorEmail(
         content: pdfBuffer,
         contentType: "application/pdf",
       }],
+    });
+    return { ok: true };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : t("general.errorDesconocido");
+    return { ok: false, error: msg };
+  }
+}
+
+// ─── Enviar recetario por email ───
+
+export async function enviarRecetarioPorEmail(
+  pacienteId: string,
+  recetaIds: string[],
+  opciones?: {
+    titulo?: string;
+    indice?: boolean;
+    valoresNutricionales?: boolean;
+    distribucion?: DistribucionRecetarioPDF;
+  },
+): Promise<{ ok: boolean; error?: string }> {
+  const t = await getTranslations("validation");
+  const te = await getTranslations("emails");
+  const tr = await getTranslations("recipes");
+  const dietista = await getCurrentDietista();
+  if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
+  if (dietista.isDemo) return { ok: true };
+
+  const paciente = await getPaciente(pacienteId);
+  if (!paciente) return { ok: false, error: t("paciente.pacienteNoEncontrado") };
+  if (!paciente.email) return { ok: false, error: t("paciente.sinEmailRegistrado") };
+
+  const resultado = await getRecetarioPDFData(recetaIds);
+  if (!resultado.ok) return resultado;
+
+  const pacienteNombre = `${paciente.nombre} ${paciente.apellidos}`.trim();
+  const dietistaNombre = `${dietista.nombre} ${dietista.apellidos}`.trim();
+  const titulo = opciones?.titulo?.trim().slice(0, 120)
+    || (resultado.data.recetas.length === 1 ? resultado.data.recetas[0].nombre : tr("recetario.tituloDefault"));
+  const datos = {
+    ...resultado.data,
+    titulo,
+    isEmail: true,
+    opciones: {
+      portada: true,
+      indice: opciones?.indice ?? resultado.data.recetas.length > 1,
+      valoresNutricionales: opciones?.valoresNutricionales ?? true,
+      distribucion: opciones?.distribucion ?? "automatica",
+    },
+  };
+
+  let pdfBuffer: Buffer;
+  try {
+    const tPdf = await getTranslations("pdf");
+    pdfBuffer = await htmlToPdf(generateRecetarioPDF(datos, tPdf));
+  } catch (err) {
+    console.error("Error generando el recetario para email:", err);
+    const msg = err instanceof Error ? err.message : t("general.errorDesconocido");
+    return { ok: false, error: msg };
+  }
+
+  const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://annonia.com"}/paciente/login`;
+  const brandName = escapeHtml(dietista.marcaPdf || "Annonia");
+  const emailHtml = `
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f9fafb">
+  <div style="max-width:600px;margin:0 auto;padding:32px 16px">
+    <div style="background:#fff;border-radius:12px;border:1px solid #e5e7eb;padding:32px;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+      <div style="text-align:center;margin-bottom:24px">
+        <h1 style="margin:0 0 8px;font-size:22px;color:#111827">${escapeHtml(te("recetario.titulo"))}</h1>
+        <p style="margin:0;color:#6b7280;font-size:14px">${escapeHtml(te("recetario.saludo", { pacienteNombre, dietistaNombre }))}</p>
+      </div>
+      <div style="background:#f0fdf4;border-radius:8px;padding:20px;margin-bottom:24px;text-align:center">
+        <p style="margin:0 0 4px;font-size:16px;font-weight:700;color:#166534">${escapeHtml(titulo)}</p>
+        <p style="margin:0;font-size:13px;color:#4b5563">${escapeHtml(te("recetario.adjunto"))}</p>
+      </div>
+      <div style="background:#f9fafb;border-radius:8px;padding:16px;margin-bottom:16px;text-align:center">
+        <p style="margin:0 0 12px;font-size:13px;color:#4b5563">${escapeHtml(te("recetario.portal"))}</p>
+        <a href="${portalUrl}" style="display:inline-block;background:#16a34a;color:white;padding:10px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px">${escapeHtml(te("recetario.botonPortal"))}</a>
+      </div>
+      <div style="margin-top:24px;text-align:center;color:#9ca3af;font-size:12px"><p style="margin:0">${brandName} &mdash; annonia.com</p></div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  const safeFileName = titulo.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-_]/g, "").trim() || "recetario";
+  try {
+    await sendEmail({
+      to: paciente.email,
+      subject: te("recetario.subject", { titulo }),
+      html: emailHtml,
+      replyTo: dietista.email,
+      attachments: [{ filename: `${safeFileName}.pdf`, content: pdfBuffer, contentType: "application/pdf" }],
     });
     return { ok: true };
   } catch (err) {

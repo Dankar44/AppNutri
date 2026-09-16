@@ -67,7 +67,17 @@
     "errorDemasiadas": "Puedes incluir un máximo de {max} recetas por recetario",
     "errorRecetaNoDisponible": "Alguna receta seleccionada ya no está disponible",
     "errorNoAutorizado": "No tienes permiso para generar este recetario",
-    "errorDescargar": "No se pudo descargar el recetario PDF"
+    "errorDescargar": "No se pudo descargar el recetario PDF",
+    "enviarEmail": "Enviar por email",
+    "selectorPaciente": "Enviar a un paciente",
+    "selectorPacienteAyuda": "Elige el paciente que recibirá este PDF.",
+    "seleccionarPaciente": "Selecciona un paciente",
+    "selectorPacienteObligatorio": "Selecciona un paciente",
+    "enviar": "Enviar recetario",
+    "enviando": "Enviando...",
+    "emailEnviado": "Recetario enviado por email",
+    "errorEmail": "No se pudo enviar el recetario",
+    "sinPacientesConEmail": "No hay pacientes activos con email registrado"
   },
   "filter": {
     "buscarPlaceholder": "Buscar receta...",

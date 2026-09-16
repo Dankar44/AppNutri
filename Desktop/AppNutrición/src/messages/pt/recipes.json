@@ -67,7 +67,17 @@
     "errorDemasiadas": "Pode incluir no máximo {max} receitas por livro",
     "errorRecetaNoDisponible": "Alguma receita selecionada já não está disponível",
     "errorNoAutorizado": "Não tem permissão para gerar este livro de receitas",
-    "errorDescargar": "Não foi possível baixar o livro de receitas PDF"
+    "errorDescargar": "Não foi possível baixar o livro de receitas PDF",
+    "enviarEmail": "Enviar por email",
+    "selectorPaciente": "Enviar para um paciente",
+    "selectorPacienteAyuda": "Escolha o paciente que receberá este PDF.",
+    "seleccionarPaciente": "Selecione um paciente",
+    "selectorPacienteObligatorio": "Selecione um paciente",
+    "enviar": "Enviar livro de receitas",
+    "enviando": "A enviar...",
+    "emailEnviado": "Livro de receitas enviado por email",
+    "errorEmail": "Não foi possível enviar o livro de receitas",
+    "sinPacientesConEmail": "Não há pacientes ativos com email registado"
   },
   "filter": {
     "buscarPlaceholder": "Pesquisar receita...",
