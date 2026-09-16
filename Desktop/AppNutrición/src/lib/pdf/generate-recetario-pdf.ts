@@ -168,11 +168,18 @@ export function extraerRecetasDelPlan(dias: FuenteRecetasPlan[]): RecetaRecetari
 }
 
 /** Estilos del apéndice, aislados para poder reutilizarlos dentro del PDF del paciente. */
-export function generateRecetarioCSS(tema: PdfColorTheme): string {
+export function generateRecetarioCSS(
+  tema: PdfColorTheme,
+  opciones?: { densidad?: "normal" | "compacta" },
+): string {
+  const esCompacta = opciones?.densidad === "compacta";
+  const margenHorizontal = esCompacta ? "30px" : "40px";
+  const margenVertical = esCompacta ? "22px" : "30px";
+  const rellenoImpresion = esCompacta ? "16px 24px" : "20px 30px";
   return `
   .recetario-page { background: white; display: flex; flex-direction: column; }
-  .recetario-header { background: ${tema.primary}; color: white; margin: -30px -40px 18px; border-spacing: 0; width: calc(100% + 80px); }
-  .recetario-header td { padding: 12px 40px; vertical-align: middle; }
+  .recetario-header { background: ${tema.primary}; color: white; margin: -${margenVertical} -${margenHorizontal} 18px; border-spacing: 0; width: calc(100% + ${esCompacta ? "60px" : "80px"}); }
+  .recetario-header td { padding: ${esCompacta ? "9px 30px" : "12px 40px"}; vertical-align: middle; }
   .recetario-header-name { font-weight: 700; font-size: 13px; letter-spacing: 0.3px; }
   .recetario-header-sub { font-size: 10px; opacity: 0.9; }
   .recetario-header-logo { font-weight: 800; font-size: 16px; letter-spacing: -0.5px; text-align: right; }
@@ -245,13 +252,14 @@ export function generateRecetarioCSS(tema: PdfColorTheme): string {
   .recetario-footer-platform { color: #c0c8c3; font-size: 8px; margin-top: 2px; }
 
   @media print {
-    .recetario-page { padding: 20px 30px; }
+    .recetario-page { padding: ${rellenoImpresion}; }
     .recetario-cover { padding-top: 200px; }
-    .recetario-header { margin: -20px -30px 16px; width: calc(100% + 60px); }
-    .recetario-header td { padding: 10px 30px; }
+    .recetario-header { margin: -${esCompacta ? "16px -24px" : "20px -30px"} ${esCompacta ? "12px" : "16px"}; width: calc(100% + ${esCompacta ? "48px" : "60px"}); }
+    .recetario-header td { padding: ${esCompacta ? "8px 24px" : "10px 30px"}; }
     .recetario-cover-logo-img { max-width: 150px; }
     .recetario-header-logo-img { max-height: 24px; }
   }
+  @page { size: A4 portrait; margin: 0; }
 `;
 }
 

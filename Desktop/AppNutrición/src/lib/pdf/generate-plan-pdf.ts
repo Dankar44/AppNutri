@@ -163,6 +163,29 @@ export interface PDFSectionOptions {
   recetasDelPlan?: boolean;
   valoresNutricionalesRecetas?: boolean;
   distribucionRecetas?: DistribucionRecetarioPDF;
+  densidad?: "normal" | "compacta";
+  planSemanalHorizontal?: boolean;
+  listaCompraHorizontal?: boolean;
+  ordenSecciones?: PDFSectionKey[];
+}
+
+/** Secciones que el nutricionista puede reordenar dentro del PDF. Portada y contraportada son fijas. */
+export type PDFSectionKey = "planSemanal" | "detalleDiario" | "recomendaciones" | "listaCompra" | "recetasDelPlan";
+
+export const ORDEN_SECCIONES_PDF: PDFSectionKey[] = [
+  "planSemanal",
+  "detalleDiario",
+  "recomendaciones",
+  "listaCompra",
+  "recetasDelPlan",
+];
+
+function normalizarOrdenSecciones(orden?: PDFSectionKey[]): PDFSectionKey[] {
+  const validas = new Set<PDFSectionKey>(ORDEN_SECCIONES_PDF);
+  const ordenNormalizado = (orden ?? []).filter((seccion, indice, lista) =>
+    validas.has(seccion) && lista.indexOf(seccion) === indice,
+  );
+  return [...ordenNormalizado, ...ORDEN_SECCIONES_PDF.filter((seccion) => !ordenNormalizado.includes(seccion))];
 }
 
 /**
@@ -195,22 +218,29 @@ export interface PlanPDFData {
   isEmail?: boolean;
 }
 
-function generateCSS(t: PdfColorTheme): string {
+function generateCSS(
+  t: PdfColorTheme,
+  densidad: "normal" | "compacta" = "normal",
+): string {
+  const esCompacta = densidad === "compacta";
+  const paddingPagina = esCompacta ? "22px 30px" : "30px 40px";
+  const paddingCabecera = esCompacta ? "9px 30px" : "12px 40px";
+  const tamanoTexto = esCompacta ? "10px" : "11px";
   return `
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', Arial, sans-serif; color: ${t.textDark}; font-size: 11px; line-height: 1.4; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; color: ${t.textDark}; font-size: ${tamanoTexto}; line-height: ${esCompacta ? "1.3" : "1.4"}; }
 
-  .page { page-break-after: always; padding: 30px 40px; min-height: 100vh; position: relative; }
+  .page { page-break-after: always; padding: ${paddingPagina}; min-height: 100vh; position: relative; }
   .page:last-child { page-break-after: avoid; }
 
-  .header { background: ${t.primary}; color: white; margin: -30px -40px 20px; border-spacing: 0; width: calc(100% + 80px); }
-  .header td { padding: 12px 40px; vertical-align: middle; }
+  .header { background: ${t.primary}; color: white; margin: -${esCompacta ? "22px -30px" : "30px -40px"} ${esCompacta ? "14px" : "20px"}; border-spacing: 0; width: calc(100% + ${esCompacta ? "60px" : "80px"}); }
+  .header td { padding: ${paddingCabecera}; vertical-align: middle; }
   .header-name { font-weight: 700; font-size: 13px; letter-spacing: 0.3px; }
   .header-sub { font-size: 10px; opacity: 0.9; }
   .header-logo { font-weight: 800; font-size: 16px; letter-spacing: -0.5px; text-align: right; }
   .header-logo-img { max-height: 28px; vertical-align: middle; }
 
-  .section-title { background: ${t.sectionBg}; padding: 10px 20px; text-align: center; font-weight: 700; font-size: 14px; color: ${t.textMedium}; margin: 20px 0 16px; border-radius: 6px; border: 1px solid ${t.border}; }
+  .section-title { background: ${t.sectionBg}; padding: ${esCompacta ? "7px 14px" : "10px 20px"}; text-align: center; font-weight: 700; font-size: ${esCompacta ? "13px" : "14px"}; color: ${t.textMedium}; margin: ${esCompacta ? "14px 0 10px" : "20px 0 16px"}; border-radius: 6px; border: 1px solid ${t.border}; }
 
   .day-title { background: ${t.dayHeaderBg}; color: ${t.dayHeaderText}; padding: 8px 16px; text-align: center; font-weight: 700; font-size: 13px; border-radius: 6px; margin-bottom: 12px; }
   .alt-line { font-size: 0.9em; color: ${t.textLight}; }
@@ -242,7 +272,7 @@ function generateCSS(t: PdfColorTheme): string {
   /* Day detail table */
   .detail-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
   .detail-table th { background: ${t.primary}; color: white; padding: 8px; font-size: 10px; text-align: left; font-weight: 600; }
-  .detail-table td { padding: 8px; border: 1px solid ${t.borderLight}; vertical-align: top; font-size: 10px; }
+  .detail-table td { padding: ${esCompacta ? "5px 6px" : "8px"}; border: 1px solid ${t.borderLight}; vertical-align: top; font-size: ${esCompacta ? "9px" : "10px"}; }
   .detail-table .meal-cell { background: ${t.accent}; color: white; font-weight: 700; text-align: center; width: 90px; font-size: 11px; }
   .detail-table .meal-cell .hora { font-weight: 400; font-size: 9px; opacity: 0.85; }
   .detail-table .plato-cell { width: 160px; font-weight: 600; font-size: 10px; color: ${t.textMedium}; }
@@ -251,9 +281,18 @@ function generateCSS(t: PdfColorTheme): string {
   /* Que una comida no se parta entre páginas dejando filas huérfanas sin su etiqueta (#5) */
   .detail-table tbody { break-inside: avoid; page-break-inside: avoid; }
   .detail-table tr { break-inside: avoid; page-break-inside: avoid; }
+  .detail-day { break-inside: avoid; page-break-inside: avoid; margin-bottom: ${esCompacta ? "12px" : "18px"}; }
+  .detail-day:last-child { margin-bottom: 0; }
+  .detail-page { display: flex; flex-direction: column; break-inside: avoid; page-break-inside: avoid; }
+  .detail-days { flex: 1; }
+  .detail-page .footer { margin-top: auto; }
+  @page plan-semanal-horizontal { size: A4 landscape; margin: 0; }
+  @page lista-compra-horizontal { size: A4 landscape; margin: 0; }
+  .pdf-pagina-plan-semanal-horizontal { page: plan-semanal-horizontal; }
+  .pdf-pagina-lista-compra-horizontal { page: lista-compra-horizontal; }
 
   /* Macros */
-  .macros-row { margin-top: 12px; background: ${t.sectionBg}; border-radius: 8px; border: 1px solid ${t.borderLight}; border-spacing: 0; }
+  .macros-row { margin-top: ${esCompacta ? "8px" : "12px"}; background: ${t.sectionBg}; border-radius: 8px; border: 1px solid ${t.borderLight}; border-spacing: 0; }
   .macro-item { text-align: center; padding: 12px 16px; }
   .macro-value { font-weight: 800; font-size: 16px; }
   .macro-label { font-size: 9px; color: ${t.textLight}; margin-top: 2px; }
@@ -279,15 +318,18 @@ function generateCSS(t: PdfColorTheme): string {
   .footer { text-align: center; color: #a3b0a6; font-size: 9px; padding: 10px 0; border-top: 1px solid ${t.borderLight}; margin-top: 20px; }
   .footer-platform { color: #c0c8c3; font-size: 8px; margin-top: 2px; }
 
-  @page { margin: 0; }
+  @page { size: A4 portrait; margin: 0; }
   @media print {
     * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
     body { margin: 0; }
-    .page { padding: 20px 30px; break-after: page; }
+    .page { padding: ${esCompacta ? "16px 24px" : "20px 30px"}; break-after: page; }
+    .page { min-height: 1123px; }
+    .page.pdf-pagina-plan-semanal-horizontal,
+    .page.pdf-pagina-lista-compra-horizontal { min-height: 794px; }
     .page:last-child { break-after: avoid; }
     .cover { padding-top: 200px; }
-    .header { margin: -20px -30px 16px; }
-    .header td { padding: 10px 30px; }
+    .header { margin: -${esCompacta ? "16px -24px" : "20px -30px"} ${esCompacta ? "12px" : "16px"}; }
+    .header td { padding: ${esCompacta ? "8px 24px" : "10px 30px"}; }
     .cover-logo-img { max-width: 150px; }
     .header-logo-img { max-height: 24px; }
   }
@@ -337,10 +379,64 @@ function getDayMacros(dia: Dia) {
   return sumarMacros(all);
 }
 
+/**
+ * Estimación conservadora para decidir si dos días pueden compartir una página compacta.
+ * La descarga y la preview reciben los mismos grupos ya construidos, así que no dependen de
+ * que cada navegador interprete de forma distinta los saltos automáticos.
+ */
+function estimarAlturaDiaDetalle(dia: Dia, valoresNutricionales: boolean): number {
+  const comidas = dia.comidas.filter((comida) => comida.alimentos.length > 0);
+  const altoComidas = comidas.reduce((total, comida) => {
+    const altoFilas = comida.alimentos.reduce((alto, alimento) => {
+      const texto = [
+        getItemName(alimento),
+        ...(alimento.alternativas ?? []).flatMap((alternativa) => [
+          getAltNombre(alternativa),
+          ...(alternativa.receta?.ingredientes ?? []).map((ingrediente) => ingrediente.alimento.nombre),
+          alternativa.receta?.instrucciones ?? "",
+        ]),
+        ...(alimento.receta?.ingredientes ?? []).map((ingrediente) => ingrediente.alimento.nombre),
+        alimento.receta?.instrucciones ?? "",
+      ].join(" ");
+      const lineas = Math.max(1, Math.ceil(texto.length / 82));
+      return alto + lineas * 13 + 7;
+    }, 0);
+    return total + 27 + altoFilas + (comida.descripcion ? 18 : 0);
+  }, 0);
+
+  return 62 + altoComidas + (valoresNutricionales ? 70 : 0);
+}
+
+function agruparDiasDetalle(
+  dias: Dia[],
+  densidad: "normal" | "compacta",
+  valoresNutricionales: boolean,): Dia[][] {
+  if (dias.length === 0) return [[]];
+  if (densidad !== "compacta") return dias.map((dia) => [dia]);
+
+  const paginas: Dia[][] = [];
+  const alturaDisponibleParaDosDias = 1000;
+  for (let indice = 0; indice < dias.length; indice++) {
+    const actual = dias[indice];
+    const siguiente = dias[indice + 1];
+    if (
+      siguiente &&
+      estimarAlturaDiaDetalle(actual, valoresNutricionales) + estimarAlturaDiaDetalle(siguiente, valoresNutricionales) <= alturaDisponibleParaDosDias
+    ) {
+      paginas.push([actual, siguiente]);
+      indice++;
+    } else {
+      paginas.push([actual]);
+    }
+  }
+  return paginas;
+}
+
 export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
   const tt = t ?? ((key: string) => key);
   const theme = data.tema ?? TEMAS_PDF.verde;
   const sec = { portada: true, planSemanal: true, detalleDiario: true, recomendaciones: true, listaCompra: true, cantidadesSemanal: false, valoresNutricionales: true, recetasDelPlan: false, valoresNutricionalesRecetas: true, distribucionRecetas: "automatica" as DistribucionRecetarioPDF, ...data.sections };
+  const ordenSecciones = normalizarOrdenSecciones(sec.ordenSecciones);
   const brandName = escapeHtml(data.brandName || "Annonia");
   const ov = data.displayOverrides ?? {};
   const sortedDias = DIAS_ORDEN.map((d) => data.dias.find((dia) => dia.dia === d)).filter(Boolean) as Dia[];
@@ -373,9 +469,12 @@ export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
     html += `<div class="page cover"><div class="cover-box"><div class="cover-title">${tt("planDietetico.portada.titulo")}<br><strong>${tt("planDietetico.portada.subtitulo")}</strong></div><div class="cover-name">${pacNombre}</div>${deClase}</div><div class="cover-logo">${logoCoverHtml}</div><p class="cover-platform">Annonia</p></div>`;
   }
 
+  html += "<!-- PDF_SECTIONS_START -->";
+
   // === RESUMEN SEMANAL ===
   if (sec.planSemanal) {
-    html += `<div class="page">${header}<div class="section-title">${tt("planDietetico.secciones.planSemanal")}</div>`;
+    html += "<!-- PDF_SECTION: planSemanal -->";
+    html += `<div class="page pdf-pagina-plan-semanal${sec.planSemanalHorizontal ? " pdf-pagina-plan-semanal-horizontal" : ""}">${header}<div class="section-title">${tt("planDietetico.secciones.planSemanal")}</div>`;
     html += `<table class="summary-table"><thead><tr><th></th>`;
     for (const d of DIAS_ORDEN) html += `<th>${tt("planDietetico.diaLabels." + DIA_KEY_MAP[d])}</th>`;
     html += `</tr></thead><tbody>`;
@@ -422,14 +521,18 @@ export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
       }
       html += `</tr>`;
     }
-    html += `</tbody></table>${footer}</div>`;
+    html += `</tbody></table>${footer}</div><!-- /PDF_SECTION -->`;
   }
 
   // === DETALLE POR DÍA ===
   if (sec.detalleDiario) {
-    for (const dia of sortedDias) {
+    html += "<!-- PDF_SECTION: detalleDiario -->";
+    const paginasDetalle = agruparDiasDetalle(sortedDias, sec.densidad ?? "normal", sec.valoresNutricionales);
+    for (const diasPagina of paginasDetalle) {
+      html += `<div class="page detail-page">${header}<div class="detail-days">`;
+      for (const dia of diasPagina) {
       const macros = getDayMacros(dia);
-      html += `<div class="page">${header}<div class="day-title">${tt("planDietetico.diaLabels." + DIA_KEY_MAP[dia.dia])}</div>`;
+      html += `<section class="detail-day"><div class="day-title">${tt("planDietetico.diaLabels." + DIA_KEY_MAP[dia.dia])}</div>`;
       html += `<table class="detail-table"><thead><tr><th style="width:90px">${tt("planDietetico.tabla.comida")}</th><th style="width:160px">${tt("planDietetico.tabla.platos")}</th><th>${tt("planDietetico.tabla.ingredientesYCantidades")}</th></tr></thead>`;
 
       for (const comida of ordenarComidasPorHora(dia.comidas)) {
@@ -501,18 +604,22 @@ export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
           <td class="macro-item"><div class="macro-value macro-fat">${macros.grasas}g</div><div class="macro-label">${tt("planDietetico.macros.grasas")}</div></td>
         </tr></table>`;
       }
-      html += `${footer}</div>`;
+      html += `</section>`;
     }
+      html += `</div>${footer}</div>`;
+    }
+    html += "<!-- /PDF_SECTION -->";
   }
 
   // === RECOMENDACIONES ===
   if (sec.recomendaciones && data.recomendaciones.trim()) {
-    html += `<div class="page">${header}<div class="section-title">${tt("planDietetico.secciones.recomendaciones")}</div><div class="reco-text">${escapeHtml(data.recomendaciones)}</div>${footer}</div>`;
+    html += `<!-- PDF_SECTION: recomendaciones --><div class="page">${header}<div class="section-title">${tt("planDietetico.secciones.recomendaciones")}</div><div class="reco-text">${escapeHtml(data.recomendaciones)}</div>${footer}</div><!-- /PDF_SECTION -->`;
   }
 
   // === LISTA DE LA COMPRA ===
   if (sec.listaCompra && listaCompra.length > 0) {
-    html += `<div class="page">${header}<div class="section-title">${tt("planDietetico.secciones.listaCompra")}</div><div class="shop-grid">`;
+    html += "<!-- PDF_SECTION: listaCompra -->";
+    html += `<div class="page pdf-pagina-lista-compra${sec.listaCompraHorizontal ? " pdf-pagina-lista-compra-horizontal" : ""}">${header}<div class="section-title">${tt("planDietetico.secciones.listaCompra")}</div><div class="shop-grid">`;
     for (const cat of listaCompra) {
       html += `<div class="shop-cat"><div class="shop-cat-title">${cat.label}</div>`;
       for (const item of cat.items) {
@@ -526,13 +633,14 @@ export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
       }
       html += `</div>`;
     }
-    html += `</div>${footer}</div>`;
+    html += `</div>${footer}</div><!-- /PDF_SECTION -->`;
   }
 
   // === RECETAS DEL PLAN ===
   // Se añaden una sola vez, aunque la misma receta aparezca varios días. La contraportada general
   // sigue siendo la última página del entregable para mantener la estructura del documento.
   if (recetasDelPlan.length > 0) {
+    html += "<!-- PDF_SECTION: recetasDelPlan -->";
     html += generateRecetarioPages({
       titulo: tt("recetario.tituloPlan", { pacienteNombre: data.pacienteNombre }),
       dietistaNombre: data.dietistaNombre,
@@ -545,13 +653,31 @@ export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
       isEmail: data.isEmail,
       opciones: { portada: false, indice: false, valoresNutricionales: sec.valoresNutricionalesRecetas, distribucion: sec.distribucionRecetas },
     }, tt, false);
+    html += "<!-- /PDF_SECTION -->";
   }
+
+  html += "<!-- PDF_SECTIONS_END -->";
 
   // === CONTRAPORTADA ===
   const clinicaLine = data.clinica ? ` &mdash; ${escapeHtml(data.clinica)}` : "";
   html += `<div class="page cover"><div class="cover-logo" style="font-size:32px;">${logoCoverHtml}</div><p style="color:#666; margin-top:12px; font-size:12px;">${tt("planDietetico.contraportada.generadoPor", { dietistaNombre: escapeHtml(data.dietistaNombre) })}${clinicaLine}</p><p style="color:#b0b8b3; margin-top:24px; font-size:10px;">${tt("planDietetico.contraportada.plataforma")}</p></div>`;
 
+  const contenidoMatch = html.match(/<!-- PDF_SECTIONS_START -->([\s\S]*?)<!-- PDF_SECTIONS_END -->/);
+  if (contenidoMatch) {
+    const contenido = contenidoMatch[1];
+    const bloques = new Map<PDFSectionKey, string>();
+    const bloqueRegex = /<!-- PDF_SECTION: (\w+) -->([\s\S]*?)<!-- \/PDF_SECTION -->/g;
+    let bloque: RegExpExecArray | null;
+    while ((bloque = bloqueRegex.exec(contenido)) !== null) {
+      bloques.set(bloque[1] as PDFSectionKey, bloque[2]);
+    }
+    const contenidoOrdenado = ordenSecciones.map((seccion) => bloques.get(seccion) ?? "").join("");
+    html = html.replace(contenidoMatch[0], contenidoOrdenado);
+  }
+
   const printScript = data.isEmail ? "" : "<script>window.onload=function(){window.print();}</script>";
-  const cssRecetas = recetasDelPlan.length > 0 ? generateRecetarioCSS(theme) : "";
-  return `<!DOCTYPE html><html><head><title>Plan Dietético - ${data.pacienteNombre}</title><style>${generateCSS(theme)}${cssRecetas}</style></head><body>${html}${printScript}</body></html>`;
+  const cssRecetas = recetasDelPlan.length > 0
+    ? generateRecetarioCSS(theme, { densidad: sec.densidad })
+    : "";
+  return `<!DOCTYPE html><html><head><title>Plan Dietético - ${data.pacienteNombre}</title><style>${generateCSS(theme, sec.densidad)}${cssRecetas}</style></head><body>${html}${printScript}</body></html>`;
 }
