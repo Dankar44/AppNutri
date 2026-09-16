@@ -2,7 +2,9 @@
   "planDietetico": {
     "portada": {
       "titulo": "PLAN DIETÉTICO",
-      "subtitulo": "PERSONALIZADO"
+      "subtitulo": "PERSONALIZADO",
+      "profesional": "Nutricionista {dietistaNombre}",
+      "numeroColegiado": "Núm. de colegio: {numColegiado}"
     },
     "header": {
       "subtitulo": "PLAN DIETÉTICO SEMANAL DE {pacienteNombre}"

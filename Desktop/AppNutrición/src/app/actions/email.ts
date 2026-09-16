@@ -237,6 +237,7 @@ export async function enviarPlanPorEmail(
     planNombre: plan.nombre,
     pacienteNombre,
     dietistaNombre,
+    numColegiado: dietista.numColegiado,
     dias: plan.dias.map((dia) => ({
       dia: dia.dia,
       comidas: dia.comidas.map((comida) => ({

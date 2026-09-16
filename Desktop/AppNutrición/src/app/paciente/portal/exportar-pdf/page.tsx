@@ -20,7 +20,7 @@ export default async function ExportarPDFPage() {
       nombre: true,
       apellidos: true,
       ocultarCalorias: true,
-      dietista: { select: { nombre: true, apellidos: true, marcaPdf: true, pdfLogoUrl: true, temaPdf: true, colorPrimarioPdf: true, clinica: true } },
+      dietista: { select: { nombre: true, apellidos: true, numColegiado: true, marcaPdf: true, pdfLogoUrl: true, temaPdf: true, colorPrimarioPdf: true, clinica: true } },
     },
   });
   if (!paciente) redirect("/paciente/login");
@@ -100,6 +100,7 @@ export default async function ExportarPDFPage() {
           plan={JSON.parse(JSON.stringify(plan))}
           pacienteNombre={pacienteNombre}
           dietistaNombre={dietistaNombre}
+          numColegiado={paciente.dietista?.numColegiado}
           recomendaciones={recomendaciones}
           horario={JSON.parse(JSON.stringify(horario))}
           tema={tema ? JSON.parse(JSON.stringify(tema)) : undefined}
