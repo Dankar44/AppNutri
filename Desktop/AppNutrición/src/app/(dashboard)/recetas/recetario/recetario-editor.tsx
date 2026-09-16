@@ -16,6 +16,7 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { enviarRecetarioPorEmail } from "@/app/actions/email";
+import { Combobox } from "@/components/combobox";
 import {
   generateRecetarioPDF,
   type DistribucionRecetarioPDF,
@@ -373,19 +374,17 @@ export function RecetarioEditor({ data, tituloInicial, pacientes }: Props) {
                   <label htmlFor="recetario-paciente" className="block text-sm font-medium text-foreground">
                     {t("selectorPaciente")}
                   </label>
-                  <select
-                    id="recetario-paciente"
+                  <Combobox
                     value={pacienteId}
-                    onChange={(evento) => setPacienteId(evento.target.value)}
-                    className="mt-2 min-h-11 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  >
-                    <option value="">{t("seleccionarPaciente")}</option>
-                    {pacientesConEmail.map((paciente) => (
-                      <option key={paciente.id} value={paciente.id}>
-                        {paciente.nombre} {paciente.apellidos} · {paciente.email}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setPacienteId}
+                    options={pacientesConEmail.map((paciente) => ({
+                      value: paciente.id,
+                      label: `${paciente.nombre} ${paciente.apellidos} · ${paciente.email}`,
+                    }))}
+                    placeholder={t("seleccionarPaciente")}
+                    ariaLabel={t("selectorPaciente")}
+                    inputClassName="mt-2 flex min-h-11 w-full items-center justify-between gap-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground transition-shadow focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
                   <p className="mt-1.5 text-xs text-muted-foreground">{t("selectorPacienteAyuda")}</p>
                   <button
                     type="button"
