@@ -60,5 +60,15 @@ export async function GET() {
     }
   }
 
-  return NextResponse.json(checks, { status: 200 });
+  // El código de estado es lo único que mira un monitor externo, así que tiene que decir la
+  // verdad: si la base no responde, 503. Antes devolvía 200 siempre y solo cambiaba el texto
+  // del JSON, así que el 17 sep 2026, con la base inaccesible durante horas, esta ruta seguía
+  // contestando "OK" y nadie se enteró hasta que alguien entró a mano. Ver #188.
+  const baseCaida = checks.prisma.startsWith("ERROR") || checks.verificado_column.startsWith("ERROR");
+  const faltaConfiguracion = Object.values(checks).some((v) => v === "MISSING");
+
+  return NextResponse.json(
+    { ...checks, estado: baseCaida || faltaConfiguracion ? "no disponible" : "ok" },
+    { status: baseCaida || faltaConfiguracion ? 503 : 200 },
+  );
 }
