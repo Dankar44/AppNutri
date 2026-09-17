@@ -137,7 +137,7 @@ export function AdminSidebar({ adminNombre, onSignOut, mensajesCount = 0, role }
             <div className="min-w-0">
               <p className="text-sm font-medium truncate">{adminNombre}</p>
               <p className="text-xs text-indigo-600 dark:text-indigo-400">
-                {role === "creator" ? t("roles.creator") : role === "lector" ? t("roles.lector") : t("roles.admin")}
+                {role === "creator" ? t("roles.creator") : t("roles.admin")}
               </p>
             </div>
           )}
