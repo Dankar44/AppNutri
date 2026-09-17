@@ -87,7 +87,7 @@ function urlDelEnlace(token: string) {
 }
 
 export async function getEnlacesProfesores(licenciaId: string): Promise<EnlaceProfesoresResumen[]> {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin({ soloLectura: true });
   if (!admin) redirect("/admin-login");
 
   const enlaces = await prisma.enlaceProfesores.findMany({
