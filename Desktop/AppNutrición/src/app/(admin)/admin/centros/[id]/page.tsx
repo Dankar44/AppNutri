@@ -12,8 +12,8 @@ export default async function CentroDetallePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const admin = await requireAdmin();
-  if (!admin || admin.role !== "admin") redirect("/admin-login");
+  const admin = await requireAdmin({ soloLectura: true });
+  if (!admin || (admin.role !== "admin" && admin.role !== "lector")) redirect("/admin-login");
 
   const { id } = await params;
   const t = await getTranslations("admin.centros");

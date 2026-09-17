@@ -4,8 +4,8 @@ import { requireAdmin } from "@/lib/admin";
 import { CrearLicenciaForm } from "./crear-licencia-form";
 
 export default async function CrearUniversidadPage() {
-  const admin = await requireAdmin();
-  if (!admin || admin.role !== "admin") redirect("/admin-login");
+  const admin = await requireAdmin({ soloLectura: true });
+  if (!admin || (admin.role !== "admin" && admin.role !== "lector")) redirect("/admin-login");
 
   const t = await getTranslations("admin.universidades");
 

@@ -9,7 +9,7 @@ export default async function AdminMensajesPage({
 }: {
   searchParams: Promise<{ d?: string }>;
 }) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin({ soloLectura: true });
   if (!admin) redirect("/admin-login");
 
   const params = await searchParams;

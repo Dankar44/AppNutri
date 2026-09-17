@@ -7,8 +7,8 @@ import { requireAdmin } from "@/lib/admin";
 import { getLicenciasDocentes } from "@/app/actions/admin-docencia";
 
 export default async function UniversidadesPage() {
-  const admin = await requireAdmin();
-  if (!admin || admin.role !== "admin") redirect("/admin-login");
+  const admin = await requireAdmin({ soloLectura: true });
+  if (!admin || (admin.role !== "admin" && admin.role !== "lector")) redirect("/admin-login");
 
   const t = await getTranslations("admin.universidades");
   const licencias = await getLicenciasDocentes();

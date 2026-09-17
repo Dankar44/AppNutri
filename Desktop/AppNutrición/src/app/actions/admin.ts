@@ -78,7 +78,7 @@ export async function logoutAdmin() {
 }
 
 export async function getAdminStats() {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin({ soloLectura: true });
   if (!admin) redirect("/admin-login");
 
   const ahora = new Date();
@@ -131,7 +131,7 @@ export async function getAdminStats() {
 }
 
 export async function getRegistrosMensuales() {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin({ soloLectura: true });
   if (!admin) redirect("/admin-login");
 
   const locale = await getLocale();
@@ -168,7 +168,7 @@ export async function getRegistrosMensuales() {
 }
 
 export async function getDistribucionPlanes() {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin({ soloLectura: true });
   if (!admin) redirect("/admin-login");
 
   try {
@@ -225,7 +225,7 @@ export interface DietistaAdminItem {
 }
 
 export async function getDietistasAdmin(busqueda?: string): Promise<DietistaAdminItem[]> {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin({ soloLectura: true });
   if (!admin) redirect("/admin-login");
 
   const search = busqueda?.trim().toLowerCase();
@@ -358,7 +358,7 @@ export interface DietistaDetalle {
 }
 
 export async function getDietistaDetalle(dietistaId: string): Promise<DietistaDetalle | null> {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin({ soloLectura: true });
   if (!admin) redirect("/admin-login");
 
   const dietista = await prisma.dietista.findUnique({
@@ -415,7 +415,7 @@ export async function getDietistaDetalle(dietistaId: string): Promise<DietistaDe
 }
 
 export async function getActividadGlobal() {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin({ soloLectura: true });
   if (!admin) redirect("/admin-login");
 
   const ahora = new Date();
@@ -490,7 +490,7 @@ export interface SuscripcionAdminItem {
 }
 
 export async function getSuscripcionesAdmin(): Promise<SuscripcionAdminItem[]> {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin({ soloLectura: true });
   if (!admin) redirect("/admin-login");
 
   try {
@@ -547,7 +547,7 @@ export interface DietistaPendiente {
 }
 
 export async function getDietistasPendientes(): Promise<DietistaPendiente[]> {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin({ soloLectura: true });
   if (!admin) redirect("/admin-login");
 
   return prisma.$queryRawUnsafe<DietistaPendiente[]>(
@@ -560,7 +560,7 @@ export async function getDietistasPendientes(): Promise<DietistaPendiente[]> {
 }
 
 export async function getPendientesCount(): Promise<number> {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin({ soloLectura: true });
   if (!admin) return 0;
 
   const rows = await prisma.$queryRawUnsafe<{ count: bigint }[]>(
@@ -947,8 +947,8 @@ export interface CentroAdminItem {
 }
 
 export async function getCentrosAdmin(busqueda?: string): Promise<CentroAdminItem[]> {
-  const admin = await requireAdmin();
-  if (!admin || admin.role !== "admin") redirect("/admin-login");
+  const admin = await requireAdmin({ soloLectura: true });
+  if (!admin || (admin.role !== "admin" && admin.role !== "lector")) redirect("/admin-login");
 
   const search = busqueda?.trim().toLowerCase();
 
@@ -980,8 +980,8 @@ export async function getCentrosAdmin(busqueda?: string): Promise<CentroAdminIte
 }
 
 export async function buscarDietistasParaCentro(busqueda: string) {
-  const admin = await requireAdmin();
-  if (!admin || admin.role !== "admin") redirect("/admin-login");
+  const admin = await requireAdmin({ soloLectura: true });
+  if (!admin || (admin.role !== "admin" && admin.role !== "lector")) redirect("/admin-login");
 
   const search = busqueda.trim().toLowerCase();
   if (!search) return [];
@@ -1012,7 +1012,7 @@ export async function crearCentroAdmin(data: {
   liderPassword?: string;
 }): Promise<{ ok: boolean; error?: string; centroId?: string }> {
   const admin = await requireAdmin();
-  if (!admin || admin.role !== "admin") redirect("/admin-login");
+  if (!admin || (admin.role !== "admin" && admin.role !== "lector")) redirect("/admin-login");
 
   const t = await getTranslations("validation");
 
@@ -1088,8 +1088,8 @@ export interface CentroDetalle {
 }
 
 export async function getCentroDetalle(centroId: string): Promise<CentroDetalle | null> {
-  const admin = await requireAdmin();
-  if (!admin || admin.role !== "admin") redirect("/admin-login");
+  const admin = await requireAdmin({ soloLectura: true });
+  if (!admin || (admin.role !== "admin" && admin.role !== "lector")) redirect("/admin-login");
 
   const empresa = await prisma.empresa.findUnique({
     where: { id: centroId },
@@ -1126,7 +1126,7 @@ export async function editarCentroAdmin(
   data: { nombre?: string; descripcion?: string; maxMiembros?: number; slug?: string }
 ): Promise<{ ok: boolean; error?: string }> {
   const admin = await requireAdmin();
-  if (!admin || admin.role !== "admin") redirect("/admin-login");
+  if (!admin || (admin.role !== "admin" && admin.role !== "lector")) redirect("/admin-login");
 
   const t = await getTranslations("validation");
 

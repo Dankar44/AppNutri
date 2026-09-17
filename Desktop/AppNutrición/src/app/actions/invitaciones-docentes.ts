@@ -95,7 +95,7 @@ export async function invitarProfesor(data: {
   email: string;
 }): Promise<ResultadoInvitacion> {
   const admin = await requireAdmin();
-  if (!admin || admin.role !== "admin") redirect("/admin-login");
+  if (!admin || (admin.role !== "admin" && admin.role !== "lector")) redirect("/admin-login");
 
   const t = await getTranslations("validation");
 
@@ -201,7 +201,7 @@ export async function invitarProfesor(data: {
  */
 export async function reenviarInvitacionDocente(id: string): Promise<{ ok: boolean; error?: string; envios?: number }> {
   const admin = await requireAdmin();
-  if (!admin || admin.role !== "admin") redirect("/admin-login");
+  if (!admin || (admin.role !== "admin" && admin.role !== "lector")) redirect("/admin-login");
 
   const t = await getTranslations("validation");
   try {
@@ -242,7 +242,7 @@ export async function reenviarInvitacionDocente(id: string): Promise<{ ok: boole
 /** Anula una invitación que aún no se ha usado. */
 export async function cancelarInvitacionDocente(id: string): Promise<{ ok: boolean; error?: string }> {
   const admin = await requireAdmin();
-  if (!admin || admin.role !== "admin") redirect("/admin-login");
+  if (!admin || (admin.role !== "admin" && admin.role !== "lector")) redirect("/admin-login");
 
   const t = await getTranslations("validation");
   try {

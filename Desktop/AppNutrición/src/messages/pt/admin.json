@@ -32,7 +32,8 @@
     },
     "roles": {
       "creator": "Criador de contas",
-      "admin": "Administrador(a)"
+      "admin": "Administrador(a)",
+      "lector": "Apenas leitura"
     },
     "volverApp": "Voltar ao app",
     "cerrarSesion": "Sair"
