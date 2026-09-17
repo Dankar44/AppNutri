@@ -681,79 +681,13 @@ export async function crearPacienteDemoSiNoExiste(
     ],
   });
 
-  // Plan 3 — Deportivo
-  await crearPlanConDias(s.planNames[2], 2600, { prot: 180, carb: 320, grasa: 75 }, false, 40, {
-    DESAYUNO: [
-      { alimentoId: avena?.id, cantidad: 80 },
-      { alimentoId: platano?.id, cantidad: 120 },
-      { alimentoId: huevo?.id, cantidad: 150 },
-    ],
-    ALMUERZO: [
-      { alimentoId: ternera?.id, cantidad: 180 },
-      { alimentoId: boniato?.id, cantidad: 250 },
-      { alimentoId: pimiento?.id, cantidad: 100 },
-      { alimentoId: aceite?.id, cantidad: 12 },
-    ],
-    MERIENDA: [
-      { alimentoId: yogur?.id, cantidad: 200 },
-      { alimentoId: fresas?.id, cantidad: 100 },
-      { alimentoId: almendras?.id, cantidad: 30 },
-    ],
-    CENA: [
-      { alimentoId: salmon?.id, cantidad: 180 },
-      { alimentoId: quinoa?.id, cantidad: 80 },
-      { alimentoId: espinacas?.id, cantidad: 150 },
-    ],
-  });
 
-  // Plan 4 — Low-carb
-  await crearPlanConDias(s.planNames[3], 1800, { prot: 140, carb: 90, grasa: 115 }, false, 60, {
-    DESAYUNO: [
-      { alimentoId: huevo?.id, cantidad: 150 },
-      { alimentoId: aguacate?.id, cantidad: 80 },
-      { alimentoId: aceitunas?.id, cantidad: 30 },
-    ],
-    ALMUERZO: [
-      { alimentoId: salmon?.id, cantidad: 180 },
-      { alimentoId: espinacas?.id, cantidad: 200 },
-      { alimentoId: aceite?.id, cantidad: 15 },
-    ],
-    MERIENDA: [
-      { alimentoId: queso?.id, cantidad: 50 },
-      { alimentoId: nueces?.id, cantidad: 25 },
-    ],
-    CENA: [
-      { alimentoId: ternera?.id, cantidad: 150 },
-      { alimentoId: brocoli?.id, cantidad: 200 },
-      { alimentoId: aceite?.id, cantidad: 10 },
-    ],
-  });
-
-  // Plan 5 — Mediterránea legumbres
-  await crearPlanConDias(s.planNames[4], 1900, { prot: 110, carb: 230, grasa: 65 }, false, 75, {
-    DESAYUNO: [
-      { alimentoId: panIntegral?.id, cantidad: 50 },
-      { alimentoId: tomate?.id, cantidad: 80 },
-      { alimentoId: aceite?.id, cantidad: 8 },
-      { alimentoId: jamonSerrano?.id, cantidad: 30 },
-    ],
-    ALMUERZO: [
-      { alimentoId: lentejas?.id, cantidad: 80 },
-      { alimentoId: cebolla?.id, cantidad: 40 },
-      { alimentoId: pimiento?.id, cantidad: 60 },
-      { alimentoId: aceite?.id, cantidad: 8 },
-    ],
-    MERIENDA: [
-      { alimentoId: pera?.id, cantidad: 180 },
-      { alimentoId: yogur?.id, cantidad: 125 },
-    ],
-    CENA: [
-      { alimentoId: garbanzos?.id, cantidad: 70 },
-      { alimentoId: espinacas?.id, cantidad: 150 },
-      { alimentoId: pepino?.id, cantidad: 100 },
-      { alimentoId: aceite?.id, cantidad: 8 },
-    ],
-  });
+  // Se crean DOS planes, no cinco. El paciente de ejemplo traía cinco planes de siete días
+  // cada uno: 441 filas en `alimentos_en_comida` por cada cuenta nueva. Multiplicado por las
+  // cuentas que hay, ese paciente ocupaba un tercio de la base entera (#176). Con el activo y
+  // uno anterior se ve igual de bien cómo funciona la herramienta, y se ve el histórico.
+  // Los nombres de los otros tres se quedan en `planNames` porque los usa el tour guiado
+  // (`tour-demo-data.ts`), que es una simulación visual y no lee de la base.
 
   // Medidas (8 puntos con evolución)
   const medidasData = [
