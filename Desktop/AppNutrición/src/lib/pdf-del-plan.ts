@@ -45,6 +45,7 @@ async function renderizarPdf(html: string): Promise<Buffer> {
       await page.setContent(html, { waitUntil: "load" });
       const pdf = await page.pdf({
         format: "A4",
+        preferCSSPageSize: true,
         printBackground: true,
         margin: { top: "0", right: "0", bottom: "0", left: "0" },
       });

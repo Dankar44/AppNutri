@@ -143,6 +143,8 @@
       "custom": "Custom"
     },
     "colorPersonalizado": "Color personalizado",
+    "abrirSelectorColor": "Abrir selector de color",
+    "colorFormato": "Introduce un color hexadecimal válido, por ejemplo #6b9e80.",
     "colorPrimario": "Primario",
     "colorAcento": "Acento",
     "colorFondoSeccion": "Fondo sección",

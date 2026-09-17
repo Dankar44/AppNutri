@@ -30,6 +30,7 @@ import { SeguimientoTab } from "./seguimiento-tab";
 import { RecomendacionesTab } from "./recomendaciones-tab";
 import { EntregablesTab } from "./entregables-tab";
 import { PortalPacienteTab } from "./portal-paciente-tab";
+import { SelectorDesplegable } from "@/components/selector-desplegable";
 import type { HorarioEntry } from "@/app/actions/pacientes";
 import type { FichaSidebarData } from "@/lib/ficha-sidebar-types";
 
@@ -257,25 +258,21 @@ export function PacienteFichaClient({
       </div>
 
       {/* Móvil: dropdown */}
-      <div className="sm:hidden mb-5 relative">
-        <select
-          value={pestana}
-          onChange={(e) => router.push(`/pacientes/${paciente.id}?pestana=${e.target.value}${sufijoEspacio}`, { scroll: false })}
-          className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-sm font-medium text-foreground appearance-none pr-8"
-        >
-          {fichaTabs.map((t) => {
-            const n = notifsPorTipoPestana(t.id, notifsPorTipo);
-            return (
-              <option key={t.id} value={t.id}>
-                {t.label}{n > 0 ? ` (${n})` : ""}
-              </option>
-            );
-          })}
-        </select>
-        <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-        </div>
-      </div>
+      <SelectorDesplegable
+        value={pestana}
+        onChange={(valor) => router.push(`/pacientes/${paciente.id}?pestana=${valor}${sufijoEspacio}`, { scroll: false })}
+        options={fichaTabs.map((tab) => {
+          const notificaciones = notifsPorTipoPestana(tab.id, notifsPorTipo);
+          return {
+            value: tab.id,
+            label: tab.label,
+            insignia: notificaciones > 0 ? (notificaciones > 9 ? "9+" : String(notificaciones)) : undefined,
+            insigniaClassName: "bg-red-500 text-white",
+          };
+        })}
+        ariaLabel={t("tabGeneral")}
+        className="mb-5 sm:hidden"
+      />
 
       {/* Desktop: tabs */}
       <nav className="hidden sm:flex gap-1 overflow-x-auto pb-px mb-6 -mx-1 px-1 scrollbar-thin">

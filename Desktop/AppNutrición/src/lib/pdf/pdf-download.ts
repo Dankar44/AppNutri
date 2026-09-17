@@ -1,6 +1,6 @@
 export async function downloadPDF(
   htmlStr: string,
-  filename: string
+  filename: string,
 ): Promise<void> {
   const res = await fetch("/api/pdf", {
     method: "POST",

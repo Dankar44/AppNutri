@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { UnidadMedida } from "@/generated/prisma/client";
 import { convertirAGramos } from "@/lib/macros";
 import {
@@ -13,11 +13,16 @@ import {
   validateNumber,
   validateNumberOptional,
   sanitizeSearch,
+  validateId,
   LIMITS,
 } from "@/lib/validation";
 import { getMaterialMemberIds, puedeCompartirMaterial } from "@/lib/empresa-utils";
 import { isNextNavigation } from "@/lib/utils";
 import { normalizarParaBusqueda } from "@/lib/alimento-utils";
+import {
+  MAX_RECETAS_RECETARIO,
+  type RecetarioPDFData,
+} from "@/lib/pdf/generate-recetario-pdf";
 
 export interface RecetaFormData {
   nombre: string;
@@ -530,6 +535,91 @@ export async function getReceta(id: string) {
     micros,
     favorito: favRows.length > 0,
     esGlobal: receta.dietistaId === null,
+  };
+}
+
+export type ResultadoDatosRecetarioPDF =
+  | { ok: true; data: RecetarioPDFData }
+  | { ok: false; error: string };
+
+/**
+ * Datos de un recetario descargable. Mantiene exactamente los mismos permisos que la biblioteca:
+ * recetas propias, globales de la app y material compartido por el centro o el profesor.
+ */
+export async function getRecetarioPDFData(ids: string[]): Promise<ResultadoDatosRecetarioPDF> {
+  const t = await getTranslations("recipes");
+  const dietista = await getCurrentDietista();
+  if (!dietista) return { ok: false, error: t("recetario.errorNoAutorizado") };
+
+  if (!Array.isArray(ids)) return { ok: false, error: t("recetario.errorSinSeleccion") };
+  const idsValidos = [...new Set(ids.map(validateId).filter((id): id is string => id !== null))];
+  if (idsValidos.length === 0) return { ok: false, error: t("recetario.errorSinSeleccion") };
+  if (idsValidos.length > MAX_RECETAS_RECETARIO) {
+    return {
+      ok: false,
+      error: t("recetario.errorDemasiadas", { max: MAX_RECETAS_RECETARIO }),
+    };
+  }
+
+  const propietariosVisibles = (await getMaterialMemberIds(dietista)).filter(
+    (id) => id !== dietista.id,
+  );
+  const recetas = await prisma.receta.findMany({
+    where: {
+      id: { in: idsValidos },
+      OR: [
+        { dietistaId: dietista.id },
+        { dietistaId: null },
+        ...(propietariosVisibles.length > 0
+          ? [{ dietistaId: { in: propietariosVisibles }, compartido: true }]
+          : []),
+      ],
+    },
+    include: {
+      ingredientes: {
+        include: { alimento: { select: { nombre: true } } },
+      },
+    },
+  });
+
+  if (recetas.length !== idsValidos.length) {
+    return { ok: false, error: t("recetario.errorRecetaNoDisponible") };
+  }
+
+  const porId = new Map(recetas.map((receta) => [receta.id, receta]));
+  const ordenadas = idsValidos.map((id) => porId.get(id)).filter((receta): receta is NonNullable<typeof receta> => !!receta);
+  const { getTheme } = await import("@/lib/pdf/pdf-themes");
+  const locale = (await getLocale()) === "pt" ? "pt" : "es";
+
+  return {
+    ok: true,
+    data: {
+      titulo: "",
+      dietistaNombre: `${dietista.nombre} ${dietista.apellidos}`.trim(),
+      tema: getTheme(dietista.temaPdf, dietista.colorPrimarioPdf),
+      brandName: dietista.marcaPdf || undefined,
+      logoDataUrl: dietista.pdfLogoUrl || undefined,
+      clinica: dietista.clinica || undefined,
+      locale,
+      recetas: ordenadas.map((receta) => ({
+        id: receta.id,
+        nombre: receta.nombre,
+        descripcion: receta.descripcion,
+        instrucciones: receta.instrucciones,
+        porciones: receta.porciones,
+        tiempoPreparacion: receta.tiempoPreparacion,
+        calorias: receta.calorias,
+        proteinas: receta.proteinas,
+        carbohidratos: receta.carbohidratos,
+        grasas: receta.grasas,
+        ingredientes: receta.ingredientes.map((ingrediente) => ({
+          id: ingrediente.id,
+          cantidad: ingrediente.cantidad,
+          unidad: ingrediente.unidad,
+          alimento: { nombre: ingrediente.alimento.nombre },
+        })),
+      })),
+    },
   };
 }
 

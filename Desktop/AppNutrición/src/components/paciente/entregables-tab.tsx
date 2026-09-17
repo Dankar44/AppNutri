@@ -16,11 +16,14 @@ import {
   RotateCcw,
   Ban,
   EyeOff,
+  ListOrdered,
+  ArrowLeftRight,
 } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { SelectorDesplegable } from "@/components/selector-desplegable";
 import { enviarPlanPorEmail } from "@/app/actions/email";
 import { getPlanPDFData, getPlanesPaciente } from "@/app/actions/planes";
 import {
@@ -29,10 +32,14 @@ import {
   type PDFSectionOptions,
   type DisplayOverrides,
   type QuantityOverride,
+  type PDFSectionKey,
+  ORDEN_SECCIONES_PDF,
   UNIDAD_LABELS_FULL,
 } from "@/lib/pdf/generate-plan-pdf";
+import { extraerRecetasDelPlan, type DistribucionRecetarioPDF } from "@/lib/pdf/generate-recetario-pdf";
 import { downloadPDF } from "@/lib/pdf/pdf-download";
 import { EntregarCaso } from "@/components/docencia/entregar-caso";
+import { OrdenSeccionesPdf } from "@/components/paciente/orden-secciones-pdf";
 
 // ─── Types ───
 
@@ -60,7 +67,18 @@ type PDFOptions = {
   recomendaciones: boolean;
   listaCompra: boolean;
   valoresNutricionales: boolean;
+  recetasDelPlan: boolean;
+  valoresNutricionalesRecetas: boolean;
+  distribucionRecetas: DistribucionRecetarioPDF;
+  densidad: "normal" | "compacta";
+  planSemanalHorizontal: boolean;
+  listaCompraHorizontal: boolean;
+  ordenSecciones: PDFSectionKey[];
 };
+
+type PDFOptionBooleana = Exclude<keyof PDFOptions, "distribucionRecetas" | "densidad" | "ordenSecciones">;
+
+type PaginaPreview = { ancho: number; alto: number; arriba: number };
 
 const PDF_OPTIONS_DEFAULT: PDFOptions = {
   portada: true,
@@ -70,10 +88,17 @@ const PDF_OPTIONS_DEFAULT: PDFOptions = {
   recomendaciones: true,
   listaCompra: true,
   valoresNutricionales: true,
+  recetasDelPlan: false,
+  valoresNutricionalesRecetas: true,
+  distribucionRecetas: "automatica",
+  densidad: "normal",
+  planSemanalHorizontal: true,
+  listaCompraHorizontal: false,
+  ordenSecciones: [...ORDEN_SECCIONES_PDF],
 };
 
 const PDF_OPTIONS_KEYS: {
-  key: keyof PDFOptions;
+  key: PDFOptionBooleana;
   labelKey: string;
   descriptionKey: string;
   disabled?: boolean;
@@ -329,11 +354,16 @@ export function EntregablesTab({
   const t = useTranslations("patients.entregables");
   const tAula = useTranslations("aula");
   const tPdf = useTranslations("pdf");
+  const tRecetario = useTranslations("recipes.recetario");
   const [sendingPlan, startSendingPlan] = useTransition();
 
   // PDF configurator state. Si el paciente tiene "ocultar calorías", los valores
   // nutricionales arrancan desactivados para no enviarle un PDF con kcal sin querer.
-  const opcionesIniciales: PDFOptions = { ...PDF_OPTIONS_DEFAULT, valoresNutricionales: !ocultarCalorias };
+  const opcionesIniciales: PDFOptions = {
+    ...PDF_OPTIONS_DEFAULT,
+    valoresNutricionales: !ocultarCalorias,
+    valoresNutricionalesRecetas: !ocultarCalorias,
+  };
   const [pdfOptions, setPdfOptions] = useState<PDFOptions>(opcionesIniciales);
   const [appliedOptions, setAppliedOptions] = useState<PDFOptions>(opcionesIniciales);
   const [pdfData, setPdfData] = useState<PlanPDFData | null>(null);
@@ -343,8 +373,11 @@ export function EntregablesTab({
   const [loadingPdf, setLoadingPdf] = useState(false);
   const [previewPage, setPreviewPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [paginasPreview, setPaginasPreview] = useState<PaginaPreview[]>([]);
   const [displayOverrides, setDisplayOverrides] = useState<DisplayOverrides>({});
   const [appliedOverrides, setAppliedOverrides] = useState<DisplayOverrides>({});
+  const [ordenPersonalizado, setOrdenPersonalizado] = useState(false);
+  const numeroRecetasPlan = pdfData ? extraerRecetasDelPlan(pdfData.dias).length : 0;
 
   // Cargar la lista de planes del paciente
   useEffect(() => {
@@ -368,6 +401,10 @@ export function EntregablesTab({
     getPlanPDFData(selectedPlanId).then((data) => {
       if (cancelled) return;
       setPdfData(data);
+      if (!data || extraerRecetasDelPlan(data.dias).length === 0) {
+        setPdfOptions((prev) => ({ ...prev, recetasDelPlan: false }));
+        setAppliedOptions((prev) => ({ ...prev, recetasDelPlan: false }));
+      }
       setLoadingPdf(false);
     }).catch(() => {
       if (!cancelled) setLoadingPdf(false);
@@ -378,17 +415,33 @@ export function EntregablesTab({
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const [previewScale, setPreviewScale] = useState(1);
+  const paginaActualPreview = paginasPreview[previewPage] ?? {
+    ancho: 794,
+    alto: 1123,
+    arriba: previewPage * 1123,
+  };
+  const anchoPaginaPreview = paginaActualPreview.ancho;
+  const anchoMaximoPreview = Math.max(794, ...paginasPreview.map((pagina) => pagina.ancho));
+  const altoTotalPreview = paginasPreview.length > 0
+    ? paginasPreview[paginasPreview.length - 1].arriba + paginasPreview[paginasPreview.length - 1].alto
+    : Math.max(totalPages, 1) * 1123;
+  const anchoPaginaEscalado = anchoPaginaPreview * previewScale;
+  const altoPaginaEscalado = paginaActualPreview.alto * previewScale;
 
-  // Ajustar escala de la vista previa al ancho del contenedor (794px = A4 a 96dpi)
+  // Aprovechar el mayor tamaño posible sin recortar la hoja: las horizontales llenan el ancho
+  // disponible y las verticales se ajustan por altura dentro del mismo espacio estable.
   useEffect(() => {
     const el = previewContainerRef.current;
     if (!el) return;
-    const update = () => setPreviewScale(el.clientWidth / 794);
+    const update = () => setPreviewScale(Math.min(
+      el.clientWidth / anchoPaginaPreview,
+      el.clientHeight / paginaActualPreview.alto,
+    ));
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [pdfHtml]);
+  }, [pdfHtml, anchoPaginaPreview, paginaActualPreview.alto]);
 
   function toSections(opts: PDFOptions): PDFSectionOptions {
     return {
@@ -399,6 +452,13 @@ export function EntregablesTab({
       recomendaciones: opts.recomendaciones,
       listaCompra: opts.listaCompra,
       valoresNutricionales: opts.valoresNutricionales,
+      recetasDelPlan: opts.recetasDelPlan,
+      valoresNutricionalesRecetas: opts.valoresNutricionalesRecetas,
+      distribucionRecetas: opts.distribucionRecetas,
+      densidad: opts.densidad,
+      planSemanalHorizontal: opts.planSemanalHorizontal,
+      listaCompraHorizontal: opts.listaCompraHorizontal,
+      ordenSecciones: opts.ordenSecciones,
     };
   }
 
@@ -410,6 +470,7 @@ export function EntregablesTab({
     setPdfHtml(previewHtml);
     const count = (previewHtml.match(/class="page/g) || []).length;
     setTotalPages(Math.max(1, count));
+    setPaginasPreview([]);
     setPreviewPage(0);
   }, [pdfData, appliedOptions, appliedOverrides]);
 
@@ -419,7 +480,7 @@ export function EntregablesTab({
     JSON.stringify(displayOverrides) !== JSON.stringify(appliedOverrides);
 
 
-  function handlePdfOptionChange(key: keyof PDFOptions, value: boolean) {
+  function handlePdfOptionChange(key: PDFOptionBooleana, value: boolean) {
     setPdfOptions((prev) => {
       const next = { ...prev, [key]: value };
       if (key === "planSemanal" && !value) next.cantidadesSemanal = false;
@@ -486,22 +547,39 @@ export function EntregablesTab({
                 <label className="block text-sm font-semibold text-foreground mb-2">
                   {t("planAlimenticio")}
                 </label>
-                <select
+                <SelectorDesplegable
                   value={selectedPlanId ?? ""}
-                  onChange={(e) => setSelectedPlanId(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                >
-                  {planes.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nombre}{p.activo ? ` ${t("planActualLabel")}` : ""}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setSelectedPlanId}
+                  options={planes.map((plan) => ({
+                    value: plan.id,
+                    label: plan.nombre,
+                    insignia: plan.activo ? t("planActualLabel") : undefined,
+                    insigniaClassName: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
+                  }))}
+                  ariaLabel={t("planAlimenticio")}
+                  menuLabel={t("planAlimenticio")}
+                />
               </div>
 
-              <h3 className="text-sm font-semibold text-foreground mb-4">
-                {t("contenidoPdf")}
-              </h3>
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h3 className="text-sm font-semibold text-foreground">
+                  {t("contenidoPdf")}
+                </h3>
+                <button
+                  type="button"
+                  aria-pressed={ordenPersonalizado}
+                  onClick={() => setOrdenPersonalizado((actual) => !actual)}
+                  className={cn(
+                    "inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30",
+                    ordenPersonalizado
+                      ? "border-primary bg-primary/10 text-primary hover:bg-primary/15"
+                      : "border-border text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  <ListOrdered className="h-3.5 w-3.5" aria-hidden="true" />
+                  {ordenPersonalizado ? t("guardarOrden") : t("personalizarOrdenBoton")}
+                </button>
+              </div>
               {ocultarCalorias && (
                 <div className="mb-3 flex items-start gap-2.5 rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-3">
                   <EyeOff className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
@@ -510,40 +588,169 @@ export function EntregablesTab({
                   </p>
                 </div>
               )}
+
               <div className="space-y-1">
-                {PDF_OPTIONS_KEYS.map((opt) => {
+                {ordenPersonalizado ? (
+                  <OrdenSeccionesPdf
+                    orden={pdfOptions.ordenSecciones}
+                    recetasDisponibles={numeroRecetasPlan > 0}
+                    recetasCount={numeroRecetasPlan}
+                    onChange={(orden) => setPdfOptions((previa) => ({ ...previa, ordenSecciones: orden }))}
+                  />
+                ) : PDF_OPTIONS_KEYS.map((opt) => {
                   const isDisabled = opt.disabled || (opt.key === "cantidadesSemanal" && !pdfOptions.planSemanal);
+                  const permiteHorizontal = opt.key === "planSemanal" || opt.key === "listaCompra";
+                  const horizontalActivo = opt.key === "planSemanal"
+                    ? pdfOptions.planSemanalHorizontal
+                    : pdfOptions.listaCompraHorizontal;
                   return (
-                  <label
+                  <div
                     key={opt.key}
-                    className={cn(
-                      "flex items-start gap-3 rounded-lg px-3 py-2.5 transition-colors",
-                      isDisabled
-                        ? "opacity-60 cursor-not-allowed"
-                        : "hover:bg-muted/50 cursor-pointer"
-                    )}
+                    className="flex items-start gap-2 rounded-lg px-1 py-1 transition-colors hover:bg-muted/40"
                   >
-                    <input
-                      type="checkbox"
-                      checked={pdfOptions[opt.key]}
-                      disabled={isDisabled}
-                      onChange={(e) =>
-                        handlePdfOptionChange(opt.key, e.target.checked)
-                      }
-                      className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary/20 shrink-0 accent-primary"
-                    />
-                    <div className="min-w-0">
-                      <span className="text-sm font-medium text-foreground">
-                        {t(opt.labelKey)}
+                    <label className={cn(
+                      "flex min-w-0 flex-1 cursor-pointer items-start gap-3 rounded-lg px-2 py-1.5",
+                      isDisabled && "cursor-not-allowed opacity-60",
+                    )}>
+                      <input
+                        type="checkbox"
+                        checked={pdfOptions[opt.key]}
+                        disabled={isDisabled}
+                        onChange={(e) =>
+                          handlePdfOptionChange(opt.key, e.target.checked)
+                        }
+                        className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-primary accent-primary focus:ring-primary/20"
+                      />
+                      <span className="min-w-0">
+                        <span className="text-sm font-medium text-foreground">
+                          {t(opt.labelKey)}
+                        </span>
+                        <span className="mt-0.5 block text-xs text-muted-foreground">
+                          {t(opt.descriptionKey)}
+                        </span>
                       </span>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {t(opt.descriptionKey)}
-                      </p>
-                    </div>
-                  </label>
+                    </label>
+                    {permiteHorizontal && (
+                      <button
+                        type="button"
+                        disabled={isDisabled || !pdfOptions[opt.key]}
+                        aria-pressed={horizontalActivo}
+                        onClick={() => setPdfOptions((previa) => ({
+                          ...previa,
+                          [opt.key === "planSemanal" ? "planSemanalHorizontal" : "listaCompraHorizontal"]: !horizontalActivo,
+                        }))}
+                        className={cn(
+                          "mt-1 inline-flex min-h-10 shrink-0 items-center gap-1 rounded-lg border px-2.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30",
+                          horizontalActivo
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border text-muted-foreground hover:bg-muted",
+                          (isDisabled || !pdfOptions[opt.key]) && "cursor-not-allowed opacity-40",
+                        )}
+                        title={t(horizontalActivo ? "quitarHorizontal" : "ponerHorizontal")}
+                      >
+                        <ArrowLeftRight className="h-3.5 w-3.5" aria-hidden="true" />
+                        <span className="hidden sm:inline">{t("horizontal")}</span>
+                      </button>
+                    )}
+                  </div>
                   );
                 })}
               </div>
+
+              {!ordenPersonalizado && numeroRecetasPlan > 0 && (
+                <div className="mt-4 rounded-xl border border-border bg-card p-3">
+                  <label className="flex cursor-pointer items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={pdfOptions.recetasDelPlan}
+                      onChange={(evento) => handlePdfOptionChange("recetasDelPlan", evento.target.checked)}
+                      className="mt-0.5 h-4 w-4 shrink-0 rounded border-border accent-primary focus:ring-primary/20"
+                    />
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold text-foreground">
+                        {t("recetasDelPlan", { count: numeroRecetasPlan })}
+                      </span>
+                      <span className="mt-0.5 block text-xs text-muted-foreground">
+                        {t("recetasDelPlanDescripcion")}
+                      </span>
+                    </span>
+                  </label>
+
+                  {pdfOptions.recetasDelPlan && (
+                    <div className="mt-3 space-y-3 border-t border-border pt-3">
+                      <label className="flex cursor-pointer items-start gap-3 rounded-lg px-1 py-1.5 transition-colors hover:bg-muted/50">
+                        <input
+                          type="checkbox"
+                          checked={pdfOptions.valoresNutricionalesRecetas}
+                          onChange={(evento) => handlePdfOptionChange("valoresNutricionalesRecetas", evento.target.checked)}
+                          className="mt-0.5 h-4 w-4 shrink-0 rounded border-border accent-primary focus:ring-primary/20"
+                        />
+                        <span className="min-w-0">
+                          <span className="block text-sm font-medium text-foreground">{tRecetario("macros")}</span>
+                          <span className="mt-0.5 block text-xs text-muted-foreground">{tRecetario("macrosDescripcion")}</span>
+                        </span>
+                      </label>
+
+                      <fieldset className="border-t border-border pt-3">
+                        <legend className="text-sm font-medium text-foreground">{tRecetario("distribucionTitulo")}</legend>
+                        <p className="mt-1 text-xs text-muted-foreground">{tRecetario("distribucionAyuda")}</p>
+                        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                          {["automatica", "unaPorPagina"].map((distribucion) => {
+                            const valor = distribucion as DistribucionRecetarioPDF;
+                            const seleccionada = pdfOptions.distribucionRecetas === valor;
+                            return (
+                              <label
+                                key={valor}
+                                className={cn(
+                                  "flex min-h-11 cursor-pointer items-start gap-2.5 rounded-lg border p-3 transition-colors",
+                                  seleccionada
+                                    ? "border-primary bg-primary/5"
+                                    : "border-border hover:bg-muted/50",
+                                )}
+                              >
+                                <input
+                                  type="radio"
+                                  name="distribucion-recetas-plan"
+                                  value={valor}
+                                  checked={seleccionada}
+                                  onChange={() => setPdfOptions((previa) => ({ ...previa, distribucionRecetas: valor }))}
+                                  className="mt-0.5 h-4 w-4 shrink-0 accent-primary focus:ring-primary/20"
+                                />
+                                <span className="min-w-0">
+                                  <span className="block text-sm font-medium text-foreground">
+                                    {tRecetario(valor === "automatica" ? "distribucionAutomatica" : "unaPorPagina")}
+                                  </span>
+                                  <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
+                                    {tRecetario(valor === "automatica" ? "distribucionAutomaticaDescripcion" : "unaPorPaginaDescripcion")}
+                                  </span>
+                                </span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </fieldset>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!ordenPersonalizado && (
+                <label className="mt-4 flex cursor-pointer items-center gap-3 border-t border-border px-2 pt-4">
+                  <input
+                    type="checkbox"
+                    checked={pdfOptions.densidad === "compacta"}
+                    onChange={(evento) => setPdfOptions((previa) => ({
+                      ...previa,
+                      densidad: evento.target.checked ? "compacta" : "normal",
+                    }))}
+                    className="h-4 w-4 shrink-0 rounded border-border accent-primary focus:ring-primary/20"
+                  />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium text-foreground">{t("pdfCompacto")}</span>
+                    <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">{t("pdfCompactoDescripcion")}</span>
+                  </span>
+                </label>
+              )}
 
               {/* Editor de cantidades */}
               {pdfData && !loadingPdf && (
@@ -633,7 +840,7 @@ export function EntregablesTab({
             </div>
 
             {/* Left column: PDF preview */}
-            <div className="rounded-xl border border-border bg-card p-4 flex flex-col lg:order-1">
+            <div className="rounded-xl border border-border bg-card p-4 flex flex-col lg:order-1 lg:sticky lg:top-6 lg:self-start">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
                   <Eye className="w-4 h-4 text-muted-foreground" />
@@ -647,58 +854,65 @@ export function EntregablesTab({
                 </div>
               ) : pdfHtml ? (
                 <div className="flex-1 flex flex-col items-center">
-                  {/* A4 container con borde visible — una página visible a la vez */}
+                  {/* Espacio estable para una página visible, sea vertical u horizontal */}
                   <div
                     ref={previewContainerRef}
-                    className="relative bg-muted/30 rounded-lg overflow-hidden w-full border-2 border-border shadow-xl"
-                    style={{ aspectRatio: "794 / 1123", maxHeight: "calc(100vh - 200px)", maxWidth: "calc((100vh - 200px) * 794 / 1123)" }}
+                    className="relative aspect-[794/1123] w-full overflow-hidden lg:h-[calc(100vh-200px)] lg:aspect-auto"
                   >
-                    <div className="absolute inset-0 overflow-hidden">
-                      {/* Wrapper que se escala al ancho del contenedor */}
+                    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+                      {/* Reserva el tamaño visual de la hoja activa para poder centrarla sin mover
+                          el área exterior ni la navegación. */}
                       <div
-                        className="absolute top-0 left-0 bg-card"
+                        className="shrink-0 overflow-hidden rounded-lg bg-white shadow-xl ring-2 ring-inset ring-border"
                         style={{
-                          width: "794px",
-                          height: "1123px",
-                          transform: `scale(${previewScale})`,
-                          transformOrigin: "top left",
-                          overflow: "hidden",
+                          width: `${anchoPaginaEscalado}px`,
+                          height: `${altoPaginaEscalado}px`,
                         }}
                       >
-                        {/* Wrapper interno que se desplaza verticalmente para cambiar de página */}
                         <div
+                          className="overflow-hidden bg-white"
                           style={{
-                            width: "794px",
-                            height: `${Math.max(totalPages, 1) * 1123}px`,
-                            transform: `translateY(-${previewPage * 1123}px)`,
-                            transition: "transform 500ms cubic-bezier(0.22, 1, 0.36, 1)",
+                            width: `${anchoPaginaPreview}px`,
+                            height: `${paginaActualPreview.alto}px`,
+                            transform: `scale(${previewScale})`,
+                            transformOrigin: "top left",
                           }}
                         >
-                          <iframe
-                            ref={iframeRef}
-                            srcDoc={pdfHtml}
-                            title={t("vistaPreviaPdf")}
-                            className="border-0 block"
-                            sandbox="allow-same-origin"
-                            scrolling="no"
+                          {/* La tira completa se desplaza dentro de una ventana que mide exactamente
+                              una hoja; por eso nunca asoma la página siguiente. */}
+                          <div
                             style={{
-                              width: "794px",
-                              height: `${Math.max(totalPages, 1) * 1123}px`,
-                              pointerEvents: "none",
+                              width: `${anchoMaximoPreview}px`,
+                              height: `${altoTotalPreview}px`,
+                              transform: `translateY(-${paginaActualPreview.arriba}px)`,
+                              transition: "transform 500ms cubic-bezier(0.22, 1, 0.36, 1)",
                             }}
-                            onLoad={() => {
-                              const iframe = iframeRef.current;
-                              if (!iframe) return;
-                              try {
-                                const doc = iframe.contentDocument;
-                                if (!doc) return;
-                                const styleId = "preview-page-delim";
-                                let style = doc.getElementById(styleId) as HTMLStyleElement | null;
-                                if (!style) {
-                                  style = doc.createElement("style");
-                                  style.id = styleId;
-                                  doc.head.appendChild(style);
-                                }
+                          >
+                            <iframe
+                              ref={iframeRef}
+                              srcDoc={pdfHtml}
+                              title={t("vistaPreviaPdf")}
+                              className="border-0 block"
+                              sandbox="allow-same-origin"
+                              scrolling="no"
+                              style={{
+                                width: `${anchoMaximoPreview}px`,
+                                height: `${altoTotalPreview}px`,
+                                pointerEvents: "none",
+                              }}
+                              onLoad={() => {
+                                const iframe = iframeRef.current;
+                                if (!iframe) return;
+                                try {
+                                  const doc = iframe.contentDocument;
+                                  if (!doc) return;
+                                  const styleId = "preview-page-delim";
+                                  let style = doc.getElementById(styleId) as HTMLStyleElement | null;
+                                  if (!style) {
+                                    style = doc.createElement("style");
+                                    style.id = styleId;
+                                    doc.head.appendChild(style);
+                                  }
                                 // Sin altura fija: cada bloque .page crece según su contenido para
                                 // NO recortar (antes se perdían los valores nutricionales al final
                                 // de un día con mucho contenido).
@@ -712,45 +926,41 @@ export function EntregablesTab({
                                     box-sizing: border-box;
                                     overflow: hidden;
                                   }
+                                  .page.pdf-pagina-plan-semanal-horizontal,
+                                  .page.pdf-pagina-lista-compra-horizontal { width: 1123px !important; }
                                   .page.cover { justify-content: center; }
-                                  .preview-spacer td { padding: 0 !important; border: 0 !important; }
                                 `;
-                                const PAGE_H = 1123;
                                 const pages = Array.from(doc.querySelectorAll<HTMLElement>(".page"));
-                                let total = 0;
+                                const paginasCalculadas: PaginaPreview[] = [];
+                                let arriba = 0;
                                 for (const page of pages) {
+                                  const horizontal = page.classList.contains("pdf-pagina-plan-semanal-horizontal")
+                                    || page.classList.contains("pdf-pagina-lista-compra-horizontal");
+                                  const ancho = horizontal ? 1123 : 794;
+                                  const alto = horizontal ? 794 : 1123;
+                                  const PAGE_H = alto;
+                                  page.style.width = `${ancho}px`;
                                   page.style.height = "auto";
-                                  // Emular el break-inside del PDF: empujar a la hoja siguiente las
-                                  // comidas que quedarían partidas por un límite de hoja, para que el
-                                  // preview se vea IGUAL que el PDF descargado (comidas sin cortar).
-                                  const pageTop = page.getBoundingClientRect().top;
-                                  const grupos = Array.from(page.querySelectorAll<HTMLElement>("tbody.comida-group"));
-                                  for (const g of grupos) {
-                                    const top = g.getBoundingClientRect().top - pageTop;
-                                    const h = g.offsetHeight;
-                                    if (h <= 0 || h > PAGE_H) continue; // comida más alta que una hoja: inevitable
-                                    const ini = Math.floor(top / PAGE_H);
-                                    const fin = Math.floor((top + h - 1) / PAGE_H);
-                                    if (ini !== fin) {
-                                      const push = Math.round((ini + 1) * PAGE_H - top);
-                                      const spacer = doc.createElement("tbody");
-                                      spacer.className = "preview-spacer";
-                                      spacer.innerHTML = `<tr><td colspan="3" style="height:${push}px"></td></tr>`;
-                                      g.parentNode?.insertBefore(spacer, g);
-                                    }
-                                  }
-                                  // Cada día se redondea a múltiplos de una hoja (1123px), igual que el
-                                  // page-break del PDF → mismo nº de páginas y sin contenido cortado.
+                                  // El generador ya entrega cada página física como un bloque `.page`.
+                                  // La preview solo fija sus dimensiones para mostrar el mismo paquete
+                                  // de contenido que recibirá Chromium al descargar el PDF.
                                   const needed = Math.max(1, Math.ceil((page.scrollHeight - 4) / PAGE_H));
                                   page.style.height = `${needed * PAGE_H}px`;
-                                  total += needed;
+                                  for (let indice = 0; indice < needed; indice++) {
+                                    paginasCalculadas.push({ ancho, alto, arriba });
+                                    arriba += alto;
+                                  }
                                 }
-                                if (total > 0) setTotalPages(total);
-                              } catch {
-                                // cross-origin safety
-                              }
-                            }}
-                          />
+                                if (paginasCalculadas.length > 0) {
+                                  setPaginasPreview(paginasCalculadas);
+                                  setTotalPages(paginasCalculadas.length);
+                                }
+                                } catch {
+                                  // cross-origin safety
+                                }
+                              }}
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -758,7 +968,7 @@ export function EntregablesTab({
 
                   {/* Page navigation */}
                   {totalPages > 1 && (
-                    <div className="flex items-center justify-center gap-3 mt-3 pt-2 border-t border-border">
+                    <div className="flex h-14 shrink-0 items-center justify-center gap-3 border-t border-border">
                       <button
                         type="button"
                         onClick={() => setPreviewPage(Math.max(0, previewPage - 1))}
