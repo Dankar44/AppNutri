@@ -167,6 +167,119 @@ async function main() {
       `SELECT 1 FROM dietistas WHERE email = $1`, [`${MARCA.toLowerCase()}.nueva@prueba.dev`]);
     comprobar("ahora sí se da de alta", entro2.length === 1);
 
+    console.log("\n── Con la bolsa gastada, una clase nueva SÍ puede tener a los mismos alumnos ──");
+    // El caso que encontró Guillermo (17 sep 2026): 10 licencias, 10 alumnos ya en una clase, y al
+    // crear la clase del cuatrimestre siguiente no le dejaba poner 10 porque «quedan 0 libres». Si
+    // son los mismos, no gastan plaza nueva: el tope va contra las LICENCIAS, no contra lo libre.
+    {
+      const { rows: distintos } = await client.query(
+        `SELECT COUNT(DISTINCT a."alumnoId")::int n FROM alumnos_clase a
+           JOIN clases c ON c.id = a."claseId"
+          WHERE c."licenciaDocenteId" = $1 AND (a.activa OR a."altaAt" >= $2)`,
+        [licenciaId, inicioDeAnioEscolar()]);
+      const licencias = Math.max(1, distintos[0].n);
+      // Bolsa exactamente a cero: tantas licencias como alumnos distintos hay.
+      await client.query(`UPDATE licencias_docentes SET "maxAlumnos" = $2 WHERE id = $1`, [licenciaId, licencias]);
+      comprobar("de partida no queda ninguna plaza libre", (await plazasEnPantalla(claseA)) === 0,
+        `${await plazasEnPantalla(claseA)} libres`);
+
+      // La clase se crea desde la pantalla, con el número de alumnos que pide el formulario.
+      await profe.goto(`${BASE}/profesor/clases`, { waitUntil: "networkidle0" });
+      await esperar(1500);
+      await profe.evaluate(() => {
+        const b = Array.from(document.querySelectorAll("button")).find((x) => /Crear (mi primera )?clase|Nueva clase/i.test(x.textContent ?? ""));
+        (b as HTMLElement | undefined)?.click();
+      });
+      await esperar(1200);
+      // Por la etiqueta de cada campo: el diálogo tiene varios inputs (fechas incluidas) y buscar
+      // «el primero de texto» cogía el que no era. Sin declarar funciones aquí dentro: tsx inyecta
+      // `__name` y `page.evaluate` revienta con «__name is not defined».
+      const puestos = await profe.evaluate((nombre, cuantos) => {
+        const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+        const etiquetas = Array.from(document.querySelectorAll("label"));
+        const hecho: Record<string, boolean> = {};
+        for (const [clave, empiezaPor, valor] of [
+          ["nombre", "Nombre", nombre],
+          ["cuantos", "¿Cuántos alumnos", String(cuantos)],
+        ] as const) {
+          const l = etiquetas.find((x) => x.textContent?.trim().startsWith(empiezaPor));
+          const campo = (l?.parentElement?.querySelector("input") ?? null) as HTMLInputElement | null;
+          hecho[clave] = !!campo;
+          if (campo) {
+            set.call(campo, valor);
+            campo.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+        }
+        return hecho;
+      }, `${MARCA} Cuatrimestre 2`, licencias);
+      comprobar("el formulario pide cuántos alumnos son", puestos.cuantos === true, JSON.stringify(puestos));
+      await esperar(600);
+      await profe.evaluate(() => {
+        (document.querySelector('form button[type="submit"]') as HTMLElement | null)?.click();
+      });
+      await esperar(4000);
+      const { rows: nueva } = await client.query(
+        `SELECT id, "cupoEnlace" FROM clases WHERE nombre = $1`, [`${MARCA} Cuatrimestre 2`]);
+      comprobar("deja crearla con tantos alumnos como licencias hay",
+        nueva.length === 1 && nueva[0].cupoEnlace === licencias,
+        nueva.length ? `cupo=${nueva[0].cupoEnlace} de ${licencias}` : "no se creó");
+
+      if (nueva.length) {
+        // Y los MISMOS alumnos entran sin gastar nada: es lo que hace útil ese tope.
+        const { rows: yaEsta } = await client.query(
+          `SELECT d.email FROM alumnos_clase a JOIN dietistas d ON d.id = a."alumnoId"
+             JOIN clases c ON c.id = a."claseId"
+            WHERE c."licenciaDocenteId" = $1 AND a.activa LIMIT 1`, [licenciaId]);
+        // Al crear la clase, la aplicación navega sola a su ficha: sin esperar a que termine, el
+        // siguiente paso se ejecuta sobre la página vieja («detached Frame»).
+        await esperar(2500);
+        await profe.goto(`${BASE}/profesor/clases/${nueva[0].id}`, { waitUntil: "domcontentloaded" });
+        await esperar(3000);
+        await profe.evaluate((correo) => {
+          const c = document.querySelector("textarea") as HTMLTextAreaElement | null;
+          if (!c) return;
+          Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(c, correo);
+          c.dispatchEvent(new Event("input", { bubbles: true }));
+        }, yaEsta[0].email);
+        await esperar(500);
+        // El botón del formulario y el de la ventana de confirmación se llaman igual: el primero se
+        // busca DENTRO del form y el segundo dentro del diálogo.
+        await profe.evaluate(() => {
+          const b = Array.from(document.querySelectorAll("form button")).find((x) => /Enviar invitaciones/i.test(x.textContent ?? ""));
+          (b as HTMLElement | undefined)?.click();
+        });
+        await esperar(900);
+        await profe.evaluate(() => {
+          const dialogo = document.querySelector("[role='dialog']");
+          const b = Array.from(dialogo?.querySelectorAll("button") ?? []).find((x) => /Enviar invitaciones/i.test(x.textContent ?? ""));
+          (b as HTMLElement | undefined)?.click();
+        });
+        await esperar(4500);
+        const { rows: dentro } = await client.query(
+          `SELECT 1 FROM alumnos_clase a JOIN dietistas d ON d.id = a."alumnoId"
+            WHERE a."claseId" = $1 AND d.email = $2 AND a.activa`, [nueva[0].id, yaEsta[0].email]);
+        comprobar("un alumno que ya estaba entra aunque no queden plazas", dentro.length === 1);
+        comprobar("y la bolsa no se mueve", (await plazasEnPantalla(claseA)) === 0,
+          `${await plazasEnPantalla(claseA)} libres`);
+
+        // Pero uno NUEVO no: ahí sí hace falta plaza, y no la hay.
+        await client.query(
+          `UPDATE clases SET "invitacionAbierta" = true, "tokenInvitacion" = replace(gen_random_uuid()::text,'-','')
+            WHERE id = $1`, [nueva[0].id]);
+        const { rows: tkNueva } = await client.query(`SELECT "tokenInvitacion" FROM clases WHERE id = $1`, [nueva[0].id]);
+        const deFuera = await (await navegador.createBrowserContext()).newPage();
+        await deFuera.setViewport({ width: 1440, height: 950 });
+        deFuera.setDefaultNavigationTimeout(90_000);
+        await deFuera.goto(`${BASE}/clase/${tkNueva[0].tokenInvitacion}`, { waitUntil: "networkidle0" });
+        await esperar(2000);
+        await altaPorElEnlace(deFuera, `${MARCA.toLowerCase()}.deFuera@prueba.dev`);
+        const { rows: colado } = await client.query(
+          `SELECT 1 FROM dietistas WHERE email = $1`, [`${MARCA.toLowerCase()}.defuera@prueba.dev`]);
+        comprobar("pero uno nuevo no se cuela por el enlace", colado.length === 0, `${colado.length} creada(s)`);
+        await deFuera.close();
+      }
+    }
+
     await limpiar(client);
   } finally {
     await navegador.close();

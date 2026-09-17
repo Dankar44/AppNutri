@@ -239,6 +239,13 @@ async function main() {
     comprobar("con el calendario de la app, no el del navegador", nativos === 0, `inputs date nativos: ${nativos}`);
     await foto(profe, "02-nueva-clase");
     await escribir(profe, 'input[placeholder="Dietoterapia 3º A"]', `${MARCA} Dietoterapia`);
+    // Cuántos alumnos son: el formulario lo pide desde el 9 sep 2026 y sin ese número la clase no
+    // admite altas ni por correo ni por enlace.
+    comprobar("y pregunta cuántos alumnos son", (await texto(profe)).includes("¿Cuántos alumnos hay en tu clase?"));
+    // Por su etiqueta: los selectores de vista gorda («el primer input numérico») cogían la fecha
+    // de inicio, porque el campo del número va después de las fechas.
+    comprobar("y se puede escribir cuántos son",
+      await escribirEnCampo(profe, "¿Cuántos alumnos hay en tu clase?", "20"));
     await esperar(300);
     await profe.evaluate(() => (document.querySelector('form button[type="submit"]') as HTMLElement | null)?.click());
     await esperar(2500);
@@ -247,6 +254,8 @@ async function main() {
               "tokenInvitacion", "profesorId" FROM clases WHERE nombre = $1`,
       [`${MARCA} Dietoterapia`]);
     comprobar("la clase se crea", cl.length === 1);
+    const { rows: conCupo } = await client.query(`SELECT "cupoEnlace" FROM clases WHERE id = $1`, [cl[0].id]);
+    comprobar("y nace con el número de alumnos puesto", conCupo[0]?.cupoEnlace === 20, `cupo=${conCupo[0]?.cupoEnlace}`);
     const claseId = cl[0].id as string;
     comprobar("con sus dos fechas en la base", !!cl[0].fechaInicioCurso && !!cl[0].fechaFinCurso,
       `${String(cl[0].fechaInicioCurso).slice(0, 10)} → ${String(cl[0].fechaFinCurso).slice(0, 10)}`);

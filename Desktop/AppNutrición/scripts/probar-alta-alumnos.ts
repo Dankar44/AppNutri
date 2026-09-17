@@ -272,9 +272,10 @@ async function main() {
       // esto la pantalla sigue con las de antes y el botón sale apagado por un número viejo.
       await p1.reload({ waitUntil: "networkidle0" });
       await esperar(2000);
-      // El tope se pone arriba a la derecha, no dentro del enlace (Guillermo, 9 sep 2026).
+      // El tope se edita pulsando el propio contador de la cabecera («N alumnos en tu clase»), que
+      // desde el rediseño del 9 sep 2026 ES el botón: ya no hay un enlace «Cambiar» aparte.
       await p1.evaluate(() => {
-        const b = Array.from(document.querySelectorAll("button")).find((x) => /^Cambiar$/i.test(x.textContent?.trim() ?? ""));
+        const b = Array.from(document.querySelectorAll("button")).find((x) => /alumnos en tu clase/i.test(x.textContent ?? ""));
         (b as HTMLElement | undefined)?.click();
       });
       await esperar(600);
@@ -297,6 +298,8 @@ async function main() {
         const b = Array.from(document.querySelectorAll("button")).find((x) => /^Guardar$/i.test(x.textContent?.trim() ?? ""));
         return b ? (b as HTMLButtonElement).disabled : "no está";
       });
+      if (apagado === "no está") {
+      }
       comprobar("y no deja guardarlo", apagado === true, String(apagado));
 
       await escribirCupo(hay[0].n + 1);
@@ -312,8 +315,10 @@ async function main() {
       await esperar(800);
       // Cambiar el número toca lo que la facultad tiene vendido: se pregunta antes.
       comprobar("avisa antes de cambiar el tope", /Es el total de tu clase/i.test(await texto(p1)));
+      // El de confirmar va DENTRO del diálogo: fuera hay otro «Guardar» que se llama igual.
       await p1.evaluate(() => {
-        const b = Array.from(document.querySelectorAll("button")).find((x) => /^Guardar$/i.test(x.textContent?.trim() ?? ""));
+        const dialogo = document.querySelector("[role='dialog']");
+        const b = Array.from(dialogo?.querySelectorAll("button") ?? []).find((x) => /^Guardar$/i.test(x.textContent?.trim() ?? ""));
         (b as HTMLElement | undefined)?.click();
       });
       await esperar(3500);
@@ -336,22 +341,28 @@ async function main() {
       `SELECT COUNT(*)::int n FROM alumnos_clase WHERE "claseId" = $1 AND activa`, [clase1]);
     await client.query(`UPDATE clases SET "cupoEnlace" = $2 WHERE id = $1`, [clase1, dentroAhora[0].n]);
     await client.query(`UPDATE licencias_docentes SET "maxAlumnos" = 99 WHERE id = $1`, [licenciaId]);
+    // Recargar tras tocarlo por SQL: si no, la pantalla sigue con los números de antes y lo que se
+    // comprueba después no es lo que se está probando.
+    await p1.reload({ waitUntil: "networkidle0" });
+    await esperar(2000);
+    // Se ve ANTES de intentarlo, también desde la pestaña de correos: el contador de la cabecera
+    // dice cuántos caben y cuántos van, y con la clase llena los dos números coinciden (Guillermo,
+    // 9 sep 2026: "pone 1 libre y no puedo enviarle").
+    const cabecera = (await texto(p1)).split("\n").find((l) => /alumnos en tu clase/i.test(l)) ?? "";
+    const cifras = cabecera.match(/(\d+)\s*alumnos en tu clase · van (\d+)/i);
+    comprobar("el contador de la cabecera ya enseña que está llena",
+      !!cifras && Number(cifras[2]) >= Number(cifras[1]), cabecera || "no sale el contador");
     await escribirCorreos(p1, "mastope@pruebaalta.dev");
     await pulsar(p1, "Enviar invitaciones", "form");
     await confirmarAlta(p1);
+    // `textoDelToast` lee lo que haya en ese instante, no espera: hay que darle tiempo a salir.
     await esperar(3500);
-    // Y se ve ANTES de intentarlo, también desde la pestaña de correos: el número de arriba es el
-    // de la facultad y el que corta es el de la clase (Guillermo, 9 sep 2026: "pone 1 libre y no
-    // puedo enviarle").
-    comprobar("se avisa de que la clase está en su tope, sin tener que intentarlo",
-      /está en su tope/i.test(await texto(p1)),
-      (await texto(p1)).split("\n").find((l) => /tope|facultad/i.test(l)) ?? "no lo dice");
     const toastTope = await textoDelToast(p1);
     comprobar("con la clase en su tope, el correo no mete a nadie más",
       (await client.query(`SELECT 1 FROM invitaciones_docentes WHERE email = $1`, ["mastope@pruebaalta.dev"])).rows.length === 0,
       toastTope);
     comprobar("y se dice que es por el tope de la clase, no por la facultad",
-      /en su tope/i.test(toastTope), toastTope);
+      /en su tope/i.test(toastTope), toastTope || "sin aviso");
     // Se deja como estaba para lo que viene después.
     await client.query(`UPDATE clases SET "cupoEnlace" = NULL WHERE id = $1`, [clase1]);
     await client.query(`UPDATE licencias_docentes SET "maxAlumnos" = 4 WHERE id = $1`, [licenciaId]);
@@ -440,6 +451,9 @@ async function main() {
       const b = Array.from(document.querySelectorAll("button")).find((x) => /Abrir el enlace/i.test(x.textContent ?? ""));
       return (b as HTMLButtonElement | undefined)?.disabled ?? false;
     }));
+    // El número de alumnos se pone en la cabecera y hay que GUARDARLO: escribirlo no basta desde
+    // el rediseño del 9 sep 2026, porque cambiarlo toca lo que la facultad tiene vendido y se
+    // pregunta antes.
     await p1.evaluate(() => {
       const caja = Array.from(document.querySelectorAll("input")).find((i) => i.inputMode === "numeric");
       if (!caja) return;
@@ -448,6 +462,19 @@ async function main() {
       caja.dispatchEvent(new Event("input", { bubbles: true }));
     });
     await esperar(500);
+    await p1.evaluate(() => {
+      const b = Array.from(document.querySelectorAll("button")).find((x) => /^Guardar$/i.test(x.textContent?.trim() ?? ""));
+      (b as HTMLElement | undefined)?.click();
+    });
+    await esperar(900);
+    await p1.evaluate(() => {
+      const dialogo = document.querySelector("[role='dialog']");
+      const b = Array.from(dialogo?.querySelectorAll("button") ?? []).find((x) => /^Guardar$/i.test(x.textContent?.trim() ?? ""));
+      (b as HTMLElement | undefined)?.click();
+    });
+    await esperar(3000);
+    await pulsar(p1, "Con un enlace");
+    await esperar(600);
     await pulsar(p1, "Abrir el enlace");
     await esperar(3000);
     const { rows: tok } = await client.query(

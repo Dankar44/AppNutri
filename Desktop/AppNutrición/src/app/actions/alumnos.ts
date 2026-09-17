@@ -275,7 +275,7 @@ export async function cambiarCupoClase(
 
   const clase = await prisma.clase.findFirst({
     where: { id: claseId, ...claseQueLleva(profesor.dietistaId, profesor.licencia?.id ?? null) },
-    select: { id: true, licenciaDocenteId: true },
+    select: { id: true, licenciaDocenteId: true, licenciaDocente: { select: { maxAlumnos: true } } },
   });
   if (!clase) return { ok: false, error: t("docencia.claseNoEncontrada") };
 
@@ -283,11 +283,18 @@ export async function cambiarCupoClase(
   if (!Number.isFinite(pedido) || pedido < 1) return { ok: false, error: t("docencia.cupoObligatorio") };
 
   try {
-    const libres = clase.licenciaDocenteId ? await plazasLibresDeLicencia(clase.licenciaDocenteId) : 0;
+  // El tope de una clase se mide contra las LICENCIAS de la facultad, no contra las plazas que
+  // quedan libres. Un alumno distinto ocupa una plaza esté en una clase o en cinco, así que una
+  // clase nunca puede tener más alumnos que licencias hay; pero sí puede tenerlas todas aunque la
+  // bolsa esté gastada, porque pueden ser los MISMOS de otra clase y esos no vuelven a gastar.
+  //
+  // Medirlo contra las libres dejaba al profesor encerrado: con 10 licencias y sus 10 alumnos ya
+  // en una clase, no podía crear la clase del segundo cuatrimestre con esos mismos 10 (Guillermo,
+  // 17 sep 2026). Quien protege la bolsa de verdad es el alta, alumno a alumno: `conPlazaDeLaBolsa`
+  // solo cobra plaza al que no la ocupaba ya.
+    const licencias = clase.licenciaDocente?.maxAlumnos ?? 0;
     const dentro = await prisma.alumnoClase.count({ where: { claseId, activa: true } });
-    if (pedido > dentro + libres) {
-      return { ok: false, error: t("docencia.cupoSePasaDeLaBolsa", { n: dentro + libres }) };
-    }
+    if (pedido > licencias) return { ok: false, error: t("docencia.cupoSePasaDeLaBolsa", { n: licencias }) };
     if (pedido < dentro) return { ok: false, error: t("docencia.cupoSinSitio", { n: dentro }) };
     await prisma.clase.update({ where: { id: claseId }, data: { cupoEnlace: pedido } });
     revalidatePath(`/profesor/clases/${claseId}`);

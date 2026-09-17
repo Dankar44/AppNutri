@@ -140,13 +140,21 @@ export async function crearClase(data: {
   }
   if (cursoAlReves(inicio, fin)) return { ok: false, error: t("docencia.cursoAlReves") };
 
-  // El número de alumnos es del profesor, pero no puede pasarse de lo que le queda a su facultad.
+  // El tope de una clase se mide contra las LICENCIAS de la facultad, no contra las plazas que
+  // quedan libres. Un alumno distinto ocupa una plaza esté en una clase o en cinco, así que una
+  // clase nunca puede tener más alumnos que licencias hay; pero sí puede tenerlas todas aunque la
+  // bolsa esté gastada, porque pueden ser los MISMOS de otra clase y esos no vuelven a gastar.
+  //
+  // Medirlo contra las libres dejaba al profesor encerrado: con 10 licencias y sus 10 alumnos ya
+  // en una clase, no podía crear la clase del segundo cuatrimestre con esos mismos 10 (Guillermo,
+  // 17 sep 2026). Quien protege la bolsa de verdad es el alta, alumno a alumno: `conPlazaDeLaBolsa`
+  // solo cobra plaza al que no la ocupaba ya.
   let cupo: number | null = null;
   if (data.cupoEnlace != null) {
     const pedido = Math.floor(Number(data.cupoEnlace));
     if (!Number.isFinite(pedido) || pedido < 1) return { ok: false, error: t("docencia.cupoObligatorio") };
-    const libres = profesor.licencia ? await plazasLibresDeLicencia(profesor.licencia.id) : 0;
-    if (pedido > libres) return { ok: false, error: t("docencia.cupoSePasaDeLaBolsa", { n: libres }) };
+    const licencias = profesor.licencia?.maxAlumnos ?? 0;
+    if (pedido > licencias) return { ok: false, error: t("docencia.cupoSePasaDeLaBolsa", { n: licencias }) };
     cupo = pedido;
   }
 

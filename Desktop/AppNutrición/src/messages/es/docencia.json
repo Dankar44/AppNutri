@@ -188,7 +188,7 @@
     "confirmarAltaTexto": "{n, plural, =1 {Consume 1 plaza del curso} other {Consume # plazas del curso}} y no vuelven hasta el 31 de agosto, aunque después se vaya alguien. Los que ya estén en la clase no gastan plaza.",
     "cupoPlaceholder": "60",
     "plazasDe": "{usadas} de {total} en la facultad",
-    "cupoSePasa": "Como mucho {n}: es lo que cabe entre los que ya tienes y lo que le queda a tu facultad.",
+    "cupoSePasa": "Como mucho {n}: son las licencias de alumno de tu facultad. Los que ya estén en otra clase no gastan otra.",
     "resClaseLlena": "{n} no caben: tu clase está en su tope",
     "resEsProfesor": "{n} son profesores y no pueden ser alumnos",
     "cupoSinSitio": "Ya tienes {n} alumnos: pon más de {n} o el enlace nace lleno y no sirve para nada.",
@@ -201,7 +201,8 @@
     "confirmarTopeTitulo": "¿Poner el tope de tu clase en {n} alumnos?",
     "confirmarTopeTexto": "Es el total de tu clase: se llene por correo o por el enlace, no entrarán más de {n}. A tu facultad le quedan {libres} plazas libres, y solo se gastan cuando alguien entra de verdad.",
     "alumnosEnTuClase": "alumnos en tu clase · van {usadas}",
-    "plazasNuevosAyuda": "{n, plural, =0 {No quedan plazas para alumnos nuevos} one {Queda # plaza para un alumno nuevo} other {Quedan # plazas para alumnos nuevos}}. Quien ya esté en otra clase de tu facultad este curso no gasta otra."
+    "plazasNuevosAyuda": "{n, plural, =0 {No quedan plazas para alumnos nuevos} one {Queda # plaza para un alumno nuevo} other {Quedan # plazas para alumnos nuevos}}. Quien ya esté en otra clase de tu facultad este curso no gasta otra.",
+    "cupoAyuda": "El total de tu clase, contando los {dentro} que ya tienes. Como mucho {n}, las licencias de tu facultad."
   },
   "cursoTerminado": {
     "titulo": "Se ha acabado tu año escolar",

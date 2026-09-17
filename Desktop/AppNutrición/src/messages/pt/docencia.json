@@ -188,7 +188,7 @@
     "confirmarAltaTexto": "{n, plural, =1 {Consome 1 vaga do curso} other {Consome # vagas do curso}} e não voltam até 31 de agosto, mesmo que depois alguém saia. Quem já estiver na turma não gasta vaga.",
     "cupoPlaceholder": "60",
     "plazasDe": "{usadas} de {total} na faculdade",
-    "cupoSePasa": "No máximo {n}: é o que cabe entre os que já tem e o que resta à sua faculdade.",
+    "cupoSePasa": "No máximo {n}: são as licenças de aluno da sua faculdade. Os que já estiverem em outra turma não gastam outra.",
     "resClaseLlena": "{n} não cabem: sua turma está no limite",
     "resEsProfesor": "{n} são professores e não podem ser alunos",
     "cupoSinSitio": "Você já tem {n} alunos: coloque mais de {n} ou o link nasce cheio e não serve para nada.",
@@ -201,7 +201,8 @@
     "confirmarTopeTitulo": "Definir o limite da sua turma em {n} alunos?",
     "confirmarTopeTexto": "É o total da sua turma: seja por email ou pelo link, não entrarão mais de {n}. Sua faculdade tem {libres} vagas livres, e só se gastam quando alguém entra de verdade.",
     "alumnosEnTuClase": "alunos na sua turma · já são {usadas}",
-    "plazasNuevosAyuda": "{n, plural, =0 {Não restam vagas para alunos novos} one {Resta # vaga para um aluno novo} other {Restam # vagas para alunos novos}}. Quem já estiver em outra turma da sua faculdade neste curso não gasta outra."
+    "plazasNuevosAyuda": "{n, plural, =0 {Não restam vagas para alunos novos} one {Resta # vaga para um aluno novo} other {Restam # vagas para alunos novos}}. Quem já estiver em outra turma da sua faculdade neste curso não gasta outra.",
+    "cupoAyuda": "O total da sua turma, contando os {dentro} que já tem. No máximo {n}, as licenças da sua faculdade."
   },
   "cursoTerminado": {
     "titulo": "O seu ano letivo terminou",

@@ -50,7 +50,11 @@ export function AltaAlumnos({
   const yaDentro = alumnosActivos ?? 0;
   // Como mucho, los que ya tiene más lo que le quede a la facultad: el número es el TOTAL de la
   // clase, no las plazas nuevas.
-  const topeMaximo = yaDentro + (plazas?.libres ?? 0);
+  // El máximo son las LICENCIAS de la facultad, no las plazas que quedan libres: un alumno que ya
+  // está en otra clase no vuelve a gastar, así que una clase puede tenerlas todas aunque la bolsa
+  // esté gastada (Guillermo, 17 sep 2026: sus mismos 10 alumnos en la clase del cuatrimestre
+  // siguiente). La bolsa la protege el alta, alumno a alumno.
+  const topeMaximo = plazas?.total ?? 0;
   const topeSePasa = !!topeNuevo && !!plazas && Number(topeNuevo) > topeMaximo;
   // Y tiene que caber alguien: con el mismo número que ya hay, no se puede dar de alta a nadie.
   const topeSinSitio = !!topeNuevo && Number(topeNuevo) <= yaDentro;
