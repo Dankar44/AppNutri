@@ -22,7 +22,12 @@ function contrasenasIguales(recibida: string, esperada: string): boolean {
   return diferencia === 0;
 }
 
-export type AdminRole = "admin" | "creator";
+/**
+ * - `admin`   → el panel entero, con sus acciones.
+ * - `creator` → solo la pantalla de crear cuentas.
+ * - `lector`  → ve el panel entero y no puede ejecutar ninguna acción que escriba.
+ */
+export type AdminRole = "admin" | "creator" | "lector";
 
 export const ADMIN_COOKIE = "annonia-admin-session";
 const ADMIN_SESSION_DAYS = 7;
@@ -41,6 +46,10 @@ function getAdminEmails(): string[] {
 
 function getCreatorEmails(): string[] {
   return parseEmails(process.env.ADMIN_CREATOR_EMAILS);
+}
+
+function getLectorEmails(): string[] {
+  return parseEmails(process.env.ADMIN_LECTOR_EMAILS);
 }
 
 function getSecret() {
@@ -65,8 +74,12 @@ export function isCreatorEmail(email: string): boolean {
   return getCreatorEmails().includes(email.toLowerCase());
 }
 
+export function isLectorEmail(email: string): boolean {
+  return getLectorEmails().includes(email.toLowerCase());
+}
+
 export function isAnyAdminEmail(email: string): boolean {
-  return isAdminEmail(email) || isCreatorEmail(email);
+  return isAdminEmail(email) || isCreatorEmail(email) || isLectorEmail(email);
 }
 
 export function verifyAdminCredentials(email: string, password: string): { valid: true; role: AdminRole } | false {
@@ -85,6 +98,11 @@ export function verifyAdminCredentials(email: string, password: string): { valid
   const creatorPassword = cleanEnv(process.env.ADMIN_CREATOR_PASSWORD);
   if (creatorPassword && isCreatorEmail(e) && contrasenasIguales(password, creatorPassword)) {
     return { valid: true, role: "creator" };
+  }
+
+  const lectorPassword = cleanEnv(process.env.ADMIN_LECTOR_PASSWORD);
+  if (lectorPassword && isLectorEmail(e) && contrasenasIguales(password, lectorPassword)) {
+    return { valid: true, role: "lector" };
   }
 
   return false;
@@ -121,7 +139,7 @@ export async function verifyAdminToken(token: string): Promise<{ email: string; 
     const email = payload.email as string;
     const role = payload.role as string;
     if (!email || !isAnyAdminEmail(email)) return null;
-    if (role !== "admin" && role !== "creator") return null;
+    if (role !== "admin" && role !== "creator" && role !== "lector") return null;
     return { email, role };
   } catch {
     return null;
@@ -133,8 +151,31 @@ export async function clearAdminSession() {
   cookieStore.delete(ADMIN_COOKIE);
 }
 
-export async function requireAdmin(): Promise<{ email: string; role: AdminRole } | null> {
+/** Se lanza cuando una cuenta de solo lectura intenta ejecutar algo que escribe. */
+export class SoloLecturaError extends Error {
+  constructor() {
+    super("Esta cuenta de administración es de solo lectura y no puede realizar esta acción.");
+    this.name = "SoloLecturaError";
+  }
+}
+
+/**
+ * Comprueba la sesión de administración y, salvo que se diga lo contrario, **exige permiso
+ * de escritura**.
+ *
+ * El valor por defecto es a propósito: una acción nueva que no declare nada queda cerrada
+ * para el rol `lector`, en vez de abierta. Si algún día se olvida marcar una, el fallo deja
+ * el panel más restrictivo, nunca más permisivo.
+ *
+ * Las acciones que solo consultan datos pasan `{ soloLectura: true }`.
+ */
+export async function requireAdmin(
+  opts?: { soloLectura?: boolean },
+): Promise<{ email: string; role: AdminRole } | null> {
   const session = await getAdminSession();
   if (!session) return null;
+  if (session.role === "lector" && !opts?.soloLectura) {
+    throw new SoloLecturaError();
+  }
   return session;
 }

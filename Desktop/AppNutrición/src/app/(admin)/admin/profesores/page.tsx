@@ -20,8 +20,8 @@ export default async function ProfesoresAdminPage({
 }: {
   searchParams: Promise<{ licencia?: string; estado?: string; buscar?: string }>;
 }) {
-  const admin = await requireAdmin();
-  if (!admin || admin.role !== "admin") redirect("/admin-login");
+  const admin = await requireAdmin({ soloLectura: true });
+  if (!admin || (admin.role !== "admin" && admin.role !== "lector")) redirect("/admin-login");
 
   const { licencia, estado, buscar } = await searchParams;
   const locale = await getLocale();

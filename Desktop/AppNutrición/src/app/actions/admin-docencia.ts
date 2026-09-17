@@ -101,8 +101,8 @@ async function contarMiembros(licenciaId: string) {
 }
 
 export async function getLicenciasDocentes(busqueda?: string): Promise<LicenciaDocenteItem[]> {
-  const admin = await requireAdmin();
-  if (!admin || admin.role !== "admin") redirect("/admin-login");
+  const admin = await requireAdmin({ soloLectura: true });
+  if (!admin || (admin.role !== "admin" && admin.role !== "lector")) redirect("/admin-login");
 
   const search = busqueda?.trim();
 
@@ -135,8 +135,8 @@ export async function getLicenciasDocentes(busqueda?: string): Promise<LicenciaD
 }
 
 export async function getLicenciaDocenteDetalle(licenciaId: string): Promise<LicenciaDocenteDetalle | null> {
-  const admin = await requireAdmin();
-  if (!admin || admin.role !== "admin") redirect("/admin-login");
+  const admin = await requireAdmin({ soloLectura: true });
+  if (!admin || (admin.role !== "admin" && admin.role !== "lector")) redirect("/admin-login");
 
   const licencia = await prisma.licenciaDocente.findUnique({
     where: { id: licenciaId },
@@ -210,7 +210,7 @@ export async function crearLicenciaDocente(data: {
   notas?: string;
 }): Promise<{ ok: boolean; error?: string; licenciaId?: string }> {
   const admin = await requireAdmin();
-  if (!admin || admin.role !== "admin") redirect("/admin-login");
+  if (!admin || (admin.role !== "admin" && admin.role !== "lector")) redirect("/admin-login");
 
   const t = await getTranslations("validation");
 
@@ -263,7 +263,7 @@ export async function editarLicenciaDocente(
   },
 ): Promise<{ ok: boolean; error?: string }> {
   const admin = await requireAdmin();
-  if (!admin || admin.role !== "admin") redirect("/admin-login");
+  if (!admin || (admin.role !== "admin" && admin.role !== "lector")) redirect("/admin-login");
 
   const t = await getTranslations("validation");
 
@@ -326,8 +326,8 @@ export async function editarLicenciaDocente(
  * Lo que sigue sin poderse es estar en dos a la vez: eso pide un cambio de modelo y está apuntado.
  */
 export async function buscarDietistasParaDocencia(busqueda: string) {
-  const admin = await requireAdmin();
-  if (!admin || admin.role !== "admin") redirect("/admin-login");
+  const admin = await requireAdmin({ soloLectura: true });
+  if (!admin || (admin.role !== "admin" && admin.role !== "lector")) redirect("/admin-login");
 
   const search = busqueda.trim();
   if (!search) return [];
@@ -368,7 +368,7 @@ export async function asignarProfesorLicencia(data: {
   password?: string;
 }): Promise<{ ok: boolean; error?: string; dietistaId?: string }> {
   const admin = await requireAdmin();
-  if (!admin || admin.role !== "admin") redirect("/admin-login");
+  if (!admin || (admin.role !== "admin" && admin.role !== "lector")) redirect("/admin-login");
 
   const t = await getTranslations("validation");
 
@@ -446,7 +446,7 @@ export async function sacarProfesorDeLaUniversidad(
   dietistaId: string,
 ): Promise<{ ok: boolean; error?: string }> {
   const admin = await requireAdmin();
-  if (!admin || admin.role !== "admin") redirect("/admin-login");
+  if (!admin || (admin.role !== "admin" && admin.role !== "lector")) redirect("/admin-login");
 
   const t = await getTranslations("validation");
 
@@ -477,7 +477,7 @@ export async function sacarProfesorDeLaUniversidad(
 
 export async function quitarRolDocente(dietistaId: string): Promise<{ ok: boolean; error?: string }> {
   const admin = await requireAdmin();
-  if (!admin || admin.role !== "admin") redirect("/admin-login");
+  if (!admin || (admin.role !== "admin" && admin.role !== "lector")) redirect("/admin-login");
 
   const t = await getTranslations("validation");
 
@@ -550,8 +550,8 @@ export async function getAlumnosAdmin(filtros?: {
   estado?: string;
   buscar?: string;
 }): Promise<AlumnoAdmin[]> {
-  const admin = await requireAdmin();
-  if (!admin || admin.role !== "admin") return [];
+  const admin = await requireAdmin({ soloLectura: true });
+  if (!admin || (admin.role !== "admin" && admin.role !== "lector")) return [];
 
   const buscar = filtros?.buscar?.trim();
   const matriculas = await prisma.alumnoClase.findMany({
@@ -629,7 +629,7 @@ export async function cambiarAccesoAlumno(
   darAcceso: boolean,
 ): Promise<{ ok: boolean; error?: string }> {
   const admin = await requireAdmin();
-  if (!admin || admin.role !== "admin") redirect("/admin-login");
+  if (!admin || (admin.role !== "admin" && admin.role !== "lector")) redirect("/admin-login");
   const t = await getTranslations("validation");
 
   try {
@@ -682,8 +682,8 @@ export async function getProfesoresAdmin(filtros?: {
   estado?: string;
   buscar?: string;
 }): Promise<ProfesorAdmin[]> {
-  const admin = await requireAdmin();
-  if (!admin || admin.role !== "admin") redirect("/admin-login");
+  const admin = await requireAdmin({ soloLectura: true });
+  if (!admin || (admin.role !== "admin" && admin.role !== "lector")) redirect("/admin-login");
 
   const buscar = filtros?.buscar?.trim();
   const profesores = await prisma.dietista.findMany({
@@ -748,8 +748,8 @@ export async function getProfesoresAdmin(filtros?: {
 export async function getConsumoDeLicencias(): Promise<
   { id: string; institucion: string; maxAlumnos: number; ocupadas: number; libres: number; activa: boolean }[]
 > {
-  const admin = await requireAdmin();
-  if (!admin || admin.role !== "admin") return [];
+  const admin = await requireAdmin({ soloLectura: true });
+  if (!admin || (admin.role !== "admin" && admin.role !== "lector")) return [];
 
   const licencias = await prisma.licenciaDocente.findMany({
     orderBy: { institucion: "asc" },
@@ -789,7 +789,7 @@ export async function renovarLicenciaDocente(data: {
   maxAlumnos: number;
 }): Promise<{ ok: boolean; error?: string }> {
   const admin = await requireAdmin();
-  if (!admin || admin.role !== "admin") redirect("/admin-login");
+  if (!admin || (admin.role !== "admin" && admin.role !== "lector")) redirect("/admin-login");
   const t = await getTranslations("validation");
 
   const profes = Math.floor(Number(data.maxProfesores));

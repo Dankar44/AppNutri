@@ -14,10 +14,11 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin({ soloLectura: true });
   if (!admin) redirect("/admin-login");
 
-  const mensajesCount = admin.role === "admin" ? await getTotalNoLeidosSoporteAdmin() : 0;
+  const mensajesCount =
+    admin.role === "admin" || admin.role === "lector" ? await getTotalNoLeidosSoporteAdmin() : 0;
 
   return (
     <div className="flex min-h-screen">

@@ -30,7 +30,7 @@ export async function getConversacionesSoporte(
   busqueda?: string,
 ): Promise<ConversacionSoporteItem[]> {
   const t = await getTranslations("validation");
-  const admin = await requireAdmin();
+  const admin = await requireAdmin({ soloLectura: true });
   if (!admin) throw new Error(t("auth.noAutorizado"));
 
   const q = (busqueda ?? "").trim().toLowerCase();
@@ -87,7 +87,7 @@ export async function getMensajesSoporteAdmin(
   limit = 100,
 ): Promise<MensajeSoporteData[]> {
   const t = await getTranslations("validation");
-  const admin = await requireAdmin();
+  const admin = await requireAdmin({ soloLectura: true });
   if (!admin) throw new Error(t("auth.noAutorizado"));
 
   return prisma.$queryRawUnsafe<MensajeSoporteData[]>(
@@ -170,7 +170,7 @@ export async function marcarSoporteLeidoAdmin(dietistaId: string): Promise<void>
 }
 
 export async function getTotalNoLeidosSoporteAdmin(): Promise<number> {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin({ soloLectura: true });
   if (!admin) return 0;
 
   const rows = await prisma.$queryRawUnsafe<{ count: bigint }[]>(
