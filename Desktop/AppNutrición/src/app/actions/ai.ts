@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
-import { isAIConfigured } from "@/lib/openai";
+import { ErrorGeneracionIA, isAIConfigured } from "@/lib/openai";
 import { generateDietPlan } from "@/lib/ai/generate-plan";
 import { revalidatePath } from "next/cache";
 import type { MacroObjetivos } from "@/lib/ai/types";
@@ -12,6 +12,7 @@ import { getCompanyMemberIds } from "@/lib/empresa-utils";
 import { sanitizeString, validateNumber, LIMITS } from "@/lib/validation";
 import { getTranslations } from "next-intl/server";
 import { getAlimentosGlobales, type AlimentoGlobalCached } from "@/lib/alimentos-cache";
+import { isNextNavigation } from "@/lib/utils";
 
 // Cuántos alimentos globales incluir en el prompt de la IA por categoría.
 // Da más cupo a las categorías que forman el grueso de un plan (proteínas,
@@ -259,9 +260,13 @@ export async function generarPlanIA(
 
     return { generacionId: generacion.id, plan };
   } catch (err) {
+    if (isNextNavigation(err)) throw err;
     const t = await getTranslations("validation");
-    const msg = err instanceof Error ? err.message : t("general.errorDesconocido");
-    return { error: t("generacionIA.errorAlGenerar", { msg }) };
+    console.error("Error al generar el plan con IA:", err instanceof ErrorGeneracionIA ? err.causa ?? err : err);
+    if (err instanceof ErrorGeneracionIA && err.tipo === "CAPACIDAD_DIARIA_AGOTADA") {
+      return { error: t("ai.rateLimitExhausted") };
+    }
+    return { error: t("ai.temporaryFailure") };
   }
 }
 

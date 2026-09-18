@@ -24,6 +24,18 @@ function getApiKeys(): string[] {
 
 let currentKeyIndex = 0;
 
+export type TipoErrorGeneracionIA = "CAPACIDAD_DIARIA_AGOTADA" | "FALLO_PUNTUAL";
+
+export class ErrorGeneracionIA extends Error {
+  constructor(
+    public readonly tipo: TipoErrorGeneracionIA,
+    public readonly causa?: unknown,
+  ) {
+    super(tipo);
+    this.name = "ErrorGeneracionIA";
+  }
+}
+
 export function isAIConfigured(): boolean {
   return getApiKeys().length > 0;
 }
@@ -57,15 +69,19 @@ export async function callWithRetry<T>(
   fn: (client: OpenAI) => Promise<T>,
 ): Promise<T> {
   const keys = getApiKeys();
-  const tv = await getTranslations("validation.ai");
-  if (keys.length === 0) throw new Error(tv("noApiKeys"));
+  if (keys.length === 0) {
+    const tv = await getTranslations("validation.ai");
+    throw new Error(tv("noApiKeys"));
+  }
 
-  let consecutiveRateLimits = 0;
+  let intentosFallidos = 0;
+  let ultimoTipoError: TipoErrorGeneracionIA = "FALLO_PUNTUAL";
+  let ultimoError: unknown;
   const startTime = Date.now();
 
-  while (consecutiveRateLimits < MAX_RETRIES) {
+  while (intentosFallidos < MAX_RETRIES) {
     if (Date.now() - startTime > MAX_TOTAL_MS) {
-      throw new Error(tv("timeout"));
+      throw new ErrorGeneracionIA(ultimoTipoError, ultimoError);
     }
 
     const client = getNextClient();
@@ -93,22 +109,24 @@ export async function callWithRetry<T>(
         msg.includes("no generó respuesta");
 
       if (!isRateLimit && !isJsonInvalido) {
-        throw err;
+        throw new ErrorGeneracionIA("FALLO_PUNTUAL", err);
       }
 
-      consecutiveRateLimits++;
+      intentosFallidos++;
+      ultimoTipoError = isRateLimit ? "CAPACIDAD_DIARIA_AGOTADA" : "FALLO_PUNTUAL";
+      ultimoError = err;
 
       // Ante un JSON inválido no hay que esperar: el problema no es la cuota, es que esa
       // respuesta concreta salió mal. Se reintenta enseguida, y con la siguiente clave por
       // la rotación.
       if (isJsonInvalido && !isRateLimit) continue;
 
-      const ciclosCompletos = Math.floor(consecutiveRateLimits / keys.length);
+      const ciclosCompletos = Math.floor(intentosFallidos / keys.length);
       const waitMs = Math.min(3000 + ciclosCompletos * 5000, 30000);
 
       await new Promise((resolve) => setTimeout(resolve, waitMs));
     }
   }
 
-  throw new Error(tv("rateLimitExhausted"));
+  throw new ErrorGeneracionIA(ultimoTipoError, ultimoError);
 }
