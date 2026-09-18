@@ -176,6 +176,7 @@ export interface PlanPDFData {
   pacienteNombre: string;
   entregaDeClase?: DatosDeLaEntrega | null;
   dietistaNombre: string;
+  numColegiado?: string | null;
   dias: Dia[];
   recomendaciones: string;
   caloriasObjetivo?: number | null;
@@ -220,6 +221,9 @@ function generateCSS(t: PdfColorTheme): string {
   .cover-clase span { display: block; margin-top: 4px; font-size: 12px; font-weight: 400; color: ${t.textLight ?? t.textMedium}; }
   .cover-logo { margin-top: 60px; font-size: 24px; font-weight: 800; color: ${t.primary}; }
   .cover-logo-img { max-width: 180px; max-height: 80px; }
+  .cover-dietista { display: inline-flex; flex-direction: column; gap: 3px; margin-top: 18px; padding: 8px 18px; border-top: 1px solid ${t.border}; color: ${t.textMedium}; font-size: 11px; line-height: 1.35; }
+  .cover-dietista-nombre { font-weight: 600; }
+  .cover-dietista-numero { font-size: 10px; color: ${t.textLight ?? t.textMedium}; }
   .cover-platform { text-align: center; font-size: 18px; font-weight: 700; color: #c0c8c3; letter-spacing: 1px; margin-top: 60px; }
 
   /* Summary table */
@@ -352,6 +356,10 @@ export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
 
   const footer = `<div class="footer">${brandName} &mdash; ${fecha}<div class="footer-platform">annonia.com</div></div>`;
   const pacNombre = escapeHtml(data.pacienteNombre).toUpperCase();
+  const numColegiado = data.numColegiado?.trim();
+  const datosDietista = numColegiado
+    ? `<div class="cover-dietista"><span class="cover-dietista-nombre">${tt("planDietetico.portada.profesional", { dietistaNombre: escapeHtml(data.dietistaNombre) })}</span><span class="cover-dietista-numero">${tt("planDietetico.portada.numeroColegiado", { numColegiado: escapeHtml(numColegiado) })}</span></div>`
+    : "";
   const header = `<table class="header"><tr><td><span class="header-name">${pacNombre}</span><br><span class="header-sub">${tt("planDietetico.header.subtitulo", { pacienteNombre: pacNombre })}</span></td><td class="header-logo">${logoHeaderHtml}</td></tr></table>`;
 
   let html = "";
@@ -363,7 +371,7 @@ export function generatePlanPDF(data: PlanPDFData, t?: TFunc): string {
     const deClase = data.entregaDeClase
       ? `<div class="cover-clase">${escapeHtml(data.entregaDeClase.alumno)}<span>${escapeHtml(data.entregaDeClase.caso)} · ${escapeHtml(data.entregaDeClase.clase)}</span></div>`
       : "";
-    html += `<div class="page cover"><div class="cover-box"><div class="cover-title">${tt("planDietetico.portada.titulo")}<br><strong>${tt("planDietetico.portada.subtitulo")}</strong></div><div class="cover-name">${pacNombre}</div>${deClase}</div><div class="cover-logo">${logoCoverHtml}</div><p class="cover-platform">Annonia</p></div>`;
+    html += `<div class="page cover"><div class="cover-box"><div class="cover-title">${tt("planDietetico.portada.titulo")}<br><strong>${tt("planDietetico.portada.subtitulo")}</strong></div><div class="cover-name">${pacNombre}</div>${deClase}</div><div class="cover-logo">${logoCoverHtml}</div>${datosDietista}<p class="cover-platform">Annonia</p></div>`;
   }
 
   // === RESUMEN SEMANAL ===

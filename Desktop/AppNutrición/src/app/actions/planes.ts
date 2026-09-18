@@ -2678,7 +2678,7 @@ export async function getPlanPDFDataDeEntrega(entregaId: string): Promise<PlanPD
 
 async function montarDatosPdf(
   plan: NonNullable<Awaited<ReturnType<typeof getPlan>>>,
-  dietista: { nombre: string; apellidos: string; temaPdf: string | null; colorPrimarioPdf: string | null; marcaPdf: string | null; pdfLogoUrl: string | null; clinica: string | null },
+  dietista: { nombre: string; apellidos: string; numColegiado: string | null; temaPdf: string | null; colorPrimarioPdf: string | null; marcaPdf: string | null; pdfLogoUrl: string | null; clinica: string | null },
 ): Promise<PlanPDFData | null> {
   const recomendaciones = await getRecomendaciones(plan.pacienteId);
 
@@ -2689,6 +2689,7 @@ async function montarDatosPdf(
     planNombre: plan.nombre,
     pacienteNombre: `${capitalizarNombre(plan.paciente.nombre)} ${capitalizarNombre(plan.paciente.apellidos)}`,
     dietistaNombre: `${dietista.nombre} ${dietista.apellidos}`,
+    numColegiado: dietista.numColegiado,
     tema,
     brandName: dietista.marcaPdf || undefined,
     logoDataUrl: dietista.pdfLogoUrl || undefined,

@@ -34,6 +34,7 @@ interface Props {
     : never;
   pacienteNombre: string;
   dietistaNombre: string;
+  numColegiado?: string | null;
   recomendaciones: string;
   horario: HorarioEntry[];
   tema?: PdfColorTheme;
@@ -146,6 +147,7 @@ export function ExportarPDFPaciente({
   plan,
   pacienteNombre,
   dietistaNombre,
+  numColegiado,
   recomendaciones,
   horario,
   tema,
@@ -187,6 +189,7 @@ export function ExportarPDFPaciente({
       planNombre: plan.nombre,
       pacienteNombre,
       dietistaNombre,
+      numColegiado,
       dias: plan.dias,
       recomendaciones,
       caloriasObjetivo: plan.caloriasObjetivo,
@@ -198,7 +201,7 @@ export function ExportarPDFPaciente({
     }, tPdf);
     const withHorario = applyHorario(html, applied, horarioHtml);
     return withHorario.replace(/<script[\s\S]*?<\/script>/gi, "");
-  }, [plan, pacienteNombre, dietistaNombre, recomendaciones, tema, brandName, logoDataUrl, clinica, applied, horarioHtml, tPdf, ocultarCalorias]);
+  }, [plan, pacienteNombre, dietistaNombre, numColegiado, recomendaciones, tema, brandName, logoDataUrl, clinica, applied, horarioHtml, tPdf, ocultarCalorias]);
 
   // Estimación inicial por nº de bloques .page; se corrige al medir alturas reales en onLoad.
   const pageEstimate = Math.max(1, (previewHtml.match(/class="page/g) || []).length);
@@ -242,6 +245,7 @@ export function ExportarPDFPaciente({
         planNombre: plan.nombre,
         pacienteNombre,
         dietistaNombre,
+        numColegiado,
         dias: plan.dias,
         recomendaciones,
         caloriasObjetivo: plan.caloriasObjetivo,
