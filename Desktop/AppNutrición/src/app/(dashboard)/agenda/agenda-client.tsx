@@ -18,6 +18,7 @@ interface Cita {
   motivo: string | null;
   estado: string;
   notas: string | null;
+  googleEventId?: string | null;
   paciente: { id: string; nombre: string; apellidos: string };
 }
 
