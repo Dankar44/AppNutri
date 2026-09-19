@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentDietista } from "./auth";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
-import { validateNumberOptional, sanitizeStringOptional } from "@/lib/validation";
+import { validateId, validateNumberOptional, sanitizeStringOptional } from "@/lib/validation";
 
 export interface MedidaFormData {
   pacienteId: string;
@@ -42,6 +42,72 @@ function calcularIMC(peso?: number, altura?: number): number | null {
   if (!peso || !altura) return null;
   const alturaM = altura / 100;
   return Math.round((peso / (alturaM * alturaM)) * 10) / 10;
+}
+
+type MetricaMedidaEditable =
+  | "peso"
+  | "altura"
+  | "perimetroCintura"
+  | "perimetroCadera"
+  | "perimetroBrazo"
+  | "grasaSubcutanea"
+  | "musculoEsqueletico"
+  | "agua"
+  | "masaOsea"
+  | "perimetroAbdomen"
+  | "grasaVisceral"
+  | "grasaCorporal"
+  | "masaMuscular"
+  | "pliegueAbdominal"
+  | "pliegueAxilar"
+  | "plieguePectoral"
+  | "pliegueSubescapular"
+  | "pliegueSuprailiaco"
+  | "pliegueTricipital"
+  | "pliegueMuslo"
+  | "colesterolHDL"
+  | "colesterolLDL"
+  | "colesterolTotal"
+  | "presionDiastolica"
+  | "presionSistolica"
+  | "trigliceridos";
+
+const LIMITES_METRICAS: Record<
+  MetricaMedidaEditable,
+  { min: number; max: number }
+> = {
+  peso: { min: 0.1, max: 500 },
+  altura: { min: 30, max: 300 },
+  perimetroCintura: { min: 0, max: 300 },
+  perimetroCadera: { min: 0, max: 300 },
+  perimetroBrazo: { min: 0, max: 300 },
+  grasaSubcutanea: { min: 0, max: 100 },
+  musculoEsqueletico: { min: 0, max: 100 },
+  agua: { min: 0, max: 100 },
+  masaOsea: { min: 0, max: 50 },
+  perimetroAbdomen: { min: 0, max: 300 },
+  grasaVisceral: { min: 0, max: 60 },
+  grasaCorporal: { min: 0, max: 100 },
+  masaMuscular: { min: 0, max: 200 },
+  pliegueAbdominal: { min: 0, max: 100 },
+  pliegueAxilar: { min: 0, max: 100 },
+  plieguePectoral: { min: 0, max: 100 },
+  pliegueSubescapular: { min: 0, max: 100 },
+  pliegueSuprailiaco: { min: 0, max: 100 },
+  pliegueTricipital: { min: 0, max: 100 },
+  pliegueMuslo: { min: 0, max: 100 },
+  colesterolHDL: { min: 0, max: 500 },
+  colesterolLDL: { min: 0, max: 500 },
+  colesterolTotal: { min: 0, max: 500 },
+  presionDiastolica: { min: 0, max: 300 },
+  presionSistolica: { min: 0, max: 300 },
+  trigliceridos: { min: 0, max: 1000 },
+};
+
+function esMetricaMedidaEditable(
+  metrica: string
+): metrica is MetricaMedidaEditable {
+  return Object.prototype.hasOwnProperty.call(LIMITES_METRICAS, metrica);
 }
 
 export async function crearMedida(data: MedidaFormData) {
@@ -208,6 +274,123 @@ export async function getMedidasEvolucion(pacienteId: string) {
   });
 }
 
+export async function actualizarNotasMedida(
+  id: string,
+  notas: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
+  if (dietista.isDemo) return { ok: false, error: t("general.noDisponibleDemo") };
+
+  const medidaId = validateId(id);
+  if (!medidaId) return { ok: false, error: t("general.errorDesconocido") };
+
+  try {
+    const medida = await prisma.medidaAntropometrica.findFirst({
+      where: {
+        id: medidaId,
+        paciente: { dietistaId: dietista.id },
+      },
+      select: { pacienteId: true },
+    });
+    if (!medida) return { ok: false, error: t("auth.noAutorizado") };
+
+    await prisma.medidaAntropometrica.update({
+      where: { id: medidaId },
+      data: { notas: sanitizeStringOptional(notas, 1000) },
+    });
+
+    revalidatePath(`/pacientes/${medida.pacienteId}`);
+    revalidatePath(`/pacientes/${medida.pacienteId}/medidas`);
+    return { ok: true };
+  } catch {
+    return { ok: false, error: t("general.errorDesconocido") };
+  }
+}
+
+export async function actualizarValorMedida(
+  id: string,
+  metrica: string,
+  valor: number,
+): Promise<{ ok: boolean; error?: string }> {
+  const t = await getTranslations("validation");
+  const dietista = await getCurrentDietista();
+  if (!dietista) return { ok: false, error: t("auth.noAutorizado") };
+  if (dietista.isDemo) return { ok: false, error: t("general.noDisponibleDemo") };
+
+  const medidaId = validateId(id);
+  if (!medidaId || !esMetricaMedidaEditable(metrica)) {
+    return { ok: false, error: t("general.errorDesconocido") };
+  }
+
+  const limites = LIMITES_METRICAS[metrica];
+  if (!Number.isFinite(valor) || valor < limites.min || valor > limites.max) {
+    return { ok: false, error: t("general.errorDesconocido") };
+  }
+
+  try {
+    const pacienteId = await prisma.$transaction(async (tx) => {
+      const medida = await tx.medidaAntropometrica.findFirst({
+        where: {
+          id: medidaId,
+          paciente: { dietistaId: dietista.id },
+        },
+        include: {
+          paciente: { select: { peso: true, altura: true } },
+        },
+      });
+      if (!medida || typeof medida[metrica] !== "number") return null;
+
+      const data = { [metrica]: valor };
+      if (metrica === "peso") {
+        Object.assign(data, {
+          imc: calcularIMC(valor, medida.altura ?? medida.paciente.altura ?? undefined),
+        });
+      } else if (metrica === "altura") {
+        Object.assign(data, {
+          imc: calcularIMC(medida.peso ?? medida.paciente.peso ?? undefined, valor),
+        });
+      }
+
+      await tx.medidaAntropometrica.update({
+        where: { id: medidaId },
+        data,
+      });
+
+      if (metrica === "peso" || metrica === "altura") {
+        const ultimaMedida = await tx.medidaAntropometrica.findFirst({
+          where: {
+            pacienteId: medida.pacienteId,
+            ...(metrica === "peso"
+              ? { peso: { not: null } }
+              : { altura: { not: null } }),
+          },
+          orderBy: [{ fecha: "desc" }, { createdAt: "desc" }],
+          select: { id: true },
+        });
+
+        if (ultimaMedida?.id === medidaId) {
+          await tx.paciente.update({
+            where: { id: medida.pacienteId },
+            data: { [metrica]: valor },
+          });
+        }
+      }
+
+      return medida.pacienteId;
+    });
+
+    if (!pacienteId) return { ok: false, error: t("auth.noAutorizado") };
+
+    revalidatePath(`/pacientes/${pacienteId}`);
+    revalidatePath(`/pacientes/${pacienteId}/medidas`);
+    return { ok: true };
+  } catch {
+    return { ok: false, error: t("general.errorDesconocido") };
+  }
+}
+
 export async function eliminarMedida(id: string) {
   const t = await getTranslations("validation");
   const dietista = await getCurrentDietista();
@@ -223,6 +406,7 @@ export async function eliminarMedida(id: string) {
   }
 
   await prisma.medidaAntropometrica.delete({ where: { id } });
+  revalidatePath(`/pacientes/${medida.pacienteId}`);
   revalidatePath(`/pacientes/${medida.pacienteId}/medidas`);
 }
 

@@ -13,6 +13,12 @@ import {
   Minus,
   Calculator,
   Plus,
+  Pencil,
+  Save,
+  X,
+  Trash2,
+  AlertTriangle,
+  Loader2,
 } from "lucide-react";
 import {
   Line,
@@ -27,7 +33,14 @@ import {
 import { useTranslations, useLocale } from "next-intl";
 import { toast } from "sonner";
 import { intlTag, type Locale } from "@/i18n/config";
-import { crearMedida, type MedidaFormData } from "@/app/actions/medidas";
+import {
+  actualizarNotasMedida,
+  actualizarValorMedida,
+  crearMedida,
+  eliminarMedida,
+  type MedidaFormData,
+} from "@/app/actions/medidas";
+import { CantidadInput } from "@/components/cantidad-input";
 import { formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useDemoGuard } from "@/contexts/demo-context";
@@ -116,90 +129,113 @@ const ANALITICOS_KEYS: { key: MetricaDb; labelKey: string }[] = [
 
 const METRIC_META: Record<
   MetricaDb,
-  { labelKey: string; unit: string; inputStep: string; inputMax: number }
+  {
+    labelKey: string;
+    unit: string;
+    inputStep: string;
+    inputMin: number;
+    inputMax: number;
+  }
 > = {
-  peso: { labelKey: "metricaPeso", unit: "kg", inputStep: "0.1", inputMax: 500 },
-  altura: { labelKey: "metricaAltura", unit: "cm", inputStep: "0.1", inputMax: 300 },
+  peso: { labelKey: "metricaPeso", unit: "kg", inputStep: "0.1", inputMin: 0.1, inputMax: 500 },
+  altura: { labelKey: "metricaAltura", unit: "cm", inputStep: "0.1", inputMin: 30, inputMax: 300 },
   perimetroCintura: {
     labelKey: "metricaCintura",
     unit: "cm",
     inputStep: "0.1",
+    inputMin: 0,
     inputMax: 300,
   },
   perimetroCadera: {
     labelKey: "metricaCadera",
     unit: "cm",
     inputStep: "0.1",
+    inputMin: 0,
     inputMax: 300,
   },
   perimetroBrazo: {
     labelKey: "metricaBrazo",
     unit: "cm",
     inputStep: "0.1",
+    inputMin: 0,
     inputMax: 300,
   },
   grasaCorporal: {
     labelKey: "metricaGrasaCorporal",
     unit: "%",
     inputStep: "0.1",
+    inputMin: 0,
     inputMax: 100,
   },
   masaMuscular: {
     labelKey: "metricaMasaMuscular",
     unit: "kg",
     inputStep: "0.1",
+    inputMin: 0,
     inputMax: 200,
   },
   grasaSubcutanea: {
     labelKey: "metricaGrasaSubcutanea",
     unit: "%",
     inputStep: "0.1",
+    inputMin: 0,
     inputMax: 100,
   },
   musculoEsqueletico: {
     labelKey: "metricaMusculoEsqueletico",
     unit: "%",
     inputStep: "0.1",
+    inputMin: 0,
     inputMax: 100,
   },
   agua: {
     labelKey: "metricaAgua",
     unit: "%",
     inputStep: "0.1",
+    inputMin: 0,
     inputMax: 100,
   },
   masaOsea: {
     labelKey: "metricaMasaOsea",
     unit: "kg",
     inputStep: "0.1",
+    inputMin: 0,
     inputMax: 50,
   },
   perimetroAbdomen: {
     labelKey: "metricaAbdomen",
     unit: "cm",
     inputStep: "0.1",
+    inputMin: 0,
     inputMax: 300,
   },
   grasaVisceral: {
     labelKey: "metricaGrasaVisceral",
     unit: "",
     inputStep: "1",
+    inputMin: 0,
     inputMax: 60,
   },
-  pliegueAbdominal: { labelKey: "metricaPliegueAbdominal", unit: "mm", inputStep: "0.1", inputMax: 100 },
-  pliegueAxilar: { labelKey: "metricaPliegueAxilar", unit: "mm", inputStep: "0.1", inputMax: 100 },
-  plieguePectoral: { labelKey: "metricaPlieguePectoral", unit: "mm", inputStep: "0.1", inputMax: 100 },
-  pliegueSubescapular: { labelKey: "metricaPliegueSubescapular", unit: "mm", inputStep: "0.1", inputMax: 100 },
-  pliegueSuprailiaco: { labelKey: "metricaPliegueSuprailiaco", unit: "mm", inputStep: "0.1", inputMax: 100 },
-  pliegueTricipital: { labelKey: "metricaPliegueTricipital", unit: "mm", inputStep: "0.1", inputMax: 100 },
-  pliegueMuslo: { labelKey: "metricaPliegueMuslo", unit: "mm", inputStep: "0.1", inputMax: 100 },
-  colesterolHDL: { labelKey: "metricaColesterolHdl", unit: "mg/dL", inputStep: "1", inputMax: 500 },
-  colesterolLDL: { labelKey: "metricaColesterolLdl", unit: "mg/dL", inputStep: "1", inputMax: 500 },
-  colesterolTotal: { labelKey: "metricaColesterolTotal", unit: "mg/dL", inputStep: "1", inputMax: 500 },
-  presionDiastolica: { labelKey: "metricaPresionDiastolica", unit: "mmHg", inputStep: "1", inputMax: 300 },
-  presionSistolica: { labelKey: "metricaPresionSistolica", unit: "mmHg", inputStep: "1", inputMax: 300 },
-  trigliceridos: { labelKey: "metricaTrigliceridos", unit: "mg/dL", inputStep: "1", inputMax: 1000 },
+  pliegueAbdominal: { labelKey: "metricaPliegueAbdominal", unit: "mm", inputStep: "0.1", inputMin: 0, inputMax: 100 },
+  pliegueAxilar: { labelKey: "metricaPliegueAxilar", unit: "mm", inputStep: "0.1", inputMin: 0, inputMax: 100 },
+  plieguePectoral: { labelKey: "metricaPlieguePectoral", unit: "mm", inputStep: "0.1", inputMin: 0, inputMax: 100 },
+  pliegueSubescapular: { labelKey: "metricaPliegueSubescapular", unit: "mm", inputStep: "0.1", inputMin: 0, inputMax: 100 },
+  pliegueSuprailiaco: { labelKey: "metricaPliegueSuprailiaco", unit: "mm", inputStep: "0.1", inputMin: 0, inputMax: 100 },
+  pliegueTricipital: { labelKey: "metricaPliegueTricipital", unit: "mm", inputStep: "0.1", inputMin: 0, inputMax: 100 },
+  pliegueMuslo: { labelKey: "metricaPliegueMuslo", unit: "mm", inputStep: "0.1", inputMin: 0, inputMax: 100 },
+  colesterolHDL: { labelKey: "metricaColesterolHdl", unit: "mg/dL", inputStep: "1", inputMin: 0, inputMax: 500 },
+  colesterolLDL: { labelKey: "metricaColesterolLdl", unit: "mg/dL", inputStep: "1", inputMin: 0, inputMax: 500 },
+  colesterolTotal: { labelKey: "metricaColesterolTotal", unit: "mg/dL", inputStep: "1", inputMin: 0, inputMax: 500 },
+  presionDiastolica: { labelKey: "metricaPresionDiastolica", unit: "mmHg", inputStep: "1", inputMin: 0, inputMax: 300 },
+  presionSistolica: { labelKey: "metricaPresionSistolica", unit: "mmHg", inputStep: "1", inputMin: 0, inputMax: 300 },
+  trigliceridos: { labelKey: "metricaTrigliceridos", unit: "mg/dL", inputStep: "1", inputMin: 0, inputMax: 1000 },
 };
+
+function contarMedicionesDelRegistro(medida: MedidaSerializada): number {
+  return (Object.keys(METRIC_META) as MetricaDb[]).filter(
+    (key) => typeof medida[key] === "number"
+  ).length;
+}
 
 function fmt(v: number | null | undefined, unit: string, digits = 1): string {
   if (v === null || v === undefined || Number.isNaN(v)) return "—";
@@ -256,17 +292,44 @@ export function PacienteFichaMedicionesTab({
   const [valorNuevo, setValorNuevo] = useState("");
   const [notaNueva, setNotaNueva] = useState("");
   const [mostrarNota, setMostrarNota] = useState(false);
+  const [notaEditandoId, setNotaEditandoId] = useState<string | null>(null);
+  const [notaEditada, setNotaEditada] = useState("");
+  const [notasOptimistas, setNotasOptimistas] = useState<Record<string, string | null>>({});
+  const [medidaEditando, setMedidaEditando] = useState<{
+    id: string;
+    metrica: MetricaDb;
+  } | null>(null);
+  const [valorMedidaEditada, setValorMedidaEditada] = useState(0);
+  const [valoresOptimistas, setValoresOptimistas] = useState<
+    Record<string, Partial<Record<MetricaDb, number>>>
+  >({});
+  const [medidaEliminando, setMedidaEliminando] = useState<MedidaSerializada | null>(null);
   const [fechaNueva, setFechaNueva] = useState(
     () => new Date().toISOString().split("T")[0]
   );
   const [pending, startTransition] = useTransition();
+  const [guardandoNota, startGuardandoNota] = useTransition();
+  const [guardandoMedida, startGuardandoMedida] = useTransition();
+  const [eliminandoMedida, startEliminandoMedida] = useTransition();
+
+  const medidasConCambios = useMemo(
+    () =>
+      medidas.map((medida) => ({
+        ...medida,
+        ...valoresOptimistas[medida.id],
+        ...(Object.prototype.hasOwnProperty.call(notasOptimistas, medida.id)
+          ? { notas: notasOptimistas[medida.id] }
+          : {}),
+      })),
+    [medidas, notasOptimistas, valoresOptimistas]
+  );
 
   const ordenadas = useMemo(
     () =>
-      [...medidas].sort(
+      [...medidasConCambios].sort(
         (a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
       ),
-    [medidas]
+    [medidasConCambios]
   );
 
   const ultimoPeso = latestValue(ordenadas, "peso") ?? pacientePeso ?? null;
@@ -329,7 +392,7 @@ export function PacienteFichaMedicionesTab({
   const chartData = useMemo(() => {
     if (!METRIC_META[vista as MetricaDb]) return [];
     const key = vista as MetricaDb;
-    return [...medidas]
+    return [...medidasConCambios]
       .filter((m) => m[key] !== null && typeof m[key] === "number")
       .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
       .map((m) => ({
@@ -339,7 +402,218 @@ export function PacienteFichaMedicionesTab({
         }),
         valor: m[key] as number,
       }));
-  }, [medidas, vista]);
+  }, [medidasConCambios, vista]);
+
+  function empezarEdicionNota(medida: MedidaSerializada) {
+    setNotaEditandoId(medida.id);
+    setNotaEditada(medida.notas ?? "");
+  }
+
+  function cancelarEdicionNota() {
+    setNotaEditandoId(null);
+    setNotaEditada("");
+  }
+
+  function guardarNota(medida: MedidaSerializada) {
+    if (blockIfDemo()) return;
+
+    const notaActualizada = notaEditada.trim() || null;
+    if (notaActualizada === medida.notas) {
+      cancelarEdicionNota();
+      return;
+    }
+
+    const teniaNotaOptimista = Object.prototype.hasOwnProperty.call(
+      notasOptimistas,
+      medida.id
+    );
+    const notaOptimistaAnterior = notasOptimistas[medida.id];
+
+    setNotasOptimistas((actuales) => ({
+      ...actuales,
+      [medida.id]: notaActualizada,
+    }));
+    cancelarEdicionNota();
+
+    startGuardandoNota(async () => {
+      try {
+        const resultado = await actualizarNotasMedida(
+          medida.id,
+          notaActualizada ?? ""
+        );
+        if (!resultado.ok) {
+          throw new Error(resultado.error);
+        }
+        toast.success(t(notaActualizada ? "notaActualizada" : "notaEliminada"));
+        router.refresh();
+      } catch (error) {
+        setNotasOptimistas((actuales) => {
+          const siguientes = { ...actuales };
+          if (teniaNotaOptimista) {
+            siguientes[medida.id] = notaOptimistaAnterior ?? null;
+          } else {
+            delete siguientes[medida.id];
+          }
+          return siguientes;
+        });
+        setNotaEditandoId(medida.id);
+        setNotaEditada(notaActualizada ?? "");
+        toast.error(
+          error instanceof Error && error.message
+            ? error.message
+            : t("noSePudoActualizarNota")
+        );
+      }
+    });
+  }
+
+  function empezarEdicionMedida(
+    medida: MedidaSerializada,
+    metrica: MetricaDb
+  ) {
+    const valor = medida[metrica];
+    if (typeof valor !== "number") return;
+
+    setMedidaEditando({ id: medida.id, metrica });
+    setValorMedidaEditada(valor);
+  }
+
+  function cancelarEdicionMedida() {
+    setMedidaEditando(null);
+    setValorMedidaEditada(0);
+  }
+
+  function cambiarVista(nuevaVista: VistaMedicion) {
+    cancelarEdicionMedida();
+    setVista(nuevaVista);
+  }
+
+  function guardarMedida(
+    medida: MedidaSerializada,
+    metrica: MetricaDb
+  ) {
+    if (blockIfDemo()) return;
+
+    const valorAnterior = medida[metrica];
+    if (typeof valorAnterior !== "number") return;
+    if (valorMedidaEditada === valorAnterior) {
+      cancelarEdicionMedida();
+      return;
+    }
+
+    const valoresAnteriores = valoresOptimistas[medida.id];
+    const teniaValorOptimista = Object.prototype.hasOwnProperty.call(
+      valoresAnteriores ?? {},
+      metrica
+    );
+    const valorOptimistaAnterior = valoresAnteriores?.[metrica];
+
+    setValoresOptimistas((actuales) => ({
+      ...actuales,
+      [medida.id]: {
+        ...actuales[medida.id],
+        [metrica]: valorMedidaEditada,
+      },
+    }));
+    const valorActualizado = valorMedidaEditada;
+    cancelarEdicionMedida();
+
+    startGuardandoMedida(async () => {
+      try {
+        const resultado = await actualizarValorMedida(
+          medida.id,
+          metrica,
+          valorActualizado
+        );
+        if (!resultado.ok) {
+          throw new Error(resultado.error);
+        }
+        toast.success(t("medicionActualizada"));
+        router.refresh();
+      } catch (error) {
+        setValoresOptimistas((actuales) => {
+          const siguientes = { ...actuales };
+          const valoresMedida = { ...siguientes[medida.id] };
+          if (teniaValorOptimista && valorOptimistaAnterior !== undefined) {
+            valoresMedida[metrica] = valorOptimistaAnterior;
+          } else {
+            delete valoresMedida[metrica];
+          }
+
+          if (Object.keys(valoresMedida).length > 0) {
+            siguientes[medida.id] = valoresMedida;
+          } else {
+            delete siguientes[medida.id];
+          }
+          return siguientes;
+        });
+        setMedidaEditando({ id: medida.id, metrica });
+        setValorMedidaEditada(valorActualizado);
+        toast.error(
+          error instanceof Error && error.message
+            ? error.message
+            : t("noSePudoActualizarMedicion")
+        );
+      }
+    });
+  }
+
+  function confirmarEliminarMedida() {
+    if (!medidaEliminando || blockIfDemo()) return;
+
+    const medida = medidaEliminando;
+    startEliminandoMedida(async () => {
+      try {
+        await eliminarMedida(medida.id);
+        setMedidaEliminando(null);
+        toast.success(t("medicionEliminada"));
+        router.refresh();
+      } catch (error) {
+        toast.error(
+          error instanceof Error && error.message
+            ? error.message
+            : t("noSePudoEliminarMedicion")
+        );
+      }
+    });
+  }
+
+  function formularioEdicionNota(medida: MedidaSerializada) {
+    return (
+      <div className="mt-2 space-y-2">
+        <textarea
+          value={notaEditada}
+          onChange={(e) => setNotaEditada(e.target.value)}
+          rows={3}
+          maxLength={1000}
+          autoFocus
+          aria-label={t("editarNota")}
+          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm resize-y"
+        />
+        <p className="text-xs text-muted-foreground">
+          {t("notaVaciaElimina")}
+        </p>
+        <div className="flex flex-wrap justify-end gap-2">
+          <button
+            type="button"
+            onClick={cancelarEdicionNota}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-muted"
+          >
+            <X className="w-3.5 h-3.5" />
+            {t("cancelarEdicionNota")}
+          </button>
+          <button
+            type="button"
+            onClick={() => guardarNota(medida)}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            <Save className="w-3.5 h-3.5" />
+            {t("guardarNota")}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const tituloPrincipal =
     vista === "pliegues"
@@ -396,37 +670,37 @@ export function PacienteFichaMedicionesTab({
               label={t("metricaPeso")}
               value={fmt(ultimoPeso, "kg")}
               active={vista === "peso"}
-              onClick={() => setVista("peso")}
+              onClick={() => cambiarVista("peso")}
             />
             <SidebarRow
               label={t("metricaAltura")}
               value={fmt(ultimaAltura, "cm", 0)}
               active={vista === "altura"}
-              onClick={() => setVista("altura")}
+              onClick={() => cambiarVista("altura")}
             />
             <SidebarRow
               label={t("metricaCintura")}
               value={fmt(ultCintura, "cm")}
               active={vista === "perimetroCintura"}
-              onClick={() => setVista("perimetroCintura")}
+              onClick={() => cambiarVista("perimetroCintura")}
             />
             <SidebarRow
               label={t("metricaAbdomen")}
               value={fmt(ultAbdomen, "cm")}
               active={vista === "perimetroAbdomen"}
-              onClick={() => setVista("perimetroAbdomen")}
+              onClick={() => cambiarVista("perimetroAbdomen")}
             />
             <SidebarRow
               label={t("metricaCadera")}
               value={fmt(ultCadera, "cm")}
               active={vista === "perimetroCadera"}
-              onClick={() => setVista("perimetroCadera")}
+              onClick={() => cambiarVista("perimetroCadera")}
             />
             <SidebarRow
               label={t("metricaBrazo")}
               value={fmt(ultBrazo, "cm")}
               active={vista === "perimetroBrazo"}
-              onClick={() => setVista("perimetroBrazo")}
+              onClick={() => cambiarVista("perimetroBrazo")}
             />
           </SidebarCard>
 
@@ -435,43 +709,43 @@ export function PacienteFichaMedicionesTab({
               label={t("metricaGrasaSubcutanea")}
               value={fmt(ultGrasaSubcutanea, "%")}
               active={vista === "grasaSubcutanea"}
-              onClick={() => setVista("grasaSubcutanea")}
+              onClick={() => cambiarVista("grasaSubcutanea")}
             />
             <SidebarRow
               label={t("metricaMusculoEsqueletico")}
               value={fmt(ultMusculoEsqueletico, "%")}
               active={vista === "musculoEsqueletico"}
-              onClick={() => setVista("musculoEsqueletico")}
+              onClick={() => cambiarVista("musculoEsqueletico")}
             />
             <SidebarRow
               label={t("metricaMasaMuscular")}
               value={fmt(ultMasaMusc, "kg")}
               active={vista === "masaMuscular"}
-              onClick={() => setVista("masaMuscular")}
+              onClick={() => cambiarVista("masaMuscular")}
             />
             <SidebarRow
               label={t("metricaAgua")}
               value={fmt(ultAgua, "%")}
               active={vista === "agua"}
-              onClick={() => setVista("agua")}
+              onClick={() => cambiarVista("agua")}
             />
             <SidebarRow
               label={t("metricaMasaOsea")}
               value={fmt(ultMasaOsea, "kg")}
               active={vista === "masaOsea"}
-              onClick={() => setVista("masaOsea")}
+              onClick={() => cambiarVista("masaOsea")}
             />
             <SidebarRow
               label={t("metricaGrasaCorporal")}
               value={fmt(ultGrasa, "%")}
               active={vista === "grasaCorporal"}
-              onClick={() => setVista("grasaCorporal")}
+              onClick={() => cambiarVista("grasaCorporal")}
             />
             <SidebarRow
               label={t("metricaGrasaVisceral")}
               value={fmt(ultGrasaVisceral, "", 0)}
               active={vista === "grasaVisceral"}
-              onClick={() => setVista("grasaVisceral")}
+              onClick={() => cambiarVista("grasaVisceral")}
             />
           </SidebarCard>
 
@@ -480,7 +754,7 @@ export function PacienteFichaMedicionesTab({
             footer={
               <button
                 type="button"
-                onClick={() => setVista("pliegues")}
+                onClick={() => cambiarVista("pliegues")}
                 className="w-full text-center text-xs font-medium text-primary py-2 hover:bg-muted/50"
               >
                 {t("infoPliegues")}
@@ -488,7 +762,7 @@ export function PacienteFichaMedicionesTab({
             }
           >
             {PLIEGUES_KEYS.map(({ key, labelKey }) => (
-              <SidebarRow key={key} label={t(labelKey)} value={fmt(latestValue(medidas, key), "mm")} active={vista === key} onClick={() => setVista(key)} />
+              <SidebarRow key={key} label={t(labelKey)} value={fmt(latestValue(medidasConCambios, key), "mm")} active={vista === key} onClick={() => cambiarVista(key)} />
             ))}
           </SidebarCard>
 
@@ -497,7 +771,7 @@ export function PacienteFichaMedicionesTab({
             footer={
               <button
                 type="button"
-                onClick={() => setVista("analiticos")}
+                onClick={() => cambiarVista("analiticos")}
                 className="w-full text-center text-xs font-medium text-primary py-2 hover:bg-muted/50"
               >
                 {t("infoAnalitica")}
@@ -506,7 +780,7 @@ export function PacienteFichaMedicionesTab({
           >
             {ANALITICOS_KEYS.map(({ key, labelKey }) => {
               const unit = key.startsWith("presion") ? "mmHg" : "mg/dL";
-              return <SidebarRow key={key} label={t(labelKey)} value={fmt(latestValue(medidas, key), unit)} active={vista === key} onClick={() => setVista(key)} />;
+              return <SidebarRow key={key} label={t(labelKey)} value={fmt(latestValue(medidasConCambios, key), unit)} active={vista === key} onClick={() => cambiarVista(key)} />;
             })}
           </SidebarCard>
         </aside>
@@ -517,9 +791,9 @@ export function PacienteFichaMedicionesTab({
           {vista === "pliegues" && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {PLIEGUES_KEYS.map(({ key, labelKey }) => (
-                <button key={key} type="button" onClick={() => setVista(key)} className="flex items-center justify-between rounded-lg border border-border px-4 py-3 hover:bg-muted/40 text-left text-sm">
+                <button key={key} type="button" onClick={() => cambiarVista(key)} className="flex items-center justify-between rounded-lg border border-border px-4 py-3 hover:bg-muted/40 text-left text-sm">
                   <span>{t(labelKey)}</span>
-                  <span className="font-medium text-muted-foreground">{fmt(latestValue(medidas, key), "mm")}</span>
+                  <span className="font-medium text-muted-foreground">{fmt(latestValue(medidasConCambios, key), "mm")}</span>
                 </button>
               ))}
             </div>
@@ -529,9 +803,9 @@ export function PacienteFichaMedicionesTab({
               {ANALITICOS_KEYS.map(({ key, labelKey }) => {
                 const unit = key.startsWith("presion") ? "mmHg" : "mg/dL";
                 return (
-                  <button key={key} type="button" onClick={() => setVista(key)} className="flex items-center justify-between rounded-lg border border-border px-4 py-3 hover:bg-muted/40 text-left text-sm">
+                  <button key={key} type="button" onClick={() => cambiarVista(key)} className="flex items-center justify-between rounded-lg border border-border px-4 py-3 hover:bg-muted/40 text-left text-sm">
                     <span>{t(labelKey)}</span>
-                    <span className="font-medium text-muted-foreground">{fmt(latestValue(medidas, key), unit)}</span>
+                    <span className="font-medium text-muted-foreground">{fmt(latestValue(medidasConCambios, key), unit)}</span>
                   </button>
                 );
               })}
@@ -626,6 +900,9 @@ export function PacienteFichaMedicionesTab({
                       let delta: number | null = null;
                       if (prevVal != null) delta = val - prevVal;
                       const unit = METRIC_META[vista].unit;
+                      const editandoEstaMedida =
+                        medidaEditando?.id === m.id &&
+                        medidaEditando.metrica === key;
                       return (
                         <div
                           key={m.id}
@@ -638,17 +915,98 @@ export function PacienteFichaMedicionesTab({
                             <p className="text-sm font-medium capitalize">
                               {formatDate(m.fecha)}
                             </p>
-                            <p className="text-base font-semibold">
-                              {val} {unit}
-                            </p>
+                            {editandoEstaMedida ? (
+                              <div className="mt-1 flex items-center gap-2">
+                                <CantidadInput
+                                  value={valorMedidaEditada}
+                                  onChange={setValorMedidaEditada}
+                                  min={METRIC_META[key].inputMin}
+                                  max={METRIC_META[key].inputMax}
+                                  redondearA={Number(METRIC_META[key].inputStep)}
+                                  autoFocus
+                                  aria-label={t("editarMedicionLabel", {
+                                    label: t(METRIC_META[key].labelKey),
+                                  })}
+                                  className="h-10 w-24 rounded-lg border border-input bg-background px-3 text-sm font-semibold"
+                                />
+                                <span className="text-sm text-muted-foreground">
+                                  {unit || t("unidadNivel")}
+                                </span>
+                              </div>
+                            ) : (
+                              <p className="text-base font-semibold">
+                                {val} {unit}
+                              </p>
+                            )}
                           </div>
-                          {delta !== null && (
+                          {!editandoEstaMedida && delta !== null && (
                             <DeltaBadge delta={delta} unit={unit} />
                           )}
-                          {delta === null && i < filtradasMetrica.length - 1 && (
+                          {!editandoEstaMedida &&
+                            delta === null &&
+                            i < filtradasMetrica.length - 1 && (
                             <span className="text-xs text-muted-foreground flex items-center gap-1">
                               <Minus className="w-3 h-3" />
                             </span>
+                          )}
+                          {editandoEstaMedida ? (
+                            <div className="flex shrink-0 items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={cancelarEdicionMedida}
+                                disabled={guardandoMedida}
+                                className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted disabled:opacity-50"
+                                title={t("cancelarEdicionMedicion")}
+                                aria-label={t("cancelarEdicionMedicion")}
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => guardarMedida(m, key)}
+                                disabled={guardandoMedida}
+                                className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                                title={t("guardarMedicion")}
+                                aria-label={t("guardarMedicion")}
+                              >
+                                <Save className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex shrink-0 items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => empezarEdicionMedida(m, key)}
+                                disabled={
+                                  guardandoMedida ||
+                                  eliminandoMedida ||
+                                  guardandoNota ||
+                                  medidaEditando !== null ||
+                                  notaEditandoId !== null
+                                }
+                                className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary disabled:opacity-50"
+                                title={t("editarMedicion")}
+                                aria-label={t("editarMedicion")}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setMedidaEliminando(m)}
+                                disabled={
+                                  eliminandoMedida ||
+                                  guardandoNota ||
+                                  guardandoMedida ||
+                                  medidaEditando !== null ||
+                                  notaEditandoId !== null
+                                }
+                                className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
+                                title={t("eliminarMedicion")}
+                                aria-label={t("eliminarMedicion")}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
                           )}
                         </div>
                       );
@@ -716,18 +1074,41 @@ export function PacienteFichaMedicionesTab({
             </>
           )}
 
-          {medidas.some((m) => m.notas) && (
+          {medidasConCambios.some((m) => m.notas) && (
             <div className="rounded-xl border border-border bg-card p-5 mt-4">
               <h3 className="text-sm font-semibold mb-3">{t("notasTitulo")}</h3>
               <div className="space-y-3">
-                {medidas
+                {medidasConCambios
                   .filter((m) => m.notas)
                   .map((m) => (
                     <div key={m.id} className="text-sm border-l-2 border-primary/30 pl-3">
-                      <p className="text-xs font-medium text-muted-foreground">
-                        {new Date(m.fecha).toLocaleDateString(tag, { day: "numeric", month: "long", year: "numeric" })}
-                      </p>
-                      <p className="whitespace-pre-wrap text-foreground">{m.notas}</p>
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          {new Date(m.fecha).toLocaleDateString(tag, { day: "numeric", month: "long", year: "numeric" })}
+                        </p>
+                        {notaEditandoId !== m.id && (
+                          <button
+                            type="button"
+                            onClick={() => empezarEdicionNota(m)}
+                            disabled={
+                              guardandoNota ||
+                              eliminandoMedida ||
+                              guardandoMedida ||
+                              medidaEditando !== null ||
+                              notaEditandoId !== null
+                            }
+                            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-primary/10 disabled:opacity-50"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                            {t("editarNota")}
+                          </button>
+                        )}
+                      </div>
+                      {notaEditandoId === m.id ? (
+                        formularioEdicionNota(m)
+                      ) : (
+                        <p className="whitespace-pre-wrap text-foreground">{m.notas}</p>
+                      )}
                     </div>
                   ))}
               </div>
@@ -735,6 +1116,61 @@ export function PacienteFichaMedicionesTab({
           )}
         </main>
       </div>
+
+      {medidaEliminando && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="eliminar-medicion-titulo"
+        >
+          <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-xl">
+            <div className="mb-4 flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 id="eliminar-medicion-titulo" className="text-lg font-semibold">
+                  {contarMedicionesDelRegistro(medidaEliminando) > 1
+                    ? t("confirmarEliminarGrupoTitulo")
+                    : t("confirmarEliminarMedicionTitulo")}
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {contarMedicionesDelRegistro(medidaEliminando) > 1
+                    ? t("confirmarEliminarGrupoDescripcion", {
+                        count: contarMedicionesDelRegistro(medidaEliminando),
+                      })
+                    : t("confirmarEliminarMedicionDescripcion")}
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setMedidaEliminando(null)}
+                disabled={eliminandoMedida}
+                autoFocus
+                className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50"
+              >
+                {t("cancelarEdicionNota")}
+              </button>
+              <button
+                type="button"
+                onClick={confirmarEliminarMedida}
+                disabled={eliminandoMedida}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
+              >
+                {eliminandoMedida ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+                {t("eliminarMedicion")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
