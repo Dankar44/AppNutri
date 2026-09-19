@@ -46,7 +46,10 @@ export interface CitaDetalle {
   paciente: { id: string; nombre: string; apellidos: string; fotoUrl?: string | null };
 }
 
-function formatFechaLarga(iso: string, t: (key: string) => string): string {
+function formatFechaLarga(
+  iso: string,
+  t: (key: string, valores?: Record<string, string | number>) => string,
+): string {
   const d = new Date(iso);
   const dayKeys = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"] as const;
   const monthKeys = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"] as const;
@@ -65,11 +68,15 @@ function formatFechaLarga(iso: string, t: (key: string) => string): string {
   const numero = get("day");
   const dayName = t(`citaDetalleModal.dias.${dayKeys[dayIdx]}`);
   const monthName = t(`citaDetalleModal.meses.${monthKeys[monthIdx]}`);
-  return t("citaDetalleModal.fechaLargaFormat")
-    .replace("{dia}", dayName)
-    .replace("{numero}", numero)
-    .replace("{mes}", monthName)
-    .replace("{hora}", toMadridTimeStr(d));
+  // Las llaves de la plantilla son variables de next-intl: hay que pasarlas como valores.
+  // Con .replace() sobre el resultado, next-intl falla antes por falta de valores y devuelve
+  // la ruta de la clave, que es lo que acababa viéndose en pantalla.
+  return t("citaDetalleModal.fechaLargaFormat", {
+    dia: dayName,
+    numero,
+    mes: monthName,
+    hora: toMadridTimeStr(d),
+  });
 }
 
 function googleCalendarUrl(cita: CitaDetalle) {
@@ -240,7 +247,7 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
             <div className="rounded-lg bg-muted/40 p-3 space-y-1.5">
               <div className="flex items-center gap-2 text-sm">
                 <Calendar className="w-4 h-4 text-muted-foreground" />
-                <span className="capitalize">{formatFechaLarga(cita.fechaHora, t)}</span>
+                <span className="first-letter:uppercase">{formatFechaLarga(cita.fechaHora, t)}</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <Clock className="w-4 h-4 text-muted-foreground" />

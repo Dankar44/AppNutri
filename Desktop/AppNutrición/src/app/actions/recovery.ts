@@ -64,6 +64,8 @@ export async function solicitarRecuperacion(email: string, origin: string): Prom
     nombre,
     resetLink,
     t: (key: string) => te(`recuperarPassword.${key}`),
+    tv: (key: string, valores: Record<string, string>) =>
+      te(`recuperarPassword.${key}`, valores),
   });
 
   try {
@@ -126,10 +128,12 @@ function buildRecoveryEmail({
   nombre,
   resetLink,
   t,
+  tv,
 }: {
   nombre: string;
   resetLink: string;
   t: (key: string) => string;
+  tv: (key: string, valores: Record<string, string>) => string;
 }): string {
   return `<div style="max-width:520px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#ffffff;">
   <div style="background:#16a34a;padding:32px 24px;text-align:center;border-radius:12px 12px 0 0;">
@@ -139,7 +143,7 @@ function buildRecoveryEmail({
   <div style="padding:32px 24px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;">
     <h2 style="color:#111827;font-size:20px;margin:0 0 8px;font-weight:600;">${t("titulo")}</h2>
     <p style="color:#4b5563;font-size:15px;line-height:1.6;margin:0 0 8px;">
-      ${t("saludo").replace("{nombre}", escapeHtml(nombre))}
+      ${tv("saludo", { nombre: escapeHtml(nombre) })}
     </p>
     <p style="color:#4b5563;font-size:15px;line-height:1.6;margin:0 0 24px;">
       ${t("cuerpo")}
