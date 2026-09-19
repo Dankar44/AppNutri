@@ -53,6 +53,8 @@
   },
   "cita": {
     "citaNoEncontrada": "Consulta não encontrada",
+    "noPuedeEditar": "Esta consulta já não pode ser editada",
+    "enlaceVideollamadaInvalido": "O link de videochamada não é válido",
     "fechaNoPuedePasada": "A data não pode ser no passado",
     "fechaInvalida": "Data inválida",
     "fechaHoraInvalidas": "Data e hora inválidas",

@@ -29,6 +29,7 @@ import {
   getPacientesParaCita,
   getPacienteContextoCita,
   getInfoAvisoCita,
+  type ConflictoCita,
 } from "@/app/actions/citas";
 import { setAvisarPorWhatsapp } from "@/app/actions/pacientes";
 import { getIntegracionNutri } from "@/app/actions/google-integracion";
@@ -36,6 +37,7 @@ import { DatePicker } from "@/components/date-picker";
 import { TimePicker } from "@/components/time-picker";
 import { AvatarPaciente } from "@/components/avatar-paciente";
 import { capitalizarNombre, formatDate, isNextNavigation, withTimeout } from "@/lib/utils";
+import { AvisoSolapamientoCita } from "../aviso-solapamiento-cita";
 
 type PacienteListItem = {
   id: string;
@@ -90,7 +92,9 @@ export default function NuevaCitaPage() {
   const [tieneMeetAuto, setTieneMeetAuto] = useState(false);
   const [fecha, setFecha] = useState(() => new Date().toLocaleDateString("sv-SE"));
   const [hora, setHora] = useState("10:00");
+  const [duracion, setDuracion] = useState(30);
   const [avisarWhatsapp, setAvisarWhatsapp] = useState(false);
+  const [conflicto, setConflicto] = useState<ConflictoCita | null>(null);
 
   useEffect(() => {
     getPacientesParaCita().then((data) =>
@@ -134,8 +138,7 @@ export default function NuevaCitaPage() {
     setAvisarWhatsapp(pacienteSeleccionado?.avisarPorWhatsapp ?? false);
   }, [pacienteSeleccionado]);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  async function guardarCita(permitirSolapamiento = false) {
     if (blockIfDemo()) return;
     // No permitir crear una cita en una fecha/hora ya pasada. El calendario ya
     // bloquea los días pasados; aquí cubrimos también la hora cuando es para hoy.
@@ -143,7 +146,8 @@ export default function NuevaCitaPage() {
       toast.error(t("nueva.fechaPasadaError"));
       return;
     }
-    const form = new FormData(e.currentTarget);
+    if (!formRef.current) return;
+    const form = new FormData(formRef.current);
 
     const modo = (form.get("modo") as "directa" | "proponer") || "directa";
     const isOnline = form.get("isOnline") === "on";
@@ -157,13 +161,20 @@ export default function NuevaCitaPage() {
       const cita = await withTimeout(crearCita({
         pacienteId: form.get("pacienteId") as string,
         fechaHora: `${fecha}T${hora}:00`,
-        duracion: parseInt(form.get("duracion") as string) || 30,
+        duracion,
         motivo: (form.get("motivo") as string) || undefined,
         notas: (form.get("notas") as string) || undefined,
         isOnline,
         enlaceVideollamada: (form.get("enlaceVideollamada") as string) || undefined,
         modo,
+        permitirSolapamiento,
       }));
+      if (cita?.conflicto) {
+        waWin?.close();
+        setConflicto(cita.conflicto);
+        setLoading(false);
+        return;
+      }
       clearDraft();
       // Recordar la preferencia de WhatsApp del paciente si ha cambiado.
       if (pacienteId && avisarWhatsapp !== (pacienteSeleccionado?.avisarPorWhatsapp ?? false)) {
@@ -194,6 +205,15 @@ export default function NuevaCitaPage() {
       toast.error(t("nueva.toastCreateError"));
       setLoading(false);
     }
+  }
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    await guardarCita();
+  }
+
+  function limpiarConflicto() {
+    setConflicto(null);
   }
 
   const edad = calcularEdad(pacienteSeleccionado?.fechaNacimiento ?? null);
@@ -250,13 +270,24 @@ export default function NuevaCitaPage() {
             <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 sm:gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1.5">{t("nueva.dateLabel")}</label>
-                <DatePicker value={fecha} onChange={setFecha} required futureOnly />
+                <DatePicker
+                  value={fecha}
+                  onChange={(valor) => {
+                    setFecha(valor);
+                    limpiarConflicto();
+                  }}
+                  required
+                  futureOnly
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">{t("nueva.timeLabel")}</label>
                 <TimePicker
                   value={hora}
-                  onChange={setHora}
+                  onChange={(valor) => {
+                    setHora(valor);
+                    limpiarConflicto();
+                  }}
                   fecha={fecha}
                   ariaLabel={t("nueva.timeLabel")}
                   inputClassName="w-full px-3 py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
@@ -267,7 +298,11 @@ export default function NuevaCitaPage() {
               <label className="block text-sm font-medium mb-1.5">{t("nueva.durationLabel")}</label>
               <select
                 name="duracion"
-                defaultValue="30"
+                value={duracion}
+                onChange={(evento) => {
+                  setDuracion(Number(evento.target.value));
+                  limpiarConflicto();
+                }}
                 className="w-full px-3 py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
               >
                 <option value="15">{t("nueva.duration15")}</option>
@@ -278,6 +313,15 @@ export default function NuevaCitaPage() {
                 <option value="120">{t("nueva.duration120")}</option>
               </select>
             </div>
+
+            {conflicto && (
+              <AvisoSolapamientoCita
+                conflicto={conflicto}
+                guardando={loading}
+                onRevisar={limpiarConflicto}
+                onConfirmar={() => void guardarCita(true)}
+              />
+            )}
 
             <label className="flex items-start gap-3 p-3 rounded-lg border border-border cursor-pointer hover:bg-muted/40 has-[:checked]:border-primary has-[:checked]:bg-primary/5 transition-colors">
               <input type="checkbox" name="isOnline" className="mt-1 accent-primary" />

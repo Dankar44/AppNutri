@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { X, Clock, User, Check, Calendar, CalendarClock, Loader2 } from "lucide-react";
+import { X, Clock, User, Check, Calendar, CalendarClock, Loader2, Pencil } from "lucide-react";
 import { actualizarEstadoCita, eliminarCita } from "@/app/actions/citas";
 import {
   aceptarSolicitudCita,
@@ -16,6 +16,7 @@ import { isNextNavigation } from "@/lib/utils";
 import { useTranslations, useLocale } from "next-intl";
 import { intlTag, type Locale } from "@/i18n/config";
 import { ContraproponerModal } from "./contraproponer-modal";
+import { CitaEditarModal } from "./cita-editar-modal";
 
 const ESTADO_STYLES: Record<string, string> = {
   PENDIENTE: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30",
@@ -34,6 +35,8 @@ interface Cita {
   notas: string | null;
   origen?: string;
   propuestoPor?: string;
+  isOnline?: boolean;
+  enlaceVideollamada?: string | null;
   paciente: { nombre: string; apellidos: string };
 }
 
@@ -49,6 +52,7 @@ export function AgendaDiaDetalle({ fecha, citas, onClose }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [contraponerId, setContraponerId] = useState<string | null>(null);
+  const [citaEditar, setCitaEditar] = useState<Cita | null>(null);
   const fechaObj = new Date(fecha + "T12:00:00");
   const fechaFormateada = fechaObj.toLocaleDateString(tag, {
     weekday: "long",
@@ -164,6 +168,10 @@ export function AgendaDiaDetalle({ fecha, citas, onClose }: Props) {
             const horaFin = new Date(
               new Date(cita.fechaHora).getTime() + cita.duracion * 60000
             ).toLocaleTimeString(tag, { timeZone: "Europe/Madrid", hour: "2-digit", minute: "2-digit" });
+            const puedeEditar =
+              new Date(cita.fechaHora) > new Date() &&
+              (cita.estado === "CONFIRMADA" ||
+                (cita.estado === "PENDIENTE" && cita.origen === "DIETISTA"));
 
             return (
               <div key={cita.id} className="px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3">
@@ -211,6 +219,17 @@ export function AgendaDiaDetalle({ fecha, citas, onClose }: Props) {
                 </div>
 
                 <div className="flex items-center gap-1.5 flex-shrink-0 flex-wrap">
+                  {puedeEditar && (
+                    <button
+                      type="button"
+                      onClick={() => setCitaEditar(cita)}
+                      aria-label={t("editAppointment")}
+                      title={t("editAppointment")}
+                      className="min-w-11 min-h-11 inline-flex items-center justify-center rounded-lg border border-border text-primary hover:bg-primary/5 transition-colors"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                   {cita.estado === "PENDIENTE" && cita.origen === "PACIENTE" ? (
                     <>
                       <button
@@ -316,6 +335,17 @@ export function AgendaDiaDetalle({ fecha, citas, onClose }: Props) {
           citaActual={citas.find((c) => c.id === contraponerId) || null}
           onClose={() => setContraponerId(null)}
           onDone={() => { setContraponerId(null); router.refresh(); }}
+        />
+      )}
+
+      {citaEditar && (
+        <CitaEditarModal
+          cita={citaEditar}
+          onClose={() => setCitaEditar(null)}
+          onGuardado={() => {
+            setCitaEditar(null);
+            router.refresh();
+          }}
         />
       )}
     </div>

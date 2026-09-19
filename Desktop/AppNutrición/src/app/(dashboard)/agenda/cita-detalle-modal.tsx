@@ -4,7 +4,7 @@ import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  X, Clock, User, Check, Calendar, CalendarClock, Trash2, Loader2, ExternalLink, Video, Mail, MessageCircle,
+  X, Clock, User, Check, Calendar, CalendarClock, Trash2, Loader2, ExternalLink, Video, Mail, MessageCircle, Pencil,
 } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { intlTag, type Locale } from "@/i18n/config";
@@ -19,6 +19,7 @@ import {
 import { ContraproponerModal } from "./contraproponer-modal";
 import { useDemoGuard } from "@/contexts/demo-context";
 import { toMadridTimeStr } from "@/lib/tz";
+import { CitaEditarModal } from "./cita-editar-modal";
 
 const ESTADO_STYLES: Record<string, string> = {
   PENDIENTE: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30",
@@ -92,6 +93,7 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
   const [pending, startTransition] = useTransition();
   const blockIfDemo = useDemoGuard();
   const [showContraponer, setShowContraponer] = useState(false);
+  const [editando, setEditando] = useState(false);
   const [confirmEliminar, setConfirmEliminar] = useState(false);
   const [info, setInfo] = useState<{
     tieneEmail: boolean;
@@ -151,6 +153,19 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
   const esContrapropuestaPaciente = cita.estado === "CONTRAPROPUESTA" && cita.propuestoPor === "PACIENTE";
   const esPendiente = cita.estado === "PENDIENTE";
   const esConfirmada = cita.estado === "CONFIRMADA";
+  const puedeEditar =
+    new Date(cita.fechaHora) > new Date() &&
+    (esConfirmada || (esPendiente && cita.origen === "DIETISTA"));
+
+  if (editando) {
+    return (
+      <CitaEditarModal
+        cita={cita}
+        onClose={() => setEditando(false)}
+        onGuardado={refrescar}
+      />
+    );
+  }
 
   return (
     <>
@@ -269,6 +284,17 @@ export function CitaDetalleModal({ cita, onClose }: Props) {
 
           {/* Acciones */}
           <div className="p-5 border-t border-border bg-muted/20 space-y-2">
+            {puedeEditar && (
+              <button
+                type="button"
+                onClick={() => setEditando(true)}
+                disabled={pending}
+                className="min-h-11 w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-primary/30 text-primary text-sm font-medium hover:bg-primary/5 disabled:opacity-60 transition-colors"
+              >
+                <Pencil className="w-4 h-4" /> {t("citaDetalleModal.editAppointment")}
+              </button>
+            )}
+
             {esSolicitudPaciente ? (
               // Solicitud del paciente pendiente
               <div className="flex items-center gap-2 flex-wrap">
