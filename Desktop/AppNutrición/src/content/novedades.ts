@@ -46,6 +46,22 @@ export type Novedad = {
 
 const NOVEDADES: Novedad[] = [
   {
+    id: "editar-borrar-mediciones",
+    fecha: "2026-09-19",
+    titulo: {
+      es: "Corregir y borrar mediciones sin tener que rehacerlas",
+      pt: "Corrigir e excluir medições sem precisar refazê-las",
+    },
+    descripcion: {
+      es: "Ahora puedes editar el valor de una medición ya guardada, cambiar o quitar su nota, y eliminar un registro. Antes, si te equivocabas al anotar un peso, la única salida era borrar la medición y volver a crearla. Al corregir el peso o la altura se recalcula el IMC, y el peso y la altura actuales del paciente solo cambian si editas su medición más reciente, para que corregir un dato antiguo no altere su ficha. Al borrar se pide confirmación y se avisa de que también se elimina la nota asociada.",
+      pt: "Agora você pode editar o valor de uma medição já salva, alterar ou remover a sua nota, e excluir um registro. Antes, se errasse ao anotar um peso, a única saída era excluir a medição e criá-la de novo. Ao corrigir o peso ou a altura o IMC é recalculado, e o peso e a altura atuais do paciente só mudam se você editar a medição mais recente, para que corrigir um dado antigo não altere a ficha dele. Ao excluir é pedida confirmação e avisamos de que a nota associada também é eliminada.",
+    },
+    donde: {
+      es: "En la ficha del paciente, pestaña «Mediciones»: cada línea del historial tiene ahora los botones de editar y eliminar, y la nota se cambia desde «Notas / observaciones», debajo de la gráfica.",
+      pt: "Na ficha do paciente, aba «Medições»: cada linha do histórico agora tem os botões de editar e excluir, e a nota altera-se em «Notas / observações», abaixo do gráfico.",
+    },
+  },
+  {
     id: "modulo-docente",
     fecha: "2026-09-09",
     destacada: true,
