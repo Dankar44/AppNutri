@@ -221,8 +221,8 @@ const NOVEDADES: Novedad[] = [
       pt: "Modelos de anamnese por especialidade, editáveis na ficha",
     },
     descripcion: {
-      es: "Puedes tener una anamnesis por especialidad (deportiva, digestivo, embarazo…) y editarla sin salir de la ficha del paciente. Admite texto, texto largo, desplegable, casillas y escala 1-5, y preguntas condicionales: una pregunta puede abrir otra según la respuesta. Tú las ves siempre; el paciente solo cuando se cumple la condición. Las secciones y preguntas se reordenan arrastrando, y el PDF sale según la plantilla.",
-      pt: "Podes ter uma anamnese por especialidade (desportiva, digestivo, gravidez…) e editá-la sem sair da ficha do paciente. Aceita texto, texto longo, lista, caixas de seleção e escala 1-5, e perguntas condicionais: uma pergunta pode abrir outra conforme a resposta. Tu vês sempre todas; o paciente só quando a condição se cumpre. As secções e perguntas reordenam-se arrastando, e o PDF sai conforme o modelo.",
+      es: "Puedes tener una anamnesis por especialidad (deportiva, digestivo, embarazo…) y editarla sin salir de la ficha del paciente. Admite texto, texto largo, desplegable, casillas y escala 1-10, y preguntas condicionales: una pregunta puede abrir otra según la respuesta. Tú las ves siempre; el paciente solo cuando se cumple la condición. Las secciones y preguntas se reordenan arrastrando, y el PDF sale según la plantilla.",
+      pt: "Podes ter uma anamnese por especialidade (desportiva, digestivo, gravidez…) e editá-la sem sair da ficha do paciente. Aceita texto, texto longo, lista, caixas de seleção e escala 1-10, e perguntas condicionais: uma pergunta pode abrir outra conforme a resposta. Tu vês sempre todas; o paciente só quando a condição se cumpre. As secções e perguntas reordenam-se arrastando, e o PDF sai conforme o modelo.",
     },
     donde: {
       es: "Ficha del paciente → pestaña Anamnesis, selector de plantilla (ya no hay que pasar por Ajustes).",

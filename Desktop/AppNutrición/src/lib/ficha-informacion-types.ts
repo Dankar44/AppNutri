@@ -129,7 +129,7 @@ export const SELECT_OBJETIVOS_CLINICOS = getSelectObjetivosClinicos();
 
 // --- Saneamiento de campos personalizados (compartido: Ajustes y formulario de preconsulta) ---
 
-export const MAX_CAMPOS_ANAMNESIS = 20;
+export const MAX_CAMPOS_ANAMNESIS = 50;
 const MAX_LABEL_LENGTH = 100;
 const MAX_OPCIONES = 20;
 const MAX_OPCION_LENGTH = 100;
@@ -142,7 +142,7 @@ const SECCIONES_VALIDAS: SeccionAnamnesis[] = [
   "personalizado",
 ];
 
-/** Normaliza/valida la definición de campos personalizados (máx. 20, etiquetas y opciones acotadas). */
+/** Normaliza/valida la definición de campos personalizados (máx. 50, etiquetas y opciones acotadas). */
 export function sanitizeCamposAnamnesis(raw: unknown): CampoPersonalizadoDefinicion[] {
   if (!Array.isArray(raw)) return [];
   const result: CampoPersonalizadoDefinicion[] = [];

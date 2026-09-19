@@ -60,6 +60,8 @@ type PacienteGeneral = {
   patologias: string[];
   medicamentos: string[];
   suplementos: string[];
+  antecedentesPersonales: string | null;
+  antecedentesFamiliares: string | null;
 };
 
 type PlanResumen = {
@@ -223,6 +225,20 @@ export function PacienteFichaGeneralTab({
               {t("suplementos")}
             </p>
             <p className="font-medium mt-1">{renderLista(paciente.suplementos)}</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground inline-flex items-center gap-2">
+              <BookOpen className="w-4 h-4" aria-hidden="true" />
+              {t("antecedentesPersonales")}
+            </p>
+            <p className="font-medium mt-1">{paciente.antecedentesPersonales?.trim() || t("noRegistrado")}</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground inline-flex items-center gap-2">
+              <BookOpen className="w-4 h-4" aria-hidden="true" />
+              {t("antecedentesFamiliares")}
+            </p>
+            <p className="font-medium mt-1">{paciente.antecedentesFamiliares?.trim() || t("noRegistrado")}</p>
           </div>
         </div>
       </section>

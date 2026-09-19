@@ -386,7 +386,7 @@ export const PRESETS_LISTA: { id: PresetId; nombre: string }[] = PRESETS.map((p)
 const TIPOS_CAMPO: TipoCampoAnamnesis[] = ["texto", "textarea", "selector", "checkbox", "escala"];
 
 /** Nº de puntos de una pregunta tipo "escala" (1..ESCALA_MAX). */
-export const ESCALA_MAX = 5;
+export const ESCALA_MAX = 10;
 
 /** El valor de un "checkbox" se guarda como JSON array de strings. Devuelve las opciones marcadas. */
 export function parseCheckboxValue(raw: string | undefined | null): string[] {

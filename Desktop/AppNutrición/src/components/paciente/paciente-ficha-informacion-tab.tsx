@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Check, Loader2, AlertCircle, FileDown, Pencil, X, AlertTriangle } from "lucide-react";
+import { Check, Loader2, AlertCircle, FileDown, Layers, X, AlertTriangle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { toast } from "sonner";
@@ -119,6 +119,7 @@ export function PacienteFichaInformacionTab({
   estructura,
   plantillas = [],
   plantillaActualId = null,
+  tieneEstructuraPropia = false,
   camposAnamnesis = [],
   resumen,
 }: {
@@ -130,6 +131,7 @@ export function PacienteFichaInformacionTab({
   estructura: EstructuraPlantilla;
   plantillas?: PlantillaResumen[];
   plantillaActualId?: string | null;
+  tieneEstructuraPropia?: boolean;
   camposAnamnesis?: CampoPersonalizadoDefinicion[];
   resumen: PacienteResumen;
 }) {
@@ -427,16 +429,19 @@ export function PacienteFichaInformacionTab({
 
           <AnamnesisEditor estructura={estructuraEdit} onChange={setEstructuraEdit} />
 
-          <div className="flex flex-col gap-2 border-t border-border pt-4 sm:flex-row sm:flex-wrap sm:items-center">
-            <button
-              type="button"
-              onClick={guardarSolo}
-              disabled={guardando}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-            >
-              {guardando && <Loader2 className="w-4 h-4 animate-spin" />}
-              {tPre("guardarSoloPaciente")}
-            </button>
+          <div className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:flex-wrap sm:items-start">
+            <div className="flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={guardarSolo}
+                disabled={guardando}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
+                {guardando && <Loader2 className="w-4 h-4 animate-spin" />}
+                {tPre("guardarSoloPaciente")}
+              </button>
+              <p className="max-w-sm text-xs text-muted-foreground">{tPre("guardarSoloPacienteAyuda")}</p>
+            </div>
             <button
               type="button"
               onClick={() => { setNombreNuevo(""); setPidiendoNombre(true); }}
@@ -459,43 +464,56 @@ export function PacienteFichaInformacionTab({
         </>
       ) : (
         <>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 mb-2 border-b border-border">
-            <div className="flex flex-wrap items-center gap-2">
+          <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
+            <div className="flex items-start gap-3 mb-4">
+              <span className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-primary/10 text-primary shrink-0">
+                <Layers className="w-4 h-4" aria-hidden="true" />
+              </span>
+              <div>
+                <h2 className="text-base sm:text-lg font-semibold">{tPre("gestionarPlantillas")}</h2>
+                <p className="text-sm text-muted-foreground mt-0.5">{tPre("gestionarPlantillasAyuda")}</p>
+              </div>
+            </div>
+            <div>
               <SelectorPlantillaAnamnesis
                 pacienteId={pacienteId}
                 plantillas={plantillas}
                 valorActual={plantillaActualId}
+                tieneEstructuraPropia={tieneEstructuraPropia}
                 onCrearNueva={() => setShowCrearModal(true)}
+                onEditar={entrarEdicion}
               />
-              <EnviarAnamnesisButton pacienteId={pacienteId} pacienteEmail={pacienteEmail} />
-              <button
-                type="button"
-                onClick={handleExportarPDF}
-                disabled={descargandoPdf}
-                className="inline-flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors w-fit disabled:opacity-60"
-              >
-                {descargandoPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
-                {t("exportarPdf")}
-              </button>
-              <button
-                type="button"
-                onClick={entrarEdicion}
-                className="inline-flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors w-fit"
-              >
-                <Pencil className="w-4 h-4" />
-                {tPre("editar")}
-              </button>
             </div>
-            <SaveStatusBadge status={saveStatus} />
-          </div>
+          </section>
 
-          <AnamnesisRenderer
-            estructura={estructura}
-            data={data}
-            onBuiltin={(seccion, campo, value) => setField(seccion as keyof FichaInformacionData, campo, value)}
-            onCustom={setCustomField}
-            modoNutri
-          />
+          <section className="border-t border-border pt-5">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+              <div>
+                <h2 className="text-base sm:text-lg font-semibold">{tPre("informacionAnamnesis")}</h2>
+                <SaveStatusBadge status={saveStatus} />
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <EnviarAnamnesisButton pacienteId={pacienteId} pacienteEmail={pacienteEmail} />
+                <button
+                  type="button"
+                  onClick={handleExportarPDF}
+                  disabled={descargandoPdf}
+                  className="inline-flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors min-h-11 w-fit disabled:opacity-60"
+                >
+                  {descargandoPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+                  {t("exportarPdf")}
+                </button>
+              </div>
+            </div>
+
+            <AnamnesisRenderer
+              estructura={estructura}
+              data={data}
+              onBuiltin={(seccion, campo, value) => setField(seccion as keyof FichaInformacionData, campo, value)}
+              onCustom={setCustomField}
+              modoNutri
+            />
+          </section>
         </>
       )}
 
